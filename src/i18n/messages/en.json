@@ -3,5 +3,17 @@
     "welcome": "Welcome",
     "loading": "Loading...",
     "error": "An error occurred"
+  },
+  "home": {
+    "title": "Engezna",
+    "subtitle": "انجزنا",
+    "tagline": "Fast delivery from restaurants, coffee shops, and groceries",
+    "ctaOrder": "Order Now",
+    "ctaPartner": "For Restaurants & Shops",
+    "comingSoon": "Coming Soon to Beni Suef",
+    "login": "Sign In"
+  },
+  "nav": {
+    "switchLanguage": "العربية"
   }
 }

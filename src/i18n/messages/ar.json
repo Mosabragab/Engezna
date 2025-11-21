@@ -3,5 +3,17 @@
     "welcome": "مرحباً",
     "loading": "جاري التحميل...",
     "error": "حدث خطأ"
+  },
+  "home": {
+    "title": "انجزنا",
+    "subtitle": "Engezna",
+    "tagline": "انجزنا واطلب - خدمة توصيل سريعة من المطاعم والكافيهات والبقالة",
+    "ctaOrder": "ابدأ الطلب الآن",
+    "ctaPartner": "للمطاعم والمحلات",
+    "comingSoon": "قريباً في بني سويف",
+    "login": "تسجيل الدخول"
+  },
+  "nav": {
+    "switchLanguage": "English"
   }
 }
