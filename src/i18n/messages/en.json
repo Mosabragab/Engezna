@@ -125,5 +125,53 @@
       },
       "copyright": "© 2025 Engezna. All rights reserved."
     }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "description": "Sign in to your account",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "forgotPassword": "Forgot password?",
+      "loginButton": "Sign In",
+      "loggingIn": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "signupLink": "Sign up"
+    },
+    "signup": {
+      "title": "Create Account",
+      "description": "Join Engezna today",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter your full name",
+      "phone": "Phone Number",
+      "phonePlaceholder": "01xxxxxxxxx",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "signupButton": "Create Account",
+      "signingUp": "Creating account...",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in",
+      "successTitle": "Account Created!",
+      "successMessage": "Please check your email to verify your account. Redirecting to login..."
+    },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "description": "Enter your email to receive a password reset link",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "sendButton": "Send Reset Link",
+      "sending": "Sending...",
+      "rememberPassword": "Remember your password?",
+      "loginLink": "Sign in",
+      "successTitle": "Check Your Email",
+      "successMessage": "We've sent you a password reset link. Please check your email.",
+      "backToLogin": "Back to Login"
+    }
   }
 }

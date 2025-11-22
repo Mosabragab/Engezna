@@ -1,11 +1,11 @@
 # Product Requirements Document (PRD)
 ## Engezna - انجزنا | Food Delivery Platform
 
-**Version:** 1.2 (Business Model Update)  
-**Date:** November 22, 2025  
-**Last Updated:** November 22, 2025 2:45 PM  
-**Project Lead:** Mosab  
-**Location:** Beni Suef, Upper Egypt  
+**Version:** 2.0 (Foundation Complete)
+**Date:** November 22, 2025
+**Last Updated:** November 22, 2025 9:00 PM
+**Project Lead:** Mosab
+**Location:** Beni Suef, Upper Egypt
 
 ---
 
@@ -19,42 +19,55 @@
 
 ---
 
-## ⚠️ Known Issues & Blockers
+## 📊 Current Development Status
 
-### **Critical Blocker: next-intl Routing (Week 0)**
+**Phase:** Foundation Complete (Nov 21-22, 2025)
+**Status:** Week 0 - 100% Complete ✅
+**Target Launch:** February 2026 (12 weeks development)
 
-**Issue:** Application routes build successfully but return 404 errors at runtime.
+### What's Built ✅
 
-**Details:**
-- Build output shows routes generated correctly: `/ar`, `/en`
-- Static pages pre-rendered successfully
-- Runtime requests to `/ar` and `/en` return 404
-- Middleware executes correctly
-- Files are in correct locations
+**Infrastructure & Design:**
+- ✅ Complete technical infrastructure (Next.js 15.0.3, TypeScript, Tailwind CSS v4)
+- ✅ Full database schema design (1,431 lines SQL with all tables, RLS policies, triggers)
+- ✅ Brand identity and design system (deep green #06c769, logos, typography)
+- ✅ Bilingual interface (Arabic/English with full RTL support)
+- ✅ Dark/Light mode theming with next-themes
+- ✅ 13 Shadcn/ui components installed and themed
+- ✅ Noto Sans Arabic + English variable fonts
 
-**Investigation:**
-- Initially used Next.js 16.0.3 (latest)
-- Downgraded to Next.js 15.0.3 for compatibility
-- Downgraded React 19 to React 18.2.0
-- Tested multiple next-intl configurations
-- Removed/re-added root layout
-- Created catch-all routes and not-found pages
-- Issue persists in both dev and production builds
+**Pages & Features:**
+- ✅ Authentication UI pages (login, signup, forgot password)
+- ✅ Homepage/Landing page (bilingual, responsive)
+- ✅ Routing system working (/ar, /en with locale switching)
+- ✅ Language and theme toggle components
+- ✅ 404 error pages for both locales
 
-**Hypothesis:**
-Likely Next.js 15/16 + next-intl 4.5.5 compatibility issue or undocumented routing constraint with App Router.
+**DevOps:**
+- ✅ Git repository + GitHub integration
+- ✅ Vercel deployment setup (auto-deploy on push)
+- ✅ Environment configuration ready
+- ✅ Complete documentation (PRD, development tracker, README)
 
-**Impact:**
-- Blocks all language switching functionality
-- Prevents homepage from loading
-- Delays Week 1 development
+### What's NOT Built Yet 🚧
 
-**Resolution Options:**
-1. **Deep Debug** (1-2 days): Continue investigating with Next.js/next-intl docs
-2. **Workaround** (30 mins): Implement client-side i18n with React Context + localStorage
-3. **Wait** (unknown): Monitor next-intl GitHub for Next.js 15/16 compatibility updates
+- ⚠️ **Database NOT deployed to Supabase** (schema exists as local SQL file only)
+- ⚠️ **Authentication backend NOT integrated** (UI pages exist, but no actual login/signup functionality)
+- ⚠️ **No customer features** (cannot browse providers, add to cart, or place orders)
+- ⚠️ **No provider dashboard** (no menu management or order handling)
+- ⚠️ **No admin panel**
+- ⚠️ **No payment integration**
+- ⚠️ **No real-time features** (order tracking, notifications)
+- ⚠️ **Application is non-functional** beyond viewing static pages and switching languages/themes
 
-**Decision:** To be made at start of Week 1 based on time constraints.
+### Next Priority Steps (Week 1-2)
+
+1. **Deploy database schema to Supabase** (tables, RLS policies, functions)
+2. **Complete Supabase Auth integration** (OTP, email/phone authentication, sessions)
+3. **Build user session management** (protected routes, profile creation)
+4. **Create homepage with category browsing** (4 service categories)
+5. **Implement provider listing pages** (search, filters, sorting)
+6. **Add provider detail pages** (menu display, info, reviews)
 
 ---
 
@@ -139,65 +152,80 @@ A localized, bilingual (Arabic/English) food delivery platform that:
 
 ### **Tech Stack**
 
-#### **Frontend** ✅ IMPLEMENTED
+#### **Frontend** ✅ FULLY IMPLEMENTED
 - **Framework:** Next.js 15.0.3 (App Router) ✅
-  - Downgraded from 16.0.3 due to routing compatibility issues with next-intl
-  - Using React 18.2.0 for stability
+  - React 18.2.0 for stability
+  - App Router with route groups (customer/provider/admin)
 - **Language:** TypeScript 5.x ✅
 - **Styling:** Tailwind CSS 4.x ✅
-  - Custom configuration with design tokens
+  - Custom configuration with brand design tokens
   - Dark mode support via next-themes ✅
-  - RTL (Right-to-Left) support for Arabic ✅
+  - Full RTL (Right-to-Left) support for Arabic ✅
+  - Custom scrollbar styling
+  - Gradient backgrounds
 - **UI Components:** shadcn/ui (Radix UI) ✅
-  - Button, Avatar, Dialog, Dropdown, Label, Select, Separator, Slot, Switch, Tabs
-  - All components support dark mode
-- **Internationalization:** next-intl 4.5.5 ⚠️
+  - 13 components: Button, Card, Avatar, Badge, Dialog, Dropdown Menu, Input, Label, Select, Separator, Switch, Tabs, Textarea
+  - All components themed with brand colors
+  - Full dark mode support
+- **Internationalization:** next-intl 4.5.5 ✅
   - Configured for Arabic (default) and English
-  - Known issue: Routing not working properly (under investigation)
-  - Fallback: May switch to client-side i18n if unresolved
-- **State Management:** Zustand (planned)
-- **Forms:** React Hook Form + Zod validation (planned)
+  - Locale routing working (/ar, /en)
+  - Translation files with initial content
+  - RTL direction switching
+  - ✅ Routing issues resolved
+- **Typography:** ✅
+  - Noto Sans Arabic (Variable Font)
+  - Noto Sans English (Variable Font)
+  - Weights: 400, 500, 600, 700
+- **State Management:** Zustand (installed, not yet used)
+- **Forms:** React Hook Form + Zod validation (installed, not yet used)
 
-#### **Backend** 🔄 PLANNED
-- **Platform:** Supabase (not yet set up)
-  - PostgreSQL database
-  - Authentication (email, phone, social)
-  - Real-time subscriptions
-  - Storage (images, documents)
-  - Edge Functions (serverless)
-  - Row Level Security (RLS)
-- **Status:** Database schema designed, implementation pending Week 1-2
+#### **Backend** 🔄 DESIGNED - NOT DEPLOYED
+- **Platform:** Supabase (connection configured, database not deployed)
+  - PostgreSQL database (schema designed, not deployed)
+  - Authentication (configured in code, not integrated)
+  - Real-time subscriptions (planned)
+  - Storage (planned for images, documents)
+  - Edge Functions (planned)
+  - Row Level Security (RLS policies designed, not deployed)
+- **Status:**
+  - ✅ Complete schema design (1,431 lines SQL)
+  - ✅ Supabase client configured
+  - ⚠️ Database NOT deployed to Supabase yet
+  - ⚠️ Auth backend NOT integrated
+  - Implementation pending Week 1-2
 
 #### **Infrastructure**
-- **Development:** 
-  - ✅ Local development environment (macOS)
+- **Development:** ✅ COMPLETE
+  - ✅ Local development environment
   - ✅ Git version control
   - ✅ GitHub repository: https://github.com/Mosabragab/Engezna
-- **Hosting:** Vercel (planned - not yet deployed)
-  - Frontend deployment
-  - Edge Network CDN
-  - Automatic deployments from main branch
-- **Database:** Supabase (planned - not yet set up)
-  - Managed PostgreSQL
-  - Real-time capabilities
-  - Built-in authentication
-- **Analytics:** 
-  - Vercel Analytics (to be enabled on deployment)
+  - ✅ Environment variables configured
+- **Hosting:** ✅ DEPLOYED
+  - ✅ Vercel deployment active
+  - ✅ Edge Network CDN
+  - ✅ Automatic deployments from git pushes
+  - ✅ Production URL active
+- **Database:** 🔄 NOT DEPLOYED
+  - Supabase project created
+  - Schema file ready (local)
+  - NOT deployed to cloud yet
+- **Analytics:** 🔄 PLANNED
+  - Vercel Analytics (to be enabled)
   - Supabase Analytics (to be configured)
-- **Monitoring:** Sentry (to be integrated for error tracking)
+- **Monitoring:** 🔄 PLANNED
+  - Sentry (to be integrated for error tracking)
 
-#### **Third-Party Integrations** 🔄 ALL PLANNED
+#### **Third-Party Integrations** 🔄 ALL PLANNED (Week 2+)
 - **Maps:** Google Maps API (navigation, geocoding) - Week 2-3
-- **Payments:** - Week 3-4
+- **Payments:** Week 3-4
   - Fawry (Egyptian payment gateway)
   - Cash on Delivery (COD) - primary method
   - Vodafone Cash (future consideration)
-- **SMS:** Twilio or local Egyptian SMS provider - Week 2
+- **SMS:** Twilio or local Egyptian SMS provider - Week 1-2 (for OTP)
 - **Push Notifications:** Firebase Cloud Messaging - Week 4
 
-**Note:** All integrations to be implemented post-MVP routing fix.
-
-### **Database Schema (Core Tables)** 📋 DESIGNED - NOT YET IMPLEMENTED
+### **Database Schema (Core Tables)** ✅ DESIGNED - ⚠️ NOT DEPLOYED
 
 **Status:** Schema designed and documented. Implementation scheduled for Week 1-2.
 

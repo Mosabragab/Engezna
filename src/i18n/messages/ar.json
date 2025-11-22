@@ -125,5 +125,53 @@
       },
       "copyright": "© 2025 انجزنا. جميع الحقوق محفوظة."
     }
+  },
+  "auth": {
+    "login": {
+      "title": "مرحباً بعودتك",
+      "description": "سجل دخول إلى حسابك",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "أدخل بريدك الإلكتروني",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "أدخل كلمة المرور",
+      "forgotPassword": "نسيت كلمة المرور؟",
+      "loginButton": "تسجيل الدخول",
+      "loggingIn": "جاري تسجيل الدخول...",
+      "noAccount": "ليس لديك حساب؟",
+      "signupLink": "إنشاء حساب"
+    },
+    "signup": {
+      "title": "إنشاء حساب جديد",
+      "description": "انضم إلى انجزنا اليوم",
+      "fullName": "الاسم الكامل",
+      "fullNamePlaceholder": "أدخل اسمك الكامل",
+      "phone": "رقم الهاتف",
+      "phonePlaceholder": "01xxxxxxxxx",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "أدخل بريدك الإلكتروني",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "أدخل كلمة المرور",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور",
+      "signupButton": "إنشاء حساب",
+      "signingUp": "جاري إنشاء الحساب...",
+      "hasAccount": "لديك حساب بالفعل؟",
+      "loginLink": "تسجيل الدخول",
+      "successTitle": "تم إنشاء الحساب!",
+      "successMessage": "يرجى التحقق من بريدك الإلكتروني للتأكيد. جاري التحويل لتسجيل الدخول..."
+    },
+    "forgotPassword": {
+      "title": "إعادة تعيين كلمة المرور",
+      "description": "أدخل بريدك الإلكتروني لاستلام رابط إعادة تعيين كلمة المرور",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "أدخل بريدك الإلكتروني",
+      "sendButton": "إرسال رابط إعادة التعيين",
+      "sending": "جاري الإرسال...",
+      "rememberPassword": "تذكرت كلمة المرور؟",
+      "loginLink": "تسجيل الدخول",
+      "successTitle": "تحقق من بريدك الإلكتروني",
+      "successMessage": "لقد أرسلنا لك رابط إعادة تعيين كلمة المرور. يرجى التحقق من بريدك الإلكتروني.",
+      "backToLogin": "العودة لتسجيل الدخول"
+    }
   }
 }
