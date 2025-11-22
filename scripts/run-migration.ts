@@ -45,21 +45,12 @@ async function runSQL(sql: string, filename: string) {
     for (const statement of statements) {
       if (!statement) continue
 
-      const { error } = await supabase.rpc('exec_sql', {
-        query: statement,
-      }).catch(async () => {
-        // If exec_sql doesn't exist, try direct query
-        return await supabase.from('_raw').select('*').limit(0)
-          .then(() => ({ error: new Error('exec_sql RPC not available. Please run SQL manually in Supabase Dashboard.') }))
-      })
-
-      if (error) {
-        // Try alternative: execute via raw query if possible
-        console.warn(`⚠️  Note: Direct SQL execution may not be available via API`)
-        console.warn(`   Please run this migration manually in Supabase SQL Editor:`)
-        console.warn(`   https://supabase.com/dashboard/project/${supabaseUrl.split('.')[0].split('//')[1]}/sql`)
-        console.log(`\n${statement}\n`)
-      }
+      // Note: Supabase RPC may not be available for direct SQL execution
+      // This script is informational - actual migrations should be run in Supabase SQL Editor
+      console.warn(`⚠️  Note: Direct SQL execution via API may not be available`)
+      console.warn(`   Please run migrations manually in Supabase SQL Editor:`)
+      console.warn(`   https://supabase.com/dashboard/project/${supabaseUrl.split('.')[0].split('//')[1]}/sql`)
+      console.log(`\n${statement}\n`)
     }
 
     console.log(`✅ Migration completed: ${filename}`)
