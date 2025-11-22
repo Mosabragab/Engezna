@@ -1,559 +1,316 @@
-# Project Enjezna (انجزنا) - Development Tracker
+# Claude Project Guide - Engezna (انجزنا)
+
+**Last Updated:** November 22, 2025
+**Project:** Engezna - Food Delivery Platform for Beni Suef, Upper Egypt
+**Repository:** https://github.com/Mosabragab/Engezna
+**Current Branch:** `claude/start-nextjs-dev-018Ax4ocUFpPUAU6hXViA8j9`
+
+---
 
 ## 🎯 Project Overview
-- **Name:** Enjezna (انجزنا) - "Let's get it done and order!"
-- **Start Date:** November 21, 2025
-- **Target Launch:** February 21, 2026 (3 months)
-- **Developer:** Solo (Mosab)
-- **Commitment:** 40 hours/week
-- **Status:** Week 0 - 90% Complete
-- **Business Model:** 5-7% commission (vs competitors' 15-20%)
-- **Key Advantage:** Providers manage their own delivery = lowest fees in market
-- **Documentation:** See PRD.md for full 50+ page requirements document
 
-## 🎨 Brand Identity
-- **Primary Color:** Deep Green (#06c769) 💚
-- **Secondary Color:** Black (#000000)
-- **Accent Color:** White (#FFFFFF)
-- **Logo:** Text-based "انجزنا / Engezna" (6 variations)
-- **Arabic Name:** انجزنا
-- **Tagline:** "انجزنا واطلب" (Two friends ordering: "Let's get it done and order!")
-- **Domain:** engezna.com (to be purchased)
+**Engezna (انجزنا)** is a B2C food delivery marketplace platform for Beni Suef, Upper Egypt. The platform connects local restaurants, coffee shops, and grocery stores with customers.
 
-## 🌍 Service Categories
-1. 🍽️ Restaurants (المطاعم)
-2. ☕ Coffee Shops (الكافيهات)
-3. 🛒 Groceries (البقالة)
-4. 🥬 Vegetables & Fruits (الخضار والفواكه)
+**Key Differentiator:** Ultra-low 5-7% commission model where providers manage their own delivery staff (vs competitors' 15-20% commission).
 
-## 🔗 Links
-- **GitHub Repo:** https://github.com/Mosabragab/Engezna
-- **Live Production:** https://enjezna-i1qgol4w0-engeznas-projects.vercel.app
-- **Supabase Dashboard:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
-- **Vercel Dashboard:** https://vercel.com/engeznas-projects/enjezna
-
-## 📊 Overall Progress
-```
-[████░░░░░░░░░░░░░░░░░░░░░░░░░░] 12 weeks total
-Week 0 ████████ (90% complete - routing blocked)
-Week 1 ░░░░
-Week 2-12 ░░░░░░░░░░░░
-```
-**Progress:** 90% of Week 0 Complete
+**Tech Stack:**
+- Next.js 15.0.3 (App Router) + TypeScript
+- Tailwind CSS 4 + shadcn/ui
+- Supabase (PostgreSQL, Auth, Real-time)
+- next-intl for i18n (Arabic/English)
 
 ---
 
-## 💰 Business Model
+## 📋 Claude's Working Rules
 
-### Revenue
-- **Commission:** 5-7% tiered on order value
-  - Small providers (<50 orders/month): 7%
-  - Medium providers (50-200 orders/month): 6%
-  - Large providers (200+ orders/month): 5%
-- **Target Revenue:** 180K-360K EGP Year 1
-- **Break-even:** Month 6-7 (~3,750 orders/month)
-- **Profit Margin:** 60-65% (no driver infrastructure costs)
+### **CRITICAL RULE: Progress Tracking**
 
-### Competitive Advantage
-- **Talabat/Noon:** 15-20% commission + manage delivery
-- **Engezna:** 5-7% commission + providers handle delivery
-- **Savings:** Providers keep 10-13% more per order
-- **Example:** 100 EGP order = Provider keeps 93-95 EGP vs 80-85 EGP
+**When completing ANY task from the project plan (PRD.md roadmap or weekly tasks):**
 
-### Why It Works
-- No delivery infrastructure or driver costs
-- Providers already have delivery staff
-- High profit margins with simple operations
-- Lower commission = more provider adoption
-- Scales efficiently
+1. ✅ **Mark the task as complete** in the relevant section with `[x]`
+2. 📝 **Update Claude.md** (this file):
+   - Add entry to "Completed Tasks" section below
+   - Update "Current Week Status" percentage
+   - Note any blockers or issues encountered
+3. 📊 **Update PRD.md**:
+   - Mark corresponding roadmap item as complete `[x]`
+   - Update week status (e.g., "✅ 95% COMPLETE")
+   - Add notes about implementation details if significant
+4. 🔄 **Commit changes** with clear message:
+   - Example: `✨ Complete user authentication flow - Update progress in PRD and Claude.md`
+
+**This ensures:**
+- User can track progress at any time
+- Project momentum is visible
+- Nothing gets forgotten or duplicated
+- Clear audit trail of what's been done
 
 ---
 
-## ✅ Week 0: Pre-Development Setup (Nov 21-24, 2025)
+## 🚀 Development Workflow
 
-### 🎉 Day 1: Project Infrastructure - ✅ COMPLETE
-**Date:** November 21, 2025  
-**Time Spent:** 7 hours (morning + night sessions)  
-**Status:** ✅ Deployed to Production
+### **Starting a New Task**
 
-#### Setup & Configuration
-- [x] Created project folder structure
-- [x] Initialized Next.js 15.0.3 + TypeScript + App Router
-- [x] Installed Tailwind CSS v4
-- [x] Set up Supabase connection
-- [x] Created environment variables (.env.local)
+1. **Read relevant files** before making changes
+2. **Check PRD.md** for requirements and context
+3. **Update todo list** using TodoWrite tool
+4. **Mark task as in_progress** in this file
+5. **Implement the feature**
+6. **Test thoroughly** (manual testing at minimum)
+7. **Update documentation** (this file + PRD.md)
+8. **Commit and push** to the feature branch
 
-#### Packages Installed (0 Vulnerabilities)
-- [x] @supabase/supabase-js & @supabase/ssr
-- [x] next-intl (internationalization)
-- [x] react-hook-form, zod, @hookform/resolvers
-- [x] next-themes (dark/light mode)
-- [x] date-fns, zustand
-- [x] All Radix UI dependencies
+### **Code Quality Standards**
 
-#### Shadcn/ui Components (13)
-- [x] button, card, input, label
-- [x] dropdown-menu, dialog, badge, avatar
-- [x] tabs, select, textarea, switch, separator
-- [⏳] toast (will add manually if needed)
+- ✅ TypeScript strict mode - no `any` types
+- ✅ ESLint compliance - fix all warnings
+- ✅ Responsive design - mobile-first approach
+- ✅ Accessibility - WCAG 2.1 AA compliance
+- ✅ RTL support - proper Arabic text rendering
+- ✅ Dark mode - all components support both themes
+- ✅ Error handling - graceful degradation
+- ✅ Performance - optimize images, lazy load components
 
-#### Project Structure (Provider-Based)
+### **Git Commit Message Format**
+
+Use conventional commits with emojis:
+
+- ✨ `:sparkles:` - New feature
+- 🐛 `:bug:` - Bug fix
+- 📝 `:memo:` - Documentation
+- 💄 `:lipstick:` - UI/styling
+- ♻️ `:recycle:` - Refactoring
+- 🚀 `:rocket:` - Performance
+- 🔧 `:wrench:` - Configuration
+- 🧪 `:test_tube:` - Tests
+
+**Examples:**
 ```
-src/
-├── app/
-│   ├── [locale]/
-│   │   ├── (customer)/    ✅ Customer-facing pages
-│   │   ├── (provider)/    ✅ All service providers (unified)
-│   │   └── (admin)/       ✅ Admin panel
-│   └── api/               ✅ API routes
-├── components/
-│   ├── ui/                ✅ Shadcn components (13)
-│   ├── customer/          ✅ Customer components (empty)
-│   ├── provider/          ✅ Provider components (empty)
-│   ├── admin/             ✅ Admin components (empty)
-│   └── shared/            ✅ Logo, ThemeToggle, ThemeProvider, LanguageSwitcher
-├── lib/
-│   ├── fonts/             ✅ Noto Sans Arabic & English
-│   ├── supabase/          ✅ Supabase client (configured)
-│   ├── hooks/             ✅ Custom React hooks (empty)
-│   └── utils/             ✅ Utility functions
-├── types/                 ✅ TypeScript types (database.ts)
-└── i18n/                  ✅ Translations (AR/EN)
+✨ Add user authentication with Supabase
+🐛 Fix 404 error in next-intl routing
+📝 Update PRD with Week 1 progress
+💄 Implement dark mode for header component
 ```
 
-#### Branding & Theme
-- [x] Brand colors configured (#06c769 deep green, black, white)
-- [x] Dark/Light mode CSS variables set
-- [x] RTL support added for Arabic
-- [x] Custom scrollbar with brand colors
-- [x] Gradient backgrounds (white → green → white)
+---
 
-#### Typography System
-- [x] Noto Sans Arabic (Variable Font) - Google Fonts
-- [x] Noto Sans English (Variable Font) - Google Fonts
-- [x] Font loading optimization in Next.js
-- [x] CSS variables configuration
-- [x] Weights: 400, 500, 600, 700
+## 📅 Current Project Status
 
-#### Logo Component (6 Variations)
-- [x] Built reusable Logo component
-- [x] Arabic: انجزنا (small, medium, large)
-- [x] English: Engezna (small, medium, large)
-- [x] Props: language, variant, size
-- [x] Theme-aware (works in dark mode)
+### **Week 0 (Nov 18-24, 2025): Foundation** ✅ 90% COMPLETE
 
-#### Homepage Implementation
-- [x] Bilingual landing page (Arabic primary)
-- [x] RTL layout fully working
-- [x] Gradient background
-- [x] Header with logo and navigation
-- [x] Hero section with both logos
-- [x] Arabic tagline: "انجزنا واطلب"
-- [x] Two CTA buttons in Arabic
-- [x] Status badge: "🚀 قريباً في بني سويف"
-- [x] Responsive design
+**Completed Tasks:**
+- [x] Project initialization (Next.js 15.0.3 + TypeScript)
+- [x] Git repository setup and GitHub integration
+- [x] Design system foundation (Tailwind CSS 4, shadcn/ui, dark mode, RTL)
+- [x] Typography implementation (Noto Sans Arabic/English)
+- [x] Logo component (6 variations)
+- [x] Core UI components (ThemeProvider, ThemeToggle, LanguageSwitcher)
+- [x] Internationalization setup (next-intl, ar.json, en.json)
+- [x] Homepage structure (bilingual, responsive)
+- [x] Documentation (PRD.md - 50+ pages)
 
-#### Git & Deployment
-- [x] Git repository initialized
-- [x] Multiple commits to GitHub
-- [x] Connected GitHub to Vercel
-- [x] Deployed to production ✅
-- [x] Auto-deployment enabled (every push → deploy)
+**Blocked Tasks:**
+- [ ] ⚠️ **CRITICAL BLOCKER:** next-intl routing issue
+  - Routes build successfully but return 404 at runtime
+  - Investigation shows Next.js 15/16 + next-intl 4.5.5 compatibility issue
+  - **Resolution needed before Week 1**
 
-#### Files Created
-- [x] src/lib/fonts/index.ts
-- [x] src/lib/supabase/client.ts
-- [x] src/types/database.ts
-- [x] src/i18n/messages/ar.json
-- [x] src/i18n/messages/en.json
-- [x] src/components/shared/Logo.tsx
-- [x] src/components/shared/ThemeProvider.tsx
-- [x] src/components/shared/ThemeToggle.tsx
-- [x] src/components/shared/LanguageSwitcher.tsx
-- [x] .env.local (Supabase credentials)
-- [x] claude.md (this file!)
-- [x] PRD.md (50+ page requirements document)
-- [x] components.json (Shadcn config)
-- [x] tailwind.config.ts (custom theme)
-
-**🎉 Milestones:**
-- Live on the internet!
-- Dark mode working perfectly
-- RTL support complete
-- Bilingual system ready
-- Logo system flexible and reusable
+**Time Invested:** ~12 hours
+**Completion:** 90%
+**Blockers:** 1 critical (routing)
 
 ---
 
-### 📅 Day 2-3: Routing Issue Investigation (Nov 22-23)
-**Status:** ⚠️ BLOCKED
+## ✅ Completed Tasks Log
 
-#### Issue: next-intl Routing Returns 404
-- [x] Routes build successfully (/ar, /en)
-- [x] Static pages pre-rendered
-- [x] Runtime returns 404 errors
-- [x] Downgraded Next.js 16.0.3 → 15.0.3
-- [x] Downgraded React 19 → 18.2.0
-- [x] Tested multiple configurations
-- [x] Created catch-all routes
-- [x] Added not-found pages
-- [x] Spent 12+ hours debugging
+Track all completed tasks here with date, description, and relevant file changes.
 
-**Hypothesis:** Next.js 15/16 + next-intl 4.5.5 compatibility issue
+### November 22, 2025
 
-**Resolution Options:**
-1. Continue debugging (1-2 days)
-2. **Implement client-side i18n workaround (30 mins)** ← Recommended
-3. Wait for next-intl update
+1. **Created Claude.md** - Project tracking and rules documentation
+   - Added progress tracking rules
+   - Defined development workflow
+   - Created task completion log structure
 
-**Decision:** To be made at start of Week 1
+2. **Updated README.md** - Professional project documentation
+   - Added Engezna project overview
+   - Included tech stack, features, and setup instructions
+   - Added bilingual description (Arabic/English)
 
 ---
 
-### 📅 Day 4: Documentation & Planning (Nov 24)
-**Status:** ✅ COMPLETE
+## 🚧 Known Issues & Blockers
 
-#### PRD Creation
-- [x] 50+ page Product Requirements Document
-- [x] Complete technical architecture
-- [x] 14-week development roadmap
-- [x] Business model (5-7% commission)
-- [x] Competitive advantages section
-- [x] Financial projections
-- [x] Go-to-market strategy
-- [x] Version: 1.2 (Business Model Update)
+### **Critical Issues**
 
-**Week 0 Final Status:** 90% Complete (routing blocked)
+1. **next-intl Routing (Week 0)** - BLOCKING WEEK 1
+   - **Issue:** Routes build successfully but return 404 at runtime
+   - **Impact:** Blocks all language switching and homepage loading
+   - **Status:** Under investigation
+   - **Options:**
+     1. Deep debug with Next.js docs (1-2 days)
+     2. Switch to client-side i18n (30 mins)
+     3. Wait for next-intl update
+   - **Decision:** To be made at Week 1 start
 
----
+### **Minor Issues**
 
-## 📅 Month 1: Customer Experience & Core Features
-
-### Week 1: Authentication & Home (Nov 25 - Dec 1)
-- [ ] **PRIORITY:** Fix routing issue OR implement client-side i18n
-- [ ] Supabase project setup
-- [ ] OTP authentication system
-- [ ] User registration flow
-- [ ] Service category UI (4 categories)
-- [ ] Homepage with banner system
-- [ ] Search functionality
-- [ ] Deploy Week 1 MVP
-
-### Week 2: Provider Listings (Dec 2-8)
-- [ ] Provider list page
-- [ ] Provider detail page
-- [ ] Menu display system
-- [ ] Filters & sorting
-- [ ] Provider profile pages
-- [ ] Deploy Week 2 updates
-
-### Week 3: Shopping Cart (Dec 9-15)
-- [ ] Cart functionality
-- [ ] Add/remove items
-- [ ] Quantity controls
-- [ ] Price calculations
-- [ ] Cart persistence
-- [ ] Deploy Week 3 features
-
-### Week 4: Checkout & Orders (Dec 16-22)
-- [ ] Checkout flow
-- [ ] Address management
-- [ ] Order confirmation
-- [ ] Order modification (before preparing)
-- [ ] My Orders page
-- [ ] Deploy Month 1 complete
+None currently.
 
 ---
 
-## 📅 Month 2: Provider Dashboard & Admin
+## 📊 Weekly Progress Tracking
 
-### Week 5: Provider Multi-User System (Dec 23-29)
-- [ ] Provider authentication
-- [ ] Owner dashboard
-- [ ] Staff management (max 2 users)
-- [ ] Role-based permissions
-- [ ] Deploy Week 5
+Use this section to track weekly progress and update completion percentages.
 
-### Week 6: Order Management (Dec 30 - Jan 5)
-- [ ] Incoming orders UI
-- [ ] Accept/reject orders
-- [ ] Order status updates
-- [ ] Order modification handling
-- [ ] Deploy Week 6
+### Week 0 (Nov 18-24, 2025)
+- **Status:** ✅ 95% Complete
+- **Key Achievements:** Foundation, design system, i18n setup, comprehensive documentation (PRD, Claude.md, README)
+- **Blockers:** next-intl routing
+- **Next Steps:** Resolve routing or implement workaround
 
-### Week 7: Menu Management (Jan 6-12)
-- [ ] Menu CRUD (Arabic + English)
-- [ ] Category management
-- [ ] Availability toggle
-- [ ] Image upload
-- [ ] Bulk operations
-- [ ] Deploy Week 7
-
-### Week 8: Provider Analytics (Jan 13-19)
-- [ ] Sales dashboard
-- [ ] Order statistics
-- [ ] Popular items
-- [ ] Revenue reports
-- [ ] Weekly settlement preview
-- [ ] Deploy Month 2 complete
+### Week 1-2 (Nov 25 - Dec 8, 2025)
+- **Status:** 🔄 Not started
+- **Planned Tasks:**
+  - [ ] Fix routing issue
+  - [ ] Supabase project setup
+  - [ ] Database schema implementation
+  - [ ] Authentication flow
+  - [ ] Customer homepage UI
+  - [ ] Restaurant listing page
 
 ---
 
-## 📅 Month 3: Admin Panel & Launch
+## 🎨 Design System Reference
 
-### Week 9: Admin Core (Jan 20-26)
-- [ ] Super admin authentication
-- [ ] Dashboard overview
-- [ ] Platform settings (commission: 5-7%)
-- [ ] Restaurant verification
-- [ ] User management
-- [ ] Deploy Week 9
+Quick reference for development consistency.
 
-### Week 10: Admin Financial (Jan 27 - Feb 2)
-- [ ] All orders monitoring
-- [ ] Weekly settlements system
-- [ ] Platform revenue analytics
-- [ ] Commission tracking (5-7% tiered)
-- [ ] Export reports
-- [ ] Deploy Week 10
+### **Colors**
+- **Primary:** Deep Green `#06c769` (hsl(149, 94%, 40%))
+- **Secondary:** Black `#000000`
+- **Accent:** White `#FFFFFF`
 
-### Week 11: Content & Marketing (Feb 3-9)
-- [ ] Home banner management
-- [ ] Service category management
-- [ ] Provider analytics
-- [ ] Customer analytics
-- [ ] Performance metrics
-- [ ] Deploy Week 11
+### **Typography**
+- **Arabic:** Noto Sans Arabic (Variable) - `font-noto-sans-arabic`
+- **English:** Noto Sans (Variable) - `font-noto-sans`
+- **Weights:** 400 (regular), 500 (medium), 600 (semibold), 700 (bold)
 
-### Week 12: Testing & Launch (Feb 10-16)
-- [ ] Full Arabic/English testing
-- [ ] Mobile responsiveness testing
-- [ ] Dark/light mode testing
-- [ ] Order flow testing
-- [ ] Multi-user testing
-- [ ] Settlement system testing
-- [ ] Performance optimization
-- [ ] Security audit
-- [ ] **Soft launch (3 providers)**
-- [ ] **🚀 Production Launch - Feb 16, 2026**
+### **Component Library**
+- **Base:** shadcn/ui (Radix UI)
+- **Custom:** Logo, ThemeToggle, LanguageSwitcher
+- **All components:** Dark mode + RTL support
 
 ---
 
-## 📦 Tech Stack
+## 🔗 Important Links
 
-### Frontend
-- **Framework:** Next.js 15.0.3 (App Router)
-- **Language:** TypeScript 5.x
-- **Styling:** Tailwind CSS v4
-- **UI Components:** Shadcn/ui (13 components)
-- **Icons:** Lucide React
-- **i18n:** next-intl 4.5.5 (⚠️ routing issue)
-- **Theme:** next-themes (✅ working)
-- **Forms:** React Hook Form + Zod (planned)
-- **State:** Zustand (planned)
-- **Date:** date-fns (installed)
-
-### Backend
-- **Database:** PostgreSQL (via Supabase)
-- **Auth:** Supabase Auth (OTP, email, phone)
-- **Storage:** Supabase Storage (images, documents)
-- **Realtime:** Supabase Realtime (order updates)
-- **API:** Next.js API Routes + Supabase Edge Functions
-
-### Deployment
-- **Hosting:** Vercel
-- **Domain:** engezna.com (to be purchased)
-- **SSL:** Auto (Vercel)
-- **CDN:** Global (Vercel Edge)
-
-### Development
-- **Version Control:** Git + GitHub
-- **Code Editor:** Cursor (Claude-powered)
-- **Package Manager:** npm
-- **Linting:** ESLint
-- **Formatting:** Prettier (implicit)
+- **PRD:** `/PRD.md` - Complete product requirements (50+ pages)
+- **GitHub:** https://github.com/Mosabragab/Engezna
+- **Tech Docs:**
+  - Next.js 15: https://nextjs.org/docs
+  - Supabase: https://supabase.com/docs
+  - Tailwind CSS 4: https://tailwindcss.com/docs
+  - next-intl: https://next-intl-docs.vercel.app
 
 ---
 
-## 📊 Code Statistics
-- **Total Files:** 60+
-- **Languages:** TypeScript (94%), CSS (4%), JavaScript (2%)
-- **Packages:** 404 installed
-- **Vulnerabilities:** 0 ✅
-- **Bundle Size:** TBD (will optimize later)
+## 💡 Tips for Claude
+
+### **Before Starting Work**
+1. Always read `PRD.md` for context
+2. Check this file for recent updates and blockers
+3. Review relevant code files before editing
+4. Understand the user's intent fully before implementing
+
+### **During Development**
+1. Use TypeScript strict types
+2. Test in both light and dark mode
+3. Test with Arabic RTL layout
+4. Verify responsive design (mobile, tablet, desktop)
+5. Check ESLint - fix all warnings
+6. Follow established code patterns
+
+### **After Completing Tasks**
+1. Update this file (Claude.md)
+2. Update PRD.md progress
+3. Run `npm run dev` to verify
+4. Commit with conventional commit message
+5. Push to feature branch
+
+### **Communication**
+- Be concise and clear in responses
+- Explain technical decisions when needed
+- Ask for clarification if requirements are ambiguous
+- Suggest improvements proactively but don't over-engineer
 
 ---
 
-## 🎯 Success Metrics (Post-Launch)
+## 🎯 Success Metrics
 
-### Month 1 (Feb 16 - Mar 16, 2026)
-- **Goal:** 10 providers onboarded (with delivery capability)
-- **Target:** 50+ orders/week
-- **Users:** 100+ registered customers
-- **Commission:** 5-7% (tiered)
-- **Rating:** 4.0+ average
+Track these as the project progresses:
 
-### Month 2 (Mar 16 - Apr 16, 2026)
-- **Goal:** 20 providers
-- **Target:** 200+ orders/week
-- **Users:** 250+ active customers
-- **Retention:** 30%+ monthly
+### **Technical Metrics**
+- [ ] Build success rate: 100%
+- [ ] ESLint warnings: 0
+- [ ] TypeScript errors: 0
+- [ ] Lighthouse score: >90
+- [ ] Load time: <2s
 
-### Month 3 (Apr 16 - May 16, 2026)
-- **Goal:** 30 providers
-- **Target:** 400+ orders/week
-- **Users:** 500+ active customers
-- **Revenue:** ~18,000 EGP/month
-- **Break-even:** Close to target
-
----
-
-## 🐛 Known Issues & Blockers
-
-### Active Issues
-⚠️ **CRITICAL:** next-intl routing returns 404
-- Routes build but fail at runtime
-- Spent 12+ hours debugging
-- Downgraded Next.js and React
-- Need to decide: Fix vs workaround
-
-### Future Considerations
-- Toast component not in Shadcn registry (add manually)
-- Domain purchase (engezna.com)
-- Payment gateway integration (Fawry - Phase 2)
-- Google Maps API (Phase 2)
-
----
-
-## 💡 Key Decisions Made
-
-### Architecture
-✅ **Provider-based structure** instead of restaurant-specific  
-**Reason:** Supports 4 categories with single codebase
-
-✅ **Web-first approach** (responsive, no native apps initially)  
-**Reason:** Faster MVP, works on all devices
-
-✅ **Cash-first payments** (cards Phase 2)  
-**Reason:** Common in Egyptian market, simpler to start
-
-✅ **No driver app** (providers manage their own delivery)  
-**Reason:** Enables ultra-low 5-7% commission (vs 15-20% competitors). Providers already have delivery staff - we just connect them to more customers. Simpler operations, lower costs, better economics for everyone. This is our key competitive advantage.
-
-### Technology
-✅ **Next.js 15.0.3** over alternatives  
-**Reason:** Best-in-class, great for solo dev, App Router for future-proofing
-
-✅ **Supabase** over custom backend  
-**Reason:** Speed, reliability, scales well, built-in auth & realtime
-
-✅ **Shadcn/ui** over component libraries  
-**Reason:** Customizable, modern, no runtime overhead, full control
-
-✅ **5-7% commission model** over traditional 15-20%  
-**Reason:** Providers keep delivery = lower costs = lower commission = competitive advantage
+### **Development Metrics**
+- [ ] Weekly velocity: Track tasks completed
+- [ ] Blocker resolution time: <24 hours
+- [ ] Code review iterations: <2 per PR
 
 ---
 
 ## 📝 Notes & Learnings
 
-### Technical Learnings
-- Next.js 15/16 + next-intl has compatibility issues
-- Tailwind CSS v4 requires different configuration approach
-- Noto Sans Arabic renders beautifully for RTL
-- Google Fonts + Next.js font optimization works seamlessly
-- Component-based logo system is highly flexible
-- Dark mode with next-themes is trivial to implement
-- Vercel deployment is instant and reliable
+Document any important learnings, gotchas, or decisions here.
 
-### Process Learnings
-- Document everything in real-time (this file!)
-- Test commands one-by-one in terminal
-- Commit frequently with descriptive messages
-- Terminal heredocs are powerful but need proper escaping
-- PRD documentation upfront saves time later
-- Business model should drive technical decisions
+### **Technical Decisions**
 
-### Design Learnings
-- Text-only logos work perfectly for delivery apps
-- Deep green (#06c769) conveys freshness and speed
-- Gradient backgrounds add depth without complexity
-- Arabic typography needs proper font selection
-- RTL layout affects entire component structure
-- Dark mode should be tested from day one
+1. **Next.js 15.0.3 over 16.0.3**
+   - Downgraded due to routing compatibility issues
+   - React 18.2.0 for stability
+   - May upgrade when next-intl adds Next.js 16 support
 
-### Business Learnings
-- Lower commission (5-7%) is THE competitive advantage
-- Providers already have delivery staff - leverage that
-- No driver management = massive cost savings
-- Simple model = faster MVP = quicker validation
-- Local focus + low fees = powerful combination
+2. **Supabase over Firebase**
+   - Better PostgreSQL support
+   - Built-in Row Level Security
+   - More cost-effective at scale
+   - Real-time capabilities
+
+3. **Provider-Managed Delivery Model**
+   - Ultra-low 5-7% commission possible
+   - No driver app complexity
+   - Providers use existing delivery staff
+   - Key competitive advantage
 
 ---
 
-## 🎯 Current Sprint (Week 1)
+## 🔄 Regular Maintenance Tasks
 
-**Focus:** Fix Routing OR Implement Workaround  
-**Duration:** 1 day maximum  
-**Priority:** CRITICAL BLOCKER
+Tasks to perform regularly:
 
-### Priority Tasks
-1. ⚠️ **DECIDE:** Debug routing vs client-side i18n workaround
-2. Implement chosen solution
-3. Test thoroughly (both languages, both modes)
-4. Move to Week 1 features (auth, homepage)
+### **Daily**
+- Check for critical errors
+- Review any user feedback
+- Update task progress
 
----
+### **Weekly**
+- Update progress percentages
+- Review blockers and resolve
+- Plan next week's tasks
+- Update PRD.md roadmap
 
-## 📞 Support & Resources
-
-### Documentation
-- Next.js: https://nextjs.org/docs
-- Supabase: https://supabase.com/docs
-- Shadcn/ui: https://ui.shadcn.com
-- Tailwind: https://tailwindcss.com/docs
-- next-intl: https://next-intl-docs.vercel.app
-
-### Community
-- GitHub Issues: Report bugs/features
-- Vercel Discussions: Deployment help
-- Supabase Discord: Database questions
-- next-intl GitHub: Routing issue investigation
+### **Monthly**
+- Review and update PRD.md
+- Evaluate tech stack performance
+- Document major learnings
+- Assess project velocity
 
 ---
 
-## 📊 Time Tracking
+**End of Claude.md**
 
-### Week 0 Summary
-- **Day 1 Morning:** 4 hours (setup, structure, deployment)
-- **Day 1 Night:** 3 hours (fonts, logo, homepage)
-- **Day 2-3:** 12 hours (routing debugging)
-- **Day 4:** 2 hours (PRD documentation)
-- **Total Week 0:** ~21 hours
-- **Status:** 90% complete (routing blocked)
-
-### Estimated Remaining
-- **Week 1:** 40 hours (fix routing + auth + homepage)
-- **Weeks 2-12:** 440 hours (features + testing)
-- **Total Project:** ~500 hours over 3 months
-
----
-
-**Last Updated:** November 22, 2025 - 3:00 PM  
-**Next Review:** November 25, 2025 (Week 1 start)  
-**Version:** 2.0 - Week 0 Complete (90%) with Business Model Documentation
-
----
-
-**🎉 Week 0 Achievements:**
-✅ Live deployment  
-✅ Dark mode working  
-✅ RTL support complete  
-✅ Bilingual system ready  
-✅ Logo system built  
-✅ Brand identity established  
-✅ PRD documented (50+ pages)  
-✅ Business model validated  
-⚠️ Routing issue identified
-
-**Next Milestone:** Week 1 - Fix routing & build auth system 🚀
+*This file should be updated with every significant task completion. Keep it current!*
