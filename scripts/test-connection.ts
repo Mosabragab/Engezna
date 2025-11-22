@@ -33,7 +33,7 @@ async function testConnection() {
   try {
     console.log('📋 Configuration:')
     console.log('   URL:', supabaseUrl)
-    console.log('   Anon Key:', supabaseAnonKey.substring(0, 20) + '...')
+    console.log('   Anon Key:', supabaseAnonKey?.substring(0, 20) + '...')
     console.log('')
 
     // Test 1: Basic connection
@@ -50,9 +50,15 @@ async function testConnection() {
 
     // Test 2: List tables
     console.log('2️⃣ Fetching table information...')
-    const { data: tablesData, error: tablesError } = await supabase
-      .rpc('get_tables')
-      .catch(() => ({ data: null, error: null }))
+    let tablesData = null
+    let tablesError = null
+    try {
+      const result = await supabase.rpc('get_tables')
+      tablesData = result.data
+      tablesError = result.error
+    } catch (e) {
+      // RPC function may not exist
+    }
 
     if (tablesError) {
       console.log('   ℹ️  Cannot fetch table list (may need custom RPC function)')

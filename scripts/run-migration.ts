@@ -49,7 +49,8 @@ async function runSQL(sql: string, filename: string) {
       // This script is informational - actual migrations should be run in Supabase SQL Editor
       console.warn(`⚠️  Note: Direct SQL execution via API may not be available`)
       console.warn(`   Please run migrations manually in Supabase SQL Editor:`)
-      console.warn(`   https://supabase.com/dashboard/project/${supabaseUrl.split('.')[0].split('//')[1]}/sql`)
+      const projectId = supabaseUrl?.split('.')[0].split('//')[1] || 'YOUR_PROJECT'
+      console.warn(`   https://supabase.com/dashboard/project/${projectId}/sql`)
       console.log(`\n${statement}\n`)
     }
 
