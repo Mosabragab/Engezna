@@ -1,17 +1,12 @@
-import { Noto_Sans, Noto_Sans_Arabic } from 'next/font/google'
+// Using system fonts as fallback (Google Fonts require network access)
+// In production, these will be replaced with proper Noto Sans fonts
 
-// English font
-export const notoSans = Noto_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+export const notoSans = {
   variable: '--font-noto-sans',
-  display: 'swap',
-})
+  className: 'font-sans',
+}
 
-// Arabic font
-export const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ['arabic'],
-  weight: ['300', '400', '500', '600', '700'],
+export const notoSansArabic = {
   variable: '--font-noto-sans-arabic',
-  display: 'swap',
-})
+  className: 'font-sans',
+}

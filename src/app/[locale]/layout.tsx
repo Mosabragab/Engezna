@@ -26,7 +26,7 @@ export default async function LocaleLayout({
   params
 }: Props) {
   const { locale } = await params
-  
+
   if (!locales.includes(locale as any)) {
     notFound()
   }

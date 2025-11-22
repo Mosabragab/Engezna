@@ -3,15 +3,127 @@
     "title": "Page Not Found"
   },
   "nav": {
-    "switchLanguage": "العربية"
+    "switchLanguage": "العربية",
+    "home": "Home",
+    "services": "Services",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Login"
   },
   "home": {
     "title": "Engezna",
     "subtitle": "انجزنا",
-    "tagline": "Fast food delivery in Beni Suef",
+    "heroTitle": "Let's Get It Done and Order!",
+    "heroSubtitle": "Fast delivery from restaurants, cafes, and groceries in Beni Suef",
+    "heroDescription": "Order your favorite food from the best restaurants, cafes, and stores in Beni Suef. Fast delivery and competitive prices.",
     "ctaOrder": "Order Now",
-    "ctaPartner": "Become a Partner",
-    "comingSoon": "Coming Soon",
-    "login": "Login"
+    "ctaPartner": "Join as Partner",
+    "comingSoon": "🚀 Coming Soon to Beni Suef",
+    "categories": {
+      "title": "Our Services",
+      "subtitle": "Everything you need in one place",
+      "restaurants": {
+        "title": "Restaurants",
+        "description": "Order from the best restaurants in Beni Suef"
+      },
+      "coffee": {
+        "title": "Coffee Shops",
+        "description": "Your favorite coffee delivered anywhere"
+      },
+      "groceries": {
+        "title": "Groceries",
+        "description": "Your daily needs at the click of a button"
+      },
+      "vegetables": {
+        "title": "Vegetables & Fruits",
+        "description": "Fresh produce delivered to your door"
+      }
+    },
+    "features": {
+      "title": "Why Engezna?",
+      "subtitle": "We offer you the best delivery experience in Beni Suef",
+      "lowCommission": {
+        "title": "Competitive Prices",
+        "description": "Low commission of only 5-7% compared to 15-20% on other platforms"
+      },
+      "fastDelivery": {
+        "title": "Fast Delivery",
+        "description": "Your order arrives in less than 45 minutes"
+      },
+      "localFocus": {
+        "title": "Local Focus",
+        "description": "Dedicated to Beni Suef and Upper Egypt"
+      },
+      "easyToUse": {
+        "title": "Easy to Use",
+        "description": "Simple and easy interface for everyone"
+      }
+    },
+    "howItWorks": {
+      "title": "How Does Engezna Work?",
+      "subtitle": "Just three simple steps",
+      "customer": {
+        "step1": {
+          "title": "Choose Your Restaurant",
+          "description": "Browse available restaurants and cafes"
+        },
+        "step2": {
+          "title": "Order Your Food",
+          "description": "Select what you want and add to cart"
+        },
+        "step3": {
+          "title": "Receive Your Order",
+          "description": "Your order arrives in less than 45 minutes"
+        }
+      },
+      "provider": {
+        "title": "For Partners",
+        "subtitle": "Join our network today",
+        "step1": {
+          "title": "Register Your Restaurant",
+          "description": "Sign up with your business details"
+        },
+        "step2": {
+          "title": "Add Your Menu",
+          "description": "Add dishes and prices easily"
+        },
+        "step3": {
+          "title": "Receive Orders",
+          "description": "Start receiving orders and increase your sales"
+        }
+      }
+    },
+    "cta": {
+      "customer": {
+        "title": "Ready to Order?",
+        "subtitle": "Join thousands of customers in Beni Suef",
+        "button": "Get Started"
+      },
+      "provider": {
+        "title": "Are You a Restaurant or Shop Owner?",
+        "subtitle": "Join Engezna platform and increase your sales with low 5-7% commission",
+        "button": "Register as Partner"
+      }
+    },
+    "footer": {
+      "about": {
+        "title": "About Engezna",
+        "description": "The first food delivery platform in Beni Suef and Upper Egypt"
+      },
+      "links": {
+        "title": "Quick Links",
+        "aboutUs": "About Us",
+        "terms": "Terms & Conditions",
+        "privacy": "Privacy Policy",
+        "contact": "Contact Us"
+      },
+      "contact": {
+        "title": "Contact Us",
+        "address": "Beni Suef, Egypt",
+        "email": "info@engezna.com",
+        "phone": "+20 xxx xxx xxx"
+      },
+      "copyright": "© 2025 Engezna. All rights reserved."
+    }
   }
 }
