@@ -8,8 +8,7 @@
 -- ============================================================================
 
 -- Enable necessary extensions
-create extension if not exists "uuid-ossp";
-create extension if not exists "pgcrypto";
+create extension if not exists "pgcrypto"; -- For gen_random_uuid()
 create extension if not exists "postgis"; -- For location data
 
 -- ============================================================================
@@ -85,7 +84,7 @@ create table if not exists public.profiles (
 -- Service Categories Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.categories (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   name_ar text not null,
   name_en text not null,
   slug text unique not null,
@@ -101,7 +100,7 @@ create table if not exists public.categories (
 -- Providers Table (Restaurants, Coffee Shops, Groceries, Vegetables/Fruits)
 -- ----------------------------------------------------------------------------
 create table if not exists public.providers (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   owner_id uuid references public.profiles(id) on delete cascade not null,
 
   -- Basic Info
@@ -161,7 +160,7 @@ create index idx_providers_status on public.providers(status);
 -- Provider Staff Table (Multi-user system: Owner + max 2 staff)
 -- ----------------------------------------------------------------------------
 create table if not exists public.provider_staff (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   provider_id uuid references public.providers(id) on delete cascade not null,
   user_id uuid references public.profiles(id) on delete cascade not null,
 
@@ -199,7 +198,7 @@ create trigger enforce_provider_staff_limit
 -- Menu Items Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.menu_items (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   provider_id uuid references public.providers(id) on delete cascade not null,
   category_id uuid references public.categories(id) on delete set null,
 
@@ -247,7 +246,7 @@ create index idx_menu_items_available on public.menu_items(is_available);
 -- Customer Addresses Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.addresses (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
 
   -- Address Details
@@ -283,7 +282,7 @@ create index idx_addresses_location on public.addresses using gist(location);
 -- Orders Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.orders (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   order_number text unique not null, -- Human-readable order number
 
   -- Relationships
@@ -375,7 +374,7 @@ create trigger set_order_number_trigger
 -- Order Items Table (Line items for each order)
 -- ----------------------------------------------------------------------------
 create table if not exists public.order_items (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   order_id uuid references public.orders(id) on delete cascade not null,
   menu_item_id uuid references public.menu_items(id) on delete set null,
 
@@ -403,7 +402,7 @@ create index idx_order_items_order on public.order_items(order_id);
 -- Reviews Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.reviews (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   order_id uuid references public.orders(id) on delete cascade not null unique,
   customer_id uuid references public.profiles(id) on delete cascade not null,
   provider_id uuid references public.providers(id) on delete cascade not null,
@@ -451,7 +450,7 @@ create trigger update_provider_rating_trigger
 -- Loyalty Points Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.loyalty_points (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
 
   -- Points Balance
@@ -471,7 +470,7 @@ create table if not exists public.loyalty_points (
 -- Loyalty Transactions Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.loyalty_transactions (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
   order_id uuid references public.orders(id) on delete set null,
 
@@ -492,7 +491,7 @@ create index idx_loyalty_transactions_user on public.loyalty_transactions(user_i
 -- Referrals Table (30 EGP credit as per PRD)
 -- ----------------------------------------------------------------------------
 create table if not exists public.referrals (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
 
   -- Referrer and Referee
   referrer_id uuid references public.profiles(id) on delete cascade not null,
@@ -559,7 +558,7 @@ alter table public.profiles add column if not exists wallet_balance decimal(10,2
 -- Chat Conversations Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.chat_conversations (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   order_id uuid references public.orders(id) on delete cascade unique not null,
   customer_id uuid references public.profiles(id) on delete cascade not null,
   provider_id uuid references public.providers(id) on delete cascade not null,
@@ -587,7 +586,7 @@ create index idx_chat_conversations_provider on public.chat_conversations(provid
 -- Chat Messages Table (Supports Text and Images)
 -- ----------------------------------------------------------------------------
 create table if not exists public.chat_messages (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   conversation_id uuid references public.chat_conversations(id) on delete cascade not null,
   sender_id uuid references public.profiles(id) on delete set null,
 
@@ -615,7 +614,7 @@ create index idx_chat_messages_created on public.chat_messages(created_at);
 -- Promo Codes Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.promo_codes (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
 
   -- Code Details
   code text unique not null,
@@ -654,7 +653,7 @@ create index idx_promo_codes_active on public.promo_codes(is_active);
 -- Promo Code Usage Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.promo_code_usage (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   promo_code_id uuid references public.promo_codes(id) on delete cascade not null,
   user_id uuid references public.profiles(id) on delete cascade not null,
   order_id uuid references public.orders(id) on delete cascade not null,
@@ -673,7 +672,7 @@ create index idx_promo_usage_user on public.promo_code_usage(user_id);
 -- Notifications Table
 -- ----------------------------------------------------------------------------
 create table if not exists public.notifications (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
 
   -- Notification Content
@@ -705,7 +704,7 @@ create index idx_notifications_created on public.notifications(created_at desc);
 -- Weekly Settlements Table (Provider Payouts)
 -- ----------------------------------------------------------------------------
 create table if not exists public.settlements (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   provider_id uuid references public.providers(id) on delete cascade not null,
 
   -- Settlement Period
