@@ -55,9 +55,11 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <ThemeToggle />
               <LanguageSwitcher />
-              <Button variant="default" size="sm" className="hidden sm:flex">
-                {navT('login')}
-              </Button>
+              <Link href={`/${locale}/auth/login`}>
+                <Button variant="default" size="sm" className="hidden sm:flex">
+                  {navT('login')}
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
