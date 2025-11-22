@@ -1,19 +1,17 @@
 {
-  "common": {
-    "welcome": "مرحباً",
-    "loading": "جاري التحميل...",
-    "error": "حدث خطأ"
+  "NotFoundPage": {
+    "title": "الصفحة غير موجودة"
+  },
+  "nav": {
+    "switchLanguage": "English"
   },
   "home": {
     "title": "انجزنا",
     "subtitle": "Engezna",
-    "tagline": "انجزنا واطلب - خدمة توصيل سريعة من المطاعم والكافيهات والبقالة",
-    "ctaOrder": "ابدأ الطلب الآن",
-    "ctaPartner": "للمطاعم والمحلات",
-    "comingSoon": "قريباً في بني سويف",
+    "tagline": "توصيل الطعام السريع في بني سويف",
+    "ctaOrder": "اطلب الآن",
+    "ctaPartner": "كن شريكًا",
+    "comingSoon": "قريباً",
     "login": "تسجيل الدخول"
-  },
-  "nav": {
-    "switchLanguage": "English"
   }
 }

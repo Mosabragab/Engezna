@@ -1,19 +1,17 @@
 {
-  "common": {
-    "welcome": "Welcome",
-    "loading": "Loading...",
-    "error": "An error occurred"
+  "NotFoundPage": {
+    "title": "Page Not Found"
+  },
+  "nav": {
+    "switchLanguage": "العربية"
   },
   "home": {
     "title": "Engezna",
     "subtitle": "انجزنا",
-    "tagline": "Fast delivery from restaurants, coffee shops, and groceries",
+    "tagline": "Fast food delivery in Beni Suef",
     "ctaOrder": "Order Now",
-    "ctaPartner": "For Restaurants & Shops",
-    "comingSoon": "Coming Soon to Beni Suef",
-    "login": "Sign In"
-  },
-  "nav": {
-    "switchLanguage": "العربية"
+    "ctaPartner": "Become a Partner",
+    "comingSoon": "Coming Soon",
+    "login": "Login"
   }
 }
