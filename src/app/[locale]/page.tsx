@@ -1,6 +1,7 @@
 'use client'
 
 import { useTranslations, useLocale } from 'next-intl'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
@@ -55,9 +56,11 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <ThemeToggle />
               <LanguageSwitcher />
-              <Button variant="default" size="sm" className="hidden sm:flex">
-                {navT('login')}
-              </Button>
+              <Link href={`/${locale}/auth/login`}>
+                <Button variant="default" size="sm" className="hidden sm:flex">
+                  {navT('login')}
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
