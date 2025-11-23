@@ -8,10 +8,10 @@
 
 ### Primary Palette
 ```
-Deep Green (Primary)
-#06c769
-RGB: 6, 199, 105
-HSL: 151°, 94%, 40%
+Orange Primary
+#E85D04
+RGB: 232, 93, 4
+HSL: 23°, 97%, 46%
 
 Black (Secondary)
 #000000
@@ -24,13 +24,13 @@ RGB: 255, 255, 255
 
 ### Accent Colors
 ```
-Warm Orange (Deals)     Golden Yellow (Premium)    Sky Blue (Info)
-#FF6B35                 #FDB927                    #2196F3
+Warm Orange Accent (Deals)  Golden Yellow (Premium)    Sky Blue (Info)
+#FF6B35                     #FDB927                    #2196F3
 ```
 
 ### System Colors
 ```
-Success: #06c769 (Same as Primary)
+Success: #E85D04 (Same as Primary Orange)
 Error:   #F44336
 Warning: #FF9800
 Info:    #2196F3
@@ -74,10 +74,10 @@ English:    Engezna
 
 ### Logo Colors by Background
 ```
-White Background    → Deep Green (#06c769)
-Light Gray         → Deep Green or Black
-Deep Green         → White (#FFFFFF)
-Black              → White or Deep Green
+White Background    → Orange Primary (#E85D04)
+Light Gray         → Orange Primary or Black
+Orange Primary     → White (#FFFFFF)
+Black              → White or Orange Primary
 Photography        → White with outline
 ```
 

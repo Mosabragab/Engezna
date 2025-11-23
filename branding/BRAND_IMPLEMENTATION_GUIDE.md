@@ -1,7 +1,7 @@
 # Engezna Brand System - Implementation Guide
 
 **For Developers & Designers**  
-**Version:** 1.0  
+**Version:** 2.0  
 **Last Updated:** November 23, 2025
 
 ---
@@ -38,9 +38,9 @@ import Logo from '@/components/shared/Logo'
 ### Primary Brand Colors
 
 ```css
---color-primary              /* #06c769 Deep Green */
---color-primary-light        /* Lighter shade */
---color-primary-dark         /* Darker shade */
+--color-primary              /* #E85D04 Orange Primary */
+--color-primary-light        /* Lighter orange shade */
+--color-primary-dark         /* Darker orange shade */
 --color-primary-foreground   /* White text on primary */
 ```
 
@@ -62,8 +62,8 @@ import Logo from '@/components/shared/Logo'
 
 **Method 3: Utility Classes** (from brand-colors.css)
 ```tsx
-<span className="text-primary">Deep Green Text</span>
-<span className="text-orange">Orange Text</span>
+<span className="text-primary">Orange Primary Text</span>
+<span className="text-orange-accent">Orange Accent Text</span>
 <span className="text-gold">Gold Text</span>
 ```
 
@@ -72,7 +72,7 @@ import Logo from '@/components/shared/Logo'
 | Use Case | Color | Example |
 |----------|-------|---------|
 | Primary CTA | `--color-primary` | "اطلب دلوقتي" button |
-| Discount | `--color-orange` | "خصم 30%" badge |
+| Discount | `--color-orange-accent` | "خصم 30%" badge |
 | Premium | `--color-gold` | "Engezna Plus" |
 | Info | `--color-blue` | "Delivery 30 min" |
 | Success | `--color-success` | "Order confirmed" |
@@ -181,7 +181,7 @@ const locale = useLocale()
 
 ```tsx
 <span className="
-  bg-orange 
+  bg-orange-accent 
   text-white 
   font-semibold 
   px-3 py-1 
@@ -238,8 +238,8 @@ Before committing:
 
 ### Colors
 - [ ] Only brand palette colors used
-- [ ] Primary green for CTAs
-- [ ] Orange only for discounts
+- [ ] Orange Primary for CTAs
+- [ ] Orange Accent only for discounts
 - [ ] Gold only for premium
 - [ ] WCAG AA contrast ratios met
 

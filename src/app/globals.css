@@ -5,53 +5,127 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --foreground: 0 0% 10%;
     
-    /* Enjezna Brand Colors */
-    --primary: 151 94% 40%;        /* #06c769 - Deep Green */
+    /* Engezna Brand Colors */
+    --primary: 23 97% 46%;         /* #E85D04 - Orange Primary */
+    --primary-light: 23 97% 56%;
+    --primary-dark: 23 97% 36%;
     --primary-foreground: 0 0% 100%;
     
     --secondary: 0 0% 0%;          /* #000000 - Black */
     --secondary-foreground: 0 0% 100%;
     
-    --accent: 151 94% 40%;
+    /* Accent Colors from Brand */
+    --orange: 16 100% 60%;         /* #FF6B35 - Deals & Discounts */
+    --gold: 43 98% 58%;            /* #FDB927 - Premium */
+    --blue: 207 90% 54%;           /* #2196F3 - Info */
+    
+    --success: 23 97% 46%;         /* Same as primary orange */
+    --error: 4 90% 58%;            /* #F44336 */
+    --warning: 36 100% 50%;        /* #FF9800 */
+    --info: 207 90% 54%;           /* #2196F3 */
+    
+    --accent: 23 97% 46%;
     --accent-foreground: 0 0% 100%;
     
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
     
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 0 0% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
     
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 151 94% 40%;
+    --ring: 23 97% 46%;
     
-    --radius: 0.5rem;
+    --destructive: 4 90% 58%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --radius: 0.75rem;
   }
 
   .dark {
     --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    --foreground: 0 0% 95%;
     
-    --primary: 151 94% 40%;
+    --primary: 23 97% 46%;
+    --primary-light: 23 97% 56%;
+    --primary-dark: 23 97% 36%;
     --primary-foreground: 0 0% 100%;
     
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 100%;
     
-    --accent: 151 94% 40%;
+    --orange: 16 100% 60%;
+    --gold: 43 98% 58%;
+    --blue: 207 90% 54%;
+    
+    --success: 23 97% 46%;
+    --error: 4 90% 58%;
+    --warning: 36 100% 50%;
+    --info: 207 90% 54%;
+    
+    --accent: 23 97% 46%;
     --accent-foreground: 0 0% 100%;
     
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
     
     --card: 0 0% 5%;
-    --card-foreground: 0 0% 100%;
+    --card-foreground: 0 0% 95%;
+    
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 95%;
     
     --border: 0 0% 20%;
     --input: 0 0% 20%;
-    --ring: 151 94% 40%;
+    --ring: 23 97% 46%;
+    
+    --destructive: 4 90% 58%;
+    --destructive-foreground: 0 0% 100%;
+  }
+}
+
+/* Brand Color Utilities */
+@layer utilities {
+  .text-brand-orange {
+    color: hsl(var(--primary));
+  }
+  
+  .text-brand-orange-accent {
+    color: hsl(var(--orange));
+  }
+  
+  .text-brand-gold {
+    color: hsl(var(--gold));
+  }
+  
+  .text-brand-blue {
+    color: hsl(var(--blue));
+  }
+  
+  .bg-brand-orange {
+    background-color: hsl(var(--primary));
+  }
+  
+  .bg-brand-orange-accent {
+    background-color: hsl(var(--orange));
+  }
+  
+  .bg-brand-gold {
+    background-color: hsl(var(--gold));
+  }
+  
+  .bg-brand-blue {
+    background-color: hsl(var(--blue));
+  }
+  
+  .border-brand-orange {
+    border-color: hsl(var(--primary));
   }
 }
 
@@ -64,26 +138,92 @@
   direction: ltr;
 }
 
-/* Custom Scrollbar */
+/* Arabic Typography Best Practices */
+.font-arabic {
+  font-family: var(--font-noto-sans-arabic);
+  line-height: 1.6;
+}
+
+.font-arabic h1,
+.font-arabic h2,
+.font-arabic h3 {
+  line-height: 1.4;
+}
+
+/* Custom Scrollbar - Engezna Brand */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
   background: hsl(var(--muted));
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--primary));
-  border-radius: 4px;
+  border-radius: 5px;
+  border: 2px solid hsl(var(--background));
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(151 94% 35%);
+  background: hsl(var(--primary-dark));
 }
 
 /* Smooth transitions */
 * {
   @apply transition-colors duration-200;
+}
+
+/* Brand Gradients */
+.gradient-brand {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(23 97% 56%) 100%);
+}
+
+.gradient-brand-dark {
+  background: linear-gradient(135deg, hsl(var(--primary-dark)) 0%, hsl(var(--primary)) 100%);
+}
+
+/* Status Badges */
+.status-success {
+  @apply bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800;
+}
+
+.status-error {
+  @apply bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800;
+}
+
+.status-warning {
+  @apply bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800;
+}
+
+.status-info {
+  @apply bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800;
+}
+
+/* Animation utilities */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply animate-shimmer rounded-md bg-muted;
 }

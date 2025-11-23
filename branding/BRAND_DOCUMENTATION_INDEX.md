@@ -2,7 +2,7 @@
 
 **Complete Brand System Overview**  
 **Last Updated:** November 23, 2025  
-**Version:** 1.0
+**Version:** 2.0
 
 ---
 
@@ -103,10 +103,10 @@ Your complete Engezna brand system is now documented across **5 comprehensive fi
 ## 📋 Brand Summary
 
 **Colors:**
-- Deep Green: #06c769 (Primary)
+- Orange Primary: #E85D04 (Primary)
 - Black: #000000 (Secondary)
 - White: #FFFFFF (Accent)
-- Orange: #FF6B35 (Deals)
+- Orange Accent: #FF6B35 (Deals)
 - Gold: #FDB927 (Premium)
 - Blue: #2196F3 (Info)
 

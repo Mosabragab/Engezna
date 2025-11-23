@@ -1,7 +1,7 @@
 # Engezna Visual Assets Creation Guide
 
 **For Designers & Illustrators**  
-**Version:** 1.0  
+**Version:** 2.0  
 **Last Updated:** November 23, 2025
 
 ---
@@ -22,7 +22,7 @@
 
 | Filename | Color | Background |
 |----------|-------|------------|
-| `engezna-logo-horizontal-primary-ar.svg` | #06c769 | Transparent |
+| `engezna-logo-horizontal-primary-ar.svg` | #E85D04 | Transparent |
 | `engezna-logo-horizontal-black-ar.svg` | #000000 | Transparent |
 | `engezna-logo-horizontal-white-ar.svg` | #FFFFFF | Transparent |
 
@@ -69,14 +69,14 @@
 - 512×512px (iOS, PWA master)
 
 **Design:**
-- Background: Deep Green #06c769 OR White #FFFFFF
-- Lettermark: White on green OR Green on white
+- Background: Orange Primary #E85D04 OR White #FFFFFF
+- Lettermark: White on orange OR Orange on white
 - Rounded corners: 20% of size
 - Stroke weight: 48px (for 512px version)
 
 **Color Variants:**
-- icon-512-green-white.png (Green bg, white mark)
-- icon-512-white-green.png (White bg, green mark)
+- icon-512-orange-white.png (Orange bg, white mark)
+- icon-512-white-orange.png (White bg, orange mark)
 
 ---
 
@@ -114,7 +114,7 @@
 
 **Dimensions:** 1024×1024px
 **Design:**
-- Background: Deep Green #06c769
+- Background: Orange Primary #E85D04
 - Logo: White stacked lockup, centered
 - Padding: 150px all sides
 
@@ -129,7 +129,7 @@
 **Layout:**
 ```
 ┌──────────────────────────────────┐
-│ [Food Photo] │ [Green + Logo]    │
+│ [Food Photo] │ [Orange + Logo]   │
 │              │   انجزنا           │
 │              │  Engezna           │
 └──────────────────────────────────┘
@@ -173,8 +173,8 @@
 ```
 
 **Colors:**
-- Front: White bg, green logo
-- Back: Green bg, white text
+- Front: White bg, orange logo
+- Back: Orange bg, white text
 
 ---
 
@@ -182,9 +182,9 @@
 
 | Color | RGB | CMYK |
 |-------|-----|------|
-| Deep Green | #06c769 | C:95 M:0 Y:81 K:0 |
+| Orange Primary | #E85D04 | C:0 M:74 Y:98 K:9 |
 | Black | #000000 | C:0 M:0 Y:0 K:100 |
-| Orange | #FF6B35 | C:0 M:73 Y:85 K:0 |
+| Orange Accent | #FF6B35 | C:0 M:73 Y:85 K:0 |
 
 ---
 
@@ -194,9 +194,9 @@
 
 **Color Styles:**
 ```
-Primary/Deep Green: #06c769
+Primary/Orange Primary: #E85D04
 Secondary/Black: #000000
-Accent/Orange: #FF6B35
+Accent/Orange Accent: #FF6B35
 Accent/Gold: #FDB927
 Accent/Blue: #2196F3
 ```

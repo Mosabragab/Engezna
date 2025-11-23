@@ -1,6 +1,6 @@
 # Engezna (انجزنا) Brand Identity Guide
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** November 23, 2025  
 **Brand Lead:** Mosab  
 **Location:** Beni Suef, Upper Egypt
@@ -67,12 +67,12 @@ Engezna speaks like a trusted local friend who's smart, energetic, and gets thin
 ### Voice Examples
 
 #### Push Notification
-**Arabic:** 🎉 طلبك في الطريق ليك! هيوصلك في خلال 20 دقيقة. است عد! 🚗
+**Arabic:** 🎉 طلبك في الطريق ليك! هيوصلك في خلال 20 دقيقة. استعد! 🚗
 
 #### Social Media Post
 **Arabic:**  
 🔥 خبر حلو! مطعم "الأصالة" دلوقتي على انجزنا!
-اطلب النهارده واستمتع بعمولة 0% لأول 50 طلب! 💚
+اطلب النهارده واستمتع بعمولة 0% لأول 50 طلب! 🧡
 #انجزنا #بني_سويف
 
 #### Error Message
@@ -108,9 +108,9 @@ The Engezna logo system is built on **bilingual harmony** and **functional flexi
 - Favicon: 16px
 
 **Logo Colors:**
-- White background → Deep Green (#06c769)
+- White background → Orange Primary (#E85D04)
 - Dark background → White (#FFFFFF)
-- Deep Green background → White
+- Orange background → White
 
 ---
 
@@ -118,11 +118,11 @@ The Engezna logo system is built on **bilingual harmony** and **functional flexi
 
 ### Primary Colors
 
-**Deep Green (Primary)**
-- HEX: #06c769
-- RGB: 6, 199, 105
-- HSL: 151°, 94%, 40%
-- Usage: Primary CTAs, logo, active states, success
+**Orange Primary**
+- HEX: #E85D04
+- RGB: 232, 93, 4
+- HSL: 23°, 97%, 46%
+- Usage: Primary CTAs, logo, active states, success, brand identity
 
 **Black (Secondary)**
 - HEX: #000000
@@ -134,13 +134,13 @@ The Engezna logo system is built on **bilingual harmony** and **functional flexi
 
 ### Accent Colors
 
-**Warm Orange** - #FF6B35 (Deals & Discounts)
+**Warm Orange Accent** - #FF6B35 (Deals & Discounts)
 **Golden Yellow** - #FDB927 (Premium & Highlights)  
 **Sky Blue** - #2196F3 (Information)
 
 ### System Colors
 
-- **Success:** #06c769 (Same as primary green)
+- **Success:** #E85D04 (Same as primary orange)
 - **Error:** #F44336
 - **Warning:** #FF9800
 - **Info:** #2196F3
@@ -236,19 +236,19 @@ The Engezna logo system is built on **bilingual harmony** and **functional flexi
 **Background:** Beni Suef street scene at golden hour
 **Headline:** انجزنا واطلب! (Display, 56px, White, Bold)
 **Subheadline:** توصيل سريع من مطاعم وكافيهات بني سويف (24px, White 90% opacity)
-**CTAs:** Deep Green buttons with white text
+**CTAs:** Orange Primary buttons with white text
 
 ### 2. Mobile App Navigation
 
 **Top Bar:** Logo + notification + profile icons
-**Search Bar:** 🔍 search with Deep Green accent
-**Category Cards:** Icons with Deep Green highlights  
+**Search Bar:** 🔍 search with Orange Primary accent
+**Category Cards:** Icons with Orange Primary highlights  
 **Restaurant Cards:** Food photos, ratings, delivery time
 
 ### 3. Social Media Banner (1200×630px)
 
-**Layout:** 50% food photo + 50% Deep Green background
-**Text:** White on green, promotional copy
+**Layout:** 50% food photo + 50% Orange Primary background
+**Text:** White on orange, promotional copy
 **Logo:** Bottom right, white version
 
 ---
@@ -261,7 +261,7 @@ The Engezna logo system is built on **bilingual harmony** and **functional flexi
 **Tagline:** "Let's get it done!"
 
 **Core Colors:**
-- Primary: Deep Green #06c769
+- Primary: Orange Primary #E85D04
 - Secondary: Black #000000
 - Accent: White #FFFFFF
 
@@ -280,7 +280,7 @@ The Engezna logo system is built on **bilingual harmony** and **functional flexi
 ## Brand Do's and Don'ts
 
 ### ✅ DO:
-1. Use Deep Green for primary actions
+1. Use Orange Primary for primary actions
 2. Maintain bilingual equity
 3. Speak conversationally
 4. Show real Egyptian food/people
@@ -325,7 +325,7 @@ The Engezna logo system is built on **bilingual harmony** and **functional flexi
 
 ---
 
-**Document Version:** v1.0 - November 23, 2025  
+**Document Version:** v2.0 - November 23, 2025  
 **Approved By:** Mosab - Founder & Brand Lead  
 **Next Review:** December 23, 2025
 

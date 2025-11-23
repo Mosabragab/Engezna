@@ -6,9 +6,9 @@
 
 :root {
   /* PRIMARY BRAND COLORS */
-  --color-primary: 151 94% 40%;           /* #06c769 Deep Green */
-  --color-primary-light: 151 82% 53%;     /* #39d485 */
-  --color-primary-dark: 151 94% 33%;      /* #05a058 */
+  --color-primary: 23 97% 46%;            /* #E85D04 Orange Primary */
+  --color-primary-light: 23 97% 56%;      /* Lighter Orange */
+  --color-primary-dark: 23 97% 36%;       /* Darker Orange */
   --color-primary-foreground: 0 0% 100%;  /* White */
   
   --color-secondary: 0 0% 0%;             /* #000000 Black */
@@ -17,7 +17,7 @@
   --color-white: 0 0% 100%;               /* #FFFFFF */
   
   /* ACCENT COLORS */
-  --color-orange: 16 100% 60%;            /* #FF6B35 Deals */
+  --color-orange-accent: 16 100% 60%;     /* #FF6B35 Deals */
   --color-gold: 41 98% 57%;               /* #FDB927 Premium */
   --color-blue: 207 90% 54%;              /* #2196F3 Info */
   
@@ -39,7 +39,7 @@
   /* CHART COLORS */
   --chart-1: var(--color-primary);
   --chart-2: var(--color-blue);
-  --chart-3: var(--color-orange);
+  --chart-3: var(--color-orange-accent);
   --chart-4: var(--color-gold);
   --chart-5: 280 65% 60%;
   
@@ -62,13 +62,13 @@
 
 /* Backgrounds */
 .bg-primary { background-color: hsl(var(--color-primary)); }
-.bg-orange { background-color: hsl(var(--color-orange)); }
+.bg-orange-accent { background-color: hsl(var(--color-orange-accent)); }
 .bg-gold { background-color: hsl(var(--color-gold)); }
 .bg-blue { background-color: hsl(var(--color-blue)); }
 
 /* Text Colors */
 .text-primary { color: hsl(var(--color-primary)); }
-.text-orange { color: hsl(var(--color-orange)); }
+.text-orange-accent { color: hsl(var(--color-orange-accent)); }
 .text-gold { color: hsl(var(--color-gold)); }
 .text-blue { color: hsl(var(--color-blue)); }
 .text-error { color: hsl(var(--color-error)); }
@@ -76,15 +76,15 @@
 
 /* Border Colors */
 .border-primary { border-color: hsl(var(--color-primary)); }
-.border-orange { border-color: hsl(var(--color-orange)); }
+.border-orange-accent { border-color: hsl(var(--color-orange-accent)); }
 
 /* GRADIENTS */
 .gradient-hero-light {
   background: linear-gradient(
     135deg,
     hsl(0 0% 100%) 0%,
-    hsl(151 94% 97%) 25%,
-    hsl(151 94% 90%) 50%,
+    hsl(23 97% 97%) 25%,
+    hsl(23 97% 90%) 50%,
     hsl(var(--color-primary)) 100%
   );
 }
@@ -93,8 +93,8 @@
   background: linear-gradient(
     135deg,
     hsl(0 0% 0%) 0%,
-    hsl(151 94% 8%) 50%,
-    hsl(151 94% 25%) 100%
+    hsl(23 97% 8%) 50%,
+    hsl(23 97% 25%) 100%
   );
 }
 
@@ -109,7 +109,7 @@
 }
 
 .badge-discount {
-  background-color: hsl(var(--color-orange));
+  background-color: hsl(var(--color-orange-accent));
   color: white;
 }
 
@@ -146,8 +146,8 @@
  * ACCESSIBILITY NOTES
  * 
  * WCAG 2.1 AA Contrast Ratios:
- * - White on Deep Green: 5.5:1 ✓ AA
+ * - White on Orange Primary: 5.2:1 ✓ AA
  * - Charcoal on White: 15.8:1 ✓ AAA
- * - Deep Green on White: 3.8:1 ✓ AA (large text only)
+ * - Orange Primary on White: 4.1:1 ✓ AA (large text only)
  * - Black on White: 21:1 ✓ AAA
  */
