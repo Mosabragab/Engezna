@@ -53,9 +53,36 @@ export default function LoginPage() {
       }
 
       if (authData.user) {
+        // Fetch user profile to get role
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', authData.user.id)
+          .single()
+
+        if (profileError) {
+          console.error('Profile fetch error:', profileError)
+          setError('Failed to fetch user profile')
+          return
+        }
+
         // Redirect based on user role
-        router.push(`/${locale}`)
-        router.refresh()
+        if (profile) {
+          switch (profile.role) {
+            case 'admin':
+              router.push(`/${locale}/admin`)
+              break
+            case 'provider_owner':
+            case 'provider_staff':
+              router.push(`/${locale}/provider`)
+              break
+            case 'customer':
+            default:
+              router.push(`/${locale}/providers`)
+              break
+          }
+          router.refresh()
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
