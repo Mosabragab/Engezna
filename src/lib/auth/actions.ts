@@ -123,12 +123,24 @@ export async function verifyOTP(formData: {
 }) {
   const supabase = await createClient()
 
-  const { data, error } = await supabase.auth.verifyOtp({
-    phone: formData.phone,
-    email: formData.email,
-    token: formData.token,
-    type: formData.type === 'sms' ? 'sms' : 'email',
-  })
+  let result
+  if (formData.type === 'sms' && formData.phone) {
+    result = await supabase.auth.verifyOtp({
+      phone: formData.phone,
+      token: formData.token,
+      type: 'sms',
+    })
+  } else if (formData.type === 'email' && formData.email) {
+    result = await supabase.auth.verifyOtp({
+      email: formData.email,
+      token: formData.token,
+      type: 'email',
+    })
+  } else {
+    return { error: 'Invalid OTP verification parameters' }
+  }
+
+  const { data, error } = result
 
   if (error) {
     return { error: error.message }
