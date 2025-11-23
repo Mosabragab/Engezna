@@ -118,7 +118,7 @@ export default function CheckoutPage() {
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-          user_id: user.id,
+          customer_id: user.id,
           provider_id: provider.id,
           status: 'pending',
           subtotal: subtotal,
@@ -126,10 +126,9 @@ export default function CheckoutPage() {
           total: getTotal(),
           payment_method: paymentMethod,
           payment_status: paymentMethod === 'cash' ? 'pending' : 'pending',
-          delivery_address: address,
-          phone: phone,
-          notes: additionalNotes || null,
-          estimated_delivery_time: provider.estimated_delivery_time_min,
+          delivery_address: { address, phone, full_name: fullName },
+          customer_notes: additionalNotes || null,
+          platform_commission: (subtotal * 0.07).toFixed(2), // 7% commission
         })
         .select()
         .single()
@@ -140,9 +139,12 @@ export default function CheckoutPage() {
       const orderItems = cart.map((item) => ({
         order_id: order.id,
         menu_item_id: item.menuItem.id,
+        item_name_ar: item.menuItem.name_ar,
+        item_name_en: item.menuItem.name_en,
+        item_price: item.menuItem.price,
         quantity: item.quantity,
         unit_price: item.menuItem.price,
-        subtotal: item.menuItem.price * item.quantity,
+        total_price: item.menuItem.price * item.quantity,
       }))
 
       const { error: itemsError } = await supabase

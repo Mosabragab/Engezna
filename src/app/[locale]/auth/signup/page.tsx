@@ -68,19 +68,17 @@ export default function SignupPage() {
       }
 
       if (authData.user) {
-        // Insert user profile data
+        // Profile is automatically created by database trigger
+        // Update the profile with phone number
         const { error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            email: data.email,
+          .from('profiles')
+          .update({
             phone: data.phone,
-            full_name: data.fullName,
-            role: 'customer',
           })
+          .eq('id', authData.user.id)
 
         if (profileError) {
-          console.error('Profile creation error:', profileError)
+          console.error('Profile update error:', profileError)
         }
 
         setSuccess(true)
