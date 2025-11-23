@@ -8,9 +8,9 @@
 
 منصة توصيل طعام حديثة لمدينة بني سويف، صعيد مصر
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.0.3-black)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.0.3-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-38bdf8)](https://tailwindcss.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.17-38bdf8)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
 
 [English](#english) | [العربية](#arabic)
@@ -63,14 +63,14 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 ### 🛠️ Tech Stack
 
 #### **Frontend**
-- **Framework:** Next.js 15.0.3 (App Router)
+- **Framework:** Next.js 16.0.3 (App Router)
 - **Language:** TypeScript 5.x
-- **Styling:** Tailwind CSS 4 with custom design tokens
+- **Styling:** Tailwind CSS 3.4.17 with custom design tokens
 - **UI Components:** shadcn/ui (Radix UI primitives)
 - **Internationalization:** next-intl 4.5.5
 - **Theme:** next-themes (dark mode support)
-- **State Management:** Zustand (planned)
-- **Forms:** React Hook Form + Zod (planned)
+- **State Management:** Zustand
+- **Forms:** React Hook Form + Zod
 
 #### **Backend**
 - **Platform:** Supabase
@@ -96,26 +96,32 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 
 #### **⚠️ Important Note - Project Status**
 
-This project is in **early development** (Week 0 complete). What you'll see:
+This project is in **active development** (Week 1 - 75% Complete). What you'll see:
 
 **Works:**
 - ✅ Design system, theming (dark/light mode)
 - ✅ Language switching (Arabic/English)
 - ✅ Navigation and routing
-- ✅ Static pages (homepage, auth UI)
+- ✅ **Database deployed with real data** (4 providers, 30 menu items)
+- ✅ **Provider browsing** (browse restaurants, coffee shops, groceries)
+- ✅ **Provider detail pages** (view menus, ratings, delivery info)
+- ✅ **Shopping cart** (add/remove items, calculate totals)
 
-**Doesn't Work:**
-- ❌ Cannot create accounts or login (backend not integrated)
-- ❌ No database deployed (schema exists locally only)
-- ❌ No actual functionality (ordering, browsing, etc.)
-- ❌ Auth pages are UI-only mockups
+**Doesn't Work Yet:**
+- ❌ User authentication (cannot create accounts or login)
+- ❌ Order placement and checkout
+- ❌ Order tracking
+- ❌ Provider dashboard
+- ❌ Admin panel
+- ❌ Payment integration
 
 **What You Can Test:**
-- View the homepage and design
+- Browse 4 live providers at `/providers`
+- View provider menus and details
+- Add items to shopping cart
+- See real-time cart calculations
 - Switch between Arabic ↔ English
 - Toggle dark ↔ light mode
-- Navigate between static pages
-- View auth page layouts (non-functional)
 
 ---
 
@@ -174,6 +180,9 @@ Visit [http://localhost:3000](http://localhost:3000) - it will redirect to local
 **Recommended routes:**
 - Arabic (default): [http://localhost:3000/ar](http://localhost:3000/ar)
 - English: [http://localhost:3000/en](http://localhost:3000/en)
+- **Providers (working):**
+  - Browse all: [http://localhost:3000/ar/providers](http://localhost:3000/ar/providers)
+  - Provider details: [http://localhost:3000/ar/providers/[id]](http://localhost:3000/ar/providers/[id])
 - Auth pages (UI only):
   - [http://localhost:3000/ar/auth/login](http://localhost:3000/ar/auth/login)
   - [http://localhost:3000/ar/auth/signup](http://localhost:3000/ar/auth/signup)
@@ -215,10 +224,13 @@ engezna/
 
 ### 🎨 Design System
 
-#### **Brand Colors**
-- **Primary:** Deep Green `#06c769` - Growth, freshness, action
+#### **Brand Colors (Brand Identity Guide v1.0)**
+- **Primary:** Orange `#E85D04` - Energy, warmth, action, "Let's get it done!"
+- **Gold:** `#FDB927` - Premium quality, excellence
 - **Secondary:** Black `#000000` - Professional, elegant
 - **Accent:** White `#FFFFFF` - Clean, minimal
+
+**Note:** Previous documentation incorrectly listed Deep Green (#06c769) as primary. The official brand color is Orange (#E85D04).
 
 #### **Typography**
 - **Arabic:** Noto Sans Arabic (Variable Font)
@@ -251,32 +263,48 @@ npm run type-check   # TypeScript type checking
 
 ### 📊 Current Status
 
-**Phase:** Foundation Complete (Nov 21-22, 2025)
-**Status:** Week 0 - 100% Complete ✅
+**Phase:** Core Features Development (Nov 18 - Nov 23, 2025)
+**Status:** Week 1 - 75% Complete 🚀
 
 **What's Working ✅**
-- ✅ Full project infrastructure (Next.js 15.0.3 + TypeScript + Tailwind CSS v4)
-- ✅ Design system with deep green (#06c769) brand colors
-- ✅ Complete database schema design (1,431 lines SQL)
+- ✅ Full project infrastructure (Next.js 16.0.3 + TypeScript + Tailwind CSS v3.4.17)
+- ✅ Design system with Orange (#E85D04) and Gold (#FDB927) brand colors
+- ✅ **Database deployed to Supabase** with live data
+  - ✅ 4 live providers (restaurants, coffee shops, groceries)
+  - ✅ 30 menu items across all providers
+  - ✅ Safe seeding script (won't destroy existing data)
+- ✅ **Provider Browsing Feature**
+  - ✅ Browse providers by category (all, restaurants, coffee, grocery, vegetables/fruits)
+  - ✅ Provider cards with ratings, delivery info, status badges
+  - ✅ Real-time filtering by category
+  - ✅ Responsive grid layout
+- ✅ **Provider Detail Pages**
+  - ✅ Full provider information display
+  - ✅ Menu items grid with images
+  - ✅ Dietary tags (vegetarian, spicy)
+  - ✅ Real-time availability checking
+- ✅ **Shopping Cart Feature**
+  - ✅ Add/remove items with +/- buttons
+  - ✅ Real-time quantity management
+  - ✅ Subtotal and total calculations
+  - ✅ Floating cart summary bar
+  - ✅ Delivery fee integration
 - ✅ Bilingual support (Arabic/English) with full RTL layout
 - ✅ Dark/Light mode with next-themes
 - ✅ 13 UI components from shadcn/ui (themed and responsive)
-- ✅ Logo component system (6 variations: AR/EN × 3 sizes)
-- ✅ Authentication UI pages (login, signup, forgot password)
 - ✅ Locale routing working perfectly (/ar, /en)
-- ✅ Git + Vercel deployment setup (auto-deploy on push)
+- ✅ Git + Vercel deployment setup
 - ✅ Noto Sans Arabic + English variable fonts
-- ✅ Complete documentation (PRD, development tracker, README)
+- ✅ Complete documentation (PRD, README, claude.md)
 
 **What's NOT Working Yet ⚠️**
 - ⚠️ **Authentication backend** (UI pages exist, but cannot actually login/signup)
-- ⚠️ **Database not deployed** (schema designed as local SQL file, not in Supabase yet)
-- ⚠️ **No customer features** (cannot browse providers, add to cart, or place orders)
-- ⚠️ **No provider dashboard** (no menu management or order handling)
-- ⚠️ **No admin panel**
-- ⚠️ **No payment integration**
-- ⚠️ **No real-time features** (order tracking, notifications)
-- ⚠️ **Application is non-functional** beyond viewing static pages, switching languages/themes
+- ⚠️ **Checkout & Order Placement** (cart works but cannot complete orders)
+- ⚠️ **Order tracking** (no order history or status updates)
+- ⚠️ **Provider dashboard** (no menu management or order handling)
+- ⚠️ **Admin panel** (no platform management)
+- ⚠️ **Payment integration** (Fawry not integrated yet)
+- ⚠️ **Real-time notifications** (order updates, push notifications)
 
 **Foundation Quality:** ✅ Excellent
 - Solid architecture with clear separation of concerns
@@ -364,11 +392,12 @@ Proprietary - All rights reserved. This project is not open source.
 
 ### 🛠️ التقنيات المستخدمة
 
-- **الواجهة الأمامية:** Next.js 15.0.3، TypeScript، Tailwind CSS 4
+- **الواجهة الأمامية:** Next.js 16.0.3، TypeScript، Tailwind CSS 3.4.17
 - **الخلفية:** Supabase (PostgreSQL، المصادقة، الوقت الفعلي)
 - **الاستضافة:** Vercel
 - **المدفوعات:** Fawry
 - **الخرائط:** Google Maps API
+- **الألوان:** البرتقالي (#E85D04) والذهبي (#FDB927)
 
 ### 🚀 البدء
 
@@ -406,18 +435,35 @@ npm run dev
 
 ### 📊 الحالة الحالية
 
-**المرحلة:** الأساس مكتمل (21-22 نوفمبر 2025)
-**الحالة:** الأسبوع 0 - مكتمل 100% ✅
+**المرحلة:** تطوير المميزات الأساسية (18-23 نوفمبر 2025)
+**الحالة:** الأسبوع 1 - مكتمل 75% 🚀
 
 **ما يعمل ✅**
-- ✅ البنية التحتية الكاملة (Next.js 15.0.3 + TypeScript + Tailwind CSS v4)
-- ✅ نظام التصميم بألوان العلامة التجارية (أخضر غامق #06c769)
-- ✅ تصميم قاعدة البيانات الكامل (1,431 سطر SQL)
+- ✅ البنية التحتية الكاملة (Next.js 16.0.3 + TypeScript + Tailwind CSS v3.4.17)
+- ✅ نظام التصميم بألوان البرتقالي (#E85D04) والذهبي (#FDB927)
+- ✅ **قاعدة البيانات منشورة على Supabase** مع بيانات حية
+  - ✅ 4 متاجر مباشرة (مطاعم، كافيهات، بقالة)
+  - ✅ 30 عنصر قائمة عبر جميع المتاجر
+  - ✅ نص تعبئة آمن (لا يدمر البيانات الموجودة)
+- ✅ **ميزة تصفح المتاجر**
+  - ✅ تصفح المتاجر حسب الفئة (الكل، مطاعم، كافيهات، بقالة، خضار وفواكه)
+  - ✅ بطاقات المتاجر مع التقييمات ومعلومات التوصيل وحالة المتجر
+  - ✅ تصفية فورية حسب الفئة
+  - ✅ تخطيط شبكي متجاوب
+- ✅ **صفحات تفاصيل المتجر**
+  - ✅ عرض معلومات المتجر الكاملة
+  - ✅ شبكة عناصر القائمة مع الصور
+  - ✅ علامات النظام الغذائي (نباتي، حار)
+  - ✅ فحص التوفر الفوري
+- ✅ **ميزة عربة التسوق**
+  - ✅ إضافة/إزالة العناصر بأزرار +/-
+  - ✅ إدارة الكمية الفورية
+  - ✅ حسابات الإجمالي الفرعي والإجمالي
+  - ✅ شريط ملخص العربة العائم
+  - ✅ تكامل رسوم التوصيل
 - ✅ دعم ثنائي اللغة (عربي/إنجليزي) مع تخطيط RTL كامل
 - ✅ الوضع الليلي/النهاري
 - ✅ 13 مكون UI من shadcn/ui
-- ✅ نظام الشعار (6 أشكال)
-- ✅ صفحات واجهة تسجيل الدخول
 - ✅ التوجيه بالمحلية يعمل بشكل مثالي (/ar, /en)
 - ✅ إعداد Git + Vercel
 - ✅ خطوط Noto Sans العربية والإنجليزية
@@ -425,13 +471,12 @@ npm run dev
 
 **ما لا يعمل بعد ⚠️**
 - ⚠️ **خلفية المصادقة** (صفحات UI موجودة، لكن لا يمكن تسجيل الدخول فعلياً)
-- ⚠️ **قاعدة البيانات غير منشورة** (التصميم موجود محلياً فقط)
-- ⚠️ **لا توجد ميزات للعميل** (لا يمكن التصفح أو الطلب)
-- ⚠️ **لا توجد لوحة تحكم للمطاعم**
-- ⚠️ **لا توجد لوحة إدارة**
-- ⚠️ **لا يوجد تكامل دفع**
-- ⚠️ **لا توجد ميزات فورية**
-- ⚠️ **التطبيق غير وظيفي** عدا عرض الصفحات الثابتة
+- ⚠️ **الدفع وإتمام الطلب** (العربة تعمل لكن لا يمكن إتمام الطلبات)
+- ⚠️ **تتبع الطلبات** (لا يوجد سجل طلبات أو تحديثات حالة)
+- ⚠️ **لوحة تحكم المتاجر** (لا توجد إدارة قوائم أو معالجة طلبات)
+- ⚠️ **لوحة الإدارة** (لا توجد إدارة منصة)
+- ⚠️ **تكامل الدفع** (Fawry غير مدمج بعد)
+- ⚠️ **الإشعارات الفورية** (تحديثات الطلبات، إشعارات الدفع)
 
 **جودة الأساس:** ✅ ممتازة
 - بنية معمارية قوية
