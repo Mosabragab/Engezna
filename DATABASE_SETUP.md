@@ -8,16 +8,94 @@
 - ✅ Safe to run multiple times
 
 ## Overview
-This guide will help you add sample menu items to your existing providers in Supabase.
+This guide will help you:
+1. Create test users for authentication testing
+2. Add sample menu items to your existing providers in Supabase
 
 ## Prerequisites
 - Access to your Supabase dashboard
 - ✅ Database schema already deployed (you have this!)
 - ✅ Existing providers (you have 4 providers!)
-- Optional test users for testing login:
-  - `admin@test.com`
-  - `customer@test.com`
-  - `provider@test.com`
+
+---
+
+## Step 0: Create Test Users (REQUIRED for login testing)
+
+**IMPORTANT**: You need to create test users first before you can login!
+
+### Option A: Via Supabase Dashboard (Easiest)
+
+1. Go to your Supabase Dashboard > **Authentication** > **Users**
+   ```
+   https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr/auth/users
+   ```
+
+2. Click **"Add User"** button and create these three users:
+
+   **User 1: Admin**
+   - Email: `admin@test.com`
+   - Password: `Test123!`
+   - ✅ **Enable "Auto Confirm User"** checkbox
+   - Click "Create User"
+
+   **User 2: Customer**
+   - Email: `customer@test.com`
+   - Password: `Test123!`
+   - ✅ **Enable "Auto Confirm User"** checkbox
+   - Click "Create User"
+
+   **User 3: Provider**
+   - Email: `provider@test.com`
+   - Password: `Test123!`
+   - ✅ **Enable "Auto Confirm User"** checkbox
+   - Click "Create User"
+
+3. After creating the auth users, create their profiles by running this SQL:
+
+   Go to: **SQL Editor** > **New Query**
+   ```
+   https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr/sql
+   ```
+
+   Copy and paste the content from:
+   ```
+   supabase/create_test_users.sql
+   ```
+
+   Then click **"Run"** (skip to section 2 that creates profiles)
+
+### Option B: Via SQL Script (Advanced)
+
+1. Open the file `supabase/create_test_users.sql`
+2. Follow the instructions in the file
+3. Create users manually via Dashboard (SQL can't create auth users directly)
+4. Then run the profile creation section
+
+### Verify Test Users
+
+Run this query to verify:
+```sql
+select
+  u.email,
+  p.full_name,
+  p.role,
+  case when p.id is not null then '✅ Has profile' else '❌ Missing profile' end as status
+from auth.users u
+left join public.profiles p on p.id = u.id
+where u.email in ('admin@test.com', 'customer@test.com', 'provider@test.com')
+order by u.email;
+```
+
+Expected result:
+```
+email                 | full_name           | role            | status
+--------------------- | ------------------- | --------------- | ----------------
+admin@test.com        | System Admin        | admin           | ✅ Has profile
+customer@test.com     | Test Customer       | customer        | ✅ Has profile
+provider@test.com     | Test Provider Owner | provider_owner  | ✅ Has profile
+```
+
+---
 
 ## Step 1: Add Menu Items to Your Providers (SAFE)
 
