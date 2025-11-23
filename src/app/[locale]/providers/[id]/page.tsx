@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useCart } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
 import {
   Star,
@@ -61,11 +62,13 @@ export default function ProviderDetailPage() {
   const params = useParams()
   const providerId = params.id as string
   const locale = useLocale()
+  const router = useRouter()
   const t = useTranslations()
+
+  const { addItem, removeItem, getItemQuantity, getTotal, getItemCount } = useCart()
 
   const [provider, setProvider] = useState<Provider | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [cart, setCart] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -106,42 +109,21 @@ export default function ProviderDetailPage() {
     setLoading(false)
   }
 
-  const addToCart = (menuItem: MenuItem) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.menuItem.id === menuItem.id)
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.menuItem.id === menuItem.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
-      }
-      return [...prevCart, { menuItem, quantity: 1 }]
-    })
+  const handleAddToCart = (menuItem: MenuItem) => {
+    if (provider) {
+      addItem(menuItem, {
+        id: provider.id,
+        name_ar: provider.name_ar,
+        name_en: provider.name_en,
+        delivery_fee: provider.delivery_fee,
+        min_order_amount: provider.min_order_amount,
+        estimated_delivery_time_min: provider.estimated_delivery_time_min,
+      })
+    }
   }
 
-  const removeFromCart = (menuItemId: string) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.menuItem.id === menuItemId)
-      if (existingItem && existingItem.quantity > 1) {
-        return prevCart.map((item) =>
-          item.menuItem.id === menuItemId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        )
-      }
-      return prevCart.filter((item) => item.menuItem.id !== menuItemId)
-    })
-  }
-
-  const getCartItemQuantity = (menuItemId: string) => {
-    const item = cart.find((item) => item.menuItem.id === menuItemId)
-    return item ? item.quantity : 0
-  }
-
-  const cartSubtotal = cart.reduce((sum, item) => sum + item.menuItem.price * item.quantity, 0)
-  const cartTotal = cartSubtotal + (provider?.delivery_fee || 0)
-  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const cartTotal = getTotal()
+  const cartItemCount = getItemCount()
 
   const getName = (item: MenuItem | Provider) => {
     return locale === 'ar' ? item.name_ar : item.name_en
@@ -265,7 +247,7 @@ export default function ProviderDetailPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {menuItems.map((item) => {
-              const quantity = getCartItemQuantity(item.id)
+              const quantity = getItemQuantity(item.id)
 
               return (
                 <div
@@ -313,7 +295,7 @@ export default function ProviderDetailPage() {
 
                     {quantity === 0 ? (
                       <Button
-                        onClick={() => addToCart(item)}
+                        onClick={() => handleAddToCart(item)}
                         size="sm"
                         className="gap-2"
                       >
@@ -323,7 +305,7 @@ export default function ProviderDetailPage() {
                     ) : (
                       <div className="flex items-center gap-2">
                         <Button
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeItem(item.id)}
                           size="sm"
                           variant="outline"
                         >
@@ -331,7 +313,7 @@ export default function ProviderDetailPage() {
                         </Button>
                         <span className="font-bold w-8 text-center">{quantity}</span>
                         <Button
-                          onClick={() => addToCart(item)}
+                          onClick={() => handleAddToCart(item)}
                           size="sm"
                         >
                           <Plus className="w-4 h-4" />
@@ -347,7 +329,7 @@ export default function ProviderDetailPage() {
       </div>
 
       {/* Floating Cart Button */}
-      {cart.length > 0 && (
+      {cartItemCount > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t shadow-2xl z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
@@ -363,7 +345,11 @@ export default function ProviderDetailPage() {
                 </div>
               </div>
 
-              <Button size="lg" className="gap-2">
+              <Button
+                size="lg"
+                className="gap-2"
+                onClick={() => router.push(`/${locale}/checkout`)}
+              >
                 {locale === 'ar' ? 'إتمام الطلب' : 'Checkout'}
                 {locale === 'ar' ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
               </Button>
