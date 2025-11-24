@@ -8,7 +8,8 @@
     "services": "Services",
     "about": "About",
     "contact": "Contact",
-    "login": "Login"
+    "login": "Login",
+    "logout": "Sign Out"
   },
   "home": {
     "title": "Engezna",

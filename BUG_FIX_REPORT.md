@@ -1,4 +1,4 @@
-# 🐛 Bug Fix Report - Enjezna Project
+# 🐛 Bug Fix Report - Engezna Project
 **Date:** November 22, 2024  
 **Status:** ✅ FIXED
 
@@ -102,7 +102,7 @@ According to `claude.md`, you still need:
 ### **Immediate Actions:**
 1. **Test the fix:**
    ```bash
-   cd /Users/dr.mosab/Desktop/enjezna
+   cd /Users/dr.mosab/Desktop/engezna
    npm run dev
    ```
    

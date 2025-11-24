@@ -70,7 +70,7 @@ export default function SignupPage() {
       if (authData.user) {
         // Insert user profile data
         const { error: profileError } = await supabase
-          .from('users')
+          .from('profiles')
           .insert({
             id: authData.user.id,
             email: data.email,

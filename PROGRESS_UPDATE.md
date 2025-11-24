@@ -257,7 +257,7 @@ Week 2 ░░░░░░░░░░░░░░░░░░░░░░░░ 
 - Ready to merge to main
 
 ### Live URLs
-- **Production:** https://enjezna-i1qgol4w0-engeznas-projects.vercel.app
+- **Production:** https://engezna.vercel.app
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
 - **GitHub:** https://github.com/Mosabragab/Engezna
 

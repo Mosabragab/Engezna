@@ -34,7 +34,7 @@ export async function signUpWithEmail(formData: {
 
   // Create user profile in database
   if (data.user) {
-    const { error: profileError } = await supabase.from('users').insert({
+    const { error: profileError } = await supabase.from('profiles').insert({
       id: data.user.id,
       email: formData.email,
       full_name: formData.fullName,

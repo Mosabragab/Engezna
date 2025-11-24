@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
 import {
   UtensilsCrossed,
   Coffee,
@@ -12,8 +13,11 @@ import {
   Star,
   Clock,
   DollarSign,
-  MapPin
+  MapPin,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react'
+import type { User } from '@supabase/supabase-js'
 
 type Provider = {
   id: string
@@ -45,10 +49,40 @@ export default function ProvidersPage() {
   const [providers, setProviders] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [user, setUser] = useState<User | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
 
   useEffect(() => {
     fetchProviders()
+    checkAuth()
   }, [selectedCategory])
+
+  async function checkAuth() {
+    const supabase = createClient()
+    
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser()
+    console.log('👤 Auth check in providers page:', { user: user?.email, hasUser: !!user })
+    setUser(user)
+    setAuthLoading(false)
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('🔄 Auth state changed:', { event: _event, userEmail: session?.user?.email })
+      setUser(session?.user ?? null)
+    })
+    
+    return () => subscription.unsubscribe()
+  }
+
+  async function handleSignOut() {
+    console.log('🚪 Signing out...')
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    
+    // Redirect to homepage after sign out
+    window.location.href = `/${locale}`
+  }
 
   async function fetchProviders() {
     setLoading(true)
@@ -116,9 +150,52 @@ export default function ProvidersPage() {
             <Link href={`/${locale}`} className="text-2xl font-bold text-primary">
               {locale === 'ar' ? 'انجزنا' : 'Engezna'}
             </Link>
-            <Link href={`/${locale}/auth/login`} className="text-sm text-muted-foreground hover:text-primary">
-              {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
-            </Link>
+            
+            {/* Auth Section */}
+            <div className="flex items-center gap-3">
+              {authLoading ? (
+                <div className="w-20 h-8 bg-muted animate-pulse rounded" />
+              ) : user ? (
+                <div className="flex items-center gap-3">
+                  {/* Debug Info */}
+                  <div className="hidden md:block text-xs text-green-600 font-mono">
+                    ✅ Logged in: {user.email}
+                  </div>
+                  
+                  {/* User Info */}
+                  <div className="hidden sm:flex items-center gap-2 text-sm">
+                    <UserIcon className="w-4 h-4" />
+                    <span className="text-muted-foreground">
+                      {user.email?.split('@')[0]}
+                    </span>
+                  </div>
+                  
+                  {/* Sign Out Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSignOut}
+                    className="flex items-center gap-2 border-red-200 hover:border-red-300 hover:bg-red-50"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    {locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  {/* Debug Info */}
+                  <div className="text-xs text-red-600 font-mono">
+                    ❌ Not logged in
+                  </div>
+                  
+                  <Link href={`/${locale}/auth/login`}>
+                    <Button variant="default" size="sm">
+                      {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>

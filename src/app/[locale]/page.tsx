@@ -1,6 +1,7 @@
 'use client'
 
 import { useTranslations, useLocale } from 'next-intl'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
@@ -14,17 +15,55 @@ import {
   Zap,
   MapPin,
   Smartphone,
-  ChevronRight
+  ChevronRight,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 export default function Home() {
+  console.log('🏠 Homepage rendered')
   const t = useTranslations('home')
   const navT = useTranslations('nav')
   const locale = useLocale()
   const isRTL = locale === 'ar'
+  const [user, setUser] = useState<User | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  
+  console.log('🌍 Locale:', locale, 'RTL:', isRTL)
+
+  useEffect(() => {
+    checkAuth()
+  }, [])
+
+  async function checkAuth() {
+    const supabase = createClient()
+    
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+    setAuthLoading(false)
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    
+    return () => subscription.unsubscribe()
+  }
+
+  async function handleSignOut() {
+    console.log('🚪 Signing out from homepage...')
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    
+    // Refresh the page to update auth state
+    window.location.reload()
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,11 +95,50 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <ThemeToggle />
               <LanguageSwitcher />
-              <Link href={`/${locale}/auth/login`}>
-                <Button variant="default" size="sm" className="hidden sm:flex">
-                  {navT('login')}
-                </Button>
-              </Link>
+              
+              {/* Auth Section */}
+              {authLoading ? (
+                <div className="w-20 h-8 bg-muted animate-pulse rounded" />
+              ) : user ? (
+                <div className="flex items-center gap-2">
+                  {/* User Info - Hidden on mobile */}
+                  <div className="hidden md:flex items-center gap-2 text-sm">
+                    <UserIcon className="w-4 h-4" />
+                    <span className="text-muted-foreground">
+                      {user.email?.split('@')[0]}
+                    </span>
+                  </div>
+                  
+                  {/* Sign Out Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSignOut}
+                    className="flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden sm:inline">
+                      {navT('logout') || (locale === 'ar' ? 'خروج' : 'Sign Out')}
+                    </span>
+                    <span className="sm:hidden">
+                      {locale === 'ar' ? 'خروج' : 'Out'}
+                    </span>
+                  </Button>
+                  
+                  {/* Go to Providers Button */}
+                  <Link href={`/${locale}/providers`}>
+                    <Button variant="default" size="sm" className="hidden sm:flex">
+                      {locale === 'ar' ? 'المتاجر' : 'Stores'}
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <Link href={`/${locale}/auth/login`}>
+                  <Button variant="default" size="sm" className="flex">
+                    {navT('login')}
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

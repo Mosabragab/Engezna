@@ -59,11 +59,11 @@ Download all 6 files from this package.
 ### Step 2: Move to Your Project
 
 ```bash
-# Move brand documentation to your enjezna folder
-mv BRAND*.md VISUAL*.md README*.md ~/Desktop/enjezna/
+# Move brand documentation to your engezna folder
+mv BRAND*.md VISUAL*.md README*.md ~/Desktop/engezna/
 
 # Move CSS file to your project styles folder
-mv brand-colors.css ~/Desktop/enjezna/src/styles/
+mv brand-colors.css ~/Desktop/engezna/src/styles/
 ```
 
 ### Step 3: Start Using
@@ -105,7 +105,7 @@ mv brand-colors.css ~/Desktop/enjezna/src/styles/
 ## 🚀 Next Steps
 
 1. ✅ Download all files
-2. ✅ Move to your enjezna project folder
+2. ✅ Move to your engezna project folder
 3. ✅ Read BRAND_DOCUMENTATION_INDEX.md
 4. ✅ Import brand-colors.css into your project
 5. ✅ Start creating brand assets using VISUAL_ASSETS_GUIDE.md

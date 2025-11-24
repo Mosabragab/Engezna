@@ -256,9 +256,15 @@
   background: hsl(var(--primary-dark));
 }
 
-/* Smooth transitions */
-* {
+/* Smooth transitions - exclude html and body to prevent flash on navigation */
+*:not(html):not(body):not([data-theme-transition="false"]) {
   @apply transition-colors duration-200;
+}
+
+/* Disable transition during theme/locale changes */
+html.no-transition,
+html.no-transition * {
+  transition: none !important;
 }
 
 /* Animation utilities */
