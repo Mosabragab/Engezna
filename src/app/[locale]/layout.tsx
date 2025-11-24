@@ -43,9 +43,10 @@ export default async function LocaleLayout({
       <body className={`${notoSans.variable} ${notoSansArabic.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
+          storageKey="engezna-theme"
         >
           <NextIntlClientProvider locale={locale} messages={messages}>
             {children}

@@ -22,6 +22,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
+  console.log('📺 Login page rendered')
   const t = useTranslations('auth.login')
   const locale = useLocale()
   const router = useRouter()
@@ -37,27 +38,76 @@ export default function LoginPage() {
   })
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log('🔑 Login form submitted:', { email: data.email }) // Debug log
     setIsLoading(true)
     setError(null)
 
     try {
       const supabase = createClient()
+      console.log('📡 Supabase client created') // Debug log
+      
+      // Sign in with email and password
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: data.email,
+        email: data.email.toLowerCase().trim(),
         password: data.password,
       })
 
+      console.log('🔐 Auth response:', { user: authData?.user?.email, error: authError?.message }) // Debug log
+
       if (authError) {
-        setError(authError.message)
+        console.error('❌ Auth error:', authError)
+        // Provide more specific error messages
+        if (authError.message.includes('Invalid login credentials')) {
+          setError('البريد الإلكتروني أو كلمة المرور غير صحيحة / Invalid email or password')
+        } else if (authError.message.includes('Email not confirmed')) {
+          setError('يرجى تأكيد بريدك الإلكتروني أولاً / Please confirm your email first')
+        } else {
+          setError(authError.message)
+        }
         return
       }
 
       if (authData.user) {
-        // Redirect based on user role
-        router.push(`/${locale}`)
-        router.refresh()
+        console.log('✅ User authenticated:', authData.user.email) // Debug log
+        
+        // Fetch user profile to get role
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, full_name')
+          .eq('id', authData.user.id)
+          .single()
+
+        console.log('👤 Profile fetch result:', { profile, error: profileError }) // Debug log
+
+        // Don't fail login if profile fetch fails - just redirect to homepage
+        let redirectPath = `/${locale}`
+        
+        if (profile?.role) {
+          console.log('🎭 User role:', profile.role) // Debug log
+          switch (profile.role) {
+            case 'admin':
+              redirectPath = `/${locale}/_admin`
+              break
+            case 'provider_owner':
+              redirectPath = `/${locale}/_provider`
+              break
+            case 'customer':
+            default:
+              redirectPath = `/${locale}/providers` // Redirect customers to providers page
+              break
+          }
+        }
+
+        console.log('🚀 Redirecting to:', redirectPath) // Debug log
+        
+        // Use window.location for more reliable redirect
+        setTimeout(() => {
+          console.log('🚀 Executing redirect to:', redirectPath)
+          window.location.href = redirectPath
+        }, 1000) // Give time to see success message
       }
     } catch (err) {
+      console.error('💥 Unexpected error:', err)
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
       setIsLoading(false)
@@ -92,6 +142,7 @@ export default function LoginPage() {
                 {...register('email')}
                 disabled={isLoading}
                 className={errors.email ? 'border-destructive' : ''}
+                autoComplete="email"
               />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email.message}</p>
@@ -107,6 +158,7 @@ export default function LoginPage() {
                 {...register('password')}
                 disabled={isLoading}
                 className={errors.password ? 'border-destructive' : ''}
+                autoComplete="current-password"
               />
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password.message}</p>
@@ -126,8 +178,75 @@ export default function LoginPage() {
               type="submit"
               className="w-full"
               disabled={isLoading}
+              onClick={(e) => {
+                console.log('🔴 Button clicked!', { 
+                  isLoading, 
+                  hasFormErrors: Object.keys(errors).length > 0,
+                  formData: data.email ? { email: data.email } : 'no data'
+                })
+              }}
             >
               {isLoading ? t('loggingIn') : t('loginButton')}
+            </Button>
+
+            {/* Debug Test Button - Remove after fixing */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full mt-2"
+              onClick={async () => {
+                console.log('🟢 Direct test button clicked!')
+                setError(null)
+                
+                // Test with known credentials
+                const testCredentials = {
+                  email: 'customer@test.com',
+                  password: 'Test123!' // You might need to set a password for test users
+                }
+                
+                console.log('🧪 Testing with:', testCredentials.email)
+                
+                try {
+                  const supabase = createClient()
+                  const { data: authData, error } = await supabase.auth.signInWithPassword(testCredentials)
+                  
+                  console.log('🧪 Test Result:', { user: authData?.user?.email, error: error?.message })
+                  
+                  if (error) {
+                    setError(`Test failed: ${error.message}`)
+                  } else {
+                    setError(`Test success! User: ${authData?.user?.email}`)
+                    // Redirect to providers page after successful test
+                    setTimeout(() => {
+                      window.location.href = `/${locale}/providers`
+                    }, 1500)
+                  }
+                } catch (err) {
+                  console.error('🧪 Test error:', err)
+                  setError(`Test error: ${err}`)
+                }
+              }}
+            >
+              🧪 Test Login (customer@test.com)
+            </Button>
+            
+            {/* Manual Login Test */}
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full mt-2"
+              onClick={() => {
+                // Pre-fill the form with test credentials
+                const emailInput = document.querySelector('#email') as HTMLInputElement
+                const passwordInput = document.querySelector('#password') as HTMLInputElement
+                
+                if (emailInput) emailInput.value = 'customer@test.com'
+                if (passwordInput) passwordInput.value = 'Test123!'
+                
+                console.log('📋 Pre-filled form with test credentials')
+              }}
+            >
+              📋 Fill Test Credentials
             </Button>
           </form>
         </CardContent>

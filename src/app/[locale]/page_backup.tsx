@@ -139,6 +139,13 @@ export default function Home() {
                   </Button>
                 </Link>
               )}
+              
+              {/* Debug: Add a visible test button */}
+              <Link href={`/${locale}/auth/login`} className="sm:hidden">
+                <Button variant="outline" size="sm" className="flex text-xs">
+                  🔑 لوجين
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -176,6 +183,21 @@ export default function Home() {
               </Button>
               <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2">
                 {t('ctaPartner')}
+              </Button>
+              
+
+              <Button 
+                size="sm" 
+                variant="destructive" 
+                onClick={async () => {
+                  console.log('🚪 Clearing session...')
+                  const supabase = (await import('@/lib/supabase/client')).createClient()
+                  await supabase.auth.signOut()
+                  window.location.reload()
+                }}
+                className="text-xs"
+              >
+
               </Button>
             </div>
           </div>
