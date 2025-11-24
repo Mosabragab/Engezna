@@ -13,119 +13,83 @@ const intlMiddleware = createMiddleware({
   localePrefix: 'always'
 })
 
+// Define protected and auth routes
+const protectedRoutes = ['/checkout', '/orders', '/profile', '/_customer', '/_provider', '/_admin']
+const authRoutes = ['/auth/login', '/auth/signup']
+
 export async function middleware(request: NextRequest) {
-  // First, handle internationalization
-  const intlResponse = intlMiddleware(request)
-  
-  // Create a response that we can modify
-  let response = intlResponse || NextResponse.next({ request })
-
-  // Create Supabase client for session management
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          // Set cookies on the request
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          // Create a new response with the updated request
-          response = intlResponse 
-            ? NextResponse.next({
-                request,
-                headers: intlResponse.headers,
-              })
-            : NextResponse.next({ request })
-          // Set cookies on the response
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // IMPORTANT: This refreshes the session and must be called
-  // Do not add any logic between createServerClient and supabase.auth.getUser()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Get the pathname from the request
   const { pathname } = request.nextUrl
-  
+
+  // Skip middleware for static files and API routes early
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next()
+  }
+
+  // Handle internationalization first
+  const intlResponse = intlMiddleware(request)
+
   // Extract locale from pathname
   const pathnameLocale = locales.find(
     locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   ) || defaultLocale
 
-  // DEBUG: Log what's happening
-  console.log('🔍 Middleware Debug:', {
-    pathname,
-    pathnameLocale,
-    hasUser: !!user,
-    userEmail: user?.email,
-    userID: user?.id
-  })
-
-  // Define protected routes (routes that require authentication)
-  const protectedRoutes = [
-    '/checkout',
-    '/orders',
-    '/profile',
-    '/_customer',
-    '/_provider',
-    '/_admin',
-  ]
-
-  // Check if current path (without locale) is protected
+  // Get path without locale
   const pathWithoutLocale = pathname.replace(`/${pathnameLocale}`, '') || '/'
-  const isProtectedRoute = protectedRoutes.some(route => 
-    pathWithoutLocale.startsWith(route)
-  )
 
-  // If trying to access protected route without being logged in, redirect to login
-  if (isProtectedRoute && !user) {
-    const loginUrl = new URL(`/${pathnameLocale}/auth/login`, request.url)
-    loginUrl.searchParams.set('redirect', pathname)
-    return NextResponse.redirect(loginUrl)
+  // Check if this is a protected or auth route
+  const isProtectedRoute = protectedRoutes.some(route => pathWithoutLocale.startsWith(route))
+  const isAuthRoute = authRoutes.some(route => pathWithoutLocale.startsWith(route))
+
+  // Only check auth for protected/auth routes to minimize Supabase calls
+  if (isProtectedRoute || isAuthRoute) {
+    try {
+      // Create Supabase client
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return request.cookies.getAll()
+            },
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value }) => {
+                request.cookies.set(name, value)
+              })
+            },
+          },
+        }
+      )
+
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // Redirect to login if accessing protected route without auth
+      if (isProtectedRoute && !user) {
+        const loginUrl = new URL(`/${pathnameLocale}/auth/login`, request.url)
+        loginUrl.searchParams.set('redirect', pathname)
+        return NextResponse.redirect(loginUrl)
+      }
+
+      // Redirect to home if logged in user tries to access auth pages
+      if (isAuthRoute && user) {
+        return NextResponse.redirect(new URL(`/${pathnameLocale}`, request.url))
+      }
+    } catch (error) {
+      // If Supabase fails, allow the request to continue
+      console.error('Middleware auth check failed:', error)
+    }
   }
 
-  // If logged in user tries to access auth pages, redirect to home
-  const authRoutes = ['/auth/login', '/auth/signup']
-  const isAuthRoute = authRoutes.some(route => 
-    pathWithoutLocale.startsWith(route)
-  )
-  
-  if (isAuthRoute && user) {
-    console.log('❌ Redirecting logged-in user away from auth page:', { pathname, userEmail: user.email })
-    return NextResponse.redirect(new URL(`/${pathnameLocale}`, request.url))
-  }
-
-  // Copy over intl headers if present
-  if (intlResponse) {
-    intlResponse.headers.forEach((value, key) => {
-      response.headers.set(key, value)
-    })
-  }
-
-  return response
+  return intlResponse || NextResponse.next()
 }
 
 export const config = {
-  // Match all pathnames except static files and API routes
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder files
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Match all paths except static files
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }
