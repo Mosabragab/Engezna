@@ -1,17 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import createMiddleware from 'next-intl/middleware'
 
-// Define locales directly to avoid import issues
+// Define locales directly
 const locales = ['ar', 'en'] as const
 const defaultLocale = 'ar'
-
-// Create the next-intl middleware
-const intlMiddleware = createMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'always'
-})
 
 // Define protected and auth routes
 const protectedRoutes = ['/checkout', '/orders', '/profile', '/_customer', '/_provider', '/_admin']
@@ -29,8 +21,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Handle internationalization first
-  const intlResponse = intlMiddleware(request)
+  // Check if pathname has a locale prefix
+  const pathnameHasLocale = locales.some(
+    locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  )
+
+  // Redirect to default locale if no locale in path
+  if (!pathnameHasLocale) {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${defaultLocale}${pathname}`
+    return NextResponse.redirect(url)
+  }
 
   // Extract locale from pathname
   const pathnameLocale = locales.find(
@@ -84,7 +85,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return intlResponse || NextResponse.next()
+  return NextResponse.next()
 }
 
 export const config = {
