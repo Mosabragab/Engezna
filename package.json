@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:migrate": "tsx scripts/run-migration.ts all",
     "db:migrate:file": "tsx scripts/run-migration.ts",
-    "db:test": "tsx scripts/test-connection.ts"
+    "db:test": "tsx scripts/test-connection.ts",
+    "auth:reset-passwords": "tsx scripts/reset-passwords.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
