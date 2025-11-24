@@ -123,18 +123,35 @@ export async function verifyOTP(formData: {
 }) {
   const supabase = await createClient()
 
-  const { data, error } = await supabase.auth.verifyOtp({
-    phone: formData.phone,
-    email: formData.email,
-    token: formData.token,
-    type: formData.type === 'sms' ? 'sms' : 'email',
-  })
+  if (formData.type === 'sms' && formData.phone) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: formData.phone,
+      token: formData.token,
+      type: 'sms',
+    })
 
-  if (error) {
-    return { error: error.message }
+    if (error) {
+      return { error: error.message }
+    }
+
+    return { success: true, data }
   }
 
-  return { success: true, data }
+  if (formData.type === 'email' && formData.email) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: formData.email,
+      token: formData.token,
+      type: 'email',
+    })
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    return { success: true, data }
+  }
+
+  return { error: 'Invalid verification type or missing credentials' }
 }
 
 /**
