@@ -47,11 +47,21 @@ export async function middleware(request: NextRequest) {
 
   // Only check auth for protected/auth routes to minimize Supabase calls
   if (isProtectedRoute || isAuthRoute) {
+    // Check if environment variables are available
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase environment variables in middleware')
+      // Allow request to continue if env vars are missing (will be handled by app)
+      return NextResponse.next()
+    }
+
     try {
       // Create Supabase client
       const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseAnonKey,
         {
           cookies: {
             getAll() {
