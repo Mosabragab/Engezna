@@ -32,7 +32,7 @@
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
 - **Status:** Week 1-2 Complete - 85% (Auth + Checkout Flow) ✅
-- **Live URL:** https://enjezna-i1qgol4w0-engeznas-projects.vercel.app
+- **Live URL:** https://engezna.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
 

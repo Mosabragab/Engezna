@@ -15,7 +15,7 @@ import {
   DollarSign,
   MapPin,
   LogOut,
-  User
+  User as UserIcon
 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 
@@ -164,7 +164,7 @@ export default function ProvidersPage() {
                   
                   {/* User Info */}
                   <div className="hidden sm:flex items-center gap-2 text-sm">
-                    <User className="w-4 h-4" />
+                    <UserIcon className="w-4 h-4" />
                     <span className="text-muted-foreground">
                       {user.email?.split('@')[0]}
                     </span>

@@ -1132,7 +1132,7 @@ reviews (
 
 ### **As of Week 0 (Nov 22, 2025)**
 ```
-enjezna/
+engezna/
 ├── public/
 │   └── (static assets - to be added)
 ├── src/

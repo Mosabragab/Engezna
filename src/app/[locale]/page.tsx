@@ -17,7 +17,7 @@ import {
   Smartphone,
   ChevronRight,
   LogOut,
-  User
+  User as UserIcon
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
@@ -103,7 +103,7 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   {/* User Info - Hidden on mobile */}
                   <div className="hidden md:flex items-center gap-2 text-sm">
-                    <User className="w-4 h-4" />
+                    <UserIcon className="w-4 h-4" />
                     <span className="text-muted-foreground">
                       {user.email?.split('@')[0]}
                     </span>

@@ -178,13 +178,6 @@ export default function LoginPage() {
               type="submit"
               className="w-full"
               disabled={isLoading}
-              onClick={(e) => {
-                console.log('🔴 Button clicked!', { 
-                  isLoading, 
-                  hasFormErrors: Object.keys(errors).length > 0,
-                  formData: data.email ? { email: data.email } : 'no data'
-                })
-              }}
             >
               {isLoading ? t('loggingIn') : t('loginButton')}
             </Button>
