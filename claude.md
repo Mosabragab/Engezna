@@ -1,8 +1,8 @@
 # Claude Project Guide - Engezna (انجزنا)
 
-**Last Updated:** November 23, 2025
-**Status:** Week 1 - 75% Complete ✅
-**Branch:** `claude/verify-munich-branch-01VGGENbh1uqCduyA8kDC2ba`
+**Last Updated:** November 24, 2025
+**Status:** Week 1-2 - 85% Complete ✅
+**Branch:** `claude/two-commits-pr-01VGGENbh1uqCduyA8kDC2ba`
 
 ---
 
@@ -31,7 +31,7 @@
 - **Name:** Engezna (انجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
-- **Status:** Week 1 Core Features 75% Complete ✅
+- **Status:** Week 1-2 Complete - 85% (Auth + Checkout Flow) ✅
 - **Live URL:** https://enjezna-i1qgol4w0-engeznas-projects.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
@@ -40,13 +40,16 @@
 
 ## ✅ What's Working NOW
 
-### Customer Flow (Fully Functional!)
+### Complete Customer Flow (End-to-End!)
 1. ✅ Visit `/ar/providers` or `/en/providers`
 2. ✅ Browse all 4 providers with category filtering
 3. ✅ Click any provider to see their menu
-4. ✅ Add items to cart (+ / - buttons)
-5. ✅ See real-time cart total
-6. ✅ Checkout button ready
+4. ✅ Add items to cart (+ / - buttons with global state)
+5. ✅ See real-time cart total with persistence
+6. ✅ **Sign up / Login** (email/password or OTP)
+7. ✅ **Complete checkout** (address, payment method)
+8. ✅ **Place order** (creates in database)
+9. ✅ **View order confirmation** (order details, tracking ready)
 
 ### Live Data
 - ✅ 4 Providers with 30 menu items total:
@@ -61,8 +64,9 @@
 
 ```
 Week 0 ████████████ 100% ✅ Foundation
-Week 1 ██████████░░  75% ✅ Provider browsing + cart
-Week 2 ░░░░░░░░░░░░   0% → Checkout + auth
+Week 1 ████████████ 100% ✅ Provider browsing + cart
+Week 2 ██████████░░  85% ✅ Auth + Checkout + Orders
+Week 3 ░░░░░░░░░░░░   0% → Order tracking
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -73,15 +77,23 @@ Week 2 ░░░░░░░░░░░░   0% → Checkout + auth
 - [x] Homepage + brand identity
 - [x] Deployed to production
 
-### Week 1: Core Features (75% ✅)
+### Week 1: Core Features (100% ✅)
 - [x] Provider browsing page `/providers`
 - [x] Provider detail page `/providers/[id]`
 - [x] Menu display system
 - [x] Shopping cart functionality
 - [x] Database schema (1,431 lines)
 - [x] Seed data (4 providers, 30 items)
-- [ ] User authentication ← Next
-- [ ] Checkout flow ← Next
+
+### Week 2: Auth + Checkout (85% ✅)
+- [x] User authentication (email/password + OTP)
+- [x] Protected routes and session management
+- [x] Checkout flow with address input
+- [x] Order placement in database
+- [x] Order confirmation page
+- [x] Global cart state with Zustand
+- [ ] Order tracking page ← Next
+- [ ] Order history ← Next
 
 ---
 
@@ -99,13 +111,13 @@ Week 2 ░░░░░░░░░░░░   0% → Checkout + auth
 
 ---
 
-## 🎯 Next Steps (Week 1 Completion)
+## 🎯 Next Steps (Week 3)
 
-1. [ ] Implement Supabase authentication
-2. [ ] Create signup/login pages
-3. [ ] Build checkout flow
-4. [ ] Add address management
-5. [ ] Order confirmation page
+1. [ ] Order tracking page (`/orders/[id]`)
+2. [ ] Order history page (`/orders`)
+3. [ ] Real-time order status updates
+4. [ ] User profile page with address management
+5. [ ] Provider dashboard (order management)
 
 ---
 
@@ -116,6 +128,9 @@ Week 2 ░░░░░░░░░░░░   0% → Checkout + auth
 - ✅ Tailwind v4 → v3 downgrade (stability)
 - ✅ Brand colors updated (Orange, not Green!)
 - ✅ Build errors resolved
+- ✅ TypeScript error in verifyOTP function (proper type handling)
+- ✅ Signup page fixed to use `users` table
+- ✅ Cart persistence across navigation
 
 ### Active Issues
 - None! All systems operational ✅
@@ -143,8 +158,8 @@ Week 2 ░░░░░░░░░░░░   0% → Checkout + auth
 
 ---
 
-**Version:** 3.0
-**Last Updated:** November 23, 2025
-**Next Review:** November 25, 2025
+**Version:** 4.0 (Week 1-2 Complete)
+**Last Updated:** November 24, 2025
+**Next Review:** November 26, 2025
 
-**🎉 Ready to continue building!**
+**🎉 Authentication and checkout complete! Ready for order tracking!**
