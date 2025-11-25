@@ -1,0 +1,267 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
+import { createClient } from '@/lib/supabase/client'
+import { Header } from '@/components/shared/Header'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { MapPinned, Loader2, Check } from 'lucide-react'
+
+type Governorate = {
+  id: string
+  name_ar: string
+  name_en: string
+}
+
+type City = {
+  id: string
+  governorate_id: string
+  name_ar: string
+  name_en: string
+}
+
+export default function GovernoratePage() {
+  const locale = useLocale()
+  const t = useTranslations('settings.governorate')
+  const router = useRouter()
+
+  const [userId, setUserId] = useState<string | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+
+  const [governorates, setGovernorates] = useState<Governorate[]>([])
+  const [cities, setCities] = useState<City[]>([])
+
+  const [governorateId, setGovernorateId] = useState('')
+  const [cityId, setCityId] = useState('')
+
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    checkAuthAndLoadData()
+  }, [])
+
+  useEffect(() => {
+    if (governorateId) {
+      loadCities(governorateId)
+    } else {
+      setCities([])
+      setCityId('')
+    }
+  }, [governorateId])
+
+  async function checkAuthAndLoadData() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      router.push(`/${locale}/auth/login?redirect=/profile/governorate`)
+      return
+    }
+
+    setUserId(user.id)
+    setAuthLoading(false)
+
+    await loadGovernorates()
+    await loadCurrentSelection(user.id)
+  }
+
+  async function loadGovernorates() {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('governorates')
+      .select('*')
+      .eq('is_active', true)
+      .order('name_en')
+
+    if (data) {
+      setGovernorates(data)
+    }
+  }
+
+  async function loadCities(govId: string) {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('cities')
+      .select('*')
+      .eq('governorate_id', govId)
+      .eq('is_active', true)
+      .order('name_en')
+
+    if (data) {
+      setCities(data)
+    }
+  }
+
+  async function loadCurrentSelection(uid: string) {
+    setLoading(true)
+    const supabase = createClient()
+
+    // Check if governorate_id column exists in profiles table
+    // If it doesn't exist, this query will fail silently
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('governorate_id, city_id')
+      .eq('id', uid)
+      .single()
+
+    if (!error && data) {
+      if (data.governorate_id) {
+        setGovernorateId(data.governorate_id)
+      }
+      if (data.city_id) {
+        setCityId(data.city_id)
+      }
+    }
+
+    setLoading(false)
+  }
+
+  async function handleSave() {
+    if (!userId) return
+
+    if (!governorateId) {
+      setMessage({ type: 'error', text: t('error') })
+      return
+    }
+
+    setSaving(true)
+    setMessage(null)
+
+    const supabase = createClient()
+
+    // Note: This assumes governorate_id and city_id columns exist in profiles table
+    // If they don't exist, you'll need to add them via migration first
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        governorate_id: governorateId,
+        city_id: cityId || null,
+      })
+      .eq('id', userId)
+
+    if (error) {
+      console.error('Error saving governorate:', error)
+      setMessage({ type: 'error', text: t('error') })
+    } else {
+      setMessage({ type: 'success', text: t('saved') })
+      setTimeout(() => setMessage(null), 3000)
+    }
+
+    setSaving(false)
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Header showBack backHref={`/${locale}/profile`} />
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Header showBack backHref={`/${locale}/profile`} backLabel={t('title')} />
+
+      <main className="container mx-auto px-4 py-6 max-w-2xl">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          {t('title')}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          {t('description')}
+        </p>
+
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                {/* Governorate */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <MapPinned className="w-4 h-4 text-muted-foreground" />
+                    {t('governorate')}
+                  </Label>
+                  <Select value={governorateId} onValueChange={setGovernorateId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t('governoratePlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {governorates.map((gov) => (
+                        <SelectItem key={gov.id} value={gov.id}>
+                          {locale === 'ar' ? gov.name_ar : gov.name_en}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* City */}
+                {governorateId && cities.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>{t('city')}</Label>
+                    <Select value={cityId} onValueChange={setCityId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={t('cityPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities.map((city) => (
+                          <SelectItem key={city.id} value={city.id}>
+                            {locale === 'ar' ? city.name_ar : city.name_en}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Save Button */}
+                <div className="flex items-center gap-3 pt-2">
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving || !governorateId}
+                    className="flex-1"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        {t('saving')}
+                      </>
+                    ) : (
+                      t('saveButton')
+                    )}
+                  </Button>
+                </div>
+
+                {/* Message */}
+                {message && (
+                  <div className={`flex items-center gap-2 text-sm ${message.type === 'success' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'} p-3 rounded-lg`}>
+                    {message.type === 'success' && <Check className="w-4 h-4" />}
+                    <span>{message.text}</span>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  )
+}

@@ -175,6 +175,86 @@
       "backToLogin": "العودة لتسجيل الدخول"
     }
   },
+  "settings": {
+    "title": "الإعدادات",
+    "menu": {
+      "account": "معلومات الحساب",
+      "addresses": "عناوين التوصيل",
+      "email": "تغيير البريد الإلكتروني",
+      "password": "تغيير كلمة المرور",
+      "language": "اللغة",
+      "governorate": "المحافظة",
+      "logout": "تسجيل الخروج",
+      "logoutConfirm": "هل أنت متأكد من تسجيل الخروج؟"
+    },
+    "account": {
+      "title": "معلومات الحساب",
+      "firstName": "الاسم الأول",
+      "firstNamePlaceholder": "أدخل اسمك الأول",
+      "lastName": "اسم العائلة",
+      "lastNamePlaceholder": "أدخل اسم العائلة",
+      "email": "البريد الإلكتروني",
+      "emailInfo": "لتغيير البريد الإلكتروني، اذهب إلى إعدادات البريد الإلكتروني",
+      "phone": "رقم الهاتف",
+      "phonePlaceholder": "01xxxxxxxxx",
+      "saveButton": "حفظ التغييرات",
+      "saving": "جاري الحفظ...",
+      "saved": "تم حفظ التغييرات بنجاح",
+      "error": "حدث خطأ أثناء الحفظ"
+    },
+    "email": {
+      "title": "تغيير البريد الإلكتروني",
+      "currentEmail": "البريد الإلكتروني الحالي",
+      "newEmail": "البريد الإلكتروني الجديد",
+      "newEmailPlaceholder": "أدخل البريد الإلكتروني الجديد",
+      "confirmEmail": "تأكيد البريد الإلكتروني",
+      "confirmEmailPlaceholder": "أعد إدخال البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "أدخل كلمة المرور للتأكيد",
+      "saveButton": "تحديث البريد الإلكتروني",
+      "saving": "جاري التحديث...",
+      "saved": "تم إرسال رابط التأكيد إلى بريدك الجديد",
+      "error": "حدث خطأ أثناء التحديث",
+      "emailMismatch": "البريد الإلكتروني غير متطابق",
+      "invalidEmail": "البريد الإلكتروني غير صحيح"
+    },
+    "password": {
+      "title": "تغيير كلمة المرور",
+      "currentPassword": "كلمة المرور الحالية",
+      "currentPasswordPlaceholder": "أدخل كلمة المرور الحالية",
+      "newPassword": "كلمة المرور الجديدة",
+      "newPasswordPlaceholder": "أدخل كلمة المرور الجديدة",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور",
+      "saveButton": "تحديث كلمة المرور",
+      "saving": "جاري التحديث...",
+      "saved": "تم تحديث كلمة المرور بنجاح",
+      "error": "حدث خطأ أثناء التحديث",
+      "passwordMismatch": "كلمة المرور غير متطابقة",
+      "passwordTooShort": "كلمة المرور قصيرة جداً (8 أحرف على الأقل)",
+      "wrongPassword": "كلمة المرور الحالية غير صحيحة"
+    },
+    "language": {
+      "title": "اللغة",
+      "description": "اختر لغة التطبيق",
+      "arabic": "العربية",
+      "english": "English",
+      "current": "اللغة الحالية",
+      "saved": "تم تغيير اللغة بنجاح"
+    },
+    "governorate": {
+      "title": "المحافظة والمدينة",
+      "description": "اختر موقعك لعرض الخدمات المتاحة",
+      "governorate": "المحافظة",
+      "governoratePlaceholder": "اختر المحافظة",
+      "city": "المدينة/المركز",
+      "cityPlaceholder": "اختر المدينة",
+      "saveButton": "حفظ الموقع",
+      "saving": "جاري الحفظ...",
+      "saved": "تم حفظ الموقع بنجاح",
+      "error": "حدث خطأ أثناء الحفظ"
+    }
+  },
   "profile": {
     "title": "حسابي",
     "personalInfo": {
