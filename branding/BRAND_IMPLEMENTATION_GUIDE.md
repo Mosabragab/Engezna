@@ -87,7 +87,7 @@ import Logo from '@/components/shared/Logo'
 **Arabic Text:**
 ```tsx
 <h1 className="font-arabic text-4xl font-bold">
-  انجزنا واطلب!
+  إنجزنا واطلب!
 </h1>
 ```
 

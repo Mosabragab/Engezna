@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD)
-## Engezna - انجزنا | Food Delivery Platform
+## Engezna - إنجزنا | Food Delivery Platform
 
 **Version:** 2.1 (Week 1-2 Complete)
 **Date:** November 24, 2025
@@ -11,7 +11,7 @@
 
 ## 📋 Executive Summary
 
-**Engezna (انجزنا)** is a B2C food delivery marketplace platform designed specifically for Beni Suef, Upper Egypt. The platform connects local restaurants, coffee shops, and grocery stores with customers, enabling fast and reliable food delivery in an underserved market.
+**Engezna (إنجزنا)** is a B2C food delivery marketplace platform designed specifically for Beni Suef, Upper Egypt. The platform connects local restaurants, coffee shops, and grocery stores with customers, enabling fast and reliable food delivery in an underserved market.
 
 **Mission:** To bring modern food delivery services to Upper Egypt, starting with Beni Suef, while supporting local businesses and creating economic opportunities.
 
@@ -485,13 +485,13 @@ reviews (
 ### **Brand Identity**
 
 #### **Logo** ✅ IMPLEMENTED
-- **Primary:** "انجزنا" (Arabic) + "Engezna" (English)
+- **Primary:** "إنجزنا" (Arabic) + "Engezna" (English)
 - **Variations:** 6 logo variants implemented as React component
-  1. **Arabic Large** - انجزنا (display text)
+  1. **Arabic Large** - إنجزنا (display text)
   2. **English Large** - Engezna (display text)
-  3. **Arabic Medium** - انجزنا (heading size)
+  3. **Arabic Medium** - إنجزنا (heading size)
   4. **English Medium** - Engezna (heading size)
-  5. **Arabic Small** - انجزنا (body text)
+  5. **Arabic Small** - إنجزنا (body text)
   6. **English Small** - Engezna (body text)
 - **Component Props:**
   - `language`: 'ar' | 'en'
@@ -770,7 +770,7 @@ reviews (
 
 #### **Launch Event**
 - Press release to local media
-- Social media campaign (#انجزنا_بني_سويف)
+- Social media campaign (#إنجزنا_بني_سويف)
 - Influencer partnerships (local micro-influencers)
 - Launch week: 30% discount on all orders
 
