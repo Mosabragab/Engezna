@@ -114,42 +114,69 @@ export default function CheckoutPage() {
     try {
       const supabase = createClient()
 
+      // Calculate platform commission (6% default)
+      const commissionRate = provider.commission_rate || 6.0
+      const platformCommission = (subtotal * commissionRate) / 100
+
+      // Create delivery address as JSONB
+      const deliveryAddressJson = {
+        address: address,
+        phone: phone,
+        full_name: fullName,
+        notes: additionalNotes || null
+      }
+
+      // Calculate estimated delivery time as timestamp
+      const estimatedDeliveryTime = new Date(
+        Date.now() + (provider.estimated_delivery_time_min || 30) * 60 * 1000
+      ).toISOString()
+
       // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-          user_id: user.id,
+          customer_id: user.id,
           provider_id: provider.id,
           status: 'pending',
           subtotal: subtotal,
           delivery_fee: provider.delivery_fee,
+          discount: 0,
           total: getTotal(),
+          platform_commission: platformCommission,
           payment_method: paymentMethod,
-          payment_status: paymentMethod === 'cash' ? 'pending' : 'pending',
-          delivery_address: address,
-          phone: phone,
-          notes: additionalNotes || null,
-          estimated_delivery_time: provider.estimated_delivery_time_min,
+          payment_status: 'pending',
+          delivery_address: deliveryAddressJson,
+          customer_notes: additionalNotes || null,
+          estimated_delivery_time: estimatedDeliveryTime,
         })
         .select()
         .single()
 
-      if (orderError) throw orderError
+      if (orderError) {
+        console.error('Order creation error details:', orderError)
+        throw orderError
+      }
 
-      // Create order items
+      // Create order items with all required fields
       const orderItems = cart.map((item) => ({
         order_id: order.id,
         menu_item_id: item.menuItem.id,
+        item_name_ar: item.menuItem.name_ar,
+        item_name_en: item.menuItem.name_en,
+        item_price: item.menuItem.price,
         quantity: item.quantity,
         unit_price: item.menuItem.price,
-        subtotal: item.menuItem.price * item.quantity,
+        total_price: item.menuItem.price * item.quantity,
       }))
 
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems)
 
-      if (itemsError) throw itemsError
+      if (itemsError) {
+        console.error('Order items error details:', itemsError)
+        throw itemsError
+      }
 
       // Clear cart
       clearCart()

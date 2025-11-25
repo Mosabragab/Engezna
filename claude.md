@@ -1,8 +1,8 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** November 24, 2025
-**Status:** Week 1-2 - 85% Complete ✅
-**Branch:** `claude/two-commits-pr-01VGGENbh1uqCduyA8kDC2ba`
+**Last Updated:** November 25, 2025
+**Status:** Week 1-2 - 95% Complete ✅
+**Branch:** `Munich25/Nov`
 
 ---
 
@@ -31,7 +31,7 @@
 - **Name:** Engezna (إنجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
-- **Status:** Week 1-2 Complete - 85% (Auth + Checkout Flow) ✅
+- **Status:** Week 1-2 Complete - 95% (Auth + Checkout + UI Fixes + Orders) ✅
 - **Live URL:** https://engezna.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
@@ -49,7 +49,10 @@
 6. ✅ **Sign up / Login** (email/password or OTP)
 7. ✅ **Complete checkout** (address, payment method)
 8. ✅ **Place order** (creates in database)
-9. ✅ **View order confirmation** (order details, tracking ready)
+9. ✅ **Order confirmation page** with order details
+10. ✅ **Order tracking page** with status timeline
+11. ✅ **Order history page** with filters (all/active/completed)
+12. ✅ **My Orders navigation** in header with active count badge
 
 ### Live Data
 - ✅ 4 Providers with 30 menu items total:
@@ -65,8 +68,8 @@
 ```
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
-Week 2 ██████████░░  85% ✅ Auth + Checkout + Orders
-Week 3 ░░░░░░░░░░░░   0% → Order tracking
+Week 2 ████████████ 100% ✅ Auth + Checkout + Orders
+Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -85,15 +88,16 @@ Week 3 ░░░░░░░░░░░░   0% → Order tracking
 - [x] Database schema (1,431 lines)
 - [x] Seed data (4 providers, 30 items)
 
-### Week 2: Auth + Checkout (85% ✅)
+### Week 2: Auth + Checkout (100% ✅)
 - [x] User authentication (email/password + OTP)
 - [x] Protected routes and session management
 - [x] Checkout flow with address input
 - [x] Order placement in database
 - [x] Order confirmation page
 - [x] Global cart state with Zustand
-- [ ] Order tracking page ← Next
-- [ ] Order history ← Next
+- [x] Order tracking page ✅
+- [x] Order history page ✅
+- [x] Shared Header component with My Orders navigation ✅
 
 ---
 
@@ -113,22 +117,35 @@ Week 3 ░░░░░░░░░░░░   0% → Order tracking
 
 ## 🎯 Next Steps (Week 3)
 
-1. [ ] Order tracking page (`/orders/[id]`)
-2. [ ] Order history page (`/orders`)
-3. [ ] Real-time order status updates
-4. [ ] User profile page with address management
-5. [ ] Provider dashboard (order management)
+1. [ ] Provider dashboard backend (order management)
+2. [ ] Real-time order status updates (Supabase realtime)
+3. [ ] User profile page with address management
+4. [ ] Order cancellation flow
+5. [ ] Provider notifications for new orders
 
 ---
 
 ## 🐛 Recent Fixes
 
+### Work Session Nov 25, 2025 - Munich (Session 2) ✅
+- ✅ **Order Placement Bug Fix**: Fixed checkout to match database schema
+  - Changed `user_id` → `customer_id`
+  - Changed `delivery_address` to JSONB format
+  - Added `platform_commission` calculation
+  - Fixed `estimated_delivery_time` as timestamp
+  - Added all required `order_items` fields
+- ✅ **Order Tracking Page**: Full status timeline with live refresh
+- ✅ **Order History Page**: Filter by all/active/completed
+- ✅ **Shared Header Component**: Reusable with My Orders navigation
+- ✅ **My Orders Badge**: Shows active order count
+
+### Work Session Nov 25, 2025 - Munich (Session 1) ✅
+- ✅ **Fix 1**: "Browse" → "Stores" button text - COMPLETE (role-aware navigation)
+- ✅ **Fix 3**: Provider Dashboard - COMPLETE (full dark-themed dashboard with sidebar, stats, quick actions)
+
 ### Work Session Nov 24, 2025 - Munich ✅
 - ✅ **Fix 2**: Logout translation working ("Sign Out" / "خروج")
 - ✅ **Fix 4**: Remove "Clear Session" button completely resolved
-- ✅ **Fix 3**: Provider 404 Error - PARTIALLY FIXED (created `/[locale]/_provider/page.tsx`)
-  - ⚠️ Provider dashboard created but needs differentiation from customer home
-- ❌ **Fix 1**: "Browse" → "Stores" button text - STILL PENDING
 
 ### Previously Resolved ✅
 - ✅ Dark mode toggle (fixed with `resolvedTheme`)
@@ -140,8 +157,8 @@ Week 3 ░░░░░░░░░░░░   0% → Order tracking
 - ✅ Cart persistence across navigation
 
 ### Active Issues
-- ❌ Fix 1: Navigation button still shows "Browse" instead of "Stores"
-- ⚠️ Fix 3: Provider dashboard needs UI differentiation from customer view
+- ✅ All Week 1-2 features complete!
+- 📅 Next: Provider dashboard backend (order management)
 
 ---
 
@@ -166,8 +183,8 @@ Week 3 ░░░░░░░░░░░░   0% → Order tracking
 
 ---
 
-**Version:** 4.0 (Week 1-2 Complete)
-**Last Updated:** November 24, 2025
-**Next Review:** November 26, 2025
+**Version:** 5.0 (Week 1-2 UI Fixes Complete)
+**Last Updated:** November 25, 2025
+**Next Review:** November 27, 2025
 
-**🎉 Authentication and checkout complete! Ready for order tracking!**
+**🎉 All Week 1-2 fixes complete! Provider dashboard ready! Next: Order tracking!**
