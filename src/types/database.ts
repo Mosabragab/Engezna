@@ -1036,6 +1036,105 @@ export interface Database {
           updated_at?: string;
         };
       };
+
+      // --------------------------------------------------------------------
+      // Governorates (محافظات) - Egyptian Administrative Level 1
+      // --------------------------------------------------------------------
+      governorates: {
+        Row: {
+          id: string;
+          name_ar: string;
+          name_en: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name_ar: string;
+          name_en: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name_ar?: string;
+          name_en?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      // --------------------------------------------------------------------
+      // Cities (مراكز/مدن) - Egyptian Administrative Level 2
+      // --------------------------------------------------------------------
+      cities: {
+        Row: {
+          id: string;
+          governorate_id: string;
+          name_ar: string;
+          name_en: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          governorate_id: string;
+          name_ar: string;
+          name_en: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          governorate_id?: string;
+          name_ar?: string;
+          name_en?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      // --------------------------------------------------------------------
+      // Districts (أحياء) - Egyptian Administrative Level 3
+      // --------------------------------------------------------------------
+      districts: {
+        Row: {
+          id: string;
+          governorate_id: string;
+          city_id: string | null;
+          name_ar: string;
+          name_en: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          governorate_id: string;
+          city_id?: string | null;
+          name_ar: string;
+          name_en: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          governorate_id?: string;
+          city_id?: string | null;
+          name_ar?: string;
+          name_en?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;

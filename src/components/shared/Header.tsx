@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
@@ -27,39 +27,9 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
   const [authLoading, setAuthLoading] = useState(true)
   const [activeOrdersCount, setActiveOrdersCount] = useState(0)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
+  const fetchActiveOrdersCount = useCallback(async (userId: string) => {
     const supabase = createClient()
-    
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-    setAuthLoading(false)
-    
-    // If user is logged in, fetch active orders count
-    if (user) {
-      fetchActiveOrdersCount(user.id)
-    }
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchActiveOrdersCount(session.user.id)
-      } else {
-        setActiveOrdersCount(0)
-      }
-    })
-    
-    return () => subscription.unsubscribe()
-  }
 
-  async function fetchActiveOrdersCount(userId: string) {
-    const supabase = createClient()
-    
     const { count, error } = await supabase
       .from('orders')
       .select('*', { count: 'exact', head: true })
@@ -69,7 +39,37 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
     if (!error && count !== null) {
       setActiveOrdersCount(count)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    async function checkAuth() {
+      const supabase = createClient()
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setAuthLoading(false)
+
+      // If user is logged in, fetch active orders count
+      if (user) {
+        fetchActiveOrdersCount(user.id)
+      }
+
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null)
+        if (session?.user) {
+          fetchActiveOrdersCount(session.user.id)
+        } else {
+          setActiveOrdersCount(0)
+        }
+      })
+
+      return () => subscription.unsubscribe()
+    }
+
+    checkAuth()
+  }, [fetchActiveOrdersCount])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -128,13 +128,19 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
                   </Button>
                 </Link>
                 
-                {/* User Info */}
-                <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-                  <UserIcon className="w-4 h-4" />
-                  <span className="max-w-[100px] truncate">
-                    {user.email?.split('@')[0]}
-                  </span>
-                </div>
+                {/* Profile Link */}
+                <Link href={`/${locale}/profile`}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1.5"
+                  >
+                    <UserIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline max-w-[100px] truncate">
+                      {user.email?.split('@')[0]}
+                    </span>
+                  </Button>
+                </Link>
                 
                 {/* Sign Out Button */}
                 <Button

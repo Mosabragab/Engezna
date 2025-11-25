@@ -174,5 +174,67 @@
       "successMessage": "We've sent you a password reset link. Please check your email.",
       "backToLogin": "Back to Login"
     }
+  },
+  "profile": {
+    "title": "My Account",
+    "personalInfo": {
+      "title": "Personal Information",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter your full name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "phonePlaceholder": "01xxxxxxxxx",
+      "saveButton": "Save Changes",
+      "saving": "Saving...",
+      "saved": "Saved successfully",
+      "error": "An error occurred while saving"
+    },
+    "addresses": {
+      "title": "Addresses",
+      "addNew": "Add New Address",
+      "edit": "Edit",
+      "delete": "Delete",
+      "setDefault": "Set as Default",
+      "default": "Default",
+      "noAddresses": "No saved addresses",
+      "addFirst": "Add your first address for faster delivery",
+      "confirmDelete": "Are you sure you want to delete this address?",
+      "deleteSuccess": "Address deleted successfully",
+      "deleteError": "An error occurred while deleting"
+    },
+    "addressForm": {
+      "addTitle": "Add New Address",
+      "editTitle": "Edit Address",
+      "label": "Address Label",
+      "labelPlaceholder": "e.g., Home, Work",
+      "governorate": "Governorate",
+      "governoratePlaceholder": "Select governorate",
+      "city": "City",
+      "cityPlaceholder": "Select city",
+      "area": "District",
+      "areaPlaceholder": "Select district",
+      "addressLine1": "Address Line 1",
+      "addressLine1Placeholder": "Street, building number",
+      "addressLine2": "Address Line 2 (Optional)",
+      "addressLine2Placeholder": "Apartment, floor, landmark",
+      "building": "Building Number",
+      "buildingPlaceholder": "Building number",
+      "floor": "Floor",
+      "floorPlaceholder": "Floor number",
+      "apartment": "Apartment",
+      "apartmentPlaceholder": "Apartment number",
+      "landmark": "Landmark",
+      "landmarkPlaceholder": "Near, in front of...",
+      "phone": "Delivery Phone",
+      "phonePlaceholder": "Contact number for delivery",
+      "deliveryInstructions": "Delivery Instructions",
+      "deliveryInstructionsPlaceholder": "Any special instructions for the driver",
+      "isDefault": "Set as default address",
+      "saveButton": "Save Address",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "saved": "Address saved successfully",
+      "error": "An error occurred while saving"
+    }
   }
 }

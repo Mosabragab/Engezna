@@ -174,5 +174,67 @@
       "successMessage": "لقد أرسلنا لك رابط إعادة تعيين كلمة المرور. يرجى التحقق من بريدك الإلكتروني.",
       "backToLogin": "العودة لتسجيل الدخول"
     }
+  },
+  "profile": {
+    "title": "حسابي",
+    "personalInfo": {
+      "title": "المعلومات الشخصية",
+      "fullName": "الاسم الكامل",
+      "fullNamePlaceholder": "أدخل اسمك الكامل",
+      "email": "البريد الإلكتروني",
+      "phone": "رقم الهاتف",
+      "phonePlaceholder": "01xxxxxxxxx",
+      "saveButton": "حفظ التغييرات",
+      "saving": "جاري الحفظ...",
+      "saved": "تم الحفظ بنجاح",
+      "error": "حدث خطأ أثناء الحفظ"
+    },
+    "addresses": {
+      "title": "العناوين",
+      "addNew": "إضافة عنوان جديد",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "setDefault": "تعيين كافتراضي",
+      "default": "الافتراضي",
+      "noAddresses": "لا توجد عناوين محفوظة",
+      "addFirst": "أضف عنوانك الأول للتوصيل السريع",
+      "confirmDelete": "هل أنت متأكد من حذف هذا العنوان؟",
+      "deleteSuccess": "تم حذف العنوان بنجاح",
+      "deleteError": "حدث خطأ أثناء الحذف"
+    },
+    "addressForm": {
+      "addTitle": "إضافة عنوان جديد",
+      "editTitle": "تعديل العنوان",
+      "label": "اسم العنوان",
+      "labelPlaceholder": "مثال: المنزل، العمل",
+      "governorate": "المحافظة",
+      "governoratePlaceholder": "اختر المحافظة",
+      "city": "المدينة",
+      "cityPlaceholder": "اختر المدينة",
+      "area": "المنطقة",
+      "areaPlaceholder": "اختر المنطقة",
+      "addressLine1": "العنوان التفصيلي",
+      "addressLine1Placeholder": "الشارع، رقم المبنى",
+      "addressLine2": "عنوان إضافي (اختياري)",
+      "addressLine2Placeholder": "شقة، دور، علامة مميزة",
+      "building": "رقم المبنى",
+      "buildingPlaceholder": "رقم المبنى",
+      "floor": "الدور",
+      "floorPlaceholder": "رقم الدور",
+      "apartment": "رقم الشقة",
+      "apartmentPlaceholder": "رقم الشقة",
+      "landmark": "علامة مميزة",
+      "landmarkPlaceholder": "بجوار، أمام...",
+      "phone": "رقم الهاتف للتوصيل",
+      "phonePlaceholder": "رقم للتواصل عند التوصيل",
+      "deliveryInstructions": "تعليمات التوصيل",
+      "deliveryInstructionsPlaceholder": "أي تعليمات خاصة للمندوب",
+      "isDefault": "تعيين كعنوان افتراضي",
+      "saveButton": "حفظ العنوان",
+      "saving": "جاري الحفظ...",
+      "cancel": "إلغاء",
+      "saved": "تم حفظ العنوان بنجاح",
+      "error": "حدث خطأ أثناء الحفظ"
+    }
   }
 }
