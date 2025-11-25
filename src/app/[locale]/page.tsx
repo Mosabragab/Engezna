@@ -182,26 +182,28 @@ export default function Home() {
                     </Link>
                   )}
                   
-                  {/* User Info - Hidden on mobile */}
-                  <div className="hidden md:flex items-center gap-2 text-sm">
-                    <UserIcon className="w-4 h-4" />
-                    <span className="text-muted-foreground">
-                      {user.email?.split('@')[0]}
-                    </span>
-                    {/* Role Badge */}
-                    {(isProvider || isAdmin) && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        isAdmin 
-                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
-                          : 'bg-primary/10 text-primary'
-                      }`}>
-                        {isAdmin 
-                          ? (locale === 'ar' ? 'مسؤول' : 'Admin')
-                          : (locale === 'ar' ? 'شريك' : 'Partner')
-                        }
+                  {/* User Info - Hidden on mobile - Clickable to go to profile */}
+                  <Link href={`/${locale}/profile`}>
+                    <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2 text-sm">
+                      <UserIcon className="w-4 h-4" />
+                      <span className="text-muted-foreground max-w-[100px] truncate">
+                        {user.email?.split('@')[0]}
                       </span>
-                    )}
-                  </div>
+                      {/* Role Badge */}
+                      {(isProvider || isAdmin) && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          isAdmin
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            : 'bg-primary/10 text-primary'
+                        }`}>
+                          {isAdmin
+                            ? (locale === 'ar' ? 'مسؤول' : 'Admin')
+                            : (locale === 'ar' ? 'شريك' : 'Partner')
+                          }
+                        </span>
+                      )}
+                    </Button>
+                  </Link>
                   
                   {/* Sign Out Button */}
                   <Button

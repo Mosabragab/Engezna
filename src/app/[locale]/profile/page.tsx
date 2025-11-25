@@ -12,6 +12,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -58,6 +65,30 @@ type Address = {
   is_active: boolean
 }
 
+type Governorate = {
+  id: string
+  name_ar: string
+  name_en: string
+  is_active: boolean
+}
+
+type City = {
+  id: string
+  governorate_id: string
+  name_ar: string
+  name_en: string
+  is_active: boolean
+}
+
+type District = {
+  id: string
+  governorate_id: string
+  city_id: string | null
+  name_ar: string
+  name_en: string
+  is_active: boolean
+}
+
 export default function ProfilePage() {
   const locale = useLocale()
   const t = useTranslations('profile')
@@ -84,7 +115,10 @@ export default function ProfilePage() {
     label: '',
     address_line1: '',
     address_line2: '',
-    city: 'بني سويف',
+    governorate_id: '',
+    city_id: '',
+    district_id: '',
+    city: '',
     area: '',
     building: '',
     floor: '',
@@ -96,6 +130,12 @@ export default function ProfilePage() {
   })
   const [addressSaving, setAddressSaving] = useState(false)
   const [addressMessage, setAddressMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  // Location data state
+  const [governorates, setGovernorates] = useState<Governorate[]>([])
+  const [cities, setCities] = useState<City[]>([])
+  const [districts, setDistricts] = useState<District[]>([])
+  const [locationsLoading, setLocationsLoading] = useState(false)
 
   // Load profile data
   const loadProfile = useCallback(async (uid: string) => {
@@ -133,6 +173,62 @@ export default function ProfilePage() {
     setAddressesLoading(false)
   }, [])
 
+  // Load governorates
+  const loadGovernorates = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('governorates')
+      .select('*')
+      .eq('is_active', true)
+      .order('name_ar')
+
+    if (data) {
+      setGovernorates(data)
+    }
+  }, [])
+
+  // Load cities based on governorate
+  const loadCities = useCallback(async (governorateId: string) => {
+    if (!governorateId) {
+      setCities([])
+      return
+    }
+    setLocationsLoading(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('cities')
+      .select('*')
+      .eq('governorate_id', governorateId)
+      .eq('is_active', true)
+      .order('name_ar')
+
+    if (data) {
+      setCities(data)
+    }
+    setLocationsLoading(false)
+  }, [])
+
+  // Load districts based on city
+  const loadDistricts = useCallback(async (cityId: string) => {
+    if (!cityId) {
+      setDistricts([])
+      return
+    }
+    setLocationsLoading(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('districts')
+      .select('*')
+      .eq('city_id', cityId)
+      .eq('is_active', true)
+      .order('name_ar')
+
+    if (data) {
+      setDistricts(data)
+    }
+    setLocationsLoading(false)
+  }, [])
+
   // Check auth and load data
   useEffect(() => {
     async function checkAuthAndLoadData() {
@@ -153,10 +249,13 @@ export default function ProfilePage() {
 
       // Load addresses
       await loadAddresses(user.id)
+
+      // Load governorates for address form
+      await loadGovernorates()
     }
 
     checkAuthAndLoadData()
-  }, [locale, router, loadProfile, loadAddresses])
+  }, [locale, router, loadProfile, loadAddresses, loadGovernorates])
 
   async function handleSaveProfile() {
     if (!userId) return
@@ -186,13 +285,20 @@ export default function ProfilePage() {
   }
 
   function openAddressModal(address?: Address) {
+    // Reset cities and districts
+    setCities([])
+    setDistricts([])
+
     if (address) {
       setEditingAddress(address)
       setAddressForm({
         label: address.label || '',
         address_line1: address.address_line1 || '',
         address_line2: address.address_line2 || '',
-        city: address.city || 'بني سويف',
+        governorate_id: '',
+        city_id: '',
+        district_id: '',
+        city: address.city || '',
         area: address.area || '',
         building: address.building || '',
         floor: address.floor || '',
@@ -208,7 +314,10 @@ export default function ProfilePage() {
         label: '',
         address_line1: '',
         address_line2: '',
-        city: 'بني سويف',
+        governorate_id: '',
+        city_id: '',
+        district_id: '',
+        city: '',
         area: '',
         building: '',
         floor: '',
@@ -221,6 +330,52 @@ export default function ProfilePage() {
     }
     setAddressMessage(null)
     setShowAddressModal(true)
+  }
+
+  // Handle governorate change - load cities and reset downstream
+  function handleGovernorateChange(governorateId: string) {
+    const selectedGov = governorates.find(g => g.id === governorateId)
+    setAddressForm(prev => ({
+      ...prev,
+      governorate_id: governorateId,
+      city_id: '',
+      district_id: '',
+      city: '',
+      area: '',
+    }))
+    setDistricts([])
+    if (governorateId) {
+      loadCities(governorateId)
+    } else {
+      setCities([])
+    }
+  }
+
+  // Handle city change - load districts and set city name
+  function handleCityChange(cityId: string) {
+    const selectedCity = cities.find(c => c.id === cityId)
+    setAddressForm(prev => ({
+      ...prev,
+      city_id: cityId,
+      district_id: '',
+      city: selectedCity ? (locale === 'ar' ? selectedCity.name_ar : selectedCity.name_en) : '',
+      area: '',
+    }))
+    if (cityId) {
+      loadDistricts(cityId)
+    } else {
+      setDistricts([])
+    }
+  }
+
+  // Handle district change - set area name
+  function handleDistrictChange(districtId: string) {
+    const selectedDistrict = districts.find(d => d.id === districtId)
+    setAddressForm(prev => ({
+      ...prev,
+      district_id: districtId,
+      area: selectedDistrict ? (locale === 'ar' ? selectedDistrict.name_ar : selectedDistrict.name_en) : '',
+    }))
   }
 
   async function handleSaveAddress() {
@@ -568,26 +723,66 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* City */}
+            {/* Governorate */}
             <div className="space-y-2">
-              <Label htmlFor="city">{t('addressForm.city')}</Label>
-              <Input
-                id="city"
-                value={addressForm.city}
-                onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                placeholder={t('addressForm.cityPlaceholder')}
-              />
+              <Label>{t('addressForm.governorate')}</Label>
+              <Select
+                value={addressForm.governorate_id}
+                onValueChange={handleGovernorateChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('addressForm.governoratePlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {governorates.map((gov) => (
+                    <SelectItem key={gov.id} value={gov.id}>
+                      {locale === 'ar' ? gov.name_ar : gov.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Area */}
+            {/* City */}
             <div className="space-y-2">
-              <Label htmlFor="area">{t('addressForm.area')}</Label>
-              <Input
-                id="area"
-                value={addressForm.area}
-                onChange={(e) => setAddressForm({ ...addressForm, area: e.target.value })}
-                placeholder={t('addressForm.areaPlaceholder')}
-              />
+              <Label>{t('addressForm.city')}</Label>
+              <Select
+                value={addressForm.city_id}
+                onValueChange={handleCityChange}
+                disabled={!addressForm.governorate_id || locationsLoading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('addressForm.cityPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities.map((city) => (
+                    <SelectItem key={city.id} value={city.id}>
+                      {locale === 'ar' ? city.name_ar : city.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* District/Area */}
+            <div className="space-y-2">
+              <Label>{t('addressForm.area')}</Label>
+              <Select
+                value={addressForm.district_id}
+                onValueChange={handleDistrictChange}
+                disabled={!addressForm.city_id || locationsLoading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('addressForm.areaPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {districts.map((district) => (
+                    <SelectItem key={district.id} value={district.id}>
+                      {locale === 'ar' ? district.name_ar : district.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Address Line 1 */}
