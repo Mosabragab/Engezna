@@ -36,6 +36,7 @@ type Provider = {
   min_order_amount: number
   estimated_delivery_time_min: number
   status: string
+  commission_rate: number
 }
 
 type MenuItem = {
@@ -118,6 +119,7 @@ export default function ProviderDetailPage() {
         delivery_fee: provider.delivery_fee,
         min_order_amount: provider.min_order_amount,
         estimated_delivery_time_min: provider.estimated_delivery_time_min,
+        commission_rate: provider.commission_rate,
       })
     }
   }

@@ -18,7 +18,8 @@ import {
 
 type Order = {
   id: string
-  user_id: string
+  order_number: string
+  customer_id: string
   provider_id: string
   status: string
   subtotal: number
@@ -26,10 +27,14 @@ type Order = {
   total: number
   payment_method: string
   payment_status: string
-  delivery_address: string
-  phone: string
-  notes: string | null
-  estimated_delivery_time: number
+  delivery_address: {
+    address: string
+    phone: string
+    full_name: string
+    notes?: string
+  }
+  customer_notes: string | null
+  estimated_delivery_time: string
   created_at: string
 }
 
@@ -37,13 +42,12 @@ type OrderItem = {
   id: string
   order_id: string
   menu_item_id: string
+  item_name_ar: string
+  item_name_en: string
+  item_price: number
   quantity: number
   unit_price: number
-  subtotal: number
-  menu_item: {
-    name_ar: string
-    name_en: string
-  }
+  total_price: number
 }
 
 type Provider = {
@@ -86,13 +90,10 @@ export default function OrderConfirmationPage() {
 
     setOrder(orderData)
 
-    // Fetch order items with menu item details
+    // Fetch order items
     const { data: itemsData, error: itemsError } = await supabase
       .from('order_items')
-      .select(`
-        *,
-        menu_item:menu_items(name_ar, name_en)
-      `)
+      .select('*')
       .eq('order_id', orderId)
 
     if (!itemsError) {
@@ -164,7 +165,9 @@ export default function OrderConfirmationPage() {
                 <p className="text-sm text-muted-foreground mb-1">
                   {locale === 'ar' ? 'رقم الطلب' : 'Order Number'}
                 </p>
-                <p className="text-2xl font-bold text-primary">#{order.id.slice(0, 8)}</p>
+                <p className="text-2xl font-bold text-primary">
+                  {order.order_number || '#' + order.id.slice(0, 8).toUpperCase()}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -185,7 +188,10 @@ export default function OrderConfirmationPage() {
                     {locale === 'ar' ? 'الوقت المتوقع' : 'Estimated Time'}
                   </p>
                   <p className="text-muted-foreground">
-                    {order.estimated_delivery_time} {locale === 'ar' ? 'دقيقة' : 'minutes'}
+                    {new Date(order.estimated_delivery_time).toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </p>
                 </div>
               </div>
@@ -196,7 +202,7 @@ export default function OrderConfirmationPage() {
                   <p className="font-semibold">
                     {locale === 'ar' ? 'عنوان التوصيل' : 'Delivery Address'}
                   </p>
-                  <p className="text-muted-foreground">{order.delivery_address}</p>
+                  <p className="text-muted-foreground">{order.delivery_address?.address}</p>
                 </div>
               </div>
 
@@ -206,7 +212,7 @@ export default function OrderConfirmationPage() {
                   <p className="font-semibold">
                     {locale === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
                   </p>
-                  <p className="text-muted-foreground" dir="ltr">{order.phone}</p>
+                  <p className="text-muted-foreground" dir="ltr">{order.delivery_address?.phone}</p>
                 </div>
               </div>
 
@@ -240,15 +246,15 @@ export default function OrderConfirmationPage() {
                       <p className="font-medium">
                         {item.quantity}x{' '}
                         {locale === 'ar'
-                          ? item.menu_item.name_ar
-                          : item.menu_item.name_en}
+                          ? item.item_name_ar
+                          : item.item_name_en}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {item.unit_price} {locale === 'ar' ? 'ج.م' : 'EGP'} {locale === 'ar' ? 'للقطعة' : 'each'}
                       </p>
                     </div>
                     <p className="font-semibold">
-                      {item.subtotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                      {item.total_price.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                     </p>
                   </div>
                 ))}

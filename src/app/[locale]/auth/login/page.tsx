@@ -86,10 +86,10 @@ export default function LoginPage() {
           console.log('🎭 User role:', profile.role) // Debug log
           switch (profile.role) {
             case 'admin':
-              redirectPath = `/${locale}/_admin`
+              redirectPath = `/${locale}/admin`
               break
             case 'provider_owner':
-              redirectPath = `/${locale}/_provider`
+              redirectPath = `/${locale}/provider`
               break
             case 'customer':
             default:
@@ -182,65 +182,7 @@ export default function LoginPage() {
               {isLoading ? t('loggingIn') : t('loginButton')}
             </Button>
 
-            {/* Debug Test Button - Remove after fixing */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full mt-2"
-              onClick={async () => {
-                console.log('🟢 Direct test button clicked!')
-                setError(null)
-                
-                // Test with known credentials
-                const testCredentials = {
-                  email: 'customer@test.com',
-                  password: 'Test123!' // You might need to set a password for test users
-                }
-                
-                console.log('🧪 Testing with:', testCredentials.email)
-                
-                try {
-                  const supabase = createClient()
-                  const { data: authData, error } = await supabase.auth.signInWithPassword(testCredentials)
-                  
-                  console.log('🧪 Test Result:', { user: authData?.user?.email, error: error?.message })
-                  
-                  if (error) {
-                    setError(`Test failed: ${error.message}`)
-                  } else {
-                    setError(`Test success! User: ${authData?.user?.email}`)
-                    // Redirect to providers page after successful test
-                    setTimeout(() => {
-                      window.location.href = `/${locale}/providers`
-                    }, 1500)
-                  }
-                } catch (err) {
-                  console.error('🧪 Test error:', err)
-                  setError(`Test error: ${err}`)
-                }
-              }}
-            >
-              🧪 Test Login (customer@test.com)
-            </Button>
-            
-            {/* Manual Login Test */}
-            <Button
-              type="button"
-              variant="secondary"
-              className="w-full mt-2"
-              onClick={() => {
-                // Pre-fill the form with test credentials
-                const emailInput = document.querySelector('#email') as HTMLInputElement
-                const passwordInput = document.querySelector('#password') as HTMLInputElement
-                
-                if (emailInput) emailInput.value = 'customer@test.com'
-                if (passwordInput) passwordInput.value = 'Test123!'
-                
-                console.log('📋 Pre-filled form with test credentials')
-              }}
-            >
-              📋 Fill Test Credentials
-            </Button>
+
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
