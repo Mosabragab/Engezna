@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 2.3 (Week 1-2 Complete + Orders)
+**Version:** 2.4 (Week 1-2 Complete + Settings System)
 **Date:** November 25, 2025
 **Last Updated:** November 25, 2025
 **Project Lead:** Mosab
@@ -22,10 +22,10 @@
 ## 📊 Current Development Status
 
 **Phase:** Core Features Development (Nov 18-25, 2025)
-**Status:** Week 1-2 - 95% Complete 🚀
+**Status:** Week 1-2 - 98% Complete 🚀
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** 47% Complete
-**Last Session:** November 25, 2025 - Order system complete (tracking, history, navigation)
+**Overall Progress:** 49% Complete
+**Last Session:** November 25, 2025 - Multi-page settings system complete (7 pages with full functionality)
 
 ### What's Built ✅
 
@@ -90,6 +90,18 @@
   - ✅ Order history page (`/orders`) with filters (all/active/completed)
   - ✅ My Orders navigation in header with active count badge
   - ✅ Shared Header component with user context
+- ✅ **Multi-Page Settings System (Complete!)**
+  - ✅ Settings menu hub (`/profile`) with navigation cards
+  - ✅ Account settings (`/profile/account`) - Edit first/last name, phone
+  - ✅ Address management (`/profile/addresses`) - Full CRUD with cascading dropdowns
+  - ✅ Email change (`/profile/email`) - With password verification
+  - ✅ Password change (`/profile/password`) - With validation (min 8 chars)
+  - ✅ Language selection (`/profile/language`) - Switch AR/EN with auto-redirect
+  - ✅ Location settings (`/profile/governorate`) - Select governorate and city
+  - ✅ Database migration for governorate_id and city_id columns
+  - ✅ 80+ new translation keys (AR/EN) for all settings pages
+  - ✅ Name split logic (first/last in UI, full_name in DB)
+  - ✅ Form validation on all inputs with error messages
 - ✅ Routing system working (/ar, /en with locale switching)
 - ✅ Language and theme toggle components
 - ✅ 404 error pages for both locales
@@ -1399,6 +1411,32 @@ engezna/
     - Updated README.md consistency
     - Updated PRD.md (v2.3)
   - **Next Priority:** Provider dashboard backend (order management)
+- **v2.4** - November 25, 2025 - Multi-Page Settings System Complete
+  - **Status:** Week 1-2 - 98% Complete 🚀
+  - **Settings System (COMPLETE ✅):**
+    - ✅ Restructured single `/profile` page into 7 dedicated pages
+    - ✅ Settings menu hub (`/profile`) - Navigation with cards and icons
+    - ✅ Account settings (`/profile/account`) - First/last name split (UI), phone editing
+    - ✅ Address management (`/profile/addresses`) - Full CRUD with cascading dropdowns (governorate → city → district)
+    - ✅ Email change (`/profile/email`) - With password verification using Supabase updateUser()
+    - ✅ Password change (`/profile/password`) - With validation and current password check
+    - ✅ Language selection (`/profile/language`) - Switch AR/EN with auto-redirect
+    - ✅ Location settings (`/profile/governorate`) - Select governorate and city
+  - **Database Changes:**
+    - ✅ New migration: `20250125000003_add_governorate_city_to_profiles.sql`
+    - ✅ Added `governorate_id` and `city_id` columns to profiles table
+    - ✅ Created indexes for performance
+  - **Translation Updates:**
+    - ✅ Added 80+ new translation keys for all settings pages
+    - ✅ Complete AR/EN coverage for forms, labels, errors, success messages
+  - **Code Metrics:**
+    - ~1,933 lines of new code across 7 pages
+    - 10 files changed, 2,102 insertions
+  - **Documentation:**
+    - Updated claude.md (v6.0)
+    - Updated README.md with settings features
+    - Updated PRD.md (v2.4)
+  - **Next Priority:** Run governorate migration, then provider dashboard backend
 
 ---
 
