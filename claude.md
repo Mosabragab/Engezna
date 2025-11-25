@@ -1,4 +1,4 @@
-# Claude Project Guide - Engezna (انجزنا)
+# Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** November 24, 2025
 **Status:** Week 1-2 - 85% Complete ✅
@@ -28,7 +28,7 @@
 ---
 
 ## 🎯 Project Overview
-- **Name:** Engezna (انجزنا) - "Let's get it done and order!"
+- **Name:** Engezna (إنجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
 - **Status:** Week 1-2 Complete - 85% (Auth + Checkout Flow) ✅

@@ -16,7 +16,7 @@ const Logo: React.FC<LogoProps> = ({
   size = 'md',
   className,
 }) => {
-  const text = language === 'ar' ? 'انجزنا' : 'Engezna'
+  const text = language === 'ar' ? 'إنجزنا' : 'Engezna'
   
   const sizeClasses = {
     sm: 'text-2xl',

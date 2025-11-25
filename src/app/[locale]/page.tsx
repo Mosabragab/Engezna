@@ -74,7 +74,7 @@ export default function Home() {
             {/* Logo */}
             <div className="flex items-center gap-2">
               <div className="text-3xl font-bold text-primary">
-                {locale === 'ar' ? 'انجزنا' : 'Engezna'}
+                {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
               </div>
             </div>
 
@@ -497,7 +497,7 @@ export default function Home() {
             {/* About */}
             <div>
               <div className="text-2xl font-bold text-primary mb-4">
-                {locale === 'ar' ? 'انجزنا' : 'Engezna'}
+                {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
               </div>
               <h3 className="font-bold text-lg mb-3">
                 {t('footer.about.title')}

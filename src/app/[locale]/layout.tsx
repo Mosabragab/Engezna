@@ -7,8 +7,8 @@ import '../globals.css'
 
 export function generateMetadata() {
   return {
-    title: "Engezna - انجزنا | Food Delivery in Beni Suef",
-    description: "انجزنا واطلب - Fast food delivery from restaurants, coffee shops, groceries in Beni Suef",
+    title: "Engezna - إنجزنا | Food Delivery in Beni Suef",
+    description: "إنجزنا واطلب - Fast food delivery from restaurants, coffee shops, groceries in Beni Suef",
   }
 }
 

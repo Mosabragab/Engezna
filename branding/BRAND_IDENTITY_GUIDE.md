@@ -1,4 +1,4 @@
-# Engezna (انجزنا) Brand Identity Guide
+# Engezna (إنجزنا) Brand Identity Guide
 
 **Version:** 2.0  
 **Date:** November 23, 2025  
@@ -26,12 +26,12 @@
 
 In the heart of Upper Egypt, where tradition meets ambition, a simple truth emerged: our community deserves the same convenience and opportunities as the big cities. Beni Suef's restaurants, cafés, and shops have been serving their neighborhoods with pride for generations—but they've been left behind by the digital revolution.
 
-**Engezna (انجزنا)** was born from this gap. Our name says it all: "Let's get it done!" It's a rallying cry that captures the spirit of Upper Egypt—decisive, energetic, and solution-oriented. We're not just another food delivery app; we're a platform built by locals, for locals, celebrating our community's entrepreneurial spirit.
+**Engezna (إنجزنا)** was born from this gap. Our name says it all: "Let's get it done!" It's a rallying cry that captures the spirit of Upper Egypt—decisive, energetic, and solution-oriented. We're not just another food delivery app; we're a platform built by locals, for locals, celebrating our community's entrepreneurial spirit.
 
 We believe local businesses shouldn't be penalized by exploitative 15-20% commissions. That's why we offer an ultra-low 5-7% commission model, allowing restaurants to use their existing delivery teams and keep more of what they earn. When local businesses thrive, our entire community flourishes.
 
 **Mission Statement:**  
-To empower local businesses and enrich everyday life in Upper Egypt by providing the most affordable, reliable, and community-focused food delivery platform—where "انجزنا" isn't just a name, it's a promise.
+To empower local businesses and enrich everyday life in Upper Egypt by providing the most affordable, reliable, and community-focused food delivery platform—where "إنجزنا" isn't just a name, it's a promise.
 
 ### Core Values
 
@@ -71,9 +71,9 @@ Engezna speaks like a trusted local friend who's smart, energetic, and gets thin
 
 #### Social Media Post
 **Arabic:**  
-🔥 خبر حلو! مطعم "الأصالة" دلوقتي على انجزنا!
+🔥 خبر حلو! مطعم "الأصالة" دلوقتي على إنجزنا!
 اطلب النهارده واستمتع بعمولة 0% لأول 50 طلب! 🧡
-#انجزنا #بني_سويف
+#إنجزنا #بني_سويف
 
 #### Error Message
 **Arabic:**  
@@ -97,9 +97,9 @@ The Engezna logo system is built on **bilingual harmony** and **functional flexi
 
 ### Primary Logo Variations
 
-**Horizontal Lockup:** انجزنا • Engezna  
-**Stacked Lockup:** انجزنا / Engezna (with separator)  
-**Wordmark Only:** انجزنا OR Engezna
+**Horizontal Lockup:** إنجزنا • Engezna  
+**Stacked Lockup:** إنجزنا / Engezna (with separator)  
+**Wordmark Only:** إنجزنا OR Engezna
 
 **Minimum Sizes:**
 - Horizontal: 120px width
@@ -234,7 +234,7 @@ The Engezna logo system is built on **bilingual harmony** and **functional flexi
 ### 1. Website Homepage Hero
 
 **Background:** Beni Suef street scene at golden hour
-**Headline:** انجزنا واطلب! (Display, 56px, White, Bold)
+**Headline:** إنجزنا واطلب! (Display, 56px, White, Bold)
 **Subheadline:** توصيل سريع من مطاعم وكافيهات بني سويف (24px, White 90% opacity)
 **CTAs:** Orange Primary buttons with white text
 
@@ -257,7 +257,7 @@ The Engezna logo system is built on **bilingual harmony** and **functional flexi
 
 ### Quick Reference
 
-**Brand Name:** Engezna (انجزنا)
+**Brand Name:** Engezna (إنجزنا)
 **Tagline:** "Let's get it done!"
 
 **Core Colors:**

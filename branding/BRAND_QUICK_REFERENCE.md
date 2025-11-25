@@ -1,4 +1,4 @@
-# Engezna (انجزنا) - Brand Style Quick Reference
+# Engezna (إنجزنا) - Brand Style Quick Reference
 
 **Last Updated:** November 23, 2025
 
@@ -64,11 +64,11 @@ Caption:  12px - Regular
 
 ### Text Lockups
 ```
-Horizontal: انجزنا • Engezna
-Stacked:    انجزنا
+Horizontal: إنجزنا • Engezna
+Stacked:    إنجزنا
             ─────
            Engezna
-Arabic:     انجزنا
+Arabic:     إنجزنا
 English:    Engezna
 ```
 
@@ -112,7 +112,7 @@ Favicon:     16px
 ### Example Phrases
 ```
 Arabic:
-- "انجزنا واطلب!" (Let's get it done and order!)
+- "إنجزنا واطلب!" (Let's get it done and order!)
 - "اطلب دلوقتي" (Order now)
 - "توصيل سريع" (Fast delivery)
 - "خليها علينا" (Leave it to us)

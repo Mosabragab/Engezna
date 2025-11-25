@@ -172,7 +172,7 @@ export default function ProviderDetailPage() {
               <span>{locale === 'ar' ? 'رجوع' : 'Back'}</span>
             </Link>
             <Link href={`/${locale}`} className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'انجزنا' : 'Engezna'}
+              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
             </Link>
           </div>
         </div>

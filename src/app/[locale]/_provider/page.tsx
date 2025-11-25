@@ -70,7 +70,7 @@ export default function ProviderPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href={`/${locale}`} className="text-2xl font-bold text-primary">
-                {locale === 'ar' ? 'انجزنا' : 'Engezna'}
+                {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
               </Link>
               <span className="text-muted-foreground">
                 {locale === 'ar' ? '- لوحة مقدم الخدمة' : '- Provider Dashboard'}
@@ -260,7 +260,7 @@ export default function ProviderPage() {
           </h3>
           <p className="text-muted-foreground">
             {locale === 'ar' 
-              ? 'نحن نعمل بجد لإطلاق منصة انجزنا قريباً في بني سويف. ستتمكن قريباً من إدارة متجرك بالكامل من هنا.'
+              ? 'نحن نعمل بجد لإطلاق منصة إنجزنا قريباً في بني سويف. ستتمكن قريباً من إدارة متجرك بالكامل من هنا.'
               : 'We are working hard to launch Engezna in Beni Suef soon. You will be able to manage your entire store from here.'}
           </p>
         </div>
