@@ -60,15 +60,15 @@ export default function ProviderDashboard() {
     setUser(user)
 
     if (user) {
-      // Load provider data
+      // Load provider data (use limit(1) instead of single() to handle multiple providers)
       const { data: providerData } = await supabase
         .from('providers')
         .select('*')
         .eq('owner_id', user.id)
-        .single()
+        .limit(1)
 
-      if (providerData) {
-        setProvider(providerData)
+      if (providerData && providerData.length > 0) {
+        setProvider(providerData[0])
       }
     }
 
