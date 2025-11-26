@@ -293,8 +293,6 @@
       "cityPlaceholder": "Select city",
       "area": "District",
       "areaPlaceholder": "Select district",
-      "governorate": "Governorate",
-      "governoratePlaceholder": "Select governorate",
       "addressLine1": "Address Line 1",
       "addressLine1Placeholder": "Street, building number",
       "building": "Building Number",
