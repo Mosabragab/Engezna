@@ -74,12 +74,13 @@ export default function EditProductPage() {
       return
     }
 
-    const { data: provider } = await supabase
+    const { data: providerData } = await supabase
       .from('providers')
       .select('id, status')
       .eq('owner_id', user.id)
-      .single()
+      .limit(1)
 
+    const provider = providerData?.[0]
     if (!provider || !['approved', 'open', 'closed', 'temporarily_paused'].includes(provider.status)) {
       router.push(`/${locale}/provider`)
       return

@@ -85,12 +85,13 @@ export default function ProviderSettingsPage() {
       return
     }
 
-    const { data: providerData } = await supabase
+    const { data: providersData } = await supabase
       .from('providers')
       .select('*')
       .eq('owner_id', user.id)
-      .single()
+      .limit(1)
 
+    const providerData = providersData?.[0]
     if (!providerData || !['approved', 'open', 'closed', 'temporarily_paused'].includes(providerData.status)) {
       router.push(`/${locale}/provider`)
       return

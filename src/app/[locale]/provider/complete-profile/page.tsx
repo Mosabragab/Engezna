@@ -135,12 +135,13 @@ export default function CompleteProfilePage() {
       }
 
       // Load provider data
-      const { data: providerData, error: providerError } = await supabase
+      const { data: providersData, error: providerError } = await supabase
         .from('providers')
         .select('*')
         .eq('owner_id', user.id)
-        .single()
+        .limit(1)
 
+      const providerData = providersData?.[0]
       if (providerError || !providerData) {
         setError('Provider not found. Please register first.')
         setIsLoading(false)

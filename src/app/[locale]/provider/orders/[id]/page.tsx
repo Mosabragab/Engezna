@@ -126,12 +126,13 @@ export default function ProviderOrderDetailPage() {
     }
 
     // Get provider ID
-    const { data: provider } = await supabase
+    const { data: providerData } = await supabase
       .from('providers')
       .select('id')
       .eq('owner_id', user.id)
-      .single()
+      .limit(1)
 
+    const provider = providerData?.[0]
     if (!provider) {
       router.push(`/${locale}/provider`)
       return
