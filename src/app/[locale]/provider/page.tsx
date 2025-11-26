@@ -6,11 +6,11 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { 
-  Store, 
-  Package, 
-  ShoppingBag, 
-  BarChart3, 
+import {
+  Store,
+  Package,
+  ShoppingBag,
+  BarChart3,
   Settings,
   ArrowRight,
   Plus,
@@ -21,16 +21,31 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  FileWarning,
+  XCircle,
+  Hourglass
 } from 'lucide-react'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
+// Provider type
+interface Provider {
+  id: string
+  name_ar: string
+  name_en: string
+  logo_url: string | null
+  status: 'incomplete' | 'pending_approval' | 'approved' | 'rejected' | 'open' | 'closed' | 'temporarily_paused' | 'on_vacation'
+  category: string
+  rejection_reason?: string | null
+}
+
 export default function ProviderDashboard() {
   const locale = useLocale()
   const isRTL = locale === 'ar'
   const [user, setUser] = useState<User | null>(null)
+  const [provider, setProvider] = useState<Provider | null>(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -42,6 +57,20 @@ export default function ProviderDashboard() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
+
+    if (user) {
+      // Load provider data
+      const { data: providerData } = await supabase
+        .from('providers')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single()
+
+      if (providerData) {
+        setProvider(providerData)
+      }
+    }
+
     setLoading(false)
   }
 
@@ -258,91 +287,198 @@ export default function ProviderDashboard() {
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Setup Store Card */}
-            <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl p-6 border border-primary/30">
+          {/* Status-based Content */}
+          {provider?.status === 'incomplete' && (
+            <div className="bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-2xl p-6 border border-orange-500/30 mb-8">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Store className="w-7 h-7 text-white" />
+                <div className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <FileWarning className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-grow">
-                  <h3 className="text-xl font-bold mb-2">
-                    {locale === 'ar' ? 'إعداد متجرك' : 'Setup Your Store'}
+                  <h3 className="text-xl font-bold mb-2 text-orange-300">
+                    {locale === 'ar' ? 'أكمل معلومات متجرك' : 'Complete Your Store Information'}
                   </h3>
-                  <p className="text-slate-400 mb-4 text-sm">
-                    {locale === 'ar' 
-                      ? 'أضف معلومات متجرك ومنتجاتك للبدء في استقبال الطلبات من العملاء.'
-                      : 'Add your store information and products to start receiving orders from customers.'}
+                  <p className="text-slate-300 mb-4 text-sm">
+                    {locale === 'ar'
+                      ? 'لم تكتمل معلومات متجرك بعد. أكمل المعلومات التالية للحصول على الموافقة وبدء استقبال الطلبات:'
+                      : 'Your store information is incomplete. Complete the following to get approved and start receiving orders:'}
                   </p>
-                  <Button className="bg-primary hover:bg-primary/90">
-                    {locale === 'ar' ? 'ابدأ الإعداد' : 'Start Setup'}
-                    <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
-                  </Button>
+                  <ul className="text-sm text-slate-400 mb-4 space-y-1">
+                    <li>• {locale === 'ar' ? 'اسم المتجر (عربي/إنجليزي)' : 'Store name (Arabic/English)'}</li>
+                    <li>• {locale === 'ar' ? 'العنوان والموقع' : 'Address and location'}</li>
+                    <li>• {locale === 'ar' ? 'شعار المتجر' : 'Store logo'}</li>
+                    <li>• {locale === 'ar' ? 'إعدادات التوصيل' : 'Delivery settings'}</li>
+                  </ul>
+                  <Link href={`/${locale}/provider/complete-profile`}>
+                    <Button className="bg-orange-500 hover:bg-orange-600">
+                      {locale === 'ar' ? 'أكمل معلومات المتجر' : 'Complete Store Information'}
+                      <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Add Products Card */}
-            <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+          {provider?.status === 'pending_approval' && (
+            <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl p-6 border border-blue-500/30 mb-8">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Plus className="w-7 h-7 text-slate-300" />
+                <div className="w-14 h-14 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Hourglass className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-grow">
-                  <h3 className="text-xl font-bold mb-2">
-                    {locale === 'ar' ? 'إضافة منتجات' : 'Add Products'}
+                  <h3 className="text-xl font-bold mb-2 text-blue-300">
+                    {locale === 'ar' ? 'طلبك قيد المراجعة' : 'Your Application is Under Review'}
                   </h3>
-                  <p className="text-slate-400 mb-4 text-sm">
-                    {locale === 'ar' 
-                      ? 'أضف منتجاتك مع الصور والأسعار والتفاصيل.'
-                      : 'Add your products with images, prices, and descriptions.'}
+                  <p className="text-slate-300 mb-4 text-sm">
+                    {locale === 'ar'
+                      ? 'تم استلام طلبك وهو قيد المراجعة من قبل فريقنا. سيتم إعلامك بالنتيجة قريباً.'
+                      : 'Your application has been received and is being reviewed by our team. You will be notified of the result soon.'}
                   </p>
-                  <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                    {locale === 'ar' ? 'إضافة منتج' : 'Add Product'}
-                    <Plus className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
-                  </Button>
+                  <div className="flex items-center gap-2 text-sm text-blue-300">
+                    <Clock className="w-4 h-4" />
+                    {locale === 'ar' ? 'عادة ما تستغرق المراجعة 24-48 ساعة' : 'Review usually takes 24-48 hours'}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Recent Orders (Empty State) */}
-          <div className="bg-slate-800 rounded-2xl border border-slate-700">
-            <div className="p-6 border-b border-slate-700">
-              <h3 className="text-lg font-bold">{locale === 'ar' ? 'أحدث الطلبات' : 'Recent Orders'}</h3>
-            </div>
-            <div className="p-12 text-center">
-              <div className="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShoppingBag className="w-10 h-10 text-slate-500" />
-              </div>
-              <h4 className="text-lg font-medium mb-2 text-slate-300">
-                {locale === 'ar' ? 'لا توجد طلبات بعد' : 'No orders yet'}
-              </h4>
-              <p className="text-slate-500 text-sm max-w-sm mx-auto">
-                {locale === 'ar' 
-                  ? 'عندما تبدأ في استقبال طلبات من العملاء، ستظهر هنا.'
-                  : 'When you start receiving orders from customers, they will appear here.'}
-              </p>
-            </div>
-          </div>
-
-          {/* Coming Soon Banner */}
-          <div className="mt-6 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 rounded-2xl p-6 border border-orange-500/30">
-            <div className="flex items-center gap-4">
-              <AlertCircle className="w-8 h-8 text-orange-400 flex-shrink-0" />
-              <div>
-                <h3 className="font-bold text-orange-300">
-                  {locale === 'ar' ? '🚀 قريباً!' : '🚀 Coming Soon!'}
-                </h3>
-                <p className="text-sm text-slate-300">
-                  {locale === 'ar' 
-                    ? 'نحن نعمل على إطلاق منصة إنجزنا قريباً. ستتمكن من إدارة متجرك بالكامل من هنا.'
-                    : 'We are working hard to launch Engezna soon. You will be able to manage your entire store from here.'}
-                </p>
+          {provider?.status === 'rejected' && (
+            <div className="bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-2xl p-6 border border-red-500/30 mb-8">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <XCircle className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-grow">
+                  <h3 className="text-xl font-bold mb-2 text-red-300">
+                    {locale === 'ar' ? 'تم رفض طلبك' : 'Your Application Was Rejected'}
+                  </h3>
+                  <p className="text-slate-300 mb-2 text-sm">
+                    {locale === 'ar'
+                      ? 'للأسف، تم رفض طلبك للأسباب التالية:'
+                      : 'Unfortunately, your application was rejected for the following reasons:'}
+                  </p>
+                  {provider.rejection_reason && (
+                    <p className="text-red-300 mb-4 text-sm bg-red-500/10 p-3 rounded-lg">
+                      {provider.rejection_reason}
+                    </p>
+                  )}
+                  <Link href={`/${locale}/provider/complete-profile`}>
+                    <Button className="bg-red-500 hover:bg-red-600">
+                      {locale === 'ar' ? 'تعديل المعلومات وإعادة التقديم' : 'Edit Information & Resubmit'}
+                      <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Approved Provider Content */}
+          {(provider?.status === 'approved' || provider?.status === 'open' || provider?.status === 'closed' || provider?.status === 'temporarily_paused') && (
+            <>
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* Manage Orders Card */}
+                <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl p-6 border border-primary/30">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                      <ShoppingBag className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="flex-grow">
+                      <h3 className="text-xl font-bold mb-2">
+                        {locale === 'ar' ? 'إدارة الطلبات' : 'Manage Orders'}
+                      </h3>
+                      <p className="text-slate-400 mb-4 text-sm">
+                        {locale === 'ar'
+                          ? 'استقبل الطلبات الجديدة وتابع حالتها.'
+                          : 'Receive new orders and track their status.'}
+                      </p>
+                      <Link href={`/${locale}/provider/orders`}>
+                        <Button className="bg-primary hover:bg-primary/90">
+                          {locale === 'ar' ? 'عرض الطلبات' : 'View Orders'}
+                          <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Add Products Card */}
+                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Plus className="w-7 h-7 text-slate-300" />
+                    </div>
+                    <div className="flex-grow">
+                      <h3 className="text-xl font-bold mb-2">
+                        {locale === 'ar' ? 'إدارة المنتجات' : 'Manage Products'}
+                      </h3>
+                      <p className="text-slate-400 mb-4 text-sm">
+                        {locale === 'ar'
+                          ? 'أضف وعدّل منتجاتك مع الصور والأسعار.'
+                          : 'Add and edit your products with images and prices.'}
+                      </p>
+                      <Link href={`/${locale}/provider/products`}>
+                        <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                          {locale === 'ar' ? 'إدارة المنتجات' : 'Manage Products'}
+                          <Package className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Orders (Empty State) */}
+              <div className="bg-slate-800 rounded-2xl border border-slate-700">
+                <div className="p-6 border-b border-slate-700">
+                  <h3 className="text-lg font-bold">{locale === 'ar' ? 'أحدث الطلبات' : 'Recent Orders'}</h3>
+                </div>
+                <div className="p-12 text-center">
+                  <div className="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ShoppingBag className="w-10 h-10 text-slate-500" />
+                  </div>
+                  <h4 className="text-lg font-medium mb-2 text-slate-300">
+                    {locale === 'ar' ? 'لا توجد طلبات بعد' : 'No orders yet'}
+                  </h4>
+                  <p className="text-slate-500 text-sm max-w-sm mx-auto">
+                    {locale === 'ar'
+                      ? 'عندما تبدأ في استقبال طلبات من العملاء، ستظهر هنا.'
+                      : 'When you start receiving orders from customers, they will appear here.'}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* No Provider - Incomplete Registration */}
+          {!provider && user && (
+            <div className="bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-2xl p-6 border border-orange-500/30 mb-8">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-grow">
+                  <h3 className="text-xl font-bold mb-2 text-orange-300">
+                    {locale === 'ar' ? 'لم يتم إكمال التسجيل' : 'Registration Incomplete'}
+                  </h3>
+                  <p className="text-slate-300 mb-4 text-sm">
+                    {locale === 'ar'
+                      ? 'يبدو أنك لم تكمل تسجيلك كشريك. هل تريد التسجيل الآن؟'
+                      : 'It seems you haven\'t completed your partner registration. Would you like to register now?'}
+                  </p>
+                  <Link href={`/${locale}/partner/register`}>
+                    <Button className="bg-orange-500 hover:bg-orange-600">
+                      {locale === 'ar' ? 'سجل كشريك' : 'Register as Partner'}
+                      <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>
