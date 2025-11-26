@@ -336,7 +336,7 @@ export default function Home() {
                       <ChevronRight className={`${isRTL ? 'mr-2 rotate-180' : 'ml-2'} h-5 w-5`} />
                     </Button>
                   </Link>
-                  <Link href={user ? `/${locale}/provider` : `/${locale}/auth/signup`}>
+                  <Link href={userRole === 'provider_owner' ? `/${locale}/provider` : `/${locale}/partner/register`}>
                     <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 w-full sm:w-auto">
                       {t('ctaPartner')}
                     </Button>
