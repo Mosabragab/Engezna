@@ -24,7 +24,8 @@ import {
   TrendingUp,
   FileWarning,
   XCircle,
-  Hourglass
+  Hourglass,
+  Wallet,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -524,6 +525,31 @@ export default function ProviderDashboard() {
                         <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
                           {locale === 'ar' ? 'عرض التقارير' : 'View Reports'}
                           <TrendingUp className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Finance Card */}
+                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-green-500/30 to-emerald-500/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Wallet className="w-7 h-7 text-green-400" />
+                    </div>
+                    <div className="flex-grow">
+                      <h3 className="text-xl font-bold mb-2">
+                        {locale === 'ar' ? 'المالية والمدفوعات' : 'Finance & Payments'}
+                      </h3>
+                      <p className="text-slate-400 mb-4 text-sm">
+                        {locale === 'ar'
+                          ? 'الأرباح والتحويلات وسجل المعاملات.'
+                          : 'Earnings, payouts, and transaction history.'}
+                      </p>
+                      <Link href={`/${locale}/provider/finance`}>
+                        <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                          {locale === 'ar' ? 'عرض المالية' : 'View Finance'}
+                          <Wallet className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
                         </Button>
                       </Link>
                     </div>

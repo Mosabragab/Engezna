@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** November 26, 2025
-**Status:** Week 3 - 95% Complete 🚧
+**Status:** Week 3 - 100% Complete ✅
 **Branch:** `main`
 
 ---
@@ -125,7 +125,7 @@
 6. ✅ Toggle active/inactive, Edit, Delete promotions
 7. ✅ Link from provider dashboard
 
-### Reports & Analytics (NEW! ✅)
+### Reports & Analytics (✅)
 1. ✅ Visit `/ar/provider/reports` or `/en/provider/reports`
 2. ✅ Revenue overview: Today, This Week, This Month, Last Month
 3. ✅ Growth percentage compared to last month
@@ -133,6 +133,16 @@
 5. ✅ Revenue chart (last 30 days) with hover details
 6. ✅ Top 5 selling products with rankings
 7. ✅ Completion rate and cancellation rate
+8. ✅ Link from provider dashboard
+
+### Finance & Payments (NEW! ✅)
+1. ✅ Visit `/ar/provider/finance` or `/en/provider/finance`
+2. ✅ Total earnings and pending payout cards
+3. ✅ Commission breakdown (6% platform fee)
+4. ✅ This month vs last month earnings comparison
+5. ✅ Payout schedule information (weekly on Sundays)
+6. ✅ Transaction history with date range filter
+7. ✅ Net earnings after commission deduction
 8. ✅ Link from provider dashboard
 
 ### Business Categories Supported
@@ -158,7 +168,7 @@
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
 Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
-Week 3 ███████████▓  95% 🚧 Partner Dashboard + Menu Management
+Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Management
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -195,7 +205,7 @@ Week 3 ███████████▓  95% 🚧 Partner Dashboard + Menu M
 - [x] Address management (full CRUD) ✅
 - [x] Governorate/city selection ✅
 
-### Week 3: Partner Dashboard (95% 🚧)
+### Week 3: Partner Dashboard (100% ✅)
 - [x] Partner registration page `/partner/register` ✅
 - [x] Multi-step registration (personal info + business type) ✅
 - [x] Business category dropdown (6 types) ✅
@@ -219,7 +229,7 @@ Week 3 ███████████▓  95% 🚧 Partner Dashboard + Menu M
 - [x] Provider settings page `/provider/settings` ✅
 - [x] Promotions management `/provider/promotions` ✅
 - [x] Reports & Analytics `/provider/reports` ✅
-- [ ] Finance/Payments dashboard
+- [x] Finance/Payments dashboard `/provider/finance` ✅
 - [ ] Supabase Storage bucket setup (SQL provided)
 - [ ] Real-time order notifications
 
@@ -239,16 +249,30 @@ Week 3 ███████████▓  95% 🚧 Partner Dashboard + Menu M
 
 ---
 
-## 🎯 Next Steps (Week 3 Remaining)
+## 🎯 Next Steps (Week 4)
 
-1. [ ] Finance/Payments dashboard `/provider/finance`
+1. [ ] Support/Help page `/provider/support`
 2. [ ] Real-time order notifications (Supabase Realtime)
 3. [ ] Execute Supabase Storage SQL (provided in session)
-4. [ ] Support/Help page `/provider/support`
+4. [ ] Customer reviews and ratings system
+5. [ ] Provider analytics dashboard enhancements
 
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 26, 2025 - Finance & Payments ✅
+- ✅ **Finance Page**: Created `/provider/finance` with comprehensive financial dashboard
+  - Total earnings card with all-time earnings
+  - Pending payout card showing next payment
+  - Commission breakdown showing 6% platform fee
+  - This month vs last month earnings comparison
+  - Payout schedule information (weekly on Sundays)
+  - Transaction history with date range filtering
+  - Net earnings calculation (after commission)
+- ✅ **Dashboard Link**: Added Finance card to provider dashboard
+- ✅ **Translations**: Added 40+ new keys for finance namespace (AR/EN)
+- ✅ **Code Metrics**: ~450 lines in new page
 
 ### Work Session Nov 26, 2025 - Reports & Analytics ✅
 - ✅ **Reports Page**: Created `/provider/reports` with comprehensive analytics
@@ -417,8 +441,11 @@ Week 3 ███████████▓  95% 🚧 Partner Dashboard + Menu M
 ### Promotions Management
 - `src/app/[locale]/provider/promotions/page.tsx` - Promotions CRUD with types and scheduling
 
-### Reports & Analytics (NEW)
+### Reports & Analytics
 - `src/app/[locale]/provider/reports/page.tsx` - Revenue, orders, and performance analytics
+
+### Finance & Payments (NEW)
+- `src/app/[locale]/provider/finance/page.tsx` - Earnings, payouts, and transaction history
 
 ---
 
@@ -441,8 +468,8 @@ CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'pu
 
 ---
 
-**Version:** 13.0 (Week 3 - Reports & Analytics Complete)
+**Version:** 14.0 (Week 3 - Finance & Payments Complete)
 **Last Updated:** November 26, 2025
 **Next Review:** November 28, 2025
 
-**🎉 Reports & Analytics complete! Week 3 at 95%! Next: Finance/Payments dashboard!**
+**🎉 Week 3 100% Complete! Provider Dashboard fully functional with Finance & Payments!**

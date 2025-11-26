@@ -667,6 +667,51 @@
       "cancellationRate": "معدل الإلغاء"
     }
   },
+  "finance": {
+    "title": "المالية والمدفوعات",
+    "dashboard": "لوحة التحكم",
+    "loadingData": "جاري تحميل البيانات المالية...",
+    "stats": {
+      "totalEarnings": "إجمالي الأرباح",
+      "pendingPayout": "قيد التحويل",
+      "thisMonth": "هذا الشهر",
+      "commission": "العمولات (6%)"
+    },
+    "commissionInfo": {
+      "title": "معلومات العمولة",
+      "description": "عمولة المنصة 6% فقط من قيمة كل طلب. يتم تحويل أرباحك أسبوعياً إلى حسابك البنكي."
+    },
+    "payoutSchedule": {
+      "title": "جدول التحويلات",
+      "payoutDay": "يوم التحويل",
+      "sunday": "الأحد",
+      "processingTime": "وقت الوصول",
+      "days": "1-3 أيام",
+      "paymentMethod": "طريقة الدفع",
+      "bankTransfer": "تحويل بنكي"
+    },
+    "transactions": {
+      "title": "سجل المعاملات",
+      "noTransactions": "لا توجد معاملات",
+      "filters": {
+        "all": "الكل",
+        "orders": "الطلبات",
+        "payouts": "التحويلات",
+        "commissions": "العمولات"
+      },
+      "types": {
+        "order": "طلب",
+        "payout": "تحويل",
+        "commission": "عمولة",
+        "refund": "استرداد"
+      },
+      "status": {
+        "completed": "مكتمل",
+        "pending": "قيد المعالجة",
+        "failed": "فشل"
+      }
+    }
+  },
   "profile": {
     "title": "حسابي",
     "personalInfo": {

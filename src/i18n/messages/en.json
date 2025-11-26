@@ -667,6 +667,51 @@
       "cancellationRate": "Cancellation Rate"
     }
   },
+  "finance": {
+    "title": "Finance & Payments",
+    "dashboard": "Dashboard",
+    "loadingData": "Loading financial data...",
+    "stats": {
+      "totalEarnings": "Total Earnings",
+      "pendingPayout": "Pending Payout",
+      "thisMonth": "This Month",
+      "commission": "Commission (6%)"
+    },
+    "commissionInfo": {
+      "title": "Commission Information",
+      "description": "Platform commission is only 6% of each order. Your earnings are transferred weekly to your bank account."
+    },
+    "payoutSchedule": {
+      "title": "Payout Schedule",
+      "payoutDay": "Payout Day",
+      "sunday": "Sunday",
+      "processingTime": "Processing Time",
+      "days": "1-3 Days",
+      "paymentMethod": "Payment Method",
+      "bankTransfer": "Bank Transfer"
+    },
+    "transactions": {
+      "title": "Transaction History",
+      "noTransactions": "No transactions",
+      "filters": {
+        "all": "All",
+        "orders": "Orders",
+        "payouts": "Payouts",
+        "commissions": "Commissions"
+      },
+      "types": {
+        "order": "Order",
+        "payout": "Payout",
+        "commission": "Commission",
+        "refund": "Refund"
+      },
+      "status": {
+        "completed": "Completed",
+        "pending": "Pending",
+        "failed": "Failed"
+      }
+    }
+  },
   "profile": {
     "title": "My Account",
     "personalInfo": {
