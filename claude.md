@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** November 25, 2025
-**Status:** Week 1-2 - 98% Complete ✅
+**Last Updated:** November 26, 2025
+**Status:** Week 1-2 - 100% Complete ✅
 **Branch:** `main`
 
 ---
@@ -73,7 +73,7 @@
 ```
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
-Week 2 ████████████ 100% ✅ Auth + Checkout + Orders
+Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
 Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 ```
 
@@ -131,14 +131,23 @@ Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 
 1. [ ] Provider dashboard backend (order management)
 2. [ ] Real-time order status updates (Supabase realtime)
-3. [x] ~~User profile page with address management~~ ✅ COMPLETE
-4. [ ] Order cancellation flow
-5. [ ] Provider notifications for new orders
-6. [ ] Run database migration for governorate_id/city_id columns
+3. [ ] Order cancellation flow
+4. [ ] Provider notifications for new orders
+
+### Completed ✅
+- [x] User profile page with address management
+- [x] District dropdown cascading fix
+- [x] Database migration for governorate_id/city_id columns
 
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 26, 2025 - Address Form Fix ✅
+- ✅ **District Dropdown Fix**: Fixed `loadDistricts` function that was incorrectly filtering by `governorate_id` (column doesn't exist in districts table)
+- ✅ **Cascade Logic**: Districts now properly cascade from City selection via `city_id` only
+- ✅ **Type Fix**: Updated `District` type to reflect actual database schema
+- ✅ **Address Form Complete**: Governorate → City → District cascade working perfectly
 
 ### Work Session Nov 25, 2025 - Settings System ✅
 - ✅ **Multi-Page Settings System**: Complete restructure from single page to 7 dedicated pages
@@ -212,8 +221,8 @@ Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 
 ---
 
-**Version:** 6.0 (Week 1-2 Complete + Multi-Page Settings System)
-**Last Updated:** November 25, 2025
-**Next Review:** November 27, 2025
+**Version:** 6.1 (Week 1-2 Complete + Address Form Fix)
+**Last Updated:** November 26, 2025
+**Next Review:** November 28, 2025
 
-**🎉 Week 1-2 98% Complete! Settings system with 7 pages deployed! Next: Provider dashboard backend!**
+**🎉 Week 1-2 100% Complete! Settings system with 7 pages + address cascading dropdowns working! Next: Provider dashboard backend!**

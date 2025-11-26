@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 2.4 (Week 1-2 Complete + Settings System)
-**Date:** November 25, 2025
-**Last Updated:** November 25, 2025
+**Version:** 2.5 (Week 1-2 Complete + Address Form Fix)
+**Date:** November 26, 2025
+**Last Updated:** November 26, 2025
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -21,11 +21,11 @@
 
 ## 📊 Current Development Status
 
-**Phase:** Core Features Development (Nov 18-25, 2025)
-**Status:** Week 1-2 - 98% Complete 🚀
+**Phase:** Core Features Development (Nov 18-26, 2025)
+**Status:** Week 1-2 - 100% Complete 🚀
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** 49% Complete
-**Last Session:** November 25, 2025 - Multi-page settings system complete (7 pages with full functionality)
+**Overall Progress:** 50% Complete
+**Last Session:** November 26, 2025 - District dropdown fix for address form cascading
 
 ### What's Built ✅
 
@@ -114,13 +114,13 @@
 
 ### What's NOT Built Yet 🚧
 
-- ⚠️ **User profile page** (no address management or profile editing)
 - ⚠️ **Provider dashboard backend** (UI complete, needs order management)
 - ⚠️ **Admin panel** (no platform management)
 - ⚠️ **Online payment integration** (Fawry not integrated yet, only COD works)
 - ⚠️ **Real-time notifications** (order updates, push notifications)
 - ⚠️ **Real-time order status updates** (Supabase realtime pending)
 - ⚠️ **SMS notifications** (OTP and order updates)
+- ⚠️ **Order cancellation flow** (customers cannot cancel orders)
 
 ### Next Priority Steps (Week 3)
 
@@ -137,9 +137,8 @@
 **Week 3 Priorities:**
 1. **Provider dashboard backend** (order management, notifications)
 2. **Real-time order status updates** (Supabase real-time subscriptions)
-3. **User profile page** (address management, profile editing)
-4. **Order cancellation flow**
-5. **Provider notifications for new orders**
+3. **Order cancellation flow**
+4. **Provider notifications for new orders**
 
 ---
 
@@ -1437,11 +1436,27 @@ engezna/
     - Updated README.md with settings features
     - Updated PRD.md (v2.4)
   - **Next Priority:** Run governorate migration, then provider dashboard backend
+- **v2.5** - November 26, 2025 - Address Form Fix
+  - **Status:** Week 1-2 - 100% Complete 🚀
+  - **District Dropdown Fix:**
+    - ✅ Fixed `loadDistricts` function that was incorrectly filtering by `governorate_id`
+    - ✅ Districts table only has `city_id`, not `governorate_id`
+    - ✅ Updated cascade: Governorate → City → District (via city_id)
+    - ✅ Updated `District` type to reflect actual DB schema
+  - **Address Form Status:**
+    - ✅ Full CRUD operations working
+    - ✅ Cascading dropdowns: Governorate → City → District
+    - ✅ All fields functional with proper translations
+  - **Documentation:**
+    - Updated claude.md (v6.1)
+    - Updated README.md with current status
+    - Updated PRD.md (v2.5)
+  - **Next Priority:** Provider dashboard backend
 
 ---
 
 **Approved By:**
-- **Mosab** - Founder & Product Lead - November 25, 2025
+- **Mosab** - Founder & Product Lead - November 26, 2025
 
 **Next Review Date:** December 1, 2025
 
