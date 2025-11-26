@@ -60,8 +60,7 @@ type City = {
 
 type District = {
   id: string
-  governorate_id: string
-  city_id: string | null
+  city_id: string
   name_ar: string
   name_en: string
 }
@@ -116,12 +115,12 @@ export default function AddressesPage() {
   }, [governorateId])
 
   useEffect(() => {
-    if (governorateId && cityId) {
-      loadDistricts(governorateId, cityId)
+    if (cityId) {
+      loadDistricts(cityId)
     } else {
       setDistricts([])
     }
-  }, [governorateId, cityId])
+  }, [cityId])
 
   async function checkAuthAndLoadData() {
     const supabase = createClient()
@@ -185,12 +184,11 @@ export default function AddressesPage() {
     }
   }
 
-  async function loadDistricts(govId: string, cityId: string) {
+  async function loadDistricts(cityId: string) {
     const supabase = createClient()
     const { data } = await supabase
       .from('districts')
       .select('*')
-      .eq('governorate_id', govId)
       .eq('city_id', cityId)
       .eq('is_active', true)
       .order('name_en')
@@ -225,7 +223,7 @@ export default function AddressesPage() {
 
       if (address.city_id) {
         setCityId(address.city_id)
-        await loadDistricts(address.governorate_id, address.city_id)
+        await loadDistricts(address.city_id)
 
         if (address.district_id) {
           setDistrictId(address.district_id)
