@@ -36,22 +36,16 @@ type Provider = {
   name_ar: string
   name_en: string
   phone: string | null
-  address: string | null
+  address_ar: string | null
+  address_en: string | null
   logo_url: string | null
   status: string
   delivery_fee: number | null
-  delivery_time: string | null
-  minimum_order: number | null
-  delivery_radius: number | null
-  governorate_id: string | null
-  city_id: string | null
+  estimated_delivery_time_min: number | null
+  min_order_amount: number | null
+  delivery_radius_km: number | null
 }
 
-type Location = {
-  id: string
-  name_ar: string
-  name_en: string
-}
 
 export default function ProviderSettingsPage() {
   const locale = useLocale()
@@ -68,7 +62,8 @@ export default function ProviderSettingsPage() {
   const [nameAr, setNameAr] = useState('')
   const [nameEn, setNameEn] = useState('')
   const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState('')
+  const [addressAr, setAddressAr] = useState('')
+  const [addressEn, setAddressEn] = useState('')
   const [deliveryFee, setDeliveryFee] = useState('')
   const [deliveryTime, setDeliveryTime] = useState('')
   const [minimumOrder, setMinimumOrder] = useState('')
@@ -76,25 +71,9 @@ export default function ProviderSettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
 
-  // Location states
-  const [governorates, setGovernorates] = useState<Location[]>([])
-  const [cities, setCities] = useState<Location[]>([])
-  const [selectedGovernorate, setSelectedGovernorate] = useState('')
-  const [selectedCity, setSelectedCity] = useState('')
-
   useEffect(() => {
     checkAuthAndLoadProvider()
-    loadGovernorates()
   }, [])
-
-  useEffect(() => {
-    if (selectedGovernorate) {
-      loadCities(selectedGovernorate)
-    } else {
-      setCities([])
-      setSelectedCity('')
-    }
-  }, [selectedGovernorate])
 
   const checkAuthAndLoadProvider = async () => {
     setLoading(true)
@@ -121,35 +100,15 @@ export default function ProviderSettingsPage() {
     setNameAr(providerData.name_ar || '')
     setNameEn(providerData.name_en || '')
     setPhone(providerData.phone || '')
-    setAddress(providerData.address || '')
+    setAddressAr(providerData.address_ar || '')
+    setAddressEn(providerData.address_en || '')
     setDeliveryFee(providerData.delivery_fee?.toString() || '')
-    setDeliveryTime(providerData.delivery_time || '')
-    setMinimumOrder(providerData.minimum_order?.toString() || '')
-    setDeliveryRadius(providerData.delivery_radius?.toString() || '')
-    setSelectedGovernorate(providerData.governorate_id || '')
-    setSelectedCity(providerData.city_id || '')
+    setDeliveryTime(providerData.estimated_delivery_time_min?.toString() || '')
+    setMinimumOrder(providerData.min_order_amount?.toString() || '')
+    setDeliveryRadius(providerData.delivery_radius_km?.toString() || '')
     setLogoPreview(providerData.logo_url)
 
     setLoading(false)
-  }
-
-  const loadGovernorates = async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('governorates')
-      .select('id, name_ar, name_en')
-      .order('name_ar')
-    if (data) setGovernorates(data)
-  }
-
-  const loadCities = async (governorateId: string) => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('cities')
-      .select('id, name_ar, name_en')
-      .eq('governorate_id', governorateId)
-      .order('name_ar')
-    if (data) setCities(data)
   }
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,9 +154,8 @@ export default function ProviderSettingsPage() {
         name_ar: nameAr,
         name_en: nameEn,
         phone: phone || null,
-        address: address || null,
-        governorate_id: selectedGovernorate || null,
-        city_id: selectedCity || null,
+        address_ar: addressAr || null,
+        address_en: addressEn || null,
         logo_url: logoUrl,
         updated_at: new Date().toISOString()
       })
@@ -224,9 +182,9 @@ export default function ProviderSettingsPage() {
       .from('providers')
       .update({
         delivery_fee: deliveryFee ? parseFloat(deliveryFee) : null,
-        delivery_time: deliveryTime || null,
-        minimum_order: minimumOrder ? parseFloat(minimumOrder) : null,
-        delivery_radius: deliveryRadius ? parseFloat(deliveryRadius) : null,
+        estimated_delivery_time_min: deliveryTime ? parseInt(deliveryTime) : null,
+        min_order_amount: minimumOrder ? parseFloat(minimumOrder) : null,
+        delivery_radius_km: deliveryRadius ? parseFloat(deliveryRadius) : null,
         updated_at: new Date().toISOString()
       })
       .eq('id', provider.id)
@@ -411,55 +369,30 @@ export default function ProviderSettingsPage() {
                   />
                 </div>
 
-                {/* Governorate */}
+                {/* Address AR */}
                 <div>
                   <label className="block text-sm text-slate-400 mb-1 flex items-center gap-1">
                     <MapPin className="w-4 h-4" />
-                    {locale === 'ar' ? 'المحافظة' : 'Governorate'}
-                  </label>
-                  <select
-                    value={selectedGovernorate}
-                    onChange={(e) => setSelectedGovernorate(e.target.value)}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                  >
-                    <option value="">{locale === 'ar' ? 'اختر المحافظة' : 'Select Governorate'}</option>
-                    {governorates.map((gov) => (
-                      <option key={gov.id} value={gov.id}>
-                        {locale === 'ar' ? gov.name_ar : gov.name_en}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* City */}
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">
-                    {locale === 'ar' ? 'المدينة' : 'City'}
-                  </label>
-                  <select
-                    value={selectedCity}
-                    onChange={(e) => setSelectedCity(e.target.value)}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                    disabled={!selectedGovernorate}
-                  >
-                    <option value="">{locale === 'ar' ? 'اختر المدينة' : 'Select City'}</option>
-                    {cities.map((city) => (
-                      <option key={city.id} value={city.id}>
-                        {locale === 'ar' ? city.name_ar : city.name_en}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Address */}
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">
-                    {locale === 'ar' ? 'العنوان التفصيلي' : 'Detailed Address'}
+                    {locale === 'ar' ? 'العنوان (عربي)' : 'Address (Arabic)'}
                   </label>
                   <Input
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    value={addressAr}
+                    onChange={(e) => setAddressAr(e.target.value)}
                     className="bg-slate-700 border-slate-600 text-white"
+                    dir="rtl"
+                  />
+                </div>
+
+                {/* Address EN */}
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">
+                    {locale === 'ar' ? 'العنوان (إنجليزي)' : 'Address (English)'}
+                  </label>
+                  <Input
+                    value={addressEn}
+                    onChange={(e) => setAddressEn(e.target.value)}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    dir="ltr"
                   />
                 </div>
 
