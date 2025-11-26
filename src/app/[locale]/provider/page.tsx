@@ -479,6 +479,31 @@ export default function ProviderDashboard() {
                     </div>
                   </div>
                 </div>
+
+                {/* Promotions Card */}
+                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-orange-500/30 to-yellow-500/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <BarChart3 className="w-7 h-7 text-orange-400" />
+                    </div>
+                    <div className="flex-grow">
+                      <h3 className="text-xl font-bold mb-2">
+                        {locale === 'ar' ? 'العروض والخصومات' : 'Promotions'}
+                      </h3>
+                      <p className="text-slate-400 mb-4 text-sm">
+                        {locale === 'ar'
+                          ? 'إنشاء عروض وخصومات لجذب العملاء.'
+                          : 'Create promotions and discounts to attract customers.'}
+                      </p>
+                      <Link href={`/${locale}/provider/promotions`}>
+                        <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                          {locale === 'ar' ? 'إدارة العروض' : 'Manage Promotions'}
+                          <BarChart3 className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Recent Orders (Empty State) */}

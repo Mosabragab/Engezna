@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** November 26, 2025
-**Status:** Week 3 - 85% Complete 🚧
+**Status:** Week 3 - 90% Complete 🚧
 **Branch:** `main`
 
 ---
@@ -107,13 +107,22 @@
 8. ✅ Saves to `business_hours` JSONB in providers table
 9. ✅ Link from provider dashboard
 
-### Provider Settings (NEW! ✅)
+### Provider Settings (✅)
 1. ✅ Visit `/ar/provider/settings` or `/en/provider/settings`
 2. ✅ Tabbed interface: Store Info, Delivery, Status
 3. ✅ Store Info: Edit name (AR/EN), phone, governorate/city, address, logo
 4. ✅ Delivery: Edit delivery fee, time, minimum order, radius
 5. ✅ Status: Toggle Open/Temporarily Paused/Closed
 6. ✅ Quick links to Store Hours, Products, Orders
+7. ✅ Link from provider dashboard
+
+### Promotions Management (NEW! ✅)
+1. ✅ Visit `/ar/provider/promotions` or `/en/provider/promotions`
+2. ✅ Stats: active, upcoming, expired, total promotions
+3. ✅ Filter tabs: All, Active, Upcoming, Expired
+4. ✅ Create promotion with types: Percentage, Fixed Amount, Buy X Get Y
+5. ✅ Set date range, minimum order, max discount
+6. ✅ Toggle active/inactive, Edit, Delete promotions
 7. ✅ Link from provider dashboard
 
 ### Business Categories Supported
@@ -139,7 +148,7 @@
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
 Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
-Week 3 ██████████░░  85% 🚧 Partner Dashboard + Menu Management
+Week 3 ███████████░  90% 🚧 Partner Dashboard + Menu Management
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -176,7 +185,7 @@ Week 3 ██████████░░  85% 🚧 Partner Dashboard + Menu M
 - [x] Address management (full CRUD) ✅
 - [x] Governorate/city selection ✅
 
-### Week 3: Partner Dashboard (85% 🚧)
+### Week 3: Partner Dashboard (90% 🚧)
 - [x] Partner registration page `/partner/register` ✅
 - [x] Multi-step registration (personal info + business type) ✅
 - [x] Business category dropdown (6 types) ✅
@@ -198,9 +207,9 @@ Week 3 ██████████░░  85% 🚧 Partner Dashboard + Menu M
 - [x] Products translations (AR/EN) ✅
 - [x] Store hours management `/provider/store-hours` ✅
 - [x] Provider settings page `/provider/settings` ✅
+- [x] Promotions management `/provider/promotions` ✅
 - [ ] Supabase Storage bucket setup (SQL provided)
 - [ ] Real-time order notifications
-- [ ] Promotions management
 
 ---
 
@@ -220,7 +229,7 @@ Week 3 ██████████░░  85% 🚧 Partner Dashboard + Menu M
 
 ## 🎯 Next Steps (Week 3 Remaining)
 
-1. [ ] Promotions management `/provider/promotions`
+1. [ ] Create promotions table in Supabase (SQL provided)
 2. [ ] Real-time order notifications (Supabase Realtime)
 3. [ ] Execute Supabase Storage SQL (provided in session)
 4. [ ] Reports dashboard `/provider/reports`
@@ -229,6 +238,19 @@ Week 3 ██████████░░  85% 🚧 Partner Dashboard + Menu M
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 26, 2025 - Promotions Management ✅
+- ✅ **Promotions Page**: Created `/provider/promotions` with full promotion management
+  - Stats row: active, upcoming, expired, total
+  - Filter tabs: All, Active, Upcoming, Expired
+  - Create/Edit promotion modal with form
+  - 3 promotion types: Percentage, Fixed Amount, Buy X Get Y
+  - Date range (start/end), minimum order, max discount options
+  - Toggle promotion active/inactive
+  - Delete promotion with confirmation
+- ✅ **Dashboard Link**: Added Promotions card to provider dashboard
+- ✅ **Translations**: Added 60+ new keys for promotions namespace (AR/EN)
+- ✅ **Code Metrics**: ~700 lines in new page
 
 ### Work Session Nov 26, 2025 - Provider Settings Page ✅
 - ✅ **Provider Settings Page**: Created `/provider/settings` with tabbed interface
@@ -367,8 +389,11 @@ Week 3 ██████████░░  85% 🚧 Partner Dashboard + Menu M
 ### Store Hours Management
 - `src/app/[locale]/provider/store-hours/page.tsx` - Weekly schedule management
 
-### Provider Settings (NEW)
+### Provider Settings
 - `src/app/[locale]/provider/settings/page.tsx` - Store info, delivery, and status settings
+
+### Promotions Management (NEW)
+- `src/app/[locale]/provider/promotions/page.tsx` - Promotions CRUD with types and scheduling
 
 ---
 
@@ -391,8 +416,8 @@ CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'pu
 
 ---
 
-**Version:** 11.0 (Week 3 - Provider Settings Complete)
+**Version:** 12.0 (Week 3 - Promotions Management Complete)
 **Last Updated:** November 26, 2025
 **Next Review:** November 28, 2025
 
-**🎉 Provider settings complete! Week 3 at 85%! Next: Promotions + Real-time notifications + Reports!**
+**🎉 Promotions management complete! Week 3 at 90%! Next: Real-time notifications + Reports!**

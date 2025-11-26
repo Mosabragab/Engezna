@@ -566,6 +566,69 @@
       "saved": "Saved!"
     }
   },
+  "promotions": {
+    "title": "Promotions",
+    "dashboard": "Dashboard",
+    "newPromotion": "New Promotion",
+    "editPromotion": "Edit Promotion",
+    "createPromotion": "Create Promotion",
+    "noPromotions": "No promotions",
+    "noPromotionsDescription": "Create a new promotion to attract more customers",
+    "tabs": {
+      "all": "All",
+      "active": "Active",
+      "upcoming": "Upcoming",
+      "expired": "Expired"
+    },
+    "stats": {
+      "active": "Active",
+      "upcoming": "Upcoming",
+      "expired": "Expired",
+      "total": "Total"
+    },
+    "form": {
+      "nameAr": "Promotion Name (Arabic)",
+      "nameArPlaceholder": "e.g., Weekend Discount",
+      "nameEn": "Promotion Name (English)",
+      "type": "Promotion Type",
+      "percentage": "Percentage",
+      "fixed": "Fixed Amount",
+      "buyXGetY": "Buy X Get Y",
+      "discountPercentage": "Discount Percentage (%)",
+      "discountAmount": "Discount Amount (EGP)",
+      "buyQuantity": "Buy (quantity)",
+      "getQuantity": "Get (quantity)",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "minOrder": "Minimum Order (EGP)",
+      "maxDiscount": "Max Discount (EGP)",
+      "optional": "Optional"
+    },
+    "status": {
+      "active": "Active",
+      "upcoming": "Upcoming",
+      "expired": "Expired",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "edit": "Edit",
+      "enable": "Enable",
+      "disable": "Disable",
+      "delete": "Delete",
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "deleteConfirm": "Delete this promotion?"
+    },
+    "display": {
+      "off": "off",
+      "egpOff": "EGP off",
+      "buy": "Buy",
+      "get": "get",
+      "free": "free",
+      "min": "Min:"
+    }
+  },
   "profile": {
     "title": "My Account",
     "personalInfo": {

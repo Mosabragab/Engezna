@@ -566,6 +566,69 @@
       "saved": "تم الحفظ!"
     }
   },
+  "promotions": {
+    "title": "العروض والخصومات",
+    "dashboard": "لوحة التحكم",
+    "newPromotion": "عرض جديد",
+    "editPromotion": "تعديل العرض",
+    "createPromotion": "إنشاء عرض",
+    "noPromotions": "لا توجد عروض",
+    "noPromotionsDescription": "أنشئ عرضاً جديداً لجذب المزيد من العملاء",
+    "tabs": {
+      "all": "الكل",
+      "active": "نشط",
+      "upcoming": "قادم",
+      "expired": "منتهي"
+    },
+    "stats": {
+      "active": "نشط",
+      "upcoming": "قادم",
+      "expired": "منتهي",
+      "total": "الإجمالي"
+    },
+    "form": {
+      "nameAr": "اسم العرض (عربي)",
+      "nameArPlaceholder": "مثال: خصم نهاية الأسبوع",
+      "nameEn": "اسم العرض (إنجليزي)",
+      "type": "نوع العرض",
+      "percentage": "نسبة مئوية",
+      "fixed": "مبلغ ثابت",
+      "buyXGetY": "اشتري واحصل",
+      "discountPercentage": "نسبة الخصم (%)",
+      "discountAmount": "قيمة الخصم (ج.م)",
+      "buyQuantity": "اشتري (عدد)",
+      "getQuantity": "واحصل على (عدد)",
+      "startDate": "تاريخ البداية",
+      "endDate": "تاريخ النهاية",
+      "minOrder": "الحد الأدنى للطلب (ج.م)",
+      "maxDiscount": "أقصى خصم (ج.م)",
+      "optional": "اختياري"
+    },
+    "status": {
+      "active": "نشط",
+      "upcoming": "قادم",
+      "expired": "منتهي",
+      "inactive": "متوقف"
+    },
+    "actions": {
+      "edit": "تعديل",
+      "enable": "تفعيل",
+      "disable": "إيقاف",
+      "delete": "حذف",
+      "save": "حفظ",
+      "saving": "جاري الحفظ...",
+      "cancel": "إلغاء",
+      "deleteConfirm": "هل تريد حذف هذا العرض؟"
+    },
+    "display": {
+      "off": "خصم",
+      "egpOff": "ج.م خصم",
+      "buy": "اشتري",
+      "get": "واحصل على",
+      "free": "مجاناً",
+      "min": "الحد الأدنى:"
+    }
+  },
   "profile": {
     "title": "حسابي",
     "personalInfo": {
