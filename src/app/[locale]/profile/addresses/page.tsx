@@ -33,6 +33,9 @@ type Address = {
   address_line2: string | null
   city: string
   area: string | null
+  governorate_id: string | null
+  city_id: string | null
+  district_id: string | null
   building: string | null
   floor: string | null
   apartment: string | null
@@ -206,6 +209,9 @@ export default function AddressesPage() {
   function openEditDialog(address: Address) {
     setEditingAddress(address)
     setLabel(address.label)
+    setGovernorateId(address.governorate_id || '')
+    setCityId(address.city_id || '')
+    setDistrictId(address.district_id || '')
     setAddressLine1(address.address_line1)
     setBuilding(address.building || '')
     setFloor(address.floor || '')
@@ -259,6 +265,9 @@ export default function AddressesPage() {
       address_line2: null,
       city: cityName,
       area: areaName || null,
+      governorate_id: governorateId || null,
+      city_id: cityId || null,
+      district_id: districtId || null,
       building: building || null,
       floor: floor || null,
       apartment: apartment || null,
@@ -489,7 +498,11 @@ export default function AddressesPage() {
               {/* Governorate */}
               <div className="space-y-2">
                 <Label>Governorate</Label>
-                <Select value={governorateId} onValueChange={setGovernorateId}>
+                <Select value={governorateId} onValueChange={(value) => {
+                  setGovernorateId(value)
+                  setCityId('')
+                  setDistrictId('')
+                }}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select governorate" />
                   </SelectTrigger>
@@ -507,7 +520,10 @@ export default function AddressesPage() {
               {governorateId && (
                 <div className="space-y-2">
                   <Label>{tForm('city')}</Label>
-                  <Select value={cityId} onValueChange={setCityId}>
+                  <Select value={cityId} onValueChange={(value) => {
+                    setCityId(value)
+                    setDistrictId('')
+                  }}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder={tForm('cityPlaceholder')} />
                     </SelectTrigger>
