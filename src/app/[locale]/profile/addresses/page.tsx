@@ -91,7 +91,6 @@ export default function AddressesPage() {
   const [cityId, setCityId] = useState('')
   const [districtId, setDistrictId] = useState('')
   const [addressLine1, setAddressLine1] = useState('')
-  const [addressLine2, setAddressLine2] = useState('')
   const [building, setBuilding] = useState('')
   const [floor, setFloor] = useState('')
   const [apartment, setApartment] = useState('')
@@ -208,7 +207,6 @@ export default function AddressesPage() {
     setEditingAddress(address)
     setLabel(address.label)
     setAddressLine1(address.address_line1)
-    setAddressLine2(address.address_line2 || '')
     setBuilding(address.building || '')
     setFloor(address.floor || '')
     setApartment(address.apartment || '')
@@ -225,7 +223,6 @@ export default function AddressesPage() {
     setCityId('')
     setDistrictId('')
     setAddressLine1('')
-    setAddressLine2('')
     setBuilding('')
     setFloor('')
     setApartment('')
@@ -259,7 +256,7 @@ export default function AddressesPage() {
       user_id: userId,
       label,
       address_line1: addressLine1,
-      address_line2: addressLine2 || null,
+      address_line2: null,
       city: cityName,
       area: areaName || null,
       building: building || null,
@@ -423,7 +420,6 @@ export default function AddressesPage() {
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       {address.address_line1}
-                      {address.address_line2 && `, ${address.address_line2}`}
                     </p>
                     {address.city && (
                       <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -553,17 +549,6 @@ export default function AddressesPage() {
                   value={addressLine1}
                   onChange={(e) => setAddressLine1(e.target.value)}
                   placeholder={tForm('addressLine1Placeholder')}
-                />
-              </div>
-
-              {/* Address Line 2 */}
-              <div className="space-y-2">
-                <Label htmlFor="addressLine2">{tForm('addressLine2')}</Label>
-                <Input
-                  id="addressLine2"
-                  value={addressLine2}
-                  onChange={(e) => setAddressLine2(e.target.value)}
-                  placeholder={tForm('addressLine2Placeholder')}
                 />
               </div>
 
