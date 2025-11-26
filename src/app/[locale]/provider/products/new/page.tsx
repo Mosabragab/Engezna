@@ -21,7 +21,15 @@ import {
   Leaf,
   Flame,
   Info,
+  FolderOpen,
+  Plus,
 } from 'lucide-react'
+
+type Category = {
+  id: string
+  name_ar: string
+  name_en: string
+}
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -37,6 +45,14 @@ export default function AddProductPage() {
   const [uploading, setUploading] = useState(false)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
+  // Category state
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(false)
+  const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newCategoryAr, setNewCategoryAr] = useState('')
+  const [newCategoryEn, setNewCategoryEn] = useState('')
+  const [savingCategory, setSavingCategory] = useState(false)
+
   // Form state
   const [formData, setFormData] = useState({
     name_ar: '',
@@ -51,6 +67,7 @@ export default function AddProductPage() {
     is_spicy: false,
     preparation_time_min: '15',
     calories: '',
+    category_id: '',
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -82,7 +99,50 @@ export default function AddProductPage() {
     }
 
     setProviderId(provider.id)
+    await loadCategories(provider.id)
     setLoading(false)
+  }
+
+  const loadCategories = async (provId: string) => {
+    setLoadingCategories(true)
+    const supabase = createClient()
+
+    const { data, error } = await supabase
+      .from('product_categories')
+      .select('*')
+      .eq('provider_id', provId)
+      .order('name_ar', { ascending: true })
+
+    if (!error && data) {
+      setCategories(data)
+    }
+    setLoadingCategories(false)
+  }
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryAr.trim() || !newCategoryEn.trim() || !providerId) return
+
+    setSavingCategory(true)
+    const supabase = createClient()
+
+    const { data, error } = await supabase
+      .from('product_categories')
+      .insert({
+        provider_id: providerId,
+        name_ar: newCategoryAr.trim(),
+        name_en: newCategoryEn.trim(),
+      })
+      .select()
+      .single()
+
+    if (!error && data) {
+      setCategories(prev => [...prev, data])
+      setFormData(prev => ({ ...prev, category_id: data.id }))
+      setNewCategoryAr('')
+      setNewCategoryEn('')
+      setShowNewCategory(false)
+    }
+    setSavingCategory(false)
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,6 +240,7 @@ export default function AddProductPage() {
       is_spicy: formData.is_spicy,
       preparation_time_min: parseInt(formData.preparation_time_min) || 15,
       calories: formData.calories ? parseInt(formData.calories) : null,
+      category_id: formData.category_id || null,
     }
 
     const { error } = await supabase
@@ -284,6 +345,117 @@ export default function AddProductPage() {
               )}
               {errors.image && (
                 <p className="text-red-400 text-sm mt-2">{errors.image}</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Product Category */}
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <FolderOpen className="w-5 h-5" />
+                {locale === 'ar' ? 'تصنيف المنتج' : 'Product Category'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!showNewCategory ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      {locale === 'ar' ? 'اختر التصنيف' : 'Select Category'}
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        value={formData.category_id}
+                        onChange={(e) => setFormData(prev => ({ ...prev, category_id: e.target.value }))}
+                        className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                        disabled={loadingCategories}
+                      >
+                        <option value="">
+                          {loadingCategories
+                            ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
+                            : (locale === 'ar' ? 'بدون تصنيف' : 'No Category')}
+                        </option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {locale === 'ar' ? cat.name_ar : cat.name_en}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowNewCategory(true)}
+                        className="border-slate-600 text-white hover:bg-slate-700"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {categories.length === 0 && !loadingCategories && (
+                      <p className="text-xs text-slate-500 mt-2">
+                        {locale === 'ar'
+                          ? 'لا توجد تصنيفات بعد. أضف تصنيفًا جديدًا للبدء.'
+                          : 'No categories yet. Add a new category to get started.'}
+                      </p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4 p-4 bg-slate-700/50 rounded-lg">
+                  <h4 className="text-sm font-medium text-white">
+                    {locale === 'ar' ? 'إضافة تصنيف جديد' : 'Add New Category'}
+                  </h4>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      {locale === 'ar' ? 'اسم التصنيف (عربي)' : 'Category Name (Arabic)'} *
+                    </label>
+                    <input
+                      type="text"
+                      value={newCategoryAr}
+                      onChange={(e) => setNewCategoryAr(e.target.value)}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder={locale === 'ar' ? 'مثال: المشروبات' : 'e.g., المشروبات'}
+                      dir="rtl"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      {locale === 'ar' ? 'اسم التصنيف (إنجليزي)' : 'Category Name (English)'} *
+                    </label>
+                    <input
+                      type="text"
+                      value={newCategoryEn}
+                      onChange={(e) => setNewCategoryEn(e.target.value)}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="e.g., Beverages"
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowNewCategory(false)
+                        setNewCategoryAr('')
+                        setNewCategoryEn('')
+                      }}
+                      className="flex-1 border-slate-600 text-white hover:bg-slate-700"
+                    >
+                      {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleCreateCategory}
+                      disabled={savingCategory || !newCategoryAr.trim() || !newCategoryEn.trim()}
+                      className="flex-1"
+                    >
+                      {savingCategory
+                        ? (locale === 'ar' ? 'جاري الحفظ...' : 'Saving...')
+                        : (locale === 'ar' ? 'إضافة' : 'Add')}
+                    </Button>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -99,10 +99,23 @@ export default function ProviderOrdersPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter] = useState<FilterType>('all')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
   useEffect(() => {
     checkAuthAndLoadOrders()
   }, [])
+
+  // Auto-refresh every 60 seconds
+  useEffect(() => {
+    if (!providerId) return
+
+    const interval = setInterval(() => {
+      loadOrders(providerId)
+      setLastRefresh(new Date())
+    }, 60000) // 60 seconds
+
+    return () => clearInterval(interval)
+  }, [providerId])
 
   const checkAuthAndLoadOrders = async () => {
     setLoading(true)
