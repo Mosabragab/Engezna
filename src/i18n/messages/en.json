@@ -175,6 +175,86 @@
       "backToLogin": "Back to Login"
     }
   },
+  "settings": {
+    "title": "Settings",
+    "menu": {
+      "account": "Account Information",
+      "addresses": "Delivery Addresses",
+      "email": "Change Email",
+      "password": "Change Password",
+      "language": "Language",
+      "governorate": "Governorate",
+      "logout": "Logout",
+      "logoutConfirm": "Are you sure you want to logout?"
+    },
+    "account": {
+      "title": "Account Information",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Enter your first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Enter your last name",
+      "email": "Email",
+      "emailInfo": "To change your email, go to email settings",
+      "phone": "Phone Number",
+      "phonePlaceholder": "01xxxxxxxxx",
+      "saveButton": "Save Changes",
+      "saving": "Saving...",
+      "saved": "Changes saved successfully",
+      "error": "An error occurred while saving"
+    },
+    "email": {
+      "title": "Change Email",
+      "currentEmail": "Current Email",
+      "newEmail": "New Email",
+      "newEmailPlaceholder": "Enter new email",
+      "confirmEmail": "Confirm Email",
+      "confirmEmailPlaceholder": "Re-enter email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter password to confirm",
+      "saveButton": "Update Email",
+      "saving": "Updating...",
+      "saved": "Confirmation link sent to your new email",
+      "error": "An error occurred while updating",
+      "emailMismatch": "Emails don't match",
+      "invalidEmail": "Invalid email address"
+    },
+    "password": {
+      "title": "Change Password",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter password",
+      "saveButton": "Update Password",
+      "saving": "Updating...",
+      "saved": "Password updated successfully",
+      "error": "An error occurred while updating",
+      "passwordMismatch": "Passwords don't match",
+      "passwordTooShort": "Password too short (minimum 8 characters)",
+      "wrongPassword": "Current password is incorrect"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose your app language",
+      "arabic": "العربية",
+      "english": "English",
+      "current": "Current Language",
+      "saved": "Language changed successfully"
+    },
+    "governorate": {
+      "title": "Governorate & City",
+      "description": "Select your location to show available services",
+      "governorate": "Governorate",
+      "governoratePlaceholder": "Select governorate",
+      "city": "City/Center",
+      "cityPlaceholder": "Select city",
+      "saveButton": "Save Location",
+      "saving": "Saving...",
+      "saved": "Location saved successfully",
+      "error": "An error occurred while saving"
+    }
+  },
   "profile": {
     "title": "My Account",
     "personalInfo": {
@@ -215,8 +295,6 @@
       "areaPlaceholder": "Select district",
       "addressLine1": "Address Line 1",
       "addressLine1Placeholder": "Street, building number",
-      "addressLine2": "Address Line 2 (Optional)",
-      "addressLine2Placeholder": "Apartment, floor, landmark",
       "building": "Building Number",
       "buildingPlaceholder": "Building number",
       "floor": "Floor",

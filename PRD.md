@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 2.3 (Week 1-2 Complete + Orders)
-**Date:** November 25, 2025
-**Last Updated:** November 25, 2025
+**Version:** 2.5 (Week 1-2 Complete + Address Form Fix)
+**Date:** November 26, 2025
+**Last Updated:** November 26, 2025
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -21,11 +21,11 @@
 
 ## 📊 Current Development Status
 
-**Phase:** Core Features Development (Nov 18-25, 2025)
-**Status:** Week 1-2 - 95% Complete 🚀
+**Phase:** Core Features Development (Nov 18-26, 2025)
+**Status:** Week 1-2 - 100% Complete 🚀
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** 47% Complete
-**Last Session:** November 25, 2025 - Order system complete (tracking, history, navigation)
+**Overall Progress:** 50% Complete
+**Last Session:** November 26, 2025 - District dropdown fix for address form cascading
 
 ### What's Built ✅
 
@@ -90,6 +90,18 @@
   - ✅ Order history page (`/orders`) with filters (all/active/completed)
   - ✅ My Orders navigation in header with active count badge
   - ✅ Shared Header component with user context
+- ✅ **Multi-Page Settings System (Complete!)**
+  - ✅ Settings menu hub (`/profile`) with navigation cards
+  - ✅ Account settings (`/profile/account`) - Edit first/last name, phone
+  - ✅ Address management (`/profile/addresses`) - Full CRUD with cascading dropdowns
+  - ✅ Email change (`/profile/email`) - With password verification
+  - ✅ Password change (`/profile/password`) - With validation (min 8 chars)
+  - ✅ Language selection (`/profile/language`) - Switch AR/EN with auto-redirect
+  - ✅ Location settings (`/profile/governorate`) - Select governorate and city
+  - ✅ Database migration for governorate_id and city_id columns
+  - ✅ 80+ new translation keys (AR/EN) for all settings pages
+  - ✅ Name split logic (first/last in UI, full_name in DB)
+  - ✅ Form validation on all inputs with error messages
 - ✅ Routing system working (/ar, /en with locale switching)
 - ✅ Language and theme toggle components
 - ✅ 404 error pages for both locales
@@ -102,13 +114,13 @@
 
 ### What's NOT Built Yet 🚧
 
-- ⚠️ **User profile page** (no address management or profile editing)
 - ⚠️ **Provider dashboard backend** (UI complete, needs order management)
 - ⚠️ **Admin panel** (no platform management)
 - ⚠️ **Online payment integration** (Fawry not integrated yet, only COD works)
 - ⚠️ **Real-time notifications** (order updates, push notifications)
 - ⚠️ **Real-time order status updates** (Supabase realtime pending)
 - ⚠️ **SMS notifications** (OTP and order updates)
+- ⚠️ **Order cancellation flow** (customers cannot cancel orders)
 
 ### Next Priority Steps (Week 3)
 
@@ -125,9 +137,8 @@
 **Week 3 Priorities:**
 1. **Provider dashboard backend** (order management, notifications)
 2. **Real-time order status updates** (Supabase real-time subscriptions)
-3. **User profile page** (address management, profile editing)
-4. **Order cancellation flow**
-5. **Provider notifications for new orders**
+3. **Order cancellation flow**
+4. **Provider notifications for new orders**
 
 ---
 
@@ -1399,11 +1410,53 @@ engezna/
     - Updated README.md consistency
     - Updated PRD.md (v2.3)
   - **Next Priority:** Provider dashboard backend (order management)
+- **v2.4** - November 25, 2025 - Multi-Page Settings System Complete
+  - **Status:** Week 1-2 - 98% Complete 🚀
+  - **Settings System (COMPLETE ✅):**
+    - ✅ Restructured single `/profile` page into 7 dedicated pages
+    - ✅ Settings menu hub (`/profile`) - Navigation with cards and icons
+    - ✅ Account settings (`/profile/account`) - First/last name split (UI), phone editing
+    - ✅ Address management (`/profile/addresses`) - Full CRUD with cascading dropdowns (governorate → city → district)
+    - ✅ Email change (`/profile/email`) - With password verification using Supabase updateUser()
+    - ✅ Password change (`/profile/password`) - With validation and current password check
+    - ✅ Language selection (`/profile/language`) - Switch AR/EN with auto-redirect
+    - ✅ Location settings (`/profile/governorate`) - Select governorate and city
+  - **Database Changes:**
+    - ✅ New migration: `20250125000003_add_governorate_city_to_profiles.sql`
+    - ✅ Added `governorate_id` and `city_id` columns to profiles table
+    - ✅ Created indexes for performance
+  - **Translation Updates:**
+    - ✅ Added 80+ new translation keys for all settings pages
+    - ✅ Complete AR/EN coverage for forms, labels, errors, success messages
+  - **Code Metrics:**
+    - ~1,933 lines of new code across 7 pages
+    - 10 files changed, 2,102 insertions
+  - **Documentation:**
+    - Updated claude.md (v6.0)
+    - Updated README.md with settings features
+    - Updated PRD.md (v2.4)
+  - **Next Priority:** Run governorate migration, then provider dashboard backend
+- **v2.5** - November 26, 2025 - Address Form Fix
+  - **Status:** Week 1-2 - 100% Complete 🚀
+  - **District Dropdown Fix:**
+    - ✅ Fixed `loadDistricts` function that was incorrectly filtering by `governorate_id`
+    - ✅ Districts table only has `city_id`, not `governorate_id`
+    - ✅ Updated cascade: Governorate → City → District (via city_id)
+    - ✅ Updated `District` type to reflect actual DB schema
+  - **Address Form Status:**
+    - ✅ Full CRUD operations working
+    - ✅ Cascading dropdowns: Governorate → City → District
+    - ✅ All fields functional with proper translations
+  - **Documentation:**
+    - Updated claude.md (v6.1)
+    - Updated README.md with current status
+    - Updated PRD.md (v2.5)
+  - **Next Priority:** Provider dashboard backend
 
 ---
 
 **Approved By:**
-- **Mosab** - Founder & Product Lead - November 25, 2025
+- **Mosab** - Founder & Product Lead - November 26, 2025
 
 **Next Review Date:** December 1, 2025
 

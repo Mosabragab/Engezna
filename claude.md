@@ -1,8 +1,8 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** November 25, 2025
-**Status:** Week 1-2 - 95% Complete ✅
-**Branch:** `Munich25/Nov`
+**Last Updated:** November 26, 2025
+**Status:** Week 1-2 - 100% Complete ✅
+**Branch:** `main`
 
 ---
 
@@ -53,6 +53,11 @@
 10. ✅ **Order tracking page** with status timeline
 11. ✅ **Order history page** with filters (all/active/completed)
 12. ✅ **My Orders navigation** in header with active count badge
+13. ✅ **User Settings** - Multi-page settings system with 7 pages
+14. ✅ **Profile Management** - Edit name (first/last), phone, email, password
+15. ✅ **Address Management** - Full CRUD with cascading location dropdowns
+16. ✅ **Language Selection** - Switch between Arabic/English
+17. ✅ **Location Settings** - Select governorate and city
 
 ### Live Data
 - ✅ 4 Providers with 30 menu items total:
@@ -68,7 +73,7 @@
 ```
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
-Week 2 ████████████ 100% ✅ Auth + Checkout + Orders
+Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
 Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 ```
 
@@ -88,7 +93,7 @@ Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 - [x] Database schema (1,431 lines)
 - [x] Seed data (4 providers, 30 items)
 
-### Week 2: Auth + Checkout (100% ✅)
+### Week 2: Auth + Checkout + Settings (100% ✅)
 - [x] User authentication (email/password + OTP)
 - [x] Protected routes and session management
 - [x] Checkout flow with address input
@@ -98,6 +103,13 @@ Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 - [x] Order tracking page ✅
 - [x] Order history page ✅
 - [x] Shared Header component with My Orders navigation ✅
+- [x] Multi-page settings system (7 pages) ✅
+- [x] Account settings (first/last name split, phone) ✅
+- [x] Email change with password verification ✅
+- [x] Password change with validation ✅
+- [x] Language selection page ✅
+- [x] Address management (full CRUD) ✅
+- [x] Governorate/city selection ✅
 
 ---
 
@@ -119,13 +131,39 @@ Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 
 1. [ ] Provider dashboard backend (order management)
 2. [ ] Real-time order status updates (Supabase realtime)
-3. [ ] User profile page with address management
-4. [ ] Order cancellation flow
-5. [ ] Provider notifications for new orders
+3. [ ] Order cancellation flow
+4. [ ] Provider notifications for new orders
+
+### Completed ✅
+- [x] User profile page with address management
+- [x] District dropdown cascading fix
+- [x] Database migration for governorate_id/city_id columns
 
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 26, 2025 - Address Form Fix ✅
+- ✅ **District Dropdown Fix**: Fixed `loadDistricts` function that was incorrectly filtering by `governorate_id` (column doesn't exist in districts table)
+- ✅ **Cascade Logic**: Districts now properly cascade from City selection via `city_id` only
+- ✅ **Type Fix**: Updated `District` type to reflect actual database schema
+- ✅ **Address Form Complete**: Governorate → City → District cascade working perfectly
+
+### Work Session Nov 25, 2025 - Settings System ✅
+- ✅ **Multi-Page Settings System**: Complete restructure from single page to 7 dedicated pages
+  - `/profile` → Settings menu hub with navigation cards
+  - `/profile/account` → Personal info (first/last name split, phone editing)
+  - `/profile/addresses` → Full address CRUD with cascading dropdowns
+  - `/profile/email` → Change email with password verification
+  - `/profile/password` → Change password with validation (min 8 chars)
+  - `/profile/language` → Language selection (AR/EN) with auto-redirect
+  - `/profile/governorate` → Location selection (governorate → city)
+- ✅ **Name Handling**: Display split into first/last name, stores as full_name in DB
+- ✅ **Database Migration**: Added governorate_id and city_id columns to profiles table
+- ✅ **Translation Keys**: Added 80+ new keys for all settings pages (AR/EN)
+- ✅ **Email Display**: Read-only with info text linking to email settings
+- ✅ **Form Validation**: All forms have proper validation and error messages
+- ✅ **Code Metrics**: ~1,933 lines across 7 new pages
 
 ### Work Session Nov 25, 2025 - Munich (Session 2) ✅
 - ✅ **Order Placement Bug Fix**: Fixed checkout to match database schema
@@ -183,8 +221,8 @@ Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 
 ---
 
-**Version:** 5.0 (Week 1-2 UI Fixes Complete)
-**Last Updated:** November 25, 2025
-**Next Review:** November 27, 2025
+**Version:** 6.1 (Week 1-2 Complete + Address Form Fix)
+**Last Updated:** November 26, 2025
+**Next Review:** November 28, 2025
 
-**🎉 All Week 1-2 fixes complete! Provider dashboard ready! Next: Order tracking!**
+**🎉 Week 1-2 100% Complete! Settings system with 7 pages + address cascading dropdowns working! Next: Provider dashboard backend!**
