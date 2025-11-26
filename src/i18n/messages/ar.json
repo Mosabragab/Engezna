@@ -406,6 +406,85 @@
       "hoursAgo": "منذ {count} ساعة"
     }
   },
+  "providerProducts": {
+    "title": "إدارة المنتجات",
+    "dashboard": "لوحة التحكم",
+    "products": "المنتجات",
+    "addProduct": "إضافة منتج",
+    "editProduct": "تعديل المنتج",
+    "addFirstProduct": "إضافة أول منتج",
+    "stats": {
+      "totalProducts": "إجمالي المنتجات",
+      "available": "متاح",
+      "unavailable": "غير متاح"
+    },
+    "filters": {
+      "all": "الكل",
+      "available": "متاح",
+      "unavailable": "غير متاح"
+    },
+    "search": "ابحث عن منتج...",
+    "empty": {
+      "noProducts": "لا توجد منتجات بعد",
+      "noResults": "لا توجد نتائج",
+      "noAvailable": "لا توجد منتجات متاحة",
+      "noUnavailable": "لا توجد منتجات غير متاحة",
+      "description": "أضف منتجاتك ليتمكن العملاء من الطلب"
+    },
+    "product": {
+      "image": "صورة المنتج",
+      "nameAr": "اسم المنتج (عربي)",
+      "nameEn": "اسم المنتج (إنجليزي)",
+      "descriptionAr": "الوصف (عربي)",
+      "descriptionEn": "الوصف (إنجليزي)",
+      "price": "السعر (ج.م)",
+      "originalPrice": "السعر الأصلي (للخصم)",
+      "prepTime": "وقت التحضير (دقيقة)",
+      "calories": "السعرات الحرارية",
+      "vegetarian": "نباتي",
+      "spicy": "حار",
+      "availableForOrder": "متاح للطلب",
+      "off": "خصم"
+    },
+    "actions": {
+      "save": "حفظ المنتج",
+      "saveChanges": "حفظ التغييرات",
+      "saving": "جاري الحفظ...",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "show": "إظهار",
+      "hide": "إخفاء",
+      "cancel": "إلغاء",
+      "confirmDelete": "هل أنت متأكد من الحذف؟",
+      "deleteProduct": "حذف المنتج؟",
+      "deleteWarning": "هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء."
+    },
+    "upload": {
+      "clickToUpload": "اضغط لرفع صورة",
+      "maxSize": "الحد الأقصى 2 ميجابايت",
+      "invalidType": "الملف يجب أن يكون صورة",
+      "tooLarge": "حجم الصورة يجب أن يكون أقل من 2 ميجابايت",
+      "failed": "فشل رفع الصورة"
+    },
+    "errors": {
+      "nameArRequired": "الاسم بالعربية مطلوب",
+      "nameEnRequired": "الاسم بالإنجليزية مطلوب",
+      "priceRequired": "السعر مطلوب ويجب أن يكون أكبر من 0",
+      "originalPriceInvalid": "السعر الأصلي يجب أن يكون أكبر من السعر الحالي",
+      "addFailed": "فشل إضافة المنتج",
+      "updateFailed": "فشل تحديث المنتج",
+      "deleteFailed": "فشل حذف المنتج"
+    },
+    "sections": {
+      "productImage": "صورة المنتج",
+      "productInfo": "معلومات المنتج",
+      "pricing": "التسعير",
+      "additionalInfo": "معلومات إضافية"
+    },
+    "hints": {
+      "originalPriceHint": "أضف السعر الأصلي إذا كنت تريد إظهار خصم"
+    }
+  },
   "profile": {
     "title": "حسابي",
     "personalInfo": {

@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** November 26, 2025
-**Status:** Week 3 - 50% In Progress 🚧
+**Status:** Week 3 - 65% In Progress 🚧
 **Branch:** `main`
 
 ---
@@ -31,7 +31,7 @@
 - **Name:** Engezna (إنجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
-- **Status:** Week 3 In Progress - Provider Orders Management Complete ✅
+- **Status:** Week 3 In Progress - Menu Management System Complete ✅
 - **Live URL:** https://engezna.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
@@ -70,7 +70,7 @@
 8. ✅ Step 4: Delivery settings (fee, time, minimum order, radius)
 9. ✅ Submit for review → status "pending_approval"
 
-### Provider Orders Management (NEW! ✅)
+### Provider Orders Management (✅)
 1. ✅ Visit `/ar/provider/orders` or `/en/provider/orders`
 2. ✅ View all orders with stats (new/in-progress/completed/total)
 3. ✅ Filter tabs: All, New, In Progress, Completed, Cancelled
@@ -81,6 +81,20 @@
 8. ✅ Status timeline with timestamps
 9. ✅ Customer info with call button
 10. ✅ Net earnings display (after commission)
+
+### Menu Management System (NEW! ✅)
+1. ✅ Visit `/ar/provider/products` or `/en/provider/products`
+2. ✅ View all products with stats (total/available/unavailable)
+3. ✅ Filter tabs: All, Available, Unavailable
+4. ✅ Search products by name/description
+5. ✅ Product cards with image, price, discount badge
+6. ✅ Toggle availability (show/hide product)
+7. ✅ Delete product with confirmation
+8. ✅ Add new product `/provider/products/new`
+9. ✅ Edit product `/provider/products/[id]`
+10. ✅ Product form: name (AR/EN), description, price, original price (for discount)
+11. ✅ Product attributes: vegetarian, spicy, prep time, calories
+12. ✅ Image upload to Supabase Storage
 
 ### Business Categories Supported
 - 🍔 Restaurant (مطعم)
@@ -105,7 +119,7 @@
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
 Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
-Week 3 ██████░░░░░░  50% 🚧 Partner registration + Orders Management
+Week 3 ████████░░░░  65% 🚧 Partner Dashboard + Menu Management
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -142,7 +156,7 @@ Week 3 ██████░░░░░░  50% 🚧 Partner registration + Ord
 - [x] Address management (full CRUD) ✅
 - [x] Governorate/city selection ✅
 
-### Week 3: Partner Dashboard (50% 🚧)
+### Week 3: Partner Dashboard (65% 🚧)
 - [x] Partner registration page `/partner/register` ✅
 - [x] Multi-step registration (personal info + business type) ✅
 - [x] Business category dropdown (6 types) ✅
@@ -156,9 +170,16 @@ Week 3 ██████░░░░░░  50% 🚧 Partner registration + Ord
 - [x] Order detail page `/provider/orders/[id]` ✅
 - [x] Accept/Reject/Update order status ✅
 - [x] Provider orders translations (AR/EN) ✅
+- [x] Products list page `/provider/products` ✅
+- [x] Add product page `/provider/products/new` ✅
+- [x] Edit product page `/provider/products/[id]` ✅
+- [x] Product image upload ✅
+- [x] Product CRUD operations ✅
+- [x] Products translations (AR/EN) ✅
 - [ ] Supabase Storage bucket setup (SQL provided)
 - [ ] Real-time order notifications
-- [ ] Menu management system
+- [ ] Store hours management
+- [ ] Provider settings page
 
 ---
 
@@ -179,14 +200,36 @@ Week 3 ██████░░░░░░  50% 🚧 Partner registration + Ord
 ## 🎯 Next Steps (Week 3 Remaining)
 
 1. [ ] Execute Supabase Storage SQL (provided in session)
-2. [ ] Real-time order notifications (Supabase Realtime)
-3. [ ] Menu management system `/provider/products`
-4. [ ] Add/Edit/Delete menu items with images
-5. [ ] Category management for menu items
+2. [ ] Store hours management `/provider/store-hours`
+3. [ ] Real-time order notifications (Supabase Realtime)
+4. [ ] Provider settings page `/provider/settings`
+5. [ ] Promotions management
 
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 26, 2025 - Menu Management System ✅
+- ✅ **Products List Page**: Created `/provider/products` with full product management
+  - Stats row: total products, available, unavailable
+  - Filter tabs: All, Available, Unavailable
+  - Search by product name/description
+  - Product cards with image, price, discount badge, availability
+  - Toggle availability (show/hide)
+  - Delete with confirmation
+- ✅ **Add Product Page**: Created `/provider/products/new`
+  - Product info: name (AR/EN), description (AR/EN)
+  - Pricing: price, original price (for discounts)
+  - Attributes: vegetarian, spicy, prep time, calories
+  - Availability toggle
+  - Image upload to Supabase Storage
+- ✅ **Edit Product Page**: Created `/provider/products/[id]`
+  - Load existing product data
+  - Update all fields
+  - Delete product option
+- ✅ **Translations**: Added 70+ new keys for products (AR/EN)
+  - Complete providerProducts namespace
+- ✅ **Code Metrics**: ~1200 lines across 3 new pages
 
 ### Work Session Nov 26, 2025 - Provider Orders Management ✅
 - ✅ **Provider Orders Page**: Created `/provider/orders` with full order management
@@ -266,11 +309,16 @@ Week 3 ██████░░░░░░  50% 🚧 Partner registration + Ord
 - `src/app/[locale]/provider/complete-profile/page.tsx` - Complete business info
 - `src/app/[locale]/provider/page.tsx` - Status-aware dashboard
 
-### Provider Orders Management (NEW)
+### Provider Orders Management
 - `src/app/[locale]/provider/orders/page.tsx` - Orders list with filters & actions
 - `src/app/[locale]/provider/orders/[id]/page.tsx` - Order detail with status updates
-- `src/i18n/messages/ar.json` - Arabic translations (providerOrders namespace)
-- `src/i18n/messages/en.json` - English translations (providerOrders namespace)
+
+### Menu Management System (NEW)
+- `src/app/[locale]/provider/products/page.tsx` - Products list with search & filters
+- `src/app/[locale]/provider/products/new/page.tsx` - Add new product form
+- `src/app/[locale]/provider/products/[id]/page.tsx` - Edit product form
+- `src/i18n/messages/ar.json` - Arabic translations (providerProducts namespace)
+- `src/i18n/messages/en.json` - English translations (providerProducts namespace)
 
 ---
 
@@ -293,8 +341,8 @@ CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'pu
 
 ---
 
-**Version:** 8.0 (Week 3 - Provider Orders Management Complete)
+**Version:** 9.0 (Week 3 - Menu Management System Complete)
 **Last Updated:** November 26, 2025
 **Next Review:** November 28, 2025
 
-**🎉 Provider orders management complete! Next: Real-time notifications + Menu management system!**
+**🎉 Menu management system complete! Next: Store hours + Real-time notifications + Provider settings!**
