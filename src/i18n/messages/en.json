@@ -485,6 +485,35 @@
       "originalPriceHint": "Add original price if you want to show a discount"
     }
   },
+  "storeHours": {
+    "title": "Store Hours",
+    "dashboard": "Dashboard",
+    "weeklySchedule": "Weekly Schedule",
+    "hoursSummary": "Hours Summary",
+    "openAllDays": "Open All Days",
+    "closeAllDays": "Close All Days",
+    "copyToAll": "Copy to all days",
+    "from": "From",
+    "to": "To",
+    "open": "Open",
+    "closed": "Closed",
+    "openDays": "Open Days",
+    "closedDays": "Closed Days",
+    "days": {
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday"
+    },
+    "actions": {
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "saved": "Saved!"
+    }
+  },
   "profile": {
     "title": "My Account",
     "personalInfo": {

@@ -485,6 +485,35 @@
       "originalPriceHint": "أضف السعر الأصلي إذا كنت تريد إظهار خصم"
     }
   },
+  "storeHours": {
+    "title": "ساعات العمل",
+    "dashboard": "لوحة التحكم",
+    "weeklySchedule": "جدول العمل الأسبوعي",
+    "hoursSummary": "ملخص ساعات العمل",
+    "openAllDays": "فتح كل الأيام",
+    "closeAllDays": "إغلاق كل الأيام",
+    "copyToAll": "نسخ لكل الأيام",
+    "from": "من",
+    "to": "إلى",
+    "open": "مفتوح",
+    "closed": "مغلق",
+    "openDays": "أيام مفتوحة",
+    "closedDays": "أيام مغلقة",
+    "days": {
+      "saturday": "السبت",
+      "sunday": "الأحد",
+      "monday": "الاثنين",
+      "tuesday": "الثلاثاء",
+      "wednesday": "الأربعاء",
+      "thursday": "الخميس",
+      "friday": "الجمعة"
+    },
+    "actions": {
+      "save": "حفظ التغييرات",
+      "saving": "جاري الحفظ...",
+      "saved": "تم الحفظ!"
+    }
+  },
   "profile": {
     "title": "حسابي",
     "personalInfo": {

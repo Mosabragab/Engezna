@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** November 26, 2025
-**Status:** Week 3 - 65% In Progress 🚧
+**Status:** Week 3 - 75% Complete 🚧
 **Branch:** `main`
 
 ---
@@ -31,7 +31,7 @@
 - **Name:** Engezna (إنجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
-- **Status:** Week 3 In Progress - Menu Management System Complete ✅
+- **Status:** Week 3 In Progress - Store Hours Management Complete ✅
 - **Live URL:** https://engezna.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
@@ -82,7 +82,7 @@
 9. ✅ Customer info with call button
 10. ✅ Net earnings display (after commission)
 
-### Menu Management System (NEW! ✅)
+### Menu Management System (✅)
 1. ✅ Visit `/ar/provider/products` or `/en/provider/products`
 2. ✅ View all products with stats (total/available/unavailable)
 3. ✅ Filter tabs: All, Available, Unavailable
@@ -95,6 +95,17 @@
 10. ✅ Product form: name (AR/EN), description, price, original price (for discount)
 11. ✅ Product attributes: vegetarian, spicy, prep time, calories
 12. ✅ Image upload to Supabase Storage
+
+### Store Hours Management (NEW! ✅)
+1. ✅ Visit `/ar/provider/store-hours` or `/en/provider/store-hours`
+2. ✅ Weekly schedule with all 7 days
+3. ✅ Toggle each day open/closed
+4. ✅ Set opening and closing times (30-min intervals)
+5. ✅ Quick actions: Open all days / Close all days
+6. ✅ Copy hours from one day to all days
+7. ✅ Summary showing open/closed days count
+8. ✅ Saves to `business_hours` JSONB in providers table
+9. ✅ Link from provider dashboard
 
 ### Business Categories Supported
 - 🍔 Restaurant (مطعم)
@@ -119,7 +130,7 @@
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
 Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
-Week 3 ████████░░░░  65% 🚧 Partner Dashboard + Menu Management
+Week 3 █████████░░░  75% 🚧 Partner Dashboard + Menu Management
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -156,7 +167,7 @@ Week 3 ████████░░░░  65% 🚧 Partner Dashboard + Menu M
 - [x] Address management (full CRUD) ✅
 - [x] Governorate/city selection ✅
 
-### Week 3: Partner Dashboard (65% 🚧)
+### Week 3: Partner Dashboard (75% 🚧)
 - [x] Partner registration page `/partner/register` ✅
 - [x] Multi-step registration (personal info + business type) ✅
 - [x] Business category dropdown (6 types) ✅
@@ -176,10 +187,11 @@ Week 3 ████████░░░░  65% 🚧 Partner Dashboard + Menu M
 - [x] Product image upload ✅
 - [x] Product CRUD operations ✅
 - [x] Products translations (AR/EN) ✅
+- [x] Store hours management `/provider/store-hours` ✅
 - [ ] Supabase Storage bucket setup (SQL provided)
 - [ ] Real-time order notifications
-- [ ] Store hours management
 - [ ] Provider settings page
+- [ ] Promotions management
 
 ---
 
@@ -199,15 +211,28 @@ Week 3 ████████░░░░  65% 🚧 Partner Dashboard + Menu M
 
 ## 🎯 Next Steps (Week 3 Remaining)
 
-1. [ ] Execute Supabase Storage SQL (provided in session)
-2. [ ] Store hours management `/provider/store-hours`
+1. [ ] Provider settings page `/provider/settings`
+2. [ ] Promotions management `/provider/promotions`
 3. [ ] Real-time order notifications (Supabase Realtime)
-4. [ ] Provider settings page `/provider/settings`
-5. [ ] Promotions management
+4. [ ] Execute Supabase Storage SQL (provided in session)
+5. [ ] Reports dashboard
 
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 26, 2025 - Store Hours Management ✅
+- ✅ **Store Hours Page**: Created `/provider/store-hours` with full weekly schedule management
+  - Weekly schedule for all 7 days (Saturday-Friday)
+  - Toggle each day open/closed
+  - Time dropdowns with 30-minute intervals
+  - Quick actions: Open all days / Close all days
+  - Copy hours from one day to all days
+  - Summary showing open/closed days count
+- ✅ **Database Integration**: Saves to `business_hours` JSONB in providers table
+- ✅ **Dashboard Link**: Added Store Hours card to provider dashboard
+- ✅ **Translations**: Added 25+ new keys for storeHours namespace (AR/EN)
+- ✅ **Code Metrics**: ~300 lines in new page
 
 ### Work Session Nov 26, 2025 - Menu Management System ✅
 - ✅ **Products List Page**: Created `/provider/products` with full product management
@@ -313,12 +338,15 @@ Week 3 ████████░░░░  65% 🚧 Partner Dashboard + Menu M
 - `src/app/[locale]/provider/orders/page.tsx` - Orders list with filters & actions
 - `src/app/[locale]/provider/orders/[id]/page.tsx` - Order detail with status updates
 
-### Menu Management System (NEW)
+### Menu Management System
 - `src/app/[locale]/provider/products/page.tsx` - Products list with search & filters
 - `src/app/[locale]/provider/products/new/page.tsx` - Add new product form
 - `src/app/[locale]/provider/products/[id]/page.tsx` - Edit product form
 - `src/i18n/messages/ar.json` - Arabic translations (providerProducts namespace)
 - `src/i18n/messages/en.json` - English translations (providerProducts namespace)
+
+### Store Hours Management (NEW)
+- `src/app/[locale]/provider/store-hours/page.tsx` - Weekly schedule management
 
 ---
 
@@ -341,8 +369,8 @@ CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'pu
 
 ---
 
-**Version:** 9.0 (Week 3 - Menu Management System Complete)
+**Version:** 10.0 (Week 3 - Store Hours Management Complete)
 **Last Updated:** November 26, 2025
 **Next Review:** November 28, 2025
 
-**🎉 Menu management system complete! Next: Store hours + Real-time notifications + Provider settings!**
+**🎉 Store hours management complete! Week 3 at 75%! Next: Provider settings + Promotions + Real-time notifications!**
