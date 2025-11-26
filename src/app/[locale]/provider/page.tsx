@@ -3,6 +3,7 @@
 import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
@@ -13,7 +14,6 @@ import {
   BarChart3,
   Settings,
   ArrowRight,
-  Plus,
   LogOut,
   Menu,
   X,
@@ -26,6 +26,11 @@ import {
   XCircle,
   Hourglass,
   Wallet,
+  Tag,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  DollarSign,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -42,13 +47,32 @@ interface Provider {
   rejection_reason?: string | null
 }
 
+// Stats type
+interface DashboardStats {
+  todayOrders: number
+  todayRevenue: number
+  pendingOrders: number
+  activeProducts: number
+  totalOrders: number
+  totalCustomers: number
+}
+
 export default function ProviderDashboard() {
   const locale = useLocale()
+  const pathname = usePathname()
   const isRTL = locale === 'ar'
   const [user, setUser] = useState<User | null>(null)
   const [provider, setProvider] = useState<Provider | null>(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [stats, setStats] = useState<DashboardStats>({
+    todayOrders: 0,
+    todayRevenue: 0,
+    pendingOrders: 0,
+    activeProducts: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+  })
 
   useEffect(() => {
     checkAuth()
@@ -69,10 +93,62 @@ export default function ProviderDashboard() {
 
       if (providerData && providerData.length > 0) {
         setProvider(providerData[0])
+
+        // Load stats for the provider
+        await loadStats(providerData[0].id, supabase)
       }
     }
 
     setLoading(false)
+  }
+
+  async function loadStats(providerId: string, supabase: ReturnType<typeof createClient>) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Get today's orders
+    const { data: todayOrdersData } = await supabase
+      .from('orders')
+      .select('id, total_amount, status')
+      .eq('provider_id', providerId)
+      .gte('created_at', today.toISOString())
+
+    // Get pending orders
+    const { data: pendingData } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('provider_id', providerId)
+      .in('status', ['pending', 'accepted', 'preparing'])
+
+    // Get active products
+    const { data: productsData } = await supabase
+      .from('products')
+      .select('id')
+      .eq('provider_id', providerId)
+      .eq('is_available', true)
+
+    // Get total orders
+    const { data: totalOrdersData } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('provider_id', providerId)
+
+    // Get unique customers
+    const { data: customersData } = await supabase
+      .from('orders')
+      .select('user_id')
+      .eq('provider_id', providerId)
+
+    const uniqueCustomers = new Set(customersData?.map(o => o.user_id) || [])
+
+    setStats({
+      todayOrders: todayOrdersData?.length || 0,
+      todayRevenue: todayOrdersData?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0,
+      pendingOrders: pendingData?.length || 0,
+      activeProducts: productsData?.length || 0,
+      totalOrders: totalOrdersData?.length || 0,
+      totalCustomers: uniqueCustomers.size,
+    })
   }
 
   async function handleSignOut() {
@@ -80,6 +156,52 @@ export default function ProviderDashboard() {
     await supabase.auth.signOut()
     window.location.href = `/${locale}`
   }
+
+  // Navigation items with proper paths
+  const navItems = [
+    {
+      icon: Home,
+      label: locale === 'ar' ? 'الرئيسية' : 'Dashboard',
+      path: `/${locale}/provider`,
+      active: pathname === `/${locale}/provider`
+    },
+    {
+      icon: ShoppingBag,
+      label: locale === 'ar' ? 'الطلبات' : 'Orders',
+      path: `/${locale}/provider/orders`,
+      badge: stats.pendingOrders > 0 ? stats.pendingOrders.toString() : undefined
+    },
+    {
+      icon: Package,
+      label: locale === 'ar' ? 'المنتجات' : 'Products',
+      path: `/${locale}/provider/products`
+    },
+    {
+      icon: BarChart3,
+      label: locale === 'ar' ? 'التقارير' : 'Reports',
+      path: `/${locale}/provider/reports`
+    },
+    {
+      icon: Tag,
+      label: locale === 'ar' ? 'العروض' : 'Promotions',
+      path: `/${locale}/provider/promotions`
+    },
+    {
+      icon: Wallet,
+      label: locale === 'ar' ? 'المالية' : 'Finance',
+      path: `/${locale}/provider/finance`
+    },
+    {
+      icon: Clock,
+      label: locale === 'ar' ? 'ساعات العمل' : 'Store Hours',
+      path: `/${locale}/provider/store-hours`
+    },
+    {
+      icon: Settings,
+      label: locale === 'ar' ? 'الإعدادات' : 'Settings',
+      path: `/${locale}/provider/settings`
+    },
+  ]
 
   if (loading) {
     return (
@@ -110,19 +232,11 @@ export default function ProviderDashboard() {
     )
   }
 
-  const menuItems = [
-    { icon: Home, label: locale === 'ar' ? 'الرئيسية' : 'Dashboard', active: true },
-    { icon: ShoppingBag, label: locale === 'ar' ? 'الطلبات' : 'Orders', badge: '0' },
-    { icon: Package, label: locale === 'ar' ? 'المنتجات' : 'Products' },
-    { icon: BarChart3, label: locale === 'ar' ? 'التقارير' : 'Analytics' },
-    { icon: Settings, label: locale === 'ar' ? 'الإعدادات' : 'Settings' },
-  ]
-
   return (
     <div className="min-h-screen bg-slate-900 text-white flex">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
@@ -134,11 +248,12 @@ export default function ProviderDashboard() {
         w-64 bg-slate-800 border-${isRTL ? 'l' : 'r'} border-slate-700
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0
+        flex flex-col
       `}>
         {/* Logo */}
-        <div className="p-6 border-b border-slate-700">
+        <div className="p-4 border-b border-slate-700">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <Link href={`/${locale}/provider`} className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
                 <Store className="w-6 h-6 text-white" />
               </div>
@@ -146,8 +261,8 @@ export default function ProviderDashboard() {
                 <h1 className="font-bold text-lg">{locale === 'ar' ? 'إنجزنا' : 'Engezna'}</h1>
                 <p className="text-xs text-slate-400">{locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}</p>
               </div>
-            </div>
-            <button 
+            </Link>
+            <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden text-slate-400 hover:text-white"
             >
@@ -156,31 +271,59 @@ export default function ProviderDashboard() {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-2">
-          {menuItems.map((item, index) => (
-            <button
-              key={index}
-              className={`
-                w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                ${item.active 
-                  ? 'bg-primary text-white' 
-                  : 'text-slate-400 hover:bg-slate-700 hover:text-white'}
-              `}
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
-              {item.badge && (
-                <span className="ml-auto bg-slate-600 text-xs px-2 py-0.5 rounded-full">
-                  {item.badge}
+        {/* Store Info */}
+        {provider && (
+          <div className="p-4 border-b border-slate-700">
+            <div className="bg-slate-700/50 rounded-xl p-3">
+              <p className="text-sm font-medium truncate">
+                {locale === 'ar' ? provider.name_ar : provider.name_en}
+              </p>
+              <p className="text-xs text-slate-400 capitalize">{provider.category.replace('_', ' ')}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className={`w-2 h-2 rounded-full ${
+                  provider.status === 'open' ? 'bg-green-500' :
+                  provider.status === 'closed' ? 'bg-red-500' : 'bg-yellow-500'
+                }`}></span>
+                <span className="text-xs text-slate-400">
+                  {provider.status === 'open' ? (locale === 'ar' ? 'مفتوح' : 'Open') :
+                   provider.status === 'closed' ? (locale === 'ar' ? 'مغلق' : 'Closed') :
+                   (locale === 'ar' ? 'متوقف مؤقتاً' : 'Paused')}
                 </span>
-              )}
-            </button>
-          ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = item.active || pathname === item.path
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                onClick={() => setSidebarOpen(false)}
+                className={`
+                  w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+                  ${isActive
+                    ? 'bg-primary text-white'
+                    : 'text-slate-400 hover:bg-slate-700 hover:text-white'}
+                `}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="font-medium text-sm">{item.label}</span>
+                {item.badge && (
+                  <span className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs px-2 py-0.5 rounded-full`}>
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* User Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700">
+        <div className="p-4 border-t border-slate-700">
           <div className="flex items-center gap-3 mb-3 px-2">
             <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center">
               <span className="font-bold text-sm">
@@ -192,25 +335,25 @@ export default function ProviderDashboard() {
               <p className="text-xs text-slate-400 truncate">{user.email}</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
             onClick={handleSignOut}
           >
-            <LogOut className="w-4 h-4 mr-2" />
+            <LogOut className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
             {locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}
           </Button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
         {/* Top Header */}
-        <header className="bg-slate-800/50 border-b border-slate-700 px-6 py-4">
+        <header className="bg-slate-800/50 border-b border-slate-700 px-4 lg:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button 
+              <button
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden text-slate-400 hover:text-white"
               >
@@ -218,15 +361,16 @@ export default function ProviderDashboard() {
               </button>
               <div>
                 <h2 className="text-xl font-bold">
-                  {locale === 'ar' ? 'مرحباً' : 'Welcome'}, {user.email?.split('@')[0]}! 👋
+                  {locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
                 </h2>
                 <p className="text-sm text-slate-400">
-                  {locale === 'ar' ? 'إليك ملخص متجرك اليوم' : "Here's your store summary for today"}
+                  {locale === 'ar' ? 'نظرة عامة على متجرك' : 'Overview of your store'}
                 </p>
               </div>
             </div>
             <Link href={`/${locale}`}>
               <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                {isRTL ? <ChevronRight className="w-4 h-4 ml-1" /> : <ChevronLeft className="w-4 h-4 mr-1" />}
                 {locale === 'ar' ? 'العودة للموقع' : 'Back to Site'}
               </Button>
             </Link>
@@ -234,85 +378,26 @@ export default function ProviderDashboard() {
         </header>
 
         {/* Dashboard Content */}
-        <main className="flex-1 p-6 overflow-auto">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {/* Stat Card 1 */}
-            <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                  <ShoppingBag className="w-6 h-6 text-blue-400" />
-                </div>
-                <span className="text-green-400 text-sm flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4" /> +0%
-                </span>
-              </div>
-              <h3 className="text-3xl font-bold mb-1">0</h3>
-              <p className="text-slate-400 text-sm">{locale === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</p>
-            </div>
-
-            {/* Stat Card 2 */}
-            <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-green-400" />
-                </div>
-                <span className="text-green-400 text-sm flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4" /> +0%
-                </span>
-              </div>
-              <h3 className="text-3xl font-bold mb-1">0 EGP</h3>
-              <p className="text-slate-400 text-sm">{locale === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</p>
-            </div>
-
-            {/* Stat Card 3 */}
-            <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-orange-400" />
-                </div>
-              </div>
-              <h3 className="text-3xl font-bold mb-1">0</h3>
-              <p className="text-slate-400 text-sm">{locale === 'ar' ? 'طلبات قيد الانتظار' : 'Pending Orders'}</p>
-            </div>
-
-            {/* Stat Card 4 */}
-            <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                  <Package className="w-6 h-6 text-purple-400" />
-                </div>
-              </div>
-              <h3 className="text-3xl font-bold mb-1">0</h3>
-              <p className="text-slate-400 text-sm">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
-            </div>
-          </div>
-
-          {/* Status-based Content */}
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          {/* Status Messages */}
           {provider?.status === 'incomplete' && (
-            <div className="bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-2xl p-6 border border-orange-500/30 mb-8">
+            <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-2xl p-6 border border-yellow-500/30 mb-6">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-14 h-14 bg-yellow-500 rounded-xl flex items-center justify-center flex-shrink-0">
                   <FileWarning className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-grow">
-                  <h3 className="text-xl font-bold mb-2 text-orange-300">
-                    {locale === 'ar' ? 'أكمل معلومات متجرك' : 'Complete Your Store Information'}
+                  <h3 className="text-xl font-bold mb-2 text-yellow-300">
+                    {locale === 'ar' ? 'أكمل ملفك الشخصي' : 'Complete Your Profile'}
                   </h3>
                   <p className="text-slate-300 mb-4 text-sm">
                     {locale === 'ar'
-                      ? 'لم تكتمل معلومات متجرك بعد. أكمل المعلومات التالية للحصول على الموافقة وبدء استقبال الطلبات:'
+                      ? 'معلومات متجرك غير مكتملة. أكمل المعلومات التالية للحصول على الموافقة والبدء في استقبال الطلبات:'
                       : 'Your store information is incomplete. Complete the following to get approved and start receiving orders:'}
                   </p>
-                  <ul className="text-sm text-slate-400 mb-4 space-y-1">
-                    <li>• {locale === 'ar' ? 'اسم المتجر (عربي/إنجليزي)' : 'Store name (Arabic/English)'}</li>
-                    <li>• {locale === 'ar' ? 'العنوان والموقع' : 'Address and location'}</li>
-                    <li>• {locale === 'ar' ? 'شعار المتجر' : 'Store logo'}</li>
-                    <li>• {locale === 'ar' ? 'إعدادات التوصيل' : 'Delivery settings'}</li>
-                  </ul>
                   <Link href={`/${locale}/provider/complete-profile`}>
-                    <Button className="bg-orange-500 hover:bg-orange-600">
-                      {locale === 'ar' ? 'أكمل معلومات المتجر' : 'Complete Store Information'}
+                    <Button className="bg-yellow-500 hover:bg-yellow-600 text-black">
+                      {locale === 'ar' ? 'إكمال الملف' : 'Complete Profile'}
                       <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                     </Button>
                   </Link>
@@ -322,52 +407,41 @@ export default function ProviderDashboard() {
           )}
 
           {provider?.status === 'pending_approval' && (
-            <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl p-6 border border-blue-500/30 mb-8">
+            <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl p-6 border border-blue-500/30 mb-6">
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Hourglass className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-grow">
                   <h3 className="text-xl font-bold mb-2 text-blue-300">
-                    {locale === 'ar' ? 'طلبك قيد المراجعة' : 'Your Application is Under Review'}
+                    {locale === 'ar' ? 'قيد المراجعة' : 'Under Review'}
                   </h3>
-                  <p className="text-slate-300 mb-4 text-sm">
+                  <p className="text-slate-300 text-sm">
                     {locale === 'ar'
-                      ? 'تم استلام طلبك وهو قيد المراجعة من قبل فريقنا. سيتم إعلامك بالنتيجة قريباً.'
-                      : 'Your application has been received and is being reviewed by our team. You will be notified of the result soon.'}
+                      ? 'تم إرسال طلبك وهو قيد المراجعة من فريقنا. سنقوم بإخطارك عند الموافقة على متجرك.'
+                      : 'Your application has been submitted and is being reviewed by our team. We will notify you once your store is approved.'}
                   </p>
-                  <div className="flex items-center gap-2 text-sm text-blue-300">
-                    <Clock className="w-4 h-4" />
-                    {locale === 'ar' ? 'عادة ما تستغرق المراجعة 24-48 ساعة' : 'Review usually takes 24-48 hours'}
-                  </div>
                 </div>
               </div>
             </div>
           )}
 
           {provider?.status === 'rejected' && (
-            <div className="bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-2xl p-6 border border-red-500/30 mb-8">
+            <div className="bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-2xl p-6 border border-red-500/30 mb-6">
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
                   <XCircle className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-grow">
                   <h3 className="text-xl font-bold mb-2 text-red-300">
-                    {locale === 'ar' ? 'تم رفض طلبك' : 'Your Application Was Rejected'}
+                    {locale === 'ar' ? 'تم رفض الطلب' : 'Application Rejected'}
                   </h3>
                   <p className="text-slate-300 mb-2 text-sm">
-                    {locale === 'ar'
-                      ? 'للأسف، تم رفض طلبك للأسباب التالية:'
-                      : 'Unfortunately, your application was rejected for the following reasons:'}
+                    {locale === 'ar' ? 'سبب الرفض:' : 'Reason:'} {provider.rejection_reason || (locale === 'ar' ? 'لم يتم تحديد سبب' : 'No reason provided')}
                   </p>
-                  {provider.rejection_reason && (
-                    <p className="text-red-300 mb-4 text-sm bg-red-500/10 p-3 rounded-lg">
-                      {provider.rejection_reason}
-                    </p>
-                  )}
                   <Link href={`/${locale}/provider/complete-profile`}>
                     <Button className="bg-red-500 hover:bg-red-600">
-                      {locale === 'ar' ? 'تعديل المعلومات وإعادة التقديم' : 'Edit Information & Resubmit'}
+                      {locale === 'ar' ? 'تعديل وإعادة الإرسال' : 'Edit & Resubmit'}
                       <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                     </Button>
                   </Link>
@@ -376,212 +450,9 @@ export default function ProviderDashboard() {
             </div>
           )}
 
-          {/* Approved Provider Content */}
-          {(provider?.status === 'approved' || provider?.status === 'open' || provider?.status === 'closed' || provider?.status === 'temporarily_paused') && (
-            <>
-              {/* Quick Actions */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Manage Orders Card */}
-                <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl p-6 border border-primary/30">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
-                      <ShoppingBag className="w-7 h-7 text-white" />
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="text-xl font-bold mb-2">
-                        {locale === 'ar' ? 'إدارة الطلبات' : 'Manage Orders'}
-                      </h3>
-                      <p className="text-slate-400 mb-4 text-sm">
-                        {locale === 'ar'
-                          ? 'استقبل الطلبات الجديدة وتابع حالتها.'
-                          : 'Receive new orders and track their status.'}
-                      </p>
-                      <Link href={`/${locale}/provider/orders`}>
-                        <Button className="bg-primary hover:bg-primary/90">
-                          {locale === 'ar' ? 'عرض الطلبات' : 'View Orders'}
-                          <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Add Products Card */}
-                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Plus className="w-7 h-7 text-slate-300" />
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="text-xl font-bold mb-2">
-                        {locale === 'ar' ? 'إدارة المنتجات' : 'Manage Products'}
-                      </h3>
-                      <p className="text-slate-400 mb-4 text-sm">
-                        {locale === 'ar'
-                          ? 'أضف وعدّل منتجاتك مع الصور والأسعار.'
-                          : 'Add and edit your products with images and prices.'}
-                      </p>
-                      <Link href={`/${locale}/provider/products`}>
-                        <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                          {locale === 'ar' ? 'إدارة المنتجات' : 'Manage Products'}
-                          <Package className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Store Hours Card */}
-                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Clock className="w-7 h-7 text-slate-300" />
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="text-xl font-bold mb-2">
-                        {locale === 'ar' ? 'ساعات العمل' : 'Store Hours'}
-                      </h3>
-                      <p className="text-slate-400 mb-4 text-sm">
-                        {locale === 'ar'
-                          ? 'حدد أوقات فتح وإغلاق متجرك.'
-                          : 'Set your store opening and closing times.'}
-                      </p>
-                      <Link href={`/${locale}/provider/store-hours`}>
-                        <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                          {locale === 'ar' ? 'إدارة الساعات' : 'Manage Hours'}
-                          <Clock className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Settings Card */}
-                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Settings className="w-7 h-7 text-slate-300" />
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="text-xl font-bold mb-2">
-                        {locale === 'ar' ? 'إعدادات المتجر' : 'Store Settings'}
-                      </h3>
-                      <p className="text-slate-400 mb-4 text-sm">
-                        {locale === 'ar'
-                          ? 'تعديل معلومات المتجر والتوصيل والحالة.'
-                          : 'Edit store info, delivery settings, and status.'}
-                      </p>
-                      <Link href={`/${locale}/provider/settings`}>
-                        <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                          {locale === 'ar' ? 'الإعدادات' : 'Settings'}
-                          <Settings className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Promotions Card */}
-                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-orange-500/30 to-yellow-500/30 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <BarChart3 className="w-7 h-7 text-orange-400" />
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="text-xl font-bold mb-2">
-                        {locale === 'ar' ? 'العروض والخصومات' : 'Promotions'}
-                      </h3>
-                      <p className="text-slate-400 mb-4 text-sm">
-                        {locale === 'ar'
-                          ? 'إنشاء عروض وخصومات لجذب العملاء.'
-                          : 'Create promotions and discounts to attract customers.'}
-                      </p>
-                      <Link href={`/${locale}/provider/promotions`}>
-                        <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                          {locale === 'ar' ? 'إدارة العروض' : 'Manage Promotions'}
-                          <BarChart3 className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Reports Card */}
-                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500/30 to-cyan-500/30 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-7 h-7 text-blue-400" />
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="text-xl font-bold mb-2">
-                        {locale === 'ar' ? 'التقارير والإحصائيات' : 'Reports & Analytics'}
-                      </h3>
-                      <p className="text-slate-400 mb-4 text-sm">
-                        {locale === 'ar'
-                          ? 'تتبع الإيرادات والطلبات والأداء.'
-                          : 'Track revenue, orders, and performance.'}
-                      </p>
-                      <Link href={`/${locale}/provider/reports`}>
-                        <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                          {locale === 'ar' ? 'عرض التقارير' : 'View Reports'}
-                          <TrendingUp className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Finance Card */}
-                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-green-500/30 to-emerald-500/30 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Wallet className="w-7 h-7 text-green-400" />
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="text-xl font-bold mb-2">
-                        {locale === 'ar' ? 'المالية والمدفوعات' : 'Finance & Payments'}
-                      </h3>
-                      <p className="text-slate-400 mb-4 text-sm">
-                        {locale === 'ar'
-                          ? 'الأرباح والتحويلات وسجل المعاملات.'
-                          : 'Earnings, payouts, and transaction history.'}
-                      </p>
-                      <Link href={`/${locale}/provider/finance`}>
-                        <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                          {locale === 'ar' ? 'عرض المالية' : 'View Finance'}
-                          <Wallet className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Orders (Empty State) */}
-              <div className="bg-slate-800 rounded-2xl border border-slate-700">
-                <div className="p-6 border-b border-slate-700">
-                  <h3 className="text-lg font-bold">{locale === 'ar' ? 'أحدث الطلبات' : 'Recent Orders'}</h3>
-                </div>
-                <div className="p-12 text-center">
-                  <div className="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <ShoppingBag className="w-10 h-10 text-slate-500" />
-                  </div>
-                  <h4 className="text-lg font-medium mb-2 text-slate-300">
-                    {locale === 'ar' ? 'لا توجد طلبات بعد' : 'No orders yet'}
-                  </h4>
-                  <p className="text-slate-500 text-sm max-w-sm mx-auto">
-                    {locale === 'ar'
-                      ? 'عندما تبدأ في استقبال طلبات من العملاء، ستظهر هنا.'
-                      : 'When you start receiving orders from customers, they will appear here.'}
-                  </p>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* No Provider - Incomplete Registration */}
+          {/* No Provider - Show registration prompt */}
           {!provider && user && (
-            <div className="bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-2xl p-6 border border-orange-500/30 mb-8">
+            <div className="bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-2xl p-6 border border-orange-500/30 mb-6">
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
                   <AlertCircle className="w-7 h-7 text-white" />
@@ -604,6 +475,110 @@ export default function ProviderDashboard() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Dashboard Stats - Only for approved/open providers */}
+          {(provider?.status === 'approved' || provider?.status === 'open' || provider?.status === 'closed' || provider?.status === 'temporarily_paused') && (
+            <>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {/* Today's Orders */}
+                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                      <ShoppingBag className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <span className="text-green-400 text-xs flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" /> +0%
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold">{stats.todayOrders}</p>
+                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</p>
+                </div>
+
+                {/* Today's Revenue */}
+                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-green-400" />
+                    </div>
+                    <span className="text-green-400 text-xs flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" /> +0%
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold">{stats.todayRevenue} <span className="text-sm text-slate-400">EGP</span></p>
+                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</p>
+                </div>
+
+                {/* Pending Orders */}
+                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-orange-400" />
+                    </div>
+                  </div>
+                  <p className="text-2xl font-bold">{stats.pendingOrders}</p>
+                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'طلبات قيد الانتظار' : 'Pending Orders'}</p>
+                </div>
+
+                {/* Active Products */}
+                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                      <Package className="w-5 h-5 text-purple-400" />
+                    </div>
+                  </div>
+                  <p className="text-2xl font-bold">{stats.activeProducts}</p>
+                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
+                </div>
+              </div>
+
+              {/* Performance Indicators */}
+              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 mb-6">
+                <h3 className="text-lg font-bold mb-4">{locale === 'ar' ? 'مؤشرات الأداء' : 'Performance Indicators'}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
+                    <p className="text-3xl font-bold">{stats.totalOrders}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</p>
+                    <p className="text-3xl font-bold">{stats.totalCustomers}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
+                    <p className="text-3xl font-bold">{stats.activeProducts}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <Link href={`/${locale}/provider/orders`} className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-primary transition-colors group">
+                  <ShoppingBag className="w-8 h-8 text-blue-400 mb-3 group-hover:scale-110 transition-transform" />
+                  <p className="font-medium">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
+                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'إدارة الطلبات' : 'Manage orders'}</p>
+                </Link>
+
+                <Link href={`/${locale}/provider/products`} className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-primary transition-colors group">
+                  <Package className="w-8 h-8 text-purple-400 mb-3 group-hover:scale-110 transition-transform" />
+                  <p className="font-medium">{locale === 'ar' ? 'المنتجات' : 'Products'}</p>
+                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'إدارة القائمة' : 'Manage menu'}</p>
+                </Link>
+
+                <Link href={`/${locale}/provider/reports`} className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-primary transition-colors group">
+                  <BarChart3 className="w-8 h-8 text-green-400 mb-3 group-hover:scale-110 transition-transform" />
+                  <p className="font-medium">{locale === 'ar' ? 'التقارير' : 'Reports'}</p>
+                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'عرض الإحصائيات' : 'View analytics'}</p>
+                </Link>
+
+                <Link href={`/${locale}/provider/settings`} className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-primary transition-colors group">
+                  <Settings className="w-8 h-8 text-slate-400 mb-3 group-hover:scale-110 transition-transform" />
+                  <p className="font-medium">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</p>
+                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'إعدادات المتجر' : 'Store settings'}</p>
+                </Link>
+              </div>
+            </>
           )}
         </main>
       </div>
