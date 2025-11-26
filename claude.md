@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** November 26, 2025
-**Status:** Week 1-2 - 100% Complete ✅
+**Status:** Week 3 - 30% In Progress 🚧
 **Branch:** `main`
 
 ---
@@ -31,7 +31,7 @@
 - **Name:** Engezna (إنجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
-- **Status:** Week 1-2 Complete - 95% (Auth + Checkout + UI Fixes + Orders) ✅
+- **Status:** Week 3 In Progress - Partner Registration Complete ✅
 - **Live URL:** https://engezna.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
@@ -59,6 +59,25 @@
 16. ✅ **Language Selection** - Switch between Arabic/English
 17. ✅ **Location Settings** - Select governorate and city
 
+### Partner Registration Flow (NEW! ✅)
+1. ✅ Visit `/ar/partner/register` or `/en/partner/register`
+2. ✅ Step 1: Personal info (name, email, phone, password)
+3. ✅ Step 2: Business type dropdown + Role dropdown
+4. ✅ Creates provider with status "incomplete"
+5. ✅ Redirect to provider dashboard
+6. ✅ Complete profile at `/provider/complete-profile`
+7. ✅ Step 3: Store info (name AR/EN, phone, governorate/city, address, logo)
+8. ✅ Step 4: Delivery settings (fee, time, minimum order, radius)
+9. ✅ Submit for review → status "pending_approval"
+
+### Business Categories Supported
+- 🍔 Restaurant (مطعم)
+- ☕ Cafe (كافيه)
+- 🛒 Supermarket (سوبر ماركت)
+- 🧃 Juice Shop (عصائر)
+- 💊 Pharmacy (صيدلية)
+- 🥬 Vegetables & Fruits (خضروات وفواكه)
+
 ### Live Data
 - ✅ 4 Providers with 30 menu items total:
   - Lavender Cafe (Coffee - 8 items)
@@ -74,7 +93,7 @@
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
 Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
-Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
+Week 3 ███░░░░░░░░░  30% 🚧 Partner registration + Dashboard
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -111,6 +130,21 @@ Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 - [x] Address management (full CRUD) ✅
 - [x] Governorate/city selection ✅
 
+### Week 3: Partner Dashboard (30% 🚧)
+- [x] Partner registration page `/partner/register` ✅
+- [x] Multi-step registration (personal info + business type) ✅
+- [x] Business category dropdown (6 types) ✅
+- [x] Partner role dropdown (owner/manager) ✅
+- [x] Complete profile page `/provider/complete-profile` ✅
+- [x] Cascading governorate/city dropdowns ✅
+- [x] Logo upload with preview ✅
+- [x] Delivery settings form ✅
+- [x] Status-aware provider dashboard ✅
+- [ ] Supabase Storage bucket setup (SQL provided)
+- [ ] Provider orders management page
+- [ ] Real-time order notifications
+- [ ] Menu management system
+
 ---
 
 ## 📦 Tech Stack
@@ -127,102 +161,103 @@ Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 
 ---
 
-## 🎯 Next Steps (Week 3)
+## 🎯 Next Steps (Week 3 Remaining)
 
-1. [ ] Provider dashboard backend (order management)
-2. [ ] Real-time order status updates (Supabase realtime)
-3. [ ] Order cancellation flow
-4. [ ] Provider notifications for new orders
-
-### Completed ✅
-- [x] User profile page with address management
-- [x] District dropdown cascading fix
-- [x] Database migration for governorate_id/city_id columns
+1. [ ] Execute Supabase Storage SQL (provided in session)
+2. [ ] Provider orders management page `/provider/orders`
+3. [ ] Order detail page `/provider/orders/[id]`
+4. [ ] Accept/Reject/Update order status
+5. [ ] Real-time order notifications
+6. [ ] Menu management system
 
 ---
 
 ## 🐛 Recent Fixes
 
+### Work Session Nov 26, 2025 - Partner Registration System ✅
+- ✅ **Partner Registration Page**: Created `/partner/register` with multi-step flow
+  - Step 1: Personal info (name, email, phone, password)
+  - Step 2: Business category + Partner role dropdowns
+  - Creates provider record with status "incomplete"
+- ✅ **Complete Profile Page**: Created `/provider/complete-profile`
+  - Store info: name (AR/EN), phone, governorate/city cascade, address
+  - Logo upload with preview (2MB limit, image validation)
+  - Delivery settings: fee, time, minimum order, radius
+  - Progress bar showing completion percentage
+  - Submits for review → status "pending_approval"
+- ✅ **Provider Dashboard Updates**: Status-aware content
+  - "incomplete" → Shows complete profile prompt
+  - "pending_approval" → Shows under review message
+  - "rejected" → Shows rejection reason + resubmit button
+  - "approved/open/closed" → Shows full dashboard with orders/products links
+- ✅ **Database Migration**: Added new provider categories and statuses
+  - New categories: juice_shop, pharmacy
+  - New statuses: incomplete, approved, rejected
+  - Added partner_role column to profiles
+- ✅ **Translations**: Added 50+ new keys for partner registration (AR/EN)
+- ✅ **Code Metrics**: ~800 lines across 2 new pages + dashboard updates
+
 ### Work Session Nov 26, 2025 - Address Form Fix ✅
-- ✅ **District Dropdown Fix**: Fixed `loadDistricts` function that was incorrectly filtering by `governorate_id` (column doesn't exist in districts table)
-- ✅ **Cascade Logic**: Districts now properly cascade from City selection via `city_id` only
-- ✅ **Type Fix**: Updated `District` type to reflect actual database schema
-- ✅ **Address Form Complete**: Governorate → City → District cascade working perfectly
+- ✅ **District Dropdown Fix**: Fixed `loadDistricts` function
+- ✅ **Cascade Logic**: Districts cascade from City via `city_id`
+- ✅ **Address Form Complete**: Governorate → City → District working
 
 ### Work Session Nov 25, 2025 - Settings System ✅
-- ✅ **Multi-Page Settings System**: Complete restructure from single page to 7 dedicated pages
-  - `/profile` → Settings menu hub with navigation cards
-  - `/profile/account` → Personal info (first/last name split, phone editing)
-  - `/profile/addresses` → Full address CRUD with cascading dropdowns
-  - `/profile/email` → Change email with password verification
-  - `/profile/password` → Change password with validation (min 8 chars)
-  - `/profile/language` → Language selection (AR/EN) with auto-redirect
-  - `/profile/governorate` → Location selection (governorate → city)
-- ✅ **Name Handling**: Display split into first/last name, stores as full_name in DB
-- ✅ **Database Migration**: Added governorate_id and city_id columns to profiles table
-- ✅ **Translation Keys**: Added 80+ new keys for all settings pages (AR/EN)
-- ✅ **Email Display**: Read-only with info text linking to email settings
-- ✅ **Form Validation**: All forms have proper validation and error messages
-- ✅ **Code Metrics**: ~1,933 lines across 7 new pages
-
-### Work Session Nov 25, 2025 - Munich (Session 2) ✅
-- ✅ **Order Placement Bug Fix**: Fixed checkout to match database schema
-  - Changed `user_id` → `customer_id`
-  - Changed `delivery_address` to JSONB format
-  - Added `platform_commission` calculation
-  - Fixed `estimated_delivery_time` as timestamp
-  - Added all required `order_items` fields
-- ✅ **Order Tracking Page**: Full status timeline with live refresh
-- ✅ **Order History Page**: Filter by all/active/completed
-- ✅ **Shared Header Component**: Reusable with My Orders navigation
-- ✅ **My Orders Badge**: Shows active order count
-
-### Work Session Nov 25, 2025 - Munich (Session 1) ✅
-- ✅ **Fix 1**: "Browse" → "Stores" button text - COMPLETE (role-aware navigation)
-- ✅ **Fix 3**: Provider Dashboard - COMPLETE (full dark-themed dashboard with sidebar, stats, quick actions)
-
-### Work Session Nov 24, 2025 - Munich ✅
-- ✅ **Fix 2**: Logout translation working ("Sign Out" / "خروج")
-- ✅ **Fix 4**: Remove "Clear Session" button completely resolved
-
-### Previously Resolved ✅
-- ✅ Dark mode toggle (fixed with `resolvedTheme`)
-- ✅ Tailwind v4 → v3 downgrade (stability)
-- ✅ Brand colors updated (Orange, not Green!)
-- ✅ Build errors resolved
-- ✅ TypeScript error in verifyOTP function (proper type handling)
-- ✅ Signup page fixed to use `users` table
-- ✅ Cart persistence across navigation
-
-### Active Issues
-- ✅ All Week 1-2 features complete!
-- 📅 Next: Provider dashboard backend (order management)
+- ✅ **Multi-Page Settings System**: 7 dedicated pages
+- ✅ **Database Migration**: Added governorate_id and city_id to profiles
 
 ---
 
 ## 💡 Key Decisions
 
 1. **Tailwind v3** (not v4) - v4 has breaking changes
-2. **Provider-based structure** - supports 4 categories
+2. **Provider-based structure** - supports 6 categories
 3. **Providers manage delivery** - enables 5-7% commission
 4. **Cash-first** - cards in Phase 2
 5. **Orange #E85D04** - official brand color
+6. **Multi-step partner registration** - Better UX, incomplete tracking
+7. **Admin approval required** - Quality control for partners
 
 ---
 
 ## 📁 Important Files
 
+### Core Files
 - `claude.md` - This file (project guide)
-- `PROGRESS_UPDATE.md` - Latest achievements
-- `DATABASE_SETUP.md` - Safe deployment guide
 - `PRD.md` - Full requirements
 - `src/app/globals.css` - Brand colors
 - `package.json` - Dependencies (Tailwind v3)
 
+### Partner Registration (NEW)
+- `src/app/[locale]/partner/register/page.tsx` - Partner signup
+- `src/app/[locale]/provider/complete-profile/page.tsx` - Complete business info
+- `src/app/[locale]/provider/page.tsx` - Status-aware dashboard
+- `src/i18n/messages/ar.json` - Arabic translations (partner namespace)
+- `src/i18n/messages/en.json` - English translations (partner namespace)
+
 ---
 
-**Version:** 6.1 (Week 1-2 Complete + Address Form Fix)
+## ⚠️ Pending Setup (Required for Logo Upload)
+
+Run this SQL in Supabase to enable logo uploads:
+
+```sql
+-- Create storage bucket
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('public', 'public', true, 2097152, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies
+CREATE POLICY "Public Read" ON storage.objects FOR SELECT USING (bucket_id = 'public');
+CREATE POLICY "Auth Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'public' AND auth.role() = 'authenticated');
+CREATE POLICY "Auth Update" ON storage.objects FOR UPDATE USING (bucket_id = 'public' AND auth.role() = 'authenticated');
+CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'public' AND auth.role() = 'authenticated');
+```
+
+---
+
+**Version:** 7.0 (Week 3 - Partner Registration Complete)
 **Last Updated:** November 26, 2025
 **Next Review:** November 28, 2025
 
-**🎉 Week 1-2 100% Complete! Settings system with 7 pages + address cascading dropdowns working! Next: Provider dashboard backend!**
+**🎉 Partner registration system complete! Next: Provider orders management + real-time notifications!**
