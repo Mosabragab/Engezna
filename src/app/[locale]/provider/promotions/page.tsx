@@ -24,6 +24,9 @@ import {
   Power,
   AlertCircle,
   Sparkles,
+  Package,
+  CheckSquare,
+  Square,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -425,7 +428,7 @@ export default function PromotionsPage() {
                                 ? `${promo.discount_value} ${locale === 'ar' ? 'ج.م خصم' : 'EGP off'}`
                                 : `${locale === 'ar' ? 'اشتري' : 'Buy'} ${promo.buy_quantity} ${locale === 'ar' ? 'واحصل على' : 'get'} ${promo.get_quantity} ${locale === 'ar' ? 'مجاناً' : 'free'}`}
                             </p>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                            <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 flex-wrap">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
                                 {formatDate(promo.start_date)} - {formatDate(promo.end_date)}
@@ -435,6 +438,19 @@ export default function PromotionsPage() {
                                   {locale === 'ar' ? 'الحد الأدنى:' : 'Min:'} {promo.min_order_amount} {locale === 'ar' ? 'ج.م' : 'EGP'}
                                 </span>
                               )}
+                              <span className={`flex items-center gap-1 ${promo.applies_to === 'specific' ? 'text-primary' : ''}`}>
+                                {promo.applies_to === 'specific' ? (
+                                  <>
+                                    <CheckSquare className="w-3 h-3" />
+                                    {promo.product_ids?.length || 0} {locale === 'ar' ? 'منتج محدد' : 'specific products'}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Package className="w-3 h-3" />
+                                    {locale === 'ar' ? 'جميع المنتجات' : 'All products'}
+                                  </>
+                                )}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -680,12 +696,102 @@ export default function PromotionsPage() {
                 )}
               </div>
 
+              {/* Applies To */}
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">
+                  {locale === 'ar' ? 'ينطبق على' : 'Applies To'}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, applies_to: 'all', product_ids: [] })}
+                    className={`p-3 rounded-lg border-2 transition-colors ${
+                      formData.applies_to === 'all'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-slate-600 hover:border-slate-500'
+                    }`}
+                  >
+                    <Package className="w-5 h-5 mx-auto mb-1 text-primary" />
+                    <p className="text-xs">{locale === 'ar' ? 'جميع المنتجات' : 'All Products'}</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, applies_to: 'specific' })}
+                    className={`p-3 rounded-lg border-2 transition-colors ${
+                      formData.applies_to === 'specific'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-slate-600 hover:border-slate-500'
+                    }`}
+                  >
+                    <CheckSquare className="w-5 h-5 mx-auto mb-1 text-primary" />
+                    <p className="text-xs">{locale === 'ar' ? 'منتجات محددة' : 'Specific Products'}</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Product Selection */}
+              {formData.applies_to === 'specific' && (
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    {locale === 'ar' ? 'اختر المنتجات' : 'Select Products'} ({formData.product_ids.length} {locale === 'ar' ? 'منتج' : 'selected'})
+                  </label>
+                  <div className="max-h-48 overflow-y-auto bg-slate-700/50 rounded-lg p-2 space-y-1">
+                    {products.length === 0 ? (
+                      <p className="text-sm text-slate-500 p-2 text-center">
+                        {locale === 'ar' ? 'لا توجد منتجات متاحة' : 'No products available'}
+                      </p>
+                    ) : (
+                      products.map((product) => {
+                        const isSelected = formData.product_ids.includes(product.id)
+                        return (
+                          <button
+                            key={product.id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setFormData({
+                                  ...formData,
+                                  product_ids: formData.product_ids.filter(id => id !== product.id)
+                                })
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  product_ids: [...formData.product_ids, product.id]
+                                })
+                              }
+                            }}
+                            className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
+                              isSelected ? 'bg-primary/20' : 'hover:bg-slate-600'
+                            }`}
+                          >
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-primary flex-shrink-0" />
+                            ) : (
+                              <Square className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                            )}
+                            <span className="text-sm text-left flex-1">
+                              {locale === 'ar' ? product.name_ar : product.name_en}
+                            </span>
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+                  {formData.applies_to === 'specific' && formData.product_ids.length === 0 && (
+                    <p className="text-xs text-yellow-400 mt-2 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {locale === 'ar' ? 'يرجى اختيار منتج واحد على الأقل' : 'Please select at least one product'}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex gap-3 pt-4">
                 <Button
                   className="flex-1"
                   onClick={handleSave}
-                  disabled={saving || !formData.name_ar || !formData.start_date || !formData.end_date}
+                  disabled={saving || !formData.name_ar || !formData.start_date || !formData.end_date || (formData.applies_to === 'specific' && formData.product_ids.length === 0)}
                 >
                   {saving ? (
                     <>
