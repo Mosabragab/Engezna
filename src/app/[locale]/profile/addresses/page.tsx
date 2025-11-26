@@ -206,12 +206,9 @@ export default function AddressesPage() {
     setDialogOpen(true)
   }
 
-  function openEditDialog(address: Address) {
+  async function openEditDialog(address: Address) {
     setEditingAddress(address)
     setLabel(address.label)
-    setGovernorateId(address.governorate_id || '')
-    setCityId(address.city_id || '')
-    setDistrictId(address.district_id || '')
     setAddressLine1(address.address_line1)
     setBuilding(address.building || '')
     setFloor(address.floor || '')
@@ -220,6 +217,22 @@ export default function AddressesPage() {
     setPhone(address.phone || '')
     setDeliveryInstructions(address.delivery_instructions || '')
     setIsDefault(address.is_default)
+
+    // Load cities and districts for editing
+    if (address.governorate_id) {
+      setGovernorateId(address.governorate_id)
+      await loadCities(address.governorate_id)
+
+      if (address.city_id) {
+        setCityId(address.city_id)
+        await loadDistricts(address.governorate_id, address.city_id)
+
+        if (address.district_id) {
+          setDistrictId(address.district_id)
+        }
+      }
+    }
+
     setDialogOpen(true)
   }
 
@@ -497,14 +510,14 @@ export default function AddressesPage() {
 
               {/* Governorate */}
               <div className="space-y-2">
-                <Label>Governorate</Label>
+                <Label>{tForm('governorate')}</Label>
                 <Select value={governorateId} onValueChange={(value) => {
                   setGovernorateId(value)
                   setCityId('')
                   setDistrictId('')
                 }}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select governorate" />
+                    <SelectValue placeholder={tForm('governoratePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {governorates.map((gov) => (
