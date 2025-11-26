@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** November 26, 2025
-**Status:** Week 3 - 75% Complete 🚧
+**Status:** Week 3 - 85% Complete 🚧
 **Branch:** `main`
 
 ---
@@ -96,7 +96,7 @@
 11. ✅ Product attributes: vegetarian, spicy, prep time, calories
 12. ✅ Image upload to Supabase Storage
 
-### Store Hours Management (NEW! ✅)
+### Store Hours Management (✅)
 1. ✅ Visit `/ar/provider/store-hours` or `/en/provider/store-hours`
 2. ✅ Weekly schedule with all 7 days
 3. ✅ Toggle each day open/closed
@@ -106,6 +106,15 @@
 7. ✅ Summary showing open/closed days count
 8. ✅ Saves to `business_hours` JSONB in providers table
 9. ✅ Link from provider dashboard
+
+### Provider Settings (NEW! ✅)
+1. ✅ Visit `/ar/provider/settings` or `/en/provider/settings`
+2. ✅ Tabbed interface: Store Info, Delivery, Status
+3. ✅ Store Info: Edit name (AR/EN), phone, governorate/city, address, logo
+4. ✅ Delivery: Edit delivery fee, time, minimum order, radius
+5. ✅ Status: Toggle Open/Temporarily Paused/Closed
+6. ✅ Quick links to Store Hours, Products, Orders
+7. ✅ Link from provider dashboard
 
 ### Business Categories Supported
 - 🍔 Restaurant (مطعم)
@@ -130,7 +139,7 @@
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
 Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
-Week 3 █████████░░░  75% 🚧 Partner Dashboard + Menu Management
+Week 3 ██████████░░  85% 🚧 Partner Dashboard + Menu Management
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -167,7 +176,7 @@ Week 3 █████████░░░  75% 🚧 Partner Dashboard + Menu M
 - [x] Address management (full CRUD) ✅
 - [x] Governorate/city selection ✅
 
-### Week 3: Partner Dashboard (75% 🚧)
+### Week 3: Partner Dashboard (85% 🚧)
 - [x] Partner registration page `/partner/register` ✅
 - [x] Multi-step registration (personal info + business type) ✅
 - [x] Business category dropdown (6 types) ✅
@@ -188,9 +197,9 @@ Week 3 █████████░░░  75% 🚧 Partner Dashboard + Menu M
 - [x] Product CRUD operations ✅
 - [x] Products translations (AR/EN) ✅
 - [x] Store hours management `/provider/store-hours` ✅
+- [x] Provider settings page `/provider/settings` ✅
 - [ ] Supabase Storage bucket setup (SQL provided)
 - [ ] Real-time order notifications
-- [ ] Provider settings page
 - [ ] Promotions management
 
 ---
@@ -211,15 +220,25 @@ Week 3 █████████░░░  75% 🚧 Partner Dashboard + Menu M
 
 ## 🎯 Next Steps (Week 3 Remaining)
 
-1. [ ] Provider settings page `/provider/settings`
-2. [ ] Promotions management `/provider/promotions`
-3. [ ] Real-time order notifications (Supabase Realtime)
-4. [ ] Execute Supabase Storage SQL (provided in session)
-5. [ ] Reports dashboard
+1. [ ] Promotions management `/provider/promotions`
+2. [ ] Real-time order notifications (Supabase Realtime)
+3. [ ] Execute Supabase Storage SQL (provided in session)
+4. [ ] Reports dashboard `/provider/reports`
+5. [ ] Finance/Payments dashboard
 
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 26, 2025 - Provider Settings Page ✅
+- ✅ **Provider Settings Page**: Created `/provider/settings` with tabbed interface
+  - Store Info tab: Edit name (AR/EN), phone, governorate/city, address, logo
+  - Delivery tab: Edit delivery fee, time, minimum order, radius
+  - Status tab: Toggle store status (Open/Temporarily Paused/Closed)
+  - Quick links to Store Hours, Products, Orders
+- ✅ **Dashboard Link**: Added Settings card to provider dashboard
+- ✅ **Translations**: Added 50+ new keys for providerSettings namespace (AR/EN)
+- ✅ **Code Metrics**: ~600 lines in new page
 
 ### Work Session Nov 26, 2025 - Store Hours Management ✅
 - ✅ **Store Hours Page**: Created `/provider/store-hours` with full weekly schedule management
@@ -345,8 +364,11 @@ Week 3 █████████░░░  75% 🚧 Partner Dashboard + Menu M
 - `src/i18n/messages/ar.json` - Arabic translations (providerProducts namespace)
 - `src/i18n/messages/en.json` - English translations (providerProducts namespace)
 
-### Store Hours Management (NEW)
+### Store Hours Management
 - `src/app/[locale]/provider/store-hours/page.tsx` - Weekly schedule management
+
+### Provider Settings (NEW)
+- `src/app/[locale]/provider/settings/page.tsx` - Store info, delivery, and status settings
 
 ---
 
@@ -369,8 +391,8 @@ CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'pu
 
 ---
 
-**Version:** 10.0 (Week 3 - Store Hours Management Complete)
+**Version:** 11.0 (Week 3 - Provider Settings Complete)
 **Last Updated:** November 26, 2025
 **Next Review:** November 28, 2025
 
-**🎉 Store hours management complete! Week 3 at 75%! Next: Provider settings + Promotions + Real-time notifications!**
+**🎉 Provider settings complete! Week 3 at 85%! Next: Promotions + Real-time notifications + Reports!**

@@ -454,6 +454,31 @@ export default function ProviderDashboard() {
                     </div>
                   </div>
                 </div>
+
+                {/* Settings Card */}
+                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Settings className="w-7 h-7 text-slate-300" />
+                    </div>
+                    <div className="flex-grow">
+                      <h3 className="text-xl font-bold mb-2">
+                        {locale === 'ar' ? 'إعدادات المتجر' : 'Store Settings'}
+                      </h3>
+                      <p className="text-slate-400 mb-4 text-sm">
+                        {locale === 'ar'
+                          ? 'تعديل معلومات المتجر والتوصيل والحالة.'
+                          : 'Edit store info, delivery settings, and status.'}
+                      </p>
+                      <Link href={`/${locale}/provider/settings`}>
+                        <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                          {locale === 'ar' ? 'الإعدادات' : 'Settings'}
+                          <Settings className={`w-4 h-4 ${isRTL ? 'mr-2' : 'ml-2'}`} />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Recent Orders (Empty State) */}

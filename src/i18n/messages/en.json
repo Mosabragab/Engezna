@@ -514,6 +514,58 @@
       "saved": "Saved!"
     }
   },
+  "providerSettings": {
+    "title": "Store Settings",
+    "dashboard": "Dashboard",
+    "tabs": {
+      "store": "Store Info",
+      "delivery": "Delivery",
+      "status": "Store Status"
+    },
+    "store": {
+      "title": "Store Information",
+      "logo": "Store Logo",
+      "logoMaxSize": "Max 2MB",
+      "nameAr": "Store Name (Arabic)",
+      "nameEn": "Store Name (English)",
+      "phone": "Phone Number",
+      "governorate": "Governorate",
+      "selectGovernorate": "Select Governorate",
+      "city": "City",
+      "selectCity": "Select City",
+      "address": "Detailed Address"
+    },
+    "delivery": {
+      "title": "Delivery Settings",
+      "fee": "Delivery Fee (EGP)",
+      "time": "Expected Delivery Time",
+      "timePlaceholder": "30-45 min",
+      "minimumOrder": "Minimum Order (EGP)",
+      "radius": "Delivery Radius (km)"
+    },
+    "status": {
+      "title": "Store Status",
+      "current": "Current Status",
+      "open": "Open",
+      "openDescription": "Store is accepting orders",
+      "paused": "Temporarily Paused",
+      "pausedDescription": "Temporarily not accepting orders",
+      "closed": "Closed",
+      "closedDescription": "Store is closed and not accepting orders",
+      "warning": "Changing status will affect your store visibility and customers' ability to place orders."
+    },
+    "quickLinks": {
+      "title": "Quick Links",
+      "storeHours": "Store Hours",
+      "products": "Products",
+      "orders": "Orders"
+    },
+    "actions": {
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "saved": "Saved!"
+    }
+  },
   "profile": {
     "title": "My Account",
     "personalInfo": {

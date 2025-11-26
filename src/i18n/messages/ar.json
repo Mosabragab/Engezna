@@ -514,6 +514,58 @@
       "saved": "تم الحفظ!"
     }
   },
+  "providerSettings": {
+    "title": "إعدادات المتجر",
+    "dashboard": "لوحة التحكم",
+    "tabs": {
+      "store": "معلومات المتجر",
+      "delivery": "التوصيل",
+      "status": "حالة المتجر"
+    },
+    "store": {
+      "title": "معلومات المتجر",
+      "logo": "شعار المتجر",
+      "logoMaxSize": "الحد الأقصى 2MB",
+      "nameAr": "اسم المتجر (عربي)",
+      "nameEn": "اسم المتجر (إنجليزي)",
+      "phone": "رقم الهاتف",
+      "governorate": "المحافظة",
+      "selectGovernorate": "اختر المحافظة",
+      "city": "المدينة",
+      "selectCity": "اختر المدينة",
+      "address": "العنوان التفصيلي"
+    },
+    "delivery": {
+      "title": "إعدادات التوصيل",
+      "fee": "رسوم التوصيل (ج.م)",
+      "time": "وقت التوصيل المتوقع",
+      "timePlaceholder": "30-45 دقيقة",
+      "minimumOrder": "الحد الأدنى للطلب (ج.م)",
+      "radius": "نطاق التوصيل (كم)"
+    },
+    "status": {
+      "title": "حالة المتجر",
+      "current": "الحالة الحالية",
+      "open": "مفتوح",
+      "openDescription": "المتجر يستقبل الطلبات",
+      "paused": "متوقف مؤقتاً",
+      "pausedDescription": "توقف مؤقت عن استقبال الطلبات",
+      "closed": "مغلق",
+      "closedDescription": "المتجر مغلق ولا يستقبل طلبات",
+      "warning": "تغيير الحالة سيؤثر على ظهور متجرك للعملاء وقدرتهم على تقديم الطلبات."
+    },
+    "quickLinks": {
+      "title": "روابط سريعة",
+      "storeHours": "ساعات العمل",
+      "products": "المنتجات",
+      "orders": "الطلبات"
+    },
+    "actions": {
+      "save": "حفظ التغييرات",
+      "saving": "جاري الحفظ...",
+      "saved": "تم الحفظ!"
+    }
+  },
   "profile": {
     "title": "حسابي",
     "personalInfo": {
