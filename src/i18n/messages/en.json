@@ -629,6 +629,44 @@
       "min": "Min:"
     }
   },
+  "reports": {
+    "title": "Reports & Analytics",
+    "dashboard": "Dashboard",
+    "loadingReports": "Loading reports...",
+    "revenue": {
+      "today": "Today",
+      "thisWeek": "This Week",
+      "thisMonth": "This Month",
+      "lastMonth": "Last Month",
+      "todaysRevenue": "Today's Revenue",
+      "week": "Week",
+      "month": "Month"
+    },
+    "orders": {
+      "totalOrders": "Total Orders",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "pending": "Pending",
+      "pendingOrders": "Pending Orders"
+    },
+    "customers": {
+      "total": "Customers",
+      "avgOrder": "Avg Order"
+    },
+    "products": {
+      "topSelling": "Top Selling Products",
+      "unitsSold": "units sold",
+      "noData": "No data yet"
+    },
+    "chart": {
+      "revenueLast30Days": "Revenue (Last 30 Days)",
+      "orders": "orders"
+    },
+    "rates": {
+      "completionRate": "Completion Rate",
+      "cancellationRate": "Cancellation Rate"
+    }
+  },
   "profile": {
     "title": "My Account",
     "personalInfo": {

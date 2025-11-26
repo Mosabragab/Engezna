@@ -629,6 +629,44 @@
       "min": "الحد الأدنى:"
     }
   },
+  "reports": {
+    "title": "التقارير والإحصائيات",
+    "dashboard": "لوحة التحكم",
+    "loadingReports": "جاري تحميل التقارير...",
+    "revenue": {
+      "today": "اليوم",
+      "thisWeek": "هذا الأسبوع",
+      "thisMonth": "هذا الشهر",
+      "lastMonth": "الشهر الماضي",
+      "todaysRevenue": "إيرادات اليوم",
+      "week": "الأسبوع",
+      "month": "الشهر"
+    },
+    "orders": {
+      "totalOrders": "إجمالي الطلبات",
+      "completed": "مكتمل",
+      "cancelled": "ملغي",
+      "pending": "معلق",
+      "pendingOrders": "طلبات معلقة"
+    },
+    "customers": {
+      "total": "عملاء",
+      "avgOrder": "متوسط الطلب"
+    },
+    "products": {
+      "topSelling": "المنتجات الأكثر مبيعاً",
+      "unitsSold": "وحدة مباعة",
+      "noData": "لا توجد بيانات بعد"
+    },
+    "chart": {
+      "revenueLast30Days": "الإيرادات (آخر 30 يوم)",
+      "orders": "طلبات"
+    },
+    "rates": {
+      "completionRate": "معدل الإكمال",
+      "cancellationRate": "معدل الإلغاء"
+    }
+  },
   "profile": {
     "title": "حسابي",
     "personalInfo": {
