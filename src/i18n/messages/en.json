@@ -325,6 +325,87 @@
       "progress": "Progress"
     }
   },
+  "providerOrders": {
+    "title": "Order Management",
+    "dashboard": "Dashboard",
+    "refresh": "Refresh",
+    "stats": {
+      "newOrders": "New Orders",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "totalOrders": "Total Orders"
+    },
+    "filters": {
+      "all": "All",
+      "new": "New",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "status": {
+      "pending": "New Order",
+      "accepted": "Accepted",
+      "preparing": "Preparing",
+      "ready": "Ready",
+      "outForDelivery": "On the way",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled",
+      "rejected": "Rejected"
+    },
+    "actions": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "details": "Details",
+      "updateTo": "Update to:",
+      "call": "Call"
+    },
+    "empty": {
+      "noOrders": "No orders yet",
+      "noNewOrders": "No new orders",
+      "noActiveOrders": "No orders in progress",
+      "noCompletedOrders": "No completed orders",
+      "noCancelledOrders": "No cancelled orders",
+      "description": "When customers order from your store, orders will appear here"
+    },
+    "order": {
+      "orderNumber": "Order #",
+      "customer": "Customer",
+      "items": "Items",
+      "moreItems": "more items",
+      "notes": "Notes:",
+      "orderNotes": "Order notes:",
+      "addressNotes": "Address notes:",
+      "subtotal": "Subtotal",
+      "deliveryFee": "Delivery Fee",
+      "discount": "Discount",
+      "total": "Total",
+      "cashOnDelivery": "Cash on Delivery",
+      "onlinePayment": "Online Payment"
+    },
+    "detail": {
+      "orderStatus": "Order Status",
+      "currentStatus": "Current Status",
+      "orderRejected": "Order Rejected",
+      "orderCancelled": "Order Cancelled",
+      "reason": "Reason:",
+      "acceptOrder": "Accept Order",
+      "rejectOrder": "Reject Order",
+      "customerInfo": "Customer Information",
+      "orderDetails": "Order Details",
+      "paymentInfo": "Payment Information",
+      "netEarnings": "Net Earnings (after commission)",
+      "platformCommission": "Platform commission:",
+      "pending": "Pending",
+      "paid": "Paid",
+      "failed": "Failed",
+      "perUnit": "each"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{count}m ago",
+      "hoursAgo": "{count}h ago"
+    }
+  },
   "profile": {
     "title": "My Account",
     "personalInfo": {

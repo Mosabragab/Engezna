@@ -325,6 +325,87 @@
       "progress": "التقدم"
     }
   },
+  "providerOrders": {
+    "title": "إدارة الطلبات",
+    "dashboard": "لوحة التحكم",
+    "refresh": "تحديث",
+    "stats": {
+      "newOrders": "طلبات جديدة",
+      "inProgress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "totalOrders": "إجمالي الطلبات"
+    },
+    "filters": {
+      "all": "الكل",
+      "new": "جديد",
+      "inProgress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "cancelled": "ملغي"
+    },
+    "status": {
+      "pending": "طلب جديد",
+      "accepted": "تم القبول",
+      "preparing": "جاري التحضير",
+      "ready": "جاهز",
+      "outForDelivery": "في الطريق",
+      "delivered": "تم التوصيل",
+      "cancelled": "ملغي",
+      "rejected": "مرفوض"
+    },
+    "actions": {
+      "accept": "قبول",
+      "reject": "رفض",
+      "details": "التفاصيل",
+      "updateTo": "تحديث إلى:",
+      "call": "اتصال"
+    },
+    "empty": {
+      "noOrders": "لا توجد طلبات بعد",
+      "noNewOrders": "لا توجد طلبات جديدة",
+      "noActiveOrders": "لا توجد طلبات قيد التنفيذ",
+      "noCompletedOrders": "لا توجد طلبات مكتملة",
+      "noCancelledOrders": "لا توجد طلبات ملغية",
+      "description": "عندما يطلب العملاء من متجرك، ستظهر الطلبات هنا"
+    },
+    "order": {
+      "orderNumber": "رقم الطلب",
+      "customer": "العميل",
+      "items": "المنتجات",
+      "moreItems": "منتجات أخرى",
+      "notes": "ملاحظات:",
+      "orderNotes": "ملاحظات الطلب:",
+      "addressNotes": "ملاحظات العنوان:",
+      "subtotal": "المجموع الفرعي",
+      "deliveryFee": "رسوم التوصيل",
+      "discount": "الخصم",
+      "total": "الإجمالي",
+      "cashOnDelivery": "الدفع عند الاستلام",
+      "onlinePayment": "دفع إلكتروني"
+    },
+    "detail": {
+      "orderStatus": "حالة الطلب",
+      "currentStatus": "الحالة الحالية",
+      "orderRejected": "تم رفض الطلب",
+      "orderCancelled": "تم إلغاء الطلب",
+      "reason": "السبب:",
+      "acceptOrder": "قبول الطلب",
+      "rejectOrder": "رفض الطلب",
+      "customerInfo": "معلومات العميل",
+      "orderDetails": "تفاصيل الطلب",
+      "paymentInfo": "معلومات الدفع",
+      "netEarnings": "صافي الأرباح (بعد العمولة)",
+      "platformCommission": "عمولة المنصة:",
+      "pending": "معلق",
+      "paid": "مدفوع",
+      "failed": "فشل",
+      "perUnit": "للوحدة"
+    },
+    "time": {
+      "justNow": "الآن",
+      "minutesAgo": "منذ {count} دقيقة",
+      "hoursAgo": "منذ {count} ساعة"
+    }
+  },
   "profile": {
     "title": "حسابي",
     "personalInfo": {

@@ -1,0 +1,646 @@
+'use client'
+
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Clock,
+  ShoppingBag,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  XCircle,
+  Package,
+  Truck,
+  ChefHat,
+  Store,
+  RefreshCw,
+  ChevronRight,
+  ChevronLeft,
+  Phone,
+  MapPin,
+  User,
+  AlertCircle,
+  Check,
+  X,
+  Home,
+  Menu,
+} from 'lucide-react'
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
+type OrderItem = {
+  id: string
+  item_name_ar: string
+  item_name_en: string
+  quantity: number
+  unit_price: number
+  total_price: number
+}
+
+type Order = {
+  id: string
+  order_number: string
+  customer_id: string
+  status: string
+  subtotal: number
+  delivery_fee: number
+  total: number
+  payment_method: string
+  delivery_address: {
+    address: string
+    phone: string
+    full_name: string
+    notes?: string
+  }
+  customer_notes: string | null
+  created_at: string
+  customer: {
+    full_name: string
+    phone: string | null
+  } | null
+  items: OrderItem[]
+}
+
+const STATUS_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label_ar: string; label_en: string }> = {
+  pending: { icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', label_ar: 'طلب جديد', label_en: 'New Order' },
+  accepted: { icon: CheckCircle2, color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/30', label_ar: 'تم القبول', label_en: 'Accepted' },
+  preparing: { icon: ChefHat, color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/30', label_ar: 'جاري التحضير', label_en: 'Preparing' },
+  ready: { icon: Package, color: 'text-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/30', label_ar: 'جاهز', label_en: 'Ready' },
+  out_for_delivery: { icon: Truck, color: 'text-indigo-600', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', label_ar: 'في الطريق', label_en: 'On the way' },
+  delivered: { icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900/30', label_ar: 'تم التوصيل', label_en: 'Delivered' },
+  cancelled: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/30', label_ar: 'ملغي', label_en: 'Cancelled' },
+  rejected: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/30', label_ar: 'مرفوض', label_en: 'Rejected' },
+}
+
+// Status flow for providers
+const NEXT_STATUS: Record<string, string> = {
+  accepted: 'preparing',
+  preparing: 'ready',
+  ready: 'out_for_delivery',
+  out_for_delivery: 'delivered',
+}
+
+type FilterType = 'all' | 'pending' | 'active' | 'completed' | 'cancelled'
+
+export default function ProviderOrdersPage() {
+  const locale = useLocale()
+  const router = useRouter()
+  const isRTL = locale === 'ar'
+
+  const [orders, setOrders] = useState<Order[]>([])
+  const [providerId, setProviderId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [filter, setFilter] = useState<FilterType>('all')
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  useEffect(() => {
+    checkAuthAndLoadOrders()
+  }, [])
+
+  const checkAuthAndLoadOrders = async () => {
+    setLoading(true)
+    const supabase = createClient()
+
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push(`/${locale}/auth/login?redirect=/provider/orders`)
+      return
+    }
+
+    // Get provider ID
+    const { data: provider } = await supabase
+      .from('providers')
+      .select('id, status')
+      .eq('owner_id', user.id)
+      .single()
+
+    if (!provider || !['approved', 'open', 'closed', 'temporarily_paused'].includes(provider.status)) {
+      router.push(`/${locale}/provider`)
+      return
+    }
+
+    setProviderId(provider.id)
+    await loadOrders(provider.id)
+    setLoading(false)
+  }
+
+  const loadOrders = async (provId: string) => {
+    const supabase = createClient()
+
+    // Fetch orders for this provider
+    const { data: ordersData, error } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        order_number,
+        customer_id,
+        status,
+        subtotal,
+        delivery_fee,
+        total,
+        payment_method,
+        delivery_address,
+        customer_notes,
+        created_at,
+        customer:profiles!customer_id(full_name, phone)
+      `)
+      .eq('provider_id', provId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching orders:', error)
+      return
+    }
+
+    // Fetch order items for each order
+    const ordersWithItems = await Promise.all(
+      (ordersData || []).map(async (order) => {
+        const { data: items } = await supabase
+          .from('order_items')
+          .select('id, item_name_ar, item_name_en, quantity, unit_price, total_price')
+          .eq('order_id', order.id)
+
+        return {
+          ...order,
+          customer: Array.isArray(order.customer) ? order.customer[0] : order.customer,
+          items: items || []
+        }
+      })
+    )
+
+    setOrders(ordersWithItems)
+  }
+
+  const handleRefresh = async () => {
+    if (!providerId) return
+    setRefreshing(true)
+    await loadOrders(providerId)
+    setRefreshing(false)
+  }
+
+  const handleAcceptOrder = async (orderId: string) => {
+    setActionLoading(orderId)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+
+    if (!error && providerId) {
+      await loadOrders(providerId)
+    }
+    setActionLoading(null)
+  }
+
+  const handleRejectOrder = async (orderId: string) => {
+    setActionLoading(orderId)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        status: 'rejected',
+        cancelled_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+
+    if (!error && providerId) {
+      await loadOrders(providerId)
+    }
+    setActionLoading(null)
+  }
+
+  const handleUpdateStatus = async (orderId: string, currentStatus: string) => {
+    const nextStatus = NEXT_STATUS[currentStatus]
+    if (!nextStatus) return
+
+    setActionLoading(orderId)
+    const supabase = createClient()
+
+    const updateData: Record<string, any> = {
+      status: nextStatus,
+      updated_at: new Date().toISOString()
+    }
+
+    // Add timestamp for the new status
+    if (nextStatus === 'preparing') updateData.preparing_at = new Date().toISOString()
+    if (nextStatus === 'ready') updateData.ready_at = new Date().toISOString()
+    if (nextStatus === 'out_for_delivery') updateData.out_for_delivery_at = new Date().toISOString()
+    if (nextStatus === 'delivered') updateData.delivered_at = new Date().toISOString()
+
+    const { error } = await supabase
+      .from('orders')
+      .update(updateData)
+      .eq('id', orderId)
+
+    if (!error && providerId) {
+      await loadOrders(providerId)
+    }
+    setActionLoading(null)
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+    })
+  }
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  const getTimeSince = (dateString: string) => {
+    const now = new Date()
+    const date = new Date(dateString)
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000 / 60) // in minutes
+
+    if (diff < 1) return locale === 'ar' ? 'الآن' : 'Just now'
+    if (diff < 60) return locale === 'ar' ? `منذ ${diff} دقيقة` : `${diff}m ago`
+    if (diff < 1440) return locale === 'ar' ? `منذ ${Math.floor(diff / 60)} ساعة` : `${Math.floor(diff / 60)}h ago`
+    return formatDate(dateString)
+  }
+
+  const filterOrders = (orders: Order[]) => {
+    switch (filter) {
+      case 'pending':
+        return orders.filter(o => o.status === 'pending')
+      case 'active':
+        return orders.filter(o =>
+          ['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)
+        )
+      case 'completed':
+        return orders.filter(o => o.status === 'delivered')
+      case 'cancelled':
+        return orders.filter(o => ['cancelled', 'rejected'].includes(o.status))
+      default:
+        return orders
+    }
+  }
+
+  const filteredOrders = filterOrders(orders)
+  const pendingCount = orders.filter(o => o.status === 'pending').length
+  const activeCount = orders.filter(o => ['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)).length
+
+  const getStatusConfig = (status: string) => {
+    return STATUS_CONFIG[status] || STATUS_CONFIG.pending
+  }
+
+  const getNextStatusLabel = (status: string) => {
+    const next = NEXT_STATUS[status]
+    if (!next) return null
+    const config = STATUS_CONFIG[next]
+    return locale === 'ar' ? config.label_ar : config.label_en
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-slate-400">
+            {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-white">
+      {/* Header */}
+      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link
+              href={`/${locale}/provider`}
+              className="flex items-center gap-2 text-slate-400 hover:text-white"
+            >
+              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
+              <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
+            </Link>
+            <h1 className="text-xl font-bold text-primary">
+              {locale === 'ar' ? 'إدارة الطلبات' : 'Order Management'}
+            </h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="text-slate-400 hover:text-white"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-6">
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{pendingCount}</p>
+                <p className="text-xs text-slate-400">{locale === 'ar' ? 'طلبات جديدة' : 'New Orders'}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                <ChefHat className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{activeCount}</p>
+                <p className="text-xs text-slate-400">{locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{orders.filter(o => o.status === 'delivered').length}</p>
+                <p className="text-xs text-slate-400">{locale === 'ar' ? 'مكتمل' : 'Completed'}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{orders.length}</p>
+                <p className="text-xs text-slate-400">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('all')}
+            className={filter !== 'all' ? 'border-slate-600 text-slate-300' : ''}
+          >
+            {locale === 'ar' ? 'الكل' : 'All'}
+            <span className="mx-1 text-xs opacity-70">({orders.length})</span>
+          </Button>
+          <Button
+            variant={filter === 'pending' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('pending')}
+            className={filter !== 'pending' ? 'border-slate-600 text-slate-300' : ''}
+          >
+            {locale === 'ar' ? 'جديد' : 'New'}
+            {pendingCount > 0 && (
+              <span className="mx-1 bg-yellow-500 text-black text-xs px-1.5 rounded-full">
+                {pendingCount}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant={filter === 'active' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('active')}
+            className={filter !== 'active' ? 'border-slate-600 text-slate-300' : ''}
+          >
+            {locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}
+            <span className="mx-1 text-xs opacity-70">({activeCount})</span>
+          </Button>
+          <Button
+            variant={filter === 'completed' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('completed')}
+            className={filter !== 'completed' ? 'border-slate-600 text-slate-300' : ''}
+          >
+            {locale === 'ar' ? 'مكتمل' : 'Completed'}
+          </Button>
+          <Button
+            variant={filter === 'cancelled' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('cancelled')}
+            className={filter !== 'cancelled' ? 'border-slate-600 text-slate-300' : ''}
+          >
+            {locale === 'ar' ? 'ملغي' : 'Cancelled'}
+          </Button>
+        </div>
+
+        {/* Orders List */}
+        {filteredOrders.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ShoppingBag className="w-10 h-10 text-slate-500" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">
+              {filter === 'all'
+                ? locale === 'ar' ? 'لا توجد طلبات بعد' : 'No orders yet'
+                : filter === 'pending'
+                ? locale === 'ar' ? 'لا توجد طلبات جديدة' : 'No new orders'
+                : filter === 'active'
+                ? locale === 'ar' ? 'لا توجد طلبات قيد التنفيذ' : 'No orders in progress'
+                : filter === 'completed'
+                ? locale === 'ar' ? 'لا توجد طلبات مكتملة' : 'No completed orders'
+                : locale === 'ar' ? 'لا توجد طلبات ملغية' : 'No cancelled orders'}
+            </h2>
+            <p className="text-slate-500 text-sm">
+              {locale === 'ar'
+                ? 'عندما يطلب العملاء من متجرك، ستظهر الطلبات هنا'
+                : 'When customers order from your store, orders will appear here'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredOrders.map((order) => {
+              const statusConfig = getStatusConfig(order.status)
+              const StatusIcon = statusConfig.icon
+              const isLoading = actionLoading === order.id
+
+              return (
+                <Card key={order.id} className="bg-slate-800 border-slate-700 overflow-hidden">
+                  <CardContent className="p-0">
+                    {/* Order Header */}
+                    <div className={`p-4 border-b border-slate-700 ${order.status === 'pending' ? 'bg-yellow-500/10' : ''}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono font-bold text-primary text-lg">
+                            #{order.order_number || order.id.slice(0, 8).toUpperCase()}
+                          </span>
+                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color} ${statusConfig.bgColor}`}>
+                            <StatusIcon className="w-3.5 h-3.5" />
+                            {locale === 'ar' ? statusConfig.label_ar : statusConfig.label_en}
+                          </div>
+                        </div>
+                        <div className="text-sm text-slate-400">
+                          {getTimeSince(order.created_at)}
+                        </div>
+                      </div>
+
+                      {/* Customer Info */}
+                      <div className="flex items-center gap-4 text-sm text-slate-300">
+                        <div className="flex items-center gap-1.5">
+                          <User className="w-4 h-4 text-slate-500" />
+                          {order.delivery_address?.full_name || order.customer?.full_name || 'N/A'}
+                        </div>
+                        <a
+                          href={`tel:${order.delivery_address?.phone}`}
+                          className="flex items-center gap-1.5 hover:text-primary"
+                        >
+                          <Phone className="w-4 h-4 text-slate-500" />
+                          {order.delivery_address?.phone || 'N/A'}
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    <div className="p-4 border-b border-slate-700">
+                      <div className="space-y-2">
+                        {order.items.slice(0, 3).map((item) => (
+                          <div key={item.id} className="flex justify-between text-sm">
+                            <span className="text-slate-300">
+                              {item.quantity}x {locale === 'ar' ? item.item_name_ar : item.item_name_en}
+                            </span>
+                            <span className="text-slate-400">
+                              {item.total_price.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                            </span>
+                          </div>
+                        ))}
+                        {order.items.length > 3 && (
+                          <p className="text-xs text-slate-500">
+                            +{order.items.length - 3} {locale === 'ar' ? 'منتجات أخرى' : 'more items'}
+                          </p>
+                        )}
+                      </div>
+                      {order.customer_notes && (
+                        <div className="mt-3 p-2 bg-slate-700/50 rounded text-sm">
+                          <span className="text-slate-500">{locale === 'ar' ? 'ملاحظات:' : 'Notes:'}</span>{' '}
+                          <span className="text-slate-300">{order.customer_notes}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Delivery Address */}
+                    <div className="p-4 border-b border-slate-700 bg-slate-800/50">
+                      <div className="flex items-start gap-2 text-sm">
+                        <MapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-slate-300">{order.delivery_address?.address}</span>
+                      </div>
+                      {order.delivery_address?.notes && (
+                        <p className="text-xs text-slate-500 mt-1 mr-6">
+                          {order.delivery_address.notes}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Order Footer */}
+                    <div className="p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold text-primary">
+                          {order.total.toFixed(2)} <span className="text-sm">{locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {order.payment_method === 'cash'
+                            ? locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'
+                            : locale === 'ar' ? 'دفع إلكتروني' : 'Online Payment'}
+                        </p>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2">
+                        {order.status === 'pending' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRejectOrder(order.id)}
+                              disabled={isLoading}
+                              className="border-red-500/50 text-red-400 hover:bg-red-500/20"
+                            >
+                              <X className="w-4 h-4" />
+                              {locale === 'ar' ? 'رفض' : 'Reject'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleAcceptOrder(order.id)}
+                              disabled={isLoading}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              {isLoading ? (
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Check className="w-4 h-4" />
+                              )}
+                              {locale === 'ar' ? 'قبول' : 'Accept'}
+                            </Button>
+                          </>
+                        )}
+
+                        {['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(order.status) && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleUpdateStatus(order.id, order.status)}
+                            disabled={isLoading}
+                          >
+                            {isLoading ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                {getNextStatusLabel(order.status)}
+                                {isRTL ? (
+                                  <ChevronLeft className="w-4 h-4 mr-1" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4 ml-1" />
+                                )}
+                              </>
+                            )}
+                          </Button>
+                        )}
+
+                        {['delivered', 'cancelled', 'rejected'].includes(order.status) && (
+                          <Link href={`/${locale}/provider/orders/${order.id}`}>
+                            <Button variant="outline" size="sm" className="border-slate-600">
+                              {locale === 'ar' ? 'التفاصيل' : 'Details'}
+                              {isRTL ? <ChevronLeft className="w-4 h-4 mr-1" /> : <ChevronRight className="w-4 h-4 ml-1" />}
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

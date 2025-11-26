@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** November 26, 2025
-**Status:** Week 3 - 30% In Progress 🚧
+**Status:** Week 3 - 50% In Progress 🚧
 **Branch:** `main`
 
 ---
@@ -31,7 +31,7 @@
 - **Name:** Engezna (إنجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
-- **Status:** Week 3 In Progress - Partner Registration Complete ✅
+- **Status:** Week 3 In Progress - Provider Orders Management Complete ✅
 - **Live URL:** https://engezna.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
@@ -59,7 +59,7 @@
 16. ✅ **Language Selection** - Switch between Arabic/English
 17. ✅ **Location Settings** - Select governorate and city
 
-### Partner Registration Flow (NEW! ✅)
+### Partner Registration Flow (✅)
 1. ✅ Visit `/ar/partner/register` or `/en/partner/register`
 2. ✅ Step 1: Personal info (name, email, phone, password)
 3. ✅ Step 2: Business type dropdown + Role dropdown
@@ -69,6 +69,18 @@
 7. ✅ Step 3: Store info (name AR/EN, phone, governorate/city, address, logo)
 8. ✅ Step 4: Delivery settings (fee, time, minimum order, radius)
 9. ✅ Submit for review → status "pending_approval"
+
+### Provider Orders Management (NEW! ✅)
+1. ✅ Visit `/ar/provider/orders` or `/en/provider/orders`
+2. ✅ View all orders with stats (new/in-progress/completed/total)
+3. ✅ Filter tabs: All, New, In Progress, Completed, Cancelled
+4. ✅ Order cards with customer info, items, address, total
+5. ✅ Accept/Reject buttons for pending orders
+6. ✅ Status update flow: Accepted → Preparing → Ready → Out for Delivery → Delivered
+7. ✅ Order detail page `/provider/orders/[id]`
+8. ✅ Status timeline with timestamps
+9. ✅ Customer info with call button
+10. ✅ Net earnings display (after commission)
 
 ### Business Categories Supported
 - 🍔 Restaurant (مطعم)
@@ -93,7 +105,7 @@
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
 Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
-Week 3 ███░░░░░░░░░  30% 🚧 Partner registration + Dashboard
+Week 3 ██████░░░░░░  50% 🚧 Partner registration + Orders Management
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -130,7 +142,7 @@ Week 3 ███░░░░░░░░░  30% 🚧 Partner registration + Das
 - [x] Address management (full CRUD) ✅
 - [x] Governorate/city selection ✅
 
-### Week 3: Partner Dashboard (30% 🚧)
+### Week 3: Partner Dashboard (50% 🚧)
 - [x] Partner registration page `/partner/register` ✅
 - [x] Multi-step registration (personal info + business type) ✅
 - [x] Business category dropdown (6 types) ✅
@@ -140,8 +152,11 @@ Week 3 ███░░░░░░░░░  30% 🚧 Partner registration + Das
 - [x] Logo upload with preview ✅
 - [x] Delivery settings form ✅
 - [x] Status-aware provider dashboard ✅
+- [x] Provider orders management page `/provider/orders` ✅
+- [x] Order detail page `/provider/orders/[id]` ✅
+- [x] Accept/Reject/Update order status ✅
+- [x] Provider orders translations (AR/EN) ✅
 - [ ] Supabase Storage bucket setup (SQL provided)
-- [ ] Provider orders management page
 - [ ] Real-time order notifications
 - [ ] Menu management system
 
@@ -164,15 +179,33 @@ Week 3 ███░░░░░░░░░  30% 🚧 Partner registration + Das
 ## 🎯 Next Steps (Week 3 Remaining)
 
 1. [ ] Execute Supabase Storage SQL (provided in session)
-2. [ ] Provider orders management page `/provider/orders`
-3. [ ] Order detail page `/provider/orders/[id]`
-4. [ ] Accept/Reject/Update order status
-5. [ ] Real-time order notifications
-6. [ ] Menu management system
+2. [ ] Real-time order notifications (Supabase Realtime)
+3. [ ] Menu management system `/provider/products`
+4. [ ] Add/Edit/Delete menu items with images
+5. [ ] Category management for menu items
 
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 26, 2025 - Provider Orders Management ✅
+- ✅ **Provider Orders Page**: Created `/provider/orders` with full order management
+  - Stats row: new orders, in progress, completed, total
+  - Filter tabs: All, New, In Progress, Completed, Cancelled
+  - Order cards with customer info, items preview, delivery address
+  - Accept/Reject buttons for pending orders
+  - Progressive status updates (Accepted → Preparing → Ready → Out for Delivery → Delivered)
+- ✅ **Order Detail Page**: Created `/provider/orders/[id]`
+  - Full status timeline with timestamps
+  - Customer information with call button
+  - Complete order items list with prices
+  - Payment information with status
+  - Net earnings display (total minus platform commission)
+  - Action buttons for status updates
+- ✅ **Translations**: Added 70+ new keys for provider orders (AR/EN)
+  - Complete providerOrders namespace
+  - Status labels, actions, empty states, time formatting
+- ✅ **Code Metrics**: ~900 lines across 2 new pages
 
 ### Work Session Nov 26, 2025 - Partner Registration System ✅
 - ✅ **Partner Registration Page**: Created `/partner/register` with multi-step flow
@@ -228,12 +261,16 @@ Week 3 ███░░░░░░░░░  30% 🚧 Partner registration + Das
 - `src/app/globals.css` - Brand colors
 - `package.json` - Dependencies (Tailwind v3)
 
-### Partner Registration (NEW)
+### Partner Registration
 - `src/app/[locale]/partner/register/page.tsx` - Partner signup
 - `src/app/[locale]/provider/complete-profile/page.tsx` - Complete business info
 - `src/app/[locale]/provider/page.tsx` - Status-aware dashboard
-- `src/i18n/messages/ar.json` - Arabic translations (partner namespace)
-- `src/i18n/messages/en.json` - English translations (partner namespace)
+
+### Provider Orders Management (NEW)
+- `src/app/[locale]/provider/orders/page.tsx` - Orders list with filters & actions
+- `src/app/[locale]/provider/orders/[id]/page.tsx` - Order detail with status updates
+- `src/i18n/messages/ar.json` - Arabic translations (providerOrders namespace)
+- `src/i18n/messages/en.json` - English translations (providerOrders namespace)
 
 ---
 
@@ -256,8 +293,8 @@ CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'pu
 
 ---
 
-**Version:** 7.0 (Week 3 - Partner Registration Complete)
+**Version:** 8.0 (Week 3 - Provider Orders Management Complete)
 **Last Updated:** November 26, 2025
 **Next Review:** November 28, 2025
 
-**🎉 Partner registration system complete! Next: Provider orders management + real-time notifications!**
+**🎉 Provider orders management complete! Next: Real-time notifications + Menu management system!**
