@@ -31,6 +31,7 @@ import {
   ChevronRight,
   Users,
   DollarSign,
+  User as UserIcon,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -200,6 +201,11 @@ export default function ProviderDashboard() {
       icon: Settings,
       label: locale === 'ar' ? 'الإعدادات' : 'Settings',
       path: `/${locale}/provider/settings`
+    },
+    {
+      icon: UserIcon,
+      label: locale === 'ar' ? 'الملف الشخصي' : 'Profile',
+      path: `/${locale}/provider/profile`
     },
   ]
 
