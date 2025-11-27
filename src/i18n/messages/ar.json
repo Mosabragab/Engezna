@@ -255,6 +255,463 @@
       "error": "حدث خطأ أثناء الحفظ"
     }
   },
+  "partner": {
+    "register": {
+      "title": "تسجيل شريك جديد",
+      "description": "انضم إلى منصة إنجزنا كشريك",
+      "step1Title": "الخطوة 1: المعلومات الشخصية",
+      "step2Title": "الخطوة 2: معلومات النشاط",
+      "fullName": "الاسم الكامل",
+      "fullNamePlaceholder": "أدخل اسمك الكامل",
+      "phone": "رقم الهاتف",
+      "phonePlaceholder": "01xxxxxxxxx",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "أدخل بريدك الإلكتروني",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "أدخل كلمة المرور",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور",
+      "businessCategory": "نوع النشاط",
+      "businessCategoryPlaceholder": "اختر نوع النشاط",
+      "partnerRole": "الوظيفة",
+      "partnerRolePlaceholder": "اختر وظيفتك",
+      "nextStep": "التالي",
+      "prevStep": "السابق",
+      "registerButton": "تسجيل كشريك",
+      "registering": "جاري التسجيل...",
+      "hasAccount": "لديك حساب بالفعل؟",
+      "loginLink": "تسجيل الدخول",
+      "isCustomer": "أنت زبون؟",
+      "customerSignupLink": "سجل كزبون",
+      "successTitle": "تم التسجيل بنجاح!",
+      "successMessage": "تم إنشاء حسابك كشريك. جاري التحويل إلى لوحة التحكم...",
+      "completeProfileNote": "ملاحظة: أكمل معلومات النشاط في لوحة التحكم للحصول على الموافقة وبدء استقبال الطلبات.",
+      "completeProfileLater": "ملاحظة: بعد التسجيل، ستحتاج لإكمال معلومات متجرك (الاسم، العنوان، الشعار، إعدادات التوصيل) للحصول على الموافقة."
+    },
+    "completeProfile": {
+      "title": "أكمل معلومات النشاط",
+      "description": "أكمل المعلومات التالية للحصول على الموافقة",
+      "step3Title": "معلومات المتجر",
+      "step4Title": "إعدادات التوصيل",
+      "storeNameAr": "اسم المتجر (عربي)",
+      "storeNameArPlaceholder": "أدخل اسم المتجر بالعربية",
+      "storeNameEn": "اسم المتجر (إنجليزي)",
+      "storeNameEnPlaceholder": "أدخل اسم المتجر بالإنجليزية",
+      "storePhone": "رقم هاتف المتجر",
+      "storePhonePlaceholder": "رقم للتواصل مع المتجر",
+      "governorate": "المحافظة",
+      "governoratePlaceholder": "اختر المحافظة",
+      "city": "المدينة",
+      "cityPlaceholder": "اختر المدينة",
+      "address": "العنوان التفصيلي",
+      "addressPlaceholder": "الشارع، رقم المبنى، علامة مميزة",
+      "logo": "شعار المتجر",
+      "logoRequired": "(إجباري)",
+      "logoUpload": "اسحب الصورة هنا أو انقر للاختيار",
+      "logoUploading": "جاري رفع الشعار...",
+      "logoSuccess": "تم رفع الشعار بنجاح",
+      "deliveryFee": "رسوم التوصيل (ج.م)",
+      "deliveryFeePlaceholder": "مثال: 10",
+      "estimatedDeliveryTime": "وقت التوصيل المتوقع (دقيقة)",
+      "estimatedDeliveryTimePlaceholder": "مثال: 30",
+      "minOrderAmount": "الحد الأدنى للطلب (ج.م)",
+      "minOrderAmountPlaceholder": "مثال: 50",
+      "deliveryRadius": "نطاق التوصيل (كم)",
+      "deliveryRadiusPlaceholder": "مثال: 5",
+      "submitButton": "إرسال للمراجعة",
+      "submitting": "جاري الإرسال...",
+      "successTitle": "تم الإرسال للمراجعة!",
+      "successMessage": "سيتم مراجعة طلبك وإعلامك بالنتيجة قريباً.",
+      "progress": "التقدم"
+    }
+  },
+  "providerOrders": {
+    "title": "إدارة الطلبات",
+    "dashboard": "لوحة التحكم",
+    "refresh": "تحديث",
+    "stats": {
+      "newOrders": "طلبات جديدة",
+      "inProgress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "totalOrders": "إجمالي الطلبات"
+    },
+    "filters": {
+      "all": "الكل",
+      "new": "جديد",
+      "inProgress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "cancelled": "ملغي"
+    },
+    "status": {
+      "pending": "طلب جديد",
+      "accepted": "تم القبول",
+      "preparing": "جاري التحضير",
+      "ready": "جاهز",
+      "outForDelivery": "في الطريق",
+      "delivered": "تم التوصيل",
+      "cancelled": "ملغي",
+      "rejected": "مرفوض"
+    },
+    "actions": {
+      "accept": "قبول",
+      "reject": "رفض",
+      "details": "التفاصيل",
+      "updateTo": "تحديث إلى:",
+      "call": "اتصال"
+    },
+    "empty": {
+      "noOrders": "لا توجد طلبات بعد",
+      "noNewOrders": "لا توجد طلبات جديدة",
+      "noActiveOrders": "لا توجد طلبات قيد التنفيذ",
+      "noCompletedOrders": "لا توجد طلبات مكتملة",
+      "noCancelledOrders": "لا توجد طلبات ملغية",
+      "description": "عندما يطلب العملاء من متجرك، ستظهر الطلبات هنا"
+    },
+    "order": {
+      "orderNumber": "رقم الطلب",
+      "customer": "العميل",
+      "items": "المنتجات",
+      "moreItems": "منتجات أخرى",
+      "notes": "ملاحظات:",
+      "orderNotes": "ملاحظات الطلب:",
+      "addressNotes": "ملاحظات العنوان:",
+      "subtotal": "المجموع الفرعي",
+      "deliveryFee": "رسوم التوصيل",
+      "discount": "الخصم",
+      "total": "الإجمالي",
+      "cashOnDelivery": "الدفع عند الاستلام",
+      "onlinePayment": "دفع إلكتروني"
+    },
+    "detail": {
+      "orderStatus": "حالة الطلب",
+      "currentStatus": "الحالة الحالية",
+      "orderRejected": "تم رفض الطلب",
+      "orderCancelled": "تم إلغاء الطلب",
+      "reason": "السبب:",
+      "acceptOrder": "قبول الطلب",
+      "rejectOrder": "رفض الطلب",
+      "customerInfo": "معلومات العميل",
+      "orderDetails": "تفاصيل الطلب",
+      "paymentInfo": "معلومات الدفع",
+      "netEarnings": "صافي الأرباح (بعد العمولة)",
+      "platformCommission": "عمولة المنصة:",
+      "pending": "معلق",
+      "paid": "مدفوع",
+      "failed": "فشل",
+      "perUnit": "للوحدة"
+    },
+    "time": {
+      "justNow": "الآن",
+      "minutesAgo": "منذ {count} دقيقة",
+      "hoursAgo": "منذ {count} ساعة"
+    }
+  },
+  "providerProducts": {
+    "title": "إدارة المنتجات",
+    "dashboard": "لوحة التحكم",
+    "products": "المنتجات",
+    "addProduct": "إضافة منتج",
+    "editProduct": "تعديل المنتج",
+    "addFirstProduct": "إضافة أول منتج",
+    "stats": {
+      "totalProducts": "إجمالي المنتجات",
+      "available": "متاح",
+      "unavailable": "غير متاح"
+    },
+    "filters": {
+      "all": "الكل",
+      "available": "متاح",
+      "unavailable": "غير متاح"
+    },
+    "search": "ابحث عن منتج...",
+    "empty": {
+      "noProducts": "لا توجد منتجات بعد",
+      "noResults": "لا توجد نتائج",
+      "noAvailable": "لا توجد منتجات متاحة",
+      "noUnavailable": "لا توجد منتجات غير متاحة",
+      "description": "أضف منتجاتك ليتمكن العملاء من الطلب"
+    },
+    "product": {
+      "image": "صورة المنتج",
+      "nameAr": "اسم المنتج (عربي)",
+      "nameEn": "اسم المنتج (إنجليزي)",
+      "descriptionAr": "الوصف (عربي)",
+      "descriptionEn": "الوصف (إنجليزي)",
+      "price": "السعر (ج.م)",
+      "originalPrice": "السعر الأصلي (للخصم)",
+      "prepTime": "وقت التحضير (دقيقة)",
+      "calories": "السعرات الحرارية",
+      "vegetarian": "نباتي",
+      "spicy": "حار",
+      "availableForOrder": "متاح للطلب",
+      "off": "خصم"
+    },
+    "actions": {
+      "save": "حفظ المنتج",
+      "saveChanges": "حفظ التغييرات",
+      "saving": "جاري الحفظ...",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "show": "إظهار",
+      "hide": "إخفاء",
+      "cancel": "إلغاء",
+      "confirmDelete": "هل أنت متأكد من الحذف؟",
+      "deleteProduct": "حذف المنتج؟",
+      "deleteWarning": "هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء."
+    },
+    "upload": {
+      "clickToUpload": "اضغط لرفع صورة",
+      "maxSize": "الحد الأقصى 2 ميجابايت",
+      "invalidType": "الملف يجب أن يكون صورة",
+      "tooLarge": "حجم الصورة يجب أن يكون أقل من 2 ميجابايت",
+      "failed": "فشل رفع الصورة"
+    },
+    "errors": {
+      "nameArRequired": "الاسم بالعربية مطلوب",
+      "nameEnRequired": "الاسم بالإنجليزية مطلوب",
+      "priceRequired": "السعر مطلوب ويجب أن يكون أكبر من 0",
+      "originalPriceInvalid": "السعر الأصلي يجب أن يكون أكبر من السعر الحالي",
+      "addFailed": "فشل إضافة المنتج",
+      "updateFailed": "فشل تحديث المنتج",
+      "deleteFailed": "فشل حذف المنتج"
+    },
+    "sections": {
+      "productImage": "صورة المنتج",
+      "productInfo": "معلومات المنتج",
+      "pricing": "التسعير",
+      "additionalInfo": "معلومات إضافية"
+    },
+    "hints": {
+      "originalPriceHint": "أضف السعر الأصلي إذا كنت تريد إظهار خصم"
+    }
+  },
+  "storeHours": {
+    "title": "ساعات العمل",
+    "dashboard": "لوحة التحكم",
+    "weeklySchedule": "جدول العمل الأسبوعي",
+    "hoursSummary": "ملخص ساعات العمل",
+    "openAllDays": "فتح كل الأيام",
+    "closeAllDays": "إغلاق كل الأيام",
+    "copyToAll": "نسخ لكل الأيام",
+    "from": "من",
+    "to": "إلى",
+    "open": "مفتوح",
+    "closed": "مغلق",
+    "openDays": "أيام مفتوحة",
+    "closedDays": "أيام مغلقة",
+    "days": {
+      "saturday": "السبت",
+      "sunday": "الأحد",
+      "monday": "الاثنين",
+      "tuesday": "الثلاثاء",
+      "wednesday": "الأربعاء",
+      "thursday": "الخميس",
+      "friday": "الجمعة"
+    },
+    "actions": {
+      "save": "حفظ التغييرات",
+      "saving": "جاري الحفظ...",
+      "saved": "تم الحفظ!"
+    }
+  },
+  "providerSettings": {
+    "title": "إعدادات المتجر",
+    "dashboard": "لوحة التحكم",
+    "tabs": {
+      "store": "معلومات المتجر",
+      "delivery": "التوصيل",
+      "status": "حالة المتجر"
+    },
+    "store": {
+      "title": "معلومات المتجر",
+      "logo": "شعار المتجر",
+      "logoMaxSize": "الحد الأقصى 2MB",
+      "nameAr": "اسم المتجر (عربي)",
+      "nameEn": "اسم المتجر (إنجليزي)",
+      "phone": "رقم الهاتف",
+      "governorate": "المحافظة",
+      "selectGovernorate": "اختر المحافظة",
+      "city": "المدينة",
+      "selectCity": "اختر المدينة",
+      "address": "العنوان التفصيلي"
+    },
+    "delivery": {
+      "title": "إعدادات التوصيل",
+      "fee": "رسوم التوصيل (ج.م)",
+      "time": "وقت التوصيل المتوقع",
+      "timePlaceholder": "30-45 دقيقة",
+      "minimumOrder": "الحد الأدنى للطلب (ج.م)",
+      "radius": "نطاق التوصيل (كم)"
+    },
+    "status": {
+      "title": "حالة المتجر",
+      "current": "الحالة الحالية",
+      "open": "مفتوح",
+      "openDescription": "المتجر يستقبل الطلبات",
+      "paused": "متوقف مؤقتاً",
+      "pausedDescription": "توقف مؤقت عن استقبال الطلبات",
+      "closed": "مغلق",
+      "closedDescription": "المتجر مغلق ولا يستقبل طلبات",
+      "warning": "تغيير الحالة سيؤثر على ظهور متجرك للعملاء وقدرتهم على تقديم الطلبات."
+    },
+    "quickLinks": {
+      "title": "روابط سريعة",
+      "storeHours": "ساعات العمل",
+      "products": "المنتجات",
+      "orders": "الطلبات"
+    },
+    "actions": {
+      "save": "حفظ التغييرات",
+      "saving": "جاري الحفظ...",
+      "saved": "تم الحفظ!"
+    }
+  },
+  "promotions": {
+    "title": "العروض والخصومات",
+    "dashboard": "لوحة التحكم",
+    "newPromotion": "عرض جديد",
+    "editPromotion": "تعديل العرض",
+    "createPromotion": "إنشاء عرض",
+    "noPromotions": "لا توجد عروض",
+    "noPromotionsDescription": "أنشئ عرضاً جديداً لجذب المزيد من العملاء",
+    "tabs": {
+      "all": "الكل",
+      "active": "نشط",
+      "upcoming": "قادم",
+      "expired": "منتهي"
+    },
+    "stats": {
+      "active": "نشط",
+      "upcoming": "قادم",
+      "expired": "منتهي",
+      "total": "الإجمالي"
+    },
+    "form": {
+      "nameAr": "اسم العرض (عربي)",
+      "nameArPlaceholder": "مثال: خصم نهاية الأسبوع",
+      "nameEn": "اسم العرض (إنجليزي)",
+      "type": "نوع العرض",
+      "percentage": "نسبة مئوية",
+      "fixed": "مبلغ ثابت",
+      "buyXGetY": "اشتري واحصل",
+      "discountPercentage": "نسبة الخصم (%)",
+      "discountAmount": "قيمة الخصم (ج.م)",
+      "buyQuantity": "اشتري (عدد)",
+      "getQuantity": "واحصل على (عدد)",
+      "startDate": "تاريخ البداية",
+      "endDate": "تاريخ النهاية",
+      "minOrder": "الحد الأدنى للطلب (ج.م)",
+      "maxDiscount": "أقصى خصم (ج.م)",
+      "optional": "اختياري"
+    },
+    "status": {
+      "active": "نشط",
+      "upcoming": "قادم",
+      "expired": "منتهي",
+      "inactive": "متوقف"
+    },
+    "actions": {
+      "edit": "تعديل",
+      "enable": "تفعيل",
+      "disable": "إيقاف",
+      "delete": "حذف",
+      "save": "حفظ",
+      "saving": "جاري الحفظ...",
+      "cancel": "إلغاء",
+      "deleteConfirm": "هل تريد حذف هذا العرض؟"
+    },
+    "display": {
+      "off": "خصم",
+      "egpOff": "ج.م خصم",
+      "buy": "اشتري",
+      "get": "واحصل على",
+      "free": "مجاناً",
+      "min": "الحد الأدنى:"
+    }
+  },
+  "reports": {
+    "title": "التقارير والإحصائيات",
+    "dashboard": "لوحة التحكم",
+    "loadingReports": "جاري تحميل التقارير...",
+    "revenue": {
+      "today": "اليوم",
+      "thisWeek": "هذا الأسبوع",
+      "thisMonth": "هذا الشهر",
+      "lastMonth": "الشهر الماضي",
+      "todaysRevenue": "إيرادات اليوم",
+      "week": "الأسبوع",
+      "month": "الشهر"
+    },
+    "orders": {
+      "totalOrders": "إجمالي الطلبات",
+      "completed": "مكتمل",
+      "cancelled": "ملغي",
+      "pending": "معلق",
+      "pendingOrders": "طلبات معلقة"
+    },
+    "customers": {
+      "total": "عملاء",
+      "avgOrder": "متوسط الطلب"
+    },
+    "products": {
+      "topSelling": "المنتجات الأكثر مبيعاً",
+      "unitsSold": "وحدة مباعة",
+      "noData": "لا توجد بيانات بعد"
+    },
+    "chart": {
+      "revenueLast30Days": "الإيرادات (آخر 30 يوم)",
+      "orders": "طلبات"
+    },
+    "rates": {
+      "completionRate": "معدل الإكمال",
+      "cancellationRate": "معدل الإلغاء"
+    }
+  },
+  "finance": {
+    "title": "المالية والمدفوعات",
+    "dashboard": "لوحة التحكم",
+    "loadingData": "جاري تحميل البيانات المالية...",
+    "stats": {
+      "totalEarnings": "إجمالي الأرباح",
+      "pendingPayout": "قيد التحويل",
+      "thisMonth": "هذا الشهر",
+      "commission": "العمولات (6%)"
+    },
+    "commissionInfo": {
+      "title": "معلومات العمولة",
+      "description": "عمولة المنصة 6% فقط من قيمة كل طلب. يتم تحويل أرباحك أسبوعياً إلى حسابك البنكي."
+    },
+    "payoutSchedule": {
+      "title": "جدول التحويلات",
+      "payoutDay": "يوم التحويل",
+      "sunday": "الأحد",
+      "processingTime": "وقت الوصول",
+      "days": "1-3 أيام",
+      "paymentMethod": "طريقة الدفع",
+      "bankTransfer": "تحويل بنكي"
+    },
+    "transactions": {
+      "title": "سجل المعاملات",
+      "noTransactions": "لا توجد معاملات",
+      "filters": {
+        "all": "الكل",
+        "orders": "الطلبات",
+        "payouts": "التحويلات",
+        "commissions": "العمولات"
+      },
+      "types": {
+        "order": "طلب",
+        "payout": "تحويل",
+        "commission": "عمولة",
+        "refund": "استرداد"
+      },
+      "status": {
+        "completed": "مكتمل",
+        "pending": "قيد المعالجة",
+        "failed": "فشل"
+      }
+    }
+  },
   "profile": {
     "title": "حسابي",
     "personalInfo": {

@@ -96,7 +96,7 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 
 #### **⚠️ Important Note - Project Status**
 
-This project is in **active development** (Week 1-2 - 100% Complete). What you'll see:
+This project is in **active development** (Week 3 - 30% In Progress). What you'll see:
 
 **Works:**
 - ✅ Design system, theming (dark/light mode)
@@ -120,19 +120,24 @@ This project is in **active development** (Week 1-2 - 100% Complete). What you'l
 - ✅ **Address management** (full CRUD with cascading dropdowns)
 - ✅ **Language selection** (switch between AR/EN)
 - ✅ **Location settings** (select governorate and city)
+- ✅ **Partner Registration** (NEW! - multi-step registration for businesses)
+- ✅ **Business Profile Completion** (store info, logo upload, delivery settings)
+- ✅ **Status-aware Dashboard** (incomplete/pending/approved states)
 
 **Doesn't Work Yet:**
-- ❌ Provider dashboard backend (UI complete, needs order management)
+- ❌ Provider orders management (accepting/rejecting orders)
+- ❌ Real-time order notifications
+- ❌ Menu management system
 - ❌ Admin panel
 - ❌ Payment integration (online payment with Fawry)
-- ❌ Real-time notifications
-- ❌ Order cancellation flow
 
 **What You Can Test:**
 - Browse 4 live providers at `/providers`
 - View provider menus and details
 - Add items to shopping cart (persisted globally)
 - Create account or login (`/auth/signup`, `/auth/login`)
+- **Register as partner** (`/partner/register`) - NEW!
+- **Complete business profile** (`/provider/complete-profile`) - NEW!
 - Complete checkout flow (`/checkout`)
 - Place order and view confirmation
 - Track orders with status timeline (`/orders/[id]`)
@@ -287,8 +292,8 @@ npm run type-check   # TypeScript type checking
 
 ### 📊 Current Status
 
-**Phase:** Core Features Development (Nov 18 - Nov 26, 2025)
-**Status:** Week 1-2 - 100% Complete 🚀
+**Phase:** Partner Dashboard Development (Nov 26+, 2025)
+**Status:** Week 3 - 30% In Progress 🚧
 
 **What's Working ✅**
 - ✅ Full project infrastructure (Next.js 16.0.3 + TypeScript + Tailwind CSS v3.4.17)
@@ -341,18 +346,28 @@ npm run type-check   # TypeScript type checking
 - ✅ Noto Sans Arabic + English variable fonts
 - ✅ Complete documentation (PRD, README, claude.md, WEEK_2_PROGRESS.md)
 
-**Work Session Nov 25 - Munich 🔧 ALL FIXES COMPLETE!**
-- ✅ **Fix 1**: Navigation "Browse" → "Stores" - COMPLETE (role-aware navigation with icons)
-- ✅ **Fix 2**: Logout translation fixed ("Sign Out" / "خروج")
-- ✅ **Fix 3**: Provider Dashboard - COMPLETE (full dark-themed UI with sidebar, stats, quick actions)
-- ✅ **Fix 4**: "Clear Session" red button completely removed
+**Work Session Nov 26 - Partner Registration System 🔧 COMPLETE!**
+- ✅ **Partner Registration**: Multi-step registration at `/partner/register`
+  - Step 1: Personal info (name, email, phone, password)
+  - Step 2: Business category + Partner role dropdowns
+  - 6 business types: Restaurant, Cafe, Supermarket, Juice Shop, Pharmacy, Vegetables & Fruits
+- ✅ **Business Profile Completion**: Complete profile at `/provider/complete-profile`
+  - Store name (Arabic/English)
+  - Cascading governorate/city dropdowns
+  - Logo upload with preview
+  - Delivery settings (fee, time, minimum order, radius)
+- ✅ **Status-aware Dashboard**: Different views based on registration status
+  - "incomplete" → Shows complete profile prompt
+  - "pending_approval" → Shows under review message
+  - "rejected" → Shows rejection reason + resubmit button
+  - "approved" → Shows full dashboard
 
 **What's NOT Working Yet ⚠️**
-- ⚠️ **Provider dashboard backend** (UI complete, needs menu management and order handling)
+- ⚠️ **Provider orders management** (accepting/rejecting orders)
+- ⚠️ **Real-time order notifications**
+- ⚠️ **Menu management system**
 - ⚠️ **Admin panel** (no platform management)
 - ⚠️ **Payment integration** (Fawry online payment not integrated yet)
-- ⚠️ **Real-time notifications** (order updates, push notifications)
-- ⚠️ **Order cancellation flow** (customers cannot cancel orders yet)
 
 **Foundation Quality:** ✅ Excellent
 - Solid architecture with clear separation of concerns
@@ -360,15 +375,15 @@ npm run type-check   # TypeScript type checking
 - Complete database schema ready for deployment
 - Zero security vulnerabilities in dependencies
 
-**Next Steps (Week 3):**
-- 📅 Provider dashboard backend (order management, notifications)
-- 📅 Real-time order status updates (Supabase realtime)
-- 📅 Order cancellation flow
-- 📅 Provider notifications for new orders
+**Next Steps (Week 3 Remaining):**
+- 📅 Provider orders management page
+- 📅 Accept/Reject/Update order status
+- 📅 Real-time order notifications
+- 📅 Menu management system
 
 **Future (Week 4-12):**
 - ✅ Week 1-2: Foundation, provider browsing, cart, auth, checkout, orders (COMPLETE)
-- 📅 Week 3: Provider dashboard backend and user profile
+- 🚧 Week 3: Partner registration + dashboard backend (30% COMPLETE)
 - 📅 Week 4-5: Provider dashboard (menu management, orders)
 - 📅 Week 6-7: Provider analytics and multi-user support
 - 📅 Week 8-9: Admin panel (platform management, settlements)

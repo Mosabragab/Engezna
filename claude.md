@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** November 26, 2025
-**Status:** Week 1-2 - 100% Complete ✅
+**Last Updated:** November 27, 2025
+**Status:** Week 3 - 100% Complete ✅
 **Branch:** `main`
 
 ---
@@ -31,7 +31,7 @@
 - **Name:** Engezna (إنجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
-- **Status:** Week 1-2 Complete - 95% (Auth + Checkout + UI Fixes + Orders) ✅
+- **Status:** Week 3 In Progress - Store Hours Management Complete ✅
 - **Live URL:** https://engezna.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
@@ -59,6 +59,125 @@
 16. ✅ **Language Selection** - Switch between Arabic/English
 17. ✅ **Location Settings** - Select governorate and city
 
+### Partner Registration Flow (✅)
+1. ✅ Visit `/ar/partner/register` or `/en/partner/register`
+2. ✅ Step 1: Personal info (name, email, phone, password)
+3. ✅ Step 2: Business type dropdown + Role dropdown
+4. ✅ Creates provider with status "incomplete"
+5. ✅ Redirect to provider dashboard
+6. ✅ Complete profile at `/provider/complete-profile`
+7. ✅ Step 3: Store info (name AR/EN, phone, governorate/city, address, logo)
+8. ✅ Step 4: Delivery settings (fee, time, minimum order, radius)
+9. ✅ Submit for review → status "pending_approval"
+
+### Provider Orders Management (✅)
+1. ✅ Visit `/ar/provider/orders` or `/en/provider/orders`
+2. ✅ View all orders with stats (new/in-progress/completed/total)
+3. ✅ Filter tabs: All, New, In Progress, Completed, Cancelled
+4. ✅ Order cards with customer info, items, address, total
+5. ✅ Accept/Reject buttons for pending orders
+6. ✅ Status update flow: Accepted → Preparing → Ready → Out for Delivery → Delivered
+7. ✅ Order detail page `/provider/orders/[id]`
+8. ✅ Status timeline with timestamps
+9. ✅ Customer info with call button
+10. ✅ Net earnings display (after commission)
+
+### Menu Management System (✅)
+1. ✅ Visit `/ar/provider/products` or `/en/provider/products`
+2. ✅ View all products with stats (total/available/unavailable)
+3. ✅ Filter tabs: All, Available, Unavailable
+4. ✅ Search products by name/description
+5. ✅ Product cards with image, price, discount badge
+6. ✅ Toggle availability (show/hide product)
+7. ✅ Delete product with confirmation
+8. ✅ Add new product `/provider/products/new`
+9. ✅ Edit product `/provider/products/[id]`
+10. ✅ Product form: name (AR/EN), description, price, original price (for discount)
+11. ✅ Product attributes: vegetarian, spicy, prep time, calories
+12. ✅ Image upload to Supabase Storage
+
+### Store Hours Management (✅)
+1. ✅ Visit `/ar/provider/store-hours` or `/en/provider/store-hours`
+2. ✅ Weekly schedule with all 7 days
+3. ✅ Toggle each day open/closed
+4. ✅ Set opening and closing times (30-min intervals)
+5. ✅ Quick actions: Open all days / Close all days
+6. ✅ Copy hours from one day to all days
+7. ✅ Summary showing open/closed days count
+8. ✅ Saves to `business_hours` JSONB in providers table
+9. ✅ Link from provider dashboard
+
+### Provider Settings (✅)
+1. ✅ Visit `/ar/provider/settings` or `/en/provider/settings`
+2. ✅ Tabbed interface: Store Info, Delivery, Status
+3. ✅ Store Info: Edit name (AR/EN), phone, governorate/city, address, logo
+4. ✅ Delivery: Edit delivery fee, time, minimum order, radius
+5. ✅ Status: Toggle Open/Temporarily Paused/Closed
+6. ✅ Quick links to Store Hours, Products, Orders
+7. ✅ Link from provider dashboard
+
+### Promotions Management (✅)
+1. ✅ Visit `/ar/provider/promotions` or `/en/provider/promotions`
+2. ✅ Stats: active, upcoming, expired, total promotions
+3. ✅ Filter tabs: All, Active, Upcoming, Expired
+4. ✅ Create promotion with types: Percentage, Fixed Amount, Buy X Get Y
+5. ✅ Set date range, minimum order, max discount
+6. ✅ Toggle active/inactive, Edit, Delete promotions
+7. ✅ Link from provider dashboard
+
+### Reports & Analytics (✅)
+1. ✅ Visit `/ar/provider/reports` or `/en/provider/reports`
+2. ✅ Revenue overview: Today, This Week, This Month, Last Month
+3. ✅ Growth percentage compared to last month
+4. ✅ Order stats: Total, Completed, Customers, Avg Order Value
+5. ✅ Revenue chart (last 30 days) with hover details
+6. ✅ Top 5 selling products with rankings
+7. ✅ Completion rate and cancellation rate
+8. ✅ Link from provider dashboard
+
+### Finance & Payments (✅)
+1. ✅ Visit `/ar/provider/finance` or `/en/provider/finance`
+2. ✅ Total earnings and pending payout cards
+3. ✅ Commission breakdown (6% platform fee)
+4. ✅ This month vs last month earnings comparison
+5. ✅ Payout schedule information (weekly on Sundays)
+6. ✅ Transaction history with date range filter
+7. ✅ Net earnings after commission deduction
+8. ✅ Link from provider dashboard
+
+### Provider Profile (NEW! ✅)
+1. ✅ Visit `/ar/provider/profile` or `/en/provider/profile`
+2. ✅ Account info display (email, avatar)
+3. ✅ Language switcher (Arabic/English) with locale redirect
+4. ✅ Inline password change form (no redirect needed)
+5. ✅ Theme toggle in header (dark/light mode)
+6. ✅ Sign out button
+7. ✅ Theme-aware styling (responds to dark/light mode)
+
+### Product Categories (NEW! ✅)
+1. ✅ Add category dropdown when creating/editing products
+2. ✅ Create new categories inline with Arabic/English names
+3. ✅ Categories are provider-specific
+4. ✅ Database table: `product_categories`
+
+### Enhanced Promotions (NEW! ✅)
+1. ✅ "Applies To" toggle: All Products or Specific Products
+2. ✅ Multi-select checkbox list for choosing specific products
+3. ✅ Display selected product count in promotion cards
+4. ✅ Validation requires at least one product when specific is chosen
+
+### Auto-Refresh Orders (NEW! ✅)
+1. ✅ Orders page auto-refreshes every 60 seconds
+2. ✅ Last refresh timestamp display
+
+### Business Categories Supported
+- 🍔 Restaurant (مطعم)
+- ☕ Cafe (كافيه)
+- 🛒 Supermarket (سوبر ماركت)
+- 🧃 Juice Shop (عصائر)
+- 💊 Pharmacy (صيدلية)
+- 🥬 Vegetables & Fruits (خضروات وفواكه)
+
 ### Live Data
 - ✅ 4 Providers with 30 menu items total:
   - Lavender Cafe (Coffee - 8 items)
@@ -74,7 +193,7 @@
 Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
 Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
-Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
+Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Management
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -111,6 +230,34 @@ Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 - [x] Address management (full CRUD) ✅
 - [x] Governorate/city selection ✅
 
+### Week 3: Partner Dashboard (100% ✅)
+- [x] Partner registration page `/partner/register` ✅
+- [x] Multi-step registration (personal info + business type) ✅
+- [x] Business category dropdown (6 types) ✅
+- [x] Partner role dropdown (owner/manager) ✅
+- [x] Complete profile page `/provider/complete-profile` ✅
+- [x] Cascading governorate/city dropdowns ✅
+- [x] Logo upload with preview ✅
+- [x] Delivery settings form ✅
+- [x] Status-aware provider dashboard ✅
+- [x] Provider orders management page `/provider/orders` ✅
+- [x] Order detail page `/provider/orders/[id]` ✅
+- [x] Accept/Reject/Update order status ✅
+- [x] Provider orders translations (AR/EN) ✅
+- [x] Products list page `/provider/products` ✅
+- [x] Add product page `/provider/products/new` ✅
+- [x] Edit product page `/provider/products/[id]` ✅
+- [x] Product image upload ✅
+- [x] Product CRUD operations ✅
+- [x] Products translations (AR/EN) ✅
+- [x] Store hours management `/provider/store-hours` ✅
+- [x] Provider settings page `/provider/settings` ✅
+- [x] Promotions management `/provider/promotions` ✅
+- [x] Reports & Analytics `/provider/reports` ✅
+- [x] Finance/Payments dashboard `/provider/finance` ✅
+- [ ] Supabase Storage bucket setup (SQL provided)
+- [ ] Real-time order notifications
+
 ---
 
 ## 📦 Tech Stack
@@ -127,102 +274,250 @@ Week 3 ░░░░░░░░░░░░   0% → Provider dashboard backend
 
 ---
 
-## 🎯 Next Steps (Week 3)
+## 🎯 Next Steps (Week 4)
 
-1. [ ] Provider dashboard backend (order management)
-2. [ ] Real-time order status updates (Supabase realtime)
-3. [ ] Order cancellation flow
-4. [ ] Provider notifications for new orders
-
-### Completed ✅
-- [x] User profile page with address management
-- [x] District dropdown cascading fix
-- [x] Database migration for governorate_id/city_id columns
+1. [ ] Support/Help page `/provider/support`
+2. [ ] Real-time order notifications (Supabase Realtime)
+3. [ ] Execute Supabase Storage SQL (provided in session)
+4. [ ] Customer reviews and ratings system
+5. [ ] Provider analytics dashboard enhancements
 
 ---
 
 ## 🐛 Recent Fixes
 
+### Work Session Nov 27, 2025 - Provider Enhancements ✅
+- ✅ **Provider Profile Page**: Created `/provider/profile` with comprehensive settings
+  - Account info display with email/avatar
+  - Language switcher (Arabic/English) with locale redirect
+  - Inline password change form (no redirect to customer profile)
+  - Theme toggle moved to header bar for global access
+  - Theme-aware styling (dark/light mode responsive)
+  - Sign out functionality
+- ✅ **Product Categories**: Added category dropdown to add/edit product pages
+  - Inline category creation with Arabic/English names
+  - Categories are provider-specific
+  - Database table: `product_categories`
+- ✅ **Enhanced Promotions**: Added specific product selection
+  - "Applies To" toggle (All Products / Specific Products)
+  - Multi-select checkbox list for product selection
+  - Validation for at least one product when specific is chosen
+- ✅ **Auto-Refresh Orders**: Orders page refreshes every 60 seconds
+- ✅ **Theme Toggle in Header**: Moved from profile page to header bar
+- ✅ **Fixed .single() queries**: Changed to .limit(1) across all provider pages
+
+### Work Session Nov 26, 2025 - Finance & Payments ✅
+- ✅ **Finance Page**: Created `/provider/finance` with comprehensive financial dashboard
+  - Total earnings card with all-time earnings
+  - Pending payout card showing next payment
+  - Commission breakdown showing 6% platform fee
+  - This month vs last month earnings comparison
+  - Payout schedule information (weekly on Sundays)
+  - Transaction history with date range filtering
+  - Net earnings calculation (after commission)
+- ✅ **Dashboard Link**: Added Finance card to provider dashboard
+- ✅ **Translations**: Added 40+ new keys for finance namespace (AR/EN)
+- ✅ **Code Metrics**: ~450 lines in new page
+
+### Work Session Nov 26, 2025 - Reports & Analytics ✅
+- ✅ **Reports Page**: Created `/provider/reports` with comprehensive analytics
+  - Revenue cards: Today, This Week, This Month, Last Month with growth %
+  - Order stats: Total, Completed, Customers, Avg Order Value
+  - Revenue chart: Last 30 days with hover tooltips
+  - Top 5 selling products with rankings
+  - Completion rate and cancellation rate metrics
+- ✅ **Dashboard Link**: Added Reports card to provider dashboard
+- ✅ **Translations**: Added 40+ new keys for reports namespace (AR/EN)
+- ✅ **Code Metrics**: ~450 lines in new page
+
+### Work Session Nov 26, 2025 - Promotions Management ✅
+- ✅ **Promotions Page**: Created `/provider/promotions` with full promotion management
+  - Stats row: active, upcoming, expired, total
+  - Filter tabs: All, Active, Upcoming, Expired
+  - Create/Edit promotion modal with form
+  - 3 promotion types: Percentage, Fixed Amount, Buy X Get Y
+  - Date range (start/end), minimum order, max discount options
+  - Toggle promotion active/inactive
+  - Delete promotion with confirmation
+- ✅ **Dashboard Link**: Added Promotions card to provider dashboard
+- ✅ **Translations**: Added 60+ new keys for promotions namespace (AR/EN)
+- ✅ **Code Metrics**: ~700 lines in new page
+
+### Work Session Nov 26, 2025 - Provider Settings Page ✅
+- ✅ **Provider Settings Page**: Created `/provider/settings` with tabbed interface
+  - Store Info tab: Edit name (AR/EN), phone, governorate/city, address, logo
+  - Delivery tab: Edit delivery fee, time, minimum order, radius
+  - Status tab: Toggle store status (Open/Temporarily Paused/Closed)
+  - Quick links to Store Hours, Products, Orders
+- ✅ **Dashboard Link**: Added Settings card to provider dashboard
+- ✅ **Translations**: Added 50+ new keys for providerSettings namespace (AR/EN)
+- ✅ **Code Metrics**: ~600 lines in new page
+
+### Work Session Nov 26, 2025 - Store Hours Management ✅
+- ✅ **Store Hours Page**: Created `/provider/store-hours` with full weekly schedule management
+  - Weekly schedule for all 7 days (Saturday-Friday)
+  - Toggle each day open/closed
+  - Time dropdowns with 30-minute intervals
+  - Quick actions: Open all days / Close all days
+  - Copy hours from one day to all days
+  - Summary showing open/closed days count
+- ✅ **Database Integration**: Saves to `business_hours` JSONB in providers table
+- ✅ **Dashboard Link**: Added Store Hours card to provider dashboard
+- ✅ **Translations**: Added 25+ new keys for storeHours namespace (AR/EN)
+- ✅ **Code Metrics**: ~300 lines in new page
+
+### Work Session Nov 26, 2025 - Menu Management System ✅
+- ✅ **Products List Page**: Created `/provider/products` with full product management
+  - Stats row: total products, available, unavailable
+  - Filter tabs: All, Available, Unavailable
+  - Search by product name/description
+  - Product cards with image, price, discount badge, availability
+  - Toggle availability (show/hide)
+  - Delete with confirmation
+- ✅ **Add Product Page**: Created `/provider/products/new`
+  - Product info: name (AR/EN), description (AR/EN)
+  - Pricing: price, original price (for discounts)
+  - Attributes: vegetarian, spicy, prep time, calories
+  - Availability toggle
+  - Image upload to Supabase Storage
+- ✅ **Edit Product Page**: Created `/provider/products/[id]`
+  - Load existing product data
+  - Update all fields
+  - Delete product option
+- ✅ **Translations**: Added 70+ new keys for products (AR/EN)
+  - Complete providerProducts namespace
+- ✅ **Code Metrics**: ~1200 lines across 3 new pages
+
+### Work Session Nov 26, 2025 - Provider Orders Management ✅
+- ✅ **Provider Orders Page**: Created `/provider/orders` with full order management
+  - Stats row: new orders, in progress, completed, total
+  - Filter tabs: All, New, In Progress, Completed, Cancelled
+  - Order cards with customer info, items preview, delivery address
+  - Accept/Reject buttons for pending orders
+  - Progressive status updates (Accepted → Preparing → Ready → Out for Delivery → Delivered)
+- ✅ **Order Detail Page**: Created `/provider/orders/[id]`
+  - Full status timeline with timestamps
+  - Customer information with call button
+  - Complete order items list with prices
+  - Payment information with status
+  - Net earnings display (total minus platform commission)
+  - Action buttons for status updates
+- ✅ **Translations**: Added 70+ new keys for provider orders (AR/EN)
+  - Complete providerOrders namespace
+  - Status labels, actions, empty states, time formatting
+- ✅ **Code Metrics**: ~900 lines across 2 new pages
+
+### Work Session Nov 26, 2025 - Partner Registration System ✅
+- ✅ **Partner Registration Page**: Created `/partner/register` with multi-step flow
+  - Step 1: Personal info (name, email, phone, password)
+  - Step 2: Business category + Partner role dropdowns
+  - Creates provider record with status "incomplete"
+- ✅ **Complete Profile Page**: Created `/provider/complete-profile`
+  - Store info: name (AR/EN), phone, governorate/city cascade, address
+  - Logo upload with preview (2MB limit, image validation)
+  - Delivery settings: fee, time, minimum order, radius
+  - Progress bar showing completion percentage
+  - Submits for review → status "pending_approval"
+- ✅ **Provider Dashboard Updates**: Status-aware content
+  - "incomplete" → Shows complete profile prompt
+  - "pending_approval" → Shows under review message
+  - "rejected" → Shows rejection reason + resubmit button
+  - "approved/open/closed" → Shows full dashboard with orders/products links
+- ✅ **Database Migration**: Added new provider categories and statuses
+  - New categories: juice_shop, pharmacy
+  - New statuses: incomplete, approved, rejected
+  - Added partner_role column to profiles
+- ✅ **Translations**: Added 50+ new keys for partner registration (AR/EN)
+- ✅ **Code Metrics**: ~800 lines across 2 new pages + dashboard updates
+
 ### Work Session Nov 26, 2025 - Address Form Fix ✅
-- ✅ **District Dropdown Fix**: Fixed `loadDistricts` function that was incorrectly filtering by `governorate_id` (column doesn't exist in districts table)
-- ✅ **Cascade Logic**: Districts now properly cascade from City selection via `city_id` only
-- ✅ **Type Fix**: Updated `District` type to reflect actual database schema
-- ✅ **Address Form Complete**: Governorate → City → District cascade working perfectly
+- ✅ **District Dropdown Fix**: Fixed `loadDistricts` function
+- ✅ **Cascade Logic**: Districts cascade from City via `city_id`
+- ✅ **Address Form Complete**: Governorate → City → District working
 
 ### Work Session Nov 25, 2025 - Settings System ✅
-- ✅ **Multi-Page Settings System**: Complete restructure from single page to 7 dedicated pages
-  - `/profile` → Settings menu hub with navigation cards
-  - `/profile/account` → Personal info (first/last name split, phone editing)
-  - `/profile/addresses` → Full address CRUD with cascading dropdowns
-  - `/profile/email` → Change email with password verification
-  - `/profile/password` → Change password with validation (min 8 chars)
-  - `/profile/language` → Language selection (AR/EN) with auto-redirect
-  - `/profile/governorate` → Location selection (governorate → city)
-- ✅ **Name Handling**: Display split into first/last name, stores as full_name in DB
-- ✅ **Database Migration**: Added governorate_id and city_id columns to profiles table
-- ✅ **Translation Keys**: Added 80+ new keys for all settings pages (AR/EN)
-- ✅ **Email Display**: Read-only with info text linking to email settings
-- ✅ **Form Validation**: All forms have proper validation and error messages
-- ✅ **Code Metrics**: ~1,933 lines across 7 new pages
-
-### Work Session Nov 25, 2025 - Munich (Session 2) ✅
-- ✅ **Order Placement Bug Fix**: Fixed checkout to match database schema
-  - Changed `user_id` → `customer_id`
-  - Changed `delivery_address` to JSONB format
-  - Added `platform_commission` calculation
-  - Fixed `estimated_delivery_time` as timestamp
-  - Added all required `order_items` fields
-- ✅ **Order Tracking Page**: Full status timeline with live refresh
-- ✅ **Order History Page**: Filter by all/active/completed
-- ✅ **Shared Header Component**: Reusable with My Orders navigation
-- ✅ **My Orders Badge**: Shows active order count
-
-### Work Session Nov 25, 2025 - Munich (Session 1) ✅
-- ✅ **Fix 1**: "Browse" → "Stores" button text - COMPLETE (role-aware navigation)
-- ✅ **Fix 3**: Provider Dashboard - COMPLETE (full dark-themed dashboard with sidebar, stats, quick actions)
-
-### Work Session Nov 24, 2025 - Munich ✅
-- ✅ **Fix 2**: Logout translation working ("Sign Out" / "خروج")
-- ✅ **Fix 4**: Remove "Clear Session" button completely resolved
-
-### Previously Resolved ✅
-- ✅ Dark mode toggle (fixed with `resolvedTheme`)
-- ✅ Tailwind v4 → v3 downgrade (stability)
-- ✅ Brand colors updated (Orange, not Green!)
-- ✅ Build errors resolved
-- ✅ TypeScript error in verifyOTP function (proper type handling)
-- ✅ Signup page fixed to use `users` table
-- ✅ Cart persistence across navigation
-
-### Active Issues
-- ✅ All Week 1-2 features complete!
-- 📅 Next: Provider dashboard backend (order management)
+- ✅ **Multi-Page Settings System**: 7 dedicated pages
+- ✅ **Database Migration**: Added governorate_id and city_id to profiles
 
 ---
 
 ## 💡 Key Decisions
 
 1. **Tailwind v3** (not v4) - v4 has breaking changes
-2. **Provider-based structure** - supports 4 categories
+2. **Provider-based structure** - supports 6 categories
 3. **Providers manage delivery** - enables 5-7% commission
 4. **Cash-first** - cards in Phase 2
 5. **Orange #E85D04** - official brand color
+6. **Multi-step partner registration** - Better UX, incomplete tracking
+7. **Admin approval required** - Quality control for partners
 
 ---
 
 ## 📁 Important Files
 
+### Core Files
 - `claude.md` - This file (project guide)
-- `PROGRESS_UPDATE.md` - Latest achievements
-- `DATABASE_SETUP.md` - Safe deployment guide
 - `PRD.md` - Full requirements
 - `src/app/globals.css` - Brand colors
 - `package.json` - Dependencies (Tailwind v3)
 
+### Partner Registration
+- `src/app/[locale]/partner/register/page.tsx` - Partner signup
+- `src/app/[locale]/provider/complete-profile/page.tsx` - Complete business info
+- `src/app/[locale]/provider/page.tsx` - Status-aware dashboard
+
+### Provider Orders Management
+- `src/app/[locale]/provider/orders/page.tsx` - Orders list with filters & actions
+- `src/app/[locale]/provider/orders/[id]/page.tsx` - Order detail with status updates
+
+### Menu Management System
+- `src/app/[locale]/provider/products/page.tsx` - Products list with search & filters
+- `src/app/[locale]/provider/products/new/page.tsx` - Add new product form
+- `src/app/[locale]/provider/products/[id]/page.tsx` - Edit product form
+- `src/i18n/messages/ar.json` - Arabic translations (providerProducts namespace)
+- `src/i18n/messages/en.json` - English translations (providerProducts namespace)
+
+### Store Hours Management
+- `src/app/[locale]/provider/store-hours/page.tsx` - Weekly schedule management
+
+### Provider Settings
+- `src/app/[locale]/provider/settings/page.tsx` - Store info, delivery, and status settings
+
+### Promotions Management
+- `src/app/[locale]/provider/promotions/page.tsx` - Promotions CRUD with types and scheduling
+
+### Reports & Analytics
+- `src/app/[locale]/provider/reports/page.tsx` - Revenue, orders, and performance analytics
+
+### Finance & Payments
+- `src/app/[locale]/provider/finance/page.tsx` - Earnings, payouts, and transaction history
+
+### Provider Profile (NEW)
+- `src/app/[locale]/provider/profile/page.tsx` - Profile, language, theme, password
+
 ---
 
-**Version:** 6.1 (Week 1-2 Complete + Address Form Fix)
-**Last Updated:** November 26, 2025
-**Next Review:** November 28, 2025
+## ⚠️ Pending Setup (Required for Logo Upload)
 
-**🎉 Week 1-2 100% Complete! Settings system with 7 pages + address cascading dropdowns working! Next: Provider dashboard backend!**
+Run this SQL in Supabase to enable logo uploads:
+
+```sql
+-- Create storage bucket
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('public', 'public', true, 2097152, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies
+CREATE POLICY "Public Read" ON storage.objects FOR SELECT USING (bucket_id = 'public');
+CREATE POLICY "Auth Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'public' AND auth.role() = 'authenticated');
+CREATE POLICY "Auth Update" ON storage.objects FOR UPDATE USING (bucket_id = 'public' AND auth.role() = 'authenticated');
+CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'public' AND auth.role() = 'authenticated');
+```
+
+---
+
+**Version:** 15.0 (Week 3 - Provider Enhancements Complete)
+**Last Updated:** November 27, 2025
+**Next Review:** November 29, 2025
+
+**🎉 Week 3 100% Complete! Provider Dashboard fully functional with Profile, Categories, and Theme Toggle!**
