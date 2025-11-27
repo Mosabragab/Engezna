@@ -396,7 +396,8 @@ export default function ProviderDashboard() {
 
                 {/* Dropdown Menu */}
                 {accountMenuOpen && (
-                  <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50`}>
+                  <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-56 z-50`}>
+                    <div className="bg-white rounded-xl shadow-lg border border-slate-200 py-2">
                       {/* User Info */}
                       <div className="px-4 py-2 border-b border-slate-100">
                         <p className="text-sm font-medium text-slate-900">{user?.email?.split('@')[0]}</p>
@@ -437,6 +438,7 @@ export default function ProviderDashboard() {
                         </button>
                       </div>
                     </div>
+                  </div>
                 )}
               </div>
             </div>
