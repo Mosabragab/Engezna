@@ -199,7 +199,7 @@ export default function Home() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex items-center gap-2 text-gray-700 hover:text-primary"
+                      className="flex items-center gap-2 text-gray-700 hover:text-primary hover:bg-gray-100"
                     >
                       {locale === 'ar' ? 'حسابي' : 'My Account'}
                     </Button>

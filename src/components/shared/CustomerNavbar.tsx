@@ -133,7 +133,7 @@ export function CustomerNavbar() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="relative flex items-center gap-2 text-gray-700 hover:text-primary"
+                      className="relative flex items-center gap-2 text-gray-700 hover:text-primary hover:bg-gray-100"
                     >
                       <ShoppingBag className="w-4 h-4" />
                       <span>{locale === 'ar' ? 'طلباتي' : 'My Orders'}</span>
@@ -150,7 +150,7 @@ export function CustomerNavbar() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex items-center gap-2 text-gray-700 hover:text-primary"
+                      className="flex items-center gap-2 text-gray-700 hover:text-primary hover:bg-gray-100"
                     >
                       <UserIcon className="w-4 h-4" />
                       <span className="max-w-[100px] truncate">
@@ -190,7 +190,7 @@ export function CustomerNavbar() {
               variant="ghost"
               size="sm"
               onClick={switchLanguage}
-              className="flex items-center gap-1.5 text-gray-700 hover:text-primary"
+              className="flex items-center gap-1.5 text-gray-700 hover:text-primary hover:bg-gray-100"
             >
               <Globe className="w-4 h-4" />
               <span className="text-sm font-medium">

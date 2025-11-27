@@ -48,7 +48,7 @@ export function LanguageSwitcher({ variant = 'default', className = '' }: Langua
         size="sm"
         onClick={switchLanguage}
         disabled={isPending}
-        className={`flex items-center gap-1.5 text-gray-700 hover:text-primary ${className}`}
+        className={`flex items-center gap-1.5 text-gray-700 hover:text-primary hover:bg-gray-100 ${className}`}
       >
         <Globe className="w-4 h-4" />
         <span className="text-sm font-medium">

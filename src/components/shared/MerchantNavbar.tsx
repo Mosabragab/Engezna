@@ -123,7 +123,7 @@ export function MerchantNavbar() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex items-center gap-2 text-gray-700 hover:text-primary"
+                      className="flex items-center gap-2 text-gray-700 hover:text-primary hover:bg-gray-100"
                     >
                       <UserIcon className="w-4 h-4" />
                       <span className="max-w-[100px] truncate">
@@ -159,7 +159,7 @@ export function MerchantNavbar() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-gray-700 hover:text-primary"
+                      className="text-gray-700 hover:text-primary hover:bg-gray-100"
                     >
                       {locale === 'ar' ? 'حسابي' : 'My Account'}
                     </Button>
@@ -176,7 +176,7 @@ export function MerchantNavbar() {
               variant="ghost"
               size="sm"
               onClick={switchLanguage}
-              className="flex items-center gap-1.5 text-gray-700 hover:text-primary"
+              className="flex items-center gap-1.5 text-gray-700 hover:text-primary hover:bg-gray-100"
             >
               <Globe className="w-4 h-4" />
               <span className="text-sm font-medium">
