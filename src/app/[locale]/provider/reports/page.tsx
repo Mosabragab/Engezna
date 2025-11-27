@@ -270,63 +270,63 @@ export default function ReportsPage() {
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Revenue Overview */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/30">
+            <Card className="bg-[hsl(158_100%_38%/0.15)] border-[hsl(158_100%_38%/0.3)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
-                  <DollarSign className="w-8 h-8 text-green-400" />
-                  <span className="text-xs text-green-400 bg-green-500/20 px-2 py-1 rounded-full">
+                  <DollarSign className="w-8 h-8 text-deal" />
+                  <span className="text-xs text-deal bg-[hsl(158_100%_38%/0.2)] px-2 py-1 rounded-full">
                     {locale === 'ar' ? 'اليوم' : 'Today'}
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-green-400">{formatCurrency(revenueStats.today)}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</p>
+                <p className="text-2xl font-bold text-deal">{formatCurrency(revenueStats.today)}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/30">
+            <Card className="bg-[hsl(194_86%_58%/0.15)] border-[hsl(194_86%_58%/0.3)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
-                  <TrendingUp className="w-8 h-8 text-blue-400" />
-                  <span className="text-xs text-blue-400 bg-blue-500/20 px-2 py-1 rounded-full">
+                  <TrendingUp className="w-8 h-8 text-info" />
+                  <span className="text-xs text-info bg-[hsl(194_86%_58%/0.2)] px-2 py-1 rounded-full">
                     {locale === 'ar' ? 'الأسبوع' : 'Week'}
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-blue-400">{formatCurrency(revenueStats.thisWeek)}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'هذا الأسبوع' : 'This Week'}</p>
+                <p className="text-2xl font-bold text-info">{formatCurrency(revenueStats.thisWeek)}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'هذا الأسبوع' : 'This Week'}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-500/20 to-violet-500/20 border-purple-500/30">
+            <Card className="bg-[hsl(198_100%_44%/0.15)] border-[hsl(198_100%_44%/0.3)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
-                  <Calendar className="w-8 h-8 text-purple-400" />
-                  <span className="text-xs text-purple-400 bg-purple-500/20 px-2 py-1 rounded-full">
+                  <Calendar className="w-8 h-8 text-primary" />
+                  <span className="text-xs text-primary bg-[hsl(198_100%_44%/0.2)] px-2 py-1 rounded-full">
                     {locale === 'ar' ? 'الشهر' : 'Month'}
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-purple-400">{formatCurrency(revenueStats.thisMonth)}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'هذا الشهر' : 'This Month'}</p>
+                <p className="text-2xl font-bold text-primary">{formatCurrency(revenueStats.thisMonth)}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'هذا الشهر' : 'This Month'}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-amber-500/30">
+            <Card className="bg-[hsl(42_100%_70%/0.15)] border-[hsl(42_100%_70%/0.3)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
                   {Number(getGrowthPercentage()) >= 0 ? (
-                    <TrendingUp className="w-8 h-8 text-amber-400" />
+                    <TrendingUp className="w-8 h-8 text-premium" />
                   ) : (
-                    <TrendingDown className="w-8 h-8 text-red-400" />
+                    <TrendingDown className="w-8 h-8 text-error" />
                   )}
                   <span className={`text-xs px-2 py-1 rounded-full ${
                     Number(getGrowthPercentage()) >= 0
-                      ? 'text-green-400 bg-green-500/20'
-                      : 'text-red-400 bg-red-500/20'
+                      ? 'text-deal bg-[hsl(158_100%_38%/0.2)]'
+                      : 'text-error bg-[hsl(358_100%_68%/0.2)]'
                   }`}>
                     {Number(getGrowthPercentage()) >= 0 ? '+' : ''}{getGrowthPercentage()}%
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-amber-400">{formatCurrency(revenueStats.lastMonth)}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'الشهر الماضي' : 'Last Month'}</p>
+                <p className="text-2xl font-bold text-premium">{formatCurrency(revenueStats.lastMonth)}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'الشهر الماضي' : 'Last Month'}</p>
               </CardContent>
             </Card>
           </div>
@@ -336,31 +336,31 @@ export default function ReportsPage() {
             <Card className="bg-white border-slate-200">
               <CardContent className="pt-6 text-center">
                 <ShoppingBag className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="text-3xl font-bold">{orderStats.total}</p>
+                <p className="text-3xl font-bold text-slate-900">{orderStats.total}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
               </CardContent>
             </Card>
 
             <Card className="bg-white border-slate-200">
               <CardContent className="pt-6 text-center">
-                <Package className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-green-400">{orderStats.completed}</p>
+                <Package className="w-8 h-8 text-deal mx-auto mb-2" />
+                <p className="text-3xl font-bold text-deal">{orderStats.completed}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'مكتمل' : 'Completed'}</p>
               </CardContent>
             </Card>
 
             <Card className="bg-white border-slate-200">
               <CardContent className="pt-6 text-center">
-                <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-blue-400">{totalCustomers}</p>
+                <Users className="w-8 h-8 text-info mx-auto mb-2" />
+                <p className="text-3xl font-bold text-info">{totalCustomers}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'عملاء' : 'Customers'}</p>
               </CardContent>
             </Card>
 
             <Card className="bg-white border-slate-200">
               <CardContent className="pt-6 text-center">
-                <Star className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-yellow-400">{formatCurrency(avgOrderValue)}</p>
+                <Star className="w-8 h-8 text-premium mx-auto mb-2" />
+                <p className="text-3xl font-bold text-premium">{formatCurrency(avgOrderValue)}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'متوسط الطلب' : 'Avg Order'}</p>
               </CardContent>
             </Card>
@@ -418,9 +418,9 @@ export default function ReportsPage() {
                       className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg"
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        index === 0 ? 'bg-yellow-500 text-black' :
-                        index === 1 ? 'bg-slate-400 text-black' :
-                        index === 2 ? 'bg-amber-700 text-white' :
+                        index === 0 ? 'bg-premium text-slate-900' :
+                        index === 1 ? 'bg-slate-400 text-white' :
+                        index === 2 ? 'bg-[#CD7F32] text-white' :
                         'bg-slate-200 text-slate-900'
                       }`}>
                         {index + 1}
@@ -444,24 +444,24 @@ export default function ReportsPage() {
           </Card>
 
           {/* Quick Stats Summary */}
-          <Card className="bg-gradient-to-r from-primary/20 to-cyan-500/20 border-primary/30">
+          <Card className="bg-[hsl(198_100%_44%/0.1)] border-[hsl(198_100%_44%/0.3)]">
             <CardContent className="pt-6">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-3xl font-bold text-primary">
                     {orderStats.total > 0 ? ((orderStats.completed / orderStats.total) * 100).toFixed(0) : 0}%
                   </p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'معدل الإكمال' : 'Completion Rate'}</p>
+                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'معدل الإكمال' : 'Completion Rate'}</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-primary">
                     {orderStats.total > 0 ? ((orderStats.cancelled / orderStats.total) * 100).toFixed(0) : 0}%
                   </p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'معدل الإلغاء' : 'Cancellation Rate'}</p>
+                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'معدل الإلغاء' : 'Cancellation Rate'}</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-primary">{orderStats.pending}</p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'طلبات معلقة' : 'Pending Orders'}</p>
+                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'طلبات معلقة' : 'Pending Orders'}</p>
                 </div>
               </div>
             </CardContent>

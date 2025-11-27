@@ -68,14 +68,14 @@ type Order = {
 }
 
 const STATUS_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label_ar: string; label_en: string }> = {
-  pending: { icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', label_ar: 'طلب جديد', label_en: 'New Order' },
-  accepted: { icon: CheckCircle2, color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/30', label_ar: 'تم القبول', label_en: 'Accepted' },
-  preparing: { icon: ChefHat, color: 'text-amber-600', bgColor: 'bg-amber-100 dark:bg-amber-900/30', label_ar: 'جاري التحضير', label_en: 'Preparing' },
-  ready: { icon: Package, color: 'text-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/30', label_ar: 'جاهز', label_en: 'Ready' },
-  out_for_delivery: { icon: Truck, color: 'text-indigo-600', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', label_ar: 'في الطريق', label_en: 'On the way' },
-  delivered: { icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900/30', label_ar: 'تم التوصيل', label_en: 'Delivered' },
-  cancelled: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/30', label_ar: 'ملغي', label_en: 'Cancelled' },
-  rejected: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/30', label_ar: 'مرفوض', label_en: 'Rejected' },
+  pending: { icon: Clock, color: 'text-[hsl(42_100%_45%)]', bgColor: 'bg-[hsl(42_100%_70%/0.15)]', label_ar: 'طلب جديد', label_en: 'New Order' },
+  accepted: { icon: CheckCircle2, color: 'text-info', bgColor: 'bg-[hsl(194_86%_58%/0.15)]', label_ar: 'تم القبول', label_en: 'Accepted' },
+  preparing: { icon: ChefHat, color: 'text-[hsl(42_100%_45%)]', bgColor: 'bg-[hsl(42_100%_70%/0.15)]', label_ar: 'جاري التحضير', label_en: 'Preparing' },
+  ready: { icon: Package, color: 'text-primary', bgColor: 'bg-[hsl(198_100%_44%/0.15)]', label_ar: 'جاهز', label_en: 'Ready' },
+  out_for_delivery: { icon: Truck, color: 'text-info', bgColor: 'bg-[hsl(194_86%_58%/0.15)]', label_ar: 'في الطريق', label_en: 'On the way' },
+  delivered: { icon: CheckCircle2, color: 'text-deal', bgColor: 'bg-[hsl(158_100%_38%/0.15)]', label_ar: 'تم التوصيل', label_en: 'Delivered' },
+  cancelled: { icon: XCircle, color: 'text-error', bgColor: 'bg-[hsl(358_100%_68%/0.15)]', label_ar: 'ملغي', label_en: 'Cancelled' },
+  rejected: { icon: XCircle, color: 'text-error', bgColor: 'bg-[hsl(358_100%_68%/0.15)]', label_ar: 'مرفوض', label_en: 'Rejected' },
 }
 
 // Status flow for providers
@@ -373,44 +373,44 @@ export default function ProviderOrdersPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-yellow-400" />
+              <div className="w-10 h-10 bg-[hsl(42_100%_70%/0.2)] rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-premium" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{pendingCount}</p>
+                <p className="text-2xl font-bold text-slate-900">{pendingCount}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'طلبات جديدة' : 'New Orders'}</p>
               </div>
             </div>
           </div>
           <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <ChefHat className="w-5 h-5 text-blue-400" />
+              <div className="w-10 h-10 bg-[hsl(194_86%_58%/0.2)] rounded-lg flex items-center justify-center">
+                <ChefHat className="w-5 h-5 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{activeCount}</p>
+                <p className="text-2xl font-bold text-slate-900">{activeCount}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</p>
               </div>
             </div>
           </div>
           <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-green-400" />
+              <div className="w-10 h-10 bg-[hsl(158_100%_38%/0.2)] rounded-lg flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-deal" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{orders.filter(o => o.status === 'delivered').length}</p>
+                <p className="text-2xl font-bold text-slate-900">{orders.filter(o => o.status === 'delivered').length}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'مكتمل' : 'Completed'}</p>
               </div>
             </div>
           </div>
           <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-[hsl(198_100%_44%/0.2)] rounded-lg flex items-center justify-center">
                 <ShoppingBag className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{orders.length}</p>
+                <p className="text-2xl font-bold text-slate-900">{orders.length}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
               </div>
             </div>
@@ -436,7 +436,7 @@ export default function ProviderOrdersPage() {
           >
             {locale === 'ar' ? 'جديد' : 'New'}
             {pendingCount > 0 && (
-              <span className="mx-1 bg-yellow-500 text-black text-xs px-1.5 rounded-full">
+              <span className="mx-1 bg-premium text-slate-900 text-xs px-1.5 rounded-full">
                 {pendingCount}
               </span>
             )}
@@ -502,7 +502,7 @@ export default function ProviderOrdersPage() {
                 <Card key={order.id} className="bg-white border-slate-200 overflow-hidden">
                   <CardContent className="p-0">
                     {/* Order Header */}
-                    <div className={`p-4 border-b border-slate-200 ${order.status === 'pending' ? 'bg-yellow-500/10' : ''}`}>
+                    <div className={`p-4 border-b border-slate-200 ${order.status === 'pending' ? 'bg-[hsl(42_100%_70%/0.1)]' : ''}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <span className="font-mono font-bold text-primary text-lg">

@@ -230,33 +230,33 @@ export default function ProviderProductsPage() {
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-[hsl(198_100%_44%/0.2)] rounded-lg flex items-center justify-center">
                 <Package className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{products.length}</p>
+                <p className="text-2xl font-bold text-slate-900">{products.length}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي المنتجات' : 'Total Products'}</p>
               </div>
             </div>
           </div>
           <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <Eye className="w-5 h-5 text-green-400" />
+              <div className="w-10 h-10 bg-[hsl(158_100%_38%/0.2)] rounded-lg flex items-center justify-center">
+                <Eye className="w-5 h-5 text-deal" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{availableCount}</p>
+                <p className="text-2xl font-bold text-slate-900">{availableCount}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'متاح' : 'Available'}</p>
               </div>
             </div>
           </div>
           <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-                <EyeOff className="w-5 h-5 text-red-400" />
+              <div className="w-10 h-10 bg-[hsl(358_100%_68%/0.2)] rounded-lg flex items-center justify-center">
+                <EyeOff className="w-5 h-5 text-error" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{unavailableCount}</p>
+                <p className="text-2xl font-bold text-slate-900">{unavailableCount}</p>
                 <p className="text-xs text-slate-500">{locale === 'ar' ? 'غير متاح' : 'Unavailable'}</p>
               </div>
             </div>
@@ -370,8 +370,8 @@ export default function ProviderProductsPage() {
                       <div className={`absolute top-2 ${isRTL ? 'left-2' : 'right-2'}`}>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           product.is_available
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-red-500/20 text-red-400'
+                            ? 'bg-[hsl(158_100%_38%/0.2)] text-deal'
+                            : 'bg-[hsl(358_100%_68%/0.2)] text-error'
                         }`}>
                           {product.is_available
                             ? locale === 'ar' ? 'متاح' : 'Available'

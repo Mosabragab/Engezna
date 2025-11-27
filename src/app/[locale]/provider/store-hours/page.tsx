@@ -252,7 +252,7 @@ export default function StoreHoursPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleSetAllOpen}
-                  className="border-green-500/50 text-green-400 hover:bg-green-500/20"
+                  className="border-[hsl(158_100%_38%/0.5)] text-deal hover:bg-[hsl(158_100%_38%/0.2)]"
                 >
                   <Sun className="w-4 h-4 mr-2" />
                   {locale === 'ar' ? 'فتح كل الأيام' : 'Open All Days'}
@@ -261,7 +261,7 @@ export default function StoreHoursPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleSetAllClosed}
-                  className="border-red-500/50 text-red-400 hover:bg-red-500/20"
+                  className="border-[hsl(358_100%_68%/0.5)] text-error hover:bg-[hsl(358_100%_68%/0.2)]"
                 >
                   <Moon className="w-4 h-4 mr-2" />
                   {locale === 'ar' ? 'إغلاق كل الأيام' : 'Close All Days'}
@@ -299,8 +299,8 @@ export default function StoreHoursPage() {
                         </span>
                         <span className={`px-2 py-0.5 rounded-full text-xs ${
                           hours.is_open
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-red-500/20 text-red-400'
+                            ? 'bg-[hsl(158_100%_38%/0.2)] text-deal'
+                            : 'bg-[hsl(358_100%_68%/0.2)] text-error'
                         }`}>
                           {hours.is_open
                             ? locale === 'ar' ? 'مفتوح' : 'Open'
@@ -314,7 +314,7 @@ export default function StoreHoursPage() {
                           title={locale === 'ar' ? 'نسخ لكل الأيام' : 'Copy to all days'}
                         >
                           {isCopied ? (
-                            <Check className="w-4 h-4 text-green-400" />
+                            <Check className="w-4 h-4 text-deal" />
                           ) : (
                             <Copy className="w-4 h-4" />
                           )}
@@ -322,7 +322,7 @@ export default function StoreHoursPage() {
                         <button
                           onClick={() => handleToggleDay(day.key)}
                           className={`w-12 h-6 rounded-full transition-colors ${
-                            hours.is_open ? 'bg-green-500' : 'bg-slate-600'
+                            hours.is_open ? 'bg-deal' : 'bg-slate-400'
                           }`}
                         >
                           <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${
@@ -386,16 +386,16 @@ export default function StoreHoursPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-green-500/10 rounded-lg">
-                  <p className="text-2xl font-bold text-green-400">
+                <div className="text-center p-3 bg-[hsl(158_100%_38%/0.1)] rounded-lg">
+                  <p className="text-2xl font-bold text-deal">
                     {DAYS.filter(d => businessHours[d.key as keyof BusinessHours].is_open).length}
                   </p>
                   <p className="text-xs text-slate-500">
                     {locale === 'ar' ? 'أيام مفتوحة' : 'Open Days'}
                   </p>
                 </div>
-                <div className="text-center p-3 bg-red-500/10 rounded-lg">
-                  <p className="text-2xl font-bold text-red-400">
+                <div className="text-center p-3 bg-[hsl(358_100%_68%/0.1)] rounded-lg">
+                  <p className="text-2xl font-bold text-error">
                     {DAYS.filter(d => !businessHours[d.key as keyof BusinessHours].is_open).length}
                   </p>
                   <p className="text-xs text-slate-500">

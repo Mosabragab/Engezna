@@ -340,11 +340,11 @@ export default function PromotionsPage() {
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3">
             <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
-              <p className="text-2xl font-bold text-green-400">{stats.active}</p>
+              <p className="text-2xl font-bold text-deal">{stats.active}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'نشط' : 'Active'}</p>
             </div>
             <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
-              <p className="text-2xl font-bold text-blue-400">{stats.upcoming}</p>
+              <p className="text-2xl font-bold text-info">{stats.upcoming}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'قادم' : 'Upcoming'}</p>
             </div>
             <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
@@ -406,15 +406,15 @@ export default function PromotionsPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
                           <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            promo.type === 'percentage' ? 'bg-green-500/20' :
-                            promo.type === 'fixed' ? 'bg-blue-500/20' : 'bg-purple-500/20'
+                            promo.type === 'percentage' ? 'bg-[hsl(158_100%_38%/0.2)]' :
+                            promo.type === 'fixed' ? 'bg-[hsl(194_86%_58%/0.2)]' : 'bg-[hsl(198_100%_44%/0.2)]'
                           }`}>
                             {promo.type === 'percentage' ? (
-                              <Percent className="w-6 h-6 text-green-400" />
+                              <Percent className="w-6 h-6 text-deal" />
                             ) : promo.type === 'fixed' ? (
-                              <Tag className="w-6 h-6 text-blue-400" />
+                              <Tag className="w-6 h-6 text-info" />
                             ) : (
-                              <Gift className="w-6 h-6 text-purple-400" />
+                              <Gift className="w-6 h-6 text-primary" />
                             )}
                           </div>
                           <div>
@@ -456,9 +456,9 @@ export default function PromotionsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-1 rounded-full text-xs ${
-                            status === 'active' ? 'bg-green-500/20 text-green-400' :
-                            status === 'upcoming' ? 'bg-blue-500/20 text-blue-400' :
-                            'bg-slate-700 text-slate-400'
+                            status === 'active' ? 'bg-[hsl(158_100%_38%/0.2)] text-deal' :
+                            status === 'upcoming' ? 'bg-[hsl(194_86%_58%/0.2)] text-info' :
+                            'bg-slate-200 text-slate-500'
                           }`}>
                             {status === 'active' ? (locale === 'ar' ? 'نشط' : 'Active') :
                              status === 'upcoming' ? (locale === 'ar' ? 'قادم' : 'Upcoming') :
@@ -480,7 +480,7 @@ export default function PromotionsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleToggleActive(promo)}
-                          className={`border-slate-300 ${promo.is_active ? 'text-yellow-400' : 'text-green-400'}`}
+                          className={`border-slate-300 ${promo.is_active ? 'text-premium' : 'text-deal'}`}
                         >
                           <Power className="w-4 h-4 mr-1" />
                           {promo.is_active
@@ -491,7 +491,7 @@ export default function PromotionsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDelete(promo.id)}
-                          className="border-slate-300 text-red-400"
+                          className="border-slate-300 text-error"
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
                           {locale === 'ar' ? 'حذف' : 'Delete'}
@@ -558,11 +558,11 @@ export default function PromotionsPage() {
                     onClick={() => setFormData({ ...formData, type: 'percentage' })}
                     className={`p-3 rounded-lg border-2 transition-colors ${
                       formData.type === 'percentage'
-                        ? 'border-green-500 bg-green-500/10'
+                        ? 'border-[hsl(158_100%_38%)] bg-[hsl(158_100%_38%/0.1)]'
                         : 'border-slate-300 hover:border-slate-400'
                     }`}
                   >
-                    <Percent className="w-5 h-5 mx-auto mb-1 text-green-400" />
+                    <Percent className="w-5 h-5 mx-auto mb-1 text-deal" />
                     <p className="text-xs">{locale === 'ar' ? 'نسبة مئوية' : 'Percentage'}</p>
                   </button>
                   <button
@@ -570,11 +570,11 @@ export default function PromotionsPage() {
                     onClick={() => setFormData({ ...formData, type: 'fixed' })}
                     className={`p-3 rounded-lg border-2 transition-colors ${
                       formData.type === 'fixed'
-                        ? 'border-blue-500 bg-blue-500/10'
+                        ? 'border-[hsl(194_86%_58%)] bg-[hsl(194_86%_58%/0.1)]'
                         : 'border-slate-300 hover:border-slate-400'
                     }`}
                   >
-                    <Tag className="w-5 h-5 mx-auto mb-1 text-blue-400" />
+                    <Tag className="w-5 h-5 mx-auto mb-1 text-info" />
                     <p className="text-xs">{locale === 'ar' ? 'مبلغ ثابت' : 'Fixed Amount'}</p>
                   </button>
                   <button
@@ -582,11 +582,11 @@ export default function PromotionsPage() {
                     onClick={() => setFormData({ ...formData, type: 'buy_x_get_y' })}
                     className={`p-3 rounded-lg border-2 transition-colors ${
                       formData.type === 'buy_x_get_y'
-                        ? 'border-purple-500 bg-purple-500/10'
+                        ? 'border-primary bg-[hsl(198_100%_44%/0.1)]'
                         : 'border-slate-300 hover:border-slate-400'
                     }`}
                   >
-                    <Gift className="w-5 h-5 mx-auto mb-1 text-purple-400" />
+                    <Gift className="w-5 h-5 mx-auto mb-1 text-primary" />
                     <p className="text-xs">{locale === 'ar' ? 'اشتري واحصل' : 'Buy X Get Y'}</p>
                   </button>
                 </div>
@@ -778,7 +778,7 @@ export default function PromotionsPage() {
                     )}
                   </div>
                   {formData.applies_to === 'specific' && formData.product_ids.length === 0 && (
-                    <p className="text-xs text-yellow-400 mt-2 flex items-center gap-1">
+                    <p className="text-xs text-premium mt-2 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
                       {locale === 'ar' ? 'يرجى اختيار منتج واحد على الأقل' : 'Please select at least one product'}
                     </p>

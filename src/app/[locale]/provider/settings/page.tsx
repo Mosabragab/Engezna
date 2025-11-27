@@ -634,10 +634,10 @@ export default function ProviderSettingsPage() {
                   </p>
                   <span className={`px-4 py-2 rounded-full text-lg font-bold ${
                     provider?.status === 'open'
-                      ? 'bg-green-500/20 text-green-400'
+                      ? 'bg-[hsl(158_100%_38%/0.2)] text-deal'
                       : provider?.status === 'closed'
-                      ? 'bg-red-500/20 text-red-400'
-                      : 'bg-yellow-500/20 text-yellow-400'
+                      ? 'bg-[hsl(358_100%_68%/0.2)] text-error'
+                      : 'bg-[hsl(42_100%_70%/0.2)] text-premium'
                   }`}>
                     {provider?.status === 'open'
                       ? locale === 'ar' ? 'مفتوح' : 'Open'
@@ -654,15 +654,15 @@ export default function ProviderSettingsPage() {
                     disabled={saving || provider?.status === 'open'}
                     className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                       provider?.status === 'open'
-                        ? 'border-green-500 bg-green-500/10'
-                        : 'border-slate-300 hover:border-green-500/50 hover:bg-green-500/5'
+                        ? 'border-[hsl(158_100%_38%)] bg-[hsl(158_100%_38%/0.1)]'
+                        : 'border-slate-300 hover:border-[hsl(158_100%_38%/0.5)] hover:bg-[hsl(158_100%_38%/0.05)]'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full ${
-                      provider?.status === 'open' ? 'bg-green-500' : 'bg-slate-600'
+                      provider?.status === 'open' ? 'bg-deal' : 'bg-slate-400'
                     }`} />
                     <div className="text-start flex-1">
-                      <p className="font-bold text-green-400">
+                      <p className="font-bold text-deal">
                         {locale === 'ar' ? 'مفتوح' : 'Open'}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -672,7 +672,7 @@ export default function ProviderSettingsPage() {
                       </p>
                     </div>
                     {provider?.status === 'open' && (
-                      <Check className="w-5 h-5 text-green-500" />
+                      <Check className="w-5 h-5 text-deal" />
                     )}
                   </button>
 
@@ -681,15 +681,15 @@ export default function ProviderSettingsPage() {
                     disabled={saving || provider?.status === 'temporarily_paused'}
                     className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                       provider?.status === 'temporarily_paused'
-                        ? 'border-yellow-500 bg-yellow-500/10'
-                        : 'border-slate-300 hover:border-yellow-500/50 hover:bg-yellow-500/5'
+                        ? 'border-[hsl(42_100%_70%)] bg-[hsl(42_100%_70%/0.1)]'
+                        : 'border-slate-300 hover:border-[hsl(42_100%_70%/0.5)] hover:bg-[hsl(42_100%_70%/0.05)]'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full ${
-                      provider?.status === 'temporarily_paused' ? 'bg-yellow-500' : 'bg-slate-600'
+                      provider?.status === 'temporarily_paused' ? 'bg-premium' : 'bg-slate-400'
                     }`} />
                     <div className="text-start flex-1">
-                      <p className="font-bold text-yellow-400">
+                      <p className="font-bold text-premium">
                         {locale === 'ar' ? 'متوقف مؤقتاً' : 'Temporarily Paused'}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -699,7 +699,7 @@ export default function ProviderSettingsPage() {
                       </p>
                     </div>
                     {provider?.status === 'temporarily_paused' && (
-                      <Check className="w-5 h-5 text-yellow-500" />
+                      <Check className="w-5 h-5 text-premium" />
                     )}
                   </button>
 
@@ -708,15 +708,15 @@ export default function ProviderSettingsPage() {
                     disabled={saving || provider?.status === 'closed'}
                     className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                       provider?.status === 'closed'
-                        ? 'border-red-500 bg-red-500/10'
-                        : 'border-slate-300 hover:border-red-500/50 hover:bg-red-500/5'
+                        ? 'border-[hsl(358_100%_68%)] bg-[hsl(358_100%_68%/0.1)]'
+                        : 'border-slate-300 hover:border-[hsl(358_100%_68%/0.5)] hover:bg-[hsl(358_100%_68%/0.05)]'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full ${
-                      provider?.status === 'closed' ? 'bg-red-500' : 'bg-slate-600'
+                      provider?.status === 'closed' ? 'bg-error' : 'bg-slate-400'
                     }`} />
                     <div className="text-start flex-1">
-                      <p className="font-bold text-red-400">
+                      <p className="font-bold text-error">
                         {locale === 'ar' ? 'مغلق' : 'Closed'}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -726,13 +726,13 @@ export default function ProviderSettingsPage() {
                       </p>
                     </div>
                     {provider?.status === 'closed' && (
-                      <Check className="w-5 h-5 text-red-500" />
+                      <Check className="w-5 h-5 text-error" />
                     )}
                   </button>
                 </div>
 
                 {/* Warning */}
-                <div className="flex items-start gap-2 p-3 bg-yellow-500/10 rounded-lg text-yellow-400 text-sm">
+                <div className="flex items-start gap-2 p-3 bg-[hsl(42_100%_70%/0.1)] rounded-lg text-premium text-sm">
                   <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                   <p>
                     {locale === 'ar'
@@ -882,8 +882,8 @@ export default function ProviderSettingsPage() {
                       {passwordMessage && (
                         <div className={`flex items-center gap-2 p-3 rounded-lg ${
                           passwordMessage.type === 'success'
-                            ? 'bg-green-900/20 text-green-400'
-                            : 'bg-red-900/20 text-red-400'
+                            ? 'bg-[hsl(158_100%_38%/0.15)] text-deal'
+                            : 'bg-[hsl(358_100%_68%/0.15)] text-error'
                         }`}>
                           {passwordMessage.type === 'success' ? (
                             <Check className="w-4 h-4" />
