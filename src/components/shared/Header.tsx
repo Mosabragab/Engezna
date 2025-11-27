@@ -50,7 +50,7 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
       .eq('owner_id', userId)
       .limit(1)
 
-    setIsProvider(data && data.length > 0)
+    setIsProvider(!!(data && data.length > 0))
   }, [])
 
   useEffect(() => {
