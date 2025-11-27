@@ -138,10 +138,10 @@ export default function ProviderDashboard() {
     // Get unique customers
     const { data: customersData } = await supabase
       .from('orders')
-      .select('user_id')
+      .select('customer_id')
       .eq('provider_id', providerId)
 
-    const uniqueCustomers = new Set(customersData?.map(o => o.user_id) || [])
+    const uniqueCustomers = new Set(customersData?.map(o => o.customer_id) || [])
 
     // Calculate revenue from delivered orders only
     const deliveredOrders = todayOrdersData?.filter(o => o.status === 'delivered') || []

@@ -116,7 +116,7 @@ export default function ReportsPage() {
     // Get all orders for this provider
     const { data: orders } = await supabase
       .from('orders')
-      .select('id, status, total, created_at, user_id')
+      .select('id, status, total, created_at, customer_id')
       .eq('provider_id', provId)
 
     if (orders) {
@@ -153,7 +153,7 @@ export default function ReportsPage() {
       }
 
       // Unique customers
-      const uniqueCustomers = new Set(orders.map(o => o.user_id))
+      const uniqueCustomers = new Set(orders.map(o => o.customer_id))
       setTotalCustomers(uniqueCustomers.size)
 
       // Daily revenue for chart (last 30 days)
