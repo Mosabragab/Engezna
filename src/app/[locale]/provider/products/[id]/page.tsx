@@ -266,7 +266,8 @@ export default function EditProductPage() {
     setSaving(true)
     const supabase = createClient()
 
-    const productData = {
+    // Build product data - only include category_id if it's set
+    const productData: Record<string, any> = {
       name_ar: formData.name_ar.trim(),
       name_en: formData.name_en.trim(),
       description_ar: formData.description_ar.trim() || null,
@@ -279,8 +280,12 @@ export default function EditProductPage() {
       is_spicy: formData.is_spicy,
       preparation_time_min: parseInt(formData.preparation_time_min) || 15,
       calories: formData.calories ? parseInt(formData.calories) : null,
-      category_id: formData.category_id || null,
       updated_at: new Date().toISOString(),
+    }
+
+    // Only add category_id if a category is selected
+    if (formData.category_id) {
+      productData.category_id = formData.category_id
     }
 
     const { error } = await supabase
@@ -290,9 +295,25 @@ export default function EditProductPage() {
 
     if (error) {
       console.error('Error updating product:', error)
-      setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل تحديث المنتج' : 'Failed to update product' }))
-      setSaving(false)
-      return
+      // If category_id column doesn't exist, retry without it
+      if (error.message?.includes('category_id')) {
+        delete productData.category_id
+        const { error: retryError } = await supabase
+          .from('menu_items')
+          .update(productData)
+          .eq('id', productId)
+
+        if (retryError) {
+          console.error('Retry error:', retryError)
+          setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل تحديث المنتج' : 'Failed to update product' }))
+          setSaving(false)
+          return
+        }
+      } else {
+        setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل تحديث المنتج' : 'Failed to update product' }))
+        setSaving(false)
+        return
+      }
     }
 
     router.push(`/${locale}/provider/products`)

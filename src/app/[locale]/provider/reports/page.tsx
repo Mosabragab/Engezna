@@ -116,7 +116,7 @@ export default function ReportsPage() {
     // Get all orders for this provider
     const { data: orders } = await supabase
       .from('orders')
-      .select('id, status, total_amount, created_at, user_id')
+      .select('id, status, total, created_at, customer_id')
       .eq('provider_id', provId)
 
     if (orders) {
@@ -130,30 +130,30 @@ export default function ReportsPage() {
       const deliveredOrders = orders.filter(o => o.status === 'delivered')
       const todayRevenue = deliveredOrders
         .filter(o => new Date(o.created_at) >= todayStart)
-        .reduce((sum, o) => sum + (o.total_amount || 0), 0)
+        .reduce((sum, o) => sum + (o.total || 0), 0)
       const weekRevenue = deliveredOrders
         .filter(o => new Date(o.created_at) >= weekStart)
-        .reduce((sum, o) => sum + (o.total_amount || 0), 0)
+        .reduce((sum, o) => sum + (o.total || 0), 0)
       const monthRevenue = deliveredOrders
         .filter(o => new Date(o.created_at) >= monthStart)
-        .reduce((sum, o) => sum + (o.total_amount || 0), 0)
+        .reduce((sum, o) => sum + (o.total || 0), 0)
       const lastMonthRevenue = deliveredOrders
         .filter(o => {
           const d = new Date(o.created_at)
           return d >= lastMonthStart && d <= lastMonthEnd
         })
-        .reduce((sum, o) => sum + (o.total_amount || 0), 0)
+        .reduce((sum, o) => sum + (o.total || 0), 0)
 
       setRevenueStats({ today: todayRevenue, thisWeek: weekRevenue, thisMonth: monthRevenue, lastMonth: lastMonthRevenue })
 
       // Average order value
       if (deliveredOrders.length > 0) {
-        const totalRevenue = deliveredOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+        const totalRevenue = deliveredOrders.reduce((sum, o) => sum + (o.total || 0), 0)
         setAvgOrderValue(totalRevenue / deliveredOrders.length)
       }
 
       // Unique customers
-      const uniqueCustomers = new Set(orders.map(o => o.user_id))
+      const uniqueCustomers = new Set(orders.map(o => o.customer_id))
       setTotalCustomers(uniqueCustomers.size)
 
       // Daily revenue for chart (last 30 days)
@@ -167,7 +167,7 @@ export default function ReportsPage() {
       deliveredOrders.forEach(o => {
         const key = new Date(o.created_at).toISOString().split('T')[0]
         if (daily[key]) {
-          daily[key].revenue += o.total_amount || 0
+          daily[key].revenue += o.total || 0
           daily[key].orders += 1
         }
       })
