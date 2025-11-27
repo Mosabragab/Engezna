@@ -760,12 +760,13 @@ export default function EditProductPage() {
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, is_vegetarian: !prev.is_vegetarian }))}
-                    className={`w-12 h-6 rounded-full transition-colors ${
+                    dir="ltr"
+                    className={`w-12 h-6 rounded-full transition-colors relative ${
                       formData.is_vegetarian ? 'bg-green-500' : 'bg-slate-600'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${
-                      formData.is_vegetarian ? 'translate-x-6' : 'translate-x-0'
+                    <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
+                      formData.is_vegetarian ? 'left-[1.375rem]' : 'left-0.5'
                     }`} />
                   </button>
                 </label>
@@ -780,12 +781,13 @@ export default function EditProductPage() {
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, is_spicy: !prev.is_spicy }))}
-                    className={`w-12 h-6 rounded-full transition-colors ${
+                    dir="ltr"
+                    className={`w-12 h-6 rounded-full transition-colors relative ${
                       formData.is_spicy ? 'bg-red-500' : 'bg-slate-600'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${
-                      formData.is_spicy ? 'translate-x-6' : 'translate-x-0'
+                    <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
+                      formData.is_spicy ? 'left-[1.375rem]' : 'left-0.5'
                     }`} />
                   </button>
                 </label>
@@ -800,12 +802,13 @@ export default function EditProductPage() {
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, is_available: !prev.is_available }))}
-                    className={`w-12 h-6 rounded-full transition-colors ${
+                    dir="ltr"
+                    className={`w-12 h-6 rounded-full transition-colors relative ${
                       formData.is_available ? 'bg-primary' : 'bg-slate-600'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform mx-0.5 ${
-                      formData.is_available ? 'translate-x-6' : 'translate-x-0'
+                    <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
+                      formData.is_available ? 'left-[1.375rem]' : 'left-0.5'
                     }`} />
                   </button>
                 </label>
