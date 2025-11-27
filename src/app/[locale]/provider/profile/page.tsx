@@ -12,8 +12,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Globe,
-  Moon,
-  Sun,
   User,
   Check,
   Loader2,
@@ -25,6 +23,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react'
+import { ThemeToggle } from '@/components/shared/ThemeToggle'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -38,7 +37,6 @@ export default function ProviderProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [selectedLanguage, setSelectedLanguage] = useState(locale)
   const [changingLanguage, setChangingLanguage] = useState(false)
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark') // Keep for header toggle
 
   // Password change states
   const [showPasswordForm, setShowPasswordForm] = useState(false)
@@ -52,12 +50,6 @@ export default function ProviderProfilePage() {
 
   useEffect(() => {
     checkAuth()
-    // Load theme from localStorage
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
-    if (savedTheme) {
-      setTheme(savedTheme)
-      applyTheme(savedTheme)
-    }
   }, [])
 
   const checkAuth = async () => {
@@ -85,21 +77,6 @@ export default function ProviderProfilePage() {
     }
 
     setLoading(false)
-  }
-
-  const applyTheme = (newTheme: 'light' | 'dark') => {
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark'
-    setTheme(newTheme)
-    localStorage.setItem('theme', newTheme)
-    applyTheme(newTheme)
   }
 
   const handleLanguageChange = async (newLocale: string) => {
@@ -226,13 +203,7 @@ export default function ProviderProfilePage() {
               <User className="w-5 h-5" />
               {locale === 'ar' ? 'الملف الشخصي' : 'Profile'}
             </h1>
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-              title={theme === 'dark' ? (locale === 'ar' ? 'الوضع النهاري' : 'Light Mode') : (locale === 'ar' ? 'الوضع الليلي' : 'Dark Mode')}
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
+            <ThemeToggle />
           </div>
         </div>
       </header>
