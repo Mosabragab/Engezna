@@ -1,29 +1,42 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** November 27, 2025
-**Status:** Week 3 - 100% Complete ✅
+**Status:** Week 3 - 100% Complete ✅ + Brand Refresh
 **Branch:** `main`
 
 ---
 
-## 🎨 BRAND COLORS (OFFICIAL - v1.0)
+## 🎨 BRAND COLORS (OFFICIAL - v2.0)
 
 ⚠️ **CRITICAL: Use ONLY these colors**
 
 ### Primary Colors
 ```css
---primary: 23 97% 46%;            /* #E85D04 Orange Primary */
---gold: 41 98% 57%;               /* #FDB927 Premium */
---orange-accent: 16 100% 60%;     /* #FF6B35 Deals */
---blue: 207 90% 54%;              /* #2196F3 Info */
+--primary: 198 100% 44%;          /* #009DE0 Engezna Blue */
 --secondary: 0 0% 0%;             /* #000000 Black */
+--background: 0 0% 100%;          /* #FFFFFF White */
+```
+
+### Semantic Colors
+```css
+--deal: 158 100% 38%;             /* #00C27A Green-Cyan (Deals/Success) */
+--premium: 42 100% 70%;           /* #FFD166 Soft Gold (Premium/Warning) */
+--info: 194 86% 58%;              /* #36C5F0 Sky Blue (Info) */
+--error: 358 100% 68%;            /* #FF5A5F Coral Red (Error) */
 ```
 
 ### ❌ OLD COLORS (DO NOT USE)
 - ~~Deep Green #06c769~~ ← WRONG
+- ~~Orange #E85D04~~ ← OLD (Changed to Blue)
 - ~~Gold: 43 98% 58%~~ ← WRONG
 
-**Official brand color is ORANGE #E85D04, NOT green!**
+### Theme Strategy
+**Light-Only Theme** - Dark mode has been removed for:
+- Simplified development and testing
+- Consistent brand experience
+- Better performance (fewer CSS variables)
+
+**Official brand color is ENGEZNA BLUE #009DE0, NOT orange or green!**
 
 ---
 
@@ -336,13 +349,32 @@ Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Ma
 
 ## 🐛 Recent Fixes
 
+### Work Session Nov 27, 2025 - Brand Identity Refresh & Navigation Standards ✅
+- ✅ **Brand Color Update**: Changed from Orange (#E85D04) to Engezna Blue (#009DE0)
+- ✅ **Light-Only Theme**: Removed dark mode for simplified development and consistent brand
+- ✅ **New Navigation Bars**: Implemented new customer and provider navigation
+- ✅ **Fixed Dropdown Hover Issue**: Resolved gap between trigger and dropdown content
+- ✅ **Improved Button Visibility**: Added explicit hover states for ghost buttons
+- ✅ **RTL Arrow Fix**: Dynamic arrow direction based on locale
+- ✅ **Documentation Updates**:
+  - Updated BRAND_IDENTITY_GUIDE.md (v2.0) - Added navigation standards, lessons learned
+  - Updated BRAND_IMPLEMENTATION_GUIDE.md (v2.0) - Added implementation code examples
+  - Updated engezna-theme.css (v2.0) - Added navigation component styles
+  - Updated README.md, PRD.md, claude.md with new brand info
+
+### Lessons Learned (Brand Refresh)
+| Problem | Root Cause | Solution |
+|---------|------------|----------|
+| Dropdown closes on hover | CSS gap between trigger and menu | Use `mt-0` and `top-full` |
+| Ghost buttons invisible | No hover background defined | Add `hover:bg-muted` |
+| RTL arrows wrong direction | Hardcoded arrow icons | Check `isRTL` and swap icons |
+| Dark mode complexity | Two themes to maintain | Simplified to light-only |
+
 ### Work Session Nov 27, 2025 - Provider Enhancements ✅
 - ✅ **Provider Profile Page**: Created `/provider/profile` with comprehensive settings
   - Account info display with email/avatar
   - Language switcher (Arabic/English) with locale redirect
   - Inline password change form (no redirect to customer profile)
-  - Theme toggle moved to header bar for global access
-  - Theme-aware styling (dark/light mode responsive)
   - Sign out functionality
 - ✅ **Product Categories**: Added category dropdown to add/edit product pages
   - Inline category creation with Arabic/English names
@@ -353,7 +385,6 @@ Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Ma
   - Multi-select checkbox list for product selection
   - Validation for at least one product when specific is chosen
 - ✅ **Auto-Refresh Orders**: Orders page refreshes every 60 seconds
-- ✅ **Theme Toggle in Header**: Moved from profile page to header bar
 - ✅ **Fixed .single() queries**: Changed to .limit(1) across all provider pages
 
 ### Work Session Nov 26, 2025 - Finance & Payments ✅
@@ -566,8 +597,13 @@ CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'pu
 
 ---
 
-**Version:** 16.0 (Week 3 - 100% Complete + Documentation Update)
+**Version:** 17.0 (Week 3 Complete + Brand Identity Refresh)
 **Last Updated:** November 27, 2025
 **Next Review:** December 1, 2025
 
-**🎉 Week 3 100% Complete! Full customer flow and provider dashboard functional. Ready for Week 4: Admin Panel & Payment Integration!**
+**🎉 Week 3 Complete + Brand Refresh!**
+- Full customer flow and provider dashboard functional
+- Brand updated to Engezna Blue (#009DE0)
+- Light-only theme for consistent experience
+- Navigation standards documented with lessons learned
+- Ready for Week 4: Admin Panel & Payment Integration!

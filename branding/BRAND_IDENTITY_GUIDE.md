@@ -1,6 +1,15 @@
 # Engezna – Brand Identity Guide
-Version: 1.0
+Version: 2.0
 Last Updated: 2025-11-27
+
+---
+
+## Change Log
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.0 | 2025-11-27 | Added Navigation Bar Standards, Light-Only Theme Decision, UI/UX Guidelines |
+| 1.0 | 2025-11-27 | Initial brand identity guide with Engezna Blue (#009DE0) |
 
 ---
 
@@ -212,7 +221,197 @@ Key positioning pillars:
 
 ---
 
-## 8. Business & Economic Model (Brand-Level)
+## 8. Theme & Mode Strategy
+
+### 8.1 Light-Only Theme Decision
+
+**Decision:** Engezna uses a **Light-Only Theme** without dark mode support.
+
+**Rationale:**
+- **Simplified Development:** Reduced complexity in testing and maintaining two visual modes
+- **Consistent Brand Experience:** Engezna Blue (#009DE0) and white backgrounds provide maximum brand recognition
+- **Target Audience:** Class B & C users in المحافظات typically prefer simpler, cleaner interfaces
+- **Performance:** Fewer CSS variables and conditional styling improves load times
+
+**Implementation:**
+- All UI components are designed for light backgrounds only
+- No `dark:` Tailwind prefixes used in the codebase
+- Background colors: White (#FFFFFF) and Light Gray (#F4F4F5)
+- Text colors: Charcoal (#1A1A1A) for readability
+
+### 8.2 Technical Implications
+- Removed `next-themes` dark mode provider
+- Simplified CSS with single-mode color tokens
+- Consistent contrast ratios across all screens
+
+---
+
+## 9. Navigation Bar Standards (Header/Navbar)
+
+### 9.1 Customer Navigation Bar
+
+**Structure:**
+```
+┌─────────────────────────────────────────────────────┐
+│  Logo          [My Orders] [My Account] [Logout]   │
+│  إنجزنا                                            │
+└─────────────────────────────────────────────────────┘
+```
+
+**Design Specifications:**
+- **Background:** White (`#FFFFFF`) with subtle border-bottom
+- **Height:** 64px (py-4)
+- **Position:** Sticky (top: 0, z-index: 50)
+- **Shadow:** Subtle drop shadow (`shadow-sm`)
+- **Container:** Max-width with horizontal padding (px-4)
+
+**Logo:**
+- Primary Blue text (`#009DE0`)
+- Font: Bold, 2xl (24px)
+- Arabic: "إنجزنا" | English: "Engezna"
+
+**Navigation Items:**
+- **Ghost Buttons:** Transparent background with subtle hover states
+- **Icon Size:** 16px (w-4 h-4)
+- **Gap:** 1.5rem (gap-1.5) between icon and text
+- **Responsive:** Text hidden on mobile (sm:inline)
+
+**My Orders Badge:**
+- Position: Absolute (-top-1, -right-1)
+- Size: 20px (w-5 h-5)
+- Background: Primary Blue
+- Text: White, xs font, bold
+- Shape: Circle (rounded-full)
+
+**Logout Button:**
+- Variant: Outline
+- Border: Light red (`border-red-200`)
+- Text: Red (`text-red-600`)
+- Hover: Darker red with light red background
+
+### 9.2 Provider Dashboard Navigation
+
+**Structure:**
+```
+┌─────────────────────────────────────────────────────┐
+│  ☰ Menu  │  Dashboard        [Settings] [Profile]  │
+│          │  لوحة التحكم                             │
+└─────────────────────────────────────────────────────┘
+```
+
+**Design Specifications:**
+- **Background:** White
+- **Sidebar:** Collapsible on mobile
+- **Logo:** Clickable, returns to provider dashboard
+
+**Dropdown Menu (Hover):**
+- **Trigger:** User avatar or menu icon
+- **Gap:** No gap between trigger and dropdown (prevents hover loss)
+- **Animation:** Smooth fade-in/slide-down
+- **Items:** Clear padding and hover states
+
+### 9.3 Common Navigation Patterns
+
+**Button States:**
+| State | Background | Border | Text Color |
+|-------|------------|--------|------------|
+| Default | Transparent | None | `text-muted-foreground` |
+| Hover | `bg-accent` | None | `text-primary` |
+| Active | `bg-primary` | None | White |
+| Disabled | Transparent | None | `text-gray-300` |
+
+**RTL Considerations:**
+- Arrow icons flip direction (ArrowLeft ↔ ArrowRight)
+- Text alignment respects document direction
+- Flex direction remains consistent (justify-between)
+
+---
+
+## 10. UI/UX Design Standards
+
+### 10.1 Hover & Interactive States
+
+**Best Practices:**
+1. **Dropdown Menus:** NO gap between trigger and dropdown content
+2. **Button Visibility:** Ensure adequate contrast on hover states
+3. **Ghost Buttons:** Use subtle background change on hover
+4. **Links:** Underline or color change on hover
+
+**Common Issues Avoided:**
+- ❌ Gap between hover trigger and dropdown (causes menu to close)
+- ❌ Ghost buttons with no visible hover state
+- ❌ Low contrast text on light backgrounds
+- ✅ Seamless dropdown connection to trigger
+- ✅ Clear visual feedback on all interactive elements
+
+### 10.2 Spacing & Layout
+
+**Consistent Spacing Scale:**
+- `gap-2` (8px): Between icon and text
+- `gap-3` (12px): Between navigation items
+- `gap-4` (16px): Section padding
+- `gap-6` (24px): Between major sections
+
+**Container Standards:**
+- Max-width: `container` Tailwind class
+- Horizontal padding: `px-4` (16px)
+- Vertical padding: Header `py-4` (16px)
+
+### 10.3 Component-Specific Standards
+
+**Cards:**
+- Background: White
+- Border: `border-gray-200`
+- Border-radius: `rounded-lg` (8px)
+- Shadow: `shadow-sm` for elevated cards
+- Padding: `p-4` or `p-6`
+
+**Buttons:**
+- Border-radius: `rounded-md` (6px)
+- Size variants: `sm`, `default`, `lg`
+- Icon placement: Before text (with gap-1.5)
+
+---
+
+## 11. Lessons Learned & Design Anti-Patterns
+
+### 11.1 Problems We Encountered & Solutions
+
+| Problem | Root Cause | Solution |
+|---------|------------|----------|
+| Dropdown menu closes on hover | CSS gap between trigger and menu | Remove gap, use `inset-0` or overlapping positioning |
+| Ghost buttons invisible | No hover background | Add `hover:bg-accent` or `hover:bg-muted` |
+| Inconsistent button colors | Multiple color systems | Unified token system in CSS variables |
+| Dark mode complexity | Maintaining two themes | Simplified to light-only theme |
+| RTL arrow confusion | Hardcoded arrow directions | Dynamic arrow based on `isRTL` check |
+
+### 11.2 Design Anti-Patterns to Avoid
+
+1. **Don't:** Use `gap` in dropdown positioning
+   - **Do:** Use `top-full` with `mt-0` for seamless connection
+
+2. **Don't:** Mix color systems (hex, hsl, rgb)
+   - **Do:** Use CSS variables consistently (`hsl(var(--primary))`)
+
+3. **Don't:** Add visual elements without testing hover states
+   - **Do:** Test every interactive element on desktop and mobile
+
+4. **Don't:** Assume RTL is just text direction
+   - **Do:** Flip icons, adjust margins, test thoroughly
+
+5. **Don't:** Over-engineer with dark/light modes initially
+   - **Do:** Start with one theme, add complexity when needed
+
+### 11.3 Code Quality Standards
+
+- **CSS Variables:** All colors defined in `:root`
+- **Tailwind Classes:** Prefer utility classes over custom CSS
+- **Component Consistency:** Use shadcn/ui components as base
+- **Testing:** Visual regression testing for hover states
+
+---
+
+## 12. Business & Economic Model (Brand-Level)
 
 - **Merchant registration fees:**
   - **0 EGP – forever** (no sign-up fee for service providers).
@@ -231,7 +430,7 @@ Key positioning pillars:
 
 ---
 
-## 9. Strategic Risks & Brand Guardrails
+## 13. Strategic Risks & Brand Guardrails
 
 This section captures the key risks tied to the chosen model so all teams stay aware.
 
