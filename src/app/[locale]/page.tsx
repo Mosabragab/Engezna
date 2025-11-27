@@ -189,10 +189,10 @@ export default function Home() {
                       </span>
                       {/* Role Badge */}
                       {(isProvider || isAdmin) && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           isAdmin
                             ? 'bg-red-100 text-red-700'
-                            : 'bg-primary/10 text-primary'
+                            : 'bg-primary/15 text-primary border border-primary/30'
                         }`}>
                           {isAdmin
                             ? (locale === 'ar' ? 'مسؤول' : 'Admin')
@@ -240,7 +240,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section - Different for each role */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-primary/5">
+      <section className="relative overflow-hidden bg-white">
         <div className="container mx-auto px-4 py-20 md:py-32">
           <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
             {/* Coming Soon Badge */}
@@ -345,11 +345,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Decorative Elements */}
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-          <div className={`absolute top-20 left-10 w-64 h-64 ${isAdmin ? 'bg-red-500/10' : 'bg-primary/10'} rounded-full blur-3xl`}></div>
-          <div className={`absolute bottom-20 right-10 w-96 h-96 ${isAdmin ? 'bg-red-500/5' : 'bg-primary/5'} rounded-full blur-3xl`}></div>
-        </div>
+        {/* Decorative Elements - Only visible for Admin */}
+        {isAdmin && (
+          <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+            <div className="absolute top-20 left-10 w-64 h-64 bg-red-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-20 right-10 w-96 h-96 bg-red-500/5 rounded-full blur-3xl"></div>
+          </div>
+        )}
       </section>
 
       {/* Admin Quick Stats Section - Only for Admin */}
