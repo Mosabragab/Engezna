@@ -620,24 +620,29 @@ export default function ProviderSettingsPage() {
           {/* Status Tab */}
           {activeTab === 'status' && (
             <Card className="bg-white border-slate-200">
-              <CardHeader>
-                <CardTitle className="text-slate-900 flex items-center gap-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-slate-900 flex items-center gap-2 text-xl font-bold">
                   <Power className="w-5 h-5" />
                   {locale === 'ar' ? 'حالة المتجر' : 'Store Status'}
                 </CardTitle>
+                <p className="text-sm text-slate-500 mt-1">
+                  {locale === 'ar'
+                    ? 'اختر حالة متجرك الحالية من الخيارات أدناه'
+                    : 'Choose your current store status from the options below'}
+                </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Current Status */}
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-slate-500 mb-2">
-                    {locale === 'ar' ? 'الحالة الحالية' : 'Current Status'}
-                  </p>
-                  <span className={`px-4 py-2 rounded-full text-lg font-bold ${
+                {/* Current Status Badge */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-500">
+                    {locale === 'ar' ? 'الحالة الحالية:' : 'Current Status:'}
+                  </span>
+                  <span className={`px-3 py-1 rounded-lg text-sm font-semibold border ${
                     provider?.status === 'open'
-                      ? 'bg-[hsl(158_100%_38%/0.2)] text-deal'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       : provider?.status === 'closed'
-                      ? 'bg-[hsl(358_100%_68%/0.2)] text-error'
-                      : 'bg-[hsl(42_100%_70%/0.2)] text-premium'
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
                   }`}>
                     {provider?.status === 'open'
                       ? locale === 'ar' ? 'مفتوح' : 'Open'
@@ -647,22 +652,34 @@ export default function ProviderSettingsPage() {
                   </span>
                 </div>
 
+                {/* Divider */}
+                <hr className="border-slate-200" />
+
                 {/* Status Options */}
                 <div className="space-y-3">
+                  {/* Open Option */}
                   <button
                     onClick={() => handleToggleStatus('open')}
                     disabled={saving || provider?.status === 'open'}
-                    className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
+                    className={`w-full p-4 rounded-lg border transition-all flex items-center gap-3 ${
                       provider?.status === 'open'
-                        ? 'border-[hsl(158_100%_38%)] bg-[hsl(158_100%_38%/0.1)]'
-                        : 'border-slate-300 hover:border-[hsl(158_100%_38%/0.5)] hover:bg-[hsl(158_100%_38%/0.05)]'
+                        ? 'border-emerald-400 bg-emerald-50'
+                        : 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50'
                     }`}
                   >
-                    <div className={`w-4 h-4 rounded-full ${
-                      provider?.status === 'open' ? 'bg-deal' : 'bg-slate-400'
-                    }`} />
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      provider?.status === 'open'
+                        ? 'border-emerald-500 bg-emerald-500'
+                        : 'border-slate-300 bg-white'
+                    }`}>
+                      {provider?.status === 'open' && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                      )}
+                    </div>
                     <div className="text-start flex-1">
-                      <p className="font-bold text-deal">
+                      <p className={`font-semibold ${
+                        provider?.status === 'open' ? 'text-emerald-700' : 'text-slate-700'
+                      }`}>
                         {locale === 'ar' ? 'مفتوح' : 'Open'}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -672,24 +689,33 @@ export default function ProviderSettingsPage() {
                       </p>
                     </div>
                     {provider?.status === 'open' && (
-                      <Check className="w-5 h-5 text-deal" />
+                      <Check className="w-5 h-5 text-emerald-500" />
                     )}
                   </button>
 
+                  {/* Temporarily Paused Option */}
                   <button
                     onClick={() => handleToggleStatus('temporarily_paused')}
                     disabled={saving || provider?.status === 'temporarily_paused'}
-                    className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
+                    className={`w-full p-4 rounded-lg border transition-all flex items-center gap-3 ${
                       provider?.status === 'temporarily_paused'
-                        ? 'border-[hsl(42_100%_70%)] bg-[hsl(42_100%_70%/0.1)]'
-                        : 'border-slate-300 hover:border-[hsl(42_100%_70%/0.5)] hover:bg-[hsl(42_100%_70%/0.05)]'
+                        ? 'border-amber-400 bg-amber-50'
+                        : 'border-slate-200 hover:border-amber-300 hover:bg-amber-50/50'
                     }`}
                   >
-                    <div className={`w-4 h-4 rounded-full ${
-                      provider?.status === 'temporarily_paused' ? 'bg-premium' : 'bg-slate-400'
-                    }`} />
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      provider?.status === 'temporarily_paused'
+                        ? 'border-amber-500 bg-amber-500'
+                        : 'border-slate-300 bg-white'
+                    }`}>
+                      {provider?.status === 'temporarily_paused' && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                      )}
+                    </div>
                     <div className="text-start flex-1">
-                      <p className="font-bold text-premium">
+                      <p className={`font-semibold ${
+                        provider?.status === 'temporarily_paused' ? 'text-amber-700' : 'text-slate-700'
+                      }`}>
                         {locale === 'ar' ? 'متوقف مؤقتاً' : 'Temporarily Paused'}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -699,24 +725,33 @@ export default function ProviderSettingsPage() {
                       </p>
                     </div>
                     {provider?.status === 'temporarily_paused' && (
-                      <Check className="w-5 h-5 text-premium" />
+                      <Check className="w-5 h-5 text-amber-500" />
                     )}
                   </button>
 
+                  {/* Closed Option */}
                   <button
                     onClick={() => handleToggleStatus('closed')}
                     disabled={saving || provider?.status === 'closed'}
-                    className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
+                    className={`w-full p-4 rounded-lg border transition-all flex items-center gap-3 ${
                       provider?.status === 'closed'
-                        ? 'border-[hsl(358_100%_68%)] bg-[hsl(358_100%_68%/0.1)]'
-                        : 'border-slate-300 hover:border-[hsl(358_100%_68%/0.5)] hover:bg-[hsl(358_100%_68%/0.05)]'
+                        ? 'border-red-400 bg-red-50'
+                        : 'border-slate-200 hover:border-red-300 hover:bg-red-50/50'
                     }`}
                   >
-                    <div className={`w-4 h-4 rounded-full ${
-                      provider?.status === 'closed' ? 'bg-error' : 'bg-slate-400'
-                    }`} />
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      provider?.status === 'closed'
+                        ? 'border-red-500 bg-red-500'
+                        : 'border-slate-300 bg-white'
+                    }`}>
+                      {provider?.status === 'closed' && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                      )}
+                    </div>
                     <div className="text-start flex-1">
-                      <p className="font-bold text-error">
+                      <p className={`font-semibold ${
+                        provider?.status === 'closed' ? 'text-red-700' : 'text-slate-700'
+                      }`}>
                         {locale === 'ar' ? 'مغلق' : 'Closed'}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -726,13 +761,13 @@ export default function ProviderSettingsPage() {
                       </p>
                     </div>
                     {provider?.status === 'closed' && (
-                      <Check className="w-5 h-5 text-error" />
+                      <Check className="w-5 h-5 text-red-500" />
                     )}
                   </button>
                 </div>
 
-                {/* Warning */}
-                <div className="flex items-start gap-2 p-3 bg-[hsl(42_100%_70%/0.1)] rounded-lg text-premium text-sm">
+                {/* Warning Notice */}
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
                   <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                   <p>
                     {locale === 'ar'
