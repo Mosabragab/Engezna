@@ -323,10 +323,10 @@ export default function StoreHoursPage() {
                           onClick={() => handleToggleDay(day.key)}
                           dir="ltr"
                           className={`w-12 h-6 rounded-full transition-colors relative ${
-                            hours.is_open ? 'bg-deal' : 'bg-slate-400'
+                            hours.is_open ? 'bg-primary' : 'bg-slate-400'
                           }`}
                         >
-                          <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
+                          <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 shadow ${
                             hours.is_open ? 'left-[1.375rem]' : 'left-0.5'
                           }`} />
                         </button>
