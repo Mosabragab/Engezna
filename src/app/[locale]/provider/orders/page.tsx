@@ -70,7 +70,7 @@ type Order = {
 const STATUS_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label_ar: string; label_en: string }> = {
   pending: { icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', label_ar: 'طلب جديد', label_en: 'New Order' },
   accepted: { icon: CheckCircle2, color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/30', label_ar: 'تم القبول', label_en: 'Accepted' },
-  preparing: { icon: ChefHat, color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/30', label_ar: 'جاري التحضير', label_en: 'Preparing' },
+  preparing: { icon: ChefHat, color: 'text-amber-600', bgColor: 'bg-amber-100 dark:bg-amber-900/30', label_ar: 'جاري التحضير', label_en: 'Preparing' },
   ready: { icon: Package, color: 'text-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/30', label_ar: 'جاهز', label_en: 'Ready' },
   out_for_delivery: { icon: Truck, color: 'text-indigo-600', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', label_ar: 'في الطريق', label_en: 'On the way' },
   delivered: { icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900/30', label_ar: 'تم التوصيل', label_en: 'Delivered' },

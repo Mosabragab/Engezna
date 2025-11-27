@@ -1,201 +1,91 @@
-# Engezna (إنجزنا) - Brand Style Quick Reference
-
-**Last Updated:** November 23, 2025
-
----
-
-## 🎨 Brand Colors
-
-### Primary Palette
-```
-Orange Primary
-#E85D04
-RGB: 232, 93, 4
-HSL: 23°, 97%, 46%
-
-Black (Secondary)
-#000000
-RGB: 0, 0, 0
-
-White (Accent)
-#FFFFFF
-RGB: 255, 255, 255
-```
-
-### Accent Colors
-```
-Warm Orange Accent (Deals)  Golden Yellow (Premium)    Sky Blue (Info)
-#FF6B35                     #FDB927                    #2196F3
-```
-
-### System Colors
-```
-Success: #E85D04 (Same as Primary Orange)
-Error:   #F44336
-Warning: #FF9800
-Info:    #2196F3
-```
+# Engezna – Brand Quick Reference
+Version: 1.0
 
 ---
 
-## 🔤 Typography
+## 1. Core Identity
 
-### Fonts
-```
-Arabic:  Noto Sans Arabic (Variable)
-English: Noto Sans (Variable)
-Weights: 400 (Regular), 500 (Medium), 600 (Semibold), 700 (Bold)
-```
-
-### Hierarchy
-```
-Display:  56px / 48px (AR/EN) - Bold
-H1:       40px / 36px - Semibold
-H2:       30px - Semibold
-H3:       24px - Semibold
-Body:     16px - Regular
-Small:    14px - Regular
-Caption:  12px - Regular
-```
+- **Name:** Engezna / إنجزنا
+- **Tagline (AR):** عايز تطلب؟ إنجزنا
+- **Tagline (EN):** Want to order? Engezna!
+- **What we do:**
+  Connect customers with local service providers (restaurants, supermarkets, cafés, pharmacies, fruits & veg) in non-primary Egyptian cities, replacing phone-based ordering with app-based ordering.
 
 ---
 
-## 📱 Logo Variations
+## 2. Who We Serve
 
-### Text Lockups
-```
-Horizontal: إنجزنا • Engezna
-Stacked:    إنجزنا
-            ─────
-           Engezna
-Arabic:     إنجزنا
-English:    Engezna
-```
-
-### Logo Colors by Background
-```
-White Background    → Orange Primary (#E85D04)
-Light Gray         → Orange Primary or Black
-Orange Primary     → White (#FFFFFF)
-Black              → White or Orange Primary
-Photography        → White with outline
-```
-
-### Minimum Sizes
-```
-Horizontal:  120px width
-Stacked:     48px width
-Wordmark:    80px width
-Favicon:     16px
-```
+- **Merchants:**
+  - مطاعم، سوبرماركت، كافيهات، صيدليات، خضار وفاكهة
+  - Located **outside** Cairo, Giza, Alexandria, and North Coast
+- **Customers:**
+  - Class B & C
+  - Residents of المحافظات
+  - Used to ordering by phone
 
 ---
 
-## 🗣️ Brand Voice
+## 3. Business Model (At a Glance)
 
-### Personality
-- Confident but Approachable
-- Energetic but Genuine
-- Modern but Rooted
-- Clear & Direct
-
-### Tone Keywords
-```
-✓ Warm          ✓ Action-oriented     ✓ Conversational
-✓ Positive      ✓ Respectful          ✓ Clear
-✓ Bilingual     ✓ Encouraging         ✓ Concise
-
-✗ Formal        ✗ Pushy              ✗ Complex
-✗ Corporate     ✗ Condescending      ✗ Jargon-heavy
-```
-
-### Example Phrases
-```
-Arabic:
-- "إنجزنا واطلب!" (Let's get it done and order!)
-- "اطلب دلوقتي" (Order now)
-- "توصيل سريع" (Fast delivery)
-- "خليها علينا" (Leave it to us)
-
-English:
-- "Let's get it done!"
-- "Order now"
-- "Fast delivery"
-- "We've got you"
-```
+- **Merchant Registration Fee:** 0 EGP – forever
+- **Merchant Commission:**
+  - 0% first 9 months from launch
+  - 6% after that
+- **Customer Service Fee:**
+  - 0% first 12 months
+  - 2% after that
+- **Delivery:** Provided by **merchant**, not by Engezna.
 
 ---
 
-## 📸 Photography Style
+## 4. Visuals – Colors
 
-### Food Photography
-```
-✓ Natural lighting          ✓ Overhead/45° angles
-✓ Context included          ✓ Minimal garnishes
-✓ Vibrant but natural       ✓ Sharp focus
+- **Primary:** `#009DE0` (Engezna Blue)
+- **Secondary:**
+  - Black `#000000`
+  - White `#FFFFFF`
 
-✗ Dark/moody               ✗ Over-styled
-✗ Unrealistic colors       ✗ Generic stock
-```
-
-### People Photography
-```
-✓ Candid moments           ✓ Local faces
-✓ Genuine emotions         ✓ Action shots
-✓ Diverse representation   ✓ Real environments
-
-✗ Staged corporate         ✗ Non-Egyptian models
-✗ Fake smiles             ✗ Sterile settings
-```
+- **Accents:**
+  - Deals: `#00C27A`
+  - Premium: `#FFD166`
+  - Info: `#36C5F0`
+  - Error/Warning: `#FF5A5F`
 
 ---
 
-## 🎯 Key Design Principles
+## 5. Typography
 
-1. **Arabic-First:** RTL layout, Arabic typography prioritized
-2. **Simplicity:** Clean, uncluttered interface
-3. **Speed:** Fast loading, minimal interactions
-4. **Accessibility:** WCAG 2.1 AA compliance
-5. **Mobile-First:** Optimized for small screens
-6. **Local Pride:** Celebrate Beni Suef culture
+- **Arabic:** Noto Sans Arabic (400 / 500 / 700)
+- **English:** Noto Sans / Inter (400 / 500 / 600 / 700)
 
 ---
 
-## ✅ Brand Checklist
+## 6. Voice & Tone
 
-Before publishing, verify:
-- [ ] Logo correctly sized and colored
-- [ ] Colors match brand palette
-- [ ] Noto Sans fonts used
-- [ ] Arabic RTL, English LTR
-- [ ] Tone is warm and action-oriented
-- [ ] Imagery is authentic and local
-- [ ] Design is accessible
-- [ ] Mobile-responsive
-- [ ] Text proofread (AR & EN)
-- [ ] CTAs are clear
+- Confident, energetic, local, action-oriented
+- Simple Egyptian Arabic for main audience
+- No corporate buzzwords
+- No complex Fusha in the app UI
+
+**Example copy:**
+- "عايز تطلب؟ إنجزنا."
+- "طلبك رايح للتاجر دلوقتي."
+- "في تاجر جديد قريب منك – جرّبه!"
 
 ---
 
-## 📊 Quick Stats
+## 7. Do & Don't
 
-```
-Commission:     5-7% (vs 15-20% competitors)
-Delivery Time:  <45 minutes
-Target Market:  Beni Suef, Upper Egypt
-Launch Date:    February 2026
-Platform:       B2C Food Delivery Marketplace
-```
+**Do:**
+- Use primary blue for main CTAs.
+- Keep messages short and clear.
+- Use Arabic RTL properly.
+- Respect merchants and customers in tone.
 
----
-
-## 🔗 Resources
-
-- **Full Brand Guide:** BRAND_IDENTITY_GUIDE.md
-- **PRD:** PRD.md
-- **GitHub:** https://github.com/Mosabragab/Engezna
-- **Contact:** info@engezna.com
+**Don't:**
+- Don't promise unrealistic delivery times.
+- Don't use orange as a primary brand color anymore.
+- Don't overload screens with too many colors.
+- Don't shame or mock small merchants.
 
 ---
-
-**Print this page for quick reference while designing!**

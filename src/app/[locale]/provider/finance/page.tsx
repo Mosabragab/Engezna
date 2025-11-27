@@ -285,12 +285,12 @@ export default function FinancePage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-500/20 to-amber-500/20 border-orange-500/30">
+            <Card className="bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-amber-500/30">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
-                  <Banknote className="w-8 h-8 text-orange-400" />
+                  <Banknote className="w-8 h-8 text-amber-400" />
                 </div>
-                <p className="text-2xl font-bold text-orange-400">{formatCurrency(stats.totalCommission)}</p>
+                <p className="text-2xl font-bold text-amber-400">{formatCurrency(stats.totalCommission)}</p>
                 <p className="text-xs text-slate-400">{locale === 'ar' ? 'العمولات (6%)' : 'Commission (6%)'}</p>
               </CardContent>
             </Card>
@@ -398,7 +398,7 @@ export default function FinancePage() {
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                           txn.type === 'order' ? 'bg-green-500/20' :
                           txn.type === 'payout' ? 'bg-blue-500/20' :
-                          txn.type === 'commission' ? 'bg-orange-500/20' :
+                          txn.type === 'commission' ? 'bg-amber-500/20' :
                           'bg-red-500/20'
                         }`}>
                           {txn.type === 'order' ? (
@@ -406,7 +406,7 @@ export default function FinancePage() {
                           ) : txn.type === 'payout' ? (
                             <ArrowDownRight className="w-5 h-5 text-blue-400" />
                           ) : txn.type === 'commission' ? (
-                            <DollarSign className="w-5 h-5 text-orange-400" />
+                            <DollarSign className="w-5 h-5 text-amber-400" />
                           ) : (
                             <XCircle className="w-5 h-5 text-red-400" />
                           )}
@@ -428,7 +428,7 @@ export default function FinancePage() {
                         <p className={`font-bold ${
                           txn.type === 'order' ? 'text-green-400' :
                           txn.type === 'payout' ? 'text-blue-400' :
-                          txn.type === 'commission' ? 'text-orange-400' :
+                          txn.type === 'commission' ? 'text-amber-400' :
                           'text-red-400'
                         }`}>
                           {txn.type === 'order' ? '+' : txn.type === 'commission' ? '-' : ''}{formatCurrency(txn.amount)}

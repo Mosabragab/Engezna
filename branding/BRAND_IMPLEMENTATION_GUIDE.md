@@ -1,283 +1,162 @@
-# Engezna Brand System - Implementation Guide
-
-**For Developers & Designers**  
-**Version:** 2.0  
-**Last Updated:** November 23, 2025
+# Engezna – Brand Implementation Guide (For Developers & Product Teams)
+Version: 1.0
 
 ---
 
-## 🚀 Quick Start
+## 1. Naming & Structure
 
-### Import Brand Colors
+- **Product Name:** Engezna
+- **Arabic Name:** إنجزنا
+- **Tagline EN:** Want to order? Engezna!
+- **Tagline AR:** عايز تطلب؟ إنجزنا
 
-```tsx
-// In your component
-import '@/styles/brand-colors.css'
-```
-
-### Use Logo Component
-
-```tsx
-import Logo from '@/components/shared/Logo'
-
-<Logo language="ar" variant="medium" color="primary" size="lg" />
-```
-
-### Apply Brand Colors
-
-```tsx
-<button className="bg-primary text-primary-foreground">
-  اطلب دلوقتي
-</button>
-```
+**Recommended identifiers:**
+- Package IDs:
+  - `com.engezna.app.customer`
+  - `com.engezna.app.merchant`
+- Web:
+  - `engezna.com`
+  - `merchant.engezna.com`
 
 ---
 
-## 🎨 Color System Usage
+## 2. Language & Localization
 
-### Primary Brand Colors
+- **Primary UI language:** Arabic (Egyptian dialect for copy, MSA for legal)
+- **Secondary:** English (for some CTAs, app store descriptions)
 
-```css
---color-primary              /* #E85D04 Orange Primary */
---color-primary-light        /* Lighter orange shade */
---color-primary-dark         /* Darker orange shade */
---color-primary-foreground   /* White text on primary */
-```
+**Rules:**
+- Arabic UI: RTL layout; English text inside may be LTR but aligned correctly.
+- Avoid long, dense paragraphs inside the app.
+- For microcopy, prefer Egyptian expressions, but keep them clean and neutral.
 
-### Using in Components
+**Example Microcopy:**
 
-**Method 1: Tailwind Classes**
-```tsx
-<button className="bg-primary text-white hover:bg-primary-light">
-  Order Now
-</button>
-```
+- Order status:
+  - "جارِ تجهيز طلبك"
+  - "الطلب خرج للتوصيل"
+  - "الطلب وِصل"
 
-**Method 2: CSS Custom Properties**
-```tsx
-<div style={{ backgroundColor: 'hsl(var(--color-primary))' }}>
-  Content
-</div>
-```
-
-**Method 3: Utility Classes** (from brand-colors.css)
-```tsx
-<span className="text-primary">Orange Primary Text</span>
-<span className="text-orange-accent">Orange Accent Text</span>
-<span className="text-gold">Gold Text</span>
-```
-
-### Color Semantic Mapping
-
-| Use Case | Color | Example |
-|----------|-------|---------|
-| Primary CTA | `--color-primary` | "اطلب دلوقتي" button |
-| Discount | `--color-orange-accent` | "خصم 30%" badge |
-| Premium | `--color-gold` | "Engezna Plus" |
-| Info | `--color-blue` | "Delivery 30 min" |
-| Success | `--color-success` | "Order confirmed" |
-| Error | `--color-error` | "Payment failed" |
+- Error messages:
+  - "في مشكلة بسيطة… جرّب تاني بعد شوية."
+  - "التاجر حالياً مشغول، حاول كمان دقيقة."
 
 ---
 
-## 🔤 Typography Implementation
+## 3. Color Tokens (High-Level)
 
-### Using in Components
+Use CSS variables / design tokens to ensure consistency. See `engezna-theme.css` for full spec.
 
-**Arabic Text:**
-```tsx
-<h1 className="font-arabic text-4xl font-bold">
-  إنجزنا واطلب!
-</h1>
-```
+Core HSL tokens:
 
-**English Text:**
-```tsx
-<h1 className="font-sans text-3xl font-bold">
-  Let's Get It Done!
-</h1>
-```
+- `--color-primary: 198 100% 44%;`      #009DE0
+- `--color-secondary: 0 0% 0%;`         #000000
+- `--color-white: 0 0% 100%;`           #FFFFFF
 
-**Bilingual:**
-```tsx
-<div className={locale === 'ar' ? 'font-arabic' : 'font-sans'}>
-  {t('homepage.title')}
-</div>
-```
+Accents:
 
-### Typography Scale
+- Deals: `--color-deal: 158 100% 38%;`        #00C27A
+- Premium: `--color-premium: 42 100% 70%;`    #FFD166
+- Info: `--color-info: 194 86% 58%;`          #36C5F0
+- Error: `--color-error: 358 100% 68%;`       #FF5A5F
 
-| Element | Class |
-|---------|-------|
-| Display | `text-[56px] md:text-5xl` |
-| H1 | `text-4xl md:text-[40px]` |
-| H2 | `text-3xl` |
-| H3 | `text-2xl` |
-| Body | `text-base` |
-| Small | `text-sm` |
-| Caption | `text-xs` |
-
-### Font Weights
-
-```tsx
-<p className="font-normal">Regular (400)</p>
-<p className="font-medium">Medium (500)</p>
-<h2 className="font-semibold">Semibold (600)</h2>
-<h1 className="font-bold">Bold (700)</h1>
-```
+Neutrals (light vs dark) are defined under `:root` and `.dark` in CSS.
 
 ---
 
-## 🏷️ Logo Component
+## 4. UI Usage Guidelines
 
-### Props
+### 4.1 Buttons
 
-```typescript
-interface LogoProps {
-  language?: 'ar' | 'en'                    // Default: 'ar'
-  variant?: 'light' | 'medium' | 'bold'     // Default: 'medium'
-  color?: 'primary' | 'white' | 'black'     // Default: 'primary'
-  size?: 'sm' | 'md' | 'lg' | 'xl'          // Default: 'md'
-  className?: string
-}
-```
+- **Primary Button:**
+  - Background: `var(--color-primary)`
+  - Text: white
+  - Hover: lighten primary by ~10%
 
-### Examples
+- **Secondary Button:**
+  - Background: transparent or muted grey
+  - Border: `var(--color-primary)`
+  - Text: `var(--color-primary)`
 
-```tsx
-// Header logo
-<Logo language="ar" variant="medium" color="primary" size="lg" />
+- **Danger Button (cancel / delete):**
+  - Background: `var(--color-error)`
+  - Text: white
 
-// Footer logo
-<Logo language="en" variant="medium" color="white" size="sm" />
+### 4.2 Status & Badges
 
-// Dynamic based on locale
-const locale = useLocale()
-<Logo language={locale as 'ar' | 'en'} size="lg" />
-```
+- **Discount badge (e.g. -20%):**
+  - Background: `var(--color-deal)`
+  - Text: white
 
----
+- **Premium / Highlight badge:**
+  - Background: `var(--color-premium)`
+  - Text: black
 
-## 🎯 Common UI Patterns
-
-### 1. Primary CTA Button
-
-```tsx
-<button className="
-  bg-primary 
-  text-primary-foreground 
-  hover:bg-primary-light 
-  active:bg-primary-dark
-  font-semibold 
-  px-6 py-3 
-  rounded-lg
-  transition-colors
-">
-  اطلب دلوقتي
-</button>
-```
-
-### 2. Discount Badge
-
-```tsx
-<span className="
-  bg-orange-accent 
-  text-white 
-  font-semibold 
-  px-3 py-1 
-  rounded-full 
-  text-sm
-">
-  خصم 30%
-</span>
-```
-
-### 3. Status Indicators
-
-```tsx
-// Success
-<div className="status-success px-4 py-2 rounded-lg">
-  <span className="text-success">✓ تم تأكيد الطلب</span>
-</div>
-
-// Error
-<div className="status-error px-4 py-2 rounded-lg">
-  <span className="text-error">✗ فشل الدفع</span>
-</div>
-```
-
-### 4. Restaurant Card
-
-```tsx
-<div className="
-  bg-card 
-  border border-border 
-  rounded-lg 
-  overflow-hidden 
-  hover:shadow-lg 
-  transition-shadow
-">
-  <img src="/restaurant.jpg" className="w-full h-48 object-cover" />
-  <div className="p-4">
-    <h3 className="font-arabic text-xl font-semibold mb-2">
-      مطعم الأصالة
-    </h3>
-    <div className="flex items-center gap-2 mb-3">
-      <span className="text-gold">⭐ 4.5</span>
-      <span className="text-muted-foreground">(120)</span>
-    </div>
-  </div>
-</div>
-```
+- **Status chips:**
+  - Success: border & text `--color-deal` with 0.1 alpha background
+  - Error: border & text `--color-error`
+  - Info: border & text `--color-info`
 
 ---
 
-## ✅ Brand Compliance Checklist
+## 5. Brand Logic in Product
 
-Before committing:
+### 5.1 Business Rules to Respect (in Code)
 
-### Colors
-- [ ] Only brand palette colors used
-- [ ] Orange Primary for CTAs
-- [ ] Orange Accent only for discounts
-- [ ] Gold only for premium
-- [ ] WCAG AA contrast ratios met
+- **No registration fees for merchants**
+  - Merchants must never see or be charged "sign-up" fees anywhere in the app or back office.
 
-### Typography
-- [ ] Noto Sans Arabic for Arabic
-- [ ] Noto Sans for English
-- [ ] Approved weights only (400-700)
-- [ ] No letter-spacing on Arabic
-- [ ] No text-transform on Arabic
+- **Commission model:**
+  - Commission = 0% for first 9 months from:
+    - Platform launch in that city, OR
+    - merchant registration date (implementation decision to be documented)
+  - After 9 months:
+    - Commission = 6% of order value.
 
-### Logo
-- [ ] Logo component used
-- [ ] Correct language variant
-- [ ] Proper clear space
-- [ ] Appropriate color for background
-- [ ] Minimum sizes met
+- **Customer service fee:**
+  - 0% for first 12 months.
+  - After 12 months: 2% of order value as "service fee".
 
-### Layout
-- [ ] RTL for Arabic
-- [ ] LTR for English
-- [ ] Mobile-responsive
-- [ ] Dark mode compatible
+All logic must be configurable in the backend (feature flags + per-city config).
 
 ---
 
-## 🛠️ Development Commands
+## 6. Risks & Implementation Guardrails
 
-```bash
-# Run dev server
-npm run dev
+Link to brand-level risks and translate into product/tech constraints.
 
-# Build
-npm run build
+**1. Speed of Acquisition Risk**
+- Product must optimize onboarding flows for merchants:
+  - 3–5 steps max
+  - Simple KYC and store setup
+  - Instant test order feature
 
-# Lint
-npm run lint
-```
+**2. Reliability Risk**
+- Minimum requirements:
+  - API error rates and uptime SLAs documented.
+  - Clear error handling for low-connectivity environments.
+  - Graceful fallbacks for timeouts.
+
+**3. Merchant Delivery Dependency**
+- Product must:
+  - Expose merchant preparation time and delivery time expectations clearly.
+  - Allow customers to rate both merchant and delivery.
+  - Provide merchants with tools to pause ordering when overloaded.
+
+**4. Competitive Reaction**
+- Keep room for:
+  - Promo codes & dynamic commission adjustments.
+  - Per-city launch flags and growth experiments.
 
 ---
 
-**Keep this guide updated as the brand system evolves!**
+## 7. Future-Proofing
+
+- All brand-dependent values (colors, fees, slogans) should live in:
+  - Remote configuration where possible.
+  - Centralized token files (CSS / design system).
+- Tagline should be configurable per locale:
+  - `tagline.ar = "عايز تطلب؟ إنجزنا"`
+  - `tagline.en = "Want to order? Engezna!"`
+
+---

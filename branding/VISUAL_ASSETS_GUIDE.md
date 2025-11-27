@@ -1,290 +1,145 @@
-# Engezna Visual Assets Creation Guide
-
-**For Designers & Illustrators**  
-**Version:** 2.0  
-**Last Updated:** November 23, 2025
+# Engezna – Visual Assets Guide (For Designers)
+Version: 1.0
 
 ---
 
-## 🎨 Logo Asset Specifications
+## 1. Logo System
 
-### 1. Horizontal Lockup (Primary)
+### 1.1 Main Logo Lockups
 
-**Filename:** `engezna-logo-horizontal-[color]-[locale].svg`
+1. **Bilingual Horizontal Logo (Primary)**
+   - Left: Icon (if any, future-ready)
+   - Right:
+     - Top: إنجزنا
+     - Bottom (smaller): Engezna
 
-**Specifications:**
-- Artboard Size: 800px × 200px
-- Logo Width: 600px (with 100px padding each side)
-- Text: "إنجزنا" (Noto Sans Arabic Semibold 600, 72pt) + "•" + "Engezna" (Noto Sans Semibold 600, 64pt)
-- Separator: "•" bullet (36pt, centered)
+2. **Arabic-Only Logo**
+   - Text: إنجزنا
+   - Weight: Medium or Bold
+   - Color: `#009DE0` on light backgrounds, white on dark.
 
-**Variants to Create:**
+3. **English-Only Logo**
+   - Text: Engezna
+   - Case: Title case
+   - Weight: Medium
+   - Color: `#009DE0`
 
-| Filename | Color | Background |
-|----------|-------|------------|
-| `engezna-logo-horizontal-primary-ar.svg` | #E85D04 | Transparent |
-| `engezna-logo-horizontal-black-ar.svg` | #000000 | Transparent |
-| `engezna-logo-horizontal-white-ar.svg` | #FFFFFF | Transparent |
+4. **Tagline Lockup (Optional for hero areas)**
+   - إنجزنا
+   - Below it: عايز تطلب؟ إنجزنا
+   - English use: "Want to order? Engezna!"
 
-**Layout:**
-```
-┌────────────────────────────────────┐
-│                                    │
-│    إنجزنا   •   Engezna            │
-│                                    │
-└────────────────────────────────────┘
-```
+### 1.2 Clear Space & Minimum Size
 
----
-
-### 2. Stacked Lockup
-
-**Filename:** `engezna-logo-stacked-[color].svg`
-
-**Specifications:**
-- Artboard Size: 400px × 400px
-- Logo Area: 300px × 300px (centered)
-- Arabic: 80pt, English: 72pt
-- Separator: 2px line, 60px width, 20% opacity
-
-**Layout:**
-```
-┌──────────────┐
-│   إنجزنا     │
-│   ─────      │
-│  Engezna     │
-└──────────────┘
-```
+- Clear space: at least **1x** the height of the Arabic word "إنجزنا" around the logo.
+- Minimum size:
+  - Mobile: 24px height for icon-only, 32px for wordmark.
+  - Web: 40px height recommended.
 
 ---
 
-### 3. App Icon / Favicon
+## 2. Icon & App Icon
 
-**Concept:** Fusion of Arabic "ن" (Noon) + English "E"
+### 2.1 App Icon Concept
 
-**Artboard Sizes:**
-- 16×16px (favicon.ico)
-- 32×32px (favicon)
-- 192×192px (Android)
-- 512×512px (iOS, PWA master)
+- Shape: Rounded square.
+- Background: `#009DE0`.
+- Foreground options:
+  - White Arabic letter "إ" stylized, OR
+  - White simplified pin + check mark.
 
-**Design:**
-- Background: Orange Primary #E85D04 OR White #FFFFFF
-- Lettermark: White on orange OR Orange on white
-- Rounded corners: 20% of size
-- Stroke weight: 48px (for 512px version)
+The goal: recognisable at 48x48px on low-end Android screens.
 
-**Color Variants:**
-- icon-512-orange-white.png (Orange bg, white mark)
-- icon-512-white-orange.png (White bg, orange mark)
+### 2.2 Favicon & Small Iconography
+
+- Use simplified "E" or "إ" inside a blue circle for favicon.
+- Ensure contrast and sharp edges at 16x16 / 32x32.
 
 ---
 
-## 🎯 Icon Set Specifications
+## 3. Color Usage
 
-### UI Icons (Line Style)
+See main palette in `BRAND_IDENTITY_GUIDE.md`.
 
-**Specs:**
-- Size: 24×24px (also 16, 32, 48)
-- Stroke Width: 2px
-- Stroke Cap: Round
-- Stroke Join: Round
-- Color: currentColor (inherits)
+**Safe Combinations:**
+- Primary blue on white.
+- White on primary blue (for large text and buttons).
+- Deals green on dark or white.
+- Gold for premium highlights on both black and white.
 
-**Icons to Create:**
-
-| Name | Description |
-|------|-------------|
-| icon-home.svg | House outline |
-| icon-search.svg | Magnifying glass |
-| icon-cart.svg | Shopping cart |
-| icon-user.svg | User profile |
-| icon-heart.svg | Favorite |
-| icon-star.svg | Rating |
-| icon-clock.svg | Time |
-| icon-location.svg | Pin/marker |
-| icon-menu.svg | Hamburger menu |
-| icon-check.svg | Checkmark |
+**Avoid:**
+- Using all accents at once in a single screen.
+- Using primary blue on bright sky blue (lack of contrast).
+- Reintroducing old orange as a brand primary.
 
 ---
 
-## 📱 Social Media Assets
+## 4. Typography Rules (Design)
 
-### Profile Picture (Square)
+### 4.1 Headings
 
-**Dimensions:** 1024×1024px
-**Design:**
-- Background: Orange Primary #E85D04
-- Logo: White stacked lockup, centered
-- Padding: 150px all sides
+- Arabic:
+  - Font: Noto Sans Arabic
+  - Weight: 700 for main headers, 500 for subheaders
+- English:
+  - Font: Noto Sans / Inter
+  - Weight: 600–700 for headers
 
-**Filename:** `social-profile-1024.png`
+### 4.2 Body Text
 
----
-
-### Cover Photo (Facebook)
-
-**Dimensions:** 1640×624px
-
-**Layout:**
-```
-┌──────────────────────────────────┐
-│ [Food Photo] │ [Orange + Logo]   │
-│              │   إنجزنا           │
-│              │  Engezna           │
-└──────────────────────────────────┘
-```
-
-**Filename:** `social-cover-facebook-1640x624.png`
+- Size: 14–16px on mobile, 16–18px on web.
+- Line height: 1.5–1.7 for Arabic.
 
 ---
 
-### Instagram Story Template
+## 5. Layout & Composition
 
-**Dimensions:** 1080×1920px
+- Keep UI clean and uncluttered.
+- Use primary blue for main CTA and active states.
+- Use muted greys for dividers, cards, and backgrounds.
 
-**Layout:**
-```
-┌─────────────┐
-│   [Logo]    │  ← Top 200px
-│   [Photo]   │  ← Center 1400px
-│   [Text]    │  ← Bottom 320px
-└─────────────┘
-```
+**Example usage:**
+- Login screen:
+  - White background
+  - Blue primary CTA
+  - Black text for labels
 
----
-
-## 🖨️ Print Materials
-
-### Business Card
-
-**Dimensions:** 90×50mm (standard)
-**Bleed:** 3mm all sides
-**Safe Area:** 5mm from edge
-
-**Front:**
-```
-┌───────────────────┐
-│  إنجزنا • Engezna │  ← Logo top
-│                   │
-│  [Name/Title]     │  ← Bottom right
-│  📱 [Phone]       │
-└───────────────────┘
-```
-
-**Colors:**
-- Front: White bg, orange logo
-- Back: Orange bg, white text
+- Merchant dashboard:
+  - Light grey background
+  - White cards
+  - Blue highlights and charts
 
 ---
 
-### CMYK Color Conversions
+## 6. Social Media Templates
 
-| Color | RGB | CMYK |
-|-------|-----|------|
-| Orange Primary | #E85D04 | C:0 M:74 Y:98 K:9 |
-| Black | #000000 | C:0 M:0 Y:0 K:100 |
-| Orange Accent | #FF6B35 | C:0 M:73 Y:85 K:0 |
+### 6.1 Primary Post Template
 
----
+- Background: light or dark gradient including #009DE0.
+- Logo: top or top-left.
+- Main copy in Arabic: bold, short, e.g.
+  "عايز تطلب؟ إنجزنا"
+- CTA: "حمّل التطبيق الآن"
 
-## 📐 Design Tool Setup
+### 6.2 Offer Template
 
-### Figma
-
-**Color Styles:**
-```
-Primary/Orange Primary: #E85D04
-Secondary/Black: #000000
-Accent/Orange Accent: #FF6B35
-Accent/Gold: #FDB927
-Accent/Blue: #2196F3
-```
-
-**Text Styles:**
-```
-AR/Display/Bold - Noto Sans Arabic 700, 56px
-AR/H1/Semibold - Noto Sans Arabic 600, 40px
-AR/Body/Regular - Noto Sans Arabic 400, 16px
-
-EN/Display/Bold - Noto Sans 700, 48px
-EN/H1/Semibold - Noto Sans 600, 36px
-EN/Body/Regular - Noto Sans 400, 16px
-```
+- Use deals accent (#00C27A) for discounts.
+- Use premium accent (#FFD166) for special bundles.
+- Always include logo + store badges (Google Play first, Apple later if applicable).
 
 ---
 
-## ✅ Export Checklist
+## 7. Photography & Illustration Style
 
-### SVG Export
-- [ ] Remove unused elements
-- [ ] Outline text
-- [ ] Optimize paths
-- [ ] Set viewBox correctly
-- [ ] Compress (SVGO)
+- Realistic, local Egyptian vibe (streets, shops, people).
+- Avoid overly "stocky" western-looking images.
+- Show:
+  - Real delivery bags / bikes used by merchants.
+  - Actual shop fronts in المحافظات.
+  - Real food, fresh produce, daily life scenes.
 
-### PNG Export
-- [ ] Export at 1x, 2x, 3x
-- [ ] Transparent background
-- [ ] Optimize (TinyPNG)
-- [ ] Name with size
-
-### Print Export
-- [ ] CMYK color mode
-- [ ] 300 DPI
-- [ ] Include bleed
-- [ ] Outline text
-- [ ] PDF/X-1a format
+Illustrations:
+- Simple, flat, friendly.
+- Use brand blue as anchor.
 
 ---
-
-## 📦 File Structure
-
-```
-engezna-brand-assets/
-├── logos/
-│   ├── svg/
-│   ├── png/
-│   │   ├── 1x/
-│   │   ├── 2x/
-│   │   └── 3x/
-│   └── ai/
-├── icons/
-│   ├── ui-icons/
-│   └── app-icons/
-├── social/
-│   ├── profile-pictures/
-│   └── covers/
-└── print/
-    ├── business-cards/
-    └── flyers/
-```
-
----
-
-## 🎓 Best Practices
-
-### DO ✅
-- Maintain consistent stroke weights
-- Use brand colors only
-- Test logos at multiple sizes
-- Export in multiple formats
-- Optimize file sizes
-- Version control designs
-
-### DON'T ❌
-- Distort logo proportions
-- Use off-brand colors
-- Add effects unless specified
-- Use raster in logos (SVG only)
-- Ignore accessibility
-- Mix font families
-
----
-
-**Contact:** info@engezna.com  
-**Project:** https://github.com/Mosabragab/Engezna
-
----
-
-**Happy designing! 🎨**

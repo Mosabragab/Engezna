@@ -97,7 +97,7 @@ export default function SettingsPage() {
       icon: MapPinned,
       label: t('menu.governorate'),
       href: `/${locale}/profile/governorate`,
-      color: 'text-orange-600 dark:text-orange-400',
+      color: 'text-cyan-600 dark:text-cyan-400',
     },
   ]
 

@@ -132,15 +132,15 @@ export default function AdminDashboard() {
             <p className="text-slate-400 text-sm">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
           </div>
           <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-            <Settings className="w-8 h-8 text-orange-400 mb-3" />
+            <Settings className="w-8 h-8 text-cyan-400 mb-3" />
             <h3 className="text-2xl font-bold">Active</h3>
             <p className="text-slate-400 text-sm">{locale === 'ar' ? 'حالة النظام' : 'System Status'}</p>
           </div>
         </div>
 
         {/* Coming Soon */}
-        <div className="bg-gradient-to-r from-red-900/30 to-orange-900/30 rounded-2xl p-6 border border-red-800/50">
-          <h3 className="font-bold text-red-300 mb-2">
+        <div className="bg-gradient-to-r from-primary/20 to-cyan-900/30 rounded-2xl p-6 border border-primary/50">
+          <h3 className="font-bold text-cyan-300 mb-2">
             🚀 {locale === 'ar' ? 'قريباً!' : 'Coming Soon!'}
           </h3>
           <p className="text-slate-300 text-sm">

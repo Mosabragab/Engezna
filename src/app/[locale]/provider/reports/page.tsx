@@ -309,11 +309,11 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-500/20 to-amber-500/20 border-orange-500/30">
+            <Card className="bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-amber-500/30">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
                   {Number(getGrowthPercentage()) >= 0 ? (
-                    <TrendingUp className="w-8 h-8 text-orange-400" />
+                    <TrendingUp className="w-8 h-8 text-amber-400" />
                   ) : (
                     <TrendingDown className="w-8 h-8 text-red-400" />
                   )}
@@ -325,7 +325,7 @@ export default function ReportsPage() {
                     {Number(getGrowthPercentage()) >= 0 ? '+' : ''}{getGrowthPercentage()}%
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-orange-400">{formatCurrency(revenueStats.lastMonth)}</p>
+                <p className="text-2xl font-bold text-amber-400">{formatCurrency(revenueStats.lastMonth)}</p>
                 <p className="text-xs text-slate-400">{locale === 'ar' ? 'الشهر الماضي' : 'Last Month'}</p>
               </CardContent>
             </Card>
@@ -444,7 +444,7 @@ export default function ReportsPage() {
           </Card>
 
           {/* Quick Stats Summary */}
-          <Card className="bg-gradient-to-r from-primary/20 to-orange-500/20 border-primary/30">
+          <Card className="bg-gradient-to-r from-primary/20 to-cyan-500/20 border-primary/30">
             <CardContent className="pt-6">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>

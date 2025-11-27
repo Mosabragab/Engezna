@@ -388,7 +388,7 @@ export default function ProviderDashboard() {
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Status Messages */}
           {provider?.status === 'incomplete' && (
-            <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-2xl p-6 border border-yellow-500/30 mb-6">
+            <div className="bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-2xl p-6 border border-amber-500/30 mb-6">
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 bg-yellow-500 rounded-xl flex items-center justify-center flex-shrink-0">
                   <FileWarning className="w-7 h-7 text-white" />
@@ -459,13 +459,13 @@ export default function ProviderDashboard() {
 
           {/* No Provider - Show registration prompt */}
           {!provider && user && (
-            <div className="bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-2xl p-6 border border-orange-500/30 mb-6">
+            <div className="bg-gradient-to-br from-primary/20 to-cyan-500/20 rounded-2xl p-6 border border-primary/30 mb-6">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
                   <AlertCircle className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-grow">
-                  <h3 className="text-xl font-bold mb-2 text-orange-300">
+                  <h3 className="text-xl font-bold mb-2 text-cyan-300">
                     {locale === 'ar' ? 'لم يتم إكمال التسجيل' : 'Registration Incomplete'}
                   </h3>
                   <p className="text-slate-300 mb-4 text-sm">
@@ -474,7 +474,7 @@ export default function ProviderDashboard() {
                       : 'It seems you haven\'t completed your partner registration. Would you like to register now?'}
                   </p>
                   <Link href={`/${locale}/partner/register`}>
-                    <Button className="bg-orange-500 hover:bg-orange-600">
+                    <Button className="bg-primary hover:bg-primary/90">
                       {locale === 'ar' ? 'سجل كشريك' : 'Register as Partner'}
                       <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                     </Button>
@@ -520,8 +520,8 @@ export default function ProviderDashboard() {
                 {/* Pending Orders */}
                 <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-orange-400" />
+                    <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-amber-400" />
                     </div>
                   </div>
                   <p className="text-2xl font-bold">{stats.pendingOrders}</p>

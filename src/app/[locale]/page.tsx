@@ -253,7 +253,7 @@ export default function Home() {
             {/* Main Heading - Role-specific for Admin */}
             {isAdmin ? (
               <>
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 bg-clip-text text-transparent">
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-cyan-500 to-sky-500 bg-clip-text text-transparent">
                   {locale === 'ar' ? 'لوحة إدارة إنجزنا' : 'Engezna Admin Panel'}
                 </h1>
                 <p className="text-xl md:text-2xl text-muted-foreground mb-4">
@@ -378,7 +378,7 @@ export default function Home() {
                 <div className="text-sm text-slate-400">{locale === 'ar' ? 'المتاجر' : 'Stores'}</div>
               </div>
               <div className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700">
-                <ShoppingBasket className="w-8 h-8 text-orange-400 mx-auto mb-2" />
+                <ShoppingBasket className="w-8 h-8 text-cyan-400 mx-auto mb-2" />
                 <div className="text-2xl font-bold">0</div>
                 <div className="text-sm text-slate-400">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
               </div>
