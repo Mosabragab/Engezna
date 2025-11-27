@@ -305,7 +305,7 @@ export default function Home() {
                     </Link>
                     <Button
                       variant="outline"
-                      className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                      className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
                       onClick={() => {
                         handleSignOut()
                         setMobileMenuOpen(false)

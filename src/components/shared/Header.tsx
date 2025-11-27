@@ -26,6 +26,7 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [activeOrdersCount, setActiveOrdersCount] = useState(0)
+  const [isProvider, setIsProvider] = useState(false)
 
   const fetchActiveOrdersCount = useCallback(async (userId: string) => {
     const supabase = createClient()
@@ -41,6 +42,17 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
     }
   }, [])
 
+  const checkIfProvider = useCallback(async (userId: string) => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('providers')
+      .select('id')
+      .eq('owner_id', userId)
+      .limit(1)
+
+    setIsProvider(data && data.length > 0)
+  }, [])
+
   useEffect(() => {
     async function checkAuth() {
       const supabase = createClient()
@@ -50,9 +62,10 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
       setUser(user)
       setAuthLoading(false)
 
-      // If user is logged in, fetch active orders count
+      // If user is logged in, fetch active orders count and check if provider
       if (user) {
         fetchActiveOrdersCount(user.id)
+        checkIfProvider(user.id)
       }
 
       // Listen for auth changes
@@ -60,8 +73,10 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
         setUser(session?.user ?? null)
         if (session?.user) {
           fetchActiveOrdersCount(session.user.id)
+          checkIfProvider(session.user.id)
         } else {
           setActiveOrdersCount(0)
+          setIsProvider(false)
         }
       })
 
@@ -69,7 +84,7 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
     }
 
     checkAuth()
-  }, [fetchActiveOrdersCount])
+  }, [fetchActiveOrdersCount, checkIfProvider])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -128,8 +143,8 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
                   </Button>
                 </Link>
                 
-                {/* Profile Link */}
-                <Link href={`/${locale}/profile`}>
+                {/* Profile Link - Redirects to provider settings if user is a provider */}
+                <Link href={isProvider ? `/${locale}/provider/settings` : `/${locale}/profile`}>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -137,17 +152,17 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
                   >
                     <UserIcon className="w-4 h-4" />
                     <span className="hidden sm:inline max-w-[100px] truncate">
-                      {user.email?.split('@')[0]}
+                      {locale === 'ar' ? 'حسابي' : 'My Account'}
                     </span>
                   </Button>
                 </Link>
-                
+
                 {/* Sign Out Button */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleSignOut}
-                  className="flex items-center gap-1.5 border-red-200 hover:border-red-300 hover:bg-red-50"
+                  className="flex items-center gap-1.5 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="hidden sm:inline">
