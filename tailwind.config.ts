@@ -44,6 +44,13 @@ const config: Config = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))'
         },
+        // Brand accent colors - Engezna identity
+        deal: 'hsl(var(--deal))',           // #00C27A Green-Cyan for deals/discounts
+        premium: 'hsl(var(--premium))',     // #FFD166 Soft Gold for premium items
+        info: 'hsl(var(--info))',           // #36C5F0 Sky Blue for information
+        error: 'hsl(var(--error))',         // #FF5A5F Coral Red for errors
+        success: 'hsl(var(--success))',     // Same as deal
+        warning: 'hsl(var(--warning))',     // Same as premium
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

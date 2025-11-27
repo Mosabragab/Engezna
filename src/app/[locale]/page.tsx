@@ -194,8 +194,8 @@ export default function Home() {
                     </Link>
                   )}
 
-                  {/* Profile Link */}
-                  <Link href={`/${locale}/profile`}>
+                  {/* Profile Link - Routes to provider settings for providers, profile for customers */}
+                  <Link href={isProvider ? `/${locale}/provider/settings` : `/${locale}/profile`}>
                     <Button
                       variant="ghost"
                       size="sm"

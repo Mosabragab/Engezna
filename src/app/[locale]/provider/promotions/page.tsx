@@ -370,7 +370,11 @@ export default function PromotionsPage() {
                 }`}
               >
                 {locale === 'ar' ? tab.label_ar : tab.label_en}
-                <span className="text-xs bg-slate-100 px-2 py-0.5 rounded-full">{tab.count}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  activeTab === tab.key
+                    ? 'bg-white/20 text-white'
+                    : 'bg-slate-100 text-slate-600'
+                }`}>{tab.count}</span>
               </button>
             ))}
           </div>
