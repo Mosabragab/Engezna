@@ -31,7 +31,6 @@ import {
   ChevronRight,
   Users,
   DollarSign,
-  User as UserIcon,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
 
@@ -205,11 +204,6 @@ export default function ProviderDashboard() {
       icon: Settings,
       label: locale === 'ar' ? 'الإعدادات' : 'Settings',
       path: `/${locale}/provider/settings`
-    },
-    {
-      icon: UserIcon,
-      label: locale === 'ar' ? 'الملف الشخصي' : 'Profile',
-      path: `/${locale}/provider/profile`
     },
   ]
 
