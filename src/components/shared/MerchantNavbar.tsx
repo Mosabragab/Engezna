@@ -118,8 +118,8 @@ export function MerchantNavbar() {
                     </Button>
                   </Link>
 
-                  {/* Profile */}
-                  <Link href={`/${locale}/profile`}>
+                  {/* Profile - Links to provider settings for merchants */}
+                  <Link href={`/${locale}/provider/settings`}>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -236,7 +236,7 @@ export function MerchantNavbar() {
                   </Link>
 
                   <Link
-                    href={`/${locale}/profile`}
+                    href={`/${locale}/provider/settings`}
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
                   >

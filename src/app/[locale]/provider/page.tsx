@@ -328,7 +328,7 @@ export default function ProviderDashboard() {
           <Button
             variant="outline"
             size="sm"
-            className="w-full border-slate-300 text-slate-700 hover:bg-slate-100"
+            className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 transition-colors"
             onClick={handleSignOut}
           >
             <LogOut className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
@@ -360,7 +360,7 @@ export default function ProviderDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <Link href={`/${locale}`}>
-                <Button variant="outline" size="sm" className="border-slate-300 text-slate-700 hover:bg-slate-100">
+                <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary hover:text-white transition-colors">
                   {isRTL ? <ChevronRight className="w-4 h-4 ml-1" /> : <ChevronLeft className="w-4 h-4 mr-1" />}
                   {locale === 'ar' ? 'العودة للموقع' : 'Back to Site'}
                 </Button>
