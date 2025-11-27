@@ -78,7 +78,7 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
   }
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b sticky top-0 z-50 shadow-sm">
+    <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Left Side - Back or Logo */}
@@ -147,7 +147,7 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
                   variant="outline"
                   size="sm"
                   onClick={handleSignOut}
-                  className="flex items-center gap-1.5 border-red-200 hover:border-red-300 hover:bg-red-50 dark:border-red-900 dark:hover:border-red-800 dark:hover:bg-red-950"
+                  className="flex items-center gap-1.5 border-red-200 hover:border-red-300 hover:bg-red-50"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="hidden sm:inline">

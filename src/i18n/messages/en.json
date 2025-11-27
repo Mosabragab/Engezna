@@ -14,12 +14,12 @@
   "home": {
     "title": "Engezna",
     "subtitle": "إنجزنا",
-    "heroTitle": "Let's Get It Done and Order!",
-    "heroSubtitle": "Fast delivery from restaurants, cafes, and groceries in Beni Suef",
-    "heroDescription": "Order your favorite food from the best restaurants, cafes, and stores in Beni Suef. Fast delivery and competitive prices.",
+    "heroTitle": "Want to order? Engezna!",
+    "heroSubtitle": "Faster connection to your nearest merchant in your governorate",
+    "heroDescription": "Engezna is built for Egyptians outside the major cities. Order from the nearest restaurant, café, grocery, or fresh produce shop - no more waiting on the phone.",
     "ctaOrder": "Order Now",
-    "ctaPartner": "Join as Partner",
-    "comingSoon": "🚀 Coming Soon to Beni Suef",
+    "ctaPartner": "Register as Partner",
+    "comingSoon": "Coming Soon to Your City",
     "categories": {
       "title": "Our Services",
       "subtitle": "Everything you need in one place",
@@ -42,22 +42,22 @@
     },
     "features": {
       "title": "Why Engezna?",
-      "subtitle": "We offer you the best delivery experience in Beni Suef",
+      "subtitle": "Because great service is a right for everyone, not just big cities",
       "lowCommission": {
-        "title": "Competitive Prices",
-        "description": "Low commission of only 5-7% compared to 15-20% on other platforms"
+        "title": "No Crazy Commissions",
+        "description": "Only 6% commission after 9 months - compared to 15-20% on other platforms"
       },
       "fastDelivery": {
-        "title": "Fast Delivery",
-        "description": "Your order arrives in less than 45 minutes"
+        "title": "Faster Connection",
+        "description": "Your order reaches you from the nearest merchant - no more waiting on the phone"
       },
       "localFocus": {
-        "title": "Local Focus",
-        "description": "Dedicated to Beni Suef and Upper Egypt"
+        "title": "Built for Governorates",
+        "description": "Not just for Cairo & Alexandria - Engezna is for all of Egypt's cities"
       },
       "easyToUse": {
-        "title": "Easy to Use",
-        "description": "Simple and easy interface for everyone"
+        "title": "Simple & Easy",
+        "description": "Clear Arabic-first interface - order in seconds"
       }
     },
     "howItWorks": {
@@ -96,20 +96,20 @@
     },
     "cta": {
       "customer": {
-        "title": "Ready to Order?",
-        "subtitle": "Join thousands of customers in Beni Suef",
-        "button": "Get Started"
+        "title": "Want to Order?",
+        "subtitle": "For every order... there's a merchant ready to serve you",
+        "button": "Get it done now"
       },
       "provider": {
-        "title": "Are You a Restaurant or Shop Owner?",
-        "subtitle": "Join Engezna platform and increase your sales with low 5-7% commission",
-        "button": "Register as Partner"
+        "title": "Own a Shop or Restaurant?",
+        "subtitle": "Register on Engezna - zero registration fees, only 6% commission after 9 months",
+        "button": "Register Free as Partner"
       }
     },
     "footer": {
       "about": {
         "title": "About Engezna",
-        "description": "The first food delivery platform in Beni Suef and Upper Egypt"
+        "description": "Engezna connects you to the nearest merchant in your governorate - no more waiting on the phone. Fast, fair service for people in all of Egypt's cities."
       },
       "links": {
         "title": "Quick Links",

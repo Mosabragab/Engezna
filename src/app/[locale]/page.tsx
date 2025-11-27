@@ -4,7 +4,6 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
 import {
   UtensilsCrossed,
@@ -162,7 +161,6 @@ export default function Home() {
 
             {/* Actions */}
             <div className="flex items-center gap-3">
-              <ThemeToggle />
               <LanguageSwitcher />
               
               {/* Auth Section */}
@@ -193,7 +191,7 @@ export default function Home() {
                       {(isProvider || isAdmin) && (
                         <span className={`text-xs px-2 py-0.5 rounded-full ${
                           isAdmin
-                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            ? 'bg-red-100 text-red-700'
                             : 'bg-primary/10 text-primary'
                         }`}>
                           {isAdmin
@@ -356,41 +354,41 @@ export default function Home() {
 
       {/* Admin Quick Stats Section - Only for Admin */}
       {isAdmin && (
-        <section className="py-12 bg-slate-900 text-white">
+        <section className="py-12 bg-gradient-to-br from-red-50 to-slate-50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">
+              <h2 className="text-2xl md:text-3xl font-bold mb-2 text-slate-900">
                 {locale === 'ar' ? 'نظرة سريعة على المنصة' : 'Platform Overview'}
               </h2>
-              <p className="text-slate-400">
+              <p className="text-slate-600">
                 {locale === 'ar' ? 'إحصائيات سريعة عن أداء المنصة' : 'Quick stats about platform performance'}
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700">
-                <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold">0</div>
-                <div className="text-sm text-slate-400">{locale === 'ar' ? 'المستخدمين' : 'Users'}</div>
+              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
+                <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-slate-900">0</div>
+                <div className="text-sm text-slate-500">{locale === 'ar' ? 'المستخدمين' : 'Users'}</div>
               </div>
-              <div className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700">
-                <Store className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold">4</div>
-                <div className="text-sm text-slate-400">{locale === 'ar' ? 'المتاجر' : 'Stores'}</div>
+              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
+                <Store className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-slate-900">4</div>
+                <div className="text-sm text-slate-500">{locale === 'ar' ? 'المتاجر' : 'Stores'}</div>
               </div>
-              <div className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700">
-                <ShoppingBasket className="w-8 h-8 text-cyan-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold">0</div>
-                <div className="text-sm text-slate-400">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
+              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
+                <ShoppingBasket className="w-8 h-8 text-cyan-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-slate-900">0</div>
+                <div className="text-sm text-slate-500">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
               </div>
-              <div className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700">
-                <BarChart3 className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold">0 EGP</div>
-                <div className="text-sm text-slate-400">{locale === 'ar' ? 'الإيرادات' : 'Revenue'}</div>
+              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
+                <BarChart3 className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-slate-900">0 EGP</div>
+                <div className="text-sm text-slate-500">{locale === 'ar' ? 'الإيرادات' : 'Revenue'}</div>
               </div>
             </div>
             <div className="text-center mt-6">
               <Link href={`/${locale}/admin`}>
-                <Button variant="outline" className="border-slate-600 text-white hover:bg-slate-800">
+                <Button variant="default" className="bg-red-600 hover:bg-red-700 text-white">
                   {locale === 'ar' ? 'عرض التفاصيل' : 'View Details'}
                   <ChevronRight className={`${isRTL ? 'mr-2 rotate-180' : 'ml-2'} h-4 w-4`} />
                 </Button>
@@ -402,32 +400,32 @@ export default function Home() {
 
       {/* Provider Quick Actions - Only for Providers */}
       {isProvider && (
-        <section className="py-12 bg-slate-900 text-white">
+        <section className="py-12 bg-gradient-to-br from-primary/5 to-slate-50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">
+              <h2 className="text-2xl md:text-3xl font-bold mb-2 text-slate-900">
                 {locale === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}
               </h2>
-              <p className="text-slate-400">
+              <p className="text-slate-600">
                 {locale === 'ar' ? 'الوصول السريع لأهم الوظائف' : 'Quick access to important functions'}
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Link href={`/${locale}/provider`} className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700 hover:bg-slate-700 transition-colors">
+              <Link href={`/${locale}/provider`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
                 <LayoutDashboard className="w-8 h-8 text-primary mx-auto mb-2" />
-                <div className="font-medium">{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</div>
+                <div className="font-medium text-slate-900">{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</div>
               </Link>
-              <Link href={`/${locale}/provider`} className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700 hover:bg-slate-700 transition-colors">
-                <ShoppingBasket className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                <div className="font-medium">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
+              <Link href={`/${locale}/provider/orders`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
+                <ShoppingBasket className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <div className="font-medium text-slate-900">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
               </Link>
-              <Link href={`/${locale}/provider`} className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700 hover:bg-slate-700 transition-colors">
-                <Store className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                <div className="font-medium">{locale === 'ar' ? 'المنتجات' : 'Products'}</div>
+              <Link href={`/${locale}/provider/products`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
+                <Store className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <div className="font-medium text-slate-900">{locale === 'ar' ? 'المنتجات' : 'Products'}</div>
               </Link>
-              <Link href={`/${locale}/provider`} className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700 hover:bg-slate-700 transition-colors">
-                <Settings className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                <div className="font-medium">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</div>
+              <Link href={`/${locale}/provider/settings`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
+                <Settings className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+                <div className="font-medium text-slate-900">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</div>
               </Link>
             </div>
           </div>

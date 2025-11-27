@@ -209,10 +209,10 @@ export default function StoreHoursPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
           </p>
         </div>
@@ -221,14 +221,14 @@ export default function StoreHoursPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
               href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-400 hover:text-white"
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
             >
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
@@ -245,7 +245,7 @@ export default function StoreHoursPage() {
       <div className="container mx-auto px-4 py-6">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Quick Actions */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardContent className="pt-6">
               <div className="flex flex-wrap gap-3">
                 <Button
@@ -271,9 +271,9 @@ export default function StoreHoursPage() {
           </Card>
 
           {/* Days List */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
                 {locale === 'ar' ? 'جدول العمل الأسبوعي' : 'Weekly Schedule'}
               </CardTitle>
@@ -288,8 +288,8 @@ export default function StoreHoursPage() {
                     key={day.key}
                     className={`p-4 rounded-lg border transition-colors ${
                       hours.is_open
-                        ? 'bg-slate-700/50 border-slate-600'
-                        : 'bg-slate-800/50 border-slate-700'
+                        ? 'bg-slate-50 border-slate-300'
+                        : 'bg-white/80 border-slate-200'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-3">
@@ -341,7 +341,7 @@ export default function StoreHoursPage() {
                           <select
                             value={hours.open}
                             onChange={(e) => handleTimeChange(day.key, 'open', e.target.value)}
-                            className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                           >
                             {TIME_OPTIONS.map(time => (
                               <option key={`${day.key}-open-${time}`} value={time}>
@@ -354,13 +354,13 @@ export default function StoreHoursPage() {
                           <span className="text-slate-500">—</span>
                         </div>
                         <div className="flex-1">
-                          <label className="block text-xs text-slate-400 mb-1">
+                          <label className="block text-xs text-slate-500 mb-1">
                             {locale === 'ar' ? 'إلى' : 'To'}
                           </label>
                           <select
                             value={hours.close}
                             onChange={(e) => handleTimeChange(day.key, 'close', e.target.value)}
-                            className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                           >
                             {TIME_OPTIONS.map(time => (
                               <option key={`${day.key}-close-${time}`} value={time}>
@@ -378,9 +378,9 @@ export default function StoreHoursPage() {
           </Card>
 
           {/* Summary Card */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white text-sm">
+              <CardTitle className="text-slate-900 text-sm">
                 {locale === 'ar' ? 'ملخص ساعات العمل' : 'Hours Summary'}
               </CardTitle>
             </CardHeader>
@@ -390,7 +390,7 @@ export default function StoreHoursPage() {
                   <p className="text-2xl font-bold text-green-400">
                     {DAYS.filter(d => businessHours[d.key as keyof BusinessHours].is_open).length}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     {locale === 'ar' ? 'أيام مفتوحة' : 'Open Days'}
                   </p>
                 </div>
@@ -398,7 +398,7 @@ export default function StoreHoursPage() {
                   <p className="text-2xl font-bold text-red-400">
                     {DAYS.filter(d => !businessHours[d.key as keyof BusinessHours].is_open).length}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     {locale === 'ar' ? 'أيام مغلقة' : 'Closed Days'}
                   </p>
                 </div>

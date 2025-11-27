@@ -42,17 +42,6 @@
   --radius: 0.5rem;
 }
 
-/* DARK THEME OVERRIDES */
-.dark {
-  --color-background: 0 0% 0%;           /* Black */
-  --color-foreground: 0 0% 88%;          /* Light gray text */
-  --color-muted: 0 0% 15%;
-  --color-muted-foreground: 0 0% 65%;
-  --color-border: 0 0% 20%;
-  --color-input: 0 0% 20%;
-  --color-secondary: 0 0% 15%;
-}
-
 /* BASIC UTILITY CLASSES */
 
 /* Backgrounds */
@@ -145,15 +134,6 @@
     hsl(198 100% 96%) 25%,
     hsl(198 100% 90%) 50%,
     hsl(var(--color-primary)) 100%
-  );
-}
-
-.gradient-hero-dark {
-  background: linear-gradient(
-    135deg,
-    hsl(0 0% 0%) 0%,
-    hsl(198 100% 8%) 50%,
-    hsl(198 100% 25%) 100%
   );
 }
 

@@ -299,10 +299,10 @@ export default function PromotionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
           </p>
         </div>
@@ -311,14 +311,14 @@ export default function PromotionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
               href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-400 hover:text-white"
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
             >
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
@@ -339,21 +339,21 @@ export default function PromotionsPage() {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3">
-            <div className="bg-slate-800 rounded-xl p-4 text-center border border-slate-700">
+            <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
               <p className="text-2xl font-bold text-green-400">{stats.active}</p>
-              <p className="text-xs text-slate-400">{locale === 'ar' ? 'نشط' : 'Active'}</p>
+              <p className="text-xs text-slate-500">{locale === 'ar' ? 'نشط' : 'Active'}</p>
             </div>
-            <div className="bg-slate-800 rounded-xl p-4 text-center border border-slate-700">
+            <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
               <p className="text-2xl font-bold text-blue-400">{stats.upcoming}</p>
-              <p className="text-xs text-slate-400">{locale === 'ar' ? 'قادم' : 'Upcoming'}</p>
+              <p className="text-xs text-slate-500">{locale === 'ar' ? 'قادم' : 'Upcoming'}</p>
             </div>
-            <div className="bg-slate-800 rounded-xl p-4 text-center border border-slate-700">
-              <p className="text-2xl font-bold text-slate-400">{stats.expired}</p>
-              <p className="text-xs text-slate-400">{locale === 'ar' ? 'منتهي' : 'Expired'}</p>
+            <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
+              <p className="text-2xl font-bold text-slate-500">{stats.expired}</p>
+              <p className="text-xs text-slate-500">{locale === 'ar' ? 'منتهي' : 'Expired'}</p>
             </div>
-            <div className="bg-slate-800 rounded-xl p-4 text-center border border-slate-700">
+            <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
               <p className="text-2xl font-bold text-primary">{stats.total}</p>
-              <p className="text-xs text-slate-400">{locale === 'ar' ? 'الإجمالي' : 'Total'}</p>
+              <p className="text-xs text-slate-500">{locale === 'ar' ? 'الإجمالي' : 'Total'}</p>
             </div>
           </div>
 
@@ -366,23 +366,23 @@ export default function PromotionsPage() {
                 className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors flex items-center gap-2 ${
                   activeTab === tab.key
                     ? 'bg-primary text-white'
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                    : 'bg-white text-slate-500 hover:bg-slate-100'
                 }`}
               >
                 {locale === 'ar' ? tab.label_ar : tab.label_en}
-                <span className="text-xs bg-slate-700 px-2 py-0.5 rounded-full">{tab.count}</span>
+                <span className="text-xs bg-slate-100 px-2 py-0.5 rounded-full">{tab.count}</span>
               </button>
             ))}
           </div>
 
           {/* Promotions List */}
           {filteredPromotions.length === 0 ? (
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-white border-slate-200">
               <CardContent className="py-12 text-center">
-                <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Tag className="w-8 h-8 text-slate-500" />
                 </div>
-                <h3 className="text-lg font-medium text-slate-300 mb-2">
+                <h3 className="text-lg font-medium text-slate-600 mb-2">
                   {locale === 'ar' ? 'لا توجد عروض' : 'No promotions'}
                 </h3>
                 <p className="text-slate-500 text-sm mb-4">
@@ -401,7 +401,7 @@ export default function PromotionsPage() {
               {filteredPromotions.map((promo) => {
                 const status = getPromotionStatus(promo)
                 return (
-                  <Card key={promo.id} className="bg-slate-800 border-slate-700 overflow-hidden">
+                  <Card key={promo.id} className="bg-white border-slate-200 overflow-hidden">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
@@ -421,7 +421,7 @@ export default function PromotionsPage() {
                             <h3 className="font-bold text-lg">
                               {locale === 'ar' ? promo.name_ar : promo.name_en}
                             </h3>
-                            <p className="text-slate-400 text-sm">
+                            <p className="text-slate-500 text-sm">
                               {promo.type === 'percentage'
                                 ? `${promo.discount_value}% ${locale === 'ar' ? 'خصم' : 'off'}`
                                 : promo.type === 'fixed'
@@ -466,12 +466,12 @@ export default function PromotionsPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-700">
+                      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-200">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleEdit(promo)}
-                          className="border-slate-600"
+                          className="border-slate-300"
                         >
                           <Edit2 className="w-4 h-4 mr-1" />
                           {locale === 'ar' ? 'تعديل' : 'Edit'}
@@ -480,7 +480,7 @@ export default function PromotionsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleToggleActive(promo)}
-                          className={`border-slate-600 ${promo.is_active ? 'text-yellow-400' : 'text-green-400'}`}
+                          className={`border-slate-300 ${promo.is_active ? 'text-yellow-400' : 'text-green-400'}`}
                         >
                           <Power className="w-4 h-4 mr-1" />
                           {promo.is_active
@@ -491,7 +491,7 @@ export default function PromotionsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDelete(promo.id)}
-                          className="border-slate-600 text-red-400"
+                          className="border-slate-300 text-red-400"
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
                           {locale === 'ar' ? 'حذف' : 'Delete'}
@@ -509,9 +509,9 @@ export default function PromotionsPage() {
       {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <Card className="bg-slate-800 border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader className="border-b border-slate-700">
-              <CardTitle className="text-white flex items-center gap-2">
+          <Card className="bg-white border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <CardHeader className="border-b border-slate-200">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
                 {editingPromotion
                   ? (locale === 'ar' ? 'تعديل العرض' : 'Edit Promotion')
@@ -521,13 +521,13 @@ export default function PromotionsPage() {
             <CardContent className="space-y-4 pt-4">
               {/* Name AR */}
               <div>
-                <label className="block text-sm text-slate-400 mb-1">
+                <label className="block text-sm text-slate-500 mb-1">
                   {locale === 'ar' ? 'اسم العرض (عربي)' : 'Promotion Name (Arabic)'}
                 </label>
                 <Input
                   value={formData.name_ar}
                   onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                   dir="rtl"
                   placeholder={locale === 'ar' ? 'مثال: خصم نهاية الأسبوع' : 'e.g., Weekend Discount'}
                 />
@@ -535,13 +535,13 @@ export default function PromotionsPage() {
 
               {/* Name EN */}
               <div>
-                <label className="block text-sm text-slate-400 mb-1">
+                <label className="block text-sm text-slate-500 mb-1">
                   {locale === 'ar' ? 'اسم العرض (إنجليزي)' : 'Promotion Name (English)'}
                 </label>
                 <Input
                   value={formData.name_en}
                   onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-white border-slate-200 text-slate-900"
                   dir="ltr"
                   placeholder="e.g., Weekend Discount"
                 />
@@ -549,7 +549,7 @@ export default function PromotionsPage() {
 
               {/* Type */}
               <div>
-                <label className="block text-sm text-slate-400 mb-1">
+                <label className="block text-sm text-slate-500 mb-1">
                   {locale === 'ar' ? 'نوع العرض' : 'Promotion Type'}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -559,7 +559,7 @@ export default function PromotionsPage() {
                     className={`p-3 rounded-lg border-2 transition-colors ${
                       formData.type === 'percentage'
                         ? 'border-green-500 bg-green-500/10'
-                        : 'border-slate-600 hover:border-slate-500'
+                        : 'border-slate-300 hover:border-slate-400'
                     }`}
                   >
                     <Percent className="w-5 h-5 mx-auto mb-1 text-green-400" />
@@ -571,7 +571,7 @@ export default function PromotionsPage() {
                     className={`p-3 rounded-lg border-2 transition-colors ${
                       formData.type === 'fixed'
                         ? 'border-blue-500 bg-blue-500/10'
-                        : 'border-slate-600 hover:border-slate-500'
+                        : 'border-slate-300 hover:border-slate-400'
                     }`}
                   >
                     <Tag className="w-5 h-5 mx-auto mb-1 text-blue-400" />
@@ -583,7 +583,7 @@ export default function PromotionsPage() {
                     className={`p-3 rounded-lg border-2 transition-colors ${
                       formData.type === 'buy_x_get_y'
                         ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-slate-600 hover:border-slate-500'
+                        : 'border-slate-300 hover:border-slate-400'
                     }`}
                   >
                     <Gift className="w-5 h-5 mx-auto mb-1 text-purple-400" />
@@ -595,7 +595,7 @@ export default function PromotionsPage() {
               {/* Discount Value */}
               {formData.type !== 'buy_x_get_y' && (
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">
+                  <label className="block text-sm text-slate-500 mb-1">
                     {formData.type === 'percentage'
                       ? (locale === 'ar' ? 'نسبة الخصم (%)' : 'Discount Percentage (%)')
                       : (locale === 'ar' ? 'قيمة الخصم (ج.م)' : 'Discount Amount (EGP)')}
@@ -604,7 +604,7 @@ export default function PromotionsPage() {
                     type="number"
                     value={formData.discount_value}
                     onChange={(e) => setFormData({ ...formData, discount_value: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     placeholder={formData.type === 'percentage' ? '20' : '50'}
                   />
                 </div>
@@ -614,26 +614,26 @@ export default function PromotionsPage() {
               {formData.type === 'buy_x_get_y' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-slate-400 mb-1">
+                    <label className="block text-sm text-slate-500 mb-1">
                       {locale === 'ar' ? 'اشتري (عدد)' : 'Buy (quantity)'}
                     </label>
                     <Input
                       type="number"
                       value={formData.buy_quantity}
                       onChange={(e) => setFormData({ ...formData, buy_quantity: e.target.value })}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-white border-slate-200 text-slate-900"
                       placeholder="2"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-slate-400 mb-1">
+                    <label className="block text-sm text-slate-500 mb-1">
                       {locale === 'ar' ? 'واحصل على (عدد)' : 'Get (quantity)'}
                     </label>
                     <Input
                       type="number"
                       value={formData.get_quantity}
                       onChange={(e) => setFormData({ ...formData, get_quantity: e.target.value })}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-white border-slate-200 text-slate-900"
                       placeholder="1"
                     />
                   </div>
@@ -643,25 +643,25 @@ export default function PromotionsPage() {
               {/* Date Range */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">
+                  <label className="block text-sm text-slate-500 mb-1">
                     {locale === 'ar' ? 'تاريخ البداية' : 'Start Date'}
                   </label>
                   <Input
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">
+                  <label className="block text-sm text-slate-500 mb-1">
                     {locale === 'ar' ? 'تاريخ النهاية' : 'End Date'}
                   </label>
                   <Input
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                   />
                 </div>
               </div>
@@ -669,27 +669,27 @@ export default function PromotionsPage() {
               {/* Min Order & Max Discount */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">
+                  <label className="block text-sm text-slate-500 mb-1">
                     {locale === 'ar' ? 'الحد الأدنى للطلب (ج.م)' : 'Minimum Order (EGP)'}
                   </label>
                   <Input
                     type="number"
                     value={formData.min_order_amount}
                     onChange={(e) => setFormData({ ...formData, min_order_amount: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     placeholder={locale === 'ar' ? 'اختياري' : 'Optional'}
                   />
                 </div>
                 {formData.type === 'percentage' && (
                   <div>
-                    <label className="block text-sm text-slate-400 mb-1">
+                    <label className="block text-sm text-slate-500 mb-1">
                       {locale === 'ar' ? 'أقصى خصم (ج.م)' : 'Max Discount (EGP)'}
                     </label>
                     <Input
                       type="number"
                       value={formData.max_discount}
                       onChange={(e) => setFormData({ ...formData, max_discount: e.target.value })}
-                      className="bg-slate-700 border-slate-600 text-white"
+                      className="bg-white border-slate-200 text-slate-900"
                       placeholder={locale === 'ar' ? 'اختياري' : 'Optional'}
                     />
                   </div>
@@ -698,7 +698,7 @@ export default function PromotionsPage() {
 
               {/* Applies To */}
               <div>
-                <label className="block text-sm text-slate-400 mb-2">
+                <label className="block text-sm text-slate-500 mb-2">
                   {locale === 'ar' ? 'ينطبق على' : 'Applies To'}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -708,7 +708,7 @@ export default function PromotionsPage() {
                     className={`p-3 rounded-lg border-2 transition-colors ${
                       formData.applies_to === 'all'
                         ? 'border-primary bg-primary/10'
-                        : 'border-slate-600 hover:border-slate-500'
+                        : 'border-slate-300 hover:border-slate-400'
                     }`}
                   >
                     <Package className="w-5 h-5 mx-auto mb-1 text-primary" />
@@ -720,7 +720,7 @@ export default function PromotionsPage() {
                     className={`p-3 rounded-lg border-2 transition-colors ${
                       formData.applies_to === 'specific'
                         ? 'border-primary bg-primary/10'
-                        : 'border-slate-600 hover:border-slate-500'
+                        : 'border-slate-300 hover:border-slate-400'
                     }`}
                   >
                     <CheckSquare className="w-5 h-5 mx-auto mb-1 text-primary" />
@@ -732,10 +732,10 @@ export default function PromotionsPage() {
               {/* Product Selection */}
               {formData.applies_to === 'specific' && (
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">
+                  <label className="block text-sm text-slate-500 mb-2">
                     {locale === 'ar' ? 'اختر المنتجات' : 'Select Products'} ({formData.product_ids.length} {locale === 'ar' ? 'منتج' : 'selected'})
                   </label>
-                  <div className="max-h-48 overflow-y-auto bg-slate-700/50 rounded-lg p-2 space-y-1">
+                  <div className="max-h-48 overflow-y-auto bg-slate-50 rounded-lg p-2 space-y-1">
                     {products.length === 0 ? (
                       <p className="text-sm text-slate-500 p-2 text-center">
                         {locale === 'ar' ? 'لا توجد منتجات متاحة' : 'No products available'}
@@ -761,7 +761,7 @@ export default function PromotionsPage() {
                               }
                             }}
                             className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                              isSelected ? 'bg-primary/20' : 'hover:bg-slate-600'
+                              isSelected ? 'bg-primary/20' : 'hover:bg-slate-200'
                             }`}
                           >
                             {isSelected ? (
@@ -808,7 +808,7 @@ export default function PromotionsPage() {
                 <Button
                   variant="outline"
                   onClick={() => { setShowForm(false); resetForm() }}
-                  className="border-slate-600"
+                  className="border-slate-300"
                 >
                   <X className="w-4 h-4 mr-2" />
                   {locale === 'ar' ? 'إلغاء' : 'Cancel'}

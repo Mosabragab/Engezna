@@ -334,10 +334,10 @@ export default function ProviderSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
           </p>
         </div>
@@ -346,14 +346,14 @@ export default function ProviderSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
               href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-400 hover:text-white"
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
             >
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
@@ -380,7 +380,7 @@ export default function ProviderSettingsPage() {
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
                     activeTab === tab.key
                       ? 'bg-primary text-white'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                      : 'bg-white text-slate-500 hover:bg-slate-100'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -392,9 +392,9 @@ export default function ProviderSettingsPage() {
 
           {/* Store Info Tab */}
           {activeTab === 'store' && (
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-white border-slate-200">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-slate-900 flex items-center gap-2">
                   <Store className="w-5 h-5" />
                   {locale === 'ar' ? 'معلومات المتجر' : 'Store Information'}
                 </CardTitle>
@@ -408,10 +408,10 @@ export default function ProviderSettingsPage() {
                         src={logoPreview}
                         alt="Logo"
                         fill
-                        className="rounded-full object-cover border-2 border-slate-600"
+                        className="rounded-full object-cover border-2 border-slate-300"
                       />
                     ) : (
-                      <div className="w-full h-full rounded-full bg-slate-700 flex items-center justify-center">
+                      <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center">
                         <Store className="w-10 h-10 text-slate-500" />
                       </div>
                     )}
@@ -438,34 +438,34 @@ export default function ProviderSettingsPage() {
                   <Input
                     value={nameAr}
                     onChange={(e) => setNameAr(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     dir="rtl"
                   />
                 </div>
 
                 {/* Name EN */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">
+                  <label className="block text-sm text-slate-500 mb-1">
                     {locale === 'ar' ? 'اسم المتجر (إنجليزي)' : 'Store Name (English)'}
                   </label>
                   <Input
                     value={nameEn}
                     onChange={(e) => setNameEn(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     dir="ltr"
                   />
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1 flex items-center gap-1">
+                  <label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
                     <Phone className="w-4 h-4" />
                     {locale === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
                   </label>
                   <Input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     dir="ltr"
                     type="tel"
                   />
@@ -473,27 +473,27 @@ export default function ProviderSettingsPage() {
 
                 {/* Address AR */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1 flex items-center gap-1">
+                  <label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
                     <MapPin className="w-4 h-4" />
                     {locale === 'ar' ? 'العنوان (عربي)' : 'Address (Arabic)'}
                   </label>
                   <Input
                     value={addressAr}
                     onChange={(e) => setAddressAr(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     dir="rtl"
                   />
                 </div>
 
                 {/* Address EN */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">
+                  <label className="block text-sm text-slate-500 mb-1">
                     {locale === 'ar' ? 'العنوان (إنجليزي)' : 'Address (English)'}
                   </label>
                   <Input
                     value={addressEn}
                     onChange={(e) => setAddressEn(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     dir="ltr"
                   />
                 </div>
@@ -526,9 +526,9 @@ export default function ProviderSettingsPage() {
 
           {/* Delivery Tab */}
           {activeTab === 'delivery' && (
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-white border-slate-200">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-slate-900 flex items-center gap-2">
                   <Truck className="w-5 h-5" />
                   {locale === 'ar' ? 'إعدادات التوصيل' : 'Delivery Settings'}
                 </CardTitle>
@@ -536,7 +536,7 @@ export default function ProviderSettingsPage() {
               <CardContent className="space-y-4">
                 {/* Delivery Fee */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1 flex items-center gap-1">
+                  <label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
                     <DollarSign className="w-4 h-4" />
                     {locale === 'ar' ? 'رسوم التوصيل (ج.م)' : 'Delivery Fee (EGP)'}
                   </label>
@@ -544,49 +544,49 @@ export default function ProviderSettingsPage() {
                     type="number"
                     value={deliveryFee}
                     onChange={(e) => setDeliveryFee(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     placeholder="10"
                   />
                 </div>
 
                 {/* Delivery Time */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1 flex items-center gap-1">
+                  <label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
                     <Clock className="w-4 h-4" />
                     {locale === 'ar' ? 'وقت التوصيل المتوقع' : 'Expected Delivery Time'}
                   </label>
                   <Input
                     value={deliveryTime}
                     onChange={(e) => setDeliveryTime(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     placeholder={locale === 'ar' ? '30-45 دقيقة' : '30-45 min'}
                   />
                 </div>
 
                 {/* Minimum Order */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">
+                  <label className="block text-sm text-slate-500 mb-1">
                     {locale === 'ar' ? 'الحد الأدنى للطلب (ج.م)' : 'Minimum Order (EGP)'}
                   </label>
                   <Input
                     type="number"
                     value={minimumOrder}
                     onChange={(e) => setMinimumOrder(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     placeholder="50"
                   />
                 </div>
 
                 {/* Delivery Radius */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">
+                  <label className="block text-sm text-slate-500 mb-1">
                     {locale === 'ar' ? 'نطاق التوصيل (كم)' : 'Delivery Radius (km)'}
                   </label>
                   <Input
                     type="number"
                     value={deliveryRadius}
                     onChange={(e) => setDeliveryRadius(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-white border-slate-200 text-slate-900"
                     placeholder="5"
                   />
                 </div>
@@ -619,17 +619,17 @@ export default function ProviderSettingsPage() {
 
           {/* Status Tab */}
           {activeTab === 'status' && (
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-white border-slate-200">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-slate-900 flex items-center gap-2">
                   <Power className="w-5 h-5" />
                   {locale === 'ar' ? 'حالة المتجر' : 'Store Status'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Current Status */}
-                <div className="text-center p-4 bg-slate-700/50 rounded-lg">
-                  <p className="text-sm text-slate-400 mb-2">
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-slate-500 mb-2">
                     {locale === 'ar' ? 'الحالة الحالية' : 'Current Status'}
                   </p>
                   <span className={`px-4 py-2 rounded-full text-lg font-bold ${
@@ -655,7 +655,7 @@ export default function ProviderSettingsPage() {
                     className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                       provider?.status === 'open'
                         ? 'border-green-500 bg-green-500/10'
-                        : 'border-slate-600 hover:border-green-500/50 hover:bg-green-500/5'
+                        : 'border-slate-300 hover:border-green-500/50 hover:bg-green-500/5'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full ${
@@ -682,7 +682,7 @@ export default function ProviderSettingsPage() {
                     className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                       provider?.status === 'temporarily_paused'
                         ? 'border-yellow-500 bg-yellow-500/10'
-                        : 'border-slate-600 hover:border-yellow-500/50 hover:bg-yellow-500/5'
+                        : 'border-slate-300 hover:border-yellow-500/50 hover:bg-yellow-500/5'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full ${
@@ -709,7 +709,7 @@ export default function ProviderSettingsPage() {
                     className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                       provider?.status === 'closed'
                         ? 'border-red-500 bg-red-500/10'
-                        : 'border-slate-600 hover:border-red-500/50 hover:bg-red-500/5'
+                        : 'border-slate-300 hover:border-red-500/50 hover:bg-red-500/5'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full ${
@@ -748,32 +748,32 @@ export default function ProviderSettingsPage() {
           {activeTab === 'account' && (
             <>
               {/* Account Info */}
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-white border-slate-200">
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
+                  <CardTitle className="text-slate-900 flex items-center gap-2">
                     <User className="w-5 h-5" />
                     {locale === 'ar' ? 'معلومات الحساب' : 'Account Info'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
                       <span className="text-2xl font-bold text-primary">
                         {userEmail?.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-lg text-white">{userEmail?.split('@')[0]}</p>
-                      <p className="text-slate-400 text-sm">{userEmail}</p>
+                      <p className="font-medium text-lg text-slate-900">{userEmail?.split('@')[0]}</p>
+                      <p className="text-slate-500 text-sm">{userEmail}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Security Section - Password Change */}
-              <Card className="bg-slate-800 border-slate-700">
+              <Card className="bg-white border-slate-200">
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
+                  <CardTitle className="text-slate-900 flex items-center gap-2">
                     <Lock className="w-5 h-5" />
                     {locale === 'ar' ? 'الأمان' : 'Security'}
                   </CardTitle>
@@ -782,15 +782,15 @@ export default function ProviderSettingsPage() {
                   {!showPasswordForm ? (
                     <button
                       onClick={() => setShowPasswordForm(true)}
-                      className="w-full p-4 rounded-xl border border-slate-600 hover:border-slate-500 transition-all flex items-center justify-between"
+                      className="w-full p-4 rounded-xl border border-slate-300 hover:border-slate-400 transition-all flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-slate-700">
+                        <div className="p-2 rounded-lg bg-slate-100">
                           <Lock className="w-5 h-5" />
                         </div>
                         <div className={isRTL ? 'text-right' : 'text-left'}>
-                          <p className="font-medium text-white">{locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}</p>
-                          <p className="text-xs text-slate-400">
+                          <p className="font-medium text-slate-900">{locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}</p>
+                          <p className="text-xs text-slate-500">
                             {locale === 'ar' ? 'تحديث كلمة المرور الخاصة بك' : 'Update your password'}
                           </p>
                         </div>
@@ -800,7 +800,7 @@ export default function ProviderSettingsPage() {
                   ) : (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium text-white flex items-center gap-2">
+                        <h4 className="font-medium text-slate-900 flex items-center gap-2">
                           <Lock className="w-4 h-4" />
                           {locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
                         </h4>
@@ -812,7 +812,7 @@ export default function ProviderSettingsPage() {
                             setNewPassword('')
                             setConfirmPassword('')
                           }}
-                          className="text-slate-400 hover:text-white"
+                          className="text-slate-500 hover:text-slate-900"
                         >
                           {locale === 'ar' ? 'إلغاء' : 'Cancel'}
                         </button>
@@ -820,7 +820,7 @@ export default function ProviderSettingsPage() {
 
                       {/* Current Password */}
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-slate-300">
+                        <label className="block text-sm font-medium text-slate-600">
                           {locale === 'ar' ? 'كلمة المرور الحالية' : 'Current Password'}
                         </label>
                         <div className="relative">
@@ -828,13 +828,13 @@ export default function ProviderSettingsPage() {
                             type={showCurrentPassword ? 'text' : 'password'}
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword(e.target.value)}
-                            className={`bg-slate-700 border-slate-600 ${isRTL ? 'pl-10' : 'pr-10'}`}
+                            className={`bg-white border-slate-200 ${isRTL ? 'pl-10' : 'pr-10'}`}
                             placeholder={locale === 'ar' ? 'أدخل كلمة المرور الحالية' : 'Enter current password'}
                           />
                           <button
                             type="button"
                             onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400`}
+                            className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-500`}
                           >
                             {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
@@ -843,7 +843,7 @@ export default function ProviderSettingsPage() {
 
                       {/* New Password */}
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-slate-300">
+                        <label className="block text-sm font-medium text-slate-600">
                           {locale === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
                         </label>
                         <div className="relative">
@@ -851,13 +851,13 @@ export default function ProviderSettingsPage() {
                             type={showNewPassword ? 'text' : 'password'}
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
-                            className={`bg-slate-700 border-slate-600 ${isRTL ? 'pl-10' : 'pr-10'}`}
+                            className={`bg-white border-slate-200 ${isRTL ? 'pl-10' : 'pr-10'}`}
                             placeholder={locale === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'}
                           />
                           <button
                             type="button"
                             onClick={() => setShowNewPassword(!showNewPassword)}
-                            className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400`}
+                            className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-500`}
                           >
                             {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
@@ -866,14 +866,14 @@ export default function ProviderSettingsPage() {
 
                       {/* Confirm Password */}
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-slate-300">
+                        <label className="block text-sm font-medium text-slate-600">
                           {locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
                         </label>
                         <Input
                           type="password"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="bg-slate-700 border-slate-600"
+                          className="bg-white border-slate-200"
                           placeholder={locale === 'ar' ? 'أعد إدخال كلمة المرور الجديدة' : 'Re-enter new password'}
                         />
                       </div>
@@ -931,26 +931,26 @@ export default function ProviderSettingsPage() {
           )}
 
           {/* Quick Links */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardContent className="pt-6">
-              <p className="text-sm text-slate-400 mb-3">
+              <p className="text-sm text-slate-500 mb-3">
                 {locale === 'ar' ? 'روابط سريعة' : 'Quick Links'}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link href={`/${locale}/provider/store-hours`}>
-                  <Button variant="outline" size="sm" className="border-slate-600">
+                  <Button variant="outline" size="sm" className="border-slate-300">
                     <Clock className="w-4 h-4 mr-2" />
                     {locale === 'ar' ? 'ساعات العمل' : 'Store Hours'}
                   </Button>
                 </Link>
                 <Link href={`/${locale}/provider/products`}>
-                  <Button variant="outline" size="sm" className="border-slate-600">
+                  <Button variant="outline" size="sm" className="border-slate-300">
                     <Store className="w-4 h-4 mr-2" />
                     {locale === 'ar' ? 'المنتجات' : 'Products'}
                   </Button>
                 </Link>
                 <Link href={`/${locale}/provider/orders`}>
-                  <Button variant="outline" size="sm" className="border-slate-600">
+                  <Button variant="outline" size="sm" className="border-slate-300">
                     <Bell className="w-4 h-4 mr-2" />
                     {locale === 'ar' ? 'الطلبات' : 'Orders'}
                   </Button>

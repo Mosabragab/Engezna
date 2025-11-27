@@ -185,10 +185,10 @@ export default function ProviderProductsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
           </p>
         </div>
@@ -197,14 +197,14 @@ export default function ProviderProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
               href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-400 hover:text-white"
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
             >
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
@@ -217,7 +217,7 @@ export default function ProviderProductsPage() {
               size="sm"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="text-slate-400 hover:text-white"
+              className="text-slate-500 hover:text-slate-900"
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
@@ -228,36 +228,36 @@ export default function ProviderProductsPage() {
       <div className="container mx-auto px-4 py-6">
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+          <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
                 <Package className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{products.length}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'إجمالي المنتجات' : 'Total Products'}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي المنتجات' : 'Total Products'}</p>
               </div>
             </div>
           </div>
-          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+          <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
                 <Eye className="w-5 h-5 text-green-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{availableCount}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'متاح' : 'Available'}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'متاح' : 'Available'}</p>
               </div>
             </div>
           </div>
-          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+          <div className="bg-white rounded-xl p-4 border border-slate-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
                 <EyeOff className="w-5 h-5 text-red-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{unavailableCount}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'غير متاح' : 'Unavailable'}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'غير متاح' : 'Unavailable'}</p>
               </div>
             </div>
           </div>
@@ -272,7 +272,7 @@ export default function ProviderProductsPage() {
               placeholder={locale === 'ar' ? 'ابحث عن منتج...' : 'Search products...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 px-10 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full bg-white border border-slate-200 rounded-xl py-3 px-10 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <Link href={`/${locale}/provider/products/new`}>
@@ -289,7 +289,7 @@ export default function ProviderProductsPage() {
             variant={filter === 'all' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('all')}
-            className={filter !== 'all' ? 'border-slate-600 text-slate-300' : ''}
+            className={filter !== 'all' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'الكل' : 'All'}
             <span className="mx-1 text-xs opacity-70">({products.length})</span>
@@ -298,7 +298,7 @@ export default function ProviderProductsPage() {
             variant={filter === 'available' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('available')}
-            className={filter !== 'available' ? 'border-slate-600 text-slate-300' : ''}
+            className={filter !== 'available' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'متاح' : 'Available'}
             <span className="mx-1 text-xs opacity-70">({availableCount})</span>
@@ -307,7 +307,7 @@ export default function ProviderProductsPage() {
             variant={filter === 'unavailable' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('unavailable')}
-            className={filter !== 'unavailable' ? 'border-slate-600 text-slate-300' : ''}
+            className={filter !== 'unavailable' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'غير متاح' : 'Unavailable'}
             <span className="mx-1 text-xs opacity-70">({unavailableCount})</span>
@@ -317,7 +317,7 @@ export default function ProviderProductsPage() {
         {/* Products Grid */}
         {filteredProducts.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
               <Package className="w-10 h-10 text-slate-500" />
             </div>
             <h2 className="text-xl font-semibold mb-2">
@@ -350,10 +350,10 @@ export default function ProviderProductsPage() {
               const showDeleteConfirm = deleteConfirm === product.id
 
               return (
-                <Card key={product.id} className="bg-slate-800 border-slate-700 overflow-hidden">
+                <Card key={product.id} className="bg-white border-slate-200 overflow-hidden">
                   <CardContent className="p-0">
                     {/* Product Image */}
-                    <div className="relative h-40 bg-slate-700">
+                    <div className="relative h-40 bg-slate-100">
                       {product.image_url ? (
                         <img
                           src={product.image_url}
@@ -395,7 +395,7 @@ export default function ProviderProductsPage() {
                         {locale === 'ar' ? product.name_ar : product.name_en}
                       </h3>
                       {(product.description_ar || product.description_en) && (
-                        <p className="text-sm text-slate-400 mb-3 line-clamp-2">
+                        <p className="text-sm text-slate-500 mb-3 line-clamp-2">
                           {locale === 'ar' ? product.description_ar : product.description_en}
                         </p>
                       )}
@@ -405,7 +405,7 @@ export default function ProviderProductsPage() {
                           <span className="text-xl font-bold text-primary">
                             {product.price.toFixed(2)}
                           </span>
-                          <span className="text-sm text-slate-400">
+                          <span className="text-sm text-slate-500">
                             {locale === 'ar' ? 'ج.م' : 'EGP'}
                           </span>
                           {product.original_price && product.original_price > product.price && (
@@ -414,7 +414,7 @@ export default function ProviderProductsPage() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 text-sm text-slate-400">
+                        <div className="flex items-center gap-1 text-sm text-slate-500">
                           <Clock className="w-4 h-4" />
                           {product.preparation_time_min} {locale === 'ar' ? 'د' : 'min'}
                         </div>
@@ -430,7 +430,7 @@ export default function ProviderProductsPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex-1 border-slate-600"
+                              className="flex-1 border-slate-300"
                               onClick={() => setDeleteConfirm(null)}
                             >
                               {locale === 'ar' ? 'إلغاء' : 'Cancel'}
@@ -455,7 +455,7 @@ export default function ProviderProductsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 border-slate-600"
+                            className="flex-1 border-slate-300"
                             onClick={() => handleToggleAvailability(product.id, product.is_available)}
                             disabled={isLoading}
                           >
@@ -474,7 +474,7 @@ export default function ProviderProductsPage() {
                             )}
                           </Button>
                           <Link href={`/${locale}/provider/products/${product.id}`} className="flex-1">
-                            <Button variant="outline" size="sm" className="w-full border-slate-600">
+                            <Button variant="outline" size="sm" className="w-full border-slate-300">
                               <Edit className="w-4 h-4 mr-1" />
                               {locale === 'ar' ? 'تعديل' : 'Edit'}
                             </Button>

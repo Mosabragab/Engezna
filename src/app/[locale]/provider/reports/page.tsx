@@ -225,10 +225,10 @@ export default function ReportsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {locale === 'ar' ? 'جاري تحميل التقارير...' : 'Loading reports...'}
           </p>
         </div>
@@ -237,14 +237,14 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
               href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-400 hover:text-white"
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
             >
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
@@ -258,7 +258,7 @@ export default function ReportsPage() {
               size="sm"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="border-slate-600"
+              className="border-slate-300"
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
@@ -333,43 +333,43 @@ export default function ReportsPage() {
 
           {/* Order Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6 text-center">
                 <ShoppingBag className="w-8 h-8 text-primary mx-auto mb-2" />
                 <p className="text-3xl font-bold">{orderStats.total}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6 text-center">
                 <Package className="w-8 h-8 text-green-400 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-green-400">{orderStats.completed}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'مكتمل' : 'Completed'}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'مكتمل' : 'Completed'}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6 text-center">
                 <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-blue-400">{totalCustomers}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'عملاء' : 'Customers'}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'عملاء' : 'Customers'}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-white border-slate-200">
               <CardContent className="pt-6 text-center">
                 <Star className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
                 <p className="text-3xl font-bold text-yellow-400">{formatCurrency(avgOrderValue)}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'متوسط الطلب' : 'Avg Order'}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'متوسط الطلب' : 'Avg Order'}</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Revenue Chart */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
                 {locale === 'ar' ? 'الإيرادات (آخر 30 يوم)' : 'Revenue (Last 30 Days)'}
               </CardTitle>
@@ -382,9 +382,9 @@ export default function ReportsPage() {
                     className="flex-1 bg-primary/20 hover:bg-primary/40 transition-colors rounded-t relative group"
                     style={{ height: `${(day.revenue / maxRevenue) * 100}%`, minHeight: '4px' }}
                   >
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-700 px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-100 px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <p className="font-bold">{formatCurrency(day.revenue)}</p>
-                      <p className="text-slate-400">{day.orders} {locale === 'ar' ? 'طلبات' : 'orders'}</p>
+                      <p className="text-slate-500">{day.orders} {locale === 'ar' ? 'طلبات' : 'orders'}</p>
                     </div>
                   </div>
                 ))}
@@ -397,9 +397,9 @@ export default function ReportsPage() {
           </Card>
 
           {/* Top Products */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
                 <Award className="w-5 h-5 text-yellow-400" />
                 {locale === 'ar' ? 'المنتجات الأكثر مبيعاً' : 'Top Selling Products'}
               </CardTitle>
@@ -415,13 +415,13 @@ export default function ReportsPage() {
                   {topProducts.map((product, index) => (
                     <div
                       key={product.id}
-                      className="flex items-center gap-4 p-3 bg-slate-700/50 rounded-lg"
+                      className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg"
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                         index === 0 ? 'bg-yellow-500 text-black' :
                         index === 1 ? 'bg-slate-400 text-black' :
                         index === 2 ? 'bg-amber-700 text-white' :
-                        'bg-slate-600 text-white'
+                        'bg-slate-200 text-slate-900'
                       }`}>
                         {index + 1}
                       </div>
@@ -429,7 +429,7 @@ export default function ReportsPage() {
                         <p className="font-medium">
                           {locale === 'ar' ? product.name_ar : product.name_en}
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-500">
                           {product.total_quantity} {locale === 'ar' ? 'وحدة مباعة' : 'units sold'}
                         </p>
                       </div>

@@ -42,7 +42,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
       </div>
     )
@@ -50,13 +50,13 @@ export default function AdminDashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <div className="text-center bg-slate-900 p-8 rounded-2xl border border-slate-800">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2 text-white">
+          <h1 className="text-2xl font-bold mb-2 text-slate-900">
             {locale === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
           </h1>
-          <p className="text-slate-400 mb-6">
+          <p className="text-slate-500 mb-6">
             {locale === 'ar' ? 'يجب تسجيل الدخول كمسؤول' : 'Admin login required'}
           </p>
           <Link href={`/${locale}/auth/login`}>
@@ -70,9 +70,9 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4">
+      <header className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
@@ -80,20 +80,20 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h1 className="font-bold text-lg">{locale === 'ar' ? 'إنجزنا' : 'Engezna'}</h1>
-              <p className="text-xs text-slate-400">{locale === 'ar' ? 'لوحة الإدارة' : 'Admin Panel'}</p>
+              <p className="text-xs text-slate-500">{locale === 'ar' ? 'لوحة الإدارة' : 'Admin Panel'}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <Link href={`/${locale}`}>
-              <Button variant="outline" size="sm" className="border-slate-700 text-slate-300 hover:bg-slate-800">
+              <Button variant="outline" size="sm" className="border-slate-200 text-slate-600 hover:bg-slate-100">
                 <Home className="w-4 h-4 mr-2" />
                 {locale === 'ar' ? 'الموقع' : 'Site'}
               </Button>
             </Link>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-slate-700 text-slate-300 hover:bg-slate-800"
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-slate-200 text-slate-600 hover:bg-slate-100"
               onClick={handleSignOut}
             >
               <LogOut className="w-4 h-4 mr-2" />
@@ -109,32 +109,32 @@ export default function AdminDashboard() {
           <h2 className="text-2xl font-bold mb-2">
             {locale === 'ar' ? 'مرحباً، مسؤول' : 'Welcome, Admin'} 👋
           </h2>
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {locale === 'ar' ? 'إدارة منصة إنجزنا' : 'Manage Engezna Platform'}
           </p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
             <Users className="w-8 h-8 text-blue-400 mb-3" />
             <h3 className="text-2xl font-bold">0</h3>
-            <p className="text-slate-400 text-sm">{locale === 'ar' ? 'المستخدمين' : 'Users'}</p>
+            <p className="text-slate-500 text-sm">{locale === 'ar' ? 'المستخدمين' : 'Users'}</p>
           </div>
-          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
             <Store className="w-8 h-8 text-green-400 mb-3" />
             <h3 className="text-2xl font-bold">4</h3>
-            <p className="text-slate-400 text-sm">{locale === 'ar' ? 'المتاجر' : 'Stores'}</p>
+            <p className="text-slate-500 text-sm">{locale === 'ar' ? 'المتاجر' : 'Stores'}</p>
           </div>
-          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
             <BarChart3 className="w-8 h-8 text-purple-400 mb-3" />
             <h3 className="text-2xl font-bold">0</h3>
-            <p className="text-slate-400 text-sm">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
+            <p className="text-slate-500 text-sm">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
           </div>
-          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
             <Settings className="w-8 h-8 text-cyan-400 mb-3" />
             <h3 className="text-2xl font-bold">Active</h3>
-            <p className="text-slate-400 text-sm">{locale === 'ar' ? 'حالة النظام' : 'System Status'}</p>
+            <p className="text-slate-500 text-sm">{locale === 'ar' ? 'حالة النظام' : 'System Status'}</p>
           </div>
         </div>
 
@@ -143,8 +143,8 @@ export default function AdminDashboard() {
           <h3 className="font-bold text-cyan-300 mb-2">
             🚀 {locale === 'ar' ? 'قريباً!' : 'Coming Soon!'}
           </h3>
-          <p className="text-slate-300 text-sm">
-            {locale === 'ar' 
+          <p className="text-slate-600 text-sm">
+            {locale === 'ar'
               ? 'لوحة الإدارة الكاملة قيد التطوير. ستتمكن من إدارة المستخدمين والمتاجر والطلبات.'
               : 'Full admin dashboard is under development. You will be able to manage users, stores, and orders.'}
           </p>

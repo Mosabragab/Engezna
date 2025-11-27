@@ -369,7 +369,7 @@ export default function AddressesPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50">
         <Header showBack backHref={`/${locale}/profile`} />
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -379,12 +379,12 @@ export default function AddressesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       <Header showBack backHref={`/${locale}/profile`} backLabel={t('title')} />
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900">
             {t('title')}
           </h1>
           <Button onClick={openAddDialog}>
@@ -395,7 +395,7 @@ export default function AddressesPage() {
 
         {/* Message */}
         {message && (
-          <div className={`flex items-center gap-2 p-4 mb-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'}`}>
+          <div className={`flex items-center gap-2 p-4 mb-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
             {message.type === 'success' && <Check className="w-4 h-4" />}
             <span>{message.text}</span>
           </div>
@@ -409,10 +409,10 @@ export default function AddressesPage() {
         ) : addresses.length === 0 ? (
           <Card className="p-8 text-center">
             <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {t('noAddresses')}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 mb-4">
               {t('addFirst')}
             </p>
             <Button onClick={openAddDialog}>
@@ -428,7 +428,7 @@ export default function AddressesPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <MapPin className="w-4 h-4 text-primary" />
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                      <h3 className="font-semibold text-gray-900">
                         {address.label}
                       </h3>
                       {address.is_default && (
@@ -438,16 +438,16 @@ export default function AddressesPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-600">
                       {address.address_line1}
                     </p>
                     {address.city && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-gray-600">
                         {address.area && `${address.area}, `}{address.city}
                       </p>
                     )}
                     {address.phone && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1" dir="ltr">
+                      <p className="text-sm text-gray-600 mt-1" dir="ltr">
                         {address.phone}
                       </p>
                     )}
