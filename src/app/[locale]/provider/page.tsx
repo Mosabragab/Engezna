@@ -342,23 +342,17 @@ export default function ProviderDashboard() {
                 </span>
               </Link>
 
-              {/* Page Title */}
-              <div className="hidden lg:block">
-                <h2 className="text-lg font-bold text-slate-900">
-                  {locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
-                </h2>
-                <p className="text-xs text-slate-500">
-                  {locale === 'ar' ? 'نظرة عامة على متجرك' : 'Overview of your store'}
-                </p>
-              </div>
             </div>
 
-            {/* Center: Page Title on Desktop */}
+            {/* Center: Page Title on Desktop - Single clear title */}
             <div className="hidden md:flex items-center justify-center flex-1">
               <div className="text-center">
                 <h2 className="text-lg font-semibold text-slate-800">
                   {locale === 'ar' ? 'لوحة تحكم المتجر' : 'Store Dashboard'}
                 </h2>
+                <p className="text-xs text-slate-500">
+                  {locale === 'ar' ? 'نظرة عامة على متجرك' : 'Overview of your store'}
+                </p>
               </div>
             </div>
 
