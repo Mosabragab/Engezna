@@ -108,10 +108,10 @@ export default function ProviderDashboard() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Get today's orders
+    // Get today's orders (only delivered orders for revenue calculation)
     const { data: todayOrdersData } = await supabase
       .from('orders')
-      .select('id, total_amount, status')
+      .select('id, total, status')
       .eq('provider_id', providerId)
       .gte('created_at', today.toISOString())
 
@@ -122,9 +122,9 @@ export default function ProviderDashboard() {
       .eq('provider_id', providerId)
       .in('status', ['pending', 'accepted', 'preparing'])
 
-    // Get active products
+    // Get active products (menu_items table)
     const { data: productsData } = await supabase
-      .from('products')
+      .from('menu_items')
       .select('id')
       .eq('provider_id', providerId)
       .eq('is_available', true)
@@ -143,9 +143,12 @@ export default function ProviderDashboard() {
 
     const uniqueCustomers = new Set(customersData?.map(o => o.user_id) || [])
 
+    // Calculate revenue from delivered orders only
+    const deliveredOrders = todayOrdersData?.filter(o => o.status === 'delivered') || []
+
     setStats({
       todayOrders: todayOrdersData?.length || 0,
-      todayRevenue: todayOrdersData?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0,
+      todayRevenue: deliveredOrders.reduce((sum, o) => sum + (o.total || 0), 0),
       pendingOrders: pendingData?.length || 0,
       activeProducts: productsData?.length || 0,
       totalOrders: totalOrdersData?.length || 0,

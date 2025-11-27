@@ -109,20 +109,20 @@ export default function FinancePage() {
     // Get all delivered orders
     const { data: orders } = await supabase
       .from('orders')
-      .select('id, total_amount, status, created_at')
+      .select('id, total, status, created_at')
       .eq('provider_id', provId)
       .eq('status', 'delivered')
       .order('created_at', { ascending: false })
 
     if (orders) {
       // Calculate totals
-      const totalRevenue = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+      const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
       const totalCommission = totalRevenue * COMMISSION_RATE
       const totalEarnings = totalRevenue - totalCommission
 
       // This month earnings
       const thisMonthOrders = orders.filter(o => new Date(o.created_at) >= monthStart)
-      const thisMonthRevenue = thisMonthOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+      const thisMonthRevenue = thisMonthOrders.reduce((sum, o) => sum + (o.total || 0), 0)
       const thisMonthEarnings = thisMonthRevenue - (thisMonthRevenue * COMMISSION_RATE)
 
       // Last month earnings
@@ -130,14 +130,14 @@ export default function FinancePage() {
         const d = new Date(o.created_at)
         return d >= lastMonthStart && d <= lastMonthEnd
       })
-      const lastMonthRevenue = lastMonthOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+      const lastMonthRevenue = lastMonthOrders.reduce((sum, o) => sum + (o.total || 0), 0)
       const lastMonthEarnings = lastMonthRevenue - (lastMonthRevenue * COMMISSION_RATE)
 
       // Pending payout (this week's earnings - simulated)
       const weekStart = new Date(now)
       weekStart.setDate(weekStart.getDate() - 7)
       const weekOrders = orders.filter(o => new Date(o.created_at) >= weekStart)
-      const weekRevenue = weekOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+      const weekRevenue = weekOrders.reduce((sum, o) => sum + (o.total || 0), 0)
       const pendingPayout = weekRevenue - (weekRevenue * COMMISSION_RATE)
 
       setStats({
@@ -152,7 +152,7 @@ export default function FinancePage() {
       const txns: Transaction[] = orders.slice(0, 20).map(order => ({
         id: order.id,
         type: 'order' as const,
-        amount: (order.total_amount || 0) - ((order.total_amount || 0) * COMMISSION_RATE),
+        amount: (order.total || 0) - ((order.total || 0) * COMMISSION_RATE),
         status: 'completed' as const,
         description: `#${order.id.slice(0, 8).toUpperCase()}`,
         created_at: order.created_at,

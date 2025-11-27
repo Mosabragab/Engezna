@@ -226,7 +226,8 @@ export default function AddProductPage() {
     setSaving(true)
     const supabase = createClient()
 
-    const productData = {
+    // Build product data - only include category_id if it's set and table supports it
+    const productData: Record<string, any> = {
       provider_id: providerId,
       name_ar: formData.name_ar.trim(),
       name_en: formData.name_en.trim(),
@@ -240,7 +241,11 @@ export default function AddProductPage() {
       is_spicy: formData.is_spicy,
       preparation_time_min: parseInt(formData.preparation_time_min) || 15,
       calories: formData.calories ? parseInt(formData.calories) : null,
-      category_id: formData.category_id || null,
+    }
+
+    // Only add category_id if a category is selected
+    if (formData.category_id) {
+      productData.category_id = formData.category_id
     }
 
     const { error } = await supabase
@@ -249,9 +254,24 @@ export default function AddProductPage() {
 
     if (error) {
       console.error('Error creating product:', error)
-      setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل إضافة المنتج' : 'Failed to add product' }))
-      setSaving(false)
-      return
+      // If category_id column doesn't exist, retry without it
+      if (error.message?.includes('category_id')) {
+        delete productData.category_id
+        const { error: retryError } = await supabase
+          .from('menu_items')
+          .insert(productData)
+
+        if (retryError) {
+          console.error('Retry error:', retryError)
+          setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل إضافة المنتج' : 'Failed to add product' }))
+          setSaving(false)
+          return
+        }
+      } else {
+        setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل إضافة المنتج' : 'Failed to add product' }))
+        setSaving(false)
+        return
+      }
     }
 
     router.push(`/${locale}/provider/products`)
