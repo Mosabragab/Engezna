@@ -4,6 +4,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { CustomerNavbar } from '@/components/shared/CustomerNavbar'
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
 import {
   UtensilsCrossed,
@@ -15,15 +16,13 @@ import {
   MapPin,
   Smartphone,
   ChevronRight,
-  LogOut,
-  User as UserIcon,
   LayoutDashboard,
   Store,
   Shield,
   Users,
   BarChart3,
   Settings,
-  ShoppingBag,
+  Globe,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
@@ -43,6 +42,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null)
   const [userRole, setUserRole] = useState<UserRole>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
   console.log('🌍 Locale:', locale, 'RTL:', isRTL)
 
@@ -136,106 +136,197 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Header */}
-      <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <div className="text-3xl font-bold text-primary">
+      <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo - Right side in RTL */}
+            <Link href={`/${locale}`} className="flex items-center">
+              <span className="text-2xl font-bold text-primary font-arabic">
                 {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-              </div>
-            </div>
+              </span>
+            </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
-              <a href="#services" className="text-sm font-medium hover:text-primary transition-colors">
+            {/* Desktop Navigation - Center */}
+            <nav className="hidden md:flex items-center gap-8">
+              <Link
+                href={`/${locale}`}
+                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+              >
+                {navT('home')}
+              </Link>
+              <a
+                href="#services"
+                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+              >
                 {navT('services')}
               </a>
-              <a href="#about" className="text-sm font-medium hover:text-primary transition-colors">
+              <a
+                href="#about"
+                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+              >
                 {navT('about')}
               </a>
-              <a href="#contact" className="text-sm font-medium hover:text-primary transition-colors">
+              <a
+                href="#contact"
+                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+              >
                 {navT('contact')}
               </a>
             </nav>
 
-            {/* Actions */}
+            {/* Actions - Left side in RTL */}
             <div className="flex items-center gap-3">
-              <LanguageSwitcher />
-              
               {/* Auth Section */}
               {authLoading ? (
-                <div className="w-20 h-8 bg-muted animate-pulse rounded" />
+                <div className="hidden md:block w-24 h-9 bg-gray-100 animate-pulse rounded-lg" />
               ) : user ? (
-                <div className="flex items-center gap-2">
-                  {/* My Orders Link - Only for customers */}
-                  {isCustomer && (
-                    <Link href={`/${locale}/orders`}>
-                      <Button variant="ghost" size="sm" className="relative">
-                        <ShoppingBag className="w-4 h-4" />
-                        <span className="hidden sm:inline ml-1">
-                          {locale === 'ar' ? 'طلباتي' : 'Orders'}
-                        </span>
+                <div className="hidden md:flex items-center gap-3">
+                  {/* Role-based Navigation Button */}
+                  {(isProvider || isAdmin) && (
+                    <Link href={getDashboardLink()}>
+                      <Button
+                        size="sm"
+                        className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
+                      >
+                        {getHeaderButtonIcon()}
+                        {getHeaderButtonText()}
                       </Button>
                     </Link>
                   )}
-                  
-                  {/* User Info - Hidden on mobile - Clickable to go to profile */}
+
+                  {/* Profile Link */}
                   <Link href={`/${locale}/profile`}>
-                    <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2 text-sm">
-                      <UserIcon className="w-4 h-4" />
-                      <span className="text-muted-foreground max-w-[100px] truncate">
-                        {user.email?.split('@')[0]}
-                      </span>
-                      {/* Role Badge */}
-                      {(isProvider || isAdmin) && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          isAdmin
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-primary/15 text-primary border border-primary/30'
-                        }`}>
-                          {isAdmin
-                            ? (locale === 'ar' ? 'مسؤول' : 'Admin')
-                            : (locale === 'ar' ? 'شريك' : 'Partner')
-                          }
-                        </span>
-                      )}
-                    </Button>
-                  </Link>
-                  
-                  {/* Sign Out Button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSignOut}
-                    className="flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span className="hidden sm:inline">
-                      {navT('logout') || (locale === 'ar' ? 'خروج' : 'Sign Out')}
-                    </span>
-                    <span className="sm:hidden">
-                      {locale === 'ar' ? 'خروج' : 'Out'}
-                    </span>
-                  </Button>
-                  
-                  {/* Role-based Navigation Button */}
-                  <Link href={getDashboardLink()}>
-                    <Button variant="default" size="sm" className="hidden sm:flex items-center">
-                      {getHeaderButtonIcon()}
-                      {getHeaderButtonText()}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-2 text-gray-700 hover:text-primary"
+                    >
+                      {locale === 'ar' ? 'حسابي' : 'My Account'}
                     </Button>
                   </Link>
                 </div>
               ) : (
-                <Link href={`/${locale}/auth/login`}>
-                  <Button variant="default" size="sm" className="flex">
+                <Link href={`/${locale}/auth/login`} className="hidden md:block">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-primary text-primary hover:bg-primary hover:text-white"
+                  >
                     {navT('login')}
                   </Button>
                 </Link>
               )}
+
+              {/* Separator */}
+              <div className="hidden md:block w-px h-6 bg-gray-200" />
+
+              {/* Language Switcher */}
+              <LanguageSwitcher variant="compact" />
+
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? (
+                  <span className="text-lg">✕</span>
+                ) : (
+                  <span className="text-lg">☰</span>
+                )}
+              </Button>
             </div>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t py-4 space-y-4">
+              {/* Navigation Links */}
+              <nav className="flex flex-col gap-2">
+                <Link
+                  href={`/${locale}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
+                >
+                  {navT('home')}
+                </Link>
+                <a
+                  href="#services"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
+                >
+                  {navT('services')}
+                </a>
+                <a
+                  href="#about"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
+                >
+                  {navT('about')}
+                </a>
+                <a
+                  href="#contact"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
+                >
+                  {navT('contact')}
+                </a>
+              </nav>
+
+              {/* Auth Section - Mobile */}
+              <div className="border-t pt-4 px-4">
+                {authLoading ? (
+                  <div className="w-full h-10 bg-gray-100 animate-pulse rounded-lg" />
+                ) : user ? (
+                  <div className="space-y-2">
+                    {(isProvider || isAdmin) && (
+                      <Link href={getDashboardLink()}>
+                        <Button
+                          className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          {getHeaderButtonIcon()}
+                          {getHeaderButtonText()}
+                        </Button>
+                      </Link>
+                    )}
+                    <Link
+                      href={`/${locale}/profile`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-bold text-primary">
+                          {user.email?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="font-medium">{user.email?.split('@')[0]}</span>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        handleSignOut()
+                        setMobileMenuOpen(false)
+                      }}
+                    >
+                      {navT('logout')}
+                    </Button>
+                  </div>
+                ) : (
+                  <Link href={`/${locale}/auth/login`}>
+                    <Button
+                      className="w-full bg-primary hover:bg-primary/90"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {navT('login')}
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 

@@ -8,8 +8,12 @@
     "services": "الخدمات",
     "about": "من نحن",
     "contact": "تواصل معنا",
+    "support": "الدعم الفني",
     "login": "تسجيل الدخول",
-    "logout": "خروج"
+    "logout": "خروج",
+    "myAccount": "حسابي",
+    "dashboard": "لوحة التحكم",
+    "myOrders": "طلباتي"
   },
   "home": {
     "title": "إنجزنا",

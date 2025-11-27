@@ -8,8 +8,12 @@
     "services": "Services",
     "about": "About",
     "contact": "Contact",
+    "support": "Support",
     "login": "Login",
-    "logout": "Sign Out"
+    "logout": "Sign Out",
+    "myAccount": "My Account",
+    "dashboard": "Dashboard",
+    "myOrders": "My Orders"
   },
   "home": {
     "title": "Engezna",
