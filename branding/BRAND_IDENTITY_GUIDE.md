@@ -8,6 +8,7 @@ Last Updated: 2025-11-27
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1 | 2025-11-27 | Updated Semantic Colors (Professional Dashboard Standards), Text Hierarchy System |
 | 2.0 | 2025-11-27 | Added Navigation Bar Standards, Light-Only Theme Decision, UI/UX Guidelines |
 | 1.0 | 2025-11-27 | Initial brand identity guide with Engezna Blue (#009DE0) |
 
@@ -190,7 +191,7 @@ Key positioning pillars:
 **Primary Color – Engezna Blue**
 - HEX: `#009DE0`
 - HSL: `198, 100%, 44%`
-- Usage: Primary buttons, highlights, brand elements, CTAs.
+- Usage: Primary buttons, highlights, brand elements, CTAs, Info states.
 
 **Secondary Neutrals**
 - Black: `#000000`
@@ -199,10 +200,50 @@ Key positioning pillars:
 **Accents (harmonized with #009DE0):**
 - Deals / Discounts: `#00C27A` (Green-Cyan)
 - Premium / Highlight: `#FFD166` (Soft Gold)
-- Info: `#36C5F0` (Sky Blue)
-- Error / Warning: `#FF5A5F` (Coral Red)
 
-### 7.2 Typography
+### 7.2 Semantic Colors (Dashboard Standards)
+
+**Professional dashboard color system for consistent UX:**
+
+| State | HEX | HSL | Usage |
+|-------|-----|-----|-------|
+| **Success** | `#22C55E` | `142, 71%, 45%` | Completed orders, delivered, positive states |
+| **Warning** | `#FACC15` | `48, 97%, 53%` | Pending orders, temporary closures, alerts |
+| **Error** | `#EF4444` | `0, 84%, 60%` | Cancelled orders, errors, rejections |
+| **In Progress** | `#3B82F6` | `217, 91%, 60%` | Active orders, processing states |
+| **Info** | `#009DE0` | `198, 100%, 44%` | Same as Primary (brand consistency) |
+
+### 7.3 Text Hierarchy System (Contrast)
+
+**For optimal readability and professional appearance:**
+
+| Level | HEX | HSL | Usage |
+|-------|-----|-----|-------|
+| **Primary Text** | `#0F172A` | `222, 47%, 11%` | Main headings, numbers, important content |
+| **Secondary Text** | `#475569` | `215, 16%, 47%` | Descriptions, secondary labels |
+| **Muted Text** | `#94A3B8` | `215, 16%, 65%` | Hints, disabled states, timestamps |
+
+### 7.4 Card Background Colors (10% Tints)
+
+**Light pastel backgrounds for stat cards and data visualization:**
+
+| Card Type | HEX | HSL | Usage |
+|-----------|-----|-----|-------|
+| **Primary Card** | `#E0F4FF` | `198, 100%, 97%` | Total counts, primary metrics |
+| **Success Card** | `#DCFCE7` | `142, 76%, 95%` | Completed orders, revenue |
+| **Info Card** | `#E0F4FF` | `198, 100%, 97%` | Active products, general info |
+| **Warning Card** | `#FEF9C3` | `48, 100%, 95%` | Pending items, alerts |
+| **Error Card** | `#FEF2F2` | `0, 86%, 97%` | Cancelled, rejected |
+
+### 7.5 Border & Background Neutrals
+
+| Element | HEX | HSL | Usage |
+|---------|-----|-----|-------|
+| **Page Background** | `#FFFFFF` | `0, 0%, 100%` | Main background |
+| **Muted Background** | `#F1F5F9` | `210, 40%, 96%` | Section backgrounds |
+| **Border** | `#E2E8F0` | `214, 32%, 91%` | Card borders, dividers |
+
+### 7.6 Typography
 
 **Primary Arabic:**
 - **Noto Sans Arabic**
@@ -218,6 +259,28 @@ Key positioning pillars:
 - Use **Medium (500)** for primary buttons and key labels.
 - Use **Bold (700)** for titles and emphasis.
 - Keep line-height generous for Arabic: 1.5–1.7.
+
+### 7.7 Icon Guidelines
+
+**Icon Library:** Lucide React (lucide-react)
+
+**Standard Specifications:**
+- **Stroke Width:** `1.8` (slightly thicker than default for better visibility)
+- **Default Size:** `w-5 h-5` (20px) for navigation icons
+- **Large Size:** `w-8 h-8` (32px) for quick action cards
+- **Small Size:** `w-4 h-4` (16px) for inline icons
+
+**Color Rules:**
+- **Primary Actions:** Use `text-primary` (Engezna Blue)
+- **Success Actions:** Use `text-success` (#22C55E)
+- **Warning Actions:** Use `text-[hsl(48_97%_40%)]` (darker yellow for visibility)
+- **Error Actions:** Use `text-error` (#EF4444)
+- **Neutral/Settings:** Use `text-[hsl(var(--text-secondary))]`
+
+**Consistency:**
+- All icons in a section should use the same `strokeWidth`
+- Icon colors should match their semantic meaning
+- Always provide adequate contrast against card backgrounds
 
 ---
 

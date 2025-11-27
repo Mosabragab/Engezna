@@ -542,102 +542,102 @@ export default function ProviderDashboard() {
           {/* Dashboard Stats - Only for approved/open providers */}
           {(provider?.status === 'approved' || provider?.status === 'open' || provider?.status === 'closed' || provider?.status === 'temporarily_paused') && (
             <>
-              {/* Stats Grid */}
+              {/* Stats Grid - Using brand color system */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {/* Today's Orders */}
-                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                {/* Today's Orders - Primary Blue Card */}
+                <div className="bg-[hsl(var(--card-bg-primary))] rounded-xl p-4 border border-primary/20 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <ShoppingBag className="w-5 h-5 text-primary" />
+                    <div className="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center">
+                      <ShoppingBag className="w-5 h-5 text-primary" strokeWidth={1.8} />
                     </div>
-                    <span className="text-green-600 text-xs flex items-center gap-1">
+                    <span className="text-success text-xs flex items-center gap-1">
                       <TrendingUp className="w-3 h-3" /> +0%
                     </span>
                   </div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.todayOrders}</p>
-                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</p>
+                  <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.todayOrders}</p>
+                  <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</p>
                 </div>
 
-                {/* Today's Revenue */}
-                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                {/* Today's Revenue - Success Green Card */}
+                <div className="bg-[hsl(var(--card-bg-success))] rounded-xl p-4 border border-success/20 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                      <DollarSign className="w-5 h-5 text-green-600" />
+                    <div className="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-success" strokeWidth={1.8} />
                     </div>
-                    <span className="text-green-600 text-xs flex items-center gap-1">
+                    <span className="text-success text-xs flex items-center gap-1">
                       <TrendingUp className="w-3 h-3" /> +0%
                     </span>
                   </div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.todayRevenue} <span className="text-sm text-slate-500">EGP</span></p>
-                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</p>
+                  <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.todayRevenue} <span className="text-sm text-[hsl(var(--text-muted))]">EGP</span></p>
+                  <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</p>
                 </div>
 
-                {/* Pending Orders */}
-                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                {/* Pending Orders - Warning Yellow Card */}
+                <div className="bg-[hsl(var(--card-bg-warning))] rounded-xl p-4 border border-warning/20 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-amber-600" />
+                    <div className="w-10 h-10 bg-warning/15 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-[hsl(42_100%_40%)]" strokeWidth={1.8} />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.pendingOrders}</p>
-                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'طلبات قيد الانتظار' : 'Pending Orders'}</p>
+                  <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.pendingOrders}</p>
+                  <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات قيد الانتظار' : 'Pending Orders'}</p>
                 </div>
 
-                {/* Active Products */}
-                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                {/* Active Products - Info Cyan Card */}
+                <div className="bg-[hsl(var(--card-bg-info))] rounded-xl p-4 border border-info/20 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <Package className="w-5 h-5 text-purple-600" />
+                    <div className="w-10 h-10 bg-info/15 rounded-lg flex items-center justify-center">
+                      <Package className="w-5 h-5 text-primary" strokeWidth={1.8} />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.activeProducts}</p>
-                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
+                  <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.activeProducts}</p>
+                  <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
                 </div>
               </div>
 
-              {/* Performance Indicators */}
-              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm mb-6">
-                <h3 className="text-lg font-bold text-slate-900 mb-4">{locale === 'ar' ? 'مؤشرات الأداء' : 'Performance Indicators'}</h3>
+              {/* Performance Indicators - Using text hierarchy */}
+              <div className="bg-white rounded-xl p-6 border border-[hsl(var(--border))] shadow-sm mb-6">
+                <h3 className="text-lg font-bold text-[hsl(var(--text-primary))] mb-4">{locale === 'ar' ? 'مؤشرات الأداء' : 'Performance Indicators'}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <p className="text-sm text-slate-500 mb-1">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
-                    <p className="text-3xl font-bold text-slate-900">{stats.totalOrders}</p>
+                    <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
+                    <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.totalOrders}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 mb-1">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</p>
-                    <p className="text-3xl font-bold text-slate-900">{stats.totalCustomers}</p>
+                    <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</p>
+                    <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.totalCustomers}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-500 mb-1">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
-                    <p className="text-3xl font-bold text-slate-900">{stats.activeProducts}</p>
+                    <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
+                    <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.activeProducts}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Quick Actions */}
+              {/* Quick Actions - Using unified icon styling */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Link href={`/${locale}/provider/orders`} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all group">
-                  <ShoppingBag className="w-8 h-8 text-primary mb-3 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium text-slate-900">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
-                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'إدارة الطلبات' : 'Manage orders'}</p>
+                <Link href={`/${locale}/provider/orders`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
+                  <ShoppingBag className="w-8 h-8 text-primary mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
+                  <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
+                  <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'إدارة الطلبات' : 'Manage orders'}</p>
                 </Link>
 
-                <Link href={`/${locale}/provider/products`} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all group">
-                  <Package className="w-8 h-8 text-purple-600 mb-3 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium text-slate-900">{locale === 'ar' ? 'المنتجات' : 'Products'}</p>
-                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'إدارة القائمة' : 'Manage menu'}</p>
+                <Link href={`/${locale}/provider/products`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
+                  <Package className="w-8 h-8 text-primary mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
+                  <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'المنتجات' : 'Products'}</p>
+                  <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'إدارة القائمة' : 'Manage menu'}</p>
                 </Link>
 
-                <Link href={`/${locale}/provider/reports`} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all group">
-                  <BarChart3 className="w-8 h-8 text-green-600 mb-3 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium text-slate-900">{locale === 'ar' ? 'التقارير' : 'Reports'}</p>
-                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'عرض الإحصائيات' : 'View analytics'}</p>
+                <Link href={`/${locale}/provider/reports`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
+                  <BarChart3 className="w-8 h-8 text-success mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
+                  <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'التقارير' : 'Reports'}</p>
+                  <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'عرض الإحصائيات' : 'View analytics'}</p>
                 </Link>
 
-                <Link href={`/${locale}/provider/settings`} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all group">
-                  <Settings className="w-8 h-8 text-slate-500 mb-3 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium text-slate-900">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</p>
-                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'إعدادات المتجر' : 'Store settings'}</p>
+                <Link href={`/${locale}/provider/settings`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
+                  <Settings className="w-8 h-8 text-[hsl(var(--text-secondary))] mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
+                  <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</p>
+                  <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'إعدادات المتجر' : 'Store settings'}</p>
                 </Link>
               </div>
             </>

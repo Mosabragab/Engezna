@@ -1,5 +1,5 @@
 # Engezna – Brand Quick Reference
-Version: 1.0
+Version: 2.1
 
 ---
 
@@ -40,16 +40,37 @@ Version: 1.0
 
 ## 4. Visuals – Colors
 
+### Primary Brand
 - **Primary:** `#009DE0` (Engezna Blue)
 - **Secondary:**
   - Black `#000000`
   - White `#FFFFFF`
 
-- **Accents:**
-  - Deals: `#00C27A`
-  - Premium: `#FFD166`
-  - Info: `#36C5F0`
-  - Error/Warning: `#FF5A5F`
+### Semantic Colors (Dashboard)
+| State | Color | Usage |
+|-------|-------|-------|
+| **Success** | `#22C55E` | Completed, delivered |
+| **Warning** | `#FACC15` | Pending, alerts |
+| **Error** | `#EF4444` | Cancelled, errors |
+| **In Progress** | `#3B82F6` | Active orders |
+| **Info** | `#009DE0` | Same as Primary |
+
+### Text Hierarchy
+| Level | Color | Usage |
+|-------|-------|-------|
+| **Primary** | `#0F172A` | Main text, numbers |
+| **Secondary** | `#475569` | Descriptions |
+| **Muted** | `#94A3B8` | Hints, disabled |
+
+### Card Backgrounds (10% Tints)
+- Primary: `#E0F4FF`
+- Success: `#DCFCE7`
+- Warning: `#FEF9C3`
+- Error: `#FEF2F2`
+
+### Accents (Special Use)
+- Deals: `#00C27A`
+- Premium: `#FFD166`
 
 ---
 

@@ -67,15 +67,23 @@ type Order = {
   items: OrderItem[]
 }
 
+/**
+ * STATUS_CONFIG - Order Status Color System
+ * Using new semantic colors per brand guidelines v2.0:
+ * - Pending (Warning): #FACC15 → hsl(48 97% 53%)
+ * - In Progress (Blue): #3B82F6 → hsl(217 91% 60%)
+ * - Delivered (Success): #22C55E → hsl(142 71% 45%)
+ * - Cancelled/Error: #EF4444 → hsl(0 84% 60%)
+ */
 const STATUS_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label_ar: string; label_en: string }> = {
-  pending: { icon: Clock, color: 'text-[hsl(42_100%_45%)]', bgColor: 'bg-[hsl(42_100%_70%/0.15)]', label_ar: 'طلب جديد', label_en: 'New Order' },
-  accepted: { icon: CheckCircle2, color: 'text-info', bgColor: 'bg-[hsl(194_86%_58%/0.15)]', label_ar: 'تم القبول', label_en: 'Accepted' },
-  preparing: { icon: ChefHat, color: 'text-[hsl(42_100%_45%)]', bgColor: 'bg-[hsl(42_100%_70%/0.15)]', label_ar: 'جاري التحضير', label_en: 'Preparing' },
-  ready: { icon: Package, color: 'text-primary', bgColor: 'bg-[hsl(198_100%_44%/0.15)]', label_ar: 'جاهز', label_en: 'Ready' },
-  out_for_delivery: { icon: Truck, color: 'text-info', bgColor: 'bg-[hsl(194_86%_58%/0.15)]', label_ar: 'في الطريق', label_en: 'On the way' },
-  delivered: { icon: CheckCircle2, color: 'text-deal', bgColor: 'bg-[hsl(158_100%_38%/0.15)]', label_ar: 'تم التوصيل', label_en: 'Delivered' },
-  cancelled: { icon: XCircle, color: 'text-error', bgColor: 'bg-[hsl(358_100%_68%/0.15)]', label_ar: 'ملغي', label_en: 'Cancelled' },
-  rejected: { icon: XCircle, color: 'text-error', bgColor: 'bg-[hsl(358_100%_68%/0.15)]', label_ar: 'مرفوض', label_en: 'Rejected' },
+  pending: { icon: Clock, color: 'text-[hsl(48_97%_40%)]', bgColor: 'bg-[hsl(48_100%_95%)]', label_ar: 'طلب جديد', label_en: 'New Order' },
+  accepted: { icon: CheckCircle2, color: 'text-[hsl(217_91%_60%)]', bgColor: 'bg-[hsl(217_91%_60%/0.1)]', label_ar: 'تم القبول', label_en: 'Accepted' },
+  preparing: { icon: ChefHat, color: 'text-[hsl(217_91%_60%)]', bgColor: 'bg-[hsl(217_91%_60%/0.1)]', label_ar: 'جاري التحضير', label_en: 'Preparing' },
+  ready: { icon: Package, color: 'text-primary', bgColor: 'bg-[hsl(198_100%_44%/0.1)]', label_ar: 'جاهز', label_en: 'Ready' },
+  out_for_delivery: { icon: Truck, color: 'text-[hsl(217_91%_60%)]', bgColor: 'bg-[hsl(217_91%_60%/0.1)]', label_ar: 'في الطريق', label_en: 'On the way' },
+  delivered: { icon: CheckCircle2, color: 'text-[hsl(142_71%_45%)]', bgColor: 'bg-[hsl(142_76%_95%)]', label_ar: 'تم التوصيل', label_en: 'Delivered' },
+  cancelled: { icon: XCircle, color: 'text-[hsl(0_84%_60%)]', bgColor: 'bg-[hsl(0_86%_97%)]', label_ar: 'ملغي', label_en: 'Cancelled' },
+  rejected: { icon: XCircle, color: 'text-[hsl(0_84%_60%)]', bgColor: 'bg-[hsl(0_86%_97%)]', label_ar: 'مرفوض', label_en: 'Rejected' },
 }
 
 // Status flow for providers
@@ -369,49 +377,53 @@ export default function ProviderOrdersPage() {
       </header>
 
       <div className="container mx-auto px-4 py-6">
-        {/* Stats Row */}
+        {/* Stats Row - Using new semantic card backgrounds */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
+          {/* New Orders - Warning Yellow */}
+          <div className="bg-[hsl(var(--card-bg-warning))] rounded-xl p-4 border border-warning/20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[hsl(42_100%_70%/0.2)] rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-premium" />
+              <div className="w-10 h-10 bg-warning/15 rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-[hsl(48_97%_40%)]" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900">{pendingCount}</p>
-                <p className="text-xs text-slate-500">{locale === 'ar' ? 'طلبات جديدة' : 'New Orders'}</p>
+                <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{pendingCount}</p>
+                <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات جديدة' : 'New Orders'}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
+          {/* In Progress - Blue */}
+          <div className="bg-[hsl(217_91%_60%/0.08)] rounded-xl p-4 border border-[hsl(217_91%_60%/0.2)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[hsl(194_86%_58%/0.2)] rounded-lg flex items-center justify-center">
-                <ChefHat className="w-5 h-5 text-info" />
+              <div className="w-10 h-10 bg-[hsl(217_91%_60%/0.15)] rounded-lg flex items-center justify-center">
+                <ChefHat className="w-5 h-5 text-[hsl(217_91%_60%)]" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900">{activeCount}</p>
-                <p className="text-xs text-slate-500">{locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</p>
+                <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{activeCount}</p>
+                <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
+          {/* Completed - Success Green */}
+          <div className="bg-[hsl(var(--card-bg-success))] rounded-xl p-4 border border-success/20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[hsl(158_100%_38%/0.2)] rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-deal" />
+              <div className="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-success" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900">{orders.filter(o => o.status === 'delivered').length}</p>
-                <p className="text-xs text-slate-500">{locale === 'ar' ? 'مكتمل' : 'Completed'}</p>
+                <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{orders.filter(o => o.status === 'delivered').length}</p>
+                <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'مكتمل' : 'Completed'}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
+          {/* Total Orders - Primary Blue */}
+          <div className="bg-[hsl(var(--card-bg-primary))] rounded-xl p-4 border border-primary/20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[hsl(198_100%_44%/0.2)] rounded-lg flex items-center justify-center">
-                <ShoppingBag className="w-5 h-5 text-primary" />
+              <div className="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-primary" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900">{orders.length}</p>
-                <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
+                <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{orders.length}</p>
+                <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
               </div>
             </div>
           </div>
