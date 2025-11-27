@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input'
 import {
   ArrowLeft,
   ArrowRight,
-  Globe,
   User,
   Check,
   Loader2,
@@ -35,8 +34,6 @@ export default function ProviderProfilePage() {
 
   const [loading, setLoading] = useState(true)
   const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [selectedLanguage, setSelectedLanguage] = useState(locale)
-  const [changingLanguage, setChangingLanguage] = useState(false)
 
   // Password change states
   const [showPasswordForm, setShowPasswordForm] = useState(false)
@@ -77,19 +74,6 @@ export default function ProviderProfilePage() {
     }
 
     setLoading(false)
-  }
-
-  const handleLanguageChange = async (newLocale: string) => {
-    if (newLocale === locale) return
-
-    setChangingLanguage(true)
-    setSelectedLanguage(newLocale)
-
-    // Wait a bit for visual feedback
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // Redirect to provider profile with new locale
-    router.push(`/${newLocale}/provider/profile`)
   }
 
   const handlePasswordChange = async () => {
@@ -233,75 +217,6 @@ export default function ProviderProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Language Settings */}
-          <Card className="bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                {locale === 'ar' ? 'اللغة' : 'Language'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Arabic Option */}
-              <button
-                onClick={() => handleLanguageChange('ar')}
-                disabled={changingLanguage}
-                className={`w-full p-4 rounded-xl border-2 transition-all flex items-center justify-between ${
-                  selectedLanguage === 'ar'
-                    ? 'border-primary bg-primary/10'
-                    : 'border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500'
-                } ${changingLanguage ? 'opacity-50 pointer-events-none' : ''}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    selectedLanguage === 'ar' ? 'bg-primary/20' : 'bg-gray-100 dark:bg-slate-700'
-                  }`}>
-                    <Globe className="w-5 h-5" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900 dark:text-white">العربية</p>
-                    <p className="text-xs text-gray-600 dark:text-slate-400">Arabic</p>
-                  </div>
-                </div>
-                {selectedLanguage === 'ar' && !changingLanguage && (
-                  <Check className="w-5 h-5 text-primary" />
-                )}
-                {selectedLanguage === 'ar' && changingLanguage && (
-                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                )}
-              </button>
-
-              {/* English Option */}
-              <button
-                onClick={() => handleLanguageChange('en')}
-                disabled={changingLanguage}
-                className={`w-full p-4 rounded-xl border-2 transition-all flex items-center justify-between ${
-                  selectedLanguage === 'en'
-                    ? 'border-primary bg-primary/10'
-                    : 'border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500'
-                } ${changingLanguage ? 'opacity-50 pointer-events-none' : ''}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    selectedLanguage === 'en' ? 'bg-primary/20' : 'bg-gray-100 dark:bg-slate-700'
-                  }`}>
-                    <Globe className="w-5 h-5" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900 dark:text-white">English</p>
-                    <p className="text-xs text-gray-600 dark:text-slate-400">الإنجليزية</p>
-                  </div>
-                </div>
-                {selectedLanguage === 'en' && !changingLanguage && (
-                  <Check className="w-5 h-5 text-primary" />
-                )}
-                {selectedLanguage === 'en' && changingLanguage && (
-                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                )}
-              </button>
-            </CardContent>
-          </Card>
-
           {/* Security Section - Inline Password Change */}
           <Card className="bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700">
             <CardHeader>
@@ -320,7 +235,7 @@ export default function ProviderProfilePage() {
                     <div className="p-2 rounded-lg bg-gray-100 dark:bg-slate-700">
                       <Lock className="w-5 h-5" />
                     </div>
-                    <div className="text-left">
+                    <div className={isRTL ? 'text-right' : 'text-left'}>
                       <p className="font-medium text-gray-900 dark:text-white">{locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}</p>
                       <p className="text-xs text-gray-600 dark:text-slate-400">
                         {locale === 'ar' ? 'تحديث كلمة المرور الخاصة بك' : 'Update your password'}
@@ -360,13 +275,13 @@ export default function ProviderProfilePage() {
                         type={showCurrentPassword ? 'text' : 'password'}
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 pr-10"
+                        className={`bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 ${isRTL ? 'pl-10' : 'pr-10'}`}
                         placeholder={locale === 'ar' ? 'أدخل كلمة المرور الحالية' : 'Enter current password'}
                       />
                       <button
                         type="button"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400"
+                        className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400`}
                       >
                         {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -383,13 +298,13 @@ export default function ProviderProfilePage() {
                         type={showNewPassword ? 'text' : 'password'}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 pr-10"
+                        className={`bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 ${isRTL ? 'pl-10' : 'pr-10'}`}
                         placeholder={locale === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'}
                       />
                       <button
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400"
+                        className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400`}
                       >
                         {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -434,12 +349,12 @@ export default function ProviderProfilePage() {
                   >
                     {savingPassword ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        <Loader2 className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
                         {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
                       </>
                     ) : (
                       <>
-                        <Check className="w-4 h-4 mr-2" />
+                        <Check className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                         {locale === 'ar' ? 'حفظ كلمة المرور' : 'Save Password'}
                       </>
                     )}
