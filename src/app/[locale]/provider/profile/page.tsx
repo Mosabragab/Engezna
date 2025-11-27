@@ -38,7 +38,7 @@ export default function ProviderProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [selectedLanguage, setSelectedLanguage] = useState(locale)
   const [changingLanguage, setChangingLanguage] = useState(false)
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark') // Keep for header toggle
 
   // Password change states
   const [showPasswordForm, setShowPasswordForm] = useState(false)
@@ -95,7 +95,8 @@ export default function ProviderProfilePage() {
     }
   }
 
-  const handleThemeChange = (newTheme: 'light' | 'dark') => {
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark'
     setTheme(newTheme)
     localStorage.setItem('theme', newTheme)
     applyTheme(newTheme)
@@ -225,7 +226,13 @@ export default function ProviderProfilePage() {
               <User className="w-5 h-5" />
               {locale === 'ar' ? 'الملف الشخصي' : 'Profile'}
             </h1>
-            <div className="w-20" />
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+              title={theme === 'dark' ? (locale === 'ar' ? 'الوضع النهاري' : 'Light Mode') : (locale === 'ar' ? 'الوضع الليلي' : 'Dark Mode')}
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
           </div>
         </div>
       </header>
@@ -319,71 +326,6 @@ export default function ProviderProfilePage() {
                 )}
                 {selectedLanguage === 'en' && changingLanguage && (
                   <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                )}
-              </button>
-            </CardContent>
-          </Card>
-
-          {/* Theme Settings */}
-          <Card className="bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
-                {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                {locale === 'ar' ? 'المظهر' : 'Appearance'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Dark Mode Option */}
-              <button
-                onClick={() => handleThemeChange('dark')}
-                className={`w-full p-4 rounded-xl border-2 transition-all flex items-center justify-between ${
-                  theme === 'dark'
-                    ? 'border-primary bg-primary/10'
-                    : 'border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    theme === 'dark' ? 'bg-primary/20' : 'bg-gray-100 dark:bg-slate-700'
-                  }`}>
-                    <Moon className="w-5 h-5" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900 dark:text-white">{locale === 'ar' ? 'الوضع الليلي' : 'Dark Mode'}</p>
-                    <p className="text-xs text-gray-600 dark:text-slate-400">
-                      {locale === 'ar' ? 'خلفية داكنة' : 'Dark background'}
-                    </p>
-                  </div>
-                </div>
-                {theme === 'dark' && (
-                  <Check className="w-5 h-5 text-primary" />
-                )}
-              </button>
-
-              {/* Light Mode Option */}
-              <button
-                onClick={() => handleThemeChange('light')}
-                className={`w-full p-4 rounded-xl border-2 transition-all flex items-center justify-between ${
-                  theme === 'light'
-                    ? 'border-primary bg-primary/10'
-                    : 'border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    theme === 'light' ? 'bg-primary/20' : 'bg-gray-100 dark:bg-slate-700'
-                  }`}>
-                    <Sun className="w-5 h-5" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900 dark:text-white">{locale === 'ar' ? 'الوضع النهاري' : 'Light Mode'}</p>
-                    <p className="text-xs text-gray-600 dark:text-slate-400">
-                      {locale === 'ar' ? 'خلفية فاتحة' : 'Light background'}
-                    </p>
-                  </div>
-                </div>
-                {theme === 'light' && (
-                  <Check className="w-5 h-5 text-primary" />
                 )}
               </button>
             </CardContent>

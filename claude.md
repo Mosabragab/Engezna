@@ -1,6 +1,6 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** November 26, 2025
+**Last Updated:** November 27, 2025
 **Status:** Week 3 - 100% Complete ✅
 **Branch:** `main`
 
@@ -135,7 +135,7 @@
 7. ✅ Completion rate and cancellation rate
 8. ✅ Link from provider dashboard
 
-### Finance & Payments (NEW! ✅)
+### Finance & Payments (✅)
 1. ✅ Visit `/ar/provider/finance` or `/en/provider/finance`
 2. ✅ Total earnings and pending payout cards
 3. ✅ Commission breakdown (6% platform fee)
@@ -144,6 +144,31 @@
 6. ✅ Transaction history with date range filter
 7. ✅ Net earnings after commission deduction
 8. ✅ Link from provider dashboard
+
+### Provider Profile (NEW! ✅)
+1. ✅ Visit `/ar/provider/profile` or `/en/provider/profile`
+2. ✅ Account info display (email, avatar)
+3. ✅ Language switcher (Arabic/English) with locale redirect
+4. ✅ Inline password change form (no redirect needed)
+5. ✅ Theme toggle in header (dark/light mode)
+6. ✅ Sign out button
+7. ✅ Theme-aware styling (responds to dark/light mode)
+
+### Product Categories (NEW! ✅)
+1. ✅ Add category dropdown when creating/editing products
+2. ✅ Create new categories inline with Arabic/English names
+3. ✅ Categories are provider-specific
+4. ✅ Database table: `product_categories`
+
+### Enhanced Promotions (NEW! ✅)
+1. ✅ "Applies To" toggle: All Products or Specific Products
+2. ✅ Multi-select checkbox list for choosing specific products
+3. ✅ Display selected product count in promotion cards
+4. ✅ Validation requires at least one product when specific is chosen
+
+### Auto-Refresh Orders (NEW! ✅)
+1. ✅ Orders page auto-refreshes every 60 seconds
+2. ✅ Last refresh timestamp display
 
 ### Business Categories Supported
 - 🍔 Restaurant (مطعم)
@@ -260,6 +285,26 @@ Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Ma
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 27, 2025 - Provider Enhancements ✅
+- ✅ **Provider Profile Page**: Created `/provider/profile` with comprehensive settings
+  - Account info display with email/avatar
+  - Language switcher (Arabic/English) with locale redirect
+  - Inline password change form (no redirect to customer profile)
+  - Theme toggle moved to header bar for global access
+  - Theme-aware styling (dark/light mode responsive)
+  - Sign out functionality
+- ✅ **Product Categories**: Added category dropdown to add/edit product pages
+  - Inline category creation with Arabic/English names
+  - Categories are provider-specific
+  - Database table: `product_categories`
+- ✅ **Enhanced Promotions**: Added specific product selection
+  - "Applies To" toggle (All Products / Specific Products)
+  - Multi-select checkbox list for product selection
+  - Validation for at least one product when specific is chosen
+- ✅ **Auto-Refresh Orders**: Orders page refreshes every 60 seconds
+- ✅ **Theme Toggle in Header**: Moved from profile page to header bar
+- ✅ **Fixed .single() queries**: Changed to .limit(1) across all provider pages
 
 ### Work Session Nov 26, 2025 - Finance & Payments ✅
 - ✅ **Finance Page**: Created `/provider/finance` with comprehensive financial dashboard
@@ -444,8 +489,11 @@ Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Ma
 ### Reports & Analytics
 - `src/app/[locale]/provider/reports/page.tsx` - Revenue, orders, and performance analytics
 
-### Finance & Payments (NEW)
+### Finance & Payments
 - `src/app/[locale]/provider/finance/page.tsx` - Earnings, payouts, and transaction history
+
+### Provider Profile (NEW)
+- `src/app/[locale]/provider/profile/page.tsx` - Profile, language, theme, password
 
 ---
 
@@ -468,8 +516,8 @@ CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'pu
 
 ---
 
-**Version:** 14.0 (Week 3 - Finance & Payments Complete)
-**Last Updated:** November 26, 2025
-**Next Review:** November 28, 2025
+**Version:** 15.0 (Week 3 - Provider Enhancements Complete)
+**Last Updated:** November 27, 2025
+**Next Review:** November 29, 2025
 
-**🎉 Week 3 100% Complete! Provider Dashboard fully functional with Finance & Payments!**
+**🎉 Week 3 100% Complete! Provider Dashboard fully functional with Profile, Categories, and Theme Toggle!**

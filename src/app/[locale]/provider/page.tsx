@@ -32,6 +32,8 @@ import {
   Users,
   DollarSign,
   User as UserIcon,
+  Moon,
+  Sun,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -66,6 +68,7 @@ export default function ProviderDashboard() {
   const [provider, setProvider] = useState<Provider | null>(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
   const [stats, setStats] = useState<DashboardStats>({
     todayOrders: 0,
     todayRevenue: 0,
@@ -77,7 +80,28 @@ export default function ProviderDashboard() {
 
   useEffect(() => {
     checkAuth()
+    // Load theme from localStorage
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+    if (savedTheme) {
+      setTheme(savedTheme)
+      applyTheme(savedTheme)
+    }
   }, [])
+
+  const applyTheme = (newTheme: 'light' | 'dark') => {
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark'
+    setTheme(newTheme)
+    localStorage.setItem('theme', newTheme)
+    applyTheme(newTheme)
+  }
 
   async function checkAuth() {
     const supabase = createClient()
@@ -374,12 +398,21 @@ export default function ProviderDashboard() {
                 </p>
               </div>
             </div>
-            <Link href={`/${locale}`}>
-              <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                {isRTL ? <ChevronRight className="w-4 h-4 ml-1" /> : <ChevronLeft className="w-4 h-4 mr-1" />}
-                {locale === 'ar' ? 'العودة للموقع' : 'Back to Site'}
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 transition-colors"
+                title={theme === 'dark' ? (locale === 'ar' ? 'الوضع النهاري' : 'Light Mode') : (locale === 'ar' ? 'الوضع الليلي' : 'Dark Mode')}
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              <Link href={`/${locale}`}>
+                <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                  {isRTL ? <ChevronRight className="w-4 h-4 ml-1" /> : <ChevronLeft className="w-4 h-4 mr-1" />}
+                  {locale === 'ar' ? 'العودة للموقع' : 'Back to Site'}
+                </Button>
+              </Link>
+            </div>
           </div>
         </header>
 
