@@ -67,15 +67,23 @@ type Order = {
   items: OrderItem[]
 }
 
+/**
+ * STATUS_CONFIG - Order Status Color System
+ * Using new semantic colors per brand guidelines v2.0:
+ * - Pending (Warning): #FACC15 → hsl(48 97% 53%)
+ * - In Progress (Blue): #3B82F6 → hsl(217 91% 60%)
+ * - Delivered (Success): #22C55E → hsl(142 71% 45%)
+ * - Cancelled/Error: #EF4444 → hsl(0 84% 60%)
+ */
 const STATUS_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label_ar: string; label_en: string }> = {
-  pending: { icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', label_ar: 'طلب جديد', label_en: 'New Order' },
-  accepted: { icon: CheckCircle2, color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/30', label_ar: 'تم القبول', label_en: 'Accepted' },
-  preparing: { icon: ChefHat, color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/30', label_ar: 'جاري التحضير', label_en: 'Preparing' },
-  ready: { icon: Package, color: 'text-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/30', label_ar: 'جاهز', label_en: 'Ready' },
-  out_for_delivery: { icon: Truck, color: 'text-indigo-600', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', label_ar: 'في الطريق', label_en: 'On the way' },
-  delivered: { icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900/30', label_ar: 'تم التوصيل', label_en: 'Delivered' },
-  cancelled: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/30', label_ar: 'ملغي', label_en: 'Cancelled' },
-  rejected: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/30', label_ar: 'مرفوض', label_en: 'Rejected' },
+  pending: { icon: Clock, color: 'text-[hsl(48_97%_40%)]', bgColor: 'bg-[hsl(48_100%_95%)]', label_ar: 'طلب جديد', label_en: 'New Order' },
+  accepted: { icon: CheckCircle2, color: 'text-[hsl(217_91%_60%)]', bgColor: 'bg-[hsl(217_91%_60%/0.1)]', label_ar: 'تم القبول', label_en: 'Accepted' },
+  preparing: { icon: ChefHat, color: 'text-[hsl(217_91%_60%)]', bgColor: 'bg-[hsl(217_91%_60%/0.1)]', label_ar: 'جاري التحضير', label_en: 'Preparing' },
+  ready: { icon: Package, color: 'text-primary', bgColor: 'bg-[hsl(198_100%_44%/0.1)]', label_ar: 'جاهز', label_en: 'Ready' },
+  out_for_delivery: { icon: Truck, color: 'text-[hsl(217_91%_60%)]', bgColor: 'bg-[hsl(217_91%_60%/0.1)]', label_ar: 'في الطريق', label_en: 'On the way' },
+  delivered: { icon: CheckCircle2, color: 'text-[hsl(142_71%_45%)]', bgColor: 'bg-[hsl(142_76%_95%)]', label_ar: 'تم التوصيل', label_en: 'Delivered' },
+  cancelled: { icon: XCircle, color: 'text-[hsl(0_84%_60%)]', bgColor: 'bg-[hsl(0_86%_97%)]', label_ar: 'ملغي', label_en: 'Cancelled' },
+  rejected: { icon: XCircle, color: 'text-[hsl(0_84%_60%)]', bgColor: 'bg-[hsl(0_86%_97%)]', label_ar: 'مرفوض', label_en: 'Rejected' },
 }
 
 // Status flow for providers
@@ -149,7 +157,7 @@ export default function ProviderOrdersPage() {
   const loadOrders = async (provId: string) => {
     const supabase = createClient()
 
-    // Fetch orders for this provider
+    // Fetch orders with items in a single query using join
     const { data: ordersData, error } = await supabase
       .from('orders')
       .select(`
@@ -164,7 +172,8 @@ export default function ProviderOrdersPage() {
         delivery_address,
         customer_notes,
         created_at,
-        customer:profiles!customer_id(full_name, phone)
+        customer:profiles!customer_id(full_name, phone),
+        order_items(id, item_name_ar, item_name_en, quantity, unit_price, total_price)
       `)
       .eq('provider_id', provId)
       .order('created_at', { ascending: false })
@@ -174,21 +183,12 @@ export default function ProviderOrdersPage() {
       return
     }
 
-    // Fetch order items for each order
-    const ordersWithItems = await Promise.all(
-      (ordersData || []).map(async (order) => {
-        const { data: items } = await supabase
-          .from('order_items')
-          .select('id, item_name_ar, item_name_en, quantity, unit_price, total_price')
-          .eq('order_id', order.id)
-
-        return {
-          ...order,
-          customer: Array.isArray(order.customer) ? order.customer[0] : order.customer,
-          items: items || []
-        }
-      })
-    )
+    // Transform data to expected format
+    const ordersWithItems = (ordersData || []).map((order) => ({
+      ...order,
+      customer: Array.isArray(order.customer) ? order.customer[0] : order.customer,
+      items: order.order_items || []
+    }))
 
     setOrders(ordersWithItems)
   }
@@ -328,10 +328,10 @@ export default function ProviderOrdersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
           </p>
         </div>
@@ -340,14 +340,14 @@ export default function ProviderOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
               href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-400 hover:text-white"
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
             >
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
@@ -360,7 +360,7 @@ export default function ProviderOrdersPage() {
               size="sm"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="text-slate-400 hover:text-white"
+              className="text-slate-500 hover:text-slate-900"
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
@@ -369,49 +369,53 @@ export default function ProviderOrdersPage() {
       </header>
 
       <div className="container mx-auto px-4 py-6">
-        {/* Stats Row */}
+        {/* Stats Row - Using new semantic card backgrounds */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+          {/* New Orders - Warning Yellow */}
+          <div className="bg-[hsl(var(--card-bg-warning))] rounded-xl p-4 border border-warning/20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-yellow-400" />
+              <div className="w-10 h-10 bg-warning/15 rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-[hsl(48_97%_40%)]" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-2xl font-bold">{pendingCount}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'طلبات جديدة' : 'New Orders'}</p>
+                <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{pendingCount}</p>
+                <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات جديدة' : 'New Orders'}</p>
               </div>
             </div>
           </div>
-          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+          {/* In Progress - Blue */}
+          <div className="bg-[hsl(217_91%_60%/0.08)] rounded-xl p-4 border border-[hsl(217_91%_60%/0.2)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <ChefHat className="w-5 h-5 text-blue-400" />
+              <div className="w-10 h-10 bg-[hsl(217_91%_60%/0.15)] rounded-lg flex items-center justify-center">
+                <ChefHat className="w-5 h-5 text-[hsl(217_91%_60%)]" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-2xl font-bold">{activeCount}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</p>
+                <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{activeCount}</p>
+                <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</p>
               </div>
             </div>
           </div>
-          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+          {/* Completed - Success Green */}
+          <div className="bg-[hsl(var(--card-bg-success))] rounded-xl p-4 border border-success/20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-green-400" />
+              <div className="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-success" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-2xl font-bold">{orders.filter(o => o.status === 'delivered').length}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'مكتمل' : 'Completed'}</p>
+                <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{orders.filter(o => o.status === 'delivered').length}</p>
+                <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'مكتمل' : 'Completed'}</p>
               </div>
             </div>
           </div>
-          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+          {/* Total Orders - Primary Blue */}
+          <div className="bg-[hsl(var(--card-bg-primary))] rounded-xl p-4 border border-primary/20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                <ShoppingBag className="w-5 h-5 text-primary" />
+              <div className="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-primary" strokeWidth={1.8} />
               </div>
               <div>
-                <p className="text-2xl font-bold">{orders.length}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
+                <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{orders.length}</p>
+                <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
               </div>
             </div>
           </div>
@@ -423,7 +427,7 @@ export default function ProviderOrdersPage() {
             variant={filter === 'all' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('all')}
-            className={filter !== 'all' ? 'border-slate-600 text-slate-300' : ''}
+            className={filter !== 'all' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'الكل' : 'All'}
             <span className="mx-1 text-xs opacity-70">({orders.length})</span>
@@ -432,11 +436,11 @@ export default function ProviderOrdersPage() {
             variant={filter === 'pending' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('pending')}
-            className={filter !== 'pending' ? 'border-slate-600 text-slate-300' : ''}
+            className={filter !== 'pending' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'جديد' : 'New'}
             {pendingCount > 0 && (
-              <span className="mx-1 bg-yellow-500 text-black text-xs px-1.5 rounded-full">
+              <span className="mx-1 bg-premium text-slate-900 text-xs px-1.5 rounded-full">
                 {pendingCount}
               </span>
             )}
@@ -445,7 +449,7 @@ export default function ProviderOrdersPage() {
             variant={filter === 'active' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('active')}
-            className={filter !== 'active' ? 'border-slate-600 text-slate-300' : ''}
+            className={filter !== 'active' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}
             <span className="mx-1 text-xs opacity-70">({activeCount})</span>
@@ -454,7 +458,7 @@ export default function ProviderOrdersPage() {
             variant={filter === 'completed' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('completed')}
-            className={filter !== 'completed' ? 'border-slate-600 text-slate-300' : ''}
+            className={filter !== 'completed' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'مكتمل' : 'Completed'}
           </Button>
@@ -462,7 +466,7 @@ export default function ProviderOrdersPage() {
             variant={filter === 'cancelled' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('cancelled')}
-            className={filter !== 'cancelled' ? 'border-slate-600 text-slate-300' : ''}
+            className={filter !== 'cancelled' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'ملغي' : 'Cancelled'}
           </Button>
@@ -471,7 +475,7 @@ export default function ProviderOrdersPage() {
         {/* Orders List */}
         {filteredOrders.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
               <ShoppingBag className="w-10 h-10 text-slate-500" />
             </div>
             <h2 className="text-xl font-semibold mb-2">
@@ -499,10 +503,10 @@ export default function ProviderOrdersPage() {
               const isLoading = actionLoading === order.id
 
               return (
-                <Card key={order.id} className="bg-slate-800 border-slate-700 overflow-hidden">
+                <Card key={order.id} className="bg-white border-slate-200 overflow-hidden">
                   <CardContent className="p-0">
                     {/* Order Header */}
-                    <div className={`p-4 border-b border-slate-700 ${order.status === 'pending' ? 'bg-yellow-500/10' : ''}`}>
+                    <div className={`p-4 border-b border-slate-200 ${order.status === 'pending' ? 'bg-[hsl(42_100%_70%/0.1)]' : ''}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <span className="font-mono font-bold text-primary text-lg">
@@ -513,13 +517,13 @@ export default function ProviderOrdersPage() {
                             {locale === 'ar' ? statusConfig.label_ar : statusConfig.label_en}
                           </div>
                         </div>
-                        <div className="text-sm text-slate-400">
+                        <div className="text-sm text-slate-500">
                           {getTimeSince(order.created_at)}
                         </div>
                       </div>
 
                       {/* Customer Info */}
-                      <div className="flex items-center gap-4 text-sm text-slate-300">
+                      <div className="flex items-center gap-4 text-sm text-slate-600">
                         <div className="flex items-center gap-1.5">
                           <User className="w-4 h-4 text-slate-500" />
                           {order.delivery_address?.full_name || order.customer?.full_name || 'N/A'}
@@ -535,14 +539,14 @@ export default function ProviderOrdersPage() {
                     </div>
 
                     {/* Order Items */}
-                    <div className="p-4 border-b border-slate-700">
+                    <div className="p-4 border-b border-slate-200">
                       <div className="space-y-2">
                         {order.items.slice(0, 3).map((item) => (
                           <div key={item.id} className="flex justify-between text-sm">
-                            <span className="text-slate-300">
+                            <span className="text-slate-600">
                               {item.quantity}x {locale === 'ar' ? item.item_name_ar : item.item_name_en}
                             </span>
-                            <span className="text-slate-400">
+                            <span className="text-slate-500">
                               {item.total_price.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                             </span>
                           </div>
@@ -554,18 +558,18 @@ export default function ProviderOrdersPage() {
                         )}
                       </div>
                       {order.customer_notes && (
-                        <div className="mt-3 p-2 bg-slate-700/50 rounded text-sm">
+                        <div className="mt-3 p-2 bg-slate-50 rounded text-sm">
                           <span className="text-slate-500">{locale === 'ar' ? 'ملاحظات:' : 'Notes:'}</span>{' '}
-                          <span className="text-slate-300">{order.customer_notes}</span>
+                          <span className="text-slate-600">{order.customer_notes}</span>
                         </div>
                       )}
                     </div>
 
                     {/* Delivery Address */}
-                    <div className="p-4 border-b border-slate-700 bg-slate-800/50">
+                    <div className="p-4 border-b border-slate-200 bg-white/80">
                       <div className="flex items-start gap-2 text-sm">
                         <MapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-slate-300">{order.delivery_address?.address}</span>
+                        <span className="text-slate-600">{order.delivery_address?.address}</span>
                       </div>
                       {order.delivery_address?.notes && (
                         <p className="text-xs text-slate-500 mt-1 mr-6">
@@ -640,7 +644,7 @@ export default function ProviderOrdersPage() {
 
                         {['delivered', 'cancelled', 'rejected'].includes(order.status) && (
                           <Link href={`/${locale}/provider/orders/${order.id}`}>
-                            <Button variant="outline" size="sm" className="border-slate-600">
+                            <Button variant="outline" size="sm" className="border-slate-300">
                               {locale === 'ar' ? 'التفاصيل' : 'Details'}
                               {isRTL ? <ChevronLeft className="w-4 h-4 mr-1" /> : <ChevronRight className="w-4 h-4 ml-1" />}
                             </Button>

@@ -164,7 +164,7 @@ export default function GovernoratePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50">
         <Header showBack backHref={`/${locale}/profile`} />
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -174,14 +174,14 @@ export default function GovernoratePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       <Header showBack backHref={`/${locale}/profile`} backLabel={t('title')} />
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
           {t('title')}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-gray-600 mb-6">
           {t('description')}
         </p>
 
@@ -252,7 +252,7 @@ export default function GovernoratePage() {
 
                 {/* Message */}
                 {message && (
-                  <div className={`flex items-center gap-2 text-sm ${message.type === 'success' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'} p-3 rounded-lg`}>
+                  <div className={`flex items-center gap-2 text-sm ${message.type === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'} p-3 rounded-lg`}>
                     {message.type === 'success' && <Check className="w-4 h-4" />}
                     <span>{message.text}</span>
                   </div>

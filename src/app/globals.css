@@ -5,137 +5,138 @@
 /**
  * Engezna Brand Color System
  * Based on Brand Identity Guide v1.0
- * Last Updated: November 23, 2025
+ * Last Updated: November 27, 2025
+ *
+ * Primary Color: #009DE0 (Engezna Blue)
  */
 
 @layer base {
   :root {
-    /* PRIMARY BRAND COLORS */
-    --primary: 23 97% 46%;            /* #E85D04 Orange Primary */
-    --primary-light: 23 97% 56%;      /* Lighter Orange */
-    --primary-dark: 23 97% 36%;       /* Darker Orange */
-    --primary-foreground: 0 0% 100%;  /* White */
+    /* PRIMARY BRAND COLORS - Engezna Blue */
+    --primary: 198 100% 44%;            /* #009DE0 Engezna Blue */
+    --primary-light: 198 100% 54%;      /* Lighter Blue */
+    --primary-dark: 198 100% 34%;       /* Darker Blue */
+    --primary-foreground: 0 0% 100%;    /* White */
 
-    --secondary: 0 0% 0%;             /* #000000 Black */
+    --secondary: 0 0% 0%;               /* #000000 Black */
     --secondary-foreground: 0 0% 100%;
 
-    /* ACCENT COLORS */
-    --orange: 16 100% 60%;            /* #FF6B35 Deals */
-    --gold: 41 98% 57%;               /* #FDB927 Premium (UPDATED) */
-    --blue: 207 90% 54%;              /* #2196F3 Info */
+    /* ACCENT COLORS - Harmonized with #009DE0 */
+    --deal: 158 100% 38%;               /* #00C27A Green-Cyan (Deals/Discounts) */
+    --premium: 42 100% 70%;             /* #FFD166 Soft Gold (Premium/Highlight) */
+    --info: 198 100% 44%;               /* Same as Primary - Engezna Blue */
+    --in-progress: 217 91% 60%;         /* #3B82F6 Blue for in-progress states */
 
-    /* SYSTEM COLORS */
-    --success: 23 97% 46%;            /* Same as primary */
-    --error: 4 90% 58%;               /* #F44336 */
-    --warning: 36 100% 50%;           /* #FF9800 */
-    --info: 207 90% 54%;              /* Same as blue */
+    /* SEMANTIC COLORS - Professional Dashboard Standards */
+    --success: 142 71% 45%;             /* #22C55E Green - Completed/Success */
+    --error: 0 84% 60%;                 /* #EF4444 Red - Errors/Cancelled */
+    --warning: 48 97% 53%;              /* #FACC15 Yellow - Warnings/Pending */
+
+    /* CONTRAST SYSTEM - Text Hierarchy */
+    --text-primary: 222 47% 11%;        /* #0F172A Main text - highest contrast */
+    --text-secondary: 215 16% 47%;      /* #475569 Secondary text */
+    --text-muted: 215 16% 65%;          /* #94A3B8 Muted/disabled text */
 
     /* NEUTRAL TONES (Light Mode) */
-    --background: 0 0% 100%;          /* White */
-    --foreground: 0 0% 10%;           /* Charcoal */
-    --muted: 0 0% 96%;                /* Off White */
-    --muted-foreground: 0 0% 45%;
-    --border: 0 0% 88%;               /* Light Gray (UPDATED) */
-    --input: 0 0% 88%;
-    --ring: 23 97% 46%;
+    --background: 0 0% 100%;            /* White */
+    --foreground: 222 47% 11%;          /* #0F172A - Updated for better contrast */
+    --muted: 210 40% 96%;               /* #F1F5F9 - Slightly blue-tinted */
+    --muted-foreground: 215 16% 47%;    /* #475569 */
+    --border: 214 32% 91%;              /* #E2E8F0 Slate border */
+    --input: 214 32% 91%;               /* #E2E8F0 */
+    --ring: 198 100% 44%;               /* Engezna Blue */
+
+    /* LIGHT BACKGROUNDS FOR CARDS */
+    --card-bg-primary: 198 100% 97%;    /* Blue 10% - #E0F4FF */
+    --card-bg-success: 142 76% 95%;     /* Green 10% - #DCFCE7 */
+    --card-bg-info: 198 100% 97%;       /* Cyan 10% - #E0F4FF */
+    --card-bg-warning: 48 100% 95%;     /* Yellow 10% - #FEF9C3 */
+    --card-bg-error: 0 86% 97%;         /* Red 10% - #FEF2F2 */
 
     /* CARD & POPOVER */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 222 47% 11%;     /* Updated */
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 222 47% 11%;  /* Updated */
 
     /* ACCENT & DESTRUCTIVE */
-    --accent: 23 97% 46%;
+    --accent: 198 100% 44%;             /* Engezna Blue */
     --accent-foreground: 0 0% 100%;
-    --destructive: 4 90% 58%;
+    --destructive: 0 84% 60%;           /* #EF4444 Red */
     --destructive-foreground: 0 0% 100%;
 
     /* CHART COLORS */
-    --chart-1: 23 97% 46%;
-    --chart-2: 207 90% 54%;
-    --chart-3: 16 100% 60%;
-    --chart-4: 41 98% 57%;
-    --chart-5: 280 65% 60%;
+    --chart-1: 198 100% 44%;            /* Engezna Blue */
+    --chart-2: 217 91% 60%;             /* Blue #3B82F6 */
+    --chart-3: 142 71% 45%;             /* Green #22C55E */
+    --chart-4: 48 97% 53%;              /* Yellow #FACC15 */
+    --chart-5: 280 65% 60%;             /* Purple */
 
     /* UTILITY */
-    --radius: 0.5rem;                 /* UPDATED from 0.75rem */
+    --radius: 0.5rem;
   }
 
-  /* DARK MODE */
-  .dark {
-    --background: 0 0% 0%;            /* Black */
-    --foreground: 0 0% 88%;           /* Light Gray */
-
-    --primary: 23 97% 46%;
-    --primary-light: 23 97% 56%;
-    --primary-dark: 23 97% 36%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 100%;
-
-    --orange: 16 100% 60%;
-    --gold: 41 98% 57%;               /* UPDATED */
-    --blue: 207 90% 54%;
-
-    --success: 23 97% 46%;
-    --error: 4 90% 58%;
-    --warning: 36 100% 50%;
-    --info: 207 90% 54%;
-
-    --accent: 23 97% 46%;
-    --accent-foreground: 0 0% 100%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 65%;
-
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 95%;
-
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 95%;
-
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 23 97% 46%;
-
-    --destructive: 4 90% 58%;
-    --destructive-foreground: 0 0% 100%;
-  }
 }
 
 /* UTILITY CLASSES */
 @layer utilities {
-  /* Backgrounds */
+  /* Backgrounds - Primary */
   .bg-primary { background-color: hsl(var(--primary)); }
-  .bg-orange-accent { background-color: hsl(var(--orange)); }
-  .bg-gold { background-color: hsl(var(--gold)); }
-  .bg-blue { background-color: hsl(var(--blue)); }
+  .bg-deal { background-color: hsl(var(--deal)); }
+  .bg-premium { background-color: hsl(var(--premium)); }
+  .bg-info { background-color: hsl(var(--info)); }
+  .bg-error { background-color: hsl(var(--error)); }
+  .bg-success { background-color: hsl(var(--success)); }
+  .bg-warning { background-color: hsl(var(--warning)); }
+  .bg-in-progress { background-color: hsl(var(--in-progress)); }
 
-  /* Text Colors */
+  /* Backgrounds - Card Tints (10% opacity) */
+  .bg-card-primary { background-color: hsl(var(--card-bg-primary)); }
+  .bg-card-success { background-color: hsl(var(--card-bg-success)); }
+  .bg-card-info { background-color: hsl(var(--card-bg-info)); }
+  .bg-card-warning { background-color: hsl(var(--card-bg-warning)); }
+  .bg-card-error { background-color: hsl(var(--card-bg-error)); }
+
+  /* Text Colors - Brand */
   .text-primary { color: hsl(var(--primary)); }
-  .text-orange-accent { color: hsl(var(--orange)); }
-  .text-gold { color: hsl(var(--gold)); }
-  .text-blue { color: hsl(var(--blue)); }
+  .text-deal { color: hsl(var(--deal)); }
+  .text-premium { color: hsl(var(--premium)); }
+  .text-info { color: hsl(var(--info)); }
   .text-error { color: hsl(var(--error)); }
   .text-success { color: hsl(var(--success)); }
+  .text-warning { color: hsl(var(--warning)); }
+  .text-in-progress { color: hsl(var(--in-progress)); }
 
-  /* Legacy naming support */
+  /* Text Colors - Hierarchy */
+  .text-body { color: hsl(var(--text-primary)); }
+  .text-secondary-text { color: hsl(var(--text-secondary)); }
+  .text-muted-text { color: hsl(var(--text-muted)); }
+
+  /* Legacy naming support - DEPRECATED (use new names) */
   .text-brand-orange { color: hsl(var(--primary)); }
-  .text-brand-orange-accent { color: hsl(var(--orange)); }
-  .text-brand-gold { color: hsl(var(--gold)); }
-  .text-brand-blue { color: hsl(var(--blue)); }
+  .text-brand-orange-accent { color: hsl(var(--deal)); }
+  .text-brand-gold { color: hsl(var(--premium)); }
+  .text-brand-blue { color: hsl(var(--info)); }
+  .text-orange-accent { color: hsl(var(--deal)); }
+  .text-gold { color: hsl(var(--premium)); }
+  .text-blue { color: hsl(var(--info)); }
 
   .bg-brand-orange { background-color: hsl(var(--primary)); }
-  .bg-brand-orange-accent { background-color: hsl(var(--orange)); }
-  .bg-brand-gold { background-color: hsl(var(--gold)); }
-  .bg-brand-blue { background-color: hsl(var(--blue)); }
+  .bg-brand-orange-accent { background-color: hsl(var(--deal)); }
+  .bg-brand-gold { background-color: hsl(var(--premium)); }
+  .bg-brand-blue { background-color: hsl(var(--info)); }
+  .bg-orange-accent { background-color: hsl(var(--deal)); }
+  .bg-gold { background-color: hsl(var(--premium)); }
+  .bg-blue { background-color: hsl(var(--info)); }
 
   /* Border Colors */
   .border-primary { border-color: hsl(var(--primary)); }
-  .border-orange-accent { border-color: hsl(var(--orange)); }
+  .border-deal { border-color: hsl(var(--deal)); }
+  .border-success { border-color: hsl(var(--success)); }
+  .border-error { border-color: hsl(var(--error)); }
+  .border-warning { border-color: hsl(var(--warning)); }
   .border-brand-orange { border-color: hsl(var(--primary)); }
+  .border-orange-accent { border-color: hsl(var(--deal)); }
 }
 
 /* GRADIENTS */
@@ -144,28 +145,16 @@
     background: linear-gradient(
       135deg,
       hsl(0 0% 100%) 0%,
-      hsl(23 97% 97%) 25%,
-      hsl(23 97% 90%) 50%,
+      hsl(198 100% 96%) 25%,
+      hsl(198 100% 90%) 50%,
       hsl(var(--primary)) 100%
     );
   }
 
-  .gradient-hero-dark {
-    background: linear-gradient(
-      135deg,
-      hsl(0 0% 0%) 0%,
-      hsl(23 97% 8%) 50%,
-      hsl(23 97% 25%) 100%
-    );
-  }
-
   .gradient-brand {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(23 97% 56%) 100%);
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(198 100% 54%) 100%);
   }
 
-  .gradient-brand-dark {
-    background: linear-gradient(135deg, hsl(var(--primary-dark)) 0%, hsl(var(--primary)) 100%);
-  }
 }
 
 /* SEMANTIC COMPONENTS */
@@ -179,13 +168,14 @@
     background-color: hsl(var(--primary-light));
   }
 
-  .badge-discount {
-    background-color: hsl(var(--orange));
+  .badge-discount,
+  .badge-deal {
+    background-color: hsl(var(--deal));
     color: white;
   }
 
   .badge-premium {
-    background-color: hsl(var(--gold));
+    background-color: hsl(var(--premium));
     color: black;
   }
 
@@ -296,9 +286,8 @@ html.no-transition * {
 /*
  * ACCESSIBILITY NOTES
  *
- * WCAG 2.1 AA Contrast Ratios:
- * - White on Orange Primary: 5.2:1 ✓ AA
- * - Charcoal on White: 15.8:1 ✓ AAA
- * - Orange Primary on White: 4.1:1 ✓ AA (large text only)
- * - Black on White: 21:1 ✓ AAA
+ * WCAG 2.1 AA Contrast Ratios for Engezna Blue (#009DE0):
+ * - White on Primary Blue: ~3:1 (use for large text & buttons)
+ * - Primary Blue on Black: ~6.9:1 (AA for body text)
+ * - Black on White: 21:1 (AAA)
  */

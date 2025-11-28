@@ -4,7 +4,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/shared/ThemeToggle'
+import { CustomerNavbar } from '@/components/shared/CustomerNavbar'
 import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
 import {
   UtensilsCrossed,
@@ -16,15 +16,13 @@ import {
   MapPin,
   Smartphone,
   ChevronRight,
-  LogOut,
-  User as UserIcon,
   LayoutDashboard,
   Store,
   Shield,
   Users,
   BarChart3,
   Settings,
-  ShoppingBag,
+  Globe,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
@@ -44,6 +42,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null)
   const [userRole, setUserRole] = useState<UserRole>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
   console.log('🌍 Locale:', locale, 'RTL:', isRTL)
 
@@ -137,112 +136,202 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Header */}
-      <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <div className="text-3xl font-bold text-primary">
+      <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo - Right side in RTL */}
+            <Link href={`/${locale}`} className="flex items-center">
+              <span className="text-2xl font-bold text-primary font-arabic">
                 {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-              </div>
-            </div>
+              </span>
+            </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
-              <a href="#services" className="text-sm font-medium hover:text-primary transition-colors">
+            {/* Desktop Navigation - Center */}
+            <nav className="hidden md:flex items-center gap-8">
+              <Link
+                href={`/${locale}`}
+                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+              >
+                {navT('home')}
+              </Link>
+              <a
+                href="#services"
+                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+              >
                 {navT('services')}
               </a>
-              <a href="#about" className="text-sm font-medium hover:text-primary transition-colors">
+              <a
+                href="#about"
+                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+              >
                 {navT('about')}
               </a>
-              <a href="#contact" className="text-sm font-medium hover:text-primary transition-colors">
+              <a
+                href="#contact"
+                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+              >
                 {navT('contact')}
               </a>
             </nav>
 
-            {/* Actions */}
+            {/* Actions - Left side in RTL */}
             <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <LanguageSwitcher />
-              
               {/* Auth Section */}
               {authLoading ? (
-                <div className="w-20 h-8 bg-muted animate-pulse rounded" />
+                <div className="hidden md:block w-24 h-9 bg-gray-100 animate-pulse rounded-lg" />
               ) : user ? (
-                <div className="flex items-center gap-2">
-                  {/* My Orders Link - Only for customers */}
-                  {isCustomer && (
-                    <Link href={`/${locale}/orders`}>
-                      <Button variant="ghost" size="sm" className="relative">
-                        <ShoppingBag className="w-4 h-4" />
-                        <span className="hidden sm:inline ml-1">
-                          {locale === 'ar' ? 'طلباتي' : 'Orders'}
-                        </span>
+                <div className="hidden md:flex items-center gap-3">
+                  {/* Role-based Navigation Button */}
+                  {(isProvider || isAdmin) && (
+                    <Link href={getDashboardLink()}>
+                      <Button
+                        size="sm"
+                        className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
+                      >
+                        {getHeaderButtonIcon()}
+                        {getHeaderButtonText()}
                       </Button>
                     </Link>
                   )}
-                  
-                  {/* User Info - Hidden on mobile - Clickable to go to profile */}
-                  <Link href={`/${locale}/profile`}>
-                    <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2 text-sm">
-                      <UserIcon className="w-4 h-4" />
-                      <span className="text-muted-foreground max-w-[100px] truncate">
-                        {user.email?.split('@')[0]}
-                      </span>
-                      {/* Role Badge */}
-                      {(isProvider || isAdmin) && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          isAdmin
-                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                            : 'bg-primary/10 text-primary'
-                        }`}>
-                          {isAdmin
-                            ? (locale === 'ar' ? 'مسؤول' : 'Admin')
-                            : (locale === 'ar' ? 'شريك' : 'Partner')
-                          }
-                        </span>
-                      )}
-                    </Button>
-                  </Link>
-                  
-                  {/* Sign Out Button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSignOut}
-                    className="flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span className="hidden sm:inline">
-                      {navT('logout') || (locale === 'ar' ? 'خروج' : 'Sign Out')}
-                    </span>
-                    <span className="sm:hidden">
-                      {locale === 'ar' ? 'خروج' : 'Out'}
-                    </span>
-                  </Button>
-                  
-                  {/* Role-based Navigation Button */}
-                  <Link href={getDashboardLink()}>
-                    <Button variant="default" size="sm" className="hidden sm:flex items-center">
-                      {getHeaderButtonIcon()}
-                      {getHeaderButtonText()}
+
+                  {/* Profile Link - Routes to provider settings for providers, profile for customers */}
+                  <Link href={isProvider ? `/${locale}/provider/settings` : `/${locale}/profile`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-2 text-gray-700 hover:text-primary hover:bg-gray-100"
+                    >
+                      {locale === 'ar' ? 'حسابي' : 'My Account'}
                     </Button>
                   </Link>
                 </div>
               ) : (
-                <Link href={`/${locale}/auth/login`}>
-                  <Button variant="default" size="sm" className="flex">
+                <Link href={`/${locale}/auth/login`} className="hidden md:block">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-primary text-primary hover:bg-primary hover:text-white"
+                  >
                     {navT('login')}
                   </Button>
                 </Link>
               )}
+
+              {/* Separator */}
+              <div className="hidden md:block w-px h-6 bg-gray-200" />
+
+              {/* Language Switcher */}
+              <LanguageSwitcher variant="compact" />
+
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? (
+                  <span className="text-lg">✕</span>
+                ) : (
+                  <span className="text-lg">☰</span>
+                )}
+              </Button>
             </div>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t py-4 space-y-4">
+              {/* Navigation Links */}
+              <nav className="flex flex-col gap-2">
+                <Link
+                  href={`/${locale}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
+                >
+                  {navT('home')}
+                </Link>
+                <a
+                  href="#services"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
+                >
+                  {navT('services')}
+                </a>
+                <a
+                  href="#about"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
+                >
+                  {navT('about')}
+                </a>
+                <a
+                  href="#contact"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
+                >
+                  {navT('contact')}
+                </a>
+              </nav>
+
+              {/* Auth Section - Mobile */}
+              <div className="border-t pt-4 px-4">
+                {authLoading ? (
+                  <div className="w-full h-10 bg-gray-100 animate-pulse rounded-lg" />
+                ) : user ? (
+                  <div className="space-y-2">
+                    {(isProvider || isAdmin) && (
+                      <Link href={getDashboardLink()}>
+                        <Button
+                          className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          {getHeaderButtonIcon()}
+                          {getHeaderButtonText()}
+                        </Button>
+                      </Link>
+                    )}
+                    <Link
+                      href={`/${locale}/profile`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-bold text-primary">
+                          {user.email?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="font-medium">{user.email?.split('@')[0]}</span>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                      onClick={() => {
+                        handleSignOut()
+                        setMobileMenuOpen(false)
+                      }}
+                    >
+                      {navT('logout')}
+                    </Button>
+                  </div>
+                ) : (
+                  <Link href={`/${locale}/auth/login`}>
+                    <Button
+                      className="w-full bg-primary hover:bg-primary/90"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {navT('login')}
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Hero Section - Different for each role */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-primary/5">
+      <section className="relative overflow-hidden bg-white">
         <div className="container mx-auto px-4 py-20 md:py-32">
           <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
             {/* Coming Soon Badge */}
@@ -253,7 +342,7 @@ export default function Home() {
             {/* Main Heading - Role-specific for Admin */}
             {isAdmin ? (
               <>
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 bg-clip-text text-transparent">
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-cyan-500 to-sky-500 bg-clip-text text-transparent">
                   {locale === 'ar' ? 'لوحة إدارة إنجزنا' : 'Engezna Admin Panel'}
                 </h1>
                 <p className="text-xl md:text-2xl text-muted-foreground mb-4">
@@ -347,50 +436,52 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Decorative Elements */}
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-          <div className={`absolute top-20 left-10 w-64 h-64 ${isAdmin ? 'bg-red-500/10' : 'bg-primary/10'} rounded-full blur-3xl`}></div>
-          <div className={`absolute bottom-20 right-10 w-96 h-96 ${isAdmin ? 'bg-red-500/5' : 'bg-primary/5'} rounded-full blur-3xl`}></div>
-        </div>
+        {/* Decorative Elements - Only visible for Admin */}
+        {isAdmin && (
+          <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+            <div className="absolute top-20 left-10 w-64 h-64 bg-red-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-20 right-10 w-96 h-96 bg-red-500/5 rounded-full blur-3xl"></div>
+          </div>
+        )}
       </section>
 
       {/* Admin Quick Stats Section - Only for Admin */}
       {isAdmin && (
-        <section className="py-12 bg-slate-900 text-white">
+        <section className="py-12 bg-gradient-to-br from-red-50 to-slate-50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">
+              <h2 className="text-2xl md:text-3xl font-bold mb-2 text-slate-900">
                 {locale === 'ar' ? 'نظرة سريعة على المنصة' : 'Platform Overview'}
               </h2>
-              <p className="text-slate-400">
+              <p className="text-slate-600">
                 {locale === 'ar' ? 'إحصائيات سريعة عن أداء المنصة' : 'Quick stats about platform performance'}
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700">
-                <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold">0</div>
-                <div className="text-sm text-slate-400">{locale === 'ar' ? 'المستخدمين' : 'Users'}</div>
+              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
+                <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-slate-900">0</div>
+                <div className="text-sm text-slate-500">{locale === 'ar' ? 'المستخدمين' : 'Users'}</div>
               </div>
-              <div className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700">
-                <Store className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold">4</div>
-                <div className="text-sm text-slate-400">{locale === 'ar' ? 'المتاجر' : 'Stores'}</div>
+              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
+                <Store className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-slate-900">4</div>
+                <div className="text-sm text-slate-500">{locale === 'ar' ? 'المتاجر' : 'Stores'}</div>
               </div>
-              <div className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700">
-                <ShoppingBasket className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold">0</div>
-                <div className="text-sm text-slate-400">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
+              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
+                <ShoppingBasket className="w-8 h-8 text-cyan-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-slate-900">0</div>
+                <div className="text-sm text-slate-500">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
               </div>
-              <div className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700">
-                <BarChart3 className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold">0 EGP</div>
-                <div className="text-sm text-slate-400">{locale === 'ar' ? 'الإيرادات' : 'Revenue'}</div>
+              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
+                <BarChart3 className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-slate-900">0 EGP</div>
+                <div className="text-sm text-slate-500">{locale === 'ar' ? 'الإيرادات' : 'Revenue'}</div>
               </div>
             </div>
             <div className="text-center mt-6">
               <Link href={`/${locale}/admin`}>
-                <Button variant="outline" className="border-slate-600 text-white hover:bg-slate-800">
+                <Button variant="default" className="bg-red-600 hover:bg-red-700 text-white">
                   {locale === 'ar' ? 'عرض التفاصيل' : 'View Details'}
                   <ChevronRight className={`${isRTL ? 'mr-2 rotate-180' : 'ml-2'} h-4 w-4`} />
                 </Button>
@@ -402,32 +493,32 @@ export default function Home() {
 
       {/* Provider Quick Actions - Only for Providers */}
       {isProvider && (
-        <section className="py-12 bg-slate-900 text-white">
+        <section className="py-12 bg-gradient-to-br from-primary/5 to-slate-50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">
+              <h2 className="text-2xl md:text-3xl font-bold mb-2 text-slate-900">
                 {locale === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}
               </h2>
-              <p className="text-slate-400">
+              <p className="text-slate-600">
                 {locale === 'ar' ? 'الوصول السريع لأهم الوظائف' : 'Quick access to important functions'}
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Link href={`/${locale}/provider`} className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700 hover:bg-slate-700 transition-colors">
+              <Link href={`/${locale}/provider`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
                 <LayoutDashboard className="w-8 h-8 text-primary mx-auto mb-2" />
-                <div className="font-medium">{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</div>
+                <div className="font-medium text-slate-900">{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</div>
               </Link>
-              <Link href={`/${locale}/provider`} className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700 hover:bg-slate-700 transition-colors">
-                <ShoppingBasket className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                <div className="font-medium">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
+              <Link href={`/${locale}/provider/orders`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
+                <ShoppingBasket className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <div className="font-medium text-slate-900">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
               </Link>
-              <Link href={`/${locale}/provider`} className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700 hover:bg-slate-700 transition-colors">
-                <Store className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                <div className="font-medium">{locale === 'ar' ? 'المنتجات' : 'Products'}</div>
+              <Link href={`/${locale}/provider/products`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
+                <Store className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <div className="font-medium text-slate-900">{locale === 'ar' ? 'المنتجات' : 'Products'}</div>
               </Link>
-              <Link href={`/${locale}/provider`} className="bg-slate-800 rounded-xl p-6 text-center border border-slate-700 hover:bg-slate-700 transition-colors">
-                <Settings className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                <div className="font-medium">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</div>
+              <Link href={`/${locale}/provider/settings`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
+                <Settings className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+                <div className="font-medium text-slate-900">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</div>
               </Link>
             </div>
           </div>

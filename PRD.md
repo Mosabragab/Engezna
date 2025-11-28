@@ -564,35 +564,39 @@ reviews (
   - `size`: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
   - Fully responsive and theme-aware
 
-#### **Color Scheme** ✅ IMPLEMENTED (Brand Identity Guide v1.0)
-- **Primary:** Orange (#E85D04) 🧡
-  - Represents: Energy, warmth, action, "Let's get it done!"
+#### **Color Scheme** ✅ IMPLEMENTED (Brand Identity Guide v2.0)
+- **Primary:** Engezna Blue (#009DE0) 💙
+  - Represents: Trust, professionalism, clarity, reliability
   - Used for: CTAs, highlights, active states, brand elements
-  - HSL: `23 97% 46%`
-- **Gold:** (#FDB927) ✨
-  - Represents: Premium quality, excellence
-  - Used for: Accents, premium features, highlights
-  - HSL: `41 98% 57%`
+  - HSL: `198 100% 44%`
 - **Secondary:** Black (#000000)
   - Represents: Professional, elegant, modern
-  - Used for: Text, borders, backgrounds (dark mode)
+  - Used for: Text, borders
 - **Accent:** White (#FFFFFF)
   - Represents: Clean, minimal, spacious
-  - Used for: Backgrounds (light mode), text on dark
-- **Design Tokens:** Configured in `tailwind.config.ts`
-  - Orange (#E85D04) as primary color throughout
-  - Gold (#FDB927) for premium accents
-  - Black/white contrast system
-  - Dark mode using inverted black/white scheme
+  - Used for: Backgrounds, text on primary
+- **Semantic Colors:**
+  - Deals/Success: Green-Cyan (#00C27A)
+  - Premium/Warning: Soft Gold (#FFD166)
+  - Info: Sky Blue (#36C5F0)
+  - Error: Coral Red (#FF5A5F)
+- **Theme Strategy:** Light-Only (No Dark Mode)
+  - Simplified CSS with single-mode color tokens
+  - Consistent brand experience across all screens
+  - Removed `next-themes` dark mode provider
+- **Design Tokens:** Configured in `tailwind.config.ts` and `globals.css`
+  - Engezna Blue (#009DE0) as primary color throughout
   - RTL-aware spacing and layout
 - **Implementation:**
-  - Logo uses primary orange
-  - Gradient backgrounds: white → orange → white
-  - CTA buttons: Orange with white text
-  - All shadcn/ui components themed with orange accent
-  - Gold used for ratings and premium features
+  - Logo uses primary blue
+  - Gradient backgrounds: white → light blue → primary blue
+  - CTA buttons: Blue with white text
+  - All shadcn/ui components themed with blue accent
 
-**⚠️ IMPORTANT:** Previous documentation incorrectly listed Deep Green (#06c769) as primary color. The official brand colors per Brand Identity Guide v1.0 are Orange (#E85D04) and Gold (#FDB927).
+**⚠️ Brand Color History:**
+- v1.0: Deep Green (#06c769) - Changed
+- v1.5: Orange (#E85D04) - Changed
+- v2.0 (Current): Engezna Blue (#009DE0)
 
 #### **Typography** ✅ IMPLEMENTED
 - **Arabic:** Noto Sans Arabic (Variable Font) ✅
@@ -625,15 +629,17 @@ reviews (
    - Theme-aware (light/dark mode)
    - Fully typed with TypeScript
 
-2. **ThemeToggle** (`/components/shared/ThemeToggle.tsx`)
-   - Sun/Moon icon toggle
-   - Smooth transitions
-   - Persists preference via localStorage
+2. **Header** (`/components/shared/Header.tsx`) ✅ NEW
+   - Sticky navigation bar
+   - Role-aware (customer/provider detection)
+   - Active orders badge with real-time count
+   - Ghost button navigation items
+   - Logout with red variant styling
 
-3. **ThemeProvider** (`/components/shared/ThemeProvider.tsx`)
-   - Wraps app with next-themes
-   - Provides dark mode context
-   - System preference detection
+3. **Navigation Components** ✅ UPDATED
+   - Light-only theme (dark mode removed)
+   - Hover dropdown menus with no-gap fix
+   - RTL-aware arrow icons
 
 4. **LanguageSwitcher** (`/components/shared/LanguageSwitcher.tsx`)
    - Dropdown for Arabic/English
@@ -1531,6 +1537,34 @@ engezna/
     - Updated claude.md (v16.0) with "What's NOT Working" section
     - Updated README.md with Week 3 complete status
     - Updated PRD.md (v3.0) with full progress
+  - **Next Priority:** Admin panel, payment integration
+- **v3.1** - November 27, 2025 - Brand Identity Refresh & Navigation Standards
+  - **Status:** Brand Documentation Update
+  - **Brand Identity Changes:**
+    - ✅ Updated brand color from Orange (#E85D04) to Engezna Blue (#009DE0)
+    - ✅ Removed dark mode - Light-only theme for consistent brand experience
+    - ✅ New navigation bars for customer and provider interfaces
+    - ✅ Fixed hover dropdown menu gap issues
+    - ✅ Improved button visibility and hover states
+  - **Documentation Updates:**
+    - ✅ Updated BRAND_IDENTITY_GUIDE.md (v2.0) with:
+      - Navigation bar standards
+      - UI/UX design standards
+      - Lessons learned & anti-patterns
+      - Light-only theme decision
+    - ✅ Updated BRAND_IMPLEMENTATION_GUIDE.md (v2.0) with:
+      - Navigation bar implementation code
+      - Hover states & dropdown menu fixes
+      - Testing checklist
+    - ✅ Updated engezna-theme.css (v2.0) with navigation styles
+    - ✅ Updated README.md with new brand colors
+    - ✅ Updated PRD.md with brand refresh info
+    - ✅ Updated claude.md with current brand standards
+  - **Lessons Learned (Documented):**
+    - Dropdown menu gap issue causes hover to fail
+    - Ghost buttons need explicit hover backgrounds
+    - RTL arrows need dynamic swapping
+    - Light-only theme simplifies development
   - **Next Priority:** Admin panel, payment integration
 
 ---

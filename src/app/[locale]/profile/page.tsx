@@ -53,7 +53,7 @@ export default function SettingsPage() {
   // Loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50">
         <Header showBack backHref={`/${locale}`} />
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -67,46 +67,46 @@ export default function SettingsPage() {
       icon: User,
       label: t('menu.account'),
       href: `/${locale}/profile/account`,
-      color: 'text-blue-600 dark:text-blue-400',
+      color: 'text-blue-600',
     },
     {
       icon: MapPin,
       label: t('menu.addresses'),
       href: `/${locale}/profile/addresses`,
-      color: 'text-green-600 dark:text-green-400',
+      color: 'text-green-600',
     },
     {
       icon: Mail,
       label: t('menu.email'),
       href: `/${locale}/profile/email`,
-      color: 'text-purple-600 dark:text-purple-400',
+      color: 'text-purple-600',
     },
     {
       icon: Lock,
       label: t('menu.password'),
       href: `/${locale}/profile/password`,
-      color: 'text-red-600 dark:text-red-400',
+      color: 'text-red-600',
     },
     {
       icon: Globe,
       label: t('menu.language'),
       href: `/${locale}/profile/language`,
-      color: 'text-indigo-600 dark:text-indigo-400',
+      color: 'text-indigo-600',
     },
     {
       icon: MapPinned,
       label: t('menu.governorate'),
       href: `/${locale}/profile/governorate`,
-      color: 'text-orange-600 dark:text-orange-400',
+      color: 'text-cyan-600',
     },
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       <Header showBack backHref={`/${locale}`} />
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">
           {t('title')}
         </h1>
 
@@ -118,13 +118,13 @@ export default function SettingsPage() {
 
             return (
               <Link key={item.href} href={item.href}>
-                <Card className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+                <Card className="p-4 hover:bg-gray-100 transition-colors cursor-pointer">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg bg-gray-100 dark:bg-gray-800 ${item.color}`}>
+                      <div className={`p-2 rounded-lg bg-gray-100 ${item.color}`}>
                         <Icon className="w-5 h-5" />
                       </div>
-                      <span className="font-medium text-gray-900 dark:text-white">
+                      <span className="font-medium text-gray-900">
                         {item.label}
                       </span>
                     </div>
@@ -137,14 +137,14 @@ export default function SettingsPage() {
 
           {/* Logout Button */}
           <Card
-            className="p-4 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer border-red-200 dark:border-red-900"
+            className="p-4 hover:bg-red-50 transition-colors cursor-pointer border-red-200"
             onClick={handleLogout}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+              <div className="p-2 rounded-lg bg-red-100 text-red-600">
                 <LogOut className="w-5 h-5" />
               </div>
-              <span className="font-medium text-red-600 dark:text-red-400">
+              <span className="font-medium text-red-600">
                 {t('menu.logout')}
               </span>
             </div>

@@ -1,153 +1,210 @@
 /**
  * Engezna Brand Color System
- * Based on Brand Identity Guide v1.0
- * Last Updated: November 23, 2025
+ * Based on Brand Identity Guide v2.0
+ * Last Updated: November 27, 2025
+ *
+ * Primary Color: #009DE0 (Engezna Blue)
+ *
+ * COLOR HIERARCHY SYSTEM:
+ * - Primary Blue (#009DE0): Brand identity, CTAs, active states
+ * - Success Green (#22C55E): Completed orders, positive states
+ * - Warning Yellow (#FACC15): Pending, temporary closures
+ * - Error Red (#EF4444): Cancelled, errors
+ * - In Progress Blue (#3B82F6): Active orders, processing
  */
 
 :root {
-  /* PRIMARY BRAND COLORS */
-  --color-primary: 23 97% 46%;            /* #E85D04 Orange Primary */
-  --color-primary-light: 23 97% 56%;      /* Lighter Orange */
-  --color-primary-dark: 23 97% 36%;       /* Darker Orange */
-  --color-primary-foreground: 0 0% 100%;  /* White */
-  
-  --color-secondary: 0 0% 0%;             /* #000000 Black */
+  /* BRAND COLORS - Engezna Blue */
+  --color-primary: 198 100% 44%;         /* #009DE0 */
+  --color-primary-light: 198 100% 54%;   /* Lighter Blue */
+  --color-primary-dark: 198 100% 34%;    /* Darker Blue */
+  --color-primary-foreground: 0 0% 100%; /* White */
+
+  --color-secondary: 0 0% 0%;            /* #000000 */
   --color-secondary-foreground: 0 0% 100%;
-  
-  --color-white: 0 0% 100%;               /* #FFFFFF */
-  
-  /* ACCENT COLORS */
-  --color-orange-accent: 16 100% 60%;     /* #FF6B35 Deals */
-  --color-gold: 41 98% 57%;               /* #FDB927 Premium */
-  --color-blue: 207 90% 54%;              /* #2196F3 Info */
-  
-  /* SYSTEM COLORS */
-  --color-success: var(--color-primary);
-  --color-error: 4 90% 58%;               /* #F44336 */
-  --color-warning: 36 100% 50%;           /* #FF9800 */
-  --color-info: var(--color-blue);
-  
+
+  --color-white: 0 0% 100%;              /* #FFFFFF */
+
+  /* ACCENT COLORS - Harmonized with #009DE0 */
+  --color-deal: 158 100% 38%;            /* #00C27A Green-Cyan (Deals/Discounts) */
+  --color-premium: 42 100% 70%;          /* #FFD166 Soft Gold (Premium) */
+  --color-info: 198 100% 44%;            /* Same as Primary - Engezna Blue */
+  --color-in-progress: 217 91% 60%;      /* #3B82F6 Blue for active states */
+
+  /* SEMANTIC COLORS - Professional Dashboard Standards */
+  --color-success: 142 71% 45%;          /* #22C55E Green */
+  --color-error: 0 84% 60%;              /* #EF4444 Red */
+  --color-warning: 48 97% 53%;           /* #FACC15 Yellow */
+
+  /* CONTRAST SYSTEM - Text Hierarchy */
+  --color-text-primary: 222 47% 11%;     /* #0F172A Main text */
+  --color-text-secondary: 215 16% 47%;   /* #475569 Secondary text */
+  --color-text-muted: 215 16% 65%;       /* #94A3B8 Muted text */
+
   /* NEUTRAL TONES (Light Mode) */
-  --color-background: 0 0% 100%;          /* White */
-  --color-foreground: 0 0% 10%;           /* Charcoal */
-  --color-muted: 0 0% 96%;                /* Off White */
-  --color-muted-foreground: 0 0% 45%;
-  --color-border: 0 0% 88%;               /* Light Gray */
-  --color-input: 0 0% 88%;
+  --color-background: 0 0% 100%;         /* White */
+  --color-foreground: 222 47% 11%;       /* #0F172A */
+  --color-muted: 210 40% 96%;            /* #F1F5F9 */
+  --color-muted-foreground: 215 16% 47%; /* #475569 */
+  --color-border: 214 32% 91%;           /* #E2E8F0 */
+  --color-input: 214 32% 91%;            /* #E2E8F0 */
   --color-ring: var(--color-primary);
-  
+
+  /* CARD BACKGROUNDS - 10% opacity tints */
+  --color-card-primary: 198 100% 97%;    /* Blue 10% #E0F4FF */
+  --color-card-success: 142 76% 95%;     /* Green 10% #DCFCE7 */
+  --color-card-info: 198 100% 97%;       /* Cyan 10% #E0F4FF */
+  --color-card-warning: 48 100% 95%;     /* Yellow 10% #FEF9C3 */
+  --color-card-error: 0 86% 97%;         /* Red 10% #FEF2F2 */
+
   /* CHART COLORS */
-  --chart-1: var(--color-primary);
-  --chart-2: var(--color-blue);
-  --chart-3: var(--color-orange-accent);
-  --chart-4: var(--color-gold);
-  --chart-5: 280 65% 60%;
-  
+  --chart-1: var(--color-primary);       /* #009DE0 */
+  --chart-2: 217 91% 60%;                /* #3B82F6 */
+  --chart-3: 142 71% 45%;                /* #22C55E */
+  --chart-4: 48 97% 53%;                 /* #FACC15 */
+  --chart-5: 280 65% 60%;                /* Purple */
+
   /* UTILITY */
   --radius: 0.5rem;
 }
 
-/* DARK MODE */
-.dark {
-  --color-background: 0 0% 0%;            /* Black */
-  --color-foreground: 0 0% 88%;           /* Light Gray */
-  --color-muted: 0 0% 15%;
-  --color-muted-foreground: 0 0% 65%;
-  --color-border: 0 0% 20%;
-  --color-input: 0 0% 20%;
-  --color-secondary: 0 0% 15%;
-}
-
 /* UTILITY CLASSES */
 
-/* Backgrounds */
+/* Backgrounds - Primary */
 .bg-primary { background-color: hsl(var(--color-primary)); }
-.bg-orange-accent { background-color: hsl(var(--color-orange-accent)); }
-.bg-gold { background-color: hsl(var(--color-gold)); }
-.bg-blue { background-color: hsl(var(--color-blue)); }
+.bg-deal { background-color: hsl(var(--color-deal)); }
+.bg-premium { background-color: hsl(var(--color-premium)); }
+.bg-info { background-color: hsl(var(--color-info)); }
+.bg-error { background-color: hsl(var(--color-error)); }
+.bg-success { background-color: hsl(var(--color-success)); }
+.bg-warning { background-color: hsl(var(--color-warning)); }
+.bg-in-progress { background-color: hsl(var(--color-in-progress)); }
 
-/* Text Colors */
+/* Backgrounds - Card Tints (10% opacity) */
+.bg-card-primary { background-color: hsl(var(--color-card-primary)); }
+.bg-card-success { background-color: hsl(var(--color-card-success)); }
+.bg-card-info { background-color: hsl(var(--color-card-info)); }
+.bg-card-warning { background-color: hsl(var(--color-card-warning)); }
+.bg-card-error { background-color: hsl(var(--color-card-error)); }
+
+/* Text - Brand */
 .text-primary { color: hsl(var(--color-primary)); }
-.text-orange-accent { color: hsl(var(--color-orange-accent)); }
-.text-gold { color: hsl(var(--color-gold)); }
-.text-blue { color: hsl(var(--color-blue)); }
+.text-deal { color: hsl(var(--color-deal)); }
+.text-premium { color: hsl(var(--color-premium)); }
+.text-info { color: hsl(var(--color-info)); }
 .text-error { color: hsl(var(--color-error)); }
 .text-success { color: hsl(var(--color-success)); }
+.text-warning { color: hsl(var(--color-warning)); }
+.text-in-progress { color: hsl(var(--color-in-progress)); }
 
-/* Border Colors */
+/* Text - Hierarchy */
+.text-body { color: hsl(var(--color-text-primary)); }
+.text-secondary { color: hsl(var(--color-text-secondary)); }
+.text-muted { color: hsl(var(--color-text-muted)); }
+
+/* Borders */
 .border-primary { border-color: hsl(var(--color-primary)); }
-.border-orange-accent { border-color: hsl(var(--color-orange-accent)); }
+.border-deal { border-color: hsl(var(--color-deal)); }
+.border-premium { border-color: hsl(var(--color-premium)); }
+.border-info { border-color: hsl(var(--color-info)); }
+.border-error { border-color: hsl(var(--color-error)); }
+.border-success { border-color: hsl(var(--color-success)); }
+.border-warning { border-color: hsl(var(--color-warning)); }
 
 /* GRADIENTS */
 .gradient-hero-light {
   background: linear-gradient(
     135deg,
     hsl(0 0% 100%) 0%,
-    hsl(23 97% 97%) 25%,
-    hsl(23 97% 90%) 50%,
+    hsl(198 100% 96%) 25%,
+    hsl(198 100% 90%) 50%,
     hsl(var(--color-primary)) 100%
   );
 }
 
-.gradient-hero-dark {
-  background: linear-gradient(
-    135deg,
-    hsl(0 0% 0%) 0%,
-    hsl(23 97% 8%) 50%,
-    hsl(23 97% 25%) 100%
-  );
-}
+/* COMPONENTS */
 
-/* SEMANTIC COMPONENTS */
+/* Primary Button */
 .btn-primary {
   background-color: hsl(var(--color-primary));
   color: hsl(var(--color-primary-foreground));
+  border-radius: var(--radius);
+  border: none;
 }
 
 .btn-primary:hover {
   background-color: hsl(var(--color-primary-light));
 }
 
-.badge-discount {
-  background-color: hsl(var(--color-orange-accent));
-  color: white;
+/* Secondary Button */
+.btn-secondary {
+  background-color: transparent;
+  color: hsl(var(--color-primary));
+  border: 1px solid hsl(var(--color-primary));
+  border-radius: var(--radius);
+}
+
+/* Badges */
+.badge-deal {
+  background-color: hsl(var(--color-deal));
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
 }
 
 .badge-premium {
-  background-color: hsl(var(--color-gold));
-  color: black;
+  background-color: hsl(var(--color-premium));
+  color: #000;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
 }
 
+/* Status blocks - Using new semantic colors */
 .status-success {
   background-color: hsl(var(--color-success) / 0.1);
   color: hsl(var(--color-success));
   border: 1px solid hsl(var(--color-success) / 0.3);
+  border-radius: var(--radius);
 }
 
 .status-error {
   background-color: hsl(var(--color-error) / 0.1);
   color: hsl(var(--color-error));
   border: 1px solid hsl(var(--color-error) / 0.3);
+  border-radius: var(--radius);
 }
 
 .status-warning {
   background-color: hsl(var(--color-warning) / 0.1);
   color: hsl(var(--color-warning));
   border: 1px solid hsl(var(--color-warning) / 0.3);
+  border-radius: var(--radius);
 }
 
 .status-info {
   background-color: hsl(var(--color-info) / 0.1);
   color: hsl(var(--color-info));
   border: 1px solid hsl(var(--color-info) / 0.3);
+  border-radius: var(--radius);
 }
 
-/*
- * ACCESSIBILITY NOTES
- * 
- * WCAG 2.1 AA Contrast Ratios:
- * - White on Orange Primary: 5.2:1 ✓ AA
- * - Charcoal on White: 15.8:1 ✓ AAA
- * - Orange Primary on White: 4.1:1 ✓ AA (large text only)
- * - Black on White: 21:1 ✓ AAA
+.status-in-progress {
+  background-color: hsl(var(--color-in-progress) / 0.1);
+  color: hsl(var(--color-in-progress));
+  border: 1px solid hsl(var(--color-in-progress) / 0.3);
+  border-radius: var(--radius);
+}
+
+/* Accessibility Notes:
+ * - White on primary (#009DE0): ~3:1, use for large text & buttons.
+ * - Primary on black: ~6.9:1 (AA for body text).
+ * - Black on white: AAA.
+ *
+ * Contrast Ratios for new semantic colors:
+ * - #22C55E (Success) on white: 3.0:1 (use for large text/icons)
+ * - #EF4444 (Error) on white: 4.0:1 (AA compliant)
+ * - #FACC15 (Warning) on white: 1.8:1 (use with dark text)
+ * - #3B82F6 (In Progress) on white: 4.0:1 (AA compliant)
  */

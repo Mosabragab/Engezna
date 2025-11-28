@@ -43,7 +43,8 @@ export default async function LocaleLayout({
       <body className={`${notoSans.variable} ${notoSansArabic.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
+          forcedTheme="light"
           enableSystem={false}
           disableTransitionOnChange
           storageKey="engezna-theme"

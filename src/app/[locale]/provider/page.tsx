@@ -19,7 +19,6 @@ import {
   X,
   Home,
   Clock,
-  CheckCircle2,
   AlertCircle,
   TrendingUp,
   FileWarning,
@@ -29,10 +28,11 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
-  Users,
   DollarSign,
+  Bell,
+  User as UserIcon,
+  ChevronDown,
 } from 'lucide-react'
-import { ThemeToggle } from '@/components/shared/ThemeToggle'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -66,6 +66,7 @@ export default function ProviderDashboard() {
   const [provider, setProvider] = useState<Provider | null>(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [stats, setStats] = useState<DashboardStats>({
     todayOrders: 0,
     todayRevenue: 0,
@@ -85,7 +86,6 @@ export default function ProviderDashboard() {
     setUser(user)
 
     if (user) {
-      // Load provider data (use limit(1) instead of single() to handle multiple providers)
       const { data: providerData } = await supabase
         .from('providers')
         .select('*')
@@ -94,8 +94,6 @@ export default function ProviderDashboard() {
 
       if (providerData && providerData.length > 0) {
         setProvider(providerData[0])
-
-        // Load stats for the provider
         await loadStats(providerData[0].id, supabase)
       }
     }
@@ -107,42 +105,35 @@ export default function ProviderDashboard() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Get today's orders (only delivered orders for revenue calculation)
-    const { data: todayOrdersData } = await supabase
-      .from('orders')
-      .select('id, total, status')
-      .eq('provider_id', providerId)
-      .gte('created_at', today.toISOString())
+    // Run all queries in parallel for faster loading
+    const [
+      { data: todayOrdersData },
+      { data: pendingData },
+      { data: productsData },
+      { data: allOrdersData }
+    ] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id, total, status')
+        .eq('provider_id', providerId)
+        .gte('created_at', today.toISOString()),
+      supabase
+        .from('orders')
+        .select('id')
+        .eq('provider_id', providerId)
+        .in('status', ['pending', 'accepted', 'preparing']),
+      supabase
+        .from('menu_items')
+        .select('id')
+        .eq('provider_id', providerId)
+        .eq('is_available', true),
+      supabase
+        .from('orders')
+        .select('id, customer_id')
+        .eq('provider_id', providerId)
+    ])
 
-    // Get pending orders
-    const { data: pendingData } = await supabase
-      .from('orders')
-      .select('id')
-      .eq('provider_id', providerId)
-      .in('status', ['pending', 'accepted', 'preparing'])
-
-    // Get active products (menu_items table)
-    const { data: productsData } = await supabase
-      .from('menu_items')
-      .select('id')
-      .eq('provider_id', providerId)
-      .eq('is_available', true)
-
-    // Get total orders
-    const { data: totalOrdersData } = await supabase
-      .from('orders')
-      .select('id')
-      .eq('provider_id', providerId)
-
-    // Get unique customers
-    const { data: customersData } = await supabase
-      .from('orders')
-      .select('customer_id')
-      .eq('provider_id', providerId)
-
-    const uniqueCustomers = new Set(customersData?.map(o => o.customer_id) || [])
-
-    // Calculate revenue from delivered orders only
+    const uniqueCustomers = new Set(allOrdersData?.map(o => o.customer_id) || [])
     const deliveredOrders = todayOrdersData?.filter(o => o.status === 'delivered') || []
 
     setStats({
@@ -150,7 +141,7 @@ export default function ProviderDashboard() {
       todayRevenue: deliveredOrders.reduce((sum, o) => sum + (o.total || 0), 0),
       pendingOrders: pendingData?.length || 0,
       activeProducts: productsData?.length || 0,
-      totalOrders: totalOrdersData?.length || 0,
+      totalOrders: allOrdersData?.length || 0,
       totalCustomers: uniqueCustomers.size,
     })
   }
@@ -161,7 +152,6 @@ export default function ProviderDashboard() {
     window.location.href = `/${locale}`
   }
 
-  // Navigation items with proper paths
   const navItems = [
     {
       icon: Home,
@@ -209,7 +199,7 @@ export default function ProviderDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
       </div>
     )
@@ -217,13 +207,13 @@ export default function ProviderDashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="text-center bg-slate-800 p-8 rounded-2xl border border-slate-700">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
           <Store className="w-16 h-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2 text-white">
+          <h1 className="text-2xl font-bold mb-2 text-slate-900">
             {locale === 'ar' ? 'لوحة مقدم الخدمة' : 'Provider Dashboard'}
           </h1>
-          <p className="text-slate-400 mb-6">
+          <p className="text-slate-600 mb-6">
             {locale === 'ar' ? 'يجب تسجيل الدخول للوصول إلى لوحة التحكم' : 'Please login to access your dashboard'}
           </p>
           <Link href={`/${locale}/auth/login`}>
@@ -237,38 +227,38 @@ export default function ProviderDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/30 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Light Theme with Engezna Blue accent */}
       <aside className={`
         fixed lg:static inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-50
-        w-64 bg-slate-800 border-${isRTL ? 'l' : 'r'} border-slate-700
+        w-64 bg-white border-${isRTL ? 'l' : 'r'} border-slate-200 shadow-sm
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0
         flex flex-col
       `}>
         {/* Logo */}
-        <div className="p-4 border-b border-slate-700">
+        <div className="p-4 border-b border-slate-200">
           <div className="flex items-center justify-between">
             <Link href={`/${locale}/provider`} className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
                 <Store className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-lg">{locale === 'ar' ? 'إنجزنا' : 'Engezna'}</h1>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}</p>
+                <h1 className="font-bold text-lg text-slate-900">{locale === 'ar' ? 'إنجزنا' : 'Engezna'}</h1>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}</p>
               </div>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-slate-400 hover:text-white"
+              className="lg:hidden text-slate-500 hover:text-slate-700"
             >
               <X className="w-5 h-5" />
             </button>
@@ -277,18 +267,18 @@ export default function ProviderDashboard() {
 
         {/* Store Info */}
         {provider && (
-          <div className="p-4 border-b border-slate-700">
-            <div className="bg-slate-700/50 rounded-xl p-3">
-              <p className="text-sm font-medium truncate">
+          <div className="p-4 border-b border-slate-200">
+            <div className="bg-slate-50 rounded-xl p-3">
+              <p className="text-sm font-medium text-slate-900 truncate">
                 {locale === 'ar' ? provider.name_ar : provider.name_en}
               </p>
-              <p className="text-xs text-slate-400 capitalize">{provider.category.replace('_', ' ')}</p>
+              <p className="text-xs text-slate-500 capitalize">{provider.category.replace('_', ' ')}</p>
               <div className="flex items-center gap-2 mt-2">
                 <span className={`w-2 h-2 rounded-full ${
                   provider.status === 'open' ? 'bg-green-500' :
-                  provider.status === 'closed' ? 'bg-red-500' : 'bg-yellow-500'
+                  provider.status === 'closed' ? 'bg-red-500' : 'bg-amber-500'
                 }`}></span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-600">
                   {provider.status === 'open' ? (locale === 'ar' ? 'مفتوح' : 'Open') :
                    provider.status === 'closed' ? (locale === 'ar' ? 'مغلق' : 'Closed') :
                    (locale === 'ar' ? 'متوقف مؤقتاً' : 'Paused')}
@@ -310,8 +300,8 @@ export default function ProviderDashboard() {
                 className={`
                   w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
                   ${isActive
-                    ? 'bg-primary text-white'
-                    : 'text-slate-400 hover:bg-slate-700 hover:text-white'}
+                    ? 'bg-primary text-white shadow-md'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
                 `}
               >
                 <item.icon className="w-5 h-5" />
@@ -326,60 +316,125 @@ export default function ProviderDashboard() {
           })}
         </nav>
 
-        {/* User Section */}
-        <div className="p-4 border-t border-slate-700">
-          <div className="flex items-center gap-3 mb-3 px-2">
-            <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center">
-              <span className="font-bold text-sm">
-                {user.email?.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.email?.split('@')[0]}</p>
-              <p className="text-xs text-slate-400 truncate">{user.email}</p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
-            onClick={handleSignOut}
-          >
-            <LogOut className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-            {locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}
-          </Button>
-        </div>
       </aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        {/* Top Header */}
-        <header className="bg-slate-800/50 border-b border-slate-700 px-4 lg:px-6 py-4">
+        {/* Top Header - Engezna Brand Identity */}
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
           <div className="flex items-center justify-between">
+            {/* Right Side (RTL): Logo & Title */}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden text-slate-400 hover:text-white"
+                className="lg:hidden text-slate-500 hover:text-slate-700"
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <div>
-                <h2 className="text-xl font-bold">
-                  {locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+
+              {/* Logo - visible on mobile, hidden on desktop (sidebar has it) */}
+              <Link href={`/${locale}/provider`} className="lg:hidden flex items-center gap-2">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <Store className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-lg font-bold text-primary">
+                  {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
+                </span>
+              </Link>
+
+            </div>
+
+            {/* Center: Page Title on Desktop - Single clear title */}
+            <div className="hidden md:flex items-center justify-center flex-1">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold text-slate-800">
+                  {locale === 'ar' ? 'لوحة تحكم المتجر' : 'Store Dashboard'}
                 </h2>
-                <p className="text-sm text-slate-400">
+                <p className="text-xs text-slate-500">
                   {locale === 'ar' ? 'نظرة عامة على متجرك' : 'Overview of your store'}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Link href={`/${locale}`}>
-                <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                  {isRTL ? <ChevronRight className="w-4 h-4 ml-1" /> : <ChevronLeft className="w-4 h-4 mr-1" />}
-                  {locale === 'ar' ? 'العودة للموقع' : 'Back to Site'}
-                </Button>
-              </Link>
+
+            {/* Left Side (RTL): Actions */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Notifications */}
+              <button className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors">
+                <Bell className="w-5 h-5" />
+                {stats.pendingOrders > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {stats.pendingOrders > 9 ? '9+' : stats.pendingOrders}
+                  </span>
+                )}
+              </button>
+
+              {/* Account Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => setAccountMenuOpen(true)}
+                onMouseLeave={() => setAccountMenuOpen(false)}
+              >
+                <button
+                  className="flex items-center gap-2 p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                    <span className="font-semibold text-sm text-primary">
+                      {user?.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="hidden sm:inline text-sm font-medium text-slate-700">
+                    {locale === 'ar' ? 'حسابي' : 'My Account'}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {accountMenuOpen && (
+                  <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-56 z-50`}>
+                    <div className="bg-white rounded-xl shadow-lg border border-slate-200 py-2">
+                      {/* User Info */}
+                      <div className="px-4 py-2 border-b border-slate-100">
+                        <p className="text-sm font-medium text-slate-900">{user?.email?.split('@')[0]}</p>
+                        <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                      </div>
+
+                      {/* Menu Items */}
+                      <div className="py-1">
+                        <Link
+                          href={`/${locale}/provider/settings`}
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                          <UserIcon className="w-4 h-4" />
+                          {locale === 'ar' ? 'حسابي' : 'My Account'}
+                        </Link>
+                        <Link
+                          href={`/${locale}`}
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                          {isRTL ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                          {locale === 'ar' ? 'العودة للموقع' : 'Back to Site'}
+                        </Link>
+                      </div>
+
+                      {/* Logout */}
+                      <div className="border-t border-slate-100 pt-1">
+                        <button
+                          onClick={() => {
+                            setAccountMenuOpen(false)
+                            handleSignOut()
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          {locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -388,22 +443,22 @@ export default function ProviderDashboard() {
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Status Messages */}
           {provider?.status === 'incomplete' && (
-            <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-2xl p-6 border border-yellow-500/30 mb-6">
+            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-200 mb-6">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-yellow-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-14 h-14 bg-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
                   <FileWarning className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-grow">
-                  <h3 className="text-xl font-bold mb-2 text-yellow-300">
+                  <h3 className="text-xl font-bold mb-2 text-amber-800">
                     {locale === 'ar' ? 'أكمل ملفك الشخصي' : 'Complete Your Profile'}
                   </h3>
-                  <p className="text-slate-300 mb-4 text-sm">
+                  <p className="text-slate-700 mb-4 text-sm">
                     {locale === 'ar'
                       ? 'معلومات متجرك غير مكتملة. أكمل المعلومات التالية للحصول على الموافقة والبدء في استقبال الطلبات:'
                       : 'Your store information is incomplete. Complete the following to get approved and start receiving orders:'}
                   </p>
                   <Link href={`/${locale}/provider/complete-profile`}>
-                    <Button className="bg-yellow-500 hover:bg-yellow-600 text-black">
+                    <Button className="bg-amber-500 hover:bg-amber-600 text-white">
                       {locale === 'ar' ? 'إكمال الملف' : 'Complete Profile'}
                       <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                     </Button>
@@ -414,16 +469,16 @@ export default function ProviderDashboard() {
           )}
 
           {provider?.status === 'pending_approval' && (
-            <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl p-6 border border-blue-500/30 mb-6">
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-200 mb-6">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
                   <Hourglass className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-grow">
-                  <h3 className="text-xl font-bold mb-2 text-blue-300">
+                  <h3 className="text-xl font-bold mb-2 text-primary">
                     {locale === 'ar' ? 'قيد المراجعة' : 'Under Review'}
                   </h3>
-                  <p className="text-slate-300 text-sm">
+                  <p className="text-slate-700 text-sm">
                     {locale === 'ar'
                       ? 'تم إرسال طلبك وهو قيد المراجعة من فريقنا. سنقوم بإخطارك عند الموافقة على متجرك.'
                       : 'Your application has been submitted and is being reviewed by our team. We will notify you once your store is approved.'}
@@ -434,20 +489,20 @@ export default function ProviderDashboard() {
           )}
 
           {provider?.status === 'rejected' && (
-            <div className="bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-2xl p-6 border border-red-500/30 mb-6">
+            <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl p-6 border border-red-200 mb-6">
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
                   <XCircle className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-grow">
-                  <h3 className="text-xl font-bold mb-2 text-red-300">
+                  <h3 className="text-xl font-bold mb-2 text-red-700">
                     {locale === 'ar' ? 'تم رفض الطلب' : 'Application Rejected'}
                   </h3>
-                  <p className="text-slate-300 mb-2 text-sm">
+                  <p className="text-slate-700 mb-2 text-sm">
                     {locale === 'ar' ? 'سبب الرفض:' : 'Reason:'} {provider.rejection_reason || (locale === 'ar' ? 'لم يتم تحديد سبب' : 'No reason provided')}
                   </p>
                   <Link href={`/${locale}/provider/complete-profile`}>
-                    <Button className="bg-red-500 hover:bg-red-600">
+                    <Button className="bg-red-500 hover:bg-red-600 text-white">
                       {locale === 'ar' ? 'تعديل وإعادة الإرسال' : 'Edit & Resubmit'}
                       <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                     </Button>
@@ -459,22 +514,22 @@ export default function ProviderDashboard() {
 
           {/* No Provider - Show registration prompt */}
           {!provider && user && (
-            <div className="bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-2xl p-6 border border-orange-500/30 mb-6">
+            <div className="bg-gradient-to-br from-primary/5 to-cyan-50 rounded-2xl p-6 border border-primary/20 mb-6">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
                   <AlertCircle className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-grow">
-                  <h3 className="text-xl font-bold mb-2 text-orange-300">
+                  <h3 className="text-xl font-bold mb-2 text-primary">
                     {locale === 'ar' ? 'لم يتم إكمال التسجيل' : 'Registration Incomplete'}
                   </h3>
-                  <p className="text-slate-300 mb-4 text-sm">
+                  <p className="text-slate-700 mb-4 text-sm">
                     {locale === 'ar'
                       ? 'يبدو أنك لم تكمل تسجيلك كشريك. هل تريد التسجيل الآن؟'
                       : 'It seems you haven\'t completed your partner registration. Would you like to register now?'}
                   </p>
                   <Link href={`/${locale}/partner/register`}>
-                    <Button className="bg-orange-500 hover:bg-orange-600">
+                    <Button className="bg-primary hover:bg-primary/90 text-white">
                       {locale === 'ar' ? 'سجل كشريك' : 'Register as Partner'}
                       <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                     </Button>
@@ -487,102 +542,102 @@ export default function ProviderDashboard() {
           {/* Dashboard Stats - Only for approved/open providers */}
           {(provider?.status === 'approved' || provider?.status === 'open' || provider?.status === 'closed' || provider?.status === 'temporarily_paused') && (
             <>
-              {/* Stats Grid */}
+              {/* Stats Grid - Using brand color system */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {/* Today's Orders */}
-                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                {/* Today's Orders - Primary Blue Card */}
+                <div className="bg-[hsl(var(--card-bg-primary))] rounded-xl p-4 border border-primary/20 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                      <ShoppingBag className="w-5 h-5 text-blue-400" />
+                    <div className="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center">
+                      <ShoppingBag className="w-5 h-5 text-primary" strokeWidth={1.8} />
                     </div>
-                    <span className="text-green-400 text-xs flex items-center gap-1">
+                    <span className="text-success text-xs flex items-center gap-1">
                       <TrendingUp className="w-3 h-3" /> +0%
                     </span>
                   </div>
-                  <p className="text-2xl font-bold">{stats.todayOrders}</p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</p>
+                  <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.todayOrders}</p>
+                  <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</p>
                 </div>
 
-                {/* Today's Revenue */}
-                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                {/* Today's Revenue - Success Green Card */}
+                <div className="bg-[hsl(var(--card-bg-success))] rounded-xl p-4 border border-success/20 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                      <DollarSign className="w-5 h-5 text-green-400" />
+                    <div className="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-success" strokeWidth={1.8} />
                     </div>
-                    <span className="text-green-400 text-xs flex items-center gap-1">
+                    <span className="text-success text-xs flex items-center gap-1">
                       <TrendingUp className="w-3 h-3" /> +0%
                     </span>
                   </div>
-                  <p className="text-2xl font-bold">{stats.todayRevenue} <span className="text-sm text-slate-400">EGP</span></p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</p>
+                  <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.todayRevenue} <span className="text-sm text-[hsl(var(--text-muted))]">EGP</span></p>
+                  <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</p>
                 </div>
 
-                {/* Pending Orders */}
-                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                {/* Pending Orders - Warning Yellow Card */}
+                <div className="bg-[hsl(var(--card-bg-warning))] rounded-xl p-4 border border-warning/20 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-orange-400" />
+                    <div className="w-10 h-10 bg-warning/15 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-[hsl(42_100%_40%)]" strokeWidth={1.8} />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold">{stats.pendingOrders}</p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'طلبات قيد الانتظار' : 'Pending Orders'}</p>
+                  <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.pendingOrders}</p>
+                  <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات قيد الانتظار' : 'Pending Orders'}</p>
                 </div>
 
-                {/* Active Products */}
-                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                {/* Active Products - Info Cyan Card */}
+                <div className="bg-[hsl(var(--card-bg-info))] rounded-xl p-4 border border-info/20 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                      <Package className="w-5 h-5 text-purple-400" />
+                    <div className="w-10 h-10 bg-info/15 rounded-lg flex items-center justify-center">
+                      <Package className="w-5 h-5 text-primary" strokeWidth={1.8} />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold">{stats.activeProducts}</p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
+                  <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.activeProducts}</p>
+                  <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
                 </div>
               </div>
 
-              {/* Performance Indicators */}
-              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 mb-6">
-                <h3 className="text-lg font-bold mb-4">{locale === 'ar' ? 'مؤشرات الأداء' : 'Performance Indicators'}</h3>
+              {/* Performance Indicators - Using text hierarchy */}
+              <div className="bg-white rounded-xl p-6 border border-[hsl(var(--border))] shadow-sm mb-6">
+                <h3 className="text-lg font-bold text-[hsl(var(--text-primary))] mb-4">{locale === 'ar' ? 'مؤشرات الأداء' : 'Performance Indicators'}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <p className="text-sm text-slate-400 mb-1">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
-                    <p className="text-3xl font-bold">{stats.totalOrders}</p>
+                    <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
+                    <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.totalOrders}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-400 mb-1">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</p>
-                    <p className="text-3xl font-bold">{stats.totalCustomers}</p>
+                    <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</p>
+                    <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.totalCustomers}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-400 mb-1">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
-                    <p className="text-3xl font-bold">{stats.activeProducts}</p>
+                    <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
+                    <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.activeProducts}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Quick Actions */}
+              {/* Quick Actions - Using unified icon styling */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Link href={`/${locale}/provider/orders`} className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-primary transition-colors group">
-                  <ShoppingBag className="w-8 h-8 text-blue-400 mb-3 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'إدارة الطلبات' : 'Manage orders'}</p>
+                <Link href={`/${locale}/provider/orders`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
+                  <ShoppingBag className="w-8 h-8 text-primary mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
+                  <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
+                  <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'إدارة الطلبات' : 'Manage orders'}</p>
                 </Link>
 
-                <Link href={`/${locale}/provider/products`} className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-primary transition-colors group">
-                  <Package className="w-8 h-8 text-purple-400 mb-3 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium">{locale === 'ar' ? 'المنتجات' : 'Products'}</p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'إدارة القائمة' : 'Manage menu'}</p>
+                <Link href={`/${locale}/provider/products`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
+                  <Package className="w-8 h-8 text-primary mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
+                  <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'المنتجات' : 'Products'}</p>
+                  <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'إدارة القائمة' : 'Manage menu'}</p>
                 </Link>
 
-                <Link href={`/${locale}/provider/reports`} className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-primary transition-colors group">
-                  <BarChart3 className="w-8 h-8 text-green-400 mb-3 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium">{locale === 'ar' ? 'التقارير' : 'Reports'}</p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'عرض الإحصائيات' : 'View analytics'}</p>
+                <Link href={`/${locale}/provider/reports`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
+                  <BarChart3 className="w-8 h-8 text-success mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
+                  <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'التقارير' : 'Reports'}</p>
+                  <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'عرض الإحصائيات' : 'View analytics'}</p>
                 </Link>
 
-                <Link href={`/${locale}/provider/settings`} className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-primary transition-colors group">
-                  <Settings className="w-8 h-8 text-slate-400 mb-3 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</p>
-                  <p className="text-xs text-slate-400">{locale === 'ar' ? 'إعدادات المتجر' : 'Store settings'}</p>
+                <Link href={`/${locale}/provider/settings`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
+                  <Settings className="w-8 h-8 text-[hsl(var(--text-secondary))] mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
+                  <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</p>
+                  <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'إعدادات المتجر' : 'Store settings'}</p>
                 </Link>
               </div>
             </>

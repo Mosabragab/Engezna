@@ -1,0 +1,307 @@
+/**
+ * Engezna Design Tokens – Theme CSS
+ * Version: 2.0
+ * Primary: #009DE0 (Engezna Blue)
+ * Last Updated: 2025-11-27
+ *
+ * IMPORTANT: Light-Only Theme
+ * Dark mode has been removed. All styles are for light backgrounds only.
+ *
+ * Change Log:
+ * v2.0 - Added navigation styles, hover states, light-only documentation
+ * v1.0 - Initial theme with Engezna Blue primary color
+ */
+
+:root {
+  /* BRAND COLORS */
+  --color-primary: 198 100% 44%;         /* #009DE0 */
+  --color-primary-light: 198 100% 54%;
+  --color-primary-dark: 198 100% 34%;
+  --color-primary-foreground: 0 0% 100%; /* White */
+
+  --color-secondary: 0 0% 0%;            /* #000000 */
+  --color-secondary-foreground: 0 0% 100%;
+
+  --color-white: 0 0% 100%;              /* #FFFFFF */
+
+  /* ACCENT COLORS */
+  --color-deal: 158 100% 38%;            /* #00C27A */
+  --color-premium: 42 100% 70%;          /* #FFD166 */
+  --color-info: 194 86% 58%;             /* #36C5F0 */
+  --color-error: 358 100% 68%;           /* #FF5A5F */
+
+  /* NEUTRALS – LIGHT MODE */
+  --color-background: 0 0% 100%;         /* White */
+  --color-foreground: 0 0% 10%;          /* Near black */
+  --color-muted: 0 0% 96%;               /* Light gray bg */
+  --color-muted-foreground: 0 0% 45%;
+  --color-border: 0 0% 88%;
+  --color-input: 0 0% 88%;
+  --color-ring: var(--color-primary);
+
+  /* CHART COLORS */
+  --chart-1: var(--color-primary);
+  --chart-2: var(--color-info);
+  --chart-3: var(--color-deal);
+  --chart-4: var(--color-premium);
+  --chart-5: 280 65% 60%;
+
+  /* RADIUS */
+  --radius: 0.5rem;
+}
+
+/* BASIC UTILITY CLASSES */
+
+/* Backgrounds */
+.bg-primary { background-color: hsl(var(--color-primary)); }
+.bg-deal { background-color: hsl(var(--color-deal)); }
+.bg-premium { background-color: hsl(var(--color-premium)); }
+.bg-info { background-color: hsl(var(--color-info)); }
+.bg-error { background-color: hsl(var(--color-error)); }
+
+/* Text */
+.text-primary { color: hsl(var(--color-primary)); }
+.text-deal { color: hsl(var(--color-deal)); }
+.text-premium { color: hsl(var(--color-premium)); }
+.text-info { color: hsl(var(--color-info)); }
+.text-error { color: hsl(var(--color-error)); }
+
+/* Borders */
+.border-primary { border-color: hsl(var(--color-primary)); }
+.border-deal { border-color: hsl(var(--color-deal)); }
+.border-premium { border-color: hsl(var(--color-premium)); }
+.border-info { border-color: hsl(var(--color-info)); }
+.border-error { border-color: hsl(var(--color-error)); }
+
+/* COMPONENTS */
+
+/* Primary Button */
+.btn-primary {
+  background-color: hsl(var(--color-primary));
+  color: hsl(var(--color-primary-foreground));
+  border-radius: var(--radius);
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: hsl(var(--color-primary-light));
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background-color: transparent;
+  color: hsl(var(--color-primary));
+  border: 1px solid hsl(var(--color-primary));
+  border-radius: var(--radius);
+}
+
+/* Badges */
+.badge-deal {
+  background-color: hsl(var(--color-deal));
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.badge-premium {
+  background-color: hsl(var(--color-premium));
+  color: #000;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* Status blocks */
+.status-success {
+  background-color: hsl(var(--color-deal) / 0.1);
+  color: hsl(var(--color-deal));
+  border: 1px solid hsl(var(--color-deal) / 0.3);
+  border-radius: var(--radius);
+}
+
+.status-error {
+  background-color: hsl(var(--color-error) / 0.1);
+  color: hsl(var(--color-error));
+  border: 1px solid hsl(var(--color-error) / 0.3);
+  border-radius: var(--radius);
+}
+
+.status-info {
+  background-color: hsl(var(--color-info) / 0.1);
+  color: hsl(var(--color-info));
+  border: 1px solid hsl(var(--color-info) / 0.3);
+  border-radius: var(--radius);
+}
+
+/* Hero Gradients */
+.gradient-hero-light {
+  background: linear-gradient(
+    135deg,
+    hsl(0 0% 100%) 0%,
+    hsl(198 100% 96%) 25%,
+    hsl(198 100% 90%) 50%,
+    hsl(var(--color-primary)) 100%
+  );
+}
+
+/* ================================================================
+ * NAVIGATION BAR STYLES
+ * ================================================================ */
+
+/* Customer Header */
+.header-customer {
+  background-color: hsl(var(--color-white));
+  border-bottom: 1px solid hsl(var(--color-border));
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.header-customer .container {
+  padding: 1rem;
+}
+
+/* Logo */
+.header-logo {
+  color: hsl(var(--color-primary));
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+/* Navigation Ghost Button */
+.nav-btn-ghost {
+  background-color: transparent;
+  color: hsl(var(--color-muted-foreground));
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  transition: all 0.2s;
+}
+
+.nav-btn-ghost:hover {
+  background-color: hsl(var(--color-muted));
+  color: hsl(var(--color-primary));
+}
+
+/* Logout Button */
+.nav-btn-logout {
+  background-color: transparent;
+  color: hsl(358 100% 68%); /* Red */
+  border: 1px solid hsl(358 100% 90%);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  transition: all 0.2s;
+}
+
+.nav-btn-logout:hover {
+  background-color: hsl(358 100% 97%);
+  border-color: hsl(358 100% 80%);
+  color: hsl(358 100% 45%);
+}
+
+/* Active Orders Badge */
+.badge-orders-count {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: hsl(var(--color-primary));
+  color: hsl(var(--color-white));
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ================================================================
+ * DROPDOWN MENU STYLES (Hover Fix)
+ * ================================================================ */
+
+/* CRITICAL: No gap between trigger and dropdown */
+.dropdown-menu {
+  position: relative;
+}
+
+.dropdown-trigger {
+  cursor: pointer;
+}
+
+.dropdown-content {
+  position: absolute;
+  top: 100%;
+  margin-top: 0; /* NO GAP - Critical for hover */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  background-color: hsl(var(--color-white));
+  border: 1px solid hsl(var(--color-border));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  padding: 0.5rem 0;
+  min-width: 160px;
+}
+
+.dropdown-menu:hover .dropdown-content {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  color: hsl(var(--color-foreground));
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: hsl(var(--color-muted));
+}
+
+/* ================================================================
+ * PROVIDER DASHBOARD SIDEBAR
+ * ================================================================ */
+
+.sidebar-provider {
+  background-color: hsl(var(--color-white));
+  border-right: 1px solid hsl(var(--color-border));
+  width: 256px;
+  min-height: 100vh;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: hsl(var(--color-muted-foreground));
+  border-radius: var(--radius);
+  margin: 0.25rem 0.5rem;
+  transition: all 0.2s;
+}
+
+.sidebar-item:hover {
+  background-color: hsl(var(--color-muted));
+  color: hsl(var(--color-primary));
+}
+
+.sidebar-item.active {
+  background-color: hsl(var(--color-primary));
+  color: hsl(var(--color-white));
+}
+
+/* Accessibility Notes:
+ * - White on primary (#009DE0): ~3:1, use for large text & buttons.
+ * - Primary on black: ~6.9:1 (AA for body text).
+ * - Black on white: AAA.
+ *
+ * Navigation Best Practices:
+ * - NO gap between dropdown trigger and content
+ * - Always provide hover states for interactive elements
+ * - Use semantic color tokens consistently
+ */

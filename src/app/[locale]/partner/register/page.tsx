@@ -190,10 +190,10 @@ export default function PartnerRegisterPage() {
               </div>
               <h2 className="text-2xl font-bold">{t('successTitle')}</h2>
               <p className="text-muted-foreground">{t('successMessage')}</p>
-              <div className="bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mt-4">
+              <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mt-4">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-orange-800 dark:text-orange-200 text-start">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-amber-800 dark:text-amber-200 text-start">
                     {t('completeProfileNote')}
                   </p>
                 </div>

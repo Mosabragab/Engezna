@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
+  // darkMode removed - Engezna uses Light Mode only per brand guidelines
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -44,6 +44,31 @@ const config: Config = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))'
         },
+        // Brand accent colors - Engezna identity
+        deal: 'hsl(var(--deal))',           // #00C27A Green-Cyan for deals/discounts
+        premium: 'hsl(var(--premium))',     // #FFD166 Soft Gold for premium items
+        info: 'hsl(var(--info))',           // #009DE0 Same as Primary (Engezna Blue)
+        'in-progress': 'hsl(var(--in-progress))', // #3B82F6 Blue for active states
+
+        // Semantic colors - Dashboard standards
+        error: 'hsl(var(--error))',         // #EF4444 Red for errors
+        success: 'hsl(var(--success))',     // #22C55E Green for success
+        warning: 'hsl(var(--warning))',     // #FACC15 Yellow for warnings
+
+        // Text hierarchy
+        'text-primary': 'hsl(var(--text-primary))',     // #0F172A
+        'text-secondary': 'hsl(var(--text-secondary))', // #475569
+        'text-muted': 'hsl(var(--text-muted))',         // #94A3B8
+
+        // Card backgrounds (10% tints)
+        'card-bg': {
+          primary: 'hsl(var(--card-bg-primary))',   // Blue 10%
+          success: 'hsl(var(--card-bg-success))',   // Green 10%
+          info: 'hsl(var(--card-bg-info))',         // Cyan 10%
+          warning: 'hsl(var(--card-bg-warning))',   // Yellow 10%
+          error: 'hsl(var(--card-bg-error))',       // Red 10%
+        },
+
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

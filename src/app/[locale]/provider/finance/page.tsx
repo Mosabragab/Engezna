@@ -203,10 +203,10 @@ export default function FinancePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {locale === 'ar' ? 'جاري تحميل البيانات المالية...' : 'Loading financial data...'}
           </p>
         </div>
@@ -215,14 +215,14 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
               href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-400 hover:text-white"
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
             >
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
@@ -236,7 +236,7 @@ export default function FinancePage() {
               size="sm"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="border-slate-600"
+              className="border-slate-300"
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
@@ -248,64 +248,64 @@ export default function FinancePage() {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Main Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/30">
+            <Card className="bg-[hsl(158_100%_38%/0.15)] border-[hsl(158_100%_38%/0.3)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
-                  <DollarSign className="w-8 h-8 text-green-400" />
+                  <DollarSign className="w-8 h-8 text-deal" />
                 </div>
-                <p className="text-2xl font-bold text-green-400">{formatCurrency(stats.totalEarnings)}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'إجمالي الأرباح' : 'Total Earnings'}</p>
+                <p className="text-2xl font-bold text-deal">{formatCurrency(stats.totalEarnings)}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي الأرباح' : 'Total Earnings'}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/30">
+            <Card className="bg-[hsl(194_86%_58%/0.15)] border-[hsl(194_86%_58%/0.3)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
-                  <Clock className="w-8 h-8 text-blue-400" />
+                  <Clock className="w-8 h-8 text-info" />
                 </div>
-                <p className="text-2xl font-bold text-blue-400">{formatCurrency(stats.pendingPayout)}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'قيد التحويل' : 'Pending Payout'}</p>
+                <p className="text-2xl font-bold text-info">{formatCurrency(stats.pendingPayout)}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'قيد التحويل' : 'Pending Payout'}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-500/20 to-violet-500/20 border-purple-500/30">
+            <Card className="bg-[hsl(198_100%_44%/0.15)] border-[hsl(198_100%_44%/0.3)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
-                  <TrendingUp className="w-8 h-8 text-purple-400" />
+                  <TrendingUp className="w-8 h-8 text-primary" />
                   <span className={`text-xs px-2 py-1 rounded-full ${
                     Number(getGrowthPercentage()) >= 0
-                      ? 'text-green-400 bg-green-500/20'
-                      : 'text-red-400 bg-red-500/20'
+                      ? 'text-deal bg-[hsl(158_100%_38%/0.2)]'
+                      : 'text-error bg-[hsl(358_100%_68%/0.2)]'
                   }`}>
                     {Number(getGrowthPercentage()) >= 0 ? '+' : ''}{getGrowthPercentage()}%
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-purple-400">{formatCurrency(stats.thisMonthEarnings)}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'هذا الشهر' : 'This Month'}</p>
+                <p className="text-2xl font-bold text-primary">{formatCurrency(stats.thisMonthEarnings)}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'هذا الشهر' : 'This Month'}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-500/20 to-amber-500/20 border-orange-500/30">
+            <Card className="bg-[hsl(42_100%_70%/0.15)] border-[hsl(42_100%_70%/0.3)]">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-2">
-                  <Banknote className="w-8 h-8 text-orange-400" />
+                  <Banknote className="w-8 h-8 text-premium" />
                 </div>
-                <p className="text-2xl font-bold text-orange-400">{formatCurrency(stats.totalCommission)}</p>
-                <p className="text-xs text-slate-400">{locale === 'ar' ? 'العمولات (6%)' : 'Commission (6%)'}</p>
+                <p className="text-2xl font-bold text-premium">{formatCurrency(stats.totalCommission)}</p>
+                <p className="text-xs text-slate-500">{locale === 'ar' ? 'العمولات (6%)' : 'Commission (6%)'}</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Commission Info */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                <Info className="w-5 h-5 text-info shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-white mb-1">
+                  <p className="font-medium text-slate-900 mb-1">
                     {locale === 'ar' ? 'معلومات العمولة' : 'Commission Information'}
                   </p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-slate-500">
                     {locale === 'ar'
                       ? 'عمولة المنصة 6% فقط من قيمة كل طلب. يتم تحويل أرباحك أسبوعياً إلى حسابك البنكي.'
                       : 'Platform commission is only 6% of each order. Your earnings are transferred weekly to your bank account.'}
@@ -316,36 +316,36 @@ export default function FinancePage() {
           </Card>
 
           {/* Payout Schedule */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
                 {locale === 'ar' ? 'جدول التحويلات' : 'Payout Schedule'}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 bg-slate-700/50 rounded-lg text-center">
-                  <p className="text-lg font-bold text-white">
+                <div className="p-4 bg-slate-50 rounded-lg text-center">
+                  <p className="text-lg font-bold text-slate-900">
                     {locale === 'ar' ? 'الأحد' : 'Sunday'}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     {locale === 'ar' ? 'يوم التحويل' : 'Payout Day'}
                   </p>
                 </div>
-                <div className="p-4 bg-slate-700/50 rounded-lg text-center">
-                  <p className="text-lg font-bold text-white">
+                <div className="p-4 bg-slate-50 rounded-lg text-center">
+                  <p className="text-lg font-bold text-slate-900">
                     {locale === 'ar' ? '1-3 أيام' : '1-3 Days'}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     {locale === 'ar' ? 'وقت الوصول' : 'Processing Time'}
                   </p>
                 </div>
-                <div className="p-4 bg-slate-700/50 rounded-lg text-center">
-                  <p className="text-lg font-bold text-white">
+                <div className="p-4 bg-slate-50 rounded-lg text-center">
+                  <p className="text-lg font-bold text-slate-900">
                     {locale === 'ar' ? 'تحويل بنكي' : 'Bank Transfer'}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     {locale === 'ar' ? 'طريقة الدفع' : 'Payment Method'}
                   </p>
                 </div>
@@ -354,10 +354,10 @@ export default function FinancePage() {
           </Card>
 
           {/* Transaction History */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-slate-900 flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
                   {locale === 'ar' ? 'سجل المعاملات' : 'Transaction History'}
                 </CardTitle>
@@ -373,7 +373,7 @@ export default function FinancePage() {
                     className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors text-sm ${
                       filterType === filter.key
                         ? 'bg-primary text-white'
-                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                     }`}
                   >
                     {locale === 'ar' ? filter.label_ar : filter.label_en}
@@ -392,27 +392,27 @@ export default function FinancePage() {
                   {filteredTransactions.map((txn) => (
                     <div
                       key={txn.id}
-                      className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          txn.type === 'order' ? 'bg-green-500/20' :
-                          txn.type === 'payout' ? 'bg-blue-500/20' :
-                          txn.type === 'commission' ? 'bg-orange-500/20' :
-                          'bg-red-500/20'
+                          txn.type === 'order' ? 'bg-[hsl(158_100%_38%/0.2)]' :
+                          txn.type === 'payout' ? 'bg-[hsl(194_86%_58%/0.2)]' :
+                          txn.type === 'commission' ? 'bg-[hsl(42_100%_70%/0.2)]' :
+                          'bg-[hsl(358_100%_68%/0.2)]'
                         }`}>
                           {txn.type === 'order' ? (
-                            <ArrowUpRight className="w-5 h-5 text-green-400" />
+                            <ArrowUpRight className="w-5 h-5 text-deal" />
                           ) : txn.type === 'payout' ? (
-                            <ArrowDownRight className="w-5 h-5 text-blue-400" />
+                            <ArrowDownRight className="w-5 h-5 text-info" />
                           ) : txn.type === 'commission' ? (
-                            <DollarSign className="w-5 h-5 text-orange-400" />
+                            <DollarSign className="w-5 h-5 text-premium" />
                           ) : (
-                            <XCircle className="w-5 h-5 text-red-400" />
+                            <XCircle className="w-5 h-5 text-error" />
                           )}
                         </div>
                         <div>
-                          <p className="font-medium text-white">
+                          <p className="font-medium text-slate-900">
                             {txn.type === 'order'
                               ? (locale === 'ar' ? 'طلب' : 'Order')
                               : txn.type === 'payout'
@@ -426,17 +426,17 @@ export default function FinancePage() {
                       </div>
                       <div className="text-end">
                         <p className={`font-bold ${
-                          txn.type === 'order' ? 'text-green-400' :
-                          txn.type === 'payout' ? 'text-blue-400' :
-                          txn.type === 'commission' ? 'text-orange-400' :
-                          'text-red-400'
+                          txn.type === 'order' ? 'text-deal' :
+                          txn.type === 'payout' ? 'text-info' :
+                          txn.type === 'commission' ? 'text-premium' :
+                          'text-error'
                         }`}>
                           {txn.type === 'order' ? '+' : txn.type === 'commission' ? '-' : ''}{formatCurrency(txn.amount)}
                         </p>
                         <p className={`text-xs ${
-                          txn.status === 'completed' ? 'text-green-400' :
-                          txn.status === 'pending' ? 'text-yellow-400' :
-                          'text-red-400'
+                          txn.status === 'completed' ? 'text-deal' :
+                          txn.status === 'pending' ? 'text-premium' :
+                          'text-error'
                         }`}>
                           {txn.status === 'completed'
                             ? (locale === 'ar' ? 'مكتمل' : 'Completed')

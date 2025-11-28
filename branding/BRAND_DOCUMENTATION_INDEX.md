@@ -1,122 +1,63 @@
-# Engezna Brand Documentation Index
+# Engezna – Brand Documentation Index
+Version: 1.0
 
-**Complete Brand System Overview**  
-**Last Updated:** November 23, 2025  
-**Version:** 2.0
-
----
-
-## 📚 Documentation Suite
-
-Your complete Engezna brand system is now documented across **5 comprehensive files**:
+This file serves as a map for all brand-related documentation.
 
 ---
 
-### 1. 📖 BRAND_IDENTITY_GUIDE.md
-**Main Brand Bible** | **45+ pages**
+## 1. Core Brand Files
 
-**What's Inside:**
-- ✅ Complete brand story & mission statement
-- ✅ Brand voice & tone guidelines with examples
-- ✅ Logo system (6 variations explained)
-- ✅ Extended color palette (12+ colors with HEX codes)
-- ✅ Typography system (Noto Sans Arabic & English)
-- ✅ Imagery & photography style guidelines
-- ✅ Sample applications & mood boards
-- ✅ Brand do's and don'ts
+1. **BRAND_IDENTITY_GUIDE.md**
+   - Main brand bible.
+   - Includes: brand story, mission, vision, audience, positioning, colors, typography, business model, and key risks.
 
-**Use This For:**
-- Understanding the complete brand identity
-- Training new team members
-- Working with external designers
-- Creating new brand materials
-- Reference during design reviews
+2. **BRAND_QUICK_REFERENCE.md**
+   - One-page cheat sheet.
+   - For quick lookup of: tagline, palette, fonts, voice, core rules.
+
+3. **BRAND_IMPLEMENTATION_GUIDE.md**
+   - Developer & product handbook.
+   - Contains naming conventions, localization rules, color tokens, UI guidelines, and business rule implementation notes.
+
+4. **VISUAL_ASSETS_GUIDE.md**
+   - Designer-focused.
+   - Logo specs, icon usage, spacing, color usage, social templates, and imagery style.
 
 ---
 
-### 2. 🎯 BRAND_QUICK_REFERENCE.md
-**One-Page Cheat Sheet** | **Print & Keep**
+## 2. Technical Styling
 
-**What's Inside:**
-- ✅ Brand colors (HEX/RGB/HSL)
-- ✅ Typography scale
-- ✅ Logo variations quick list
-- ✅ Voice keywords
-- ✅ Photography checklist
-- ✅ Design principles
-- ✅ Brand checklist
-
-**Use This For:**
-- Quick color lookups
-- Daily design work
-- Printing as desk reference
+5. **engezna-theme.css**
+   - Central CSS token file for colors, neutrals, and component styles (light and dark themes).
+   - Referenced by web frontends and used as source of truth for design tokens.
 
 ---
 
-### 3. 💻 BRAND_IMPLEMENTATION_GUIDE.md
-**Developer's Handbook**
+## 3. Ownership & Maintenance
 
-**What's Inside:**
-- ✅ CSS color variables usage
-- ✅ Typography implementation
-- ✅ Logo component usage
-- ✅ Common UI patterns
-- ✅ Code snippets
+- Product & Brand Owner: [to be filled – e.g., CPO or Brand Lead]
+- Design Owner: [Design Lead / UI Team]
+- Tech Owner: [Frontend Lead / Design System Owner]
 
----
-
-### 4. 🎨 VISUAL_ASSETS_GUIDE.md
-**Designer's Specifications**
-
-**What's Inside:**
-- ✅ Logo file specifications
-- ✅ Icon design guidelines
-- ✅ Social media asset specs
-- ✅ Print material specifications
+**Update cadence:**
+- Minor updates: as needed (version bump: 1.0.x)
+- Major rebrands or palette change: version 2.x+
 
 ---
 
-### 5. 🎨 src/styles/brand-colors.css
-**Extended Color System**
+## 4. How to Use This Documentation
 
-**What's Inside:**
-- ✅ Complete CSS custom properties
-- ✅ Light & dark mode support
-- ✅ Utility classes
+- **New developers:**
+  - Start with BRAND_QUICK_REFERENCE.md
+  - Then read BRAND_IMPLEMENTATION_GUIDE.md
+  - Apply tokens from engezna-theme.css
 
----
+- **New designers:**
+  - Read BRAND_IDENTITY_GUIDE.md → VISUAL_ASSETS_GUIDE.md
+  - Use palette + typography from there.
 
-## 🚀 Getting Started
-
-### For Designers
-1. Read: BRAND_IDENTITY_GUIDE.md
-2. Print: BRAND_QUICK_REFERENCE.md
-3. Create Assets: Follow VISUAL_ASSETS_GUIDE.md
-
-### For Developers
-1. Read: BRAND_QUICK_REFERENCE.md
-2. Implement: Follow BRAND_IMPLEMENTATION_GUIDE.md
-3. Import: Add brand-colors.css to your project
+- **Marketing & ops:**
+  - Use BRAND_IDENTITY_GUIDE.md + BRAND_QUICK_REFERENCE.md
+  - Align campaigns with brand voice and promises (no sign-up fees, low commissions, etc.).
 
 ---
-
-## 📋 Brand Summary
-
-**Colors:**
-- Orange Primary: #E85D04 (Primary)
-- Black: #000000 (Secondary)
-- White: #FFFFFF (Accent)
-- Orange Accent: #FF6B35 (Deals)
-- Gold: #FDB927 (Premium)
-- Blue: #2196F3 (Info)
-
-**Typography:**
-- Arabic: Noto Sans Arabic
-- English: Noto Sans
-- Weights: 400, 500, 600, 700
-
-**Voice:** Confident, Energetic, Modern, Clear
-
----
-
-**Next:** Open BRAND_IDENTITY_GUIDE.md for the complete brand system! 🎨

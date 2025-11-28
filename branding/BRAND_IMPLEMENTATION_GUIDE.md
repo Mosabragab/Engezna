@@ -1,283 +1,399 @@
-# Engezna Brand System - Implementation Guide
-
-**For Developers & Designers**  
-**Version:** 2.0  
-**Last Updated:** November 23, 2025
+# Engezna – Brand Implementation Guide (For Developers & Product Teams)
+Version: 2.0
+Last Updated: 2025-11-27
 
 ---
 
-## 🚀 Quick Start
+## Change Log
 
-### Import Brand Colors
-
-```tsx
-// In your component
-import '@/styles/brand-colors.css'
-```
-
-### Use Logo Component
-
-```tsx
-import Logo from '@/components/shared/Logo'
-
-<Logo language="ar" variant="medium" color="primary" size="lg" />
-```
-
-### Apply Brand Colors
-
-```tsx
-<button className="bg-primary text-primary-foreground">
-  اطلب دلوقتي
-</button>
-```
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.0 | 2025-11-27 | Added Navigation Implementation, Light-Only Theme, Hover States, Lessons Learned |
+| 1.0 | 2025-11-27 | Initial implementation guide |
 
 ---
 
-## 🎨 Color System Usage
+## 1. Naming & Structure
 
-### Primary Brand Colors
+- **Product Name:** Engezna
+- **Arabic Name:** إنجزنا
+- **Tagline EN:** Want to order? Engezna!
+- **Tagline AR:** عايز تطلب؟ إنجزنا
 
+**Recommended identifiers:**
+- Package IDs:
+  - `com.engezna.app.customer`
+  - `com.engezna.app.merchant`
+- Web:
+  - `engezna.com`
+  - `merchant.engezna.com`
+
+---
+
+## 2. Language & Localization
+
+- **Primary UI language:** Arabic (Egyptian dialect for copy, MSA for legal)
+- **Secondary:** English (for some CTAs, app store descriptions)
+
+**Rules:**
+- Arabic UI: RTL layout; English text inside may be LTR but aligned correctly.
+- Avoid long, dense paragraphs inside the app.
+- For microcopy, prefer Egyptian expressions, but keep them clean and neutral.
+
+**Example Microcopy:**
+
+- Order status:
+  - "جارِ تجهيز طلبك"
+  - "الطلب خرج للتوصيل"
+  - "الطلب وِصل"
+
+- Error messages:
+  - "في مشكلة بسيطة… جرّب تاني بعد شوية."
+  - "التاجر حالياً مشغول، حاول كمان دقيقة."
+
+---
+
+## 3. Color Tokens (High-Level)
+
+Use CSS variables / design tokens to ensure consistency. See `engezna-theme.css` for full spec.
+
+Core HSL tokens:
+
+- `--color-primary: 198 100% 44%;`      #009DE0
+- `--color-secondary: 0 0% 0%;`         #000000
+- `--color-white: 0 0% 100%;`           #FFFFFF
+
+Accents:
+
+- Deals: `--color-deal: 158 100% 38%;`        #00C27A
+- Premium: `--color-premium: 42 100% 70%;`    #FFD166
+- Info: `--color-info: 194 86% 58%;`          #36C5F0
+- Error: `--color-error: 358 100% 68%;`       #FF5A5F
+
+Neutrals (light vs dark) are defined under `:root` and `.dark` in CSS.
+
+---
+
+## 4. UI Usage Guidelines
+
+### 4.1 Buttons
+
+- **Primary Button:**
+  - Background: `var(--color-primary)`
+  - Text: white
+  - Hover: lighten primary by ~10%
+
+- **Secondary Button:**
+  - Background: transparent or muted grey
+  - Border: `var(--color-primary)`
+  - Text: `var(--color-primary)`
+
+- **Danger Button (cancel / delete):**
+  - Background: `var(--color-error)`
+  - Text: white
+
+### 4.2 Status & Badges
+
+- **Discount badge (e.g. -20%):**
+  - Background: `var(--color-deal)`
+  - Text: white
+
+- **Premium / Highlight badge:**
+  - Background: `var(--color-premium)`
+  - Text: black
+
+- **Status chips:**
+  - Success: border & text `--color-deal` with 0.1 alpha background
+  - Error: border & text `--color-error`
+  - Info: border & text `--color-info`
+
+---
+
+## 5. Brand Logic in Product
+
+### 5.1 Business Rules to Respect (in Code)
+
+- **No registration fees for merchants**
+  - Merchants must never see or be charged "sign-up" fees anywhere in the app or back office.
+
+- **Commission model:**
+  - Commission = 0% for first 9 months from:
+    - Platform launch in that city, OR
+    - merchant registration date (implementation decision to be documented)
+  - After 9 months:
+    - Commission = 6% of order value.
+
+- **Customer service fee:**
+  - 0% for first 12 months.
+  - After 12 months: 2% of order value as "service fee".
+
+All logic must be configurable in the backend (feature flags + per-city config).
+
+---
+
+## 6. Risks & Implementation Guardrails
+
+Link to brand-level risks and translate into product/tech constraints.
+
+**1. Speed of Acquisition Risk**
+- Product must optimize onboarding flows for merchants:
+  - 3–5 steps max
+  - Simple KYC and store setup
+  - Instant test order feature
+
+**2. Reliability Risk**
+- Minimum requirements:
+  - API error rates and uptime SLAs documented.
+  - Clear error handling for low-connectivity environments.
+  - Graceful fallbacks for timeouts.
+
+**3. Merchant Delivery Dependency**
+- Product must:
+  - Expose merchant preparation time and delivery time expectations clearly.
+  - Allow customers to rate both merchant and delivery.
+  - Provide merchants with tools to pause ordering when overloaded.
+
+**4. Competitive Reaction**
+- Keep room for:
+  - Promo codes & dynamic commission adjustments.
+  - Per-city launch flags and growth experiments.
+
+---
+
+## 7. Theme Implementation (Light-Only)
+
+### 7.1 Decision
+
+Engezna uses a **Light-Only Theme**. Dark mode has been removed to simplify development and ensure consistent brand experience.
+
+### 7.2 Implementation Details
+
+**Removed:**
+- `next-themes` provider
+- All `dark:` Tailwind prefixes
+- Theme toggle component
+
+**CSS Variables (Light Mode Only):**
 ```css
---color-primary              /* #E85D04 Orange Primary */
---color-primary-light        /* Lighter orange shade */
---color-primary-dark         /* Darker orange shade */
---color-primary-foreground   /* White text on primary */
-```
-
-### Using in Components
-
-**Method 1: Tailwind Classes**
-```tsx
-<button className="bg-primary text-white hover:bg-primary-light">
-  Order Now
-</button>
-```
-
-**Method 2: CSS Custom Properties**
-```tsx
-<div style={{ backgroundColor: 'hsl(var(--color-primary))' }}>
-  Content
-</div>
-```
-
-**Method 3: Utility Classes** (from brand-colors.css)
-```tsx
-<span className="text-primary">Orange Primary Text</span>
-<span className="text-orange-accent">Orange Accent Text</span>
-<span className="text-gold">Gold Text</span>
-```
-
-### Color Semantic Mapping
-
-| Use Case | Color | Example |
-|----------|-------|---------|
-| Primary CTA | `--color-primary` | "اطلب دلوقتي" button |
-| Discount | `--color-orange-accent` | "خصم 30%" badge |
-| Premium | `--color-gold` | "Engezna Plus" |
-| Info | `--color-blue` | "Delivery 30 min" |
-| Success | `--color-success` | "Order confirmed" |
-| Error | `--color-error` | "Payment failed" |
-
----
-
-## 🔤 Typography Implementation
-
-### Using in Components
-
-**Arabic Text:**
-```tsx
-<h1 className="font-arabic text-4xl font-bold">
-  إنجزنا واطلب!
-</h1>
-```
-
-**English Text:**
-```tsx
-<h1 className="font-sans text-3xl font-bold">
-  Let's Get It Done!
-</h1>
-```
-
-**Bilingual:**
-```tsx
-<div className={locale === 'ar' ? 'font-arabic' : 'font-sans'}>
-  {t('homepage.title')}
-</div>
-```
-
-### Typography Scale
-
-| Element | Class |
-|---------|-------|
-| Display | `text-[56px] md:text-5xl` |
-| H1 | `text-4xl md:text-[40px]` |
-| H2 | `text-3xl` |
-| H3 | `text-2xl` |
-| Body | `text-base` |
-| Small | `text-sm` |
-| Caption | `text-xs` |
-
-### Font Weights
-
-```tsx
-<p className="font-normal">Regular (400)</p>
-<p className="font-medium">Medium (500)</p>
-<h2 className="font-semibold">Semibold (600)</h2>
-<h1 className="font-bold">Bold (700)</h1>
-```
-
----
-
-## 🏷️ Logo Component
-
-### Props
-
-```typescript
-interface LogoProps {
-  language?: 'ar' | 'en'                    // Default: 'ar'
-  variant?: 'light' | 'medium' | 'bold'     // Default: 'medium'
-  color?: 'primary' | 'white' | 'black'     // Default: 'primary'
-  size?: 'sm' | 'md' | 'lg' | 'xl'          // Default: 'md'
-  className?: string
+:root {
+  --background: 0 0% 100%;           /* White */
+  --foreground: 0 0% 10%;            /* Charcoal */
+  --primary: 198 100% 44%;           /* Engezna Blue */
+  --primary-foreground: 0 0% 100%;   /* White */
+  --muted: 0 0% 96%;                 /* Off White */
+  --muted-foreground: 0 0% 45%;      /* Gray */
 }
 ```
 
-### Examples
+**Background Strategy:**
+- Main background: White (`#FFFFFF`)
+- Section backgrounds: Light Gray (`#F9FAFB` or `bg-muted`)
+- Cards: White with subtle borders
 
+---
+
+## 8. Navigation Bar Implementation
+
+### 8.1 Customer Header Component
+
+**File:** `src/components/shared/Header.tsx`
+
+**Structure:**
 ```tsx
-// Header logo
-<Logo language="ar" variant="medium" color="primary" size="lg" />
+<header className="bg-white border-b sticky top-0 z-50 shadow-sm">
+  <div className="container mx-auto px-4 py-4">
+    <div className="flex items-center justify-between">
+      {/* Logo */}
+      {/* Navigation Items */}
+    </div>
+  </div>
+</header>
+```
 
-// Footer logo
-<Logo language="en" variant="medium" color="white" size="sm" />
+**Key Features:**
+1. **Sticky positioning** with z-index 50
+2. **Subtle shadow** for depth
+3. **Role-aware navigation** (detects if user is provider)
+4. **Active orders badge** with real-time count
 
-// Dynamic based on locale
-const locale = useLocale()
-<Logo language={locale as 'ar' | 'en'} size="lg" />
+### 8.2 Navigation Button Styles
+
+**Ghost Button (Default):**
+```tsx
+<Button variant="ghost" size="sm" className="flex items-center gap-1.5">
+  <Icon className="w-4 h-4" />
+  <span className="hidden sm:inline">Label</span>
+</Button>
+```
+
+**Logout Button (Danger Variant):**
+```tsx
+<Button
+  variant="outline"
+  size="sm"
+  className="border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
+>
+  <LogOut className="w-4 h-4" />
+  <span>Logout</span>
+</Button>
+```
+
+### 8.3 Badge Implementation
+
+**Active Orders Badge:**
+```tsx
+{activeOrdersCount > 0 && (
+  <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-bold">
+    {activeOrdersCount}
+  </span>
+)}
 ```
 
 ---
 
-## 🎯 Common UI Patterns
+## 9. Hover States & Dropdown Menus
 
-### 1. Primary CTA Button
+### 9.1 Critical: No Gap Rule
+
+**Problem:** Dropdown menus close when mouse moves between trigger and menu.
+
+**Solution:** Ensure zero gap between trigger and dropdown:
 
 ```tsx
-<button className="
-  bg-primary 
-  text-primary-foreground 
-  hover:bg-primary-light 
-  active:bg-primary-dark
-  font-semibold 
-  px-6 py-3 
-  rounded-lg
-  transition-colors
-">
-  اطلب دلوقتي
-</button>
+// ❌ WRONG - Creates gap
+<DropdownMenu>
+  <DropdownMenuTrigger>...</DropdownMenuTrigger>
+  <DropdownMenuContent className="mt-2"> {/* Gap! */}
+    ...
+  </DropdownMenuContent>
+</DropdownMenu>
+
+// ✅ CORRECT - No gap
+<DropdownMenu>
+  <DropdownMenuTrigger>...</DropdownMenuTrigger>
+  <DropdownMenuContent className="mt-0 top-full">
+    ...
+  </DropdownMenuContent>
+</DropdownMenu>
 ```
 
-### 2. Discount Badge
+### 9.2 Ghost Button Visibility
+
+**Problem:** Ghost buttons have no visible hover state on light backgrounds.
+
+**Solution:** Always add hover background:
 
 ```tsx
-<span className="
-  bg-orange-accent 
-  text-white 
-  font-semibold 
-  px-3 py-1 
-  rounded-full 
-  text-sm
-">
-  خصم 30%
-</span>
+// ❌ WRONG
+<Button variant="ghost">Click me</Button>
+
+// ✅ CORRECT
+<Button variant="ghost" className="hover:bg-muted">Click me</Button>
 ```
 
-### 3. Status Indicators
+### 9.3 RTL Arrow Icons
 
+**Implementation:**
 ```tsx
-// Success
-<div className="status-success px-4 py-2 rounded-lg">
-  <span className="text-success">✓ تم تأكيد الطلب</span>
-</div>
+const isRTL = locale === 'ar'
 
-// Error
-<div className="status-error px-4 py-2 rounded-lg">
-  <span className="text-error">✗ فشل الدفع</span>
-</div>
+// Dynamic arrow direction
+{isRTL ? (
+  <ArrowRight className="w-5 h-5" />
+) : (
+  <ArrowLeft className="w-5 h-5" />
+)}
 ```
 
-### 4. Restaurant Card
+---
 
+## 10. Provider Dashboard Navigation
+
+### 10.1 Sidebar Implementation
+
+**Features:**
+- Collapsible on mobile (hamburger menu)
+- Fixed on desktop
+- Hover menu for user actions
+
+**Hover Menu Fix:**
 ```tsx
-<div className="
-  bg-card 
-  border border-border 
-  rounded-lg 
-  overflow-hidden 
-  hover:shadow-lg 
-  transition-shadow
-">
-  <img src="/restaurant.jpg" className="w-full h-48 object-cover" />
-  <div className="p-4">
-    <h3 className="font-arabic text-xl font-semibold mb-2">
-      مطعم الأصالة
-    </h3>
-    <div className="flex items-center gap-2 mb-3">
-      <span className="text-gold">⭐ 4.5</span>
-      <span className="text-muted-foreground">(120)</span>
+<div className="relative group">
+  <button className="flex items-center gap-2">
+    <UserIcon />
+    <span>Profile</span>
+    <ChevronDown />
+  </button>
+
+  {/* Menu appears on hover - NO GAP */}
+  <div className="absolute top-full left-0 mt-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+    <div className="bg-white shadow-lg rounded-lg py-2">
+      {/* Menu items */}
     </div>
   </div>
 </div>
 ```
 
----
+### 10.2 Profile Link Routing
 
-## ✅ Brand Compliance Checklist
-
-Before committing:
-
-### Colors
-- [ ] Only brand palette colors used
-- [ ] Orange Primary for CTAs
-- [ ] Orange Accent only for discounts
-- [ ] Gold only for premium
-- [ ] WCAG AA contrast ratios met
-
-### Typography
-- [ ] Noto Sans Arabic for Arabic
-- [ ] Noto Sans for English
-- [ ] Approved weights only (400-700)
-- [ ] No letter-spacing on Arabic
-- [ ] No text-transform on Arabic
-
-### Logo
-- [ ] Logo component used
-- [ ] Correct language variant
-- [ ] Proper clear space
-- [ ] Appropriate color for background
-- [ ] Minimum sizes met
-
-### Layout
-- [ ] RTL for Arabic
-- [ ] LTR for English
-- [ ] Mobile-responsive
-- [ ] Dark mode compatible
-
----
-
-## 🛠️ Development Commands
-
-```bash
-# Run dev server
-npm run dev
-
-# Build
-npm run build
-
-# Lint
-npm run lint
+**Smart Routing:**
+```tsx
+// Redirects to provider settings if user is a provider
+<Link href={isProvider ? `/${locale}/provider/settings` : `/${locale}/profile`}>
 ```
 
 ---
 
-**Keep this guide updated as the brand system evolves!**
+## 11. Common Implementation Mistakes & Solutions
+
+### 11.1 CSS Issues
+
+| Mistake | Solution |
+|---------|----------|
+| Using hex colors directly | Use CSS variables: `hsl(var(--primary))` |
+| Mixing color formats | Standardize on HSL format |
+| Hardcoding text colors | Use semantic tokens: `text-foreground`, `text-muted-foreground` |
+
+### 11.2 Component Issues
+
+| Mistake | Solution |
+|---------|----------|
+| Inconsistent button sizes | Use standardized variants: `sm`, `default`, `lg` |
+| Missing hover states | Always define hover styles for interactive elements |
+| Non-responsive navigation | Use responsive classes: `hidden sm:inline` |
+
+### 11.3 RTL Issues
+
+| Mistake | Solution |
+|---------|----------|
+| Hardcoded margin-left | Use `ms-*` (margin-start) for RTL support |
+| Fixed arrow directions | Check `isRTL` and swap icons |
+| Left-aligned text | Use `text-start` instead of `text-left` |
+
+---
+
+## 12. Testing Checklist
+
+Before deploying navigation changes:
+
+- [ ] Test on desktop (Chrome, Firefox, Safari)
+- [ ] Test on mobile (iOS Safari, Android Chrome)
+- [ ] Test hover states on all buttons
+- [ ] Test dropdown menus (hover to open, no gap closing)
+- [ ] Test RTL layout (Arabic)
+- [ ] Test responsive breakpoints
+- [ ] Verify active states highlight correctly
+- [ ] Check badge visibility and positioning
+
+---
+
+## 13. Future-Proofing
+
+- All brand-dependent values (colors, fees, slogans) should live in:
+  - Remote configuration where possible.
+  - Centralized token files (CSS / design system).
+- Tagline should be configurable per locale:
+  - `tagline.ar = "عايز تطلب؟ إنجزنا"`
+  - `tagline.en = "Want to order? Engezna!"`
+
+---
