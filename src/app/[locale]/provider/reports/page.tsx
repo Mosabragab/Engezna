@@ -93,7 +93,8 @@ export default function ReportsPage() {
       .limit(1)
 
     const provider = providerData?.[0]
-    if (!provider || !['approved', 'open', 'closed', 'temporarily_paused'].includes(provider.status)) {
+    // Allow providers with active statuses to view reports (exclude only pending_approval)
+    if (!provider || provider.status === 'pending_approval') {
       router.push(`/${locale}/provider`)
       return
     }
@@ -114,10 +115,17 @@ export default function ReportsPage() {
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
 
     // Get all orders for this provider
-    const { data: orders } = await supabase
+    const { data: orders, error: ordersError } = await supabase
       .from('orders')
       .select('id, status, total, created_at, customer_id')
       .eq('provider_id', provId)
+
+    if (ordersError) {
+      console.error('Error fetching orders:', ordersError)
+    }
+
+    console.log('Provider ID:', provId)
+    console.log('Orders fetched:', orders?.length || 0)
 
     if (orders) {
       // Order stats
@@ -174,31 +182,40 @@ export default function ReportsPage() {
       setDailyRevenue(Object.entries(daily).map(([date, data]) => ({ date, ...data })))
     }
 
-    // Top products
-    const { data: orderItems } = await supabase
+    // Top products - fetch order items linked to this provider's menu items
+    const { data: orderItems, error: orderItemsError } = await supabase
       .from('order_items')
       .select(`
         quantity,
-        price,
+        unit_price,
+        menu_item_id,
         menu_items!inner(id, name_ar, name_en, provider_id)
       `)
       .eq('menu_items.provider_id', provId)
 
-    if (orderItems) {
+    if (orderItemsError) {
+      console.error('Error fetching order items:', orderItemsError)
+    }
+
+    console.log('Order items fetched:', orderItems?.length || 0)
+
+    if (orderItems && orderItems.length > 0) {
       const productStats: { [key: string]: TopProduct } = {}
       orderItems.forEach((item: any) => {
-        const id = item.menu_items.id
+        const menuItem = item.menu_items
+        if (!menuItem) return
+        const id = menuItem.id
         if (!productStats[id]) {
           productStats[id] = {
             id,
-            name_ar: item.menu_items.name_ar,
-            name_en: item.menu_items.name_en,
+            name_ar: menuItem.name_ar,
+            name_en: menuItem.name_en,
             total_quantity: 0,
             total_revenue: 0,
           }
         }
-        productStats[id].total_quantity += item.quantity
-        productStats[id].total_revenue += item.quantity * item.price
+        productStats[id].total_quantity += item.quantity || 0
+        productStats[id].total_revenue += (item.quantity || 0) * (item.unit_price || 0)
       })
       const sorted = Object.values(productStats).sort((a, b) => b.total_quantity - a.total_quantity).slice(0, 5)
       setTopProducts(sorted)
