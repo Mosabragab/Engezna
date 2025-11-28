@@ -105,35 +105,35 @@ export default function ProviderDashboard() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const { data: todayOrdersData } = await supabase
-      .from('orders')
-      .select('id, total, status')
-      .eq('provider_id', providerId)
-      .gte('created_at', today.toISOString())
+    // Run all queries in parallel for faster loading
+    const [
+      { data: todayOrdersData },
+      { data: pendingData },
+      { data: productsData },
+      { data: allOrdersData }
+    ] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id, total, status')
+        .eq('provider_id', providerId)
+        .gte('created_at', today.toISOString()),
+      supabase
+        .from('orders')
+        .select('id')
+        .eq('provider_id', providerId)
+        .in('status', ['pending', 'accepted', 'preparing']),
+      supabase
+        .from('menu_items')
+        .select('id')
+        .eq('provider_id', providerId)
+        .eq('is_available', true),
+      supabase
+        .from('orders')
+        .select('id, customer_id')
+        .eq('provider_id', providerId)
+    ])
 
-    const { data: pendingData } = await supabase
-      .from('orders')
-      .select('id')
-      .eq('provider_id', providerId)
-      .in('status', ['pending', 'accepted', 'preparing'])
-
-    const { data: productsData } = await supabase
-      .from('menu_items')
-      .select('id')
-      .eq('provider_id', providerId)
-      .eq('is_available', true)
-
-    const { data: totalOrdersData } = await supabase
-      .from('orders')
-      .select('id')
-      .eq('provider_id', providerId)
-
-    const { data: customersData } = await supabase
-      .from('orders')
-      .select('customer_id')
-      .eq('provider_id', providerId)
-
-    const uniqueCustomers = new Set(customersData?.map(o => o.customer_id) || [])
+    const uniqueCustomers = new Set(allOrdersData?.map(o => o.customer_id) || [])
     const deliveredOrders = todayOrdersData?.filter(o => o.status === 'delivered') || []
 
     setStats({
@@ -141,7 +141,7 @@ export default function ProviderDashboard() {
       todayRevenue: deliveredOrders.reduce((sum, o) => sum + (o.total || 0), 0),
       pendingOrders: pendingData?.length || 0,
       activeProducts: productsData?.length || 0,
-      totalOrders: totalOrdersData?.length || 0,
+      totalOrders: allOrdersData?.length || 0,
       totalCustomers: uniqueCustomers.size,
     })
   }

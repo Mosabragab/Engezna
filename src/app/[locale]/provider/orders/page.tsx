@@ -157,7 +157,7 @@ export default function ProviderOrdersPage() {
   const loadOrders = async (provId: string) => {
     const supabase = createClient()
 
-    // Fetch orders for this provider
+    // Fetch orders with items in a single query using join
     const { data: ordersData, error } = await supabase
       .from('orders')
       .select(`
@@ -172,7 +172,8 @@ export default function ProviderOrdersPage() {
         delivery_address,
         customer_notes,
         created_at,
-        customer:profiles!customer_id(full_name, phone)
+        customer:profiles!customer_id(full_name, phone),
+        order_items(id, item_name_ar, item_name_en, quantity, unit_price, total_price)
       `)
       .eq('provider_id', provId)
       .order('created_at', { ascending: false })
@@ -182,21 +183,12 @@ export default function ProviderOrdersPage() {
       return
     }
 
-    // Fetch order items for each order
-    const ordersWithItems = await Promise.all(
-      (ordersData || []).map(async (order) => {
-        const { data: items } = await supabase
-          .from('order_items')
-          .select('id, item_name_ar, item_name_en, quantity, unit_price, total_price')
-          .eq('order_id', order.id)
-
-        return {
-          ...order,
-          customer: Array.isArray(order.customer) ? order.customer[0] : order.customer,
-          items: items || []
-        }
-      })
-    )
+    // Transform data to expected format
+    const ordersWithItems = (ordersData || []).map((order) => ({
+      ...order,
+      customer: Array.isArray(order.customer) ? order.customer[0] : order.customer,
+      items: order.order_items || []
+    }))
 
     setOrders(ordersWithItems)
   }

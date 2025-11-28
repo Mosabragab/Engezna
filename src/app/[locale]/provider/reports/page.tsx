@@ -114,18 +114,29 @@ export default function ReportsPage() {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
 
-    // Get all orders for this provider
-    const { data: orders, error: ordersError } = await supabase
-      .from('orders')
-      .select('id, status, total, created_at, customer_id')
-      .eq('provider_id', provId)
+    // Run both queries in parallel for faster loading
+    const [ordersResult, orderItemsResult] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id, status, total, created_at, customer_id')
+        .eq('provider_id', provId),
+      supabase
+        .from('order_items')
+        .select(`
+          quantity,
+          unit_price,
+          menu_item_id,
+          menu_items!inner(id, name_ar, name_en, provider_id)
+        `)
+        .eq('menu_items.provider_id', provId)
+    ])
+
+    const { data: orders, error: ordersError } = ordersResult
+    const { data: orderItems, error: orderItemsError } = orderItemsResult
 
     if (ordersError) {
       console.error('Error fetching orders:', ordersError)
     }
-
-    console.log('Provider ID:', provId)
-    console.log('Orders fetched:', orders?.length || 0)
 
     if (orders) {
       // Order stats
@@ -182,22 +193,10 @@ export default function ReportsPage() {
       setDailyRevenue(Object.entries(daily).map(([date, data]) => ({ date, ...data })))
     }
 
-    // Top products - fetch order items linked to this provider's menu items
-    const { data: orderItems, error: orderItemsError } = await supabase
-      .from('order_items')
-      .select(`
-        quantity,
-        unit_price,
-        menu_item_id,
-        menu_items!inner(id, name_ar, name_en, provider_id)
-      `)
-      .eq('menu_items.provider_id', provId)
-
+    // Process top products from the parallel query result
     if (orderItemsError) {
       console.error('Error fetching order items:', orderItemsError)
     }
-
-    console.log('Order items fetched:', orderItems?.length || 0)
 
     if (orderItems && orderItems.length > 0) {
       const productStats: { [key: string]: TopProduct } = {}
