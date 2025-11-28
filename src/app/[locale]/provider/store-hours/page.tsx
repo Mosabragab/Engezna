@@ -153,20 +153,30 @@ export default function StoreHoursPage() {
   }
 
   const handleSetAllOpen = () => {
-    const newHours: BusinessHours = { ...businessHours }
-    DAYS.forEach(day => {
-      newHours[day.key as keyof BusinessHours].is_open = true
+    setBusinessHours(prev => {
+      const newHours: BusinessHours = {} as BusinessHours
+      DAYS.forEach(day => {
+        newHours[day.key as keyof BusinessHours] = {
+          ...prev[day.key as keyof BusinessHours],
+          is_open: true
+        }
+      })
+      return newHours
     })
-    setBusinessHours(newHours)
     setSaved(false)
   }
 
   const handleSetAllClosed = () => {
-    const newHours: BusinessHours = { ...businessHours }
-    DAYS.forEach(day => {
-      newHours[day.key as keyof BusinessHours].is_open = false
+    setBusinessHours(prev => {
+      const newHours: BusinessHours = {} as BusinessHours
+      DAYS.forEach(day => {
+        newHours[day.key as keyof BusinessHours] = {
+          ...prev[day.key as keyof BusinessHours],
+          is_open: false
+        }
+      })
+      return newHours
     })
-    setBusinessHours(newHours)
     setSaved(false)
   }
 
@@ -254,7 +264,7 @@ export default function StoreHoursPage() {
                   onClick={handleSetAllOpen}
                   className="border-[hsl(158_100%_38%/0.5)] text-deal hover:bg-[hsl(158_100%_38%/0.2)]"
                 >
-                  <Sun className="w-4 h-4 mr-2" />
+                  <Sun className="w-4 h-4 me-2" />
                   {locale === 'ar' ? 'فتح كل الأيام' : 'Open All Days'}
                 </Button>
                 <Button
@@ -263,7 +273,7 @@ export default function StoreHoursPage() {
                   onClick={handleSetAllClosed}
                   className="border-[hsl(358_100%_68%/0.5)] text-error hover:bg-[hsl(358_100%_68%/0.2)]"
                 >
-                  <Moon className="w-4 h-4 mr-2" />
+                  <Moon className="w-4 h-4 me-2" />
                   {locale === 'ar' ? 'إغلاق كل الأيام' : 'Close All Days'}
                 </Button>
               </div>
@@ -416,17 +426,17 @@ export default function StoreHoursPage() {
           >
             {saving ? (
               <>
-                <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                <RefreshCw className="w-5 h-5 me-2 animate-spin" />
                 {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
               </>
             ) : saved ? (
               <>
-                <Check className="w-5 h-5 mr-2" />
+                <Check className="w-5 h-5 me-2" />
                 {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}
               </>
             ) : (
               <>
-                <Save className="w-5 h-5 mr-2" />
+                <Save className="w-5 h-5 me-2" />
                 {locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
               </>
             )}
