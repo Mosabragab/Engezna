@@ -262,7 +262,7 @@ export default function StoreHoursPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleSetAllOpen}
-                  className="border-[hsl(158_100%_38%/0.5)] text-deal hover:bg-[hsl(158_100%_38%/0.2)]"
+                  className="border-[hsl(158_100%_38%/0.5)] text-deal hover:bg-[hsl(158_100%_38%/0.2)] hover:text-deal"
                 >
                   <Sun className="w-4 h-4 me-2" />
                   {locale === 'ar' ? 'فتح كل الأيام' : 'Open All Days'}
@@ -271,7 +271,7 @@ export default function StoreHoursPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleSetAllClosed}
-                  className="border-[hsl(358_100%_68%/0.5)] text-error hover:bg-[hsl(358_100%_68%/0.2)]"
+                  className="border-[hsl(358_100%_68%/0.5)] text-error hover:bg-[hsl(358_100%_68%/0.2)] hover:text-error"
                 >
                   <Moon className="w-4 h-4 me-2" />
                   {locale === 'ar' ? 'إغلاق كل الأيام' : 'Close All Days'}
