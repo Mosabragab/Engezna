@@ -22,6 +22,9 @@ import {
   Star,
   Phone,
   RefreshCw,
+  X,
+  AlertTriangle,
+  AlertCircle,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -65,6 +68,17 @@ export default function AdminProvidersPage() {
     pending: 0,
     paused: 0,
   })
+
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<{
+    providerId: string;
+    providerName: string;
+    action: 'approve' | 'reject' | 'pause' | 'resume';
+    newStatus: string;
+  } | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState('')
 
   useEffect(() => {
     checkAuth()
@@ -147,16 +161,109 @@ export default function AdminProvidersPage() {
     setFilteredProviders(filtered)
   }
 
-  async function handleStatusChange(providerId: string, newStatus: string) {
+  function openConfirmModal(provider: Provider, action: 'approve' | 'reject' | 'pause' | 'resume', newStatus: string) {
+    setConfirmAction({
+      providerId: provider.id,
+      providerName: locale === 'ar' ? provider.name_ar : provider.name_en,
+      action,
+      newStatus,
+    })
+    setRejectionReason('')
+    setShowConfirmModal(true)
+  }
+
+  async function executeStatusChange() {
+    if (!confirmAction) return
+
+    setActionLoading(true)
     const supabase = createClient()
+
+    const updateData: any = { status: confirmAction.newStatus }
+
+    // For rejection, we could store the reason in a notes field or activity log
+    // For now, just update the status
+
     const { error } = await supabase
       .from('providers')
-      .update({ status: newStatus })
-      .eq('id', providerId)
+      .update(updateData)
+      .eq('id', confirmAction.providerId)
 
     if (!error) {
+      // Log this activity (if activity_log table exists and admin is logged in)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: adminUser } = await supabase
+            .from('admin_users')
+            .select('id')
+            .eq('user_id', user.id)
+            .single()
+
+          if (adminUser) {
+            await supabase
+              .from('activity_log')
+              .insert({
+                admin_id: adminUser.id,
+                action_type: `provider_${confirmAction.action}`,
+                entity_type: 'provider',
+                entity_id: confirmAction.providerId,
+                details: {
+                  provider_name: confirmAction.providerName,
+                  new_status: confirmAction.newStatus,
+                  reason: rejectionReason || null,
+                },
+              })
+          }
+        }
+      } catch (e) {
+        // Activity logging is optional, don't fail the operation
+        console.error('Failed to log activity:', e)
+      }
+
       await loadProviders(supabase)
     }
+
+    setActionLoading(false)
+    setShowConfirmModal(false)
+    setConfirmAction(null)
+  }
+
+  function getActionConfig(action: 'approve' | 'reject' | 'pause' | 'resume') {
+    const configs = {
+      approve: {
+        title: { ar: 'تأكيد قبول المتجر', en: 'Confirm Approval' },
+        message: { ar: 'هل تريد قبول هذا المتجر؟ سيتمكن من البدء في استقبال الطلبات فوراً.', en: 'Approve this provider? They will be able to start receiving orders immediately.' },
+        confirmText: { ar: 'قبول', en: 'Approve' },
+        color: 'bg-green-600 hover:bg-green-700',
+        icon: CheckCircle2,
+        iconColor: 'text-green-600',
+      },
+      reject: {
+        title: { ar: 'تأكيد رفض المتجر', en: 'Confirm Rejection' },
+        message: { ar: 'هل تريد رفض هذا المتجر؟ سيتم إخطار صاحب المتجر بالقرار.', en: 'Reject this provider? The owner will be notified of this decision.' },
+        confirmText: { ar: 'رفض', en: 'Reject' },
+        color: 'bg-red-600 hover:bg-red-700',
+        icon: XCircle,
+        iconColor: 'text-red-600',
+      },
+      pause: {
+        title: { ar: 'تأكيد إيقاف المتجر', en: 'Confirm Suspension' },
+        message: { ar: 'هل تريد إيقاف هذا المتجر مؤقتاً؟ لن يتمكن من استقبال طلبات جديدة.', en: 'Suspend this provider temporarily? They won\'t be able to receive new orders.' },
+        confirmText: { ar: 'إيقاف', en: 'Suspend' },
+        color: 'bg-yellow-600 hover:bg-yellow-700',
+        icon: PauseCircle,
+        iconColor: 'text-yellow-600',
+      },
+      resume: {
+        title: { ar: 'تأكيد تفعيل المتجر', en: 'Confirm Reactivation' },
+        message: { ar: 'هل تريد إعادة تفعيل هذا المتجر؟ سيتمكن من استقبال الطلبات مرة أخرى.', en: 'Reactivate this provider? They will be able to receive orders again.' },
+        confirmText: { ar: 'تفعيل', en: 'Activate' },
+        color: 'bg-green-600 hover:bg-green-700',
+        icon: PlayCircle,
+        iconColor: 'text-green-600',
+      },
+    }
+    return configs[action]
   }
 
   const getStatusColor = (status: string) => {
@@ -419,7 +526,8 @@ export default function AdminProvidersPage() {
                                   variant="ghost"
                                   size="sm"
                                   className="h-8 w-8 p-0"
-                                  onClick={() => handleStatusChange(provider.id, 'open')}
+                                  onClick={() => openConfirmModal(provider, 'approve', 'open')}
+                                  title={locale === 'ar' ? 'قبول' : 'Approve'}
                                 >
                                   <CheckCircle2 className="w-4 h-4 text-green-500" />
                                 </Button>
@@ -427,7 +535,8 @@ export default function AdminProvidersPage() {
                                   variant="ghost"
                                   size="sm"
                                   className="h-8 w-8 p-0"
-                                  onClick={() => handleStatusChange(provider.id, 'rejected')}
+                                  onClick={() => openConfirmModal(provider, 'reject', 'rejected')}
+                                  title={locale === 'ar' ? 'رفض' : 'Reject'}
                                 >
                                   <XCircle className="w-4 h-4 text-red-500" />
                                 </Button>
@@ -439,7 +548,8 @@ export default function AdminProvidersPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0"
-                                onClick={() => handleStatusChange(provider.id, 'temporarily_paused')}
+                                onClick={() => openConfirmModal(provider, 'pause', 'temporarily_paused')}
+                                title={locale === 'ar' ? 'إيقاف مؤقت' : 'Pause'}
                               >
                                 <PauseCircle className="w-4 h-4 text-yellow-500" />
                               </Button>
@@ -450,7 +560,8 @@ export default function AdminProvidersPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0"
-                                onClick={() => handleStatusChange(provider.id, 'open')}
+                                onClick={() => openConfirmModal(provider, 'resume', 'open')}
+                                title={locale === 'ar' ? 'إعادة تفعيل' : 'Resume'}
                               >
                                 <PlayCircle className="w-4 h-4 text-green-500" />
                               </Button>
@@ -475,6 +586,89 @@ export default function AdminProvidersPage() {
           </div>
         </main>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && confirmAction && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            {(() => {
+              const config = getActionConfig(confirmAction.action)
+              const ActionIcon = config.icon
+              return (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-slate-900">
+                      {config.title[locale === 'ar' ? 'ar' : 'en']}
+                    </h2>
+                    <button
+                      onClick={() => { setShowConfirmModal(false); setConfirmAction(null); }}
+                      className="text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                      confirmAction.action === 'approve' || confirmAction.action === 'resume' ? 'bg-green-100' :
+                      confirmAction.action === 'reject' ? 'bg-red-100' : 'bg-yellow-100'
+                    }`}>
+                      <ActionIcon className={`w-8 h-8 ${config.iconColor}`} />
+                    </div>
+                    <p className="text-center text-slate-700 font-medium mb-2">
+                      {confirmAction.providerName}
+                    </p>
+                    <p className="text-center text-slate-600 text-sm">
+                      {config.message[locale === 'ar' ? 'ar' : 'en']}
+                    </p>
+                  </div>
+
+                  {/* Rejection reason field */}
+                  {(confirmAction.action === 'reject' || confirmAction.action === 'pause') && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'السبب (اختياري)' : 'Reason (optional)'}
+                      </label>
+                      <textarea
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        placeholder={locale === 'ar' ? 'أدخل سبب القرار...' : 'Enter reason for this decision...'}
+                        rows={3}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => { setShowConfirmModal(false); setConfirmAction(null); }}
+                      className="flex-1"
+                      disabled={actionLoading}
+                    >
+                      {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                    </Button>
+                    <Button
+                      onClick={executeStatusChange}
+                      className={`flex-1 ${config.color}`}
+                      disabled={actionLoading}
+                    >
+                      {actionLoading ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <ActionIcon className="w-4 h-4 me-2" />
+                          {config.confirmText[locale === 'ar' ? 'ar' : 'en']}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

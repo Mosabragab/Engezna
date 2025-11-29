@@ -133,7 +133,22 @@ export default function AdminApprovalsPage() {
     priority: 'medium' as ApprovalPriority,
     justification: '',
     amount: '',
+    // Dynamic fields based on type
+    related_order_id: '',
+    related_customer_id: '',
+    related_provider_id: '',
+    ban_reason: '',
+    suspend_reason: '',
+    new_commission_rate: '',
+    promo_discount: '',
+    promo_code: '',
   })
+
+  // Related entities for selection
+  const [orders, setOrders] = useState<{ id: string; order_number: string; customer_name: string }[]>([])
+  const [customers, setCustomers] = useState<{ id: string; full_name: string; email: string }[]>([])
+  const [providers, setProviders] = useState<{ id: string; name_ar: string; name_en: string }[]>([])
+  const [loadingEntities, setLoadingEntities] = useState(false)
 
   const [stats, setStats] = useState({
     total: 0,
@@ -336,8 +351,31 @@ export default function AdminApprovalsPage() {
   }
 
   async function handleCreateRequest() {
-    if (!formData.title || !formData.justification) {
-      setFormError(locale === 'ar' ? 'العنوان والمبرر مطلوبان' : 'Title and justification are required')
+    // Validate based on type
+    const title = formData.title || getAutoTitle()
+    if (!title) {
+      setFormError(locale === 'ar' ? 'العنوان مطلوب' : 'Title is required')
+      return
+    }
+
+    if (!formData.justification) {
+      setFormError(locale === 'ar' ? 'المبرر مطلوب' : 'Justification is required')
+      return
+    }
+
+    // Type-specific validation
+    if (formData.type === 'refund' && !formData.related_order_id) {
+      setFormError(locale === 'ar' ? 'يجب اختيار الطلب المراد استرداده' : 'Please select the order for refund')
+      return
+    }
+
+    if (formData.type === 'customer_ban' && !formData.related_customer_id) {
+      setFormError(locale === 'ar' ? 'يجب اختيار العميل' : 'Please select the customer')
+      return
+    }
+
+    if ((formData.type === 'provider_suspend' || formData.type === 'commission_change') && !formData.related_provider_id) {
+      setFormError(locale === 'ar' ? 'يجب اختيار المتجر' : 'Please select the provider')
       return
     }
 
@@ -345,17 +383,35 @@ export default function AdminApprovalsPage() {
     setFormError('')
     const supabase = createClient()
 
+    // Build description with dynamic fields
+    let description = formData.description || ''
+    if (formData.type === 'customer_ban' && formData.ban_reason) {
+      description = `${locale === 'ar' ? 'سبب الحظر:' : 'Ban reason:'} ${formData.ban_reason}\n${description}`
+    }
+    if (formData.type === 'provider_suspend' && formData.suspend_reason) {
+      description = `${locale === 'ar' ? 'سبب التعليق:' : 'Suspend reason:'} ${formData.suspend_reason}\n${description}`
+    }
+    if (formData.type === 'commission_change' && formData.new_commission_rate) {
+      description = `${locale === 'ar' ? 'النسبة الجديدة:' : 'New rate:'} ${formData.new_commission_rate}%\n${description}`
+    }
+    if (formData.type === 'promo_create') {
+      description = `${locale === 'ar' ? 'كود العرض:' : 'Promo code:'} ${formData.promo_code}\n${locale === 'ar' ? 'نسبة الخصم:' : 'Discount:'} ${formData.promo_discount}%\n${description}`
+    }
+
     const { error } = await supabase
       .from('approval_requests')
       .insert({
         type: formData.type,
-        title: formData.title,
-        description: formData.description || null,
+        title: title,
+        description: description || null,
         priority: formData.priority,
         justification: formData.justification,
         amount: formData.amount ? parseFloat(formData.amount) : null,
         requested_by: currentAdminId,
         status: 'pending',
+        related_order_id: formData.related_order_id || null,
+        related_customer_id: formData.related_customer_id || null,
+        related_provider_id: formData.related_provider_id || null,
       })
 
     if (error) {
@@ -374,6 +430,14 @@ export default function AdminApprovalsPage() {
       priority: 'medium',
       justification: '',
       amount: '',
+      related_order_id: '',
+      related_customer_id: '',
+      related_provider_id: '',
+      ban_reason: '',
+      suspend_reason: '',
+      new_commission_rate: '',
+      promo_discount: '',
+      promo_code: '',
     })
     setFormLoading(false)
   }
@@ -383,6 +447,83 @@ export default function AdminApprovalsPage() {
     setActionType(action)
     setDecisionNotes('')
     setShowActionModal(true)
+  }
+
+  async function openCreateModal() {
+    setShowCreateModal(true)
+    setLoadingEntities(true)
+    const supabase = createClient()
+
+    // Load orders
+    const { data: ordersData } = await supabase
+      .from('orders')
+      .select('id, order_number, customer_id')
+      .order('created_at', { ascending: false })
+      .limit(100)
+
+    if (ordersData) {
+      const ordersWithNames = await Promise.all(
+        ordersData.map(async (order) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', order.customer_id)
+            .single()
+          return {
+            id: order.id,
+            order_number: order.order_number,
+            customer_name: profile?.full_name || 'N/A',
+          }
+        })
+      )
+      setOrders(ordersWithNames)
+    }
+
+    // Load customers
+    const { data: customersData } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('role', 'customer')
+      .order('full_name')
+      .limit(100)
+
+    if (customersData) {
+      setCustomers(customersData)
+    }
+
+    // Load providers
+    const { data: providersData } = await supabase
+      .from('providers')
+      .select('id, name_ar, name_en')
+      .order('name_ar')
+      .limit(100)
+
+    if (providersData) {
+      setProviders(providersData)
+    }
+
+    setLoadingEntities(false)
+  }
+
+  function getAutoTitle() {
+    switch (formData.type) {
+      case 'refund':
+        const order = orders.find(o => o.id === formData.related_order_id)
+        return order ? (locale === 'ar' ? `استرداد للطلب ${order.order_number}` : `Refund for order ${order.order_number}`) : ''
+      case 'customer_ban':
+        const customer = customers.find(c => c.id === formData.related_customer_id)
+        return customer ? (locale === 'ar' ? `حظر العميل: ${customer.full_name}` : `Ban customer: ${customer.full_name}`) : ''
+      case 'provider_suspend':
+        const provider = providers.find(p => p.id === formData.related_provider_id)
+        return provider ? (locale === 'ar' ? `تعليق المتجر: ${provider.name_ar}` : `Suspend provider: ${provider.name_en}`) : ''
+      case 'commission_change':
+        const providerComm = providers.find(p => p.id === formData.related_provider_id)
+        return providerComm ? (locale === 'ar' ? `تعديل عمولة: ${providerComm.name_ar}` : `Commission change: ${providerComm.name_en}`) : ''
+      case 'promo_create':
+        return formData.promo_code ? (locale === 'ar' ? `إنشاء عرض: ${formData.promo_code}` : `Create promo: ${formData.promo_code}`) : ''
+      default:
+        return ''
+    }
   }
 
   if (loading) {
@@ -549,7 +690,7 @@ export default function AdminApprovalsPage() {
               </Button>
 
               <Button
-                onClick={() => setShowCreateModal(true)}
+                onClick={openCreateModal}
                 className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
               >
                 <Plus className="w-4 h-4" />
@@ -776,41 +917,245 @@ export default function AdminApprovalsPage() {
               </div>
             )}
 
-            <div className="space-y-4">
-              {/* Type */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  {locale === 'ar' ? 'نوع الطلب' : 'Request Type'} *
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as ApprovalType })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                >
-                  {Object.entries(typeConfig).map(([key, config]) => (
-                    <option key={key} value={key}>
-                      {config.label[locale === 'ar' ? 'ar' : 'en']}
-                    </option>
-                  ))}
-                </select>
+            {loadingEntities ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="w-8 h-8 text-red-500 animate-spin" />
               </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Type */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {locale === 'ar' ? 'نوع الطلب' : 'Request Type'} *
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as ApprovalType, title: '' })}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  >
+                    {Object.entries(typeConfig).map(([key, config]) => (
+                      <option key={key} value={key}>
+                        {config.label[locale === 'ar' ? 'ar' : 'en']}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  {locale === 'ar' ? 'العنوان' : 'Title'} *
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder={locale === 'ar' ? 'عنوان الطلب' : 'Request title'}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                />
-              </div>
+                {/* Dynamic Fields based on Type */}
+                {formData.type === 'refund' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'الطلب المراد استرداده' : 'Order to Refund'} *
+                      </label>
+                      <select
+                        value={formData.related_order_id}
+                        onChange={(e) => setFormData({ ...formData, related_order_id: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="">{locale === 'ar' ? 'اختر الطلب' : 'Select order'}</option>
+                        {orders.map(order => (
+                          <option key={order.id} value={order.id}>
+                            #{order.order_number} - {order.customer_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'مبلغ الاسترداد' : 'Refund Amount'} *
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        placeholder="0.00"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                  </>
+                )}
 
-              {/* Priority and Amount */}
-              <div className="grid grid-cols-2 gap-4">
+                {formData.type === 'customer_ban' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'العميل' : 'Customer'} *
+                      </label>
+                      <select
+                        value={formData.related_customer_id}
+                        onChange={(e) => setFormData({ ...formData, related_customer_id: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="">{locale === 'ar' ? 'اختر العميل' : 'Select customer'}</option>
+                        {customers.map(customer => (
+                          <option key={customer.id} value={customer.id}>
+                            {customer.full_name} - {customer.email}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'سبب الحظر' : 'Ban Reason'} *
+                      </label>
+                      <select
+                        value={formData.ban_reason}
+                        onChange={(e) => setFormData({ ...formData, ban_reason: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="">{locale === 'ar' ? 'اختر السبب' : 'Select reason'}</option>
+                        <option value="fraud">{locale === 'ar' ? 'احتيال أو نشاط مشبوه' : 'Fraud or suspicious activity'}</option>
+                        <option value="abuse">{locale === 'ar' ? 'إساءة استخدام' : 'Abuse'}</option>
+                        <option value="fake_orders">{locale === 'ar' ? 'طلبات وهمية متكررة' : 'Repeated fake orders'}</option>
+                        <option value="harassment">{locale === 'ar' ? 'مضايقة المتاجر' : 'Harassing providers'}</option>
+                        <option value="other">{locale === 'ar' ? 'سبب آخر' : 'Other reason'}</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {formData.type === 'provider_suspend' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'المتجر' : 'Provider'} *
+                      </label>
+                      <select
+                        value={formData.related_provider_id}
+                        onChange={(e) => setFormData({ ...formData, related_provider_id: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="">{locale === 'ar' ? 'اختر المتجر' : 'Select provider'}</option>
+                        {providers.map(provider => (
+                          <option key={provider.id} value={provider.id}>
+                            {locale === 'ar' ? provider.name_ar : provider.name_en}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'سبب التعليق' : 'Suspend Reason'} *
+                      </label>
+                      <select
+                        value={formData.suspend_reason}
+                        onChange={(e) => setFormData({ ...formData, suspend_reason: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="">{locale === 'ar' ? 'اختر السبب' : 'Select reason'}</option>
+                        <option value="quality">{locale === 'ar' ? 'مشاكل في الجودة' : 'Quality issues'}</option>
+                        <option value="complaints">{locale === 'ar' ? 'شكاوى متكررة' : 'Repeated complaints'}</option>
+                        <option value="policy">{locale === 'ar' ? 'مخالفة السياسات' : 'Policy violation'}</option>
+                        <option value="fraud">{locale === 'ar' ? 'احتيال' : 'Fraud'}</option>
+                        <option value="other">{locale === 'ar' ? 'سبب آخر' : 'Other reason'}</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {formData.type === 'commission_change' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'المتجر' : 'Provider'} *
+                      </label>
+                      <select
+                        value={formData.related_provider_id}
+                        onChange={(e) => setFormData({ ...formData, related_provider_id: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="">{locale === 'ar' ? 'اختر المتجر' : 'Select provider'}</option>
+                        {providers.map(provider => (
+                          <option key={provider.id} value={provider.id}>
+                            {locale === 'ar' ? provider.name_ar : provider.name_en}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'نسبة العمولة الجديدة (%)' : 'New Commission Rate (%)'} *
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.new_commission_rate}
+                        onChange={(e) => setFormData({ ...formData, new_commission_rate: e.target.value })}
+                        placeholder="0"
+                        min="0"
+                        max="100"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {formData.type === 'promo_create' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          {locale === 'ar' ? 'كود العرض' : 'Promo Code'} *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.promo_code}
+                          onChange={(e) => setFormData({ ...formData, promo_code: e.target.value.toUpperCase() })}
+                          placeholder="PROMO20"
+                          className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 uppercase"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          {locale === 'ar' ? 'نسبة الخصم (%)' : 'Discount (%)'} *
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.promo_discount}
+                          onChange={(e) => setFormData({ ...formData, promo_discount: e.target.value })}
+                          placeholder="10"
+                          min="1"
+                          max="100"
+                          className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {formData.type === 'settlement_adjust' && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'مبلغ التعديل' : 'Adjustment Amount'} *
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                )}
+
+                {/* Title - auto-generated or custom */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {locale === 'ar' ? 'العنوان' : 'Title'}
+                    <span className="text-slate-400 text-xs ms-1">
+                      ({locale === 'ar' ? 'يُنشأ تلقائياً إذا تُرك فارغاً' : 'auto-generated if left empty'})
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder={getAutoTitle() || (locale === 'ar' ? 'عنوان الطلب' : 'Request title')}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                {/* Priority */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     {locale === 'ar' ? 'الأولوية' : 'Priority'}
@@ -827,48 +1172,36 @@ export default function AdminApprovalsPage() {
                     ))}
                   </select>
                 </div>
+
+                {/* Description */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    {locale === 'ar' ? 'المبلغ (إن وجد)' : 'Amount (if any)'}
+                    {locale === 'ar' ? 'تفاصيل إضافية' : 'Additional Details'}
                   </label>
-                  <input
-                    type="number"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    placeholder="0.00"
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder={locale === 'ar' ? 'أي معلومات إضافية...' : 'Any additional information...'}
+                    rows={2}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                {/* Justification */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {locale === 'ar' ? 'المبرر' : 'Justification'} *
+                  </label>
+                  <textarea
+                    value={formData.justification}
+                    onChange={(e) => setFormData({ ...formData, justification: e.target.value })}
+                    placeholder={locale === 'ar' ? 'لماذا تحتاج هذه الموافقة؟' : 'Why do you need this approval?'}
+                    rows={4}
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
                   />
                 </div>
               </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  {locale === 'ar' ? 'الوصف' : 'Description'}
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder={locale === 'ar' ? 'تفاصيل إضافية' : 'Additional details'}
-                  rows={2}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                />
-              </div>
-
-              {/* Justification */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  {locale === 'ar' ? 'المبرر' : 'Justification'} *
-                </label>
-                <textarea
-                  value={formData.justification}
-                  onChange={(e) => setFormData({ ...formData, justification: e.target.value })}
-                  placeholder={locale === 'ar' ? 'لماذا تحتاج هذه الموافقة؟' : 'Why do you need this approval?'}
-                  rows={4}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                />
-              </div>
-            </div>
+            )}
 
             <div className="flex gap-3 mt-6">
               <Button

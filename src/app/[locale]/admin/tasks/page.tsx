@@ -135,6 +135,15 @@ export default function AdminTasksPage() {
     auto_escalate: false,
   })
 
+  // Update task modal
+  const [showUpdateModal, setShowUpdateModal] = useState(false)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [updateData, setUpdateData] = useState({
+    status: '' as TaskStatus | '',
+    progress_percentage: 0,
+    comment: '',
+  })
+
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -398,6 +407,163 @@ export default function AdminTasksPage() {
     setFormLoading(false)
   }
 
+  async function handleAcceptTask(task: Task) {
+    setFormLoading(true)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('admin_tasks')
+      .update({
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+      })
+      .eq('id', task.id)
+
+    if (!error) {
+      // Log the task update
+      await supabase
+        .from('task_updates')
+        .insert({
+          task_id: task.id,
+          admin_id: currentAdminId,
+          update_type: 'status_change',
+          status_change: 'accepted',
+          comment: locale === 'ar' ? 'تم قبول المهمة' : 'Task accepted',
+        })
+
+      await loadTasks(supabase)
+    }
+    setFormLoading(false)
+  }
+
+  function openUpdateModal(task: Task) {
+    setSelectedTask(task)
+    setUpdateData({
+      status: task.status,
+      progress_percentage: task.progress_percentage,
+      comment: '',
+    })
+    setShowUpdateModal(true)
+  }
+
+  async function handleUpdateTask() {
+    if (!selectedTask) return
+
+    setFormLoading(true)
+    setFormError('')
+    const supabase = createClient()
+
+    const updates: any = {}
+
+    if (updateData.status && updateData.status !== selectedTask.status) {
+      updates.status = updateData.status
+      if (updateData.status === 'completed') {
+        updates.completed_at = new Date().toISOString()
+      }
+    }
+
+    if (updateData.progress_percentage !== selectedTask.progress_percentage) {
+      updates.progress_percentage = updateData.progress_percentage
+      // Auto-update status based on progress
+      if (updateData.progress_percentage > 0 && updateData.progress_percentage < 100 && selectedTask.status === 'accepted') {
+        updates.status = 'in_progress'
+      } else if (updateData.progress_percentage === 100) {
+        updates.status = 'completed'
+        updates.completed_at = new Date().toISOString()
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      const { error } = await supabase
+        .from('admin_tasks')
+        .update(updates)
+        .eq('id', selectedTask.id)
+
+      if (error) {
+        console.error('Error updating task:', error)
+        setFormError(locale === 'ar' ? 'حدث خطأ أثناء تحديث المهمة' : 'Error updating task')
+        setFormLoading(false)
+        return
+      }
+
+      // Log the update
+      await supabase
+        .from('task_updates')
+        .insert({
+          task_id: selectedTask.id,
+          admin_id: currentAdminId,
+          update_type: updateData.status !== selectedTask.status ? 'status_change' : 'progress',
+          status_change: updates.status || null,
+          progress: updateData.progress_percentage,
+          comment: updateData.comment || null,
+        })
+
+      await loadTasks(supabase)
+    }
+
+    setShowUpdateModal(false)
+    setSelectedTask(null)
+    setFormLoading(false)
+  }
+
+  async function handleStartTask(task: Task) {
+    setFormLoading(true)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('admin_tasks')
+      .update({
+        status: 'in_progress',
+        progress_percentage: task.progress_percentage > 0 ? task.progress_percentage : 10,
+      })
+      .eq('id', task.id)
+
+    if (!error) {
+      await supabase
+        .from('task_updates')
+        .insert({
+          task_id: task.id,
+          admin_id: currentAdminId,
+          update_type: 'status_change',
+          status_change: 'in_progress',
+          comment: locale === 'ar' ? 'بدأ العمل على المهمة' : 'Started working on task',
+        })
+
+      await loadTasks(supabase)
+    }
+    setFormLoading(false)
+  }
+
+  async function handleCompleteTask(task: Task) {
+    setFormLoading(true)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('admin_tasks')
+      .update({
+        status: 'completed',
+        progress_percentage: 100,
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', task.id)
+
+    if (!error) {
+      await supabase
+        .from('task_updates')
+        .insert({
+          task_id: task.id,
+          admin_id: currentAdminId,
+          update_type: 'status_change',
+          status_change: 'completed',
+          progress: 100,
+          comment: locale === 'ar' ? 'تم إكمال المهمة' : 'Task completed',
+        })
+
+      await loadTasks(supabase)
+    }
+    setFormLoading(false)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -648,18 +814,62 @@ export default function AdminTasksPage() {
                       )}
 
                       {/* Actions */}
-                      <div className="flex items-center gap-2 mt-4">
+                      <div className="flex flex-wrap items-center gap-2 mt-4">
                         <Link href={`/${locale}/admin/tasks/${task.id}`}>
                           <Button variant="outline" size="sm" className="flex items-center gap-2">
                             <Eye className="w-4 h-4" />
                             {locale === 'ar' ? 'عرض التفاصيل' : 'View Details'}
                           </Button>
                         </Link>
+
+                        {/* Accept Task - only for new tasks assigned to current user */}
                         {task.status === 'new' && task.assigned_to === currentAdminId && (
-                          <Button size="sm" className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
+                          <Button
+                            size="sm"
+                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                            onClick={() => handleAcceptTask(task)}
+                            disabled={formLoading}
+                          >
                             <CheckCircle2 className="w-4 h-4" />
                             {locale === 'ar' ? 'قبول المهمة' : 'Accept Task'}
                           </Button>
+                        )}
+
+                        {/* Start Task - for accepted tasks */}
+                        {task.status === 'accepted' && task.assigned_to === currentAdminId && (
+                          <Button
+                            size="sm"
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                            onClick={() => handleStartTask(task)}
+                            disabled={formLoading}
+                          >
+                            <Play className="w-4 h-4" />
+                            {locale === 'ar' ? 'بدء العمل' : 'Start Work'}
+                          </Button>
+                        )}
+
+                        {/* Update Progress - for in-progress tasks */}
+                        {task.status === 'in_progress' && task.assigned_to === currentAdminId && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex items-center gap-2"
+                              onClick={() => openUpdateModal(task)}
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                              {locale === 'ar' ? 'تحديث التقدم' : 'Update Progress'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                              onClick={() => handleCompleteTask(task)}
+                              disabled={formLoading}
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              {locale === 'ar' ? 'إكمال' : 'Complete'}
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -845,6 +1055,115 @@ export default function AdminTasksPage() {
                   <>
                     <Send className="w-4 h-4 me-2" />
                     {locale === 'ar' ? 'إرسال' : 'Send'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Task Modal */}
+      {showUpdateModal && selectedTask && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-slate-900">
+                {locale === 'ar' ? 'تحديث المهمة' : 'Update Task'}
+              </h2>
+              <button
+                onClick={() => { setShowUpdateModal(false); setSelectedTask(null); }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="mb-4 p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm text-slate-600">#{selectedTask.task_number}</p>
+              <p className="font-medium text-slate-900">{selectedTask.title}</p>
+            </div>
+
+            {formError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="text-sm">{formError}</span>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* Progress Slider */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {locale === 'ar' ? 'نسبة الإنجاز' : 'Progress'}: {updateData.progress_percentage}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={updateData.progress_percentage}
+                  onChange={(e) => setUpdateData({ ...updateData, progress_percentage: parseInt(e.target.value) })}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-600"
+                />
+                <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <span>0%</span>
+                  <span>50%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+
+              {/* Status Change */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {locale === 'ar' ? 'تغيير الحالة' : 'Change Status'}
+                </label>
+                <select
+                  value={updateData.status}
+                  onChange={(e) => setUpdateData({ ...updateData, status: e.target.value as TaskStatus })}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="in_progress">{locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</option>
+                  <option value="pending">{locale === 'ar' ? 'في انتظار' : 'Pending'}</option>
+                  <option value="completed">{locale === 'ar' ? 'مكتملة' : 'Completed'}</option>
+                </select>
+              </div>
+
+              {/* Comment */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {locale === 'ar' ? 'تعليق (اختياري)' : 'Comment (optional)'}
+                </label>
+                <textarea
+                  value={updateData.comment}
+                  onChange={(e) => setUpdateData({ ...updateData, comment: e.target.value })}
+                  placeholder={locale === 'ar' ? 'أضف تعليقاً على التحديث...' : 'Add a comment about this update...'}
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => { setShowUpdateModal(false); setSelectedTask(null); }}
+                className="flex-1"
+                disabled={formLoading}
+              >
+                {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button
+                onClick={handleUpdateTask}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                disabled={formLoading}
+              >
+                {formLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 me-2" />
+                    {locale === 'ar' ? 'حفظ التحديث' : 'Save Update'}
                   </>
                 )}
               </Button>
