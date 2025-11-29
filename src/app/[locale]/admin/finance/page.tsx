@@ -3,44 +3,27 @@
 import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
+import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
-  Store,
-  ShoppingBag,
-  BarChart3,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Home,
-  Users,
-  Wallet,
-  Bell,
-  ChevronDown,
   Search,
   Eye,
   RefreshCw,
   DollarSign,
-  TrendingUp,
-  TrendingDown,
   CreditCard,
   Banknote,
   Clock,
   CheckCircle2,
   XCircle,
-  Calendar,
-  Download,
-  Filter,
-  HeadphonesIcon,
-  Activity,
   ArrowUpRight,
   ArrowDownRight,
   Building,
   Receipt,
+  Wallet,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -75,15 +58,12 @@ type FilterSettlementStatus = 'all' | 'pending' | 'processing' | 'completed' | '
 
 export default function AdminFinancePage() {
   const locale = useLocale()
-  const pathname = usePathname()
   const isRTL = locale === 'ar'
 
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
-
   const [settlements, setSettlements] = useState<SettlementRecord[]>([])
   const [filteredSettlements, setFilteredSettlements] = useState<SettlementRecord[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -134,8 +114,6 @@ export default function AdminFinancePage() {
   }
 
   async function loadFinanceData(supabase: ReturnType<typeof createClient>) {
-    // Get date ranges based on period filter
-    const now = new Date()
     const getDateRange = (period: FilterPeriod) => {
       const start = new Date()
       switch (period) {
@@ -159,7 +137,6 @@ export default function AdminFinancePage() {
 
     const startDate = getDateRange(periodFilter)
 
-    // Load orders for financial stats
     let ordersQuery = supabase
       .from('orders')
       .select('id, total, platform_commission, delivery_fee, payment_method, payment_status, status, created_at')
@@ -173,7 +150,6 @@ export default function AdminFinancePage() {
 
     const orders = (ordersData || []) as OrderFinance[]
 
-    // Calculate stats
     const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
     const totalCommission = orders.reduce((sum, o) => sum + (o.platform_commission || 0), 0)
     const totalDeliveryFees = orders.reduce((sum, o) => sum + (o.delivery_fee || 0), 0)
@@ -182,7 +158,6 @@ export default function AdminFinancePage() {
     const cardOrders = orders.filter(o => o.payment_method === 'card').reduce((sum, o) => sum + (o.total || 0), 0)
     const walletOrders = orders.filter(o => o.payment_method === 'wallet').reduce((sum, o) => sum + (o.total || 0), 0)
 
-    // Load previous period for comparison
     const getPreviousRange = (period: FilterPeriod) => {
       const end = new Date()
       const start = new Date()
@@ -230,7 +205,6 @@ export default function AdminFinancePage() {
     const revenueChange = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0
     const commissionChange = prevCommission > 0 ? ((totalCommission - prevCommission) / prevCommission) * 100 : 0
 
-    // Load settlements
     const { data: settlementsData } = await supabase
       .from('settlements')
       .select(`
@@ -288,41 +262,11 @@ export default function AdminFinancePage() {
     setFilteredSettlements(filtered)
   }
 
-  async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = `/${locale}`
-  }
-
   async function handleRefresh() {
     setLoading(true)
     const supabase = createClient()
     await loadFinanceData(supabase)
     setLoading(false)
-  }
-
-  const navItems = [
-    { icon: Home, label: locale === 'ar' ? 'الرئيسية' : 'Dashboard', path: `/${locale}/admin` },
-    { icon: Store, label: locale === 'ar' ? 'المتاجر' : 'Providers', path: `/${locale}/admin/providers` },
-    { icon: ShoppingBag, label: locale === 'ar' ? 'الطلبات' : 'Orders', path: `/${locale}/admin/orders` },
-    { icon: Users, label: locale === 'ar' ? 'العملاء' : 'Customers', path: `/${locale}/admin/customers` },
-    { icon: Wallet, label: locale === 'ar' ? 'المالية' : 'Finance', path: `/${locale}/admin/finance`, active: true },
-    { icon: BarChart3, label: locale === 'ar' ? 'التحليلات' : 'Analytics', path: `/${locale}/admin/analytics` },
-    { icon: HeadphonesIcon, label: locale === 'ar' ? 'الدعم' : 'Support', path: `/${locale}/admin/support` },
-    { icon: Activity, label: locale === 'ar' ? 'سجل النشاط' : 'Activity Log', path: `/${locale}/admin/activity-log` },
-    { icon: Settings, label: locale === 'ar' ? 'الإعدادات' : 'Settings', path: `/${locale}/admin/settings` },
-  ]
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG').format(amount)
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-EG', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
   }
 
   const getSettlementStatusColor = (status: string) => {
@@ -384,93 +328,17 @@ export default function AdminFinancePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <aside className={`
-        fixed lg:static inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-50
-        w-64 bg-white border-${isRTL ? 'l' : 'r'} border-slate-200 shadow-sm
-        transform transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0
-        flex flex-col
-      `}>
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex items-center justify-between">
-            <Link href={`/${locale}/admin`} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg text-slate-900">{locale === 'ar' ? 'إنجزنا' : 'Engezna'}</h1>
-                <p className="text-xs text-slate-500">{locale === 'ar' ? 'لوحة المشرفين' : 'Admin Panel'}</p>
-              </div>
-            </Link>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 hover:text-slate-700">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = item.active || pathname === item.path
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                  ${isActive ? 'bg-red-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{item.label}</span>
-              </Link>
-            )
-          })}
-        </nav>
-      </aside>
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-500 hover:text-slate-700">
-                <Menu className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="hidden md:flex items-center justify-center flex-1">
-              <h2 className="text-lg font-semibold text-slate-800">
-                {locale === 'ar' ? 'الإدارة المالية' : 'Finance Management'}
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button className="p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-lg">
-                <Bell className="w-5 h-5" />
-              </button>
-              <div className="relative" onMouseEnter={() => setAccountMenuOpen(true)} onMouseLeave={() => setAccountMenuOpen(false)}>
-                <button className="flex items-center gap-2 p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <span className="font-semibold text-sm text-red-600">{user?.email?.charAt(0).toUpperCase()}</span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {accountMenuOpen && (
-                  <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-56 z-50`}>
-                    <div className="bg-white rounded-xl shadow-lg border border-slate-200 py-2">
-                      <button onClick={handleSignOut} className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                        <LogOut className="w-4 h-4" />
-                        {locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <AdminHeader
+          user={user}
+          title={locale === 'ar' ? 'الإدارة المالية' : 'Finance Management'}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Period Filter */}
@@ -512,13 +380,13 @@ export default function AdminFinancePage() {
                 {stats.revenueChange !== 0 && (
                   <div className={`flex items-center gap-1 text-sm ${stats.revenueChange > 0 ? 'text-green-100' : 'text-red-100'}`}>
                     {stats.revenueChange > 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                    {Math.abs(stats.revenueChange).toFixed(1)}%
+                    {formatNumber(Math.abs(stats.revenueChange), locale)}.{formatNumber(Math.round((Math.abs(stats.revenueChange) % 1) * 10), locale)}%
                   </div>
                 )}
               </div>
               <p className="text-green-100 text-sm mb-1">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</p>
-              <p className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-              <p className="text-green-100 text-xs mt-2">{stats.ordersCount} {locale === 'ar' ? 'طلب' : 'orders'}</p>
+              <p className="text-2xl font-bold">{formatCurrency(stats.totalRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+              <p className="text-green-100 text-xs mt-2">{formatNumber(stats.ordersCount, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
             </div>
 
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg">
@@ -529,22 +397,22 @@ export default function AdminFinancePage() {
                 {stats.commissionChange !== 0 && (
                   <div className={`flex items-center gap-1 text-sm ${stats.commissionChange > 0 ? 'text-blue-100' : 'text-red-100'}`}>
                     {stats.commissionChange > 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                    {Math.abs(stats.commissionChange).toFixed(1)}%
+                    {formatNumber(Math.abs(stats.commissionChange), locale)}.{formatNumber(Math.round((Math.abs(stats.commissionChange) % 1) * 10), locale)}%
                   </div>
                 )}
               </div>
               <p className="text-blue-100 text-sm mb-1">{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</p>
-              <p className="text-2xl font-bold">{formatCurrency(stats.totalCommission)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+              <p className="text-2xl font-bold">{formatCurrency(stats.totalCommission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
 
             <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6" />
+                  <DollarSign className="w-6 h-6" />
                 </div>
               </div>
               <p className="text-purple-100 text-sm mb-1">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</p>
-              <p className="text-2xl font-bold">{formatCurrency(stats.totalDeliveryFees)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+              <p className="text-2xl font-bold">{formatCurrency(stats.totalDeliveryFees, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
 
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-5 text-white shadow-lg">
@@ -554,7 +422,7 @@ export default function AdminFinancePage() {
                 </div>
               </div>
               <p className="text-orange-100 text-sm mb-1">{locale === 'ar' ? 'تسويات معلقة' : 'Pending Settlements'}</p>
-              <p className="text-2xl font-bold">{formatCurrency(stats.pendingSettlements)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+              <p className="text-2xl font-bold">{formatCurrency(stats.pendingSettlements, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
           </div>
 
@@ -567,7 +435,7 @@ export default function AdminFinancePage() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">{locale === 'ar' ? 'دفع نقدي' : 'Cash'}</p>
-                  <p className="text-xl font-bold text-slate-900">{formatCurrency(stats.cashOrders)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                  <p className="text-xl font-bold text-slate-900">{formatCurrency(stats.cashOrders, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
                 </div>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
@@ -577,7 +445,7 @@ export default function AdminFinancePage() {
                 />
               </div>
               <p className="text-xs text-slate-500 mt-2">
-                {stats.totalRevenue > 0 ? ((stats.cashOrders / stats.totalRevenue) * 100).toFixed(1) : 0}%
+                {formatNumber(stats.totalRevenue > 0 ? Math.round((stats.cashOrders / stats.totalRevenue) * 1000) / 10 : 0, locale)}%
               </p>
             </div>
 
@@ -588,7 +456,7 @@ export default function AdminFinancePage() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">{locale === 'ar' ? 'بطاقة' : 'Card'}</p>
-                  <p className="text-xl font-bold text-slate-900">{formatCurrency(stats.cardOrders)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                  <p className="text-xl font-bold text-slate-900">{formatCurrency(stats.cardOrders, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
                 </div>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
@@ -598,7 +466,7 @@ export default function AdminFinancePage() {
                 />
               </div>
               <p className="text-xs text-slate-500 mt-2">
-                {stats.totalRevenue > 0 ? ((stats.cardOrders / stats.totalRevenue) * 100).toFixed(1) : 0}%
+                {formatNumber(stats.totalRevenue > 0 ? Math.round((stats.cardOrders / stats.totalRevenue) * 1000) / 10 : 0, locale)}%
               </p>
             </div>
 
@@ -609,7 +477,7 @@ export default function AdminFinancePage() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">{locale === 'ar' ? 'محفظة' : 'Wallet'}</p>
-                  <p className="text-xl font-bold text-slate-900">{formatCurrency(stats.walletOrders)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                  <p className="text-xl font-bold text-slate-900">{formatCurrency(stats.walletOrders, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
                 </div>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
@@ -619,7 +487,7 @@ export default function AdminFinancePage() {
                 />
               </div>
               <p className="text-xs text-slate-500 mt-2">
-                {stats.totalRevenue > 0 ? ((stats.walletOrders / stats.totalRevenue) * 100).toFixed(1) : 0}%
+                {formatNumber(stats.totalRevenue > 0 ? Math.round((stats.walletOrders / stats.totalRevenue) * 1000) / 10 : 0, locale)}%
               </p>
             </div>
           </div>
@@ -686,18 +554,18 @@ export default function AdminFinancePage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm">
-                            <p className="text-slate-900">{formatDate(settlement.period_start)}</p>
-                            <p className="text-slate-500">{locale === 'ar' ? 'إلى' : 'to'} {formatDate(settlement.period_end)}</p>
+                            <p className="text-slate-900">{formatDate(settlement.period_start, locale)}</p>
+                            <p className="text-slate-500">{locale === 'ar' ? 'إلى' : 'to'} {formatDate(settlement.period_end, locale)}</p>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-medium text-slate-900">{formatCurrency(settlement.amount)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                          <span className="font-medium text-slate-900">{formatCurrency(settlement.amount, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm text-red-600">-{formatCurrency(settlement.platform_commission)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                          <span className="text-sm text-red-600">-{formatCurrency(settlement.platform_commission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-bold text-green-600">{formatCurrency(settlement.net_amount)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                          <span className="font-bold text-green-600">{formatCurrency(settlement.net_amount, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${getSettlementStatusColor(settlement.status)}`}>

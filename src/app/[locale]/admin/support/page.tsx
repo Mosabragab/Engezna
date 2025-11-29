@@ -3,24 +3,13 @@
 import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
+import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { formatNumber, formatDateTime } from '@/lib/utils/formatters'
 import {
   Shield,
-  Store,
-  ShoppingBag,
-  BarChart3,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Home,
-  Users,
-  Wallet,
-  Bell,
-  ChevronDown,
   Search,
   Eye,
   RefreshCw,
@@ -30,11 +19,7 @@ import {
   AlertCircle,
   MessageSquare,
   HeadphonesIcon,
-  Activity,
-  Send,
   User as UserIcon,
-  Calendar,
-  Tag,
   AlertTriangle,
   Info,
 } from 'lucide-react'
@@ -64,22 +49,18 @@ type FilterPriority = 'all' | 'low' | 'medium' | 'high' | 'urgent'
 
 export default function AdminSupportPage() {
   const locale = useLocale()
-  const pathname = usePathname()
   const isRTL = locale === 'ar'
 
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
 
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [filteredTickets, setFilteredTickets] = useState<SupportTicket[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [priorityFilter, setPriorityFilter] = useState<FilterPriority>('all')
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
-  const [replyMessage, setReplyMessage] = useState('')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   const [stats, setStats] = useState({
@@ -120,7 +101,7 @@ export default function AdminSupportPage() {
   }
 
   async function loadTickets(supabase: ReturnType<typeof createClient>) {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('support_tickets')
       .select(`
         *,
@@ -130,7 +111,6 @@ export default function AdminSupportPage() {
       .order('created_at', { ascending: false })
 
     if (data) {
-      // Get message counts for each ticket
       const ticketsWithCounts = await Promise.all(
         data.map(async (ticket) => {
           const { count } = await supabase
@@ -210,24 +190,6 @@ export default function AdminSupportPage() {
     setActionLoading(null)
   }
 
-  async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = `/${locale}`
-  }
-
-  const navItems = [
-    { icon: Home, label: locale === 'ar' ? 'الرئيسية' : 'Dashboard', path: `/${locale}/admin` },
-    { icon: Store, label: locale === 'ar' ? 'المتاجر' : 'Providers', path: `/${locale}/admin/providers` },
-    { icon: ShoppingBag, label: locale === 'ar' ? 'الطلبات' : 'Orders', path: `/${locale}/admin/orders` },
-    { icon: Users, label: locale === 'ar' ? 'العملاء' : 'Customers', path: `/${locale}/admin/customers` },
-    { icon: Wallet, label: locale === 'ar' ? 'المالية' : 'Finance', path: `/${locale}/admin/finance` },
-    { icon: BarChart3, label: locale === 'ar' ? 'التحليلات' : 'Analytics', path: `/${locale}/admin/analytics` },
-    { icon: HeadphonesIcon, label: locale === 'ar' ? 'الدعم' : 'Support', path: `/${locale}/admin/support`, active: true },
-    { icon: Activity, label: locale === 'ar' ? 'سجل النشاط' : 'Activity Log', path: `/${locale}/admin/activity-log` },
-    { icon: Settings, label: locale === 'ar' ? 'الإعدادات' : 'Settings', path: `/${locale}/admin/settings` },
-  ]
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return 'bg-yellow-100 text-yellow-700'
@@ -278,16 +240,6 @@ export default function AdminSupportPage() {
     return labels[priority]?.[locale === 'ar' ? 'ar' : 'en'] || priority
   }
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-EG', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -316,93 +268,18 @@ export default function AdminSupportPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <aside className={`
-        fixed lg:static inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-50
-        w-64 bg-white border-${isRTL ? 'l' : 'r'} border-slate-200 shadow-sm
-        transform transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0
-        flex flex-col
-      `}>
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex items-center justify-between">
-            <Link href={`/${locale}/admin`} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg text-slate-900">{locale === 'ar' ? 'إنجزنا' : 'Engezna'}</h1>
-                <p className="text-xs text-slate-500">{locale === 'ar' ? 'لوحة المشرفين' : 'Admin Panel'}</p>
-              </div>
-            </Link>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 hover:text-slate-700">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = item.active || pathname === item.path
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                  ${isActive ? 'bg-red-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{item.label}</span>
-              </Link>
-            )
-          })}
-        </nav>
-      </aside>
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        openTickets={stats.open}
+      />
 
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-500 hover:text-slate-700">
-                <Menu className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="hidden md:flex items-center justify-center flex-1">
-              <h2 className="text-lg font-semibold text-slate-800">
-                {locale === 'ar' ? 'تذاكر الدعم' : 'Support Tickets'}
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button className="p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-lg">
-                <Bell className="w-5 h-5" />
-              </button>
-              <div className="relative" onMouseEnter={() => setAccountMenuOpen(true)} onMouseLeave={() => setAccountMenuOpen(false)}>
-                <button className="flex items-center gap-2 p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <span className="font-semibold text-sm text-red-600">{user?.email?.charAt(0).toUpperCase()}</span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {accountMenuOpen && (
-                  <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-56 z-50`}>
-                    <div className="bg-white rounded-xl shadow-lg border border-slate-200 py-2">
-                      <button onClick={handleSignOut} className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                        <LogOut className="w-4 h-4" />
-                        {locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <AdminHeader
+          user={user}
+          title={locale === 'ar' ? 'تذاكر الدعم' : 'Support Tickets'}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Stats */}
@@ -412,35 +289,35 @@ export default function AdminSupportPage() {
                 <HeadphonesIcon className="w-5 h-5 text-slate-600" />
                 <span className="text-sm text-slate-600">{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
               </div>
-              <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
+              <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.total, locale)}</p>
             </div>
             <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
               <div className="flex items-center gap-3 mb-2">
                 <AlertCircle className="w-5 h-5 text-yellow-600" />
                 <span className="text-sm text-yellow-700">{locale === 'ar' ? 'مفتوح' : 'Open'}</span>
               </div>
-              <p className="text-2xl font-bold text-yellow-700">{stats.open}</p>
+              <p className="text-2xl font-bold text-yellow-700">{formatNumber(stats.open, locale)}</p>
             </div>
             <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
               <div className="flex items-center gap-3 mb-2">
                 <Clock className="w-5 h-5 text-blue-600" />
                 <span className="text-sm text-blue-700">{locale === 'ar' ? 'قيد المعالجة' : 'In Progress'}</span>
               </div>
-              <p className="text-2xl font-bold text-blue-700">{stats.inProgress}</p>
+              <p className="text-2xl font-bold text-blue-700">{formatNumber(stats.inProgress, locale)}</p>
             </div>
             <div className="bg-green-50 rounded-xl p-4 border border-green-200">
               <div className="flex items-center gap-3 mb-2">
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
                 <span className="text-sm text-green-700">{locale === 'ar' ? 'تم الحل' : 'Resolved'}</span>
               </div>
-              <p className="text-2xl font-bold text-green-700">{stats.resolved}</p>
+              <p className="text-2xl font-bold text-green-700">{formatNumber(stats.resolved, locale)}</p>
             </div>
             <div className="bg-red-50 rounded-xl p-4 border border-red-200">
               <div className="flex items-center gap-3 mb-2">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
                 <span className="text-sm text-red-700">{locale === 'ar' ? 'عاجل' : 'Urgent'}</span>
               </div>
-              <p className="text-2xl font-bold text-red-700">{stats.urgent}</p>
+              <p className="text-2xl font-bold text-red-700">{formatNumber(stats.urgent, locale)}</p>
             </div>
           </div>
 
@@ -548,11 +425,11 @@ export default function AdminSupportPage() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
                             <MessageSquare className="w-4 h-4 text-slate-400" />
-                            <span className="text-sm text-slate-600">{ticket.messages_count}</span>
+                            <span className="text-sm text-slate-600">{formatNumber(ticket.messages_count, locale)}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm text-slate-500">{formatDateTime(ticket.created_at)}</span>
+                          <span className="text-sm text-slate-500">{formatDateTime(ticket.created_at, locale)}</span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-2">

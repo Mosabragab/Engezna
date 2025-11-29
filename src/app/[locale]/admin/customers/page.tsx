@@ -3,29 +3,18 @@
 import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
+import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
-  Store,
-  ShoppingBag,
-  BarChart3,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Home,
   Users,
-  Wallet,
-  Bell,
-  ChevronDown,
   Search,
   Eye,
   RefreshCw,
   UserCheck,
-  UserX,
   UserPlus,
   Mail,
   Phone,
@@ -34,9 +23,6 @@ import {
   DollarSign,
   Ban,
   CheckCircle2,
-  HeadphonesIcon,
-  Activity,
-  AlertCircle,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -60,14 +46,12 @@ type FilterStatus = 'all' | 'active' | 'banned' | 'new'
 
 export default function AdminCustomersPage() {
   const locale = useLocale()
-  const pathname = usePathname()
   const isRTL = locale === 'ar'
 
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
 
   const [customers, setCustomers] = useState<Customer[]>([])
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([])
@@ -113,7 +97,6 @@ export default function AdminCustomersPage() {
   }
 
   async function loadCustomers(supabase: ReturnType<typeof createClient>) {
-    // Get customers (profiles with role='customer')
     const { data: customersData, error } = await supabase
       .from('profiles')
       .select('*')
@@ -125,7 +108,6 @@ export default function AdminCustomersPage() {
       return
     }
 
-    // Get orders count and total spent for each customer
     const customersWithOrders: Customer[] = await Promise.all(
       (customersData || []).map(async (customer) => {
         const { data: ordersData } = await supabase
@@ -153,7 +135,6 @@ export default function AdminCustomersPage() {
 
     setCustomers(customersWithOrders)
 
-    // Calculate stats
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -218,36 +199,6 @@ export default function AdminCustomersPage() {
     setActionLoading(null)
   }
 
-  async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = `/${locale}`
-  }
-
-  const navItems = [
-    { icon: Home, label: locale === 'ar' ? 'الرئيسية' : 'Dashboard', path: `/${locale}/admin` },
-    { icon: Store, label: locale === 'ar' ? 'المتاجر' : 'Providers', path: `/${locale}/admin/providers` },
-    { icon: ShoppingBag, label: locale === 'ar' ? 'الطلبات' : 'Orders', path: `/${locale}/admin/orders` },
-    { icon: Users, label: locale === 'ar' ? 'العملاء' : 'Customers', path: `/${locale}/admin/customers`, active: true },
-    { icon: Wallet, label: locale === 'ar' ? 'المالية' : 'Finance', path: `/${locale}/admin/finance` },
-    { icon: BarChart3, label: locale === 'ar' ? 'التحليلات' : 'Analytics', path: `/${locale}/admin/analytics` },
-    { icon: HeadphonesIcon, label: locale === 'ar' ? 'الدعم' : 'Support', path: `/${locale}/admin/support` },
-    { icon: Activity, label: locale === 'ar' ? 'سجل النشاط' : 'Activity Log', path: `/${locale}/admin/activity-log` },
-    { icon: Settings, label: locale === 'ar' ? 'الإعدادات' : 'Settings', path: `/${locale}/admin/settings` },
-  ]
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG').format(amount)
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-EG', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -276,93 +227,20 @@ export default function AdminCustomersPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+      {/* Sidebar */}
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-      <aside className={`
-        fixed lg:static inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-50
-        w-64 bg-white border-${isRTL ? 'l' : 'r'} border-slate-200 shadow-sm
-        transform transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0
-        flex flex-col
-      `}>
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex items-center justify-between">
-            <Link href={`/${locale}/admin`} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg text-slate-900">{locale === 'ar' ? 'إنجزنا' : 'Engezna'}</h1>
-                <p className="text-xs text-slate-500">{locale === 'ar' ? 'لوحة المشرفين' : 'Admin Panel'}</p>
-              </div>
-            </Link>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 hover:text-slate-700">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = item.active || pathname === item.path
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                  ${isActive ? 'bg-red-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{item.label}</span>
-              </Link>
-            )
-          })}
-        </nav>
-      </aside>
-
+      {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-500 hover:text-slate-700">
-                <Menu className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="hidden md:flex items-center justify-center flex-1">
-              <h2 className="text-lg font-semibold text-slate-800">
-                {locale === 'ar' ? 'إدارة العملاء' : 'Customers Management'}
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button className="p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-lg">
-                <Bell className="w-5 h-5" />
-              </button>
-              <div className="relative" onMouseEnter={() => setAccountMenuOpen(true)} onMouseLeave={() => setAccountMenuOpen(false)}>
-                <button className="flex items-center gap-2 p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <span className="font-semibold text-sm text-red-600">{user?.email?.charAt(0).toUpperCase()}</span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {accountMenuOpen && (
-                  <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-56 z-50`}>
-                    <div className="bg-white rounded-xl shadow-lg border border-slate-200 py-2">
-                      <button onClick={handleSignOut} className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                        <LogOut className="w-4 h-4" />
-                        {locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        {/* Header */}
+        <AdminHeader
+          user={user}
+          title={locale === 'ar' ? 'إدارة العملاء' : 'Customers Management'}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Stats */}
@@ -372,42 +250,42 @@ export default function AdminCustomersPage() {
                 <Users className="w-5 h-5 text-slate-600" />
                 <span className="text-sm text-slate-600">{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
               </div>
-              <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
+              <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.total, locale)}</p>
             </div>
             <div className="bg-green-50 rounded-xl p-4 border border-green-200">
               <div className="flex items-center gap-3 mb-2">
                 <UserCheck className="w-5 h-5 text-green-600" />
                 <span className="text-sm text-green-700">{locale === 'ar' ? 'نشط' : 'Active'}</span>
               </div>
-              <p className="text-2xl font-bold text-green-700">{stats.active}</p>
+              <p className="text-2xl font-bold text-green-700">{formatNumber(stats.active, locale)}</p>
             </div>
             <div className="bg-red-50 rounded-xl p-4 border border-red-200">
               <div className="flex items-center gap-3 mb-2">
                 <Ban className="w-5 h-5 text-red-600" />
                 <span className="text-sm text-red-700">{locale === 'ar' ? 'محظور' : 'Banned'}</span>
               </div>
-              <p className="text-2xl font-bold text-red-700">{stats.banned}</p>
+              <p className="text-2xl font-bold text-red-700">{formatNumber(stats.banned, locale)}</p>
             </div>
             <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
               <div className="flex items-center gap-3 mb-2">
                 <UserPlus className="w-5 h-5 text-blue-600" />
                 <span className="text-sm text-blue-700">{locale === 'ar' ? 'جدد اليوم' : 'New Today'}</span>
               </div>
-              <p className="text-2xl font-bold text-blue-700">{stats.newToday}</p>
+              <p className="text-2xl font-bold text-blue-700">{formatNumber(stats.newToday, locale)}</p>
             </div>
             <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
               <div className="flex items-center gap-3 mb-2">
                 <ShoppingCart className="w-5 h-5 text-purple-600" />
                 <span className="text-sm text-purple-700">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</span>
               </div>
-              <p className="text-2xl font-bold text-purple-700">{stats.totalOrders}</p>
+              <p className="text-2xl font-bold text-purple-700">{formatNumber(stats.totalOrders, locale)}</p>
             </div>
             <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
               <div className="flex items-center gap-3 mb-2">
                 <DollarSign className="w-5 h-5 text-emerald-600" />
                 <span className="text-sm text-emerald-700">{locale === 'ar' ? 'إجمالي الإنفاق' : 'Total Spent'}</span>
               </div>
-              <p className="text-xl font-bold text-emerald-700">{formatCurrency(stats.totalRevenue)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+              <p className="text-xl font-bold text-emerald-700">{formatCurrency(stats.totalRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
           </div>
 
@@ -521,21 +399,21 @@ export default function AdminCustomersPage() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <ShoppingCart className="w-4 h-4 text-slate-400" />
-                            <span className="font-medium text-slate-900">{customer.orders_count}</span>
+                            <span className="font-medium text-slate-900">{formatNumber(customer.orders_count, locale)}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-medium text-slate-900">{formatCurrency(customer.total_spent)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                          <span className="font-medium text-slate-900">{formatCurrency(customer.total_spent, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm text-slate-500">
-                            {customer.last_order_at ? formatDate(customer.last_order_at) : '-'}
+                            {customer.last_order_at ? formatDate(customer.last_order_at, locale) : '-'}
                           </span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2 text-sm text-slate-500">
                             <Calendar className="w-4 h-4 text-slate-400" />
-                            {formatDate(customer.created_at)}
+                            {formatDate(customer.created_at, locale)}
                           </div>
                         </td>
                         <td className="px-4 py-3">

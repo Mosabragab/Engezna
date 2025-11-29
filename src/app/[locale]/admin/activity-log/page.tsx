@@ -3,45 +3,33 @@
 import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
+import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { formatNumber, formatDateTime, formatTimeAgo } from '@/lib/utils/formatters'
 import {
   Shield,
-  Store,
-  ShoppingBag,
-  BarChart3,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Home,
-  Users,
-  Wallet,
-  Bell,
-  ChevronDown,
   Search,
   RefreshCw,
   Activity,
-  HeadphonesIcon,
-  User as UserIcon,
-  Calendar,
-  Filter,
-  FileText,
-  Edit,
+  Store,
+  ShoppingBag,
+  Settings,
   Trash2,
+  Edit,
   Plus,
   Eye,
   CheckCircle,
   XCircle,
-  AlertTriangle,
   LogIn,
   UserPlus,
   ShoppingCart,
   CreditCard,
   MessageSquare,
-  Download,
+  FileText,
+  User as UserIcon,
+  Calendar,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -64,14 +52,12 @@ type FilterEntity = 'all' | 'provider' | 'order' | 'customer' | 'ticket' | 'sett
 
 export default function AdminActivityLogPage() {
   const locale = useLocale()
-  const pathname = usePathname()
   const isRTL = locale === 'ar'
 
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
 
   const [logs, setLogs] = useState<ActivityLog[]>([])
   const [filteredLogs, setFilteredLogs] = useState<ActivityLog[]>([])
@@ -110,7 +96,7 @@ export default function AdminActivityLogPage() {
   }
 
   async function loadActivityLogs(supabase: ReturnType<typeof createClient>) {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('activity_log')
       .select(`
         *,
@@ -156,24 +142,6 @@ export default function AdminActivityLogPage() {
 
     setFilteredLogs(filtered)
   }
-
-  async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = `/${locale}`
-  }
-
-  const navItems = [
-    { icon: Home, label: locale === 'ar' ? 'الرئيسية' : 'Dashboard', path: `/${locale}/admin` },
-    { icon: Store, label: locale === 'ar' ? 'المتاجر' : 'Providers', path: `/${locale}/admin/providers` },
-    { icon: ShoppingBag, label: locale === 'ar' ? 'الطلبات' : 'Orders', path: `/${locale}/admin/orders` },
-    { icon: Users, label: locale === 'ar' ? 'العملاء' : 'Customers', path: `/${locale}/admin/customers` },
-    { icon: Wallet, label: locale === 'ar' ? 'المالية' : 'Finance', path: `/${locale}/admin/finance` },
-    { icon: BarChart3, label: locale === 'ar' ? 'التحليلات' : 'Analytics', path: `/${locale}/admin/analytics` },
-    { icon: HeadphonesIcon, label: locale === 'ar' ? 'الدعم' : 'Support', path: `/${locale}/admin/support` },
-    { icon: Activity, label: locale === 'ar' ? 'سجل النشاط' : 'Activity Log', path: `/${locale}/admin/activity-log`, active: true },
-    { icon: Settings, label: locale === 'ar' ? 'الإعدادات' : 'Settings', path: `/${locale}/admin/settings` },
-  ]
 
   const getActionIcon = (action: string) => {
     switch (action) {
@@ -238,31 +206,6 @@ export default function AdminActivityLogPage() {
     return labels[entity]?.[locale === 'ar' ? 'ar' : 'en'] || entity
   }
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-EG', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    })
-  }
-
-  const formatRelativeTime = (dateString: string) => {
-    const now = new Date()
-    const date = new Date(dateString)
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / 60000)
-    const hours = Math.floor(diff / 3600000)
-    const days = Math.floor(diff / 86400000)
-
-    if (minutes < 1) return locale === 'ar' ? 'الآن' : 'Just now'
-    if (minutes < 60) return locale === 'ar' ? `منذ ${minutes} دقيقة` : `${minutes}m ago`
-    if (hours < 24) return locale === 'ar' ? `منذ ${hours} ساعة` : `${hours}h ago`
-    return locale === 'ar' ? `منذ ${days} يوم` : `${days}d ago`
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -291,93 +234,17 @@ export default function AdminActivityLogPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <aside className={`
-        fixed lg:static inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-50
-        w-64 bg-white border-${isRTL ? 'l' : 'r'} border-slate-200 shadow-sm
-        transform transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0
-        flex flex-col
-      `}>
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex items-center justify-between">
-            <Link href={`/${locale}/admin`} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg text-slate-900">{locale === 'ar' ? 'إنجزنا' : 'Engezna'}</h1>
-                <p className="text-xs text-slate-500">{locale === 'ar' ? 'لوحة المشرفين' : 'Admin Panel'}</p>
-              </div>
-            </Link>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500 hover:text-slate-700">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = item.active || pathname === item.path
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                  ${isActive ? 'bg-red-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{item.label}</span>
-              </Link>
-            )
-          })}
-        </nav>
-      </aside>
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-500 hover:text-slate-700">
-                <Menu className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="hidden md:flex items-center justify-center flex-1">
-              <h2 className="text-lg font-semibold text-slate-800">
-                {locale === 'ar' ? 'سجل النشاط' : 'Activity Log'}
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button className="p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-lg">
-                <Bell className="w-5 h-5" />
-              </button>
-              <div className="relative" onMouseEnter={() => setAccountMenuOpen(true)} onMouseLeave={() => setAccountMenuOpen(false)}>
-                <button className="flex items-center gap-2 p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <span className="font-semibold text-sm text-red-600">{user?.email?.charAt(0).toUpperCase()}</span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {accountMenuOpen && (
-                  <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-56 z-50`}>
-                    <div className="bg-white rounded-xl shadow-lg border border-slate-200 py-2">
-                      <button onClick={handleSignOut} className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                        <LogOut className="w-4 h-4" />
-                        {locale === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <AdminHeader
+          user={user}
+          title={locale === 'ar' ? 'سجل النشاط' : 'Activity Log'}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Filters */}
@@ -450,14 +317,14 @@ export default function AdminActivityLogPage() {
                   {locale === 'ar' ? 'آخر الأنشطة' : 'Recent Activity'}
                 </h3>
                 <span className="text-sm text-slate-500">
-                  {filteredLogs.length} {locale === 'ar' ? 'سجل' : 'entries'}
+                  {formatNumber(filteredLogs.length, locale)} {locale === 'ar' ? 'سجل' : 'entries'}
                 </span>
               </div>
             </div>
 
             <div className="divide-y divide-slate-100">
               {filteredLogs.length > 0 ? (
-                filteredLogs.map((log, index) => (
+                filteredLogs.map((log) => (
                   <div key={log.id} className="p-4 hover:bg-slate-50 transition-colors">
                     <div className="flex items-start gap-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getActionColor(log.action)}`}>
@@ -488,9 +355,9 @@ export default function AdminActivityLogPage() {
                         <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            {formatDateTime(log.created_at)}
+                            {formatDateTime(log.created_at, locale)}
                           </span>
-                          <span>{formatRelativeTime(log.created_at)}</span>
+                          <span>{formatTimeAgo(log.created_at, locale)}</span>
                           {log.ip_address && (
                             <span>IP: {log.ip_address}</span>
                           )}
