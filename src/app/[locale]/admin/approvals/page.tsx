@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, AdminSidebar, SearchableSelect } from '@/components/admin'
 import { formatNumber, formatDate, formatCurrency } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -944,23 +944,14 @@ export default function AdminApprovalsPage() {
                 {/* Dynamic Fields based on Type */}
                 {formData.type === 'refund' && (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        {locale === 'ar' ? 'الطلب المراد استرداده' : 'Order to Refund'} *
-                      </label>
-                      <select
-                        value={formData.related_order_id}
-                        onChange={(e) => setFormData({ ...formData, related_order_id: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                      >
-                        <option value="">{locale === 'ar' ? 'اختر الطلب' : 'Select order'}</option>
-                        {orders.map(order => (
-                          <option key={order.id} value={order.id}>
-                            #{order.order_number} - {order.customer_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <SearchableSelect
+                      type="order"
+                      value={formData.related_order_id}
+                      onChange={(value) => setFormData({ ...formData, related_order_id: value })}
+                      label={locale === 'ar' ? 'الطلب المراد استرداده' : 'Order to Refund'}
+                      required
+                      showGeoFilter={false}
+                    />
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         {locale === 'ar' ? 'مبلغ الاسترداد' : 'Refund Amount'} *
@@ -978,23 +969,14 @@ export default function AdminApprovalsPage() {
 
                 {formData.type === 'customer_ban' && (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        {locale === 'ar' ? 'العميل' : 'Customer'} *
-                      </label>
-                      <select
-                        value={formData.related_customer_id}
-                        onChange={(e) => setFormData({ ...formData, related_customer_id: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                      >
-                        <option value="">{locale === 'ar' ? 'اختر العميل' : 'Select customer'}</option>
-                        {customers.map(customer => (
-                          <option key={customer.id} value={customer.id}>
-                            {customer.full_name} - {customer.email}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <SearchableSelect
+                      type="customer"
+                      value={formData.related_customer_id}
+                      onChange={(value) => setFormData({ ...formData, related_customer_id: value })}
+                      label={locale === 'ar' ? 'العميل' : 'Customer'}
+                      required
+                      showGeoFilter={true}
+                    />
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         {locale === 'ar' ? 'سبب الحظر' : 'Ban Reason'} *
@@ -1017,23 +999,14 @@ export default function AdminApprovalsPage() {
 
                 {formData.type === 'provider_suspend' && (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        {locale === 'ar' ? 'المتجر' : 'Provider'} *
-                      </label>
-                      <select
-                        value={formData.related_provider_id}
-                        onChange={(e) => setFormData({ ...formData, related_provider_id: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                      >
-                        <option value="">{locale === 'ar' ? 'اختر المتجر' : 'Select provider'}</option>
-                        {providers.map(provider => (
-                          <option key={provider.id} value={provider.id}>
-                            {locale === 'ar' ? provider.name_ar : provider.name_en}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <SearchableSelect
+                      type="provider"
+                      value={formData.related_provider_id}
+                      onChange={(value) => setFormData({ ...formData, related_provider_id: value })}
+                      label={locale === 'ar' ? 'المتجر' : 'Provider'}
+                      required
+                      showGeoFilter={true}
+                    />
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         {locale === 'ar' ? 'سبب التعليق' : 'Suspend Reason'} *
@@ -1056,23 +1029,14 @@ export default function AdminApprovalsPage() {
 
                 {formData.type === 'commission_change' && (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        {locale === 'ar' ? 'المتجر' : 'Provider'} *
-                      </label>
-                      <select
-                        value={formData.related_provider_id}
-                        onChange={(e) => setFormData({ ...formData, related_provider_id: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                      >
-                        <option value="">{locale === 'ar' ? 'اختر المتجر' : 'Select provider'}</option>
-                        {providers.map(provider => (
-                          <option key={provider.id} value={provider.id}>
-                            {locale === 'ar' ? provider.name_ar : provider.name_en}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <SearchableSelect
+                      type="provider"
+                      value={formData.related_provider_id}
+                      onChange={(value) => setFormData({ ...formData, related_provider_id: value })}
+                      label={locale === 'ar' ? 'المتجر' : 'Provider'}
+                      required
+                      showGeoFilter={true}
+                    />
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         {locale === 'ar' ? 'نسبة العمولة الجديدة (%)' : 'New Commission Rate (%)'} *

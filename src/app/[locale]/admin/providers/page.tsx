@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, AdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
 import { formatNumber, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -43,6 +43,8 @@ interface Provider {
   commission_rate: number
   created_at: string
   logo_url: string | null
+  governorate_id: string | null
+  city_id: string | null
 }
 
 type FilterStatus = 'all' | 'open' | 'closed' | 'pending_approval' | 'temporarily_paused'
@@ -62,6 +64,7 @@ export default function AdminProvidersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const { geoFilter, setGeoFilter } = useGeoFilter()
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -93,7 +96,7 @@ export default function AdminProvidersPage() {
 
   useEffect(() => {
     filterProviders()
-  }, [providers, searchQuery, statusFilter, categoryFilter])
+  }, [providers, searchQuery, statusFilter, categoryFilter, geoFilter])
 
   async function checkAuth() {
     const supabase = createClient()
@@ -157,6 +160,31 @@ export default function AdminProvidersPage() {
     if (categoryFilter !== 'all') {
       filtered = filtered.filter(p => p.category === categoryFilter)
     }
+
+    // Geographic filter
+    if (geoFilter.governorate_id || geoFilter.city_id) {
+      filtered = filtered.filter(p => {
+        if (geoFilter.city_id && p.city_id) {
+          return p.city_id === geoFilter.city_id
+        }
+        if (geoFilter.governorate_id && p.governorate_id) {
+          return p.governorate_id === geoFilter.governorate_id
+        }
+        return true
+      })
+    }
+
+    // Recalculate stats based on filtered data
+    const active = filtered.filter(p => ['open', 'closed'].includes(p.status)).length
+    const pending = filtered.filter(p => p.status === 'pending_approval').length
+    const paused = filtered.filter(p => p.status === 'temporarily_paused').length
+
+    setStats({
+      total: filtered.length,
+      active,
+      pending,
+      paused,
+    })
 
     setFilteredProviders(filtered)
   }
@@ -417,6 +445,15 @@ export default function AdminProvidersPage() {
                 <option value="grocery">{locale === 'ar' ? 'بقالة' : 'Grocery'}</option>
                 <option value="vegetables_fruits">{locale === 'ar' ? 'خضار وفواكه' : 'Vegetables & Fruits'}</option>
               </select>
+
+              {/* Geographic Filter */}
+              <GeoFilter
+                value={geoFilter}
+                onChange={setGeoFilter}
+                showDistrict={false}
+                layout="inline"
+                showClearButton={true}
+              />
 
               {/* Refresh */}
               <Button

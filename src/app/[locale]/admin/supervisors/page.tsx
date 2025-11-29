@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, AdminSidebar, GeoFilter, GeoFilterValue } from '@/components/admin'
 import { formatNumber, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -31,6 +31,7 @@ import {
   X,
   Save,
   AlertCircle,
+  MapPin,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -49,11 +50,31 @@ interface Permissions {
   analytics: { view: boolean }
 }
 
+interface AssignedRegion {
+  governorate_id: string | null
+  city_id: string | null
+  district_id: string | null
+}
+
+interface Governorate {
+  id: string
+  name_ar: string
+  name_en: string
+}
+
+interface City {
+  id: string
+  name_ar: string
+  name_en: string
+  governorate_id: string
+}
+
 interface Supervisor {
   id: string
   user_id: string
   role: AdminRole
   permissions: Permissions
+  assigned_regions: AssignedRegion[]
   is_active: boolean
   last_active_at: string | null
   created_at: string
@@ -183,9 +204,19 @@ export default function AdminSupervisorsPage() {
     email: '',
     role: 'general_moderator' as AdminRole,
     is_active: true,
+    assigned_regions: [] as AssignedRegion[],
   })
   const [formError, setFormError] = useState('')
   const [formLoading, setFormLoading] = useState(false)
+
+  // Geography data
+  const [governorates, setGovernorates] = useState<Governorate[]>([])
+  const [cities, setCities] = useState<City[]>([])
+  const [tempRegion, setTempRegion] = useState<GeoFilterValue>({
+    governorate_id: null,
+    city_id: null,
+    district_id: null,
+  })
 
   const [stats, setStats] = useState({
     total: 0,
@@ -199,11 +230,36 @@ export default function AdminSupervisorsPage() {
 
   useEffect(() => {
     checkAuth()
+    loadGeoData()
   }, [])
 
   useEffect(() => {
     filterSupervisors()
   }, [supervisors, searchQuery, statusFilter, roleFilter])
+
+  async function loadGeoData() {
+    const supabase = createClient()
+
+    // Load governorates
+    const { data: govData } = await supabase
+      .from('governorates')
+      .select('id, name_ar, name_en')
+      .order('name_ar')
+
+    if (govData) {
+      setGovernorates(govData)
+    }
+
+    // Load cities
+    const { data: cityData } = await supabase
+      .from('cities')
+      .select('id, name_ar, name_en, governorate_id')
+      .order('name_ar')
+
+    if (cityData) {
+      setCities(cityData)
+    }
+  }
 
   async function checkAuth() {
     const supabase = createClient()
@@ -277,6 +333,7 @@ export default function AdminSupervisorsPage() {
 
           return {
             ...admin,
+            assigned_regions: admin.assigned_regions || [],
             profile: profileData || {
               full_name: null,
               email: null,
@@ -294,6 +351,7 @@ export default function AdminSupervisorsPage() {
 
     const supervisorsData = (adminUsers || []).map((admin: any) => ({
       ...admin,
+      assigned_regions: admin.assigned_regions || [],
       profile: admin.profile || {
         full_name: null,
         email: null,
@@ -411,6 +469,7 @@ export default function AdminSupervisorsPage() {
         user_id: profile.id,
         role: formData.role,
         permissions: getDefaultPermissions(formData.role),
+        assigned_regions: formData.assigned_regions,
         is_active: formData.is_active,
       })
 
@@ -424,7 +483,7 @@ export default function AdminSupervisorsPage() {
     // Reload supervisors
     await loadSupervisors(supabase)
     setShowAddModal(false)
-    setFormData({ email: '', role: 'general_moderator', is_active: true })
+    setFormData({ email: '', role: 'general_moderator', is_active: true, assigned_regions: [] })
     setFormLoading(false)
   }
 
@@ -440,6 +499,7 @@ export default function AdminSupervisorsPage() {
       .update({
         role: formData.role,
         permissions: getDefaultPermissions(formData.role),
+        assigned_regions: formData.assigned_regions,
         is_active: formData.is_active,
       })
       .eq('id', selectedSupervisor.id)
@@ -495,7 +555,9 @@ export default function AdminSupervisorsPage() {
       email: supervisor.profile?.email || '',
       role: supervisor.role,
       is_active: supervisor.is_active,
+      assigned_regions: supervisor.assigned_regions || [],
     })
+    setTempRegion({ governorate_id: null, city_id: null, district_id: null })
     setFormError('')
     setShowEditModal(true)
   }
@@ -503,6 +565,56 @@ export default function AdminSupervisorsPage() {
   function openDeleteModal(supervisor: Supervisor) {
     setSelectedSupervisor(supervisor)
     setShowDeleteModal(true)
+  }
+
+  function addRegion() {
+    if (!tempRegion.governorate_id) return
+
+    // Check if region already exists
+    const exists = formData.assigned_regions.some(r =>
+      r.governorate_id === tempRegion.governorate_id &&
+      r.city_id === tempRegion.city_id
+    )
+
+    if (!exists) {
+      setFormData({
+        ...formData,
+        assigned_regions: [...formData.assigned_regions, { ...tempRegion }],
+      })
+    }
+
+    setTempRegion({ governorate_id: null, city_id: null, district_id: null })
+  }
+
+  function removeRegion(index: number) {
+    setFormData({
+      ...formData,
+      assigned_regions: formData.assigned_regions.filter((_, i) => i !== index),
+    })
+  }
+
+  function getRegionLabel(region: AssignedRegion): string {
+    const gov = governorates.find(g => g.id === region.governorate_id)
+    const city = cities.find(c => c.id === region.city_id)
+
+    const govName = gov ? (locale === 'ar' ? gov.name_ar : gov.name_en) : ''
+    const cityName = city ? (locale === 'ar' ? city.name_ar : city.name_en) : ''
+
+    if (cityName) {
+      return `${cityName} - ${govName}`
+    }
+    return govName || (locale === 'ar' ? 'غير محدد' : 'Not specified')
+  }
+
+  function getSupervisorRegionsLabel(supervisor: Supervisor): string {
+    if (!supervisor.assigned_regions || supervisor.assigned_regions.length === 0) {
+      return locale === 'ar' ? 'كل المناطق' : 'All Regions'
+    }
+
+    return supervisor.assigned_regions
+      .map(r => getRegionLabel(r))
+      .slice(0, 2)
+      .join(', ') + (supervisor.assigned_regions.length > 2 ? ` +${supervisor.assigned_regions.length - 2}` : '')
   }
 
   if (loading) {
@@ -653,7 +765,8 @@ export default function AdminSupervisorsPage() {
               {isSuperAdmin && (
                 <Button
                   onClick={() => {
-                    setFormData({ email: '', role: 'general_moderator', is_active: true })
+                    setFormData({ email: '', role: 'general_moderator', is_active: true, assigned_regions: [] })
+                    setTempRegion({ governorate_id: null, city_id: null, district_id: null })
                     setFormError('')
                     setShowAddModal(true)
                   }}
@@ -676,6 +789,7 @@ export default function AdminSupervisorsPage() {
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'البريد' : 'Email'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الهاتف' : 'Phone'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الدور' : 'Role'}</th>
+                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'المناطق' : 'Regions'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'آخر نشاط' : 'Last Active'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'تاريخ الإضافة' : 'Added'}</th>
@@ -727,6 +841,14 @@ export default function AdminSupervisorsPage() {
                               <RoleIcon className="w-3.5 h-3.5" />
                               {roleConfig[supervisor.role]?.label[locale === 'ar' ? 'ar' : 'en']}
                             </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2 text-sm text-slate-600 max-w-[180px]">
+                              <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                              <span className="truncate" title={getSupervisorRegionsLabel(supervisor)}>
+                                {getSupervisorRegionsLabel(supervisor)}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             {supervisor.is_active ? (
@@ -798,7 +920,7 @@ export default function AdminSupervisorsPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={isSuperAdmin ? 8 : 7} className="px-4 py-12 text-center">
+                      <td colSpan={isSuperAdmin ? 9 : 8} className="px-4 py-12 text-center">
                         <UserCog className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                         <p className="text-slate-500">
                           {locale === 'ar' ? 'لا يوجد مشرفين مطابقين' : 'No matching supervisors found'}
@@ -815,8 +937,8 @@ export default function AdminSupervisorsPage() {
 
       {/* Add Supervisor Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 my-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-900">
                 {locale === 'ar' ? 'إضافة مشرف جديد' : 'Add New Supervisor'}
@@ -881,6 +1003,58 @@ export default function AdminSupervisorsPage() {
                   {locale === 'ar' ? 'نشط' : 'Active'}
                 </label>
               </div>
+
+              {/* Assigned Regions */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {locale === 'ar' ? 'المناطق المخصصة' : 'Assigned Regions'}
+                </label>
+                <p className="text-xs text-slate-500 mb-3">
+                  {locale === 'ar' ? 'اختر المناطق التي يمكن للمشرف الوصول إليها. اتركها فارغة للوصول الكامل.' : 'Select regions this supervisor can access. Leave empty for full access.'}
+                </p>
+
+                {/* Region selector */}
+                <div className="flex gap-2 mb-3">
+                  <div className="flex-1">
+                    <GeoFilter
+                      value={tempRegion}
+                      onChange={setTempRegion}
+                      showDistrict={false}
+                      layout="stacked"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addRegion}
+                    disabled={!tempRegion.governorate_id}
+                    className="self-end"
+                  >
+                    {locale === 'ar' ? 'إضافة' : 'Add'}
+                  </Button>
+                </div>
+
+                {/* Assigned regions list */}
+                {formData.assigned_regions.length > 0 && (
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {formData.assigned_regions.map((region, index) => (
+                      <div key={index} className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-slate-400" />
+                          <span className="text-sm text-slate-700">{getRegionLabel(region)}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeRegion(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-3 mt-6">
@@ -913,8 +1087,8 @@ export default function AdminSupervisorsPage() {
 
       {/* Edit Supervisor Modal */}
       {showEditModal && selectedSupervisor && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 my-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-900">
                 {locale === 'ar' ? 'تعديل المشرف' : 'Edit Supervisor'}
@@ -967,6 +1141,58 @@ export default function AdminSupervisorsPage() {
                 <label htmlFor="edit_is_active" className="text-sm text-slate-700">
                   {locale === 'ar' ? 'نشط' : 'Active'}
                 </label>
+              </div>
+
+              {/* Assigned Regions */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {locale === 'ar' ? 'المناطق المخصصة' : 'Assigned Regions'}
+                </label>
+                <p className="text-xs text-slate-500 mb-3">
+                  {locale === 'ar' ? 'اختر المناطق التي يمكن للمشرف الوصول إليها. اتركها فارغة للوصول الكامل.' : 'Select regions this supervisor can access. Leave empty for full access.'}
+                </p>
+
+                {/* Region selector */}
+                <div className="flex gap-2 mb-3">
+                  <div className="flex-1">
+                    <GeoFilter
+                      value={tempRegion}
+                      onChange={setTempRegion}
+                      showDistrict={false}
+                      layout="stacked"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addRegion}
+                    disabled={!tempRegion.governorate_id}
+                    className="self-end"
+                  >
+                    {locale === 'ar' ? 'إضافة' : 'Add'}
+                  </Button>
+                </div>
+
+                {/* Assigned regions list */}
+                {formData.assigned_regions.length > 0 && (
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {formData.assigned_regions.map((region, index) => (
+                      <div key={index} className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-slate-400" />
+                          <span className="text-sm text-slate-700">{getRegionLabel(region)}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeRegion(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

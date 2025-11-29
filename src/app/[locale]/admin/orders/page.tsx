@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, AdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
+import type { GeoFilterValue } from '@/components/admin'
 import { formatNumber, formatCurrency, formatDateTime } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -37,7 +38,7 @@ interface Order {
   created_at: string
   delivered_at: string | null
   customer: { id: string; full_name: string; phone: string } | null
-  provider: { id: string; name_ar: string; name_en: string } | null
+  provider: { id: string; name_ar: string; name_en: string; governorate_id: string | null; city_id: string | null } | null
 }
 
 type FilterStatus = 'all' | 'pending' | 'accepted' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'rejected'
@@ -56,6 +57,7 @@ export default function AdminOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [dateFilter, setDateFilter] = useState<string>('')
+  const { geoFilter, setGeoFilter } = useGeoFilter()
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -71,7 +73,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     filterOrders()
-  }, [orders, searchQuery, statusFilter, dateFilter])
+  }, [orders, searchQuery, statusFilter, dateFilter, geoFilter])
 
   async function checkAuth() {
     const supabase = createClient()
@@ -110,7 +112,7 @@ export default function AdminOrdersPage() {
         created_at,
         delivered_at,
         customer:profiles!orders_customer_id_fkey(id, full_name, phone),
-        provider:providers(id, name_ar, name_en)
+        provider:providers(id, name_ar, name_en, governorate_id, city_id)
       `)
       .order('created_at', { ascending: false })
       .limit(100)
@@ -160,7 +162,36 @@ export default function AdminOrdersPage() {
       })
     }
 
+    // Geographic filter
+    if (geoFilter.governorate_id || geoFilter.city_id) {
+      filtered = filtered.filter(o => {
+        if (geoFilter.city_id && o.provider?.city_id) {
+          return o.provider.city_id === geoFilter.city_id
+        }
+        if (geoFilter.governorate_id && o.provider?.governorate_id) {
+          return o.provider.governorate_id === geoFilter.governorate_id
+        }
+        return true
+      })
+    }
+
     setFilteredOrders(filtered)
+
+    // Recalculate stats based on filtered results
+    const pending = filtered.filter(o => o.status === 'pending').length
+    const inProgress = filtered.filter(o => ['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)).length
+    const delivered = filtered.filter(o => o.status === 'delivered').length
+    const cancelled = filtered.filter(o => ['cancelled', 'rejected'].includes(o.status)).length
+    const totalRevenue = filtered.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total || 0), 0)
+
+    setStats({
+      total: filtered.length,
+      pending,
+      inProgress,
+      delivered,
+      cancelled,
+      totalRevenue,
+    })
   }
 
   const getStatusColor = (status: string) => {
@@ -293,51 +324,64 @@ export default function AdminOrdersPage() {
 
           {/* Filters */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+            <div className="flex flex-col gap-4">
+              {/* Row 1: Search & Status & Date */}
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                  <input
+                    type="text"
+                    placeholder={locale === 'ar' ? 'بحث برقم الطلب أو اسم العميل...' : 'Search by order number or customer...'}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                  />
+                </div>
+
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
+                  className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
+                  <option value="pending">{locale === 'ar' ? 'معلق' : 'Pending'}</option>
+                  <option value="accepted">{locale === 'ar' ? 'مقبول' : 'Accepted'}</option>
+                  <option value="preparing">{locale === 'ar' ? 'قيد التحضير' : 'Preparing'}</option>
+                  <option value="ready">{locale === 'ar' ? 'جاهز' : 'Ready'}</option>
+                  <option value="out_for_delivery">{locale === 'ar' ? 'في الطريق' : 'Out for Delivery'}</option>
+                  <option value="delivered">{locale === 'ar' ? 'تم التسليم' : 'Delivered'}</option>
+                  <option value="cancelled">{locale === 'ar' ? 'ملغي' : 'Cancelled'}</option>
+                </select>
+
                 <input
-                  type="text"
-                  placeholder={locale === 'ar' ? 'بحث برقم الطلب أو اسم العميل...' : 'Search by order number or customer...'}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
                 />
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const supabase = createClient()
+                    loadOrders(supabase)
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  {locale === 'ar' ? 'تحديث' : 'Refresh'}
+                </Button>
               </div>
 
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-                className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-              >
-                <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
-                <option value="pending">{locale === 'ar' ? 'معلق' : 'Pending'}</option>
-                <option value="accepted">{locale === 'ar' ? 'مقبول' : 'Accepted'}</option>
-                <option value="preparing">{locale === 'ar' ? 'قيد التحضير' : 'Preparing'}</option>
-                <option value="ready">{locale === 'ar' ? 'جاهز' : 'Ready'}</option>
-                <option value="out_for_delivery">{locale === 'ar' ? 'في الطريق' : 'Out for Delivery'}</option>
-                <option value="delivered">{locale === 'ar' ? 'تم التسليم' : 'Delivered'}</option>
-                <option value="cancelled">{locale === 'ar' ? 'ملغي' : 'Cancelled'}</option>
-              </select>
-
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-              />
-
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const supabase = createClient()
-                  loadOrders(supabase)
-                }}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                {locale === 'ar' ? 'تحديث' : 'Refresh'}
-              </Button>
+              {/* Row 2: Geographic Filter */}
+              <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+                <span className="text-sm text-slate-500">{locale === 'ar' ? 'فلترة جغرافية:' : 'Geographic Filter:'}</span>
+                <GeoFilter
+                  value={geoFilter}
+                  onChange={setGeoFilter}
+                  showDistrict={false}
+                />
+              </div>
             </div>
           </div>
 

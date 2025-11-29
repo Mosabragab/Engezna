@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, AdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
+import type { GeoFilterValue } from '@/components/admin'
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -40,6 +41,8 @@ interface Customer {
   orders_count: number
   total_spent: number
   last_order_at: string | null
+  governorate_id: string | null
+  city_id: string | null
 }
 
 type FilterStatus = 'all' | 'active' | 'banned' | 'new'
@@ -58,6 +61,7 @@ export default function AdminCustomersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const { geoFilter, setGeoFilter } = useGeoFilter()
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -73,7 +77,7 @@ export default function AdminCustomersPage() {
 
   useEffect(() => {
     filterCustomers()
-  }, [customers, searchQuery, statusFilter])
+  }, [customers, searchQuery, statusFilter, geoFilter])
 
   async function checkAuth() {
     const supabase = createClient()
@@ -110,11 +114,20 @@ export default function AdminCustomersPage() {
 
     const customersWithOrders: Customer[] = await Promise.all(
       (customersData || []).map(async (customer) => {
+        // Get orders
         const { data: ordersData } = await supabase
           .from('orders')
           .select('total, created_at, status')
           .eq('customer_id', customer.id)
           .eq('status', 'delivered')
+
+        // Get address info
+        const { data: addressData } = await supabase
+          .from('customer_addresses')
+          .select('governorate_id, city_id')
+          .eq('customer_id', customer.id)
+          .eq('is_default', true)
+          .single()
 
         const orders = ordersData || []
         const orders_count = orders.length
@@ -129,29 +142,13 @@ export default function AdminCustomersPage() {
           orders_count,
           total_spent,
           last_order_at,
+          governorate_id: addressData?.governorate_id || null,
+          city_id: addressData?.city_id || null,
         }
       })
     )
 
     setCustomers(customersWithOrders)
-
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    const newToday = customersWithOrders.filter(c => new Date(c.created_at) >= today).length
-    const banned = customersWithOrders.filter(c => c.is_banned).length
-    const active = customersWithOrders.filter(c => !c.is_banned).length
-    const totalOrders = customersWithOrders.reduce((sum, c) => sum + c.orders_count, 0)
-    const totalRevenue = customersWithOrders.reduce((sum, c) => sum + c.total_spent, 0)
-
-    setStats({
-      total: customersWithOrders.length,
-      active,
-      banned,
-      newToday,
-      totalOrders,
-      totalRevenue,
-    })
   }
 
   function filterCustomers() {
@@ -178,7 +175,39 @@ export default function AdminCustomersPage() {
       }
     }
 
+    // Geographic filter
+    if (geoFilter.governorate_id || geoFilter.city_id) {
+      filtered = filtered.filter(c => {
+        if (geoFilter.city_id && c.city_id) {
+          return c.city_id === geoFilter.city_id
+        }
+        if (geoFilter.governorate_id && c.governorate_id) {
+          return c.governorate_id === geoFilter.governorate_id
+        }
+        return true
+      })
+    }
+
     setFilteredCustomers(filtered)
+
+    // Update stats based on filtered results
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const newToday = filtered.filter(c => new Date(c.created_at) >= today).length
+    const banned = filtered.filter(c => c.is_banned).length
+    const active = filtered.filter(c => !c.is_banned).length
+    const totalOrders = filtered.reduce((sum, c) => sum + c.orders_count, 0)
+    const totalRevenue = filtered.reduce((sum, c) => sum + c.total_spent, 0)
+
+    setStats({
+      total: filtered.length,
+      active,
+      banned,
+      newToday,
+      totalOrders,
+      totalRevenue,
+    })
   }
 
   async function handleBanCustomer(customerId: string, ban: boolean) {
@@ -291,40 +320,53 @@ export default function AdminCustomersPage() {
 
           {/* Filters */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
-                <input
-                  type="text"
-                  placeholder={locale === 'ar' ? 'بحث بالاسم أو الهاتف أو البريد الإلكتروني...' : 'Search by name, phone or email...'}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
-                />
+            <div className="flex flex-col gap-4">
+              {/* Row 1: Search & Status */}
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                  <input
+                    type="text"
+                    placeholder={locale === 'ar' ? 'بحث بالاسم أو الهاتف أو البريد الإلكتروني...' : 'Search by name, phone or email...'}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                  />
+                </div>
+
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
+                  className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
+                  <option value="active">{locale === 'ar' ? 'نشط' : 'Active'}</option>
+                  <option value="banned">{locale === 'ar' ? 'محظور' : 'Banned'}</option>
+                  <option value="new">{locale === 'ar' ? 'جدد اليوم' : 'New Today'}</option>
+                </select>
+
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const supabase = createClient()
+                    loadCustomers(supabase)
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  {locale === 'ar' ? 'تحديث' : 'Refresh'}
+                </Button>
               </div>
 
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-                className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-              >
-                <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
-                <option value="active">{locale === 'ar' ? 'نشط' : 'Active'}</option>
-                <option value="banned">{locale === 'ar' ? 'محظور' : 'Banned'}</option>
-                <option value="new">{locale === 'ar' ? 'جدد اليوم' : 'New Today'}</option>
-              </select>
-
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const supabase = createClient()
-                  loadCustomers(supabase)
-                }}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                {locale === 'ar' ? 'تحديث' : 'Refresh'}
-              </Button>
+              {/* Row 2: Geographic Filter */}
+              <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+                <span className="text-sm text-slate-500">{locale === 'ar' ? 'فلترة جغرافية:' : 'Geographic Filter:'}</span>
+                <GeoFilter
+                  value={geoFilter}
+                  onChange={setGeoFilter}
+                  showDistrict={false}
+                />
+              </div>
             </div>
           </div>
 
