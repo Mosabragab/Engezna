@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** November 27, 2025
-**Status:** Week 3 - 100% Complete ✅ + Brand Refresh
+**Last Updated:** November 29, 2025
+**Status:** Week 4 - 100% Complete ✅ (Admin Dashboard + Supervisor System)
 **Branch:** `main`
 
 ---
@@ -207,6 +207,7 @@ Week 0 ████████████ 100% ✅ Foundation
 Week 1 ████████████ 100% ✅ Provider browsing + cart
 Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
 Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Management
+Week 4 ████████████ 100% ✅ Admin Dashboard + Supervisor System
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -271,16 +272,57 @@ Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Ma
 - [ ] Supabase Storage bucket setup (SQL provided)
 - [ ] Real-time order notifications
 
+### Week 4: Admin Dashboard + Supervisor System (100% ✅)
+- [x] Unified AdminHeader component ✅
+  - [x] Language switcher integration ✅
+  - [x] Notifications dropdown ✅
+  - [x] User menu with avatar ✅
+- [x] Unified AdminSidebar component ✅
+  - [x] Collapsible navigation ✅
+  - [x] Consistent Engezna Blue (#009DE0) theming ✅
+- [x] Locale-aware number formatting ✅
+  - [x] Arabic-Indic numerals (٠-٩) in Arabic locale ✅
+  - [x] Western Arabic numerals (0-9) in English locale ✅
+- [x] Supervisor management page `/admin/supervisors` ✅
+  - [x] Full CRUD operations ✅
+  - [x] Roles: super_admin, general_moderator, support, finance ✅
+  - [x] Permission system for granular access control ✅
+  - [x] Stats dashboard with role breakdown ✅
+  - [x] Filter by status and role ✅
+- [x] Tasks management page `/admin/tasks` ✅
+  - [x] Task assignment between director and supervisors ✅
+  - [x] Status: new, accepted, in_progress, pending, completed, cancelled ✅
+  - [x] Priority levels: urgent, high, medium, low ✅
+  - [x] Deadline tracking with overdue indicators ✅
+  - [x] Progress percentage tracking ✅
+- [x] Approvals system page `/admin/approvals` ✅
+  - [x] Approval types: refund, customer_ban, provider_suspend, commission_change ✅
+  - [x] Status workflow: pending, approved, approved_with_changes, rejected ✅
+  - [x] Create/decision modals ✅
+  - [x] Justification tracking ✅
+- [x] Internal messages page `/admin/messages` ✅
+  - [x] Inbox and sent views ✅
+  - [x] Compose message modal ✅
+  - [x] Broadcast to all team members ✅
+  - [x] Read/unread tracking ✅
+  - [x] Priority: urgent or normal ✅
+- [x] Announcements page `/admin/announcements` ✅
+  - [x] Types: urgent, important, info ✅
+  - [x] Pinned announcements ✅
+  - [x] Expiry dates ✅
+  - [x] CRUD for super admins ✅
+- [x] District/neighborhood filtering in location settings ✅
+
 ---
 
 ## ⚠️ What's NOT Working Yet
 
-### Admin Panel (Placeholder Only)
-- ❌ Admin dashboard - UI exists at `/admin` but NO functionality
-- ❌ User management - Cannot view/manage users
-- ❌ Provider approval - Cannot approve/reject providers
-- ❌ Platform analytics - No real platform-wide stats
-- ❌ Financial reporting - No settlement/payout system
+### Admin Panel (Backend Integration Pending)
+- ❌ **Backend integration** - UI is complete but not connected to actual database operations
+- ❌ **User management backend** - Cannot actually manage users from DB
+- ❌ **Provider approval backend** - Cannot approve/reject providers from DB
+- ❌ **Platform analytics backend** - Stats are mock data, not real queries
+- ❌ **Financial reporting backend** - No actual payment/settlement processing
 
 ### Payment Integration
 - ❌ Online payment (Fawry) - NOT integrated, only Cash on Delivery works
@@ -326,11 +368,11 @@ Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Ma
 
 ---
 
-## 🎯 Next Steps (Week 4+)
+## 🎯 Next Steps (Week 5+)
 
 ### High Priority
-1. [ ] **Execute Supabase Storage SQL** - Required for logo/image uploads
-2. [ ] **Admin Panel** - Provider approval, user management, platform oversight
+1. [ ] **Admin Backend Integration** - Connect admin UI to actual database operations
+2. [ ] **Execute Supabase Storage SQL** - Required for logo/image uploads
 3. [ ] **Payment Integration (Fawry)** - Online payment support
 
 ### Medium Priority
@@ -348,6 +390,53 @@ Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Ma
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 29, 2025 - Admin Dashboard + Supervisor System (Week 4) ✅
+- ✅ **Unified Admin Components**:
+  - AdminHeader with language switcher, notifications, user menu
+  - AdminSidebar with collapsible navigation
+  - Consistent Engezna Blue (#009DE0) theming
+- ✅ **Locale-aware Number Formatting**:
+  - Created `/src/lib/utils/formatters.ts` utility
+  - Arabic-Indic numerals (٠-٩) in Arabic locale
+  - Western Arabic numerals (0-9) in English locale
+  - Applied throughout admin dashboard
+- ✅ **Supervisor Management** (`/admin/supervisors`):
+  - Full CRUD for admin team members
+  - Roles: super_admin, general_moderator, support, finance
+  - Permission system with granular access control
+  - Stats dashboard with role breakdown
+  - Filter by status and role, search functionality
+- ✅ **Tasks Management** (`/admin/tasks`):
+  - Task assignment between director and supervisors
+  - Status tracking: new, accepted, in_progress, pending, completed, cancelled
+  - Priority levels: urgent, high, medium, low
+  - Task types: provider_review, dispute, support, report, financial, investigation
+  - Deadline tracking with overdue indicators
+  - Progress percentage tracking
+- ✅ **Approvals System** (`/admin/approvals`):
+  - Approval types: refund, customer_ban, provider_suspend, commission_change
+  - Status workflow: pending, approved, approved_with_changes, rejected
+  - Create/decision modals for workflow
+  - Justification and response tracking
+- ✅ **Internal Messages** (`/admin/messages`):
+  - Inbox and sent views
+  - Compose message modal
+  - Broadcast to all team members
+  - Read/unread tracking
+  - Priority: urgent or normal
+- ✅ **Announcements** (`/admin/announcements`):
+  - Types: urgent, important, info
+  - Pinned announcements
+  - Expiry dates
+  - CRUD for super admins
+- ✅ **Location Settings Enhancement**:
+  - District/neighborhood filtering with cascading dropdowns
+  - Improved location selection in settings
+- ✅ **Documentation Updates**:
+  - Updated PRD.md to v4.0
+  - Updated README.md with Week 4 features
+  - Updated claude.md with Week 4 progress
 
 ### Work Session Nov 28, 2025 - Provider Dashboard Performance Optimization ✅
 - ✅ **Orders Page Optimization**: Combined order items query with orders query using JOIN
@@ -593,6 +682,17 @@ Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Ma
 ### Provider Profile (NEW)
 - `src/app/[locale]/provider/profile/page.tsx` - Profile, language, theme, password
 
+### Admin Dashboard (Week 4)
+- `src/components/admin/AdminHeader.tsx` - Unified admin header with language switcher
+- `src/components/admin/AdminSidebar.tsx` - Collapsible admin navigation
+- `src/components/admin/index.ts` - Admin component exports
+- `src/lib/utils/formatters.ts` - Locale-aware number formatting utility
+- `src/app/[locale]/admin/supervisors/page.tsx` - Supervisor management
+- `src/app/[locale]/admin/tasks/page.tsx` - Tasks management
+- `src/app/[locale]/admin/approvals/page.tsx` - Approvals workflow
+- `src/app/[locale]/admin/messages/page.tsx` - Internal messaging
+- `src/app/[locale]/admin/announcements/page.tsx` - Team announcements
+
 ---
 
 ## ⚠️ Pending Setup (Required for Logo Upload)
@@ -614,14 +714,16 @@ CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'pu
 
 ---
 
-**Version:** 17.1 (Week 3 Complete + Performance Optimization)
-**Last Updated:** November 28, 2025
-**Next Review:** December 1, 2025
+**Version:** 18.0 (Week 4 Complete - Admin Dashboard + Supervisor System)
+**Last Updated:** November 29, 2025
+**Next Review:** December 6, 2025
 
-**🎉 Week 3 Complete + Performance Optimized!**
-- Full customer flow and provider dashboard functional
-- Brand updated to Engezna Blue (#009DE0)
-- Light-only theme for consistent experience
-- **Provider Dashboard Performance Optimized** (parallel queries, reduced DB calls)
-- Navigation standards documented with lessons learned
-- Ready for Week 4: Admin Panel & Payment Integration!
+**🎉 Week 4 Complete!**
+- Full admin dashboard with unified components (AdminHeader, AdminSidebar)
+- Supervisor management with roles and permissions
+- Tasks management with assignment and tracking
+- Approvals workflow system
+- Internal messaging and team announcements
+- Locale-aware number formatting (Arabic-Indic numerals)
+- District/neighborhood filtering in location settings
+- Ready for Week 5: Admin Backend Integration & Payment!

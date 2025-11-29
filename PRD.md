@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 3.0 (Week 3 Complete - Provider Dashboard)
+**Version:** 4.0 (Week 4 Complete - Admin Dashboard + Supervisor System)
 **Date:** November 27, 2025
-**Last Updated:** November 27, 2025
+**Last Updated:** November 29, 2025
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -21,22 +21,23 @@
 
 ## 📊 Current Development Status
 
-**Phase:** Week 3 Complete - Provider Dashboard (Nov 27, 2025)
-**Status:** Week 3 - 100% Complete ✅
+**Phase:** Week 4 Complete - Admin Dashboard + Supervisor System (Nov 29, 2025)
+**Status:** Week 4 - 100% Complete ✅
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~50% of MVP Complete
-**Last Session:** November 27, 2025 - Documentation update with progress and what's not working
+**Overall Progress:** ~60% of MVP Complete
+**Last Session:** November 29, 2025 - Admin Dashboard, Supervisor Management, Location Settings
 
 ### What's Built ✅
 
 **Infrastructure & Design:**
 - ✅ Complete technical infrastructure (Next.js 16.0.3, TypeScript, Tailwind CSS v3.4.17)
 - ✅ Full database schema design and **DEPLOYED to Supabase** (1,431 lines SQL with all tables, RLS policies, triggers)
-- ✅ Brand identity and design system (Orange #E85D04, Gold #FDB927, logos, typography)
+- ✅ Brand identity and design system (Engezna Blue #009DE0, logos, typography)
 - ✅ Bilingual interface (Arabic/English with full RTL support)
-- ✅ Dark/Light mode theming with next-themes
+- ✅ Light-only theme (dark mode removed for consistent brand experience)
 - ✅ 13 Shadcn/ui components installed and themed
 - ✅ Noto Sans Arabic + English variable fonts
+- ✅ Locale-aware number formatting (Arabic-Indic numerals ٠-٩ in Arabic, Western Arabic 0-9 in English)
 
 **Database & Data:**
 - ✅ **Database deployed to Supabase** with live connection
@@ -106,6 +107,46 @@
 - ✅ Language and theme toggle components
 - ✅ 404 error pages for both locales
 
+**Admin Dashboard (NEW - Week 4):**
+- ✅ **Unified Admin Components**
+  - ✅ AdminHeader with language switcher, notifications, user menu
+  - ✅ AdminSidebar with collapsible navigation
+  - ✅ Consistent Engezna Blue (#009DE0) theming
+- ✅ **Supervisor Management** (`/admin/supervisors`)
+  - ✅ Full CRUD for admin team members
+  - ✅ Roles: super_admin, general_moderator, support, finance
+  - ✅ Permission system for granular access control
+  - ✅ Stats dashboard with role breakdown
+  - ✅ Filter by status and role
+- ✅ **Tasks Management** (`/admin/tasks`)
+  - ✅ Task assignment between director and supervisors
+  - ✅ Status tracking: new, accepted, in_progress, pending, completed, cancelled
+  - ✅ Priority levels: urgent, high, medium, low
+  - ✅ Deadline tracking with overdue indicators
+  - ✅ Progress percentage tracking
+- ✅ **Approvals System** (`/admin/approvals`)
+  - ✅ Approval requests for refunds, bans, commission changes
+  - ✅ Status workflow: pending, approved, approved_with_changes, rejected
+  - ✅ Justification and response tracking
+  - ✅ Create/decision modals for workflow
+- ✅ **Internal Messages** (`/admin/messages`)
+  - ✅ Inbox and sent views
+  - ✅ Compose message modal
+  - ✅ Broadcast to all team members
+  - ✅ Read/unread tracking
+  - ✅ Priority: urgent or normal
+- ✅ **Announcements** (`/admin/announcements`)
+  - ✅ Team announcements and notifications
+  - ✅ Types: urgent, important, info
+  - ✅ Pinned announcements
+  - ✅ Expiry dates
+  - ✅ CRUD for super admins
+
+**Location Settings (NEW - Week 4):**
+- ✅ **District/Neighborhood Filtering**
+  - ✅ Cascading dropdowns: Governorate → City → District → Neighborhood
+  - ✅ Improved location selection in settings
+
 **DevOps:**
 - ✅ Git repository + GitHub integration
 - ✅ Vercel deployment setup (auto-deploy on push)
@@ -114,12 +155,11 @@
 
 ### What's NOT Built Yet 🚧
 
-**Admin Panel (Placeholder Only):**
-- ⚠️ Admin dashboard UI exists but NO functionality
-- ⚠️ Cannot approve/reject providers
-- ⚠️ Cannot manage users
-- ⚠️ No platform-wide analytics
-- ⚠️ No financial reporting/settlements
+**Admin Panel (Backend Integration Pending):**
+- ⚠️ **Provider approval workflow** - UI exists but backend integration needed
+- ⚠️ **User management backend** - Cannot actually manage users from DB
+- ⚠️ **Platform analytics backend** - Stats are mock data, not real queries
+- ⚠️ **Financial settlements** - No actual payment processing
 
 **Payment Integration:**
 - ⚠️ **Online payment (Fawry)** - NOT integrated, only Cash on Delivery works
@@ -173,11 +213,21 @@
 9. ✅ Finance dashboard
 10. ✅ Provider settings & profile
 
-**Week 4+ Priorities:**
+**Week 4 Tasks (COMPLETE ✅):**
+1. ✅ Admin Dashboard unified components (AdminHeader, AdminSidebar)
+2. ✅ Locale-aware number formatting (Arabic-Indic numerals)
+3. ✅ District/neighborhood filtering in location settings
+4. ✅ Supervisor management page with roles and permissions
+5. ✅ Tasks management with assignment and tracking
+6. ✅ Approvals workflow system
+7. ✅ Internal messaging between team members
+8. ✅ Announcements for team notifications
+
+**Week 5+ Priorities:**
 
 **High Priority:**
-1. **Execute Supabase Storage SQL** - Required for logo/image uploads
-2. **Admin Panel** - Provider approval, user management, platform oversight
+1. **Admin Backend Integration** - Connect admin UI to actual database operations
+2. **Execute Supabase Storage SQL** - Required for logo/image uploads
 3. **Payment Integration (Fawry)** - Online payment support
 
 **Medium Priority:**
@@ -1566,13 +1616,37 @@ engezna/
     - RTL arrows need dynamic swapping
     - Light-only theme simplifies development
   - **Next Priority:** Admin panel, payment integration
+- **v4.0** - November 29, 2025 - Week 4 Complete (Admin Dashboard + Supervisor System)
+  - **Status:** Week 4 - 100% Complete ✅
+  - **Admin Dashboard Features (ALL COMPLETE):**
+    - ✅ Unified AdminHeader with language switcher, notifications, user menu
+    - ✅ Unified AdminSidebar with collapsible navigation
+    - ✅ Locale-aware number formatting (Arabic-Indic numerals ٠-٩)
+    - ✅ Supervisor management with roles (super_admin, general_moderator, support, finance)
+    - ✅ Permission system for granular access control
+    - ✅ Tasks management with assignment, priorities, and deadlines
+    - ✅ Approvals workflow system for refunds, bans, commission changes
+    - ✅ Internal messaging with inbox/sent views and broadcast
+    - ✅ Team announcements with types (urgent, important, info)
+  - **Location Settings Enhancement:**
+    - ✅ District/neighborhood filtering with cascading dropdowns
+    - ✅ Improved location selection in settings
+  - **Code Metrics:**
+    - ~4,500 lines of new code across admin pages
+    - 6 new admin pages created
+    - 2 shared admin components (AdminHeader, AdminSidebar)
+  - **Documentation Updates:**
+    - ✅ Updated PRD.md with Week 4 features
+    - ✅ Updated README.md with admin dashboard status
+    - ✅ Updated claude.md with new features
+  - **Next Priority:** Admin backend integration, payment integration
 
 ---
 
 **Approved By:**
-- **Mosab** - Founder & Product Lead - November 27, 2025
+- **Mosab** - Founder & Product Lead - November 29, 2025
 
-**Next Review Date:** December 1, 2025
+**Next Review Date:** December 6, 2025
 
 ---
 
