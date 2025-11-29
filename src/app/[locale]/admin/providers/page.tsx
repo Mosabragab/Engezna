@@ -451,7 +451,7 @@ export default function AdminProvidersPage() {
                 value={geoFilter}
                 onChange={setGeoFilter}
                 showDistrict={false}
-                layout="inline"
+                inline={true}
                 showClearButton={true}
               />
 

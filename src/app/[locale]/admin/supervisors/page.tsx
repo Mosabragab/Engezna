@@ -1020,7 +1020,7 @@ export default function AdminSupervisorsPage() {
                       value={tempRegion}
                       onChange={setTempRegion}
                       showDistrict={false}
-                      layout="stacked"
+                      inline={false}
                     />
                   </div>
                   <Button
@@ -1159,7 +1159,7 @@ export default function AdminSupervisorsPage() {
                       value={tempRegion}
                       onChange={setTempRegion}
                       showDistrict={false}
-                      layout="stacked"
+                      inline={false}
                     />
                   </div>
                   <Button
