@@ -238,7 +238,22 @@ export default function AdminDashboard() {
       })
 
       setPendingProviders(pendingProvidersData || [])
-      setRecentOrders(recentOrdersData as RecentOrder[] || [])
+      // Transform the data to match the expected interface
+      // Supabase returns relations as arrays, so we need to extract the first element
+      const transformedOrders = (recentOrdersData || []).map((order: {
+        id: string
+        order_number: string
+        total: number
+        status: string
+        created_at: string
+        provider: { name_ar: string; name_en: string }[] | { name_ar: string; name_en: string } | null
+        customer: { full_name: string }[] | { full_name: string } | null
+      }) => ({
+        ...order,
+        provider: Array.isArray(order.provider) ? order.provider[0] || null : order.provider,
+        customer: Array.isArray(order.customer) ? order.customer[0] || null : order.customer,
+      }))
+      setRecentOrders(transformedOrders as RecentOrder[])
     } catch (error) {
       console.error('Error loading dashboard data:', error)
     }
