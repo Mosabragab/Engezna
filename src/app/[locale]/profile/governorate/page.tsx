@@ -30,6 +30,13 @@ type City = {
   name_en: string
 }
 
+type District = {
+  id: string
+  city_id: string
+  name_ar: string
+  name_en: string
+}
+
 export default function GovernoratePage() {
   const locale = useLocale()
   const t = useTranslations('settings.governorate')
@@ -40,9 +47,11 @@ export default function GovernoratePage() {
 
   const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [cities, setCities] = useState<City[]>([])
+  const [districts, setDistricts] = useState<District[]>([])
 
   const [governorateId, setGovernorateId] = useState('')
   const [cityId, setCityId] = useState('')
+  const [districtId, setDistrictId] = useState('')
 
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -59,7 +68,19 @@ export default function GovernoratePage() {
       setCities([])
       setCityId('')
     }
+    // Reset district when governorate changes
+    setDistricts([])
+    setDistrictId('')
   }, [governorateId])
+
+  useEffect(() => {
+    if (cityId) {
+      loadDistricts(cityId)
+    } else {
+      setDistricts([])
+      setDistrictId('')
+    }
+  }, [cityId])
 
   async function checkAuthAndLoadData() {
     const supabase = createClient()
@@ -104,6 +125,20 @@ export default function GovernoratePage() {
     }
   }
 
+  async function loadDistricts(cityId: string) {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('districts')
+      .select('*')
+      .eq('city_id', cityId)
+      .eq('is_active', true)
+      .order('name_en')
+
+    if (data) {
+      setDistricts(data)
+    }
+  }
+
   async function loadCurrentSelection(uid: string) {
     setLoading(true)
     const supabase = createClient()
@@ -112,7 +147,7 @@ export default function GovernoratePage() {
     // If it doesn't exist, this query will fail silently
     const { data, error } = await supabase
       .from('profiles')
-      .select('governorate_id, city_id')
+      .select('governorate_id, city_id, district_id')
       .eq('id', uid)
       .single()
 
@@ -122,6 +157,9 @@ export default function GovernoratePage() {
       }
       if (data.city_id) {
         setCityId(data.city_id)
+      }
+      if (data.district_id) {
+        setDistrictId(data.district_id)
       }
     }
 
@@ -141,13 +179,14 @@ export default function GovernoratePage() {
 
     const supabase = createClient()
 
-    // Note: This assumes governorate_id and city_id columns exist in profiles table
+    // Note: This assumes governorate_id, city_id, and district_id columns exist in profiles table
     // If they don't exist, you'll need to add them via migration first
     const { error } = await supabase
       .from('profiles')
       .update({
         governorate_id: governorateId,
         city_id: cityId || null,
+        district_id: districtId || null,
       })
       .eq('id', userId)
 
@@ -225,6 +264,25 @@ export default function GovernoratePage() {
                         {cities.map((city) => (
                           <SelectItem key={city.id} value={city.id}>
                             {locale === 'ar' ? city.name_ar : city.name_en}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* District */}
+                {cityId && districts.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>{t('district')}</Label>
+                    <Select value={districtId} onValueChange={setDistrictId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={t('districtPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {districts.map((district) => (
+                          <SelectItem key={district.id} value={district.id}>
+                            {locale === 'ar' ? district.name_ar : district.name_en}
                           </SelectItem>
                         ))}
                       </SelectContent>
