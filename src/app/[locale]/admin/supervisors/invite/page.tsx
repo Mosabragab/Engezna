@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -29,21 +30,24 @@ import {
   RefreshCw,
   Link as LinkIcon,
   MessageSquare,
+  UserCog,
+  Key,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-type AdminRole = 'super_admin' | 'general_moderator' | 'support' | 'finance'
-
-interface Permissions {
-  providers: { view: boolean; approve: boolean; edit: boolean; delete: boolean }
-  orders: { view: boolean; cancel: boolean; refund: boolean }
-  customers: { view: boolean; ban: boolean; edit: boolean }
-  finance: { view: boolean; settlements: boolean; reports: boolean }
-  support: { view: boolean; assign: boolean; resolve: boolean }
-  team: { view: boolean; manage: boolean }
-  settings: { view: boolean; edit: boolean }
-  analytics: { view: boolean }
+// Database role type
+interface DbRole {
+  id: string
+  code: string
+  name_ar: string
+  name_en: string
+  description_ar: string | null
+  description_en: string | null
+  color: string
+  icon: string
+  is_system: boolean
+  is_active: boolean
 }
 
 interface AssignedRegion {
@@ -52,79 +56,15 @@ interface AssignedRegion {
   district_id: string | null
 }
 
-const roleConfig: Record<AdminRole, { label: { ar: string; en: string }; icon: React.ElementType; color: string; description: { ar: string; en: string } }> = {
-  super_admin: {
-    label: { ar: 'المدير التنفيذي', en: 'Super Admin' },
-    icon: Crown,
-    color: 'text-amber-600 bg-amber-100 border-amber-200',
-    description: { ar: 'صلاحيات كاملة لإدارة المنصة', en: 'Full platform management access' },
-  },
-  general_moderator: {
-    label: { ar: 'مشرف عام', en: 'General Moderator' },
-    icon: ShieldCheck,
-    color: 'text-blue-600 bg-blue-100 border-blue-200',
-    description: { ar: 'إدارة المتاجر والطلبات والعملاء', en: 'Manage providers, orders and customers' },
-  },
-  support: {
-    label: { ar: 'مشرف دعم', en: 'Support' },
-    icon: Headphones,
-    color: 'text-purple-600 bg-purple-100 border-purple-200',
-    description: { ar: 'التعامل مع التذاكر والدعم الفني', en: 'Handle support tickets and inquiries' },
-  },
-  finance: {
-    label: { ar: 'مشرف مالي', en: 'Finance' },
-    icon: Wallet,
-    color: 'text-emerald-600 bg-emerald-100 border-emerald-200',
-    description: { ar: 'إدارة التسويات والتقارير المالية', en: 'Manage settlements and financial reports' },
-  },
-}
-
-const getDefaultPermissions = (role: AdminRole): Permissions => {
-  switch (role) {
-    case 'super_admin':
-      return {
-        providers: { view: true, approve: true, edit: true, delete: true },
-        orders: { view: true, cancel: true, refund: true },
-        customers: { view: true, ban: true, edit: true },
-        finance: { view: true, settlements: true, reports: true },
-        support: { view: true, assign: true, resolve: true },
-        team: { view: true, manage: true },
-        settings: { view: true, edit: true },
-        analytics: { view: true },
-      }
-    case 'general_moderator':
-      return {
-        providers: { view: true, approve: true, edit: true, delete: false },
-        orders: { view: true, cancel: true, refund: false },
-        customers: { view: true, ban: true, edit: false },
-        finance: { view: false, settlements: false, reports: false },
-        support: { view: true, assign: false, resolve: false },
-        team: { view: false, manage: false },
-        settings: { view: false, edit: false },
-        analytics: { view: true },
-      }
-    case 'support':
-      return {
-        providers: { view: true, approve: false, edit: false, delete: false },
-        orders: { view: true, cancel: false, refund: false },
-        customers: { view: true, ban: false, edit: false },
-        finance: { view: false, settlements: false, reports: false },
-        support: { view: true, assign: true, resolve: true },
-        team: { view: false, manage: false },
-        settings: { view: false, edit: false },
-        analytics: { view: false },
-      }
-    case 'finance':
-      return {
-        providers: { view: true, approve: false, edit: false, delete: false },
-        orders: { view: true, cancel: false, refund: true },
-        customers: { view: true, ban: false, edit: false },
-        finance: { view: true, settlements: true, reports: true },
-        support: { view: false, assign: false, resolve: false },
-        team: { view: false, manage: false },
-        settings: { view: false, edit: false },
-        analytics: { view: true },
-      }
+// Icon mapping for dynamic role icons
+function getRoleIcon(iconName: string): React.ReactNode {
+  switch (iconName) {
+    case 'Crown': return <Crown className="w-5 h-5" />
+    case 'UserCog': return <UserCog className="w-5 h-5" />
+    case 'Headphones': return <Headphones className="w-5 h-5" />
+    case 'Wallet': return <Wallet className="w-5 h-5" />
+    case 'ShieldCheck': return <ShieldCheck className="w-5 h-5" />
+    default: return <Shield className="w-5 h-5" />
   }
 }
 
@@ -139,10 +79,13 @@ export default function InviteSupervisorPage() {
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // Roles from database
+  const [dbRoles, setDbRoles] = useState<DbRole[]>([])
+
   // Form state
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
-  const [selectedRole, setSelectedRole] = useState<AdminRole>('general_moderator')
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('')
   const [message, setMessage] = useState('')
   const [expiresHours, setExpiresHours] = useState(48)
   const [assignedRegions, setAssignedRegions] = useState<AssignedRegion[]>([])
@@ -170,7 +113,27 @@ export default function InviteSupervisorPage() {
   useEffect(() => {
     checkAuth()
     loadGeoData()
+    loadRoles()
   }, [])
+
+  async function loadRoles() {
+    const supabase = createClient()
+    const { data: roles } = await supabase
+      .from('roles')
+      .select('*')
+      .eq('is_active', true)
+      .order('is_system', { ascending: false })
+      .order('name_ar')
+
+    if (roles) {
+      setDbRoles(roles)
+      // Set default selected role to first non-super_admin role
+      const defaultRole = roles.find(r => r.code !== 'super_admin') || roles[0]
+      if (defaultRole) {
+        setSelectedRoleId(defaultRole.id)
+      }
+    }
+  }
 
   async function loadGeoData() {
     const supabase = createClient()
@@ -256,6 +219,11 @@ export default function InviteSupervisorPage() {
       return
     }
 
+    if (!selectedRoleId) {
+      setFormError(locale === 'ar' ? 'يجب اختيار دور' : 'Please select a role')
+      return
+    }
+
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
@@ -269,6 +237,14 @@ export default function InviteSupervisorPage() {
     const supabase = createClient()
 
     try {
+      // Get selected role details
+      const selectedRole = dbRoles.find(r => r.id === selectedRoleId)
+      if (!selectedRole) {
+        setFormError(locale === 'ar' ? 'الدور غير موجود' : 'Role not found')
+        setFormLoading(false)
+        return
+      }
+
       // Check if email already exists as admin
       const { data: existingProfile } = await supabase
         .from('profiles')
@@ -318,7 +294,7 @@ export default function InviteSupervisorPage() {
         return
       }
 
-      // Create the invitation
+      // Create the invitation with the new role system
       const invitationToken = crypto.randomUUID()
       const expiresAt = new Date(Date.now() + expiresHours * 60 * 60 * 1000).toISOString()
 
@@ -327,8 +303,9 @@ export default function InviteSupervisorPage() {
         .insert({
           email: email.toLowerCase().trim(),
           full_name: fullName.trim() || null,
-          role: selectedRole,
-          permissions: getDefaultPermissions(selectedRole),
+          role: selectedRole.code, // Use role code for backward compatibility
+          role_id: selectedRoleId, // New: store role_id for the new permission system
+          permissions: {}, // Permissions are now managed via roles
           assigned_regions: assignedRegions,
           invitation_token: invitationToken,
           expires_at: expiresAt,
@@ -378,13 +355,20 @@ export default function InviteSupervisorPage() {
   function handleCreateAnother() {
     setEmail('')
     setFullName('')
-    setSelectedRole('general_moderator')
+    // Reset to default role (first non-super_admin)
+    const defaultRole = dbRoles.find(r => r.code !== 'super_admin') || dbRoles[0]
+    if (defaultRole) {
+      setSelectedRoleId(defaultRole.id)
+    }
     setMessage('')
     setExpiresHours(48)
     setAssignedRegions([])
     setInvitationResult(null)
     setFormError('')
   }
+
+  // Get selected role for display
+  const selectedRole = dbRoles.find(r => r.id === selectedRoleId)
 
   if (loading) {
     return (
@@ -505,9 +489,17 @@ export default function InviteSupervisorPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">{locale === 'ar' ? 'الدور:' : 'Role:'}</span>
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs ${roleConfig[selectedRole].color}`}>
-                        {roleConfig[selectedRole].label[locale === 'ar' ? 'ar' : 'en']}
-                      </span>
+                      {selectedRole && (
+                        <span
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
+                          style={{
+                            backgroundColor: `${selectedRole.color}20`,
+                            color: selectedRole.color
+                          }}
+                        >
+                          {locale === 'ar' ? selectedRole.name_ar : selectedRole.name_en}
+                        </span>
+                      )}
                     </div>
                     {assignedRegions.length > 0 && (
                       <div className="flex justify-between">
@@ -603,16 +595,14 @@ export default function InviteSupervisorPage() {
                       {locale === 'ar' ? 'الدور' : 'Role'} <span className="text-red-500">*</span>
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {(Object.keys(roleConfig) as AdminRole[]).map((role) => {
-                        const config = roleConfig[role]
-                        const Icon = config.icon
-                        const isSelected = selectedRole === role
+                      {dbRoles.map((role) => {
+                        const isSelected = selectedRoleId === role.id
 
                         return (
                           <button
-                            key={role}
+                            key={role.id}
                             type="button"
-                            onClick={() => setSelectedRole(role)}
+                            onClick={() => setSelectedRoleId(role.id)}
                             className={`p-4 rounded-xl border-2 text-start transition-all ${
                               isSelected
                                 ? 'border-[#009DE0] bg-[#E0F4FF]'
@@ -620,15 +610,21 @@ export default function InviteSupervisorPage() {
                             }`}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${config.color}`}>
-                                <Icon className="w-5 h-5" />
+                              <div
+                                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                style={{
+                                  backgroundColor: `${role.color}20`,
+                                  color: role.color
+                                }}
+                              >
+                                {getRoleIcon(role.icon)}
                               </div>
                               <div className="flex-1">
                                 <p className="font-medium text-slate-900">
-                                  {config.label[locale === 'ar' ? 'ar' : 'en']}
+                                  {locale === 'ar' ? role.name_ar : role.name_en}
                                 </p>
                                 <p className="text-xs text-slate-500">
-                                  {config.description[locale === 'ar' ? 'ar' : 'en']}
+                                  {locale === 'ar' ? role.description_ar : role.description_en}
                                 </p>
                               </div>
                               {isSelected && (
@@ -639,6 +635,12 @@ export default function InviteSupervisorPage() {
                         )
                       })}
                     </div>
+                    {dbRoles.length === 0 && (
+                      <div className="text-center py-4 text-slate-500">
+                        <Key className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                        <p className="text-sm">{locale === 'ar' ? 'لا توجد أدوار متاحة' : 'No roles available'}</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Assigned Regions */}
