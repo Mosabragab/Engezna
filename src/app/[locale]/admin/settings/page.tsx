@@ -27,7 +27,7 @@ import {
   Lock,
   Eye,
   EyeOff,
-  User,
+  User as UserIcon,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -221,7 +221,7 @@ export default function AdminSettingsPage() {
     { id: 'payments', label: locale === 'ar' ? 'الدفع' : 'Payments', icon: CreditCard },
     { id: 'delivery', label: locale === 'ar' ? 'التوصيل' : 'Delivery', icon: Truck },
     { id: 'notifications', label: locale === 'ar' ? 'الإشعارات' : 'Notifications', icon: Bell },
-    { id: 'account', label: locale === 'ar' ? 'الحساب' : 'Account', icon: User },
+    { id: 'account', label: locale === 'ar' ? 'الحساب' : 'Account', icon: UserIcon },
   ]
 
   if (loading) {
