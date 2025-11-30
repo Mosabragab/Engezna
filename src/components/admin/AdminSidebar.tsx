@@ -21,13 +21,18 @@ import {
   CheckSquare,
   MessageSquare,
   Megaphone,
+  Tag,
+  Loader2,
 } from 'lucide-react'
+import { usePermissions } from '@/lib/permissions/use-permissions'
+import type { ResourceCode } from '@/types/permissions'
 
 interface NavItem {
   icon: React.ElementType
   label: { ar: string; en: string }
   path: string
   badge?: string
+  resource: ResourceCode // للتحقق من الصلاحية
 }
 
 interface AdminSidebarProps {
@@ -53,49 +58,77 @@ export function AdminSidebar({
   const pathname = usePathname()
   const isRTL = locale === 'ar'
 
+  // استخدام نظام الصلاحيات
+  const { loading, hasResource, isSuperAdmin, roles } = usePermissions()
+
+  // جلب الدور الرئيسي للعرض
+  const primaryRole = roles.find(r => r.is_primary) || roles[0]
+
+  // التحقق من إمكانية الوصول للمورد
+  const canAccess = (resource: ResourceCode): boolean => {
+    // super_admin يرى كل شيء
+    if (isSuperAdmin) return true
+    // التحقق من وجود صلاحية view للمورد
+    return hasResource(resource)
+  }
+
   // Main navigation items
   const mainNavItems: NavItem[] = [
     {
       icon: Home,
       label: { ar: 'الرئيسية', en: 'Dashboard' },
       path: `/${locale}/admin`,
+      resource: 'dashboard',
     },
     {
       icon: Store,
       label: { ar: 'المتاجر', en: 'Providers' },
       path: `/${locale}/admin/providers`,
       badge: pendingProviders > 0 ? pendingProviders.toString() : undefined,
+      resource: 'providers',
     },
     {
       icon: ShoppingBag,
       label: { ar: 'الطلبات', en: 'Orders' },
       path: `/${locale}/admin/orders`,
+      resource: 'orders',
     },
     {
       icon: Users,
       label: { ar: 'العملاء', en: 'Customers' },
       path: `/${locale}/admin/customers`,
+      resource: 'customers',
     },
     {
       icon: Wallet,
       label: { ar: 'المالية', en: 'Finance' },
       path: `/${locale}/admin/finance`,
+      resource: 'finance',
     },
     {
       icon: BarChart3,
       label: { ar: 'التحليلات', en: 'Analytics' },
       path: `/${locale}/admin/analytics`,
+      resource: 'analytics',
     },
     {
       icon: HeadphonesIcon,
       label: { ar: 'الدعم', en: 'Support' },
       path: `/${locale}/admin/support`,
       badge: openTickets > 0 ? openTickets.toString() : undefined,
+      resource: 'support',
     },
     {
       icon: MapPin,
       label: { ar: 'المواقع', en: 'Locations' },
       path: `/${locale}/admin/locations`,
+      resource: 'locations',
+    },
+    {
+      icon: Tag,
+      label: { ar: 'العروض', en: 'Promotions' },
+      path: `/${locale}/admin/promotions`,
+      resource: 'promotions',
     },
   ]
 
@@ -105,29 +138,34 @@ export function AdminSidebar({
       icon: UserCog,
       label: { ar: 'المشرفين', en: 'Supervisors' },
       path: `/${locale}/admin/supervisors`,
+      resource: 'team',
     },
     {
       icon: ClipboardList,
       label: { ar: 'المهام', en: 'Tasks' },
       path: `/${locale}/admin/tasks`,
       badge: pendingTasks > 0 ? pendingTasks.toString() : undefined,
+      resource: 'tasks',
     },
     {
       icon: CheckSquare,
       label: { ar: 'الموافقات', en: 'Approvals' },
       path: `/${locale}/admin/approvals`,
       badge: pendingApprovals > 0 ? pendingApprovals.toString() : undefined,
+      resource: 'approvals',
     },
     {
       icon: MessageSquare,
       label: { ar: 'الرسائل', en: 'Messages' },
       path: `/${locale}/admin/messages`,
       badge: unreadMessages > 0 ? unreadMessages.toString() : undefined,
+      resource: 'messages',
     },
     {
       icon: Megaphone,
       label: { ar: 'الإعلانات', en: 'Announcements' },
       path: `/${locale}/admin/announcements`,
+      resource: 'announcements',
     },
   ]
 
@@ -137,13 +175,20 @@ export function AdminSidebar({
       icon: Activity,
       label: { ar: 'سجل النشاط', en: 'Activity Log' },
       path: `/${locale}/admin/activity-log`,
+      resource: 'activity_log',
     },
     {
       icon: Settings,
       label: { ar: 'الإعدادات', en: 'Settings' },
       path: `/${locale}/admin/settings`,
+      resource: 'settings',
     },
   ]
+
+  // تصفية العناصر حسب الصلاحيات
+  const filteredMainNavItems = mainNavItems.filter(item => canAccess(item.resource))
+  const filteredTeamNavItems = teamNavItems.filter(item => canAccess(item.resource))
+  const filteredSystemNavItems = systemNavItems.filter(item => canAccess(item.resource))
 
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname === item.path || pathname.startsWith(item.path + '/')
@@ -155,7 +200,7 @@ export function AdminSidebar({
         className={`
           w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all
           ${isActive
-            ? 'bg-red-600 text-white shadow-md'
+            ? 'bg-[#009DE0] text-white shadow-md'
             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
         `}
       >
@@ -192,7 +237,7 @@ export function AdminSidebar({
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center justify-between">
             <Link href={`/${locale}/admin`} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-[#009DE0] rounded-xl flex items-center justify-center">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -213,32 +258,64 @@ export function AdminSidebar({
           </div>
         </div>
 
+        {/* Role Badge */}
+        {primaryRole && (
+          <div className="px-4 py-2 border-b border-slate-100">
+            <div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs"
+              style={{
+                backgroundColor: `${primaryRole.role?.color}15`,
+                color: primaryRole.role?.color
+              }}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span className="font-medium">
+                {locale === 'ar' ? primaryRole.role?.name_ar : primaryRole.role?.name_en}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-6 overflow-y-auto">
-          {/* Main Navigation */}
-          <div className="space-y-1">
-            {mainNavItems.map(renderNavItem)}
-          </div>
-
-          {/* Team & Communication Section */}
-          <div>
-            <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              {locale === 'ar' ? 'الفريق والتواصل' : 'Team & Communication'}
-            </p>
-            <div className="space-y-1">
-              {teamNavItems.map(renderNavItem)}
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Main Navigation */}
+              {filteredMainNavItems.length > 0 && (
+                <div className="space-y-1">
+                  {filteredMainNavItems.map(renderNavItem)}
+                </div>
+              )}
 
-          {/* System Section */}
-          <div>
-            <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              {locale === 'ar' ? 'النظام' : 'System'}
-            </p>
-            <div className="space-y-1">
-              {systemNavItems.map(renderNavItem)}
-            </div>
-          </div>
+              {/* Team & Communication Section */}
+              {filteredTeamNavItems.length > 0 && (
+                <div>
+                  <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    {locale === 'ar' ? 'الفريق والتواصل' : 'Team & Communication'}
+                  </p>
+                  <div className="space-y-1">
+                    {filteredTeamNavItems.map(renderNavItem)}
+                  </div>
+                </div>
+              )}
+
+              {/* System Section */}
+              {filteredSystemNavItems.length > 0 && (
+                <div>
+                  <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    {locale === 'ar' ? 'النظام' : 'System'}
+                  </p>
+                  <div className="space-y-1">
+                    {filteredSystemNavItems.map(renderNavItem)}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </nav>
       </aside>
     </>

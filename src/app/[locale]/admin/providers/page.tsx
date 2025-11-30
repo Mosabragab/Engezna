@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
+import { AdminHeader, AdminSidebar, AdminLayout, GeoFilter, useGeoFilter } from '@/components/admin'
 import { formatNumber, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -357,13 +357,14 @@ export default function AdminProvidersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {/* Sidebar */}
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        pendingProviders={stats.pending}
-      />
+    <AdminLayout>
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex">
+        {/* Sidebar */}
+        <AdminSidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          pendingProviders={stats.pending}
+        />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
@@ -710,6 +711,7 @@ export default function AdminProvidersPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   )
 }

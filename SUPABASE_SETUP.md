@@ -99,6 +99,15 @@ Location: `supabase/migrations/`
    alter table public.users enable row level security;
    ```
 
+#### Key Migrations
+
+| Migration | Description |
+|-----------|-------------|
+| `20250122000000_initial_schema.sql` | Core tables (providers, orders, customers, etc.) |
+| `20250130000000_admin_dashboard_schema.sql` | Admin tables (admin_users, tasks, approvals, etc.) |
+| `20251130000000_add_assigned_regions_to_admin_users.sql` | Geographic region assignments for supervisors |
+| `20251130100000_admin_invitations.sql` | Admin invitation system |
+
 #### Running Migrations
 
 **Option 1: Supabase Dashboard (Recommended)**
@@ -246,6 +255,73 @@ export async function GET() {
 - **Table Editor**: https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr/editor
 - **API Settings**: https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr/settings/api
 - **Supabase Docs**: https://supabase.com/docs
+
+## 🔐 Permission System (RBAC + ABAC)
+
+The admin panel uses a comprehensive Role-Based Access Control (RBAC) combined with Attribute-Based Access Control (ABAC) system.
+
+### Permission Types
+
+```typescript
+import { usePermissions } from '@/lib/permissions/use-permissions'
+
+// In any admin component
+const { can, canSync, hasResource, isSuperAdmin } = usePermissions()
+
+// Async check with context
+const result = await can('providers', 'approve', { governorateId: '...' })
+if (result.allowed) {
+  // Perform action
+}
+
+// Sync check (no context)
+if (canSync('orders', 'refund')) {
+  // Show refund button
+}
+
+// Check resource access
+if (hasResource('finance')) {
+  // Show finance menu
+}
+```
+
+### Key Concepts
+
+1. **Resources**: What can be accessed (providers, orders, customers, finance, etc.)
+2. **Actions**: What can be done (view, create, update, delete, approve, refund, etc.)
+3. **Constraints**: Conditions that limit permissions:
+   - **Geographic**: Limit access to specific governorates/cities/districts
+   - **Amount Limits**: Max amount for financial operations
+   - **Own Only**: Can only access items they created
+   - **Assigned Only**: Can only access items assigned to them
+   - **Time Restrictions**: Limit access to specific hours/days
+   - **Requires Approval**: Actions above threshold need approval
+
+### Admin Layout
+
+All admin pages are wrapped with `PermissionsProvider`:
+
+```tsx
+// src/app/[locale]/admin/layout.tsx
+'use client'
+import { PermissionsProvider } from '@/lib/permissions/use-permissions'
+
+export default function AdminLayout({ children }) {
+  return (
+    <PermissionsProvider>
+      {children}
+    </PermissionsProvider>
+  )
+}
+```
+
+### Roles Management
+
+Access the roles management page at `/admin/roles` to:
+- Create and edit roles
+- Assign permissions to roles
+- Set constraints per permission
+- View and manage role members
 
 ## 🚀 Next Steps
 

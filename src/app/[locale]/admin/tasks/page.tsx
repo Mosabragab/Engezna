@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -427,7 +428,7 @@ export default function AdminTasksPage() {
           task_id: task.id,
           admin_id: currentAdminId,
           update_type: 'status_change',
-          status_change: 'accepted',
+          new_status: 'accepted',
           comment: locale === 'ar' ? 'تم قبول المهمة' : 'Task accepted',
         })
 
@@ -493,8 +494,8 @@ export default function AdminTasksPage() {
           task_id: selectedTask.id,
           admin_id: currentAdminId,
           update_type: updateData.status !== selectedTask.status ? 'status_change' : 'progress',
-          status_change: updates.status || null,
-          progress: updateData.progress_percentage,
+          new_status: updates.status || null,
+          progress_percentage: updateData.progress_percentage,
           comment: updateData.comment || null,
         })
 
@@ -525,7 +526,7 @@ export default function AdminTasksPage() {
           task_id: task.id,
           admin_id: currentAdminId,
           update_type: 'status_change',
-          status_change: 'in_progress',
+          new_status: 'in_progress',
           comment: locale === 'ar' ? 'بدأ العمل على المهمة' : 'Started working on task',
         })
 
@@ -554,8 +555,8 @@ export default function AdminTasksPage() {
           task_id: task.id,
           admin_id: currentAdminId,
           update_type: 'status_change',
-          status_change: 'completed',
-          progress: 100,
+          new_status: 'completed',
+          progress_percentage: 100,
           comment: locale === 'ar' ? 'تم إكمال المهمة' : 'Task completed',
         })
 

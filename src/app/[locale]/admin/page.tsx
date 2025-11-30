@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, AdminSidebar, AdminLayout } from '@/components/admin'
 import { formatNumber, formatCurrency, formatTimeAgo } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -278,19 +278,20 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {/* Sidebar */}
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        pendingProviders={stats.pendingProviders}
-        openTickets={stats.openTickets}
-      />
+    <AdminLayout>
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex">
+        {/* Sidebar */}
+        <AdminSidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          pendingProviders={stats.pendingProviders}
+          openTickets={stats.openTickets}
+        />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        {/* Header */}
-        <AdminHeader
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+          {/* Header */}
+          <AdminHeader
           user={user}
           title={locale === 'ar' ? 'لوحة القيادة' : 'Dashboard'}
           subtitle={locale === 'ar' ? 'نظرة عامة على المنصة' : 'Platform Overview'}
@@ -524,7 +525,8 @@ export default function AdminDashboard() {
             </div>
           </div>
         </main>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }
