@@ -69,6 +69,14 @@ interface City {
   governorate_id: string
 }
 
+interface District {
+  id: string
+  name_ar: string
+  name_en: string
+  city_id: string | null
+  governorate_id: string
+}
+
 interface Supervisor {
   id: string
   user_id: string
@@ -212,6 +220,7 @@ export default function AdminSupervisorsPage() {
   // Geography data
   const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [cities, setCities] = useState<City[]>([])
+  const [districts, setDistricts] = useState<District[]>([])
   const [tempRegion, setTempRegion] = useState<GeoFilterValue>({
     governorate_id: null,
     city_id: null,
@@ -258,6 +267,16 @@ export default function AdminSupervisorsPage() {
 
     if (cityData) {
       setCities(cityData)
+    }
+
+    // Load districts
+    const { data: districtData } = await supabase
+      .from('districts')
+      .select('id, name_ar, name_en, city_id, governorate_id')
+      .order('name_ar')
+
+    if (districtData) {
+      setDistricts(districtData)
     }
   }
 
@@ -596,10 +615,15 @@ export default function AdminSupervisorsPage() {
   function getRegionLabel(region: AssignedRegion): string {
     const gov = governorates.find(g => g.id === region.governorate_id)
     const city = cities.find(c => c.id === region.city_id)
+    const district = districts.find(d => d.id === region.district_id)
 
     const govName = gov ? (locale === 'ar' ? gov.name_ar : gov.name_en) : ''
     const cityName = city ? (locale === 'ar' ? city.name_ar : city.name_en) : ''
+    const districtName = district ? (locale === 'ar' ? district.name_ar : district.name_en) : ''
 
+    if (districtName) {
+      return `${districtName} - ${cityName || govName}`
+    }
     if (cityName) {
       return `${cityName} - ${govName}`
     }
@@ -1019,7 +1043,7 @@ export default function AdminSupervisorsPage() {
                     <GeoFilter
                       value={tempRegion}
                       onChange={setTempRegion}
-                      showDistrict={false}
+                      showDistrict={true}
                       inline={false}
                     />
                   </div>
@@ -1158,7 +1182,7 @@ export default function AdminSupervisorsPage() {
                     <GeoFilter
                       value={tempRegion}
                       onChange={setTempRegion}
-                      showDistrict={false}
+                      showDistrict={true}
                       inline={false}
                     />
                   </div>

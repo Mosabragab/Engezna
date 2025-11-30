@@ -45,6 +45,7 @@ interface Provider {
   logo_url: string | null
   governorate_id: string | null
   city_id: string | null
+  district_id: string | null
 }
 
 type FilterStatus = 'all' | 'open' | 'closed' | 'pending_approval' | 'temporarily_paused'
@@ -162,8 +163,11 @@ export default function AdminProvidersPage() {
     }
 
     // Geographic filter
-    if (geoFilter.governorate_id || geoFilter.city_id) {
+    if (geoFilter.governorate_id || geoFilter.city_id || geoFilter.district_id) {
       filtered = filtered.filter(p => {
+        if (geoFilter.district_id && p.district_id) {
+          return p.district_id === geoFilter.district_id
+        }
         if (geoFilter.city_id && p.city_id) {
           return p.city_id === geoFilter.city_id
         }
@@ -450,7 +454,7 @@ export default function AdminProvidersPage() {
               <GeoFilter
                 value={geoFilter}
                 onChange={setGeoFilter}
-                showDistrict={false}
+                showDistrict={true}
                 inline={true}
                 showClearButton={true}
               />

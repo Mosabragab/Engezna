@@ -38,7 +38,7 @@ interface Order {
   created_at: string
   delivered_at: string | null
   customer: { id: string; full_name: string; phone: string } | null
-  provider: { id: string; name_ar: string; name_en: string; governorate_id: string | null; city_id: string | null } | null
+  provider: { id: string; name_ar: string; name_en: string; governorate_id: string | null; city_id: string | null; district_id: string | null } | null
 }
 
 type FilterStatus = 'all' | 'pending' | 'accepted' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'rejected'
@@ -112,7 +112,7 @@ export default function AdminOrdersPage() {
         created_at,
         delivered_at,
         customer:profiles!orders_customer_id_fkey(id, full_name, phone),
-        provider:providers(id, name_ar, name_en, governorate_id, city_id)
+        provider:providers(id, name_ar, name_en, governorate_id, city_id, district_id)
       `)
       .order('created_at', { ascending: false })
       .limit(100)
@@ -163,8 +163,11 @@ export default function AdminOrdersPage() {
     }
 
     // Geographic filter
-    if (geoFilter.governorate_id || geoFilter.city_id) {
+    if (geoFilter.governorate_id || geoFilter.city_id || geoFilter.district_id) {
       filtered = filtered.filter(o => {
+        if (geoFilter.district_id && o.provider?.district_id) {
+          return o.provider.district_id === geoFilter.district_id
+        }
         if (geoFilter.city_id && o.provider?.city_id) {
           return o.provider.city_id === geoFilter.city_id
         }
@@ -379,7 +382,7 @@ export default function AdminOrdersPage() {
                 <GeoFilter
                   value={geoFilter}
                   onChange={setGeoFilter}
-                  showDistrict={false}
+                  showDistrict={true}
                 />
               </div>
             </div>

@@ -43,6 +43,7 @@ interface Customer {
   last_order_at: string | null
   governorate_id: string | null
   city_id: string | null
+  district_id: string | null
 }
 
 type FilterStatus = 'all' | 'active' | 'banned' | 'new'
@@ -124,7 +125,7 @@ export default function AdminCustomersPage() {
         // Get address info
         const { data: addressData } = await supabase
           .from('customer_addresses')
-          .select('governorate_id, city_id')
+          .select('governorate_id, city_id, district_id')
           .eq('customer_id', customer.id)
           .eq('is_default', true)
           .single()
@@ -144,6 +145,7 @@ export default function AdminCustomersPage() {
           last_order_at,
           governorate_id: addressData?.governorate_id || null,
           city_id: addressData?.city_id || null,
+          district_id: addressData?.district_id || null,
         }
       })
     )
@@ -176,8 +178,11 @@ export default function AdminCustomersPage() {
     }
 
     // Geographic filter
-    if (geoFilter.governorate_id || geoFilter.city_id) {
+    if (geoFilter.governorate_id || geoFilter.city_id || geoFilter.district_id) {
       filtered = filtered.filter(c => {
+        if (geoFilter.district_id && c.district_id) {
+          return c.district_id === geoFilter.district_id
+        }
         if (geoFilter.city_id && c.city_id) {
           return c.city_id === geoFilter.city_id
         }
@@ -364,7 +369,7 @@ export default function AdminCustomersPage() {
                 <GeoFilter
                   value={geoFilter}
                   onChange={setGeoFilter}
-                  showDistrict={false}
+                  showDistrict={true}
                 />
               </div>
             </div>

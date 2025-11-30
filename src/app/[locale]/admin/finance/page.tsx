@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, AdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -31,7 +31,7 @@ export const dynamic = 'force-dynamic'
 interface SettlementRecord {
   id: string
   provider_id: string
-  provider: { name_ar: string; name_en: string } | null
+  provider: { name_ar: string; name_en: string; governorate_id: string | null; city_id: string | null; district_id: string | null } | null
   amount: number
   platform_commission: number
   net_amount: number
@@ -69,6 +69,7 @@ export default function AdminFinancePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [periodFilter, setPeriodFilter] = useState<FilterPeriod>('month')
   const [settlementStatusFilter, setSettlementStatusFilter] = useState<FilterSettlementStatus>('all')
+  const { geoFilter, setGeoFilter } = useGeoFilter()
 
   const [stats, setStats] = useState({
     totalRevenue: 0,
@@ -90,7 +91,7 @@ export default function AdminFinancePage() {
 
   useEffect(() => {
     filterSettlements()
-  }, [settlements, searchQuery, settlementStatusFilter])
+  }, [settlements, searchQuery, settlementStatusFilter, geoFilter])
 
   async function checkAuth() {
     const supabase = createClient()
@@ -218,7 +219,7 @@ export default function AdminFinancePage() {
         period_end,
         paid_at,
         created_at,
-        provider:providers(name_ar, name_en)
+        provider:providers(name_ar, name_en, governorate_id, city_id, district_id)
       `)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -257,6 +258,22 @@ export default function AdminFinancePage() {
 
     if (settlementStatusFilter !== 'all') {
       filtered = filtered.filter(s => s.status === settlementStatusFilter)
+    }
+
+    // Geographic filter
+    if (geoFilter.governorate_id || geoFilter.city_id || geoFilter.district_id) {
+      filtered = filtered.filter(s => {
+        if (geoFilter.district_id && s.provider?.district_id) {
+          return s.provider.district_id === geoFilter.district_id
+        }
+        if (geoFilter.city_id && s.provider?.city_id) {
+          return s.provider.city_id === geoFilter.city_id
+        }
+        if (geoFilter.governorate_id && s.provider?.governorate_id) {
+          return s.provider.governorate_id === geoFilter.governorate_id
+        }
+        return true
+      })
     }
 
     setFilteredSettlements(filtered)
@@ -341,33 +358,48 @@ export default function AdminFinancePage() {
         />
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          {/* Period Filter */}
-          <div className="flex flex-wrap items-center gap-2 mb-6">
-            {(['today', 'week', 'month', 'year', 'all'] as FilterPeriod[]).map((period) => (
-              <button
-                key={period}
-                onClick={() => {
-                  setPeriodFilter(period)
-                  const supabase = createClient()
-                  loadFinanceData(supabase)
-                }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  periodFilter === period
-                    ? 'bg-red-600 text-white shadow-md'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                {getPeriodLabel(period)}
-              </button>
-            ))}
-            <Button
-              variant="outline"
-              onClick={handleRefresh}
-              className="flex items-center gap-2 ml-auto"
-            >
-              <RefreshCw className="w-4 h-4" />
-              {locale === 'ar' ? 'تحديث' : 'Refresh'}
-            </Button>
+          {/* Period Filter & Geographic Filter */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
+            <div className="flex flex-col gap-4">
+              {/* Period Filter */}
+              <div className="flex flex-wrap items-center gap-2">
+                {(['today', 'week', 'month', 'year', 'all'] as FilterPeriod[]).map((period) => (
+                  <button
+                    key={period}
+                    onClick={() => {
+                      setPeriodFilter(period)
+                      const supabase = createClient()
+                      loadFinanceData(supabase)
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      periodFilter === period
+                        ? 'bg-red-600 text-white shadow-md'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    {getPeriodLabel(period)}
+                  </button>
+                ))}
+                <Button
+                  variant="outline"
+                  onClick={handleRefresh}
+                  className="flex items-center gap-2 ml-auto"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  {locale === 'ar' ? 'تحديث' : 'Refresh'}
+                </Button>
+              </div>
+
+              {/* Geographic Filter */}
+              <div className="flex items-center gap-3 pt-3 border-t border-slate-100">
+                <span className="text-sm text-slate-500">{locale === 'ar' ? 'فلترة جغرافية:' : 'Geographic Filter:'}</span>
+                <GeoFilter
+                  value={geoFilter}
+                  onChange={setGeoFilter}
+                  showDistrict={true}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Revenue Stats */}
