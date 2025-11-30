@@ -285,50 +285,28 @@ export default function AdminRegisterPage() {
         return
       }
 
-      // Create the profile (if not auto-created by trigger)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: authData.user.id,
-          email: invitation.email,
-          full_name: fullName.trim(),
-          phone: phone.trim() || null,
-          role: 'admin',
-        }, {
-          onConflict: 'id',
+      // Use the database function to create admin account (bypasses RLS)
+      const { data: registerResult, error: registerError } = await supabase
+        .rpc('register_admin_from_invitation', {
+          p_user_id: authData.user.id,
+          p_invitation_token: token,
+          p_full_name: fullName.trim(),
+          p_phone: phone.trim() || null,
         })
 
-      if (profileError) {
-        console.error('Profile error:', profileError)
-      }
-
-      // Create the admin_users record
-      const { error: adminError } = await supabase
-        .from('admin_users')
-        .insert({
-          user_id: authData.user.id,
-          role: invitation.role,
-          permissions: invitation.permissions,
-          assigned_regions: invitation.assigned_regions || [],
-          is_active: true,
-        })
-
-      if (adminError) {
-        console.error('Admin user error:', adminError)
+      if (registerError) {
+        console.error('Register error:', registerError)
         setFormError(locale === 'ar' ? 'خطأ في إنشاء حساب المشرف' : 'Error creating admin account')
         setFormLoading(false)
         return
       }
 
-      // Update invitation status
-      await supabase
-        .from('admin_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-          accepted_user_id: authData.user.id,
-        })
-        .eq('id', invitation.id)
+      if (registerResult && !registerResult.success) {
+        console.error('Register failed:', registerResult.error)
+        setFormError(locale === 'ar' ? 'خطأ في إنشاء حساب المشرف' : 'Error creating admin account')
+        setFormLoading(false)
+        return
+      }
 
       setSuccess(true)
 
