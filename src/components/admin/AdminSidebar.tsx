@@ -156,7 +156,7 @@ export function AdminSidebar({
     },
     {
       icon: MessageSquare,
-      label: { ar: 'الرسائل', en: 'Messages' },
+      label: { ar: 'المراسلات الداخلية', en: 'Internal Messages' },
       path: `/${locale}/admin/messages`,
       badge: unreadMessages > 0 ? unreadMessages.toString() : undefined,
       resource: 'messages',

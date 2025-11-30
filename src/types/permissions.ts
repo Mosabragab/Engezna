@@ -307,7 +307,7 @@ export const RESOURCE_CONFIG: Record<ResourceCode, {
   messages: {
     icon: 'MessageSquare',
     href: '/admin/messages',
-    label: { ar: 'الرسائل', en: 'Messages' },
+    label: { ar: 'المراسلات الداخلية', en: 'Internal Messages' },
     category: 'team',
   },
   announcements: {
