@@ -15,7 +15,7 @@ select
   id,
   email,
   coalesce(phone, '+201234567890'),
-  coalesce(full_name, 'System Admin'),
+  coalesce(raw_user_meta_data->>'full_name', 'System Admin'),
   'admin'::user_role
 from auth.users
 where email = 'admin@test.com'
@@ -141,7 +141,7 @@ select
   id,
   email,
   coalesce(phone, '+201234567891'),
-  coalesce(full_name, 'Test Customer'),
+  coalesce(raw_user_meta_data->>'full_name', 'Test Customer'),
   'customer'::user_role
 from auth.users
 where email = 'customer@test.com'
@@ -153,7 +153,7 @@ select
   id,
   email,
   coalesce(phone, '+201234567892'),
-  coalesce(full_name, 'Test Provider Owner'),
+  coalesce(raw_user_meta_data->>'full_name', 'Test Provider Owner'),
   'provider_owner'::user_role
 from auth.users
 where email = 'provider@test.com'
