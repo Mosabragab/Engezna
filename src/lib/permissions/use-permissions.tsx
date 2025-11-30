@@ -22,6 +22,7 @@ interface PermissionsContextValue {
   userId: string | null;
   roles: AdminRole[];
   isSuperAdmin: boolean;
+  legacyRole: string | null; // الدور من جدول admin_users (للتوافقية)
   accessibleResources: ResourceCode[];
   geographicScope: GeographicConstraint;
   can: (resource: ResourceCode, action: ActionCode, context?: PermissionCheckRequest['context']) => Promise<PermissionCheckResult>;
@@ -44,6 +45,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [adminId, setAdminId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [legacyRole, setLegacyRole] = useState<string | null>(null); // الدور من جدول admin_users
   const [cache, setCache] = useState<CachedPermissions>({
     permissions: new Map(),
     deniedPermissions: new Set(),
@@ -65,10 +67,10 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       }
       setUserId(user.id);
 
-      // جلب admin_id
+      // جلب admin_id و الدور (للتوافقية)
       const { data: adminUser } = await supabase
         .from('admin_users')
-        .select('id')
+        .select('id, role')
         .eq('user_id', user.id)
         .single();
 
@@ -77,6 +79,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         return;
       }
       setAdminId(adminUser.id);
+      setLegacyRole(adminUser.role); // حفظ الدور القديم كـ fallback
 
       const newCache: CachedPermissions = {
         permissions: new Map(),
@@ -260,8 +263,8 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     .filter(code => code.endsWith('.view'))
     .map(code => code.split('.')[0] as ResourceCode);
 
-  // هل super_admin؟
-  const isSuperAdmin = cache.roles.some(r => r.role?.code === 'super_admin');
+  // هل super_admin؟ (تحقق من الأدوار الجديدة أو الدور القديم كـ fallback)
+  const isSuperAdmin = cache.roles.some(r => r.role?.code === 'super_admin') || legacyRole === 'super_admin';
 
   const value: PermissionsContextValue = {
     loading,
@@ -269,6 +272,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     userId,
     roles: cache.roles,
     isSuperAdmin,
+    legacyRole,
     accessibleResources: [...new Set(accessibleResources)],
     geographicScope: cache.geographicScope,
     can,
