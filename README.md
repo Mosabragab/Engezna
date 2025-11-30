@@ -137,6 +137,9 @@ This project is in **active development** (Week 3 - 100% Complete ✅). What you
 
 **Works (Admin Features - Week 4):**
 - ✅ **Unified Admin Components** (AdminHeader, AdminSidebar with Engezna Blue theming)
+- ✅ **RBAC + ABAC Permission System** (roles, permissions, geographic/amount constraints)
+- ✅ **Roles Management Page** (`/admin/roles` - full CRUD for roles and permissions)
+- ✅ **PermissionsProvider** (React context for permission management)
 - ✅ **Supervisor Management** (full CRUD, roles: super_admin, general_moderator, support, finance)
 - ✅ **Admin Invitation System** (invite supervisors with pre-configured roles and permissions)
 - ✅ **Dedicated Admin Login** (`/admin/login` with role validation)
@@ -265,7 +268,13 @@ engezna/
 │   │   ├── [locale]/   # Locale-specific routes
 │   │   │   ├── (customer)/  # Customer pages
 │   │   │   ├── (provider)/  # Provider dashboard
-│   │   │   └── (admin)/     # Admin panel
+│   │   │   ├── admin/       # Admin panel
+│   │   │   │   ├── layout.tsx    # Admin layout (PermissionsProvider)
+│   │   │   │   ├── roles/        # Roles management
+│   │   │   │   ├── supervisors/  # Supervisors management
+│   │   │   │   ├── tasks/        # Tasks management
+│   │   │   │   ├── approvals/    # Approvals workflow
+│   │   │   │   └── ...
 │   │   ├── layout.tsx       # Root layout
 │   │   └── globals.css      # Global styles
 │   ├── components/
@@ -277,8 +286,15 @@ engezna/
 │   │   └── messages/   # Translation files
 │   │       ├── ar.json # Arabic translations
 │   │       └── en.json # English translations
-│   ├── lib/            # Utility functions
+│   ├── lib/
+│   │   ├── supabase/   # Supabase clients
+│   │   └── permissions/
+│   │       └── use-permissions.tsx  # Permissions hook & context
+│   ├── types/
+│   │   └── permissions.ts  # Permission types (RBAC+ABAC)
 │   └── middleware.ts   # Next.js middleware
+├── supabase/
+│   └── migrations/     # Database migrations
 ├── PRD.md              # Product Requirements Document
 ├── Claude.md           # AI assistant guide
 └── package.json        # Dependencies
@@ -381,8 +397,15 @@ npm run type-check   # TypeScript type checking
 **Admin Features (NEW - Week 4 100% Complete):**
 - ✅ Unified AdminHeader with language switcher, notifications, user menu
 - ✅ Unified AdminSidebar with collapsible navigation
+- ✅ **RBAC + ABAC Permission System** with:
+  - Roles management page (`/admin/roles`) for full CRUD operations
+  - Permission-based access control per resource and action
+  - Geographic constraints (governorate, city, district)
+  - Amount limits with approval thresholds
+  - Time-based restrictions and field-level access
+  - PermissionsProvider React context for all admin pages
+  - `usePermissions` hook with `can()`, `canSync()`, `hasResource()` methods
 - ✅ Supervisor management with roles (super_admin, general_moderator, support, finance)
-- ✅ Permission system for granular access control
 - ✅ Tasks management with assignment, priorities, and deadlines
 - ✅ Approvals workflow for refunds, bans, commission changes
 - ✅ Internal messaging with inbox/sent views and broadcast
@@ -561,8 +584,15 @@ npm run dev
 
 **مميزات الإدارة (جديد - الأسبوع 4 مكتمل 100%):**
 - ✅ مكونات إدارية موحدة (AdminHeader، AdminSidebar)
+- ✅ **نظام صلاحيات RBAC + ABAC** مع:
+  - صفحة إدارة الأدوار (`/admin/roles`) لعمليات CRUD كاملة
+  - التحكم بالوصول حسب المورد والإجراء
+  - قيود جغرافية (محافظة، مدينة، حي)
+  - حدود مالية مع عتبات الموافقة
+  - قيود زمنية والوصول على مستوى الحقول
+  - PermissionsProvider كـ React Context لجميع صفحات الإدارة
+  - `usePermissions` hook مع `can()`, `canSync()`, `hasResource()`
 - ✅ إدارة المشرفين مع الأدوار (مدير عام، مشرف عام، دعم، مالية)
-- ✅ نظام الصلاحيات للتحكم الدقيق
 - ✅ إدارة المهام مع التكليف والأولويات والمواعيد النهائية
 - ✅ نظام الموافقات للمبالغ المستردة والحظر وتغييرات العمولة
 - ✅ الرسائل الداخلية مع صندوق الوارد والمرسل والبث
