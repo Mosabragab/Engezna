@@ -92,6 +92,11 @@ export default function AdminMessagesPage() {
     unread: 0,
     sent: 0,
   })
+  const [adminStatus, setAdminStatus] = useState<{
+    hasAdminRecord: boolean
+    isActive: boolean
+    adminId: string | null
+  }>({ hasAdminRecord: false, isActive: false, adminId: null })
 
   useEffect(() => {
     checkAuth()
@@ -128,12 +133,22 @@ export default function AdminMessagesPage() {
 
         if (adminUser) {
           console.log('Admin user found:', { id: adminUser.id, role: adminUser.role, is_active: adminUser.is_active })
+          setAdminStatus({
+            hasAdminRecord: true,
+            isActive: adminUser.is_active,
+            adminId: adminUser.id,
+          })
           if (!adminUser.is_active) {
             console.warn('Admin user is not active - messaging may be restricted')
           }
           setCurrentAdminId(adminUser.id)
         } else {
           console.warn('No admin_users entry found for this user - messaging will not work')
+          setAdminStatus({
+            hasAdminRecord: false,
+            isActive: false,
+            adminId: null,
+          })
         }
 
         await loadMessages(supabase)
@@ -145,6 +160,8 @@ export default function AdminMessagesPage() {
   }
 
   async function loadMessages(supabase: ReturnType<typeof createClient>) {
+    console.log('Loading messages for admin:', currentAdminId)
+
     const { data: messagesData, error } = await supabase
       .from('internal_messages')
       .select('*')
@@ -152,7 +169,13 @@ export default function AdminMessagesPage() {
 
     if (error) {
       console.error('Error loading messages:', error)
+      console.error('Error details - code:', error.code, 'message:', error.message)
       return
+    }
+
+    console.log('Messages loaded from database:', messagesData?.length || 0, 'messages')
+    if (messagesData && messagesData.length > 0) {
+      console.log('First message recipient_ids:', messagesData[0].recipient_ids)
     }
 
     // Load sender names
@@ -471,6 +494,30 @@ export default function AdminMessagesPage() {
         />
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          {/* Admin Status Warning */}
+          {(!adminStatus.hasAdminRecord || !adminStatus.isActive) && (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-yellow-800">
+                    {locale === 'ar' ? 'تحذير: مشكلة في حالة الحساب' : 'Warning: Account Status Issue'}
+                  </h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    {!adminStatus.hasAdminRecord
+                      ? (locale === 'ar'
+                          ? 'لا يوجد سجل مشرف لحسابك. يرجى التواصل مع مدير النظام لإنشاء سجل في جدول admin_users.'
+                          : 'No admin record found for your account. Please contact system admin to create an admin_users entry.')
+                      : (locale === 'ar'
+                          ? 'حسابك غير مفعل (is_active = false). لن تتمكن من رؤية الرسائل. يرجى التواصل مع مدير النظام.'
+                          : 'Your account is not active (is_active = false). You will not be able to see messages. Please contact system admin.')
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Panel - Folders & Actions */}
             <div className="w-full lg:w-64 space-y-4">
