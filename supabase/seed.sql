@@ -25,7 +25,7 @@ on conflict (id) do nothing;
 insert into public.admin_users (user_id, role, permissions, is_active)
 select
   p.id,
-  'super_admin'::admin_role,
+  'super_admin',
   '{
     "providers": {"view": true, "approve": true, "edit": true, "delete": true},
     "orders": {"view": true, "cancel": true, "refund": true},
