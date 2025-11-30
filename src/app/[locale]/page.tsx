@@ -193,17 +193,6 @@ export default function Home() {
                       </Button>
                     </Link>
                   )}
-
-                  {/* Profile Link - Routes to provider settings for providers, profile for customers */}
-                  <Link href={isProvider ? `/${locale}/provider/settings` : `/${locale}/profile`}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex items-center gap-2 text-gray-700 hover:text-primary hover:bg-gray-100"
-                    >
-                      {locale === 'ar' ? 'حسابي' : 'My Account'}
-                    </Button>
-                  </Link>
                 </div>
               ) : (
                 <Link href={`/${locale}/auth/login`} className="hidden md:block">
@@ -291,18 +280,6 @@ export default function Home() {
                         </Button>
                       </Link>
                     )}
-                    <Link
-                      href={`/${locale}/profile`}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-bold text-primary">
-                          {user.email?.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <span className="font-medium">{user.email?.split('@')[0]}</span>
-                    </Link>
                     <Button
                       variant="outline"
                       className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
