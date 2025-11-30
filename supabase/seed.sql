@@ -21,6 +21,120 @@ from auth.users
 where email = 'admin@test.com'
 on conflict (id) do nothing;
 
+-- Insert admin into admin_users table as super_admin (only if profile exists)
+insert into public.admin_users (user_id, role, permissions, is_active)
+select
+  p.id,
+  'super_admin'::admin_role,
+  '{
+    "providers": {"view": true, "approve": true, "edit": true, "delete": true},
+    "orders": {"view": true, "cancel": true, "refund": true},
+    "customers": {"view": true, "ban": true, "edit": true},
+    "finance": {"view": true, "settlements": true, "reports": true},
+    "support": {"view": true, "assign": true, "resolve": true},
+    "team": {"view": true, "manage": true},
+    "settings": {"view": true, "edit": true},
+    "analytics": {"view": true}
+  }'::jsonb,
+  true
+from public.profiles p
+where p.email = 'admin@test.com' and p.role = 'admin'
+on conflict (user_id) do nothing;
+
+-- ============================================================================
+-- 2. ADD SAMPLE SUPERVISORS FOR TESTING
+-- ============================================================================
+
+-- Create additional test supervisor users if they don't exist
+-- Note: These users should be created through Supabase Auth first
+-- This seed assumes you'll manually create users with these emails
+
+-- Create profiles for test supervisors if auth users exist
+DO $$
+DECLARE
+  v_supervisor_id uuid;
+  v_moderator_id uuid;
+  v_support_id uuid;
+  v_finance_id uuid;
+BEGIN
+  -- Check for supervisor@test.com
+  SELECT id INTO v_supervisor_id FROM auth.users WHERE email = 'supervisor@test.com';
+  IF v_supervisor_id IS NOT NULL THEN
+    INSERT INTO public.profiles (id, email, phone, full_name, role)
+    VALUES (v_supervisor_id, 'supervisor@test.com', '+201234567895', 'مشرف عام', 'admin')
+    ON CONFLICT (id) DO UPDATE SET role = 'admin';
+
+    INSERT INTO public.admin_users (user_id, role, permissions, is_active)
+    VALUES (
+      v_supervisor_id,
+      'general_moderator',
+      '{
+        "providers": {"view": true, "approve": true, "edit": true, "delete": false},
+        "orders": {"view": true, "cancel": true, "refund": false},
+        "customers": {"view": true, "ban": true, "edit": false},
+        "finance": {"view": false, "settlements": false, "reports": false},
+        "support": {"view": true, "assign": false, "resolve": false},
+        "team": {"view": false, "manage": false},
+        "settings": {"view": false, "edit": false},
+        "analytics": {"view": true}
+      }'::jsonb,
+      true
+    ) ON CONFLICT (user_id) DO NOTHING;
+  END IF;
+
+  -- Check for support@test.com
+  SELECT id INTO v_support_id FROM auth.users WHERE email = 'support@test.com';
+  IF v_support_id IS NOT NULL THEN
+    INSERT INTO public.profiles (id, email, phone, full_name, role)
+    VALUES (v_support_id, 'support@test.com', '+201234567896', 'مشرف دعم فني', 'admin')
+    ON CONFLICT (id) DO UPDATE SET role = 'admin';
+
+    INSERT INTO public.admin_users (user_id, role, permissions, is_active)
+    VALUES (
+      v_support_id,
+      'support',
+      '{
+        "providers": {"view": true, "approve": false, "edit": false, "delete": false},
+        "orders": {"view": true, "cancel": false, "refund": false},
+        "customers": {"view": true, "ban": false, "edit": false},
+        "finance": {"view": false, "settlements": false, "reports": false},
+        "support": {"view": true, "assign": true, "resolve": true},
+        "team": {"view": false, "manage": false},
+        "settings": {"view": false, "edit": false},
+        "analytics": {"view": false}
+      }'::jsonb,
+      true
+    ) ON CONFLICT (user_id) DO NOTHING;
+  END IF;
+
+  -- Check for finance@test.com
+  SELECT id INTO v_finance_id FROM auth.users WHERE email = 'finance@test.com';
+  IF v_finance_id IS NOT NULL THEN
+    INSERT INTO public.profiles (id, email, phone, full_name, role)
+    VALUES (v_finance_id, 'finance@test.com', '+201234567897', 'مشرف مالي', 'admin')
+    ON CONFLICT (id) DO UPDATE SET role = 'admin';
+
+    INSERT INTO public.admin_users (user_id, role, permissions, is_active)
+    VALUES (
+      v_finance_id,
+      'finance',
+      '{
+        "providers": {"view": true, "approve": false, "edit": false, "delete": false},
+        "orders": {"view": true, "cancel": false, "refund": true},
+        "customers": {"view": true, "ban": false, "edit": false},
+        "finance": {"view": true, "settlements": true, "reports": true},
+        "support": {"view": false, "assign": false, "resolve": false},
+        "team": {"view": false, "manage": false},
+        "settings": {"view": false, "edit": false},
+        "analytics": {"view": true}
+      }'::jsonb,
+      true
+    ) ON CONFLICT (user_id) DO NOTHING;
+  END IF;
+
+  RAISE NOTICE 'Supervisor seeding completed';
+END $$;
+
 -- Insert customer profile (only if user exists, won't overwrite)
 insert into public.profiles (id, email, phone, full_name, role)
 select
@@ -46,7 +160,7 @@ where email = 'provider@test.com'
 on conflict (id) do nothing;
 
 -- ============================================================================
--- 2. ADD SAMPLE MENU ITEMS TO EXISTING PROVIDERS
+-- 3. ADD SAMPLE MENU ITEMS TO EXISTING PROVIDERS
 -- ============================================================================
 -- This section adds menu items ONLY to providers that don't have any yet
 -- It will NOT modify or delete existing menu items
@@ -137,7 +251,7 @@ begin
 end $$;
 
 -- ============================================================================
--- 3. VERIFICATION QUERIES (uncomment to check results)
+-- 4. VERIFICATION QUERIES (uncomment to check results)
 -- ============================================================================
 
 -- Check providers with menu item counts
