@@ -50,6 +50,20 @@ interface DbPermission {
   action?: { id: string; code: string; name_ar: string; name_en: string; severity: string }
 }
 
+// Database role permission with joined relations (for viewing)
+interface DbRolePermission {
+  id: string
+  role_id: string
+  permission_id: string
+  constraints: Record<string, unknown>
+  permission?: {
+    id: string
+    code: string
+    resource?: { code: string; name_ar: string; name_en: string }
+    action?: { code: string; name_ar: string; name_en: string; severity: string }
+  }
+}
+
 interface ExtendedRole extends Role {
   permissions_count: number
   admins_count: number
@@ -93,7 +107,7 @@ export default function AdminRolesPage() {
   // View permissions modal
   const [showViewModal, setShowViewModal] = useState(false)
   const [viewingRole, setViewingRole] = useState<ExtendedRole | null>(null)
-  const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([])
+  const [rolePermissions, setRolePermissions] = useState<DbRolePermission[]>([])
 
   useEffect(() => {
     checkAuth()
