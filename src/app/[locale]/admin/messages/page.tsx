@@ -116,14 +116,24 @@ export default function AdminMessagesPage() {
       if (profile?.role === 'admin') {
         setIsAdmin(true)
 
-        const { data: adminUser } = await supabase
+        const { data: adminUser, error: adminError } = await supabase
           .from('admin_users')
-          .select('id, role')
+          .select('id, role, is_active')
           .eq('user_id', user.id)
           .single()
 
+        if (adminError) {
+          console.error('Error fetching admin user:', adminError)
+        }
+
         if (adminUser) {
+          console.log('Admin user found:', { id: adminUser.id, role: adminUser.role, is_active: adminUser.is_active })
+          if (!adminUser.is_active) {
+            console.warn('Admin user is not active - messaging may be restricted')
+          }
           setCurrentAdminId(adminUser.id)
+        } else {
+          console.warn('No admin_users entry found for this user - messaging will not work')
         }
 
         await loadMessages(supabase)
@@ -267,6 +277,12 @@ export default function AdminMessagesPage() {
   }
 
   async function handleSendMessage() {
+    // Validate sender ID exists
+    if (!currentAdminId) {
+      setFormError(locale === 'ar' ? 'لم يتم التعرف على حسابك. يرجى إعادة تسجيل الدخول.' : 'Your account was not recognized. Please log in again.')
+      return
+    }
+
     if (!formData.body) {
       setFormError(locale === 'ar' ? 'محتوى الرسالة مطلوب' : 'Message body is required')
       return
@@ -285,6 +301,15 @@ export default function AdminMessagesPage() {
       ? supervisors.filter(s => s.id !== currentAdminId).map(s => s.id)
       : formData.recipients
 
+    // Validate that we have at least one recipient
+    if (recipients.length === 0) {
+      setFormError(locale === 'ar' ? 'لا يوجد مستلمين متاحين' : 'No recipients available')
+      setFormLoading(false)
+      return
+    }
+
+    console.log('Sending message with:', { sender_id: currentAdminId, recipients, is_broadcast: formData.is_broadcast })
+
     const { error } = await supabase
       .from('internal_messages')
       .insert({
@@ -300,7 +325,25 @@ export default function AdminMessagesPage() {
 
     if (error) {
       console.error('Error sending message:', error)
-      setFormError(locale === 'ar' ? 'حدث خطأ أثناء إرسال الرسالة' : 'Error sending message')
+      console.error('Error details:', { code: error.code, message: error.message, details: error.details, hint: error.hint })
+
+      // Show more detailed error message for debugging
+      let errorMessage = locale === 'ar' ? 'حدث خطأ أثناء إرسال الرسالة' : 'Error sending message'
+
+      // Handle specific error cases
+      if (error.code === '42501' || error.message?.includes('policy')) {
+        errorMessage = locale === 'ar'
+          ? 'ليس لديك صلاحية لإرسال الرسائل. تأكد من أن حسابك مفعل.'
+          : 'You do not have permission to send messages. Make sure your account is active.'
+      } else if (error.code === '23503') {
+        errorMessage = locale === 'ar'
+          ? 'خطأ في البيانات: تأكد من صحة المستلمين'
+          : 'Data error: Please verify the recipients'
+      } else if (error.message) {
+        errorMessage = `${errorMessage}: ${error.message}`
+      }
+
+      setFormError(errorMessage)
       setFormLoading(false)
       return
     }
@@ -323,10 +366,16 @@ export default function AdminMessagesPage() {
     const supabase = createClient()
     const newReadBy = [...(message.read_by || []), currentAdminId]
 
-    await supabase
+    const { error } = await supabase
       .from('internal_messages')
       .update({ read_by: newReadBy })
       .eq('id', message.id)
+
+    if (error) {
+      console.error('Error marking message as read:', error)
+      // Don't show error to user for read status - it's not critical
+      return
+    }
 
     // Update local state
     setMessages(prev => prev.map(m =>
