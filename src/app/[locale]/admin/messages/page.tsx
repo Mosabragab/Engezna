@@ -310,9 +310,11 @@ export default function AdminMessagesPage() {
 
     console.log('Sending message with:', { sender_id: currentAdminId, recipients, is_broadcast: formData.is_broadcast })
 
+    const messageId = crypto.randomUUID()
     const { error } = await supabase
       .from('internal_messages')
       .insert({
+        id: messageId,
         conversation_id: crypto.randomUUID(),
         sender_id: currentAdminId,
         recipient_ids: recipients,
@@ -346,6 +348,33 @@ export default function AdminMessagesPage() {
       setFormError(errorMessage)
       setFormLoading(false)
       return
+    }
+
+    // Get sender name for notification
+    const currentSupervisor = supervisors.find(s => s.id === currentAdminId)
+    const senderName = currentSupervisor?.full_name || (locale === 'ar' ? 'مستخدم' : 'User')
+
+    // Create notifications for all recipients
+    const notifications = recipients.map(recipientId => ({
+      admin_id: recipientId,
+      type: 'message',
+      title: locale === 'ar'
+        ? `رسالة جديدة من ${senderName}`
+        : `New message from ${senderName}`,
+      body: formData.subject || (formData.body.length > 100 ? formData.body.substring(0, 100) + '...' : formData.body),
+      related_message_id: messageId,
+      is_read: false,
+    }))
+
+    if (notifications.length > 0) {
+      const { error: notifError } = await supabase
+        .from('admin_notifications')
+        .insert(notifications)
+
+      if (notifError) {
+        console.error('Error creating notifications:', notifError)
+        // Don't fail the whole operation if notifications fail
+      }
     }
 
     await loadMessages(supabase)
