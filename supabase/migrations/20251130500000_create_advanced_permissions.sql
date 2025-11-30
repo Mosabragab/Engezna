@@ -12,6 +12,17 @@
 -- 1. ROLES TABLE (الأدوار)
 -- ============================================================================
 
+-- Drop old roles table if it has different structure
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'roles' AND table_schema = 'public') THEN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'roles' AND column_name = 'sort_order' AND table_schema = 'public') THEN
+      DROP TABLE IF EXISTS public.roles CASCADE;
+      RAISE NOTICE 'Dropped old roles table to recreate with new structure';
+    END IF;
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code VARCHAR(50) UNIQUE NOT NULL,
