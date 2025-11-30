@@ -787,18 +787,12 @@ export default function AdminSupervisorsPage() {
               </Button>
 
               {isSuperAdmin && (
-                <Button
-                  onClick={() => {
-                    setFormData({ email: '', role: 'general_moderator', is_active: true, assigned_regions: [] })
-                    setTempRegion({ governorate_id: null, city_id: null, district_id: null })
-                    setFormError('')
-                    setShowAddModal(true)
-                  }}
-                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  {locale === 'ar' ? 'إضافة مشرف' : 'Add Supervisor'}
-                </Button>
+                <Link href={`/${locale}/admin/supervisors/invite`}>
+                  <Button className="flex items-center gap-2 bg-[#009DE0] hover:bg-[#0080b8]">
+                    <UserPlus className="w-4 h-4" />
+                    {locale === 'ar' ? 'دعوة مشرف جديد' : 'Invite Supervisor'}
+                  </Button>
+                </Link>
               )}
             </div>
           </div>

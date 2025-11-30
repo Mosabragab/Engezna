@@ -1,0 +1,762 @@
+'use client'
+
+import { useLocale } from 'next-intl'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
+import { AdminHeader, AdminSidebar, GeoFilter, GeoFilterValue } from '@/components/admin'
+import {
+  Shield,
+  ArrowLeft,
+  ArrowRight,
+  UserPlus,
+  Mail,
+  User as UserIcon,
+  Crown,
+  Headphones,
+  Wallet,
+  ShieldCheck,
+  Copy,
+  Check,
+  Send,
+  AlertCircle,
+  Clock,
+  MapPin,
+  X,
+  RefreshCw,
+  Link as LinkIcon,
+  MessageSquare,
+} from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
+
+type AdminRole = 'super_admin' | 'general_moderator' | 'support' | 'finance'
+
+interface Permissions {
+  providers: { view: boolean; approve: boolean; edit: boolean; delete: boolean }
+  orders: { view: boolean; cancel: boolean; refund: boolean }
+  customers: { view: boolean; ban: boolean; edit: boolean }
+  finance: { view: boolean; settlements: boolean; reports: boolean }
+  support: { view: boolean; assign: boolean; resolve: boolean }
+  team: { view: boolean; manage: boolean }
+  settings: { view: boolean; edit: boolean }
+  analytics: { view: boolean }
+}
+
+interface AssignedRegion {
+  governorate_id: string | null
+  city_id: string | null
+  district_id: string | null
+}
+
+const roleConfig: Record<AdminRole, { label: { ar: string; en: string }; icon: React.ElementType; color: string; description: { ar: string; en: string } }> = {
+  super_admin: {
+    label: { ar: 'المدير التنفيذي', en: 'Super Admin' },
+    icon: Crown,
+    color: 'text-amber-600 bg-amber-100 border-amber-200',
+    description: { ar: 'صلاحيات كاملة لإدارة المنصة', en: 'Full platform management access' },
+  },
+  general_moderator: {
+    label: { ar: 'مشرف عام', en: 'General Moderator' },
+    icon: ShieldCheck,
+    color: 'text-blue-600 bg-blue-100 border-blue-200',
+    description: { ar: 'إدارة المتاجر والطلبات والعملاء', en: 'Manage providers, orders and customers' },
+  },
+  support: {
+    label: { ar: 'مشرف دعم', en: 'Support' },
+    icon: Headphones,
+    color: 'text-purple-600 bg-purple-100 border-purple-200',
+    description: { ar: 'التعامل مع التذاكر والدعم الفني', en: 'Handle support tickets and inquiries' },
+  },
+  finance: {
+    label: { ar: 'مشرف مالي', en: 'Finance' },
+    icon: Wallet,
+    color: 'text-emerald-600 bg-emerald-100 border-emerald-200',
+    description: { ar: 'إدارة التسويات والتقارير المالية', en: 'Manage settlements and financial reports' },
+  },
+}
+
+const getDefaultPermissions = (role: AdminRole): Permissions => {
+  switch (role) {
+    case 'super_admin':
+      return {
+        providers: { view: true, approve: true, edit: true, delete: true },
+        orders: { view: true, cancel: true, refund: true },
+        customers: { view: true, ban: true, edit: true },
+        finance: { view: true, settlements: true, reports: true },
+        support: { view: true, assign: true, resolve: true },
+        team: { view: true, manage: true },
+        settings: { view: true, edit: true },
+        analytics: { view: true },
+      }
+    case 'general_moderator':
+      return {
+        providers: { view: true, approve: true, edit: true, delete: false },
+        orders: { view: true, cancel: true, refund: false },
+        customers: { view: true, ban: true, edit: false },
+        finance: { view: false, settlements: false, reports: false },
+        support: { view: true, assign: false, resolve: false },
+        team: { view: false, manage: false },
+        settings: { view: false, edit: false },
+        analytics: { view: true },
+      }
+    case 'support':
+      return {
+        providers: { view: true, approve: false, edit: false, delete: false },
+        orders: { view: true, cancel: false, refund: false },
+        customers: { view: true, ban: false, edit: false },
+        finance: { view: false, settlements: false, reports: false },
+        support: { view: true, assign: true, resolve: true },
+        team: { view: false, manage: false },
+        settings: { view: false, edit: false },
+        analytics: { view: false },
+      }
+    case 'finance':
+      return {
+        providers: { view: true, approve: false, edit: false, delete: false },
+        orders: { view: true, cancel: false, refund: true },
+        customers: { view: true, ban: false, edit: false },
+        finance: { view: true, settlements: true, reports: true },
+        support: { view: false, assign: false, resolve: false },
+        team: { view: false, manage: false },
+        settings: { view: false, edit: false },
+        analytics: { view: true },
+      }
+  }
+}
+
+export default function InviteSupervisorPage() {
+  const locale = useLocale()
+  const router = useRouter()
+  const isRTL = locale === 'ar'
+
+  const [user, setUser] = useState<User | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Form state
+  const [email, setEmail] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [selectedRole, setSelectedRole] = useState<AdminRole>('general_moderator')
+  const [message, setMessage] = useState('')
+  const [expiresHours, setExpiresHours] = useState(48)
+  const [assignedRegions, setAssignedRegions] = useState<AssignedRegion[]>([])
+  const [tempRegion, setTempRegion] = useState<GeoFilterValue>({
+    governorate_id: null,
+    city_id: null,
+    district_id: null,
+  })
+
+  // Result state
+  const [formLoading, setFormLoading] = useState(false)
+  const [formError, setFormError] = useState('')
+  const [invitationResult, setInvitationResult] = useState<{
+    id: string
+    token: string
+    url: string
+  } | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  // Geography data for labels
+  const [governorates, setGovernorates] = useState<Array<{ id: string; name_ar: string; name_en: string }>>([])
+  const [cities, setCities] = useState<Array<{ id: string; name_ar: string; name_en: string; governorate_id: string }>>([])
+  const [districts, setDistricts] = useState<Array<{ id: string; name_ar: string; name_en: string; city_id: string | null; governorate_id: string }>>([])
+
+  useEffect(() => {
+    checkAuth()
+    loadGeoData()
+  }, [])
+
+  async function loadGeoData() {
+    const supabase = createClient()
+
+    const [govRes, cityRes, distRes] = await Promise.all([
+      supabase.from('governorates').select('id, name_ar, name_en').order('name_ar'),
+      supabase.from('cities').select('id, name_ar, name_en, governorate_id').order('name_ar'),
+      supabase.from('districts').select('id, name_ar, name_en, city_id, governorate_id').order('name_ar'),
+    ])
+
+    if (govRes.data) setGovernorates(govRes.data)
+    if (cityRes.data) setCities(cityRes.data)
+    if (distRes.data) setDistricts(distRes.data)
+  }
+
+  async function checkAuth() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+
+        const { data: adminUser } = await supabase
+          .from('admin_users')
+          .select('role')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminUser?.role === 'super_admin') {
+          setIsSuperAdmin(true)
+        }
+      }
+    }
+
+    setLoading(false)
+  }
+
+  function addRegion() {
+    if (!tempRegion.governorate_id) return
+
+    const exists = assignedRegions.some(r =>
+      r.governorate_id === tempRegion.governorate_id &&
+      r.city_id === tempRegion.city_id &&
+      r.district_id === tempRegion.district_id
+    )
+
+    if (!exists) {
+      setAssignedRegions([...assignedRegions, { ...tempRegion }])
+    }
+
+    setTempRegion({ governorate_id: null, city_id: null, district_id: null })
+  }
+
+  function removeRegion(index: number) {
+    setAssignedRegions(assignedRegions.filter((_, i) => i !== index))
+  }
+
+  function getRegionLabel(region: AssignedRegion): string {
+    const gov = governorates.find(g => g.id === region.governorate_id)
+    const city = cities.find(c => c.id === region.city_id)
+    const district = districts.find(d => d.id === region.district_id)
+
+    const govName = gov ? (locale === 'ar' ? gov.name_ar : gov.name_en) : ''
+    const cityName = city ? (locale === 'ar' ? city.name_ar : city.name_en) : ''
+    const districtName = district ? (locale === 'ar' ? district.name_ar : district.name_en) : ''
+
+    if (districtName) return `${districtName} - ${cityName || govName}`
+    if (cityName) return `${cityName} - ${govName}`
+    return govName || (locale === 'ar' ? 'غير محدد' : 'Not specified')
+  }
+
+  async function handleCreateInvitation() {
+    if (!email) {
+      setFormError(locale === 'ar' ? 'البريد الإلكتروني مطلوب' : 'Email is required')
+      return
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setFormError(locale === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email address')
+      return
+    }
+
+    setFormLoading(true)
+    setFormError('')
+
+    const supabase = createClient()
+
+    try {
+      // Check if email already exists as admin
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('email', email.toLowerCase().trim())
+        .single()
+
+      if (existingProfile) {
+        const { data: existingAdmin } = await supabase
+          .from('admin_users')
+          .select('id')
+          .eq('user_id', existingProfile.id)
+          .single()
+
+        if (existingAdmin) {
+          setFormError(locale === 'ar' ? 'هذا البريد مسجل بالفعل كمشرف' : 'This email is already registered as a supervisor')
+          setFormLoading(false)
+          return
+        }
+      }
+
+      // Check for existing pending invitation
+      const { data: existingInvitation } = await supabase
+        .from('admin_invitations')
+        .select('id')
+        .eq('email', email.toLowerCase().trim())
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .single()
+
+      if (existingInvitation) {
+        setFormError(locale === 'ar' ? 'توجد دعوة معلقة لهذا البريد بالفعل' : 'A pending invitation already exists for this email')
+        setFormLoading(false)
+        return
+      }
+
+      // Get current admin user id
+      const { data: currentAdmin } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('user_id', user?.id)
+        .single()
+
+      if (!currentAdmin) {
+        setFormError(locale === 'ar' ? 'خطأ في التحقق من الصلاحيات' : 'Authorization error')
+        setFormLoading(false)
+        return
+      }
+
+      // Create the invitation
+      const invitationToken = crypto.randomUUID()
+      const expiresAt = new Date(Date.now() + expiresHours * 60 * 60 * 1000).toISOString()
+
+      const { data: invitation, error: createError } = await supabase
+        .from('admin_invitations')
+        .insert({
+          email: email.toLowerCase().trim(),
+          full_name: fullName.trim() || null,
+          role: selectedRole,
+          permissions: getDefaultPermissions(selectedRole),
+          assigned_regions: assignedRegions,
+          invitation_token: invitationToken,
+          expires_at: expiresAt,
+          invited_by: currentAdmin.id,
+          invitation_message: message.trim() || null,
+        })
+        .select('id, invitation_token')
+        .single()
+
+      if (createError) {
+        console.error('Error creating invitation:', createError)
+        setFormError(locale === 'ar' ? 'حدث خطأ أثناء إنشاء الدعوة' : 'Error creating invitation')
+        setFormLoading(false)
+        return
+      }
+
+      // Generate the invitation URL
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+      const invitationUrl = `${baseUrl}/${locale}/admin/register/${invitation.invitation_token}`
+
+      setInvitationResult({
+        id: invitation.id,
+        token: invitation.invitation_token,
+        url: invitationUrl,
+      })
+
+    } catch (error) {
+      console.error('Error:', error)
+      setFormError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
+    }
+
+    setFormLoading(false)
+  }
+
+  async function handleCopyLink() {
+    if (!invitationResult) return
+
+    try {
+      await navigator.clipboard.writeText(invitationResult.url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
+  function handleCreateAnother() {
+    setEmail('')
+    setFullName('')
+    setSelectedRole('general_moderator')
+    setMessage('')
+    setExpiresHours(48)
+    setAssignedRegions([])
+    setInvitationResult(null)
+    setFormError('')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#009DE0] border-t-transparent"></div>
+      </div>
+    )
+  }
+
+  if (!user || !isAdmin || !isSuperAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
+          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2 text-slate-900">
+            {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
+          </h1>
+          <p className="text-slate-600 mb-4">
+            {locale === 'ar' ? 'هذه الصفحة متاحة للمدير التنفيذي فقط' : 'This page is only available to Super Admins'}
+          </p>
+          <Link href={`/${locale}/admin/supervisors`}>
+            <Button size="lg" className="bg-[#009DE0] hover:bg-[#0080b8]">
+              {locale === 'ar' ? 'العودة' : 'Go Back'}
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <AdminHeader
+          user={user}
+          title={locale === 'ar' ? 'دعوة مشرف جديد' : 'Invite New Supervisor'}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          {/* Back Button */}
+          <Link href={`/${locale}/admin/supervisors`} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6">
+            {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+            {locale === 'ar' ? 'العودة لإدارة المشرفين' : 'Back to Supervisors'}
+          </Link>
+
+          <div className="max-w-2xl mx-auto">
+            {/* Success Result */}
+            {invitationResult ? (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-8 h-8 text-green-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900 mb-2">
+                    {locale === 'ar' ? 'تم إنشاء الدعوة بنجاح!' : 'Invitation Created Successfully!'}
+                  </h2>
+                  <p className="text-slate-600">
+                    {locale === 'ar'
+                      ? 'انسخ الرابط أدناه وأرسله للمشرف الجديد'
+                      : 'Copy the link below and send it to the new supervisor'}
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4 mb-6">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {locale === 'ar' ? 'رابط الدعوة' : 'Invitation Link'}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={invitationResult.url}
+                      readOnly
+                      className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-mono"
+                      dir="ltr"
+                    />
+                    <Button
+                      onClick={handleCopyLink}
+                      className={copied ? 'bg-green-600 hover:bg-green-700' : 'bg-[#009DE0] hover:bg-[#0080b8]'}
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-4 h-4 me-2" />
+                          {locale === 'ar' ? 'تم النسخ' : 'Copied'}
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4 me-2" />
+                          {locale === 'ar' ? 'نسخ' : 'Copy'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg mb-6">
+                  <Clock className="w-5 h-5 flex-shrink-0" />
+                  <span>
+                    {locale === 'ar'
+                      ? `هذا الرابط صالح لمدة ${expiresHours} ساعة`
+                      : `This link is valid for ${expiresHours} hours`}
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4 mb-6">
+                  <h3 className="font-medium text-slate-900 mb-3">
+                    {locale === 'ar' ? 'تفاصيل الدعوة' : 'Invitation Details'}
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">{locale === 'ar' ? 'البريد:' : 'Email:'}</span>
+                      <span className="font-medium text-slate-900">{email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">{locale === 'ar' ? 'الدور:' : 'Role:'}</span>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs ${roleConfig[selectedRole].color}`}>
+                        {roleConfig[selectedRole].label[locale === 'ar' ? 'ar' : 'en']}
+                      </span>
+                    </div>
+                    {assignedRegions.length > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">{locale === 'ar' ? 'المناطق:' : 'Regions:'}</span>
+                        <span className="font-medium text-slate-900">{assignedRegions.length}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/${locale}/admin/supervisors`)}
+                    className="flex-1"
+                  >
+                    {locale === 'ar' ? 'العودة للمشرفين' : 'Back to Supervisors'}
+                  </Button>
+                  <Button
+                    onClick={handleCreateAnother}
+                    className="flex-1 bg-[#009DE0] hover:bg-[#0080b8]"
+                  >
+                    <UserPlus className="w-4 h-4 me-2" />
+                    {locale === 'ar' ? 'دعوة آخر' : 'Invite Another'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* Invitation Form */
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-[#E0F4FF] rounded-xl flex items-center justify-center">
+                    <UserPlus className="w-6 h-6 text-[#009DE0]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">
+                      {locale === 'ar' ? 'دعوة مشرف جديد' : 'Invite New Supervisor'}
+                    </h2>
+                    <p className="text-sm text-slate-600">
+                      {locale === 'ar'
+                        ? 'أنشئ رابط دعوة لمشرف جديد'
+                        : 'Create an invitation link for a new supervisor'}
+                    </p>
+                  </div>
+                </div>
+
+                {formError && (
+                  <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm">{formError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-6">
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'البريد الإلكتروني' : 'Email Address'} <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder={locale === 'ar' ? 'admin@example.com' : 'admin@example.com'}
+                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#009DE0] focus:border-transparent`}
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Full Name (Optional) */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'الاسم الكامل' : 'Full Name'} <span className="text-slate-400 text-xs">({locale === 'ar' ? 'اختياري' : 'optional'})</span>
+                    </label>
+                    <div className="relative">
+                      <UserIcon className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder={locale === 'ar' ? 'أحمد محمد' : 'Ahmed Mohamed'}
+                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#009DE0] focus:border-transparent`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Role Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'الدور' : 'Role'} <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {(Object.keys(roleConfig) as AdminRole[]).map((role) => {
+                        const config = roleConfig[role]
+                        const Icon = config.icon
+                        const isSelected = selectedRole === role
+
+                        return (
+                          <button
+                            key={role}
+                            type="button"
+                            onClick={() => setSelectedRole(role)}
+                            className={`p-4 rounded-xl border-2 text-start transition-all ${
+                              isSelected
+                                ? 'border-[#009DE0] bg-[#E0F4FF]'
+                                : 'border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${config.color}`}>
+                                <Icon className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-medium text-slate-900">
+                                  {config.label[locale === 'ar' ? 'ar' : 'en']}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {config.description[locale === 'ar' ? 'ar' : 'en']}
+                                </p>
+                              </div>
+                              {isSelected && (
+                                <Check className="w-5 h-5 text-[#009DE0]" />
+                              )}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Assigned Regions */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'المناطق المخصصة' : 'Assigned Regions'} <span className="text-slate-400 text-xs">({locale === 'ar' ? 'اختياري' : 'optional'})</span>
+                    </label>
+                    <p className="text-xs text-slate-500 mb-3">
+                      {locale === 'ar'
+                        ? 'اترك فارغاً للوصول لجميع المناطق'
+                        : 'Leave empty for access to all regions'}
+                    </p>
+
+                    <div className="flex gap-2 mb-3">
+                      <div className="flex-1">
+                        <GeoFilter
+                          value={tempRegion}
+                          onChange={setTempRegion}
+                          showDistrict={true}
+                          inline={false}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addRegion}
+                        disabled={!tempRegion.governorate_id}
+                        className="self-end"
+                      >
+                        {locale === 'ar' ? 'إضافة' : 'Add'}
+                      </Button>
+                    </div>
+
+                    {assignedRegions.length > 0 && (
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {assignedRegions.map((region, index) => (
+                          <div key={index} className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-slate-400" />
+                              <span className="text-sm text-slate-700">{getRegionLabel(region)}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeRegion(index)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Invitation Message */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'رسالة للمدعو' : 'Message to Invitee'} <span className="text-slate-400 text-xs">({locale === 'ar' ? 'اختياري' : 'optional'})</span>
+                    </label>
+                    <div className="relative">
+                      <MessageSquare className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-3 w-5 h-5 text-slate-400`} />
+                      <textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder={locale === 'ar' ? 'مرحباً، نود انضمامك لفريق إنجزنا...' : 'Hello, we would like you to join the Engezna team...'}
+                        rows={3}
+                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#009DE0] focus:border-transparent resize-none`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Expiry */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'صلاحية الدعوة' : 'Invitation Validity'}
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-slate-400" />
+                      <select
+                        value={expiresHours}
+                        onChange={(e) => setExpiresHours(Number(e.target.value))}
+                        className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#009DE0]"
+                      >
+                        <option value={24}>{locale === 'ar' ? '24 ساعة' : '24 hours'}</option>
+                        <option value={48}>{locale === 'ar' ? '48 ساعة (موصى به)' : '48 hours (recommended)'}</option>
+                        <option value={72}>{locale === 'ar' ? '72 ساعة' : '72 hours'}</option>
+                        <option value={168}>{locale === 'ar' ? '7 أيام' : '7 days'}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-8">
+                  <Link href={`/${locale}/admin/supervisors`} className="flex-1">
+                    <Button variant="outline" className="w-full">
+                      {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                    </Button>
+                  </Link>
+                  <Button
+                    onClick={handleCreateInvitation}
+                    disabled={formLoading}
+                    className="flex-1 bg-[#009DE0] hover:bg-[#0080b8]"
+                  >
+                    {formLoading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <LinkIcon className="w-4 h-4 me-2" />
+                        {locale === 'ar' ? 'إنشاء رابط الدعوة' : 'Create Invitation Link'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}

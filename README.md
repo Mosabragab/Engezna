@@ -135,9 +135,11 @@ This project is in **active development** (Week 3 - 100% Complete ✅). What you
 - ✅ **Provider Profile** (password change, language, sign out)
 - ✅ **Auto-refresh Orders** (every 60 seconds)
 
-**Works (Admin Features - NEW Week 4):**
+**Works (Admin Features - Week 4):**
 - ✅ **Unified Admin Components** (AdminHeader, AdminSidebar with Engezna Blue theming)
 - ✅ **Supervisor Management** (full CRUD, roles: super_admin, general_moderator, support, finance)
+- ✅ **Admin Invitation System** (invite supervisors with pre-configured roles and permissions)
+- ✅ **Dedicated Admin Login** (`/admin/login` with role validation)
 - ✅ **Tasks Management** (assignment, priorities, deadlines, progress tracking)
 - ✅ **Approvals System** (workflow for refunds, bans, commission changes)
 - ✅ **Internal Messages** (inbox/sent, compose, broadcast, read tracking)

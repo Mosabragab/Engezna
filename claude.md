@@ -183,6 +183,20 @@
 1. ✅ Orders page auto-refreshes every 60 seconds
 2. ✅ Last refresh timestamp display
 
+### Admin Invitation System (NEW! ✅)
+1. ✅ Visit `/ar/admin/supervisors/invite` or `/en/admin/supervisors/invite`
+2. ✅ Create invitation with email, role, and permissions
+3. ✅ Pre-configure assigned regions
+4. ✅ Set expiry time (24h, 48h, 72h, 7 days)
+5. ✅ Add optional message for invitee
+6. ✅ Copy unique invitation link
+7. ✅ Invitee registers at `/admin/register/[token]`
+8. ✅ Validates token and expiry
+9. ✅ Shows role and permissions that will be assigned
+10. ✅ Creates auth user + profile + admin_users record
+11. ✅ Dedicated admin login at `/admin/login`
+12. ✅ Checks admin role and active status before login
+
 ### Business Categories Supported
 - 🍔 Restaurant (مطعم)
 - ☕ Cafe (كافيه)
@@ -312,6 +326,15 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
   - [x] Expiry dates ✅
   - [x] CRUD for super admins ✅
 - [x] District/neighborhood filtering in location settings ✅
+- [x] **Admin Invitation System** ✅ (NEW!)
+  - [x] `admin_invitations` database table with full schema ✅
+  - [x] Invitation page `/admin/supervisors/invite` ✅
+  - [x] Supervisor registration page `/admin/register/[token]` ✅
+  - [x] Admin login page `/admin/login` ✅
+  - [x] Invitation tokens with expiry (24-168 hours) ✅
+  - [x] Role and permissions pre-configuration ✅
+  - [x] Region assignment during invitation ✅
+  - [x] Copy invitation link functionality ✅
 
 ---
 
@@ -390,6 +413,37 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Nov 30, 2025 - Admin Invitation System ✅
+- ✅ **Admin Invitations Database Schema**:
+  - Created `admin_invitations` table with full schema
+  - Invitation status enum: pending, accepted, expired, cancelled, revoked
+  - Token-based authentication with expiry dates
+  - Pre-configured roles, permissions, and regions
+  - RLS policies for security
+  - Helper functions for creating/accepting/canceling invitations
+- ✅ **Invitation Page** (`/admin/supervisors/invite`):
+  - Email input with validation
+  - Role selection with visual cards
+  - Region assignment with cascading dropdowns
+  - Expiry time selection (24h, 48h, 72h, 7 days)
+  - Optional message for invitee
+  - Generated invitation link with copy button
+- ✅ **Supervisor Registration** (`/admin/register/[token]`):
+  - Token validation with expiry check
+  - Shows invitation details (role, permissions, inviter)
+  - Registration form (name, phone, password)
+  - Creates auth user + profile + admin_users record
+  - Updates invitation status to accepted
+  - Redirects to admin login
+- ✅ **Admin Login Page** (`/admin/login`):
+  - Dedicated login page for supervisors
+  - Validates admin role and active status
+  - Updates last_active_at timestamp
+  - Professional UI matching Engezna branding
+- ✅ **Supervisors Page Update**:
+  - Changed "Add Supervisor" to "Invite Supervisor"
+  - Links to new invitation page
 
 ### Work Session Nov 29, 2025 - Admin Dashboard + Supervisor System (Week 4) ✅
 - ✅ **Unified Admin Components**:
