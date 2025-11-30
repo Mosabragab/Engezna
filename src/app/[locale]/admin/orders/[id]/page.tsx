@@ -1,0 +1,741 @@
+'use client'
+
+import { useLocale } from 'next-intl'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
+import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { formatNumber, formatCurrency, formatDateTime, formatDate } from '@/lib/utils/formatters'
+import {
+  Shield,
+  ArrowLeft,
+  ArrowRight,
+  ShoppingBag,
+  User as UserIcon,
+  Phone,
+  Mail,
+  MapPin,
+  Store,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Truck,
+  Package,
+  CreditCard,
+  DollarSign,
+  Calendar,
+  MessageSquare,
+  RefreshCw,
+  Printer,
+  Ban,
+  FileText,
+} from 'lucide-react'
+
+export const dynamic = 'force-dynamic'
+
+interface OrderItem {
+  id: string
+  product_name: string
+  quantity: number
+  unit_price: number
+  total_price: number
+  notes: string | null
+}
+
+interface OrderDetails {
+  id: string
+  order_number: string
+  status: string
+  total: number
+  subtotal: number
+  delivery_fee: number
+  platform_commission: number
+  payment_method: string
+  payment_status: string
+  created_at: string
+  updated_at: string
+  accepted_at: string | null
+  preparing_at: string | null
+  ready_at: string | null
+  picked_up_at: string | null
+  delivered_at: string | null
+  cancelled_at: string | null
+  cancellation_reason: string | null
+  delivery_address: string | null
+  delivery_notes: string | null
+  customer_notes: string | null
+  customer: {
+    id: string
+    full_name: string | null
+    phone: string | null
+    email: string | null
+    avatar_url: string | null
+  } | null
+  provider: {
+    id: string
+    name_ar: string
+    name_en: string
+    phone: string | null
+    address: string | null
+  } | null
+  items: OrderItem[]
+}
+
+export default function AdminOrderDetailsPage() {
+  const locale = useLocale()
+  const isRTL = locale === 'ar'
+  const params = useParams()
+  const router = useRouter()
+  const orderId = params.id as string
+
+  const [user, setUser] = useState<User | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [order, setOrder] = useState<OrderDetails | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  useEffect(() => {
+    checkAuth()
+  }, [orderId])
+
+  async function checkAuth() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+        await loadOrder(supabase)
+      }
+    }
+
+    setLoading(false)
+  }
+
+  async function loadOrder(supabase: ReturnType<typeof createClient>) {
+    // Load order
+    const { data: orderData, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        customer:profiles!orders_customer_id_fkey(id, full_name, phone, email, avatar_url),
+        provider:providers(id, name_ar, name_en, phone, address)
+      `)
+      .eq('id', orderId)
+      .single()
+
+    if (error || !orderData) {
+      console.error('Error loading order:', error)
+      return
+    }
+
+    // Load order items
+    const { data: itemsData } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', orderId)
+
+    setOrder({
+      ...orderData,
+      items: itemsData || [],
+    } as unknown as OrderDetails)
+  }
+
+  async function handleStatusChange(newStatus: string) {
+    if (!order) return
+
+    setActionLoading(true)
+    const supabase = createClient()
+
+    const updateData: any = { status: newStatus }
+
+    // Set timestamp based on status
+    if (newStatus === 'accepted') updateData.accepted_at = new Date().toISOString()
+    else if (newStatus === 'preparing') updateData.preparing_at = new Date().toISOString()
+    else if (newStatus === 'ready') updateData.ready_at = new Date().toISOString()
+    else if (newStatus === 'out_for_delivery') updateData.picked_up_at = new Date().toISOString()
+    else if (newStatus === 'delivered') {
+      updateData.delivered_at = new Date().toISOString()
+      updateData.payment_status = 'completed'
+    }
+    else if (newStatus === 'cancelled') updateData.cancelled_at = new Date().toISOString()
+
+    const { error } = await supabase
+      .from('orders')
+      .update(updateData)
+      .eq('id', order.id)
+
+    if (!error) {
+      await loadOrder(supabase)
+    }
+
+    setActionLoading(false)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'delivered': return 'bg-green-100 text-green-700 border-green-200'
+      case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200'
+      case 'accepted': case 'preparing': return 'bg-blue-100 text-blue-700 border-blue-200'
+      case 'ready': return 'bg-cyan-100 text-cyan-700 border-cyan-200'
+      case 'out_for_delivery': return 'bg-purple-100 text-purple-700 border-purple-200'
+      case 'cancelled': case 'rejected': return 'bg-red-100 text-red-700 border-red-200'
+      default: return 'bg-slate-100 text-slate-700 border-slate-200'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'delivered': return <CheckCircle2 className="w-5 h-5" />
+      case 'pending': return <Clock className="w-5 h-5" />
+      case 'accepted': case 'preparing': return <Package className="w-5 h-5" />
+      case 'ready': return <Package className="w-5 h-5" />
+      case 'out_for_delivery': return <Truck className="w-5 h-5" />
+      case 'cancelled': case 'rejected': return <XCircle className="w-5 h-5" />
+      default: return <Clock className="w-5 h-5" />
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, { ar: string; en: string }> = {
+      pending: { ar: 'معلق', en: 'Pending' },
+      accepted: { ar: 'مقبول', en: 'Accepted' },
+      preparing: { ar: 'قيد التحضير', en: 'Preparing' },
+      ready: { ar: 'جاهز', en: 'Ready' },
+      out_for_delivery: { ar: 'في الطريق', en: 'Out for Delivery' },
+      delivered: { ar: 'تم التسليم', en: 'Delivered' },
+      cancelled: { ar: 'ملغي', en: 'Cancelled' },
+      rejected: { ar: 'مرفوض', en: 'Rejected' },
+    }
+    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+      </div>
+    )
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
+          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2 text-slate-900">
+            {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
+          </h1>
+          <Link href={`/${locale}/auth/login`}>
+            <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
+          <ShoppingBag className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2 text-slate-900">
+            {locale === 'ar' ? 'الطلب غير موجود' : 'Order Not Found'}
+          </h1>
+          <Link href={`/${locale}/admin/orders`}>
+            <Button className="bg-red-600 hover:bg-red-700 mt-4">
+              {locale === 'ar' ? 'العودة للطلبات' : 'Back to Orders'}
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <AdminHeader
+          user={user}
+          title={locale === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          {/* Back Button & Order Number */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Link href={`/${locale}/admin/orders`}>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+                  {locale === 'ar' ? 'العودة' : 'Back'}
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">
+                  #{order.order_number}
+                </h1>
+                <p className="text-sm text-slate-500">
+                  {formatDateTime(order.created_at, locale)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadOrder(createClient())}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                {locale === 'ar' ? 'تحديث' : 'Refresh'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.print()}
+                className="flex items-center gap-2"
+              >
+                <Printer className="w-4 h-4" />
+                {locale === 'ar' ? 'طباعة' : 'Print'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Status Banner */}
+          <div className={`rounded-xl p-4 border ${getStatusColor(order.status)} mb-6`}>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                {getStatusIcon(order.status)}
+                <div>
+                  <p className="font-semibold text-lg">{getStatusLabel(order.status)}</p>
+                  {order.cancelled_at && order.cancellation_reason && (
+                    <p className="text-sm opacity-80">
+                      {locale === 'ar' ? 'السبب:' : 'Reason:'} {order.cancellation_reason}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Actions */}
+              {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                <div className="flex items-center gap-2">
+                  {order.status === 'pending' && (
+                    <>
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => handleStatusChange('accepted')}
+                        disabled={actionLoading}
+                      >
+                        {locale === 'ar' ? 'قبول' : 'Accept'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => handleStatusChange('cancelled')}
+                        disabled={actionLoading}
+                      >
+                        {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                      </Button>
+                    </>
+                  )}
+                  {order.status === 'accepted' && (
+                    <Button
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                      onClick={() => handleStatusChange('preparing')}
+                      disabled={actionLoading}
+                    >
+                      {locale === 'ar' ? 'بدء التحضير' : 'Start Preparing'}
+                    </Button>
+                  )}
+                  {order.status === 'preparing' && (
+                    <Button
+                      size="sm"
+                      className="bg-cyan-600 hover:bg-cyan-700"
+                      onClick={() => handleStatusChange('ready')}
+                      disabled={actionLoading}
+                    >
+                      {locale === 'ar' ? 'جاهز للتسليم' : 'Ready for Pickup'}
+                    </Button>
+                  )}
+                  {order.status === 'ready' && (
+                    <Button
+                      size="sm"
+                      className="bg-purple-600 hover:bg-purple-700"
+                      onClick={() => handleStatusChange('out_for_delivery')}
+                      disabled={actionLoading}
+                    >
+                      {locale === 'ar' ? 'في الطريق' : 'Out for Delivery'}
+                    </Button>
+                  )}
+                  {order.status === 'out_for_delivery' && (
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={() => handleStatusChange('delivered')}
+                      disabled={actionLoading}
+                    >
+                      {locale === 'ar' ? 'تم التسليم' : 'Mark Delivered'}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Order Items */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-100">
+                  <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <ShoppingBag className="w-5 h-5 text-slate-600" />
+                    {locale === 'ar' ? 'عناصر الطلب' : 'Order Items'}
+                  </h2>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {order.items.length > 0 ? (
+                    order.items.map((item) => (
+                      <div key={item.id} className="p-4 flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-slate-900">{item.product_name}</p>
+                          <p className="text-sm text-slate-500">
+                            {formatCurrency(item.unit_price, locale)} x {formatNumber(item.quantity, locale)}
+                          </p>
+                          {item.notes && (
+                            <p className="text-xs text-slate-400 mt-1">{item.notes}</p>
+                          )}
+                        </div>
+                        <p className="font-semibold text-slate-900">
+                          {formatCurrency(item.total_price, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center text-slate-500">
+                      {locale === 'ar' ? 'لا توجد عناصر' : 'No items'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Order Summary */}
+                <div className="p-4 bg-slate-50 border-t border-slate-200">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">{locale === 'ar' ? 'المجموع الفرعي' : 'Subtotal'}</span>
+                      <span className="text-slate-900">{formatCurrency(order.subtotal, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
+                      <span className="text-slate-900">{formatCurrency(order.delivery_fee, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-red-600">
+                      <span>{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</span>
+                      <span>{formatCurrency(order.platform_commission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-lg pt-2 border-t border-slate-200">
+                      <span>{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
+                      <span className="text-red-600">{formatCurrency(order.total, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timeline */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-100">
+                  <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-slate-600" />
+                    {locale === 'ar' ? 'سجل الطلب' : 'Order Timeline'}
+                  </h2>
+                </div>
+                <div className="p-4">
+                  <div className="space-y-4">
+                    <TimelineItem
+                      icon={<Clock className="w-4 h-4" />}
+                      label={locale === 'ar' ? 'تم إنشاء الطلب' : 'Order Created'}
+                      time={order.created_at}
+                      locale={locale}
+                      active
+                    />
+                    {order.accepted_at && (
+                      <TimelineItem
+                        icon={<CheckCircle2 className="w-4 h-4" />}
+                        label={locale === 'ar' ? 'تم القبول' : 'Accepted'}
+                        time={order.accepted_at}
+                        locale={locale}
+                        active
+                      />
+                    )}
+                    {order.preparing_at && (
+                      <TimelineItem
+                        icon={<Package className="w-4 h-4" />}
+                        label={locale === 'ar' ? 'قيد التحضير' : 'Preparing'}
+                        time={order.preparing_at}
+                        locale={locale}
+                        active
+                      />
+                    )}
+                    {order.ready_at && (
+                      <TimelineItem
+                        icon={<Package className="w-4 h-4" />}
+                        label={locale === 'ar' ? 'جاهز للتسليم' : 'Ready'}
+                        time={order.ready_at}
+                        locale={locale}
+                        active
+                      />
+                    )}
+                    {order.picked_up_at && (
+                      <TimelineItem
+                        icon={<Truck className="w-4 h-4" />}
+                        label={locale === 'ar' ? 'في الطريق' : 'Out for Delivery'}
+                        time={order.picked_up_at}
+                        locale={locale}
+                        active
+                      />
+                    )}
+                    {order.delivered_at && (
+                      <TimelineItem
+                        icon={<CheckCircle2 className="w-4 h-4" />}
+                        label={locale === 'ar' ? 'تم التسليم' : 'Delivered'}
+                        time={order.delivered_at}
+                        locale={locale}
+                        active
+                        success
+                      />
+                    )}
+                    {order.cancelled_at && (
+                      <TimelineItem
+                        icon={<XCircle className="w-4 h-4" />}
+                        label={locale === 'ar' ? 'تم الإلغاء' : 'Cancelled'}
+                        time={order.cancelled_at}
+                        locale={locale}
+                        active
+                        error
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar Info */}
+            <div className="space-y-6">
+              {/* Customer Info */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-100">
+                  <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <UserIcon className="w-5 h-5 text-slate-600" />
+                    {locale === 'ar' ? 'معلومات العميل' : 'Customer Info'}
+                  </h2>
+                </div>
+                <div className="p-4">
+                  {order.customer ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center overflow-hidden">
+                          {order.customer.avatar_url ? (
+                            <img src={order.customer.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="font-semibold text-slate-600 text-lg">
+                              {order.customer.full_name?.charAt(0)?.toUpperCase() || '?'}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900">{order.customer.full_name || '-'}</p>
+                          <Link href={`/${locale}/admin/customers/${order.customer.id}`}>
+                            <span className="text-xs text-red-600 hover:underline">
+                              {locale === 'ar' ? 'عرض الملف' : 'View Profile'}
+                            </span>
+                          </Link>
+                        </div>
+                      </div>
+
+                      {order.customer.phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="w-4 h-4 text-slate-400" />
+                          <a href={`tel:${order.customer.phone}`} className="text-slate-600 hover:text-red-600">
+                            {order.customer.phone}
+                          </a>
+                        </div>
+                      )}
+
+                      {order.customer.email && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="w-4 h-4 text-slate-400" />
+                          <a href={`mailto:${order.customer.email}`} className="text-slate-600 hover:text-red-600 truncate">
+                            {order.customer.email}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500">{locale === 'ar' ? 'لا توجد معلومات' : 'No info'}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Provider Info */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-100">
+                  <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <Store className="w-5 h-5 text-slate-600" />
+                    {locale === 'ar' ? 'معلومات المتجر' : 'Provider Info'}
+                  </h2>
+                </div>
+                <div className="p-4">
+                  {order.provider ? (
+                    <div className="space-y-3">
+                      <p className="font-medium text-slate-900">
+                        {locale === 'ar' ? order.provider.name_ar : order.provider.name_en}
+                      </p>
+
+                      {order.provider.phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="w-4 h-4 text-slate-400" />
+                          <a href={`tel:${order.provider.phone}`} className="text-slate-600 hover:text-red-600">
+                            {order.provider.phone}
+                          </a>
+                        </div>
+                      )}
+
+                      {order.provider.address && (
+                        <div className="flex items-start gap-2 text-sm">
+                          <MapPin className="w-4 h-4 text-slate-400 mt-0.5" />
+                          <span className="text-slate-600">{order.provider.address}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500">{locale === 'ar' ? 'لا توجد معلومات' : 'No info'}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Delivery Info */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-100">
+                  <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-slate-600" />
+                    {locale === 'ar' ? 'عنوان التوصيل' : 'Delivery Address'}
+                  </h2>
+                </div>
+                <div className="p-4">
+                  {order.delivery_address ? (
+                    <p className="text-slate-600 text-sm">{order.delivery_address}</p>
+                  ) : (
+                    <p className="text-slate-500 text-sm">{locale === 'ar' ? 'لم يتم تحديد عنوان' : 'No address specified'}</p>
+                  )}
+
+                  {order.delivery_notes && (
+                    <div className="mt-3 p-2 bg-slate-50 rounded-lg">
+                      <p className="text-xs text-slate-500 mb-1">
+                        {locale === 'ar' ? 'ملاحظات التوصيل:' : 'Delivery Notes:'}
+                      </p>
+                      <p className="text-sm text-slate-700">{order.delivery_notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment Info */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-100">
+                  <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-slate-600" />
+                    {locale === 'ar' ? 'معلومات الدفع' : 'Payment Info'}
+                  </h2>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">{locale === 'ar' ? 'طريقة الدفع' : 'Method'}</span>
+                    <span className="font-medium text-slate-900 capitalize">{order.payment_method}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">{locale === 'ar' ? 'حالة الدفع' : 'Status'}</span>
+                    <span className={`font-medium ${order.payment_status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {order.payment_status === 'completed'
+                        ? (locale === 'ar' ? 'مدفوع' : 'Paid')
+                        : (locale === 'ar' ? 'معلق' : 'Pending')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {order.customer_notes && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-slate-100">
+                    <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-slate-600" />
+                      {locale === 'ar' ? 'ملاحظات العميل' : 'Customer Notes'}
+                    </h2>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-slate-600 text-sm">{order.customer_notes}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}
+
+// Timeline Item Component
+function TimelineItem({
+  icon,
+  label,
+  time,
+  locale,
+  active = false,
+  success = false,
+  error = false
+}: {
+  icon: React.ReactNode
+  label: string
+  time: string
+  locale: string
+  active?: boolean
+  success?: boolean
+  error?: boolean
+}) {
+  const bgColor = error ? 'bg-red-100 text-red-600' : success ? 'bg-green-100 text-green-600' : active ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'
+
+  return (
+    <div className="flex items-start gap-3">
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${bgColor}`}>
+        {icon}
+      </div>
+      <div className="flex-1">
+        <p className={`font-medium ${active ? 'text-slate-900' : 'text-slate-400'}`}>{label}</p>
+        <p className="text-xs text-slate-500">{formatDateTime(time, locale)}</p>
+      </div>
+    </div>
+  )
+}

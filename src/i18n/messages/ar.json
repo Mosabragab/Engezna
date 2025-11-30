@@ -247,12 +247,14 @@
       "saved": "تم تغيير اللغة بنجاح"
     },
     "governorate": {
-      "title": "المحافظة والمدينة",
+      "title": "المحافظة والمدينة والحي",
       "description": "اختر موقعك لعرض الخدمات المتاحة",
       "governorate": "المحافظة",
       "governoratePlaceholder": "اختر المحافظة",
       "city": "المدينة/المركز",
       "cityPlaceholder": "اختر المدينة",
+      "district": "الحي/المنطقة",
+      "districtPlaceholder": "اختر الحي",
       "saveButton": "حفظ الموقع",
       "saving": "جاري الحفظ...",
       "saved": "تم حفظ الموقع بنجاح",

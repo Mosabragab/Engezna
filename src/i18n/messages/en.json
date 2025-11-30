@@ -247,12 +247,14 @@
       "saved": "Language changed successfully"
     },
     "governorate": {
-      "title": "Governorate & City",
+      "title": "Governorate, City & District",
       "description": "Select your location to show available services",
       "governorate": "Governorate",
       "governoratePlaceholder": "Select governorate",
       "city": "City/Center",
       "cityPlaceholder": "Select city",
+      "district": "District/Neighborhood",
+      "districtPlaceholder": "Select district",
       "saveButton": "Save Location",
       "saving": "Saving...",
       "saved": "Location saved successfully",
