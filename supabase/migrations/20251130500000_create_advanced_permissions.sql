@@ -35,6 +35,19 @@ CREATE INDEX IF NOT EXISTS idx_roles_active ON roles(is_active);
 -- 2. PERMISSIONS TABLE (الصلاحيات)
 -- ============================================================================
 
+-- Drop old permissions table if it has different structure
+DO $$
+BEGIN
+  -- Check if permissions table exists but without resource_code column
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'permissions' AND table_schema = 'public') THEN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'permissions' AND column_name = 'resource_code' AND table_schema = 'public') THEN
+      -- Table exists but with old structure, drop and recreate
+      DROP TABLE IF EXISTS public.permissions CASCADE;
+      RAISE NOTICE 'Dropped old permissions table to recreate with new structure';
+    END IF;
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.permissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code VARCHAR(100) UNIQUE NOT NULL, -- e.g., 'providers.view', 'messages.create'

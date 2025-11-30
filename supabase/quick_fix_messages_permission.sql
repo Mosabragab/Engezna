@@ -6,16 +6,20 @@
 -- قم بتشغيل هذا السكريبت مباشرة في محرر SQL إذا لم تظهر الرسائل
 -- ============================================================================
 
--- 1. First check if permission tables exist
+-- 1. First check if permission tables exist and have correct structure
 DO $$
 BEGIN
   -- Check if roles table exists
-  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'roles') THEN
-    RAISE NOTICE 'Tables do not exist. Please run the full migration: 20251130500000_create_advanced_permissions.sql';
-    RETURN;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'roles' AND table_schema = 'public') THEN
+    RAISE EXCEPTION 'Tables do not exist. Please run the full migration: 20251130500000_create_advanced_permissions.sql';
   END IF;
 
-  RAISE NOTICE 'Permission tables exist. Proceeding with messages permission fix...';
+  -- Check if permissions table has the correct structure
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'permissions' AND column_name = 'resource_code' AND table_schema = 'public') THEN
+    RAISE EXCEPTION 'Permissions table has old structure. Please run the full migration: 20251130500000_create_advanced_permissions.sql';
+  END IF;
+
+  RAISE NOTICE 'Permission tables exist with correct structure. Proceeding with messages permission fix...';
 END $$;
 
 -- 2. Ensure messages permissions exist
