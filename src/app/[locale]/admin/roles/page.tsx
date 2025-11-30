@@ -40,6 +40,16 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+// Database permission with joined relations
+interface DbPermission {
+  id: string
+  code: string
+  resource_id: string
+  action_id: string
+  resource?: { id: string; code: string; name_ar: string; name_en: string }
+  action?: { id: string; code: string; name_ar: string; name_en: string; severity: string }
+}
+
 interface ExtendedRole extends Role {
   permissions_count: number
   admins_count: number
@@ -59,7 +69,7 @@ export default function AdminRolesPage() {
   const [roles, setRoles] = useState<ExtendedRole[]>([])
   const [resources, setResources] = useState<Resource[]>([])
   const [actions, setActions] = useState<Action[]>([])
-  const [permissions, setPermissions] = useState<Permission[]>([])
+  const [permissions, setPermissions] = useState<DbPermission[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredRoles, setFilteredRoles] = useState<ExtendedRole[]>([])
 
