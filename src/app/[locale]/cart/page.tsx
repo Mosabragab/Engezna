@@ -243,7 +243,7 @@ export default function CartPage() {
           )}
           <button
             onClick={handleCheckout}
-            disabled={provider && provider.min_order_amount > subtotal}
+            disabled={!!(provider && provider.min_order_amount > subtotal)}
             className="w-full bg-primary text-white rounded-xl py-4 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
           >
             <span>{t('checkout')}</span>

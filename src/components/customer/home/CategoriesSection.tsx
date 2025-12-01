@@ -95,6 +95,7 @@ interface CategoriesSectionProps {
   title?: string
   showViewAll?: boolean
   onViewAll?: () => void
+  onCategoryClick?: (categoryId: string) => void
   className?: string
 }
 
@@ -103,6 +104,7 @@ export function CategoriesSection({
   title,
   showViewAll = true,
   onViewAll,
+  onCategoryClick,
   className = '',
 }: CategoriesSectionProps) {
   const locale = useLocale()
@@ -128,12 +130,8 @@ export function CategoriesSection({
       {/* Categories Grid - Horizontal Scroll on Mobile */}
       <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
         <div className="flex gap-3 md:grid md:grid-cols-4 lg:grid-cols-8">
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              href={`/${locale}/providers?category=${category.id}`}
-              className="flex-shrink-0 w-20 md:w-auto"
-            >
+          {categories.map((category) => {
+            const content = (
               <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl border border-slate-100 hover:border-primary/30 hover:shadow-md transition-all">
                 <div className={`w-12 h-12 rounded-full ${category.bgColor} ${category.color} flex items-center justify-center`}>
                   {category.icon}
@@ -142,8 +140,30 @@ export function CategoriesSection({
                   {locale === 'ar' ? category.name_ar : category.name_en}
                 </span>
               </div>
-            </Link>
-          ))}
+            )
+
+            if (onCategoryClick) {
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => onCategoryClick(category.id)}
+                  className="flex-shrink-0 w-20 md:w-auto text-start"
+                >
+                  {content}
+                </button>
+              )
+            }
+
+            return (
+              <Link
+                key={category.id}
+                href={`/${locale}/providers?category=${category.id}`}
+                className="flex-shrink-0 w-20 md:w-auto"
+              >
+                {content}
+              </Link>
+            )
+          })}
         </div>
       </div>
     </section>
