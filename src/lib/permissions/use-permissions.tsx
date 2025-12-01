@@ -82,13 +82,36 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         .single();
 
       // إذا لم يوجد سجل admin_users ولكن المستخدم admin في profiles
-      // نعتبره super_admin كـ fallback
+      // نحتاج لإنشاء سجل admin_users له أولاً
       if (!adminUser) {
         if (profile?.role === 'admin') {
           // المستخدم admin في profiles لكن لا يوجد سجل admin_users
-          // نعتبره super_admin مؤقتاً حتى يتم إنشاء سجل admin_users
-          console.log('[Permissions] No admin_users record, but profile.role is admin - treating as super_admin');
-          setLegacyRole('super_admin');
+          // هذه حالة استثنائية - فقط المستخدم الأول (المؤسس) يعامل كـ super_admin
+          // يجب إنشاء سجل admin_users له
+          console.log('[Permissions] No admin_users record, but profile.role is admin - creating admin_users record');
+
+          // إنشاء سجل admin_users للمستخدم
+          const { data: newAdminUser, error: createError } = await supabase
+            .from('admin_users')
+            .insert({
+              user_id: user.id,
+              role: 'super_admin', // المستخدم الأول يكون super_admin
+              is_active: true
+            })
+            .select('id, role')
+            .single();
+
+          if (createError) {
+            console.error('[Permissions] Failed to create admin_users record:', createError);
+            // كـ fallback مؤقت فقط للمستخدم الأول
+            setLegacyRole('super_admin');
+            setLoading(false);
+            return;
+          }
+
+          console.log('[Permissions] Created admin_users record:', newAdminUser);
+          setAdminId(newAdminUser.id);
+          setLegacyRole(newAdminUser.role);
           setLoading(false);
           return;
         }
@@ -97,10 +120,9 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       }
       setAdminId(adminUser.id);
 
-      // استخدام الدور من admin_users
-      // إذا كان المستخدم admin في profiles، نعتبره super_admin بغض النظر عن admin_users.role
-      // هذا يضمن أن المستخدمين القدامى الذين كانوا admin يستمرون في العمل
-      const effectiveRole = profile?.role === 'admin' ? 'super_admin' : (adminUser.role || null);
+      // استخدام الدور الفعلي من admin_users
+      // لا نغير الدور - نستخدم ما هو مخزن في قاعدة البيانات
+      const effectiveRole = adminUser.role || null;
       console.log('[Permissions] Admin user found:', { adminId: adminUser.id, role: adminUser.role, effectiveRole, profileRole: profile?.role });
       setLegacyRole(effectiveRole);
 
@@ -271,20 +293,42 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     [cache]
   );
 
+  // الصلاحيات الافتراضية للأدوار القديمة (للاستخدام في hasResource)
+  const legacyRoleDefaultPermissions: Record<string, ResourceCode[]> = {
+    super_admin: [], // super_admin يرى كل شيء
+    general_moderator: ['dashboard', 'providers', 'orders', 'customers', 'support', 'locations', 'promotions', 'team', 'tasks', 'announcements'],
+    store_supervisor: ['dashboard', 'providers', 'orders', 'support'],
+    support: ['dashboard', 'support', 'orders', 'customers'],
+    finance: ['dashboard', 'finance', 'orders', 'analytics'],
+  };
+
   // هل يمكن الوصول للمورد؟
   const hasResource = useCallback(
     (resource: ResourceCode): boolean => {
       const code = `${resource}.view` as PermissionCode;
       if (cache.deniedPermissions.has(code)) return false;
-      return cache.permissions.has(code);
+
+      // التحقق من النظام الجديد أولاً
+      if (cache.permissions.has(code)) return true;
+
+      // التحقق من صلاحيات الدور القديم كـ fallback
+      if (legacyRole && legacyRoleDefaultPermissions[legacyRole]) {
+        return legacyRoleDefaultPermissions[legacyRole].includes(resource);
+      }
+
+      return false;
     },
-    [cache]
+    [cache, legacyRole]
   );
 
-  // الموارد المتاحة
-  const accessibleResources: ResourceCode[] = Array.from(cache.permissions.keys())
+  // الموارد المتاحة من النظام الجديد
+  const newSystemResources: ResourceCode[] = Array.from(cache.permissions.keys())
     .filter(code => code.endsWith('.view'))
     .map(code => code.split('.')[0] as ResourceCode);
+
+  // دمج الموارد من النظام الجديد والصلاحيات الافتراضية للدور القديم
+  const legacyResources = legacyRole ? (legacyRoleDefaultPermissions[legacyRole] || []) : [];
+  const accessibleResources: ResourceCode[] = [...new Set([...newSystemResources, ...legacyResources])];
 
   // هل super_admin؟ (تحقق من الأدوار الجديدة أو الدور القديم كـ fallback)
   const isSuperAdmin = cache.roles.some(r => r.role?.code === 'super_admin') || legacyRole === 'super_admin';
@@ -296,7 +340,9 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       legacyRole,
       rolesCount: cache.roles.length,
       roles: cache.roles.map(r => r.role?.code),
-      permissionsCount: cache.permissions.size
+      permissionsCount: cache.permissions.size,
+      accessibleResources,
+      legacyResources: legacyRole ? (legacyRoleDefaultPermissions[legacyRole] || []) : []
     });
   }
 
