@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { MapPin, Bell, User, ChevronDown, ArrowRight, ArrowLeft } from 'lucide-react'
+import { MapPin, Bell, User, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -19,7 +19,6 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
   const locale = useLocale()
   const router = useRouter()
   const t = useTranslations('header')
-  const isRTL = locale === 'ar'
 
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [notificationCount, setNotificationCount] = useState(0)
@@ -70,8 +69,6 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
     }
   }
 
-  const BackArrow = isRTL ? ArrowRight : ArrowLeft
-
   return (
     <header className={`sticky top-0 z-40 ${transparent ? 'bg-transparent' : 'bg-white border-b border-slate-100 shadow-sm'}`}>
       <div className="container mx-auto px-4">
@@ -81,11 +78,11 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             {showBackButton ? (
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
                 onClick={() => router.back()}
-                className="h-9 w-9"
+                className="text-slate-500 hover:text-primary"
               >
-                <BackArrow className="h-5 w-5" />
+                {locale === 'ar' ? 'رجوع' : 'Back'}
               </Button>
             ) : (
               <button

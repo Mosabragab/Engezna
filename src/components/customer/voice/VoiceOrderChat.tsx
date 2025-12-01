@@ -62,10 +62,10 @@ export function VoiceOrderChat({ isOpen, onClose, onAddToCart }: VoiceOrderChatP
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center">
       <div
         className={cn(
-          'bg-white w-full max-w-lg h-[85vh] sm:h-[600px] sm:rounded-2xl rounded-t-2xl flex flex-col shadow-2xl',
+          'bg-white w-full max-w-lg h-[75vh] sm:h-[600px] sm:rounded-2xl rounded-t-2xl flex flex-col shadow-2xl mb-16 sm:mb-0',
           isRTL ? 'font-arabic' : ''
         )}
         dir={isRTL ? 'rtl' : 'ltr'}

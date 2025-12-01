@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { useLocale } from 'next-intl'
-import { Mic, MicOff, Loader2, X } from 'lucide-react'
+import { Mic, MicOff, Loader2, X, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface VoiceOrderButtonProps {
@@ -186,7 +186,7 @@ export function VoiceOrderButton({
   }
 
   return (
-    <div className={cn('flex flex-col items-center gap-2', className)}>
+    <div className={cn('flex flex-col items-center gap-3', className)}>
       {/* Recording Timer */}
       {isRecording && (
         <div className="flex items-center gap-2 text-red-500 animate-pulse">
@@ -195,56 +195,63 @@ export function VoiceOrderButton({
         </div>
       )}
 
-      {/* Main Button */}
-      <div className="relative">
+      {/* Main Buttons Container */}
+      {isRecording ? (
+        // Recording Mode - Show Cancel and Send buttons
+        <div className="flex items-center gap-4">
+          {/* Cancel Button */}
+          <button
+            onClick={cancelRecording}
+            className="w-14 h-14 bg-slate-200 hover:bg-slate-300 rounded-full flex items-center justify-center text-slate-600 transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Recording Indicator */}
+          <div className="relative">
+            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg shadow-red-500/30">
+              <MicOff className="w-7 h-7 text-white" />
+            </div>
+            {/* Pulse Animation */}
+            <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-25" />
+          </div>
+
+          {/* Send Button */}
+          <button
+            onClick={stopRecording}
+            className="w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-500/30 transition-colors"
+          >
+            <Send className="w-6 h-6" />
+          </button>
+        </div>
+      ) : (
+        // Normal Mode - Show Mic button
         <button
           onClick={handleClick}
           disabled={isProcessing}
           className={cn(
             'rounded-full flex items-center justify-center transition-all duration-300',
             sizeClasses[size],
-            isRecording
-              ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30 scale-110'
-              : isProcessing
-                ? 'bg-slate-300 cursor-not-allowed'
-                : 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 hover:scale-105',
+            isProcessing
+              ? 'bg-slate-300 cursor-not-allowed'
+              : 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 hover:scale-105',
             'text-white'
           )}
         >
           {isProcessing ? (
             <Loader2 className={cn(iconSizes[size], 'animate-spin')} />
-          ) : isRecording ? (
-            <MicOff className={iconSizes[size]} />
           ) : (
             <Mic className={iconSizes[size]} />
           )}
         </button>
-
-        {/* Cancel Button - Show when recording */}
-        {isRecording && (
-          <button
-            onClick={cancelRecording}
-            className="absolute -top-1 -end-1 w-6 h-6 bg-slate-600 hover:bg-slate-700 rounded-full flex items-center justify-center text-white shadow-md"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        )}
-
-        {/* Pulse Animation when recording */}
-        {isRecording && (
-          <>
-            <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-25" />
-            <span className="absolute inset-0 rounded-full bg-red-500 animate-pulse opacity-20" />
-          </>
-        )}
-      </div>
+      )}
 
       {/* Helper Text */}
-      <p className="text-xs text-slate-500 text-center max-w-[150px]">
+      <p className="text-xs text-slate-500 text-center max-w-[200px]">
         {isProcessing
           ? (locale === 'ar' ? 'جاري المعالجة...' : 'Processing...')
           : isRecording
-            ? (locale === 'ar' ? 'اضغط للإيقاف' : 'Tap to stop')
+            ? (locale === 'ar' ? 'اضغط ✓ للإرسال أو ✕ للإلغاء' : 'Tap ✓ to send or ✕ to cancel')
             : (locale === 'ar' ? 'اضغط للتحدث' : 'Tap to speak')
         }
       </p>
