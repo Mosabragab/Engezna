@@ -36,6 +36,12 @@ import {
   Wallet,
   Settings,
   Copy,
+  MapPin,
+  ShoppingCart,
+  MessageCircle,
+  TrendingUp,
+  ShieldCheck,
+  Store,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -501,6 +507,13 @@ export default function AdminRolesPage() {
       case 'UserCog': return <UserCog className="w-5 h-5" />
       case 'Headphones': return <Headphones className="w-5 h-5" />
       case 'Wallet': return <Wallet className="w-5 h-5" />
+      case 'ShieldCheck': return <ShieldCheck className="w-5 h-5" />
+      case 'Store': return <Store className="w-5 h-5" />
+      case 'MapPin': return <MapPin className="w-5 h-5" />
+      case 'ShoppingCart': return <ShoppingCart className="w-5 h-5" />
+      case 'MessageCircle': return <MessageCircle className="w-5 h-5" />
+      case 'TrendingUp': return <TrendingUp className="w-5 h-5" />
+      case 'Eye': return <Eye className="w-5 h-5" />
       default: return <Shield className="w-5 h-5" />
     }
   }
@@ -866,6 +879,13 @@ export default function AdminRolesPage() {
                       <option value="Headphones">{locale === 'ar' ? 'دعم' : 'Support'}</option>
                       <option value="Wallet">{locale === 'ar' ? 'مالية' : 'Finance'}</option>
                       <option value="Shield">{locale === 'ar' ? 'درع' : 'Shield'}</option>
+                      <option value="ShieldCheck">{locale === 'ar' ? 'درع تحقق' : 'Shield Check'}</option>
+                      <option value="Store">{locale === 'ar' ? 'متجر' : 'Store'}</option>
+                      <option value="MapPin">{locale === 'ar' ? 'موقع' : 'Location'}</option>
+                      <option value="ShoppingCart">{locale === 'ar' ? 'عربة تسوق' : 'Shopping Cart'}</option>
+                      <option value="MessageCircle">{locale === 'ar' ? 'رسالة' : 'Message'}</option>
+                      <option value="TrendingUp">{locale === 'ar' ? 'تحليلات' : 'Analytics'}</option>
+                      <option value="Eye">{locale === 'ar' ? 'عين' : 'Eye'}</option>
                     </select>
                   </div>
                 </div>
