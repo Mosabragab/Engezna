@@ -7,10 +7,6 @@ import {
   Coffee,
   ShoppingBasket,
   Apple,
-  Cake,
-  Pizza,
-  IceCream,
-  Sandwich,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -23,9 +19,10 @@ interface Category {
   bgColor: string
 }
 
+// Categories that match the database provider categories
 const defaultCategories: Category[] = [
   {
-    id: 'restaurants',
+    id: 'restaurant',
     name_ar: 'مطاعم',
     name_en: 'Restaurants',
     icon: <UtensilsCrossed className="w-6 h-6" />,
@@ -33,15 +30,15 @@ const defaultCategories: Category[] = [
     bgColor: 'bg-orange-100',
   },
   {
-    id: 'coffee',
+    id: 'cafe',
     name_ar: 'مقاهي',
-    name_en: 'Coffee',
+    name_en: 'Cafes',
     icon: <Coffee className="w-6 h-6" />,
     color: 'text-amber-700',
     bgColor: 'bg-amber-100',
   },
   {
-    id: 'groceries',
+    id: 'supermarket',
     name_ar: 'بقالة',
     name_en: 'Groceries',
     icon: <ShoppingBasket className="w-6 h-6" />,
@@ -49,44 +46,12 @@ const defaultCategories: Category[] = [
     bgColor: 'bg-green-100',
   },
   {
-    id: 'fruits',
+    id: 'vegetables_fruits',
     name_ar: 'خضار وفواكه',
-    name_en: 'Fruits',
+    name_en: 'Vegetables & Fruits',
     icon: <Apple className="w-6 h-6" />,
     color: 'text-red-500',
     bgColor: 'bg-red-100',
-  },
-  {
-    id: 'bakery',
-    name_ar: 'مخبوزات',
-    name_en: 'Bakery',
-    icon: <Cake className="w-6 h-6" />,
-    color: 'text-pink-500',
-    bgColor: 'bg-pink-100',
-  },
-  {
-    id: 'pizza',
-    name_ar: 'بيتزا',
-    name_en: 'Pizza',
-    icon: <Pizza className="w-6 h-6" />,
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-100',
-  },
-  {
-    id: 'desserts',
-    name_ar: 'حلويات',
-    name_en: 'Desserts',
-    icon: <IceCream className="w-6 h-6" />,
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-100',
-  },
-  {
-    id: 'sandwiches',
-    name_ar: 'سندويشات',
-    name_en: 'Sandwiches',
-    icon: <Sandwich className="w-6 h-6" />,
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-100',
   },
 ]
 

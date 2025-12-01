@@ -10,12 +10,30 @@ import { CartItem } from '@/hooks/customer/useVoiceOrder'
 
 interface VoiceOrderFABProps {
   className?: string
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  showFAB?: boolean
 }
 
-export function VoiceOrderFAB({ className }: VoiceOrderFABProps) {
+export function VoiceOrderFAB({
+  className,
+  isOpen: externalIsOpen,
+  onOpenChange,
+  showFAB = true
+}: VoiceOrderFABProps) {
   const locale = useLocale()
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
   const addItem = useCart((state) => state.addItem)
+
+  // Use external state if provided, otherwise use internal
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
+  const setIsOpen = (value: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(value)
+    } else {
+      setInternalIsOpen(value)
+    }
+  }
 
   const handleAddToCart = (items: CartItem[]) => {
     if (items.length === 0) return
@@ -59,34 +77,38 @@ export function VoiceOrderFAB({ className }: VoiceOrderFABProps) {
 
   return (
     <>
-      {/* Floating Action Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          'fixed z-40 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95',
-          'bottom-20 end-4 sm:bottom-6 sm:end-6', // Position above bottom nav on mobile
-          className
-        )}
-        aria-label={locale === 'ar' ? 'اطلب بصوتك' : 'Order with voice'}
-      >
-        <Mic className="w-6 h-6" />
+      {/* Floating Action Button - only show if showFAB is true */}
+      {showFAB && (
+        <>
+          <button
+            onClick={() => setIsOpen(true)}
+            className={cn(
+              'fixed z-40 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95',
+              'bottom-20 end-4 sm:bottom-6 sm:end-6', // Position above bottom nav on mobile
+              className
+            )}
+            aria-label={locale === 'ar' ? 'اطلب بصوتك' : 'Order with voice'}
+          >
+            <Mic className="w-6 h-6" />
 
-        {/* Pulse Animation */}
-        <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20" />
-      </button>
+            {/* Pulse Animation */}
+            <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20" />
+          </button>
 
-      {/* Tooltip on hover - Desktop only */}
-      <div
-        className={cn(
-          'fixed z-40 hidden sm:block',
-          'bottom-6 end-24',
-          'bg-slate-900 text-white text-sm px-3 py-1.5 rounded-lg shadow-lg',
-          'opacity-0 pointer-events-none transition-opacity group-hover:opacity-100',
-          isOpen && 'hidden'
-        )}
-      >
-        {locale === 'ar' ? 'اطلب بصوتك 🎤' : 'Order with voice 🎤'}
-      </div>
+          {/* Tooltip on hover - Desktop only */}
+          <div
+            className={cn(
+              'fixed z-40 hidden sm:block',
+              'bottom-6 end-24',
+              'bg-slate-900 text-white text-sm px-3 py-1.5 rounded-lg shadow-lg',
+              'opacity-0 pointer-events-none transition-opacity group-hover:opacity-100',
+              isOpen && 'hidden'
+            )}
+          >
+            {locale === 'ar' ? 'اطلب بصوتك 🎤' : 'Order with voice 🎤'}
+          </div>
+        </>
+      )}
 
       {/* Voice Order Chat Modal */}
       <VoiceOrderChat

@@ -43,6 +43,30 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
         .eq('is_read', false)
 
       setNotificationCount(count || 0)
+
+      // Get user's current location from profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select(`
+          governorate_id,
+          city_id,
+          governorates:governorate_id (name_ar, name_en),
+          cities:city_id (name_ar, name_en)
+        `)
+        .eq('id', user.id)
+        .single()
+
+      if (profile) {
+        // Supabase returns joined data as the object directly
+        const govData = profile.governorates as unknown as { name_ar: string; name_en: string } | null
+        const cityData = profile.cities as unknown as { name_ar: string; name_en: string } | null
+
+        if (cityData && cityData.name_ar) {
+          setCurrentLocation(locale === 'ar' ? cityData.name_ar : cityData.name_en)
+        } else if (govData && govData.name_ar) {
+          setCurrentLocation(locale === 'ar' ? govData.name_ar : govData.name_en)
+        }
+      }
     }
   }
 
@@ -64,7 +88,10 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
                 <BackArrow className="h-5 w-5" />
               </Button>
             ) : (
-              <button className="flex items-center gap-2 text-sm hover:bg-slate-50 rounded-lg px-2 py-1 transition-colors">
+              <button
+                onClick={() => router.push(`/${locale}/profile/governorate`)}
+                className="flex items-center gap-2 text-sm hover:bg-slate-50 rounded-lg px-2 py-1 transition-colors"
+              >
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="font-medium text-slate-900 max-w-[150px] truncate">
                   {currentLocation}

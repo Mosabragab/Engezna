@@ -86,7 +86,6 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
               href={backHref || `/${locale}`}
               className="flex items-center gap-2 text-muted-foreground hover:text-primary"
             >
-              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{backLabel || (locale === 'ar' ? 'رجوع' : 'Back')}</span>
             </Link>
           ) : (

@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** December 1, 2025
-**Status:** Week 5 - Customer Journey + PWA ✅
+**Status:** Week 5 - Customer Journey + PWA (Session 4) ✅
 **Branch:** `claude/customer-journey-implementation-01Wm8f1cqUiz65guGpegD3q9`
 
 ---
@@ -413,6 +413,31 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Dec 1, 2025 (Session 4) - TypeScript Fixes & Homepage Updates ✅
+- ✅ **TypeScript Type Fixes**:
+  - Fixed `demoOffers` field names to match `OffersCarousel` Offer interface
+    - `title` → `title_ar`, `titleEn` → `title_en`
+    - `description` → `description_ar`, `descriptionEn` → `description_en`
+    - `discountPercentage` → `discount_percentage`, `imageUrl` → `image_url`
+    - Added `background_color` field
+  - Added `onViewAll` and `showViewAll` props to `OffersCarousel` component
+  - Updated `Provider` interface in `TopRatedSection.tsx`:
+    - `logo_url?: string | null`, `cover_image_url?: string | null`
+    - `status: string` (was union type)
+    - Added `total_reviews?: number`
+  - Updated `Provider` interface in `NearbySection.tsx` for consistency
+  - Added null coercion to img `src` attributes (`|| undefined`)
+  - Fixed disabled prop type error in cart page (`!!` coercion)
+  - Added `onCategoryClick` prop to `CategoriesSection`
+- ✅ **Build Verification**: Build passes successfully without TypeScript errors
+- ✅ **Files Modified**:
+  - `src/app/[locale]/page.tsx` - Fixed demoOffers field names
+  - `src/components/customer/home/OffersCarousel.tsx` - Added onViewAll support
+  - `src/components/customer/home/TopRatedSection.tsx` - Updated Provider interface
+  - `src/components/customer/home/NearbySection.tsx` - Updated Provider interface
+  - `src/components/customer/home/CategoriesSection.tsx` - Added onCategoryClick prop
+  - `src/app/[locale]/cart/page.tsx` - Fixed disabled prop type
 
 ### Work Session Dec 1, 2025 (Session 3) - Customer Journey + PWA Components ✅
 - ✅ **PWA Foundation**:
@@ -836,9 +861,9 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 19.0 (Customer Journey + PWA)
-**Last Updated:** December 1, 2025
-**Next Review:** December 3, 2025
+**Version:** 19.1 (TypeScript Fixes & Homepage Updates)
+**Last Updated:** December 1, 2025 (Session 4)
+**Next Review:** December 2, 2025
 
 **🎉 Week 5: Customer Journey Implementation!**
 - Full admin dashboard with unified components (AdminHeader, AdminSidebar)

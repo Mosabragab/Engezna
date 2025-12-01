@@ -177,7 +177,10 @@ export default function HomePage() {
       </div>
 
       {/* Voice Order FAB */}
-      <VoiceOrderFAB />
+      <VoiceOrderFAB
+        isOpen={isVoiceOpen}
+        onOpenChange={setIsVoiceOpen}
+      />
     </CustomerLayout>
   )
 }
