@@ -6,8 +6,7 @@ import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { CustomerLayout } from '@/components/customer/layout'
 import {
   Clock,
   MapPin,
@@ -17,7 +16,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Circle,
   Package,
   Truck,
   ChefHat,
@@ -188,32 +186,37 @@ export default function OrderTrackingPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">
-            {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-          </p>
+      <CustomerLayout showBottomNav={false}>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-slate-500">
+              {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+            </p>
+          </div>
         </div>
-      </div>
+      </CustomerLayout>
     )
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <XCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <p className="text-xl text-muted-foreground mb-4">
+      <CustomerLayout showBottomNav={false}>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-4">
+            <XCircle className="w-12 h-12 text-red-300" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">
             {locale === 'ar' ? 'الطلب غير موجود' : 'Order not found'}
-          </p>
-          <Link href={`/${locale}/orders`}>
-            <Button>
-              {locale === 'ar' ? 'العودة للطلبات' : 'Back to Orders'}
-            </Button>
-          </Link>
+          </h2>
+          <button
+            onClick={() => router.push(`/${locale}/orders`)}
+            className="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors mt-4"
+          >
+            {locale === 'ar' ? 'العودة للطلبات' : 'Back to Orders'}
+          </button>
         </div>
-      </div>
+      </CustomerLayout>
     )
   }
 
@@ -222,294 +225,245 @@ export default function OrderTrackingPage() {
   const isDelivered = order.status === 'delivered'
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/orders`}
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary"
-            >
-              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'طلباتي' : 'My Orders'}</span>
-            </Link>
-            <Link href={`/${locale}`} className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-            </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6">
-        <div className="max-w-3xl mx-auto">
-          {/* Order Header */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h1 className="text-2xl font-bold">
-                {locale === 'ar' ? 'تتبع الطلب' : 'Track Order'}
-              </h1>
-              <span className="text-sm text-muted-foreground">
-                {formatDate(order.created_at)}
-              </span>
-            </div>
-            <p className="text-muted-foreground">
-              {locale === 'ar' ? 'رقم الطلب:' : 'Order #'} 
+    <CustomerLayout showBottomNav={false}>
+      <div className="px-4 py-4">
+        {/* Order Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">
+              {locale === 'ar' ? 'تتبع الطلب' : 'Track Order'}
+            </h1>
+            <p className="text-sm text-slate-500">
+              {locale === 'ar' ? 'رقم الطلب:' : 'Order #'}
               <span className="font-mono font-bold text-primary mx-1">
                 {order.order_number || order.id.slice(0, 8).toUpperCase()}
               </span>
             </p>
           </div>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
+          >
+            <RefreshCw className={`w-5 h-5 text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
 
-          {/* Status Timeline */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{locale === 'ar' ? 'حالة الطلب' : 'Order Status'}</span>
-                {isDelivered && (
-                  <span className="text-sm font-normal text-green-600 flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4" />
-                    {locale === 'ar' ? 'تم التوصيل' : 'Delivered'}
-                  </span>
-                )}
-                {isCancelled && (
-                  <span className="text-sm font-normal text-red-600 flex items-center gap-1">
-                    <XCircle className="w-4 h-4" />
-                    {locale === 'ar' ? 'ملغي' : 'Cancelled'}
-                  </span>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isCancelled ? (
-                <div className="text-center py-8">
-                  <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                  <p className="text-lg font-semibold text-red-600">
-                    {locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled'}
-                  </p>
-                  {order.cancelled_at && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {formatDate(order.cancelled_at)}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="relative">
-                  {/* Timeline */}
-                  <div className="space-y-6">
-                    {ORDER_STATUSES.map((status, index) => {
-                      const Icon = status.icon
-                      const isCompleted = index <= currentStatusIndex
-                      const isCurrent = index === currentStatusIndex
-                      
-                      return (
-                        <div key={status.key} className="flex items-center gap-4">
-                          {/* Icon */}
-                          <div
-                            className={`
-                              w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
-                              ${isCompleted
-                                ? isCurrent
-                                  ? 'bg-primary text-white'
-                                  : 'bg-[#22C55E] text-white'
-                                : 'bg-muted text-muted-foreground'
-                              }
-                            `}
-                          >
-                            {isCompleted && !isCurrent ? (
-                              <CheckCircle2 className="w-5 h-5" />
-                            ) : (
-                              <Icon className="w-5 h-5" />
-                            )}
-                          </div>
-
-                          {/* Label */}
-                          <div className="flex-1">
-                            <p className={`font-medium ${isCompleted ? '' : 'text-muted-foreground'}`}>
-                              {locale === 'ar' ? status.label_ar : status.label_en}
-                            </p>
-                            {isCurrent && !isDelivered && (
-                              <p className="text-sm text-primary animate-pulse">
-                                {locale === 'ar' ? 'الحالة الحالية' : 'Current Status'}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Connector Line */}
-                          {index < ORDER_STATUSES.length - 1 && (
-                            <div
-                              className={`
-                                absolute w-0.5 h-6 ${isRTL ? 'right-5' : 'left-5'}
-                                ${isCompleted ? 'bg-[#22C55E]' : 'bg-muted'}
-                              `}
-                              style={{ top: `${(index + 1) * 72 - 12}px` }}
-                            />
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
+        {/* Status Timeline Card */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-slate-900">
+              {locale === 'ar' ? 'حالة الطلب' : 'Order Status'}
+            </h2>
+            {isDelivered && (
+              <span className="text-sm text-green-600 flex items-center gap-1 bg-green-50 px-2 py-1 rounded-full">
+                <CheckCircle2 className="w-4 h-4" />
+                {locale === 'ar' ? 'تم التوصيل' : 'Delivered'}
+              </span>
+            )}
+            {isCancelled && (
+              <span className="text-sm text-red-600 flex items-center gap-1 bg-red-50 px-2 py-1 rounded-full">
+                <XCircle className="w-4 h-4" />
+                {locale === 'ar' ? 'ملغي' : 'Cancelled'}
+              </span>
+            )}
+          </div>
+          {isCancelled ? (
+            <div className="text-center py-6">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                <XCircle className="w-8 h-8 text-red-500" />
+              </div>
+              <p className="font-semibold text-red-600">
+                {locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled'}
+              </p>
+              {order.cancelled_at && (
+                <p className="text-sm text-slate-500 mt-1">
+                  {formatDate(order.cancelled_at)}
+                </p>
               )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {ORDER_STATUSES.map((status, index) => {
+                const Icon = status.icon
+                const isCompleted = index <= currentStatusIndex
+                const isCurrent = index === currentStatusIndex
 
-              {/* Estimated Delivery */}
-              {!isCancelled && !isDelivered && getEstimatedDelivery() && (
-                <div className="mt-6 p-4 bg-primary/10 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        {locale === 'ar' ? 'الوقت المتوقع للتوصيل' : 'Estimated Delivery'}
-                      </p>
-                      <p className="font-bold text-primary">{getEstimatedDelivery()}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Provider Info */}
-          {provider && (
-            <Card className="mb-6">
-              <CardContent className="py-4">
-                <div className="flex items-center gap-4">
-                  {provider.logo_url ? (
-                    <img
-                      src={provider.logo_url}
-                      alt={locale === 'ar' ? provider.name_ar : provider.name_en}
-                      className="w-14 h-14 rounded-xl object-cover"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Store className="w-7 h-7 text-primary" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="font-bold text-lg">
-                      {locale === 'ar' ? provider.name_ar : provider.name_en}
-                    </p>
-                    <a
-                      href={`tel:${provider.phone}`}
-                      className="text-sm text-primary hover:underline flex items-center gap-1"
+                return (
+                  <div key={status.key} className="flex items-center gap-3">
+                    <div
+                      className={`
+                        w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all
+                        ${isCompleted
+                          ? isCurrent
+                            ? 'bg-primary text-white shadow-md shadow-primary/30'
+                            : 'bg-green-500 text-white'
+                          : 'bg-slate-100 text-slate-400'
+                        }
+                      `}
                     >
-                      <Phone className="w-3 h-3" />
-                      {provider.phone}
-                    </a>
+                      {isCompleted && !isCurrent ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        <Icon className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`font-medium ${isCompleted ? 'text-slate-900' : 'text-slate-400'}`}>
+                        {locale === 'ar' ? status.label_ar : status.label_en}
+                      </p>
+                      {isCurrent && !isDelivered && (
+                        <p className="text-xs text-primary">
+                          {locale === 'ar' ? 'الحالة الحالية' : 'Current Status'}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                )
+              })}
+            </div>
           )}
 
-          {/* Delivery Address */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                {locale === 'ar' ? 'عنوان التوصيل' : 'Delivery Address'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-medium">{order.delivery_address?.full_name}</p>
-              <p className="text-muted-foreground">{order.delivery_address?.address}</p>
-              <p className="text-sm text-muted-foreground mt-2" dir="ltr">
-                <Phone className="w-3 h-3 inline mr-1" />
-                {order.delivery_address?.phone}
-              </p>
-              {order.delivery_address?.notes && (
-                <p className="text-sm text-muted-foreground mt-2 italic">
-                  {locale === 'ar' ? 'ملاحظات:' : 'Notes:'} {order.delivery_address.notes}
+          {/* Estimated Delivery */}
+          {!isCancelled && !isDelivered && getEstimatedDelivery() && (
+            <div className="mt-4 p-3 bg-primary/5 rounded-xl flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <Clock className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">
+                  {locale === 'ar' ? 'الوقت المتوقع للتوصيل' : 'Estimated Delivery'}
                 </p>
+                <p className="font-bold text-primary">{getEstimatedDelivery()}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Provider Info */}
+        {provider && (
+          <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
+            <div className="flex items-center gap-3">
+              {provider.logo_url ? (
+                <img
+                  src={provider.logo_url}
+                  alt={locale === 'ar' ? provider.name_ar : provider.name_en}
+                  className="w-14 h-14 rounded-xl object-cover"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Store className="w-7 h-7 text-primary" />
+                </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Order Items */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5" />
-                {locale === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-4">
-                {orderItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <p className="font-medium">
-                        {item.quantity}x {locale === 'ar' ? item.item_name_ar : item.item_name_en}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {item.unit_price.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                      </p>
-                    </div>
-                    <p className="font-semibold">
-                      {item.total_price.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-4 border-t space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>{locale === 'ar' ? 'المجموع الفرعي' : 'Subtotal'}</span>
-                  <span>{order.subtotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-                  <span>{order.delivery_fee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
-                </div>
-                {order.discount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
-                    <span>-{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                  <span>{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
-                  <span className="text-primary">{order.total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
-                </div>
-              </div>
-
-              <div className="mt-4 p-4 bg-muted rounded-lg">
-                <p className="text-sm font-medium mb-1">
-                  {locale === 'ar' ? 'طريقة الدفع' : 'Payment Method'}
+              <div className="flex-1">
+                <p className="font-bold text-slate-900">
+                  {locale === 'ar' ? provider.name_ar : provider.name_en}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {order.payment_method === 'cash'
-                    ? locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'
-                    : locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+                <a
+                  href={`tel:${provider.phone}`}
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  <Phone className="w-3 h-3" />
+                  {provider.phone}
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delivery Address */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
+          <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-3">
+            <MapPin className="w-5 h-5 text-primary" />
+            {locale === 'ar' ? 'عنوان التوصيل' : 'Delivery Address'}
+          </h3>
+          <p className="font-medium text-slate-900">{order.delivery_address?.full_name}</p>
+          <p className="text-slate-500">{order.delivery_address?.address}</p>
+          <p className="text-sm text-slate-500 mt-2" dir="ltr">
+            <Phone className="w-3 h-3 inline mr-1" />
+            {order.delivery_address?.phone}
+          </p>
+          {order.delivery_address?.notes && (
+            <p className="text-sm text-slate-400 mt-2 italic">
+              {locale === 'ar' ? 'ملاحظات:' : 'Notes:'} {order.delivery_address.notes}
+            </p>
+          )}
+        </div>
+
+        {/* Order Items */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
+          <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-3">
+            <ShoppingCart className="w-5 h-5 text-primary" />
+            {locale === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}
+          </h3>
+          <div className="space-y-3 mb-4">
+            {orderItems.map((item) => (
+              <div key={item.id} className="flex justify-between items-start">
+                <div className="flex-1">
+                  <p className="font-medium text-slate-900">
+                    {item.quantity}x {locale === 'ar' ? item.item_name_ar : item.item_name_en}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {item.unit_price.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                  </p>
+                </div>
+                <p className="font-semibold text-slate-900">
+                  {item.total_price.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
 
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href={`/${locale}`} className="flex-1">
-              <Button variant="outline" className="w-full" size="lg">
-                <Home className="w-5 h-5 mr-2" />
-                {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
-              </Button>
-            </Link>
-            <Link href={`/${locale}/orders`} className="flex-1">
-              <Button className="w-full" size="lg">
-                {locale === 'ar' ? 'كل الطلبات' : 'All Orders'}
-              </Button>
-            </Link>
+          <div className="pt-4 border-t border-slate-100 space-y-2">
+            <div className="flex justify-between text-sm text-slate-600">
+              <span>{locale === 'ar' ? 'المجموع الفرعي' : 'Subtotal'}</span>
+              <span>{order.subtotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+            </div>
+            <div className="flex justify-between text-sm text-slate-600">
+              <span>{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
+              <span>{order.delivery_fee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+            </div>
+            {order.discount > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
+                <span>-{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-lg font-bold pt-2 border-t border-slate-100">
+              <span>{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
+              <span className="text-primary">{order.total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-slate-50 rounded-xl">
+            <p className="text-sm font-medium text-slate-900 mb-1">
+              {locale === 'ar' ? 'طريقة الدفع' : 'Payment Method'}
+            </p>
+            <p className="text-sm text-slate-500">
+              {order.payment_method === 'cash'
+                ? locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'
+                : locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+            </p>
           </div>
         </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 pb-4">
+          <button
+            onClick={() => router.push(`/${locale}`)}
+            className="flex-1 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <Home className="w-5 h-5" />
+            {locale === 'ar' ? 'الرئيسية' : 'Home'}
+          </button>
+          <button
+            onClick={() => router.push(`/${locale}/orders`)}
+            className="flex-1 bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+          >
+            {locale === 'ar' ? 'طلباتي' : 'My Orders'}
+          </button>
+        </div>
       </div>
-    </div>
+    </CustomerLayout>
   )
 }

@@ -2,11 +2,11 @@
 
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { Heart, Store } from 'lucide-react'
+import { Heart } from 'lucide-react'
 import { useFavorites } from '@/hooks/customer'
 import { CustomerLayout } from '@/components/customer/layout'
-import { ProviderCard, EmptyState } from '@/components/customer/shared'
-import { Button } from '@/components/ui/button'
+import { ProviderCard } from '@/components/customer/shared'
+import { VoiceOrderFAB } from '@/components/customer/voice'
 
 export default function FavoritesPage() {
   const locale = useLocale()
@@ -18,20 +18,29 @@ export default function FavoritesPage() {
     isLoading,
     isAuthenticated,
     toggleFavorite,
-    isFavorite,
   } = useFavorites()
 
   // If not authenticated, show login prompt
   if (!isAuthenticated && !isLoading) {
     return (
-      <CustomerLayout headerTitle={t('title')} showBackButton>
-        <EmptyState
-          icon={<Heart className="w-16 h-16 text-slate-300" />}
-          title={locale === 'ar' ? 'سجل دخولك أولاً' : 'Login Required'}
-          description={locale === 'ar' ? 'سجل دخولك لعرض المتاجر المفضلة' : 'Login to view your favorite stores'}
-          actionLabel={locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
-          onAction={() => router.push(`/${locale}/auth/login`)}
-        />
+      <CustomerLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-4">
+            <Heart className="w-12 h-12 text-red-300" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">
+            {locale === 'ar' ? 'سجل دخولك أولاً' : 'Login Required'}
+          </h2>
+          <p className="text-slate-500 text-center mb-6">
+            {locale === 'ar' ? 'سجل دخولك لعرض المتاجر المفضلة' : 'Login to view your favorite stores'}
+          </p>
+          <button
+            onClick={() => router.push(`/${locale}/auth/login`)}
+            className="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+          >
+            {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
+          </button>
+        </div>
       </CustomerLayout>
     )
   }
@@ -39,9 +48,9 @@ export default function FavoritesPage() {
   // Loading state
   if (isLoading) {
     return (
-      <CustomerLayout headerTitle={t('title')} showBackButton>
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <CustomerLayout>
+        <div className="px-4 py-4">
+          <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-white rounded-2xl border animate-pulse">
                 <div className="aspect-[16/9] bg-slate-200 rounded-t-2xl" />
@@ -61,34 +70,51 @@ export default function FavoritesPage() {
   // Empty state
   if (favoriteProviders.length === 0) {
     return (
-      <CustomerLayout headerTitle={t('title')} showBackButton>
-        <EmptyState
-          icon={<Heart className="w-16 h-16 text-slate-300" />}
-          title={t('empty')}
-          description={t('emptyDescription')}
-          actionLabel={t('browse')}
-          onAction={() => router.push(`/${locale}/providers`)}
-        />
+      <CustomerLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-4">
+            <Heart className="w-12 h-12 text-red-300" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">{t('empty')}</h2>
+          <p className="text-slate-500 text-center mb-6">{t('emptyDescription')}</p>
+          <button
+            onClick={() => router.push(`/${locale}/providers`)}
+            className="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+          >
+            {t('browse')}
+          </button>
+        </div>
+        <VoiceOrderFAB />
       </CustomerLayout>
     )
   }
 
   return (
-    <CustomerLayout headerTitle={t('title')} showBackButton>
-      <div className="container mx-auto px-4 py-6">
-        {/* Stats */}
-        <div className="bg-primary/5 rounded-xl p-4 mb-6 flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-            <Heart className="w-5 h-5 text-primary fill-primary" />
+    <CustomerLayout>
+      <div className="px-4 py-4">
+        {/* Page Header */}
+        <div className="mb-4">
+          <h1 className="text-xl font-bold text-slate-900">
+            {locale === 'ar' ? 'المفضلة' : 'Favorites'}
+          </h1>
+          <p className="text-slate-500 text-sm">
+            {favoriteProviders.length} {locale === 'ar' ? 'متجر محفوظ' : 'saved stores'}
+          </p>
+        </div>
+
+        {/* Stats Card */}
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-4 mb-4 flex items-center gap-3">
+          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+            <Heart className="w-6 h-6 text-red-500 fill-red-500" />
           </div>
           <div>
-            <span className="text-2xl font-bold text-primary">{favoriteProviders.length}</span>
+            <span className="text-2xl font-bold text-red-600">{favoriteProviders.length}</span>
             <span className="text-slate-600 ms-2">{t('stores')}</span>
           </div>
         </div>
 
-        {/* Providers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Providers List */}
+        <div className="space-y-4">
           {favoriteProviders.map((provider) => (
             <ProviderCard
               key={provider.id}
@@ -99,6 +125,8 @@ export default function FavoritesPage() {
           ))}
         </div>
       </div>
+
+      <VoiceOrderFAB />
     </CustomerLayout>
   )
 }
