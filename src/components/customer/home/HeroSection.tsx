@@ -51,8 +51,7 @@ export function HeroSection({
         <SearchBar
           onSearch={onSearch}
           placeholder={locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for store or product...'}
-          className="bg-white rounded-xl"
-          inputClassName="text-slate-900 placeholder:text-slate-400"
+          className="[&_input]:bg-white [&_input]:rounded-xl"
         />
       </div>
 
