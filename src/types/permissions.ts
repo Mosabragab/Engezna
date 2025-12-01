@@ -2,6 +2,19 @@
 // نظام الصلاحيات المتقدم - Types
 // ═══════════════════════════════════════════════════════════════════════
 
+// أكواد الأدوار المتاحة
+export type RoleCode =
+  | 'super_admin'
+  | 'general_moderator'
+  | 'store_supervisor'
+  | 'support'
+  | 'finance'
+  | 'regional_manager'
+  | 'orders_moderator'
+  | 'support_agent'
+  | 'analyst'
+  | 'viewer';
+
 // الموارد المتاحة في النظام
 export type ResourceCode =
   | 'dashboard'
@@ -353,4 +366,84 @@ export const ACTION_CONFIG: Record<ActionCode, {
   refund: { label: { ar: 'استرداد', en: 'Refund' }, severity: 'critical' },
   ban: { label: { ar: 'حظر', en: 'Ban' }, severity: 'critical' },
   settle: { label: { ar: 'تسوية', en: 'Settle' }, severity: 'critical' },
+};
+
+// ثوابت الأدوار
+export const ROLE_CONFIG: Record<RoleCode, {
+  icon: string;
+  color: string;
+  label: { ar: string; en: string };
+  description: { ar: string; en: string };
+  isSystem: boolean;
+}> = {
+  super_admin: {
+    icon: 'Crown',
+    color: '#DC2626',
+    label: { ar: 'المدير التنفيذي', en: 'Super Admin' },
+    description: { ar: 'صلاحيات كاملة على النظام', en: 'Full system access' },
+    isSystem: true,
+  },
+  general_moderator: {
+    icon: 'UserCog',
+    color: '#2563EB',
+    label: { ar: 'مشرف عام', en: 'General Moderator' },
+    description: { ar: 'إدارة المتاجر والطلبات', en: 'Manage stores and orders' },
+    isSystem: true,
+  },
+  store_supervisor: {
+    icon: 'ShieldCheck',
+    color: '#059669',
+    label: { ar: 'مشرف المتاجر', en: 'Store Supervisor' },
+    description: { ar: 'إدارة ومراجعة المتاجر', en: 'Manage and review stores' },
+    isSystem: true,
+  },
+  support: {
+    icon: 'Headphones',
+    color: '#7C3AED',
+    label: { ar: 'مشرف الدعم', en: 'Support Manager' },
+    description: { ar: 'إدارة التذاكر والدعم الفني', en: 'Manage tickets and support' },
+    isSystem: true,
+  },
+  finance: {
+    icon: 'Wallet',
+    color: '#D97706',
+    label: { ar: 'مشرف مالي', en: 'Finance Manager' },
+    description: { ar: 'إدارة التسويات والتقارير المالية', en: 'Manage settlements and financial reports' },
+    isSystem: true,
+  },
+  regional_manager: {
+    icon: 'MapPin',
+    color: '#0891B2',
+    label: { ar: 'مدير منطقة', en: 'Regional Manager' },
+    description: { ar: 'مسؤول عن منطقة جغرافية محددة', en: 'Responsible for a specific geographic region' },
+    isSystem: false,
+  },
+  orders_moderator: {
+    icon: 'ShoppingCart',
+    color: '#EA580C',
+    label: { ar: 'مشرف الطلبات', en: 'Orders Moderator' },
+    description: { ar: 'متخصص في إدارة الطلبات', en: 'Specialized in managing orders' },
+    isSystem: false,
+  },
+  support_agent: {
+    icon: 'MessageCircle',
+    color: '#9333EA',
+    label: { ar: 'موظف دعم', en: 'Support Agent' },
+    description: { ar: 'موظف دعم فني للرد على التذاكر', en: 'Technical support staff for ticket responses' },
+    isSystem: false,
+  },
+  analyst: {
+    icon: 'TrendingUp',
+    color: '#0D9488',
+    label: { ar: 'محلل بيانات', en: 'Analyst' },
+    description: { ar: 'للتحليلات والتقارير فقط', en: 'For analytics and reports only' },
+    isSystem: false,
+  },
+  viewer: {
+    icon: 'Eye',
+    color: '#6B7280',
+    label: { ar: 'مراقب', en: 'Viewer' },
+    description: { ar: 'عرض فقط للمراقبة والتدريب', en: 'View only for monitoring and training' },
+    isSystem: false,
+  },
 };

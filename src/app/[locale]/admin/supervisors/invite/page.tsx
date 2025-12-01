@@ -32,6 +32,10 @@ import {
   MessageSquare,
   UserCog,
   Key,
+  ShoppingCart,
+  TrendingUp,
+  Eye,
+  MessageCircle,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -66,6 +70,11 @@ function getRoleIcon(iconName: string): React.ReactNode {
     case 'ShieldCheck': return <ShieldCheck className="w-5 h-5" />
     case 'Shield': return <Shield className="w-5 h-5" />
     case 'Store': return <ShieldCheck className="w-5 h-5" />
+    case 'MapPin': return <MapPin className="w-5 h-5" />
+    case 'ShoppingCart': return <ShoppingCart className="w-5 h-5" />
+    case 'MessageCircle': return <MessageCircle className="w-5 h-5" />
+    case 'TrendingUp': return <TrendingUp className="w-5 h-5" />
+    case 'Eye': return <Eye className="w-5 h-5" />
     default: return <Shield className="w-5 h-5" />
   }
 }

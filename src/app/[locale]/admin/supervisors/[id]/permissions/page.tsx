@@ -44,6 +44,13 @@ import {
   Settings,
   Clock,
   Trash2,
+  MapPin,
+  ShoppingCart,
+  MessageCircle,
+  TrendingUp,
+  Eye,
+  ShieldCheck,
+  Store,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -89,6 +96,13 @@ function getRoleIcon(iconName: string) {
     case 'UserCog': return <UserCog className="w-5 h-5" />
     case 'Headphones': return <Headphones className="w-5 h-5" />
     case 'Wallet': return <Wallet className="w-5 h-5" />
+    case 'ShieldCheck': return <ShieldCheck className="w-5 h-5" />
+    case 'Store': return <Store className="w-5 h-5" />
+    case 'MapPin': return <MapPin className="w-5 h-5" />
+    case 'ShoppingCart': return <ShoppingCart className="w-5 h-5" />
+    case 'MessageCircle': return <MessageCircle className="w-5 h-5" />
+    case 'TrendingUp': return <TrendingUp className="w-5 h-5" />
+    case 'Eye': return <Eye className="w-5 h-5" />
     default: return <Shield className="w-5 h-5" />
   }
 }
