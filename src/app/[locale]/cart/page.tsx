@@ -3,10 +3,9 @@
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Trash2, Plus, Minus, ShoppingBag, ChevronLeft, ChevronRight, Store } from 'lucide-react'
+import { Plus, Minus, ShoppingBag, Store } from 'lucide-react'
 import { useCart } from '@/lib/store/cart'
 import { CustomerLayout } from '@/components/customer/layout'
-import { EmptyState } from '@/components/customer/shared'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 
@@ -14,7 +13,6 @@ export default function CartPage() {
   const locale = useLocale()
   const router = useRouter()
   const t = useTranslations('cart')
-  const isRTL = locale === 'ar'
 
   const {
     cart: items,
@@ -54,25 +52,29 @@ export default function CartPage() {
     return locale === 'ar' ? item.name_ar : item.name_en
   }
 
-  const BackIcon = isRTL ? ChevronRight : ChevronLeft
-
   if (items.length === 0) {
     return (
-      <CustomerLayout headerTitle={t('title')} showBackButton>
-        <EmptyState
-          icon={<ShoppingBag className="w-16 h-16 text-slate-300" />}
-          title={t('empty')}
-          description={t('emptyDescription')}
-          actionLabel={t('browsStores')}
-          onAction={() => router.push(`/${locale}/providers`)}
-        />
+      <CustomerLayout headerTitle={t('title')} showBackButton showBottomNav={false}>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+            <ShoppingBag className="w-12 h-12 text-slate-300" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">{t('empty')}</h2>
+          <p className="text-slate-500 text-center mb-6">{t('emptyDescription')}</p>
+          <button
+            onClick={() => router.push(`/${locale}/providers`)}
+            className="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+          >
+            {t('browsStores')}
+          </button>
+        </div>
       </CustomerLayout>
     )
   }
 
   return (
-    <CustomerLayout headerTitle={t('title')} showBackButton>
-      <div className="container mx-auto px-4 py-4 pb-32">
+    <CustomerLayout headerTitle={t('title')} showBackButton showBottomNav={false}>
+      <div className="px-4 py-4 pb-32">
         {/* Provider Info */}
         {provider && (
           <div className="bg-slate-50 rounded-xl p-4 mb-4 flex items-center justify-between">
@@ -229,14 +231,25 @@ export default function CartPage() {
       </div>
 
       {/* Fixed Checkout Button */}
-      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-slate-100 p-4 md:bottom-0">
-        <Button
-          onClick={handleCheckout}
-          className="w-full h-12 text-lg font-semibold"
-          size="lg"
-        >
-          {t('checkout')} • {total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-        </Button>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-2xl safe-area-bottom z-50">
+        <div className="px-4 py-3">
+          {provider && provider.min_order_amount > subtotal && (
+            <div className="bg-amber-50 text-amber-700 text-sm rounded-lg px-3 py-2 mb-3 text-center">
+              {locale === 'ar'
+                ? `أضف ${(provider.min_order_amount - subtotal).toFixed(0)} ج.م للوصول للحد الأدنى`
+                : `Add ${(provider.min_order_amount - subtotal).toFixed(0)} EGP to reach minimum order`
+              }
+            </div>
+          )}
+          <button
+            onClick={handleCheckout}
+            disabled={provider && provider.min_order_amount > subtotal}
+            className="w-full bg-primary text-white rounded-xl py-4 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+          >
+            <span>{t('checkout')}</span>
+            <span className="bg-white/20 px-3 py-1 rounded-lg">{total.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+          </button>
+        </div>
       </div>
     </CustomerLayout>
   )
