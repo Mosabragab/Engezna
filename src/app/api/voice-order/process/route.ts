@@ -2,9 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy initialization to avoid build-time errors
+let openai: OpenAI | null = null
+
+function getOpenAIClient() {
+  if (!openai && process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+  return openai
+}
 
 // Define the tools/functions for GPT-4o mini
 const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
@@ -213,7 +221,8 @@ async function processFunctionCall(
 
 export async function POST(request: NextRequest) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    const client = getOpenAIClient()
+    if (!client) {
       console.error('OPENAI_API_KEY is not configured')
       return NextResponse.json(
         { error: 'AI service is not configured' },
@@ -255,7 +264,7 @@ export async function POST(request: NextRequest) {
     ]
 
     // Call GPT-4o mini with function calling
-    let response = await openai.chat.completions.create({
+    let response = await client.chat.completions.create({
       model: 'gpt-4o-mini',
       messages,
       tools,
@@ -305,7 +314,7 @@ export async function POST(request: NextRequest) {
       messages.push(assistantMessage as OpenAI.Chat.Completions.ChatCompletionMessageParam)
       messages.push(...toolResults)
 
-      response = await openai.chat.completions.create({
+      response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
         tools,
