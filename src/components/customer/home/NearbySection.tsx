@@ -9,11 +9,11 @@ interface Provider {
   id: string
   name_ar: string
   name_en: string
-  logo_url?: string
-  cover_image_url?: string
+  logo_url?: string | null
+  cover_image_url?: string | null
   category: string
   distance?: number // in km
-  status: 'open' | 'closed' | 'busy'
+  status: string
 }
 
 interface NearbySectionProps {
@@ -104,7 +104,7 @@ function NearbyMiniCard({ provider, locale }: { provider: Provider; locale: stri
       <div className="relative h-20 bg-slate-100">
         {provider.cover_image_url || provider.logo_url ? (
           <img
-            src={provider.cover_image_url || provider.logo_url}
+            src={provider.cover_image_url || provider.logo_url || undefined}
             alt={name}
             className="w-full h-full object-cover"
           />

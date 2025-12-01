@@ -52,6 +52,8 @@ interface OffersCarouselProps {
   autoPlayInterval?: number
   title?: string
   showArrows?: boolean
+  showViewAll?: boolean
+  onViewAll?: () => void
   className?: string
 }
 
@@ -61,6 +63,8 @@ export function OffersCarousel({
   autoPlayInterval = 5000,
   title,
   showArrows = true,
+  showViewAll = false,
+  onViewAll,
   className = '',
 }: OffersCarouselProps) {
   const locale = useLocale()
@@ -118,22 +122,32 @@ export function OffersCarousel({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-slate-900">{sectionTitle}</h2>
-        {showArrows && offers.length > 1 && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          {(showViewAll || onViewAll) && (
             <button
-              onClick={handlePrev}
-              className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
+              onClick={onViewAll}
+              className="text-sm text-primary font-medium"
             >
-              <ChevronLeft className="w-4 h-4" />
+              {locale === 'ar' ? 'عرض الكل' : 'View All'}
             </button>
-            <button
-              onClick={handleNext}
-              className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+          )}
+          {showArrows && offers.length > 1 && (
+            <>
+              <button
+                onClick={handlePrev}
+                className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleNext}
+                className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Carousel */}

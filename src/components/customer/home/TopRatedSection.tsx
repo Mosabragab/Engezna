@@ -9,13 +9,14 @@ interface Provider {
   id: string
   name_ar: string
   name_en: string
-  logo_url?: string
-  cover_image_url?: string
+  logo_url?: string | null
+  cover_image_url?: string | null
   rating: number
   review_count?: number
+  total_reviews?: number
   estimated_delivery_time_min: number
   delivery_fee: number
-  status: 'open' | 'closed' | 'busy'
+  status: string
 }
 
 interface TopRatedSectionProps {
@@ -93,7 +94,7 @@ function ProviderMiniCard({ provider, locale }: { provider: Provider; locale: st
       <div className="relative h-20 bg-slate-100">
         {provider.cover_image_url || provider.logo_url ? (
           <img
-            src={provider.cover_image_url || provider.logo_url}
+            src={provider.cover_image_url || provider.logo_url || undefined}
             alt={name}
             className="w-full h-full object-cover"
           />
