@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 4.0 (Week 4 Complete - Admin Dashboard + Supervisor System)
+**Version:** 4.1 (Week 4+ - Roles Page Fixes)
 **Date:** November 27, 2025
-**Last Updated:** November 30, 2025
+**Last Updated:** December 1, 2025
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -21,11 +21,11 @@
 
 ## 📊 Current Development Status
 
-**Phase:** Week 4 Complete - Admin Dashboard + Supervisor System (Nov 29, 2025)
-**Status:** Week 4 - 100% Complete ✅
+**Phase:** Week 4+ - Admin Dashboard + Roles Management
+**Status:** Week 4+ - Ongoing Improvements ✅
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~60% of MVP Complete
-**Last Session:** November 30, 2025 - Documentation Sync & Progress Review
+**Overall Progress:** ~65% of MVP Complete
+**Last Session:** December 1, 2025 - Roles Page Fixes & Documentation Sync
 
 ### What's Built ✅
 
@@ -1640,13 +1640,29 @@ engezna/
     - ✅ Updated README.md with admin dashboard status
     - ✅ Updated claude.md with new features
   - **Next Priority:** Admin backend integration, payment integration
+- **v4.1** - December 1, 2025 - Roles Page Fixes & Documentation Sync
+  - **Status:** Week 4+ - Ongoing Improvements ✅
+  - **Roles Page Fixes:**
+    - ✅ Fixed permissions not showing in role view modal
+    - ✅ Added loading state for permission fetching
+    - ✅ Reset rolePermissions state before loading new data
+    - ✅ Added error handling for permission queries
+  - **Enable Editing for All Roles:**
+    - ✅ Removed `!role.is_system` condition that prevented editing system roles
+    - ✅ All roles now have Edit button (including super_admin, support, finance)
+    - ✅ System roles still have protected code field
+  - **Documentation Updates:**
+    - ✅ Updated claude.md with December 1 session
+    - ✅ Updated README.md with roles page fixes
+    - ✅ Updated PRD.md with v4.1
+  - **Next Priority:** Admin backend integration, payment integration
 
 ---
 
 **Approved By:**
-- **Mosab** - Founder & Product Lead - November 30, 2025
+- **Mosab** - Founder & Product Lead - December 1, 2025
 
-**Next Review Date:** December 1, 2025
+**Next Review Date:** December 2, 2025
 
 ---
 
