@@ -64,7 +64,20 @@ function getRoleIcon(iconName: string): React.ReactNode {
     case 'Headphones': return <Headphones className="w-5 h-5" />
     case 'Wallet': return <Wallet className="w-5 h-5" />
     case 'ShieldCheck': return <ShieldCheck className="w-5 h-5" />
+    case 'Shield': return <Shield className="w-5 h-5" />
+    case 'Store': return <ShieldCheck className="w-5 h-5" />
     default: return <Shield className="w-5 h-5" />
+  }
+}
+
+// Permission type from database
+interface RolePermission {
+  permission_id: string
+  permission: {
+    code: string
+    name_ar: string
+    name_en: string
+    resource_code: string
   }
 }
 
@@ -81,6 +94,7 @@ export default function InviteSupervisorPage() {
 
   // Roles from database
   const [dbRoles, setDbRoles] = useState<DbRole[]>([])
+  const [rolePermissions, setRolePermissions] = useState<Record<string, RolePermission[]>>({})
 
   // Form state
   const [email, setEmail] = useState('')
@@ -118,20 +132,44 @@ export default function InviteSupervisorPage() {
 
   async function loadRoles() {
     const supabase = createClient()
-    const { data: roles } = await supabase
+
+    // Load roles
+    const { data: roles, error: rolesError } = await supabase
       .from('roles')
       .select('*')
       .eq('is_active', true)
-      .order('is_system', { ascending: false })
-      .order('name_ar')
+      .order('sort_order', { ascending: true })
 
-    if (roles) {
+    if (rolesError) {
+      console.error('Error loading roles:', rolesError)
+    }
+
+    if (roles && roles.length > 0) {
       setDbRoles(roles)
       // Set default selected role to first non-super_admin role
       const defaultRole = roles.find(r => r.code !== 'super_admin') || roles[0]
       if (defaultRole) {
         setSelectedRoleId(defaultRole.id)
       }
+
+      // Load permissions for each role
+      const permissionsMap: Record<string, RolePermission[]> = {}
+      for (const role of roles) {
+        const { data: perms } = await supabase
+          .from('role_permissions')
+          .select(`
+            permission_id,
+            permission:permissions(code, name_ar, name_en, resource_code)
+          `)
+          .eq('role_id', role.id)
+
+        if (perms) {
+          permissionsMap[role.id] = perms as unknown as RolePermission[]
+        }
+      }
+      setRolePermissions(permissionsMap)
+    } else {
+      console.log('No roles found in database, check if migration was run')
     }
   }
 
@@ -638,7 +676,44 @@ export default function InviteSupervisorPage() {
                     {dbRoles.length === 0 && (
                       <div className="text-center py-4 text-slate-500">
                         <Key className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                        <p className="text-sm">{locale === 'ar' ? 'لا توجد أدوار متاحة' : 'No roles available'}</p>
+                        <p className="text-sm">{locale === 'ar' ? 'لا توجد أدوار متاحة. تأكد من تشغيل migration الصلاحيات.' : 'No roles available. Make sure permissions migration was run.'}</p>
+                      </div>
+                    )}
+
+                    {/* Permissions Preview for Selected Role */}
+                    {selectedRoleId && rolePermissions[selectedRoleId] && rolePermissions[selectedRoleId].length > 0 && (
+                      <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <h4 className="text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
+                          <Key className="w-4 h-4" />
+                          {locale === 'ar' ? 'الصلاحيات المضمنة في هذا الدور' : 'Permissions included in this role'}
+                          <span className="text-xs text-slate-400">
+                            ({rolePermissions[selectedRoleId].length} {locale === 'ar' ? 'صلاحية' : 'permissions'})
+                          </span>
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(
+                            rolePermissions[selectedRoleId].reduce((acc, rp) => {
+                              const resource = rp.permission?.resource_code || 'other'
+                              if (!acc[resource]) acc[resource] = []
+                              acc[resource].push(rp)
+                              return acc
+                            }, {} as Record<string, RolePermission[]>)
+                          ).map(([resource, perms]) => (
+                            <div key={resource} className="flex items-center gap-1">
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-[#009DE0]/10 text-[#009DE0]">
+                                {resource}
+                                <span className="ms-1 text-[10px] opacity-70">
+                                  ({perms.length})
+                                </span>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-3">
+                          {locale === 'ar'
+                            ? 'يمكنك تعديل الصلاحيات لاحقاً من صفحة إدارة المشرفين'
+                            : 'You can modify permissions later from the supervisors management page'}
+                        </p>
                       </div>
                     )}
                   </div>
