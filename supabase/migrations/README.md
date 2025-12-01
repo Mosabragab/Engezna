@@ -182,22 +182,13 @@ create index if not exists idx_example_table_name
 
 ---
 
-## ⚠️ Pending Setup (Storage Bucket)
+## ✅ Storage Bucket Setup (COMPLETED Dec 1, 2025)
 
-Run this SQL in Supabase to enable logo/image uploads:
-
-```sql
--- Create storage bucket
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('public', 'public', true, 2097152, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
-ON CONFLICT (id) DO NOTHING;
-
--- Storage policies
-CREATE POLICY "Public Read" ON storage.objects FOR SELECT USING (bucket_id = 'public');
-CREATE POLICY "Auth Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'public' AND auth.role() = 'authenticated');
-CREATE POLICY "Auth Update" ON storage.objects FOR UPDATE USING (bucket_id = 'public' AND auth.role() = 'authenticated');
-CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'public' AND auth.role() = 'authenticated');
-```
+The Supabase Storage bucket has been configured:
+- ✅ Bucket `public` created with 2MB file size limit
+- ✅ Allowed MIME types: jpeg, png, webp, gif
+- ✅ Storage policies active (Public Read, Auth Upload/Update/Delete)
+- ✅ Logo and product image uploads functional
 
 ---
 

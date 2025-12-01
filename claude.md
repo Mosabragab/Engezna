@@ -414,7 +414,28 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 
 ## 🐛 Recent Fixes
 
-### Work Session Dec 1, 2025 - Roles Page Fixes & Documentation Sync ✅
+### Work Session Dec 1, 2025 (Session 2) - Advanced Permissions & Storage Bucket ✅
+- ✅ **Supabase Storage Bucket Setup**:
+  - Created `public` storage bucket for images
+  - Configured file size limit (2MB) and allowed MIME types
+  - Storage policies already existed (Public Read, Auth Upload/Update/Delete)
+  - Logo and product image uploads now functional
+- ✅ **Advanced RBAC + ABAC Permission System** (from continued session):
+  - Created migration: `20251201100000_advanced_permissions_enhancement.sql`
+  - Added `resources` table with categories (main, admin, finance, support)
+  - Added `actions` table with types (read, write, manage, special)
+  - Added `escalation_rules` table for approval workflows
+  - Added `permission_audit_log` table for tracking
+  - Created `ConstraintsEditor.tsx` component for managing permission constraints
+  - Created supervisor permissions page (`/admin/supervisors/[id]/permissions`)
+  - Enhanced `permission-service.ts` with escalation logic
+  - Supports: geographic constraints, amount limits, time restrictions, ownership
+- ✅ **Documentation Updates**:
+  - Updated PRD.md Development Roadmap (Week 0-4 complete, Week 5+ planned)
+  - Updated migrations/README.md with complete migration list
+  - Marked Storage Bucket as complete in PRD.md
+
+### Work Session Dec 1, 2025 (Session 1) - Roles Page Fixes & Documentation Sync ✅
 - ✅ **Roles Page Permissions Display Fix**:
   - Fixed permissions not showing in view modal
   - Added loading state for permission fetching
@@ -764,26 +785,17 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 
 ---
 
-## ⚠️ Pending Setup (Required for Logo Upload)
+## ✅ Storage Bucket Setup (COMPLETED Dec 1, 2025)
 
-Run this SQL in Supabase to enable logo uploads:
-
-```sql
--- Create storage bucket
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('public', 'public', true, 2097152, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
-ON CONFLICT (id) DO NOTHING;
-
--- Storage policies
-CREATE POLICY "Public Read" ON storage.objects FOR SELECT USING (bucket_id = 'public');
-CREATE POLICY "Auth Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'public' AND auth.role() = 'authenticated');
-CREATE POLICY "Auth Update" ON storage.objects FOR UPDATE USING (bucket_id = 'public' AND auth.role() = 'authenticated');
-CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'public' AND auth.role() = 'authenticated');
-```
+The Supabase Storage bucket is now configured:
+- ✅ Bucket `public` created with 2MB file size limit
+- ✅ Allowed MIME types: jpeg, png, webp, gif
+- ✅ Storage policies active (Public Read, Auth Upload/Update/Delete)
+- ✅ Logo and product image uploads functional
 
 ---
 
-**Version:** 18.2 (Roles Page Fixes)
+**Version:** 18.3 (Advanced Permissions & Storage Bucket)
 **Last Updated:** December 1, 2025
 **Next Review:** December 2, 2025
 
