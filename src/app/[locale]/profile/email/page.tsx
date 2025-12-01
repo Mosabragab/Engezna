@@ -143,7 +143,7 @@ export default function EmailPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50">
         <Header showBack backHref={`/${locale}/profile`} />
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -153,11 +153,11 @@ export default function EmailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       <Header showBack backHref={`/${locale}/profile`} backLabel={t('title')} />
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">
           {t('title')}
         </h1>
 
@@ -223,7 +223,7 @@ export default function EmailPage() {
 
             {/* Validation Error */}
             {validationError && (
-              <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
                 <AlertCircle className="w-4 h-4" />
                 <span>{validationError}</span>
               </div>
@@ -249,7 +249,7 @@ export default function EmailPage() {
 
             {/* Success Message */}
             {message && message.type === 'success' && (
-              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-3 rounded-lg">
                 <Check className="w-4 h-4" />
                 <span>{message.text}</span>
               </div>
@@ -257,7 +257,7 @@ export default function EmailPage() {
 
             {/* Error Message */}
             {message && message.type === 'error' && (
-              <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
                 <AlertCircle className="w-4 h-4" />
                 <span>{message.text}</span>
               </div>

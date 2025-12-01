@@ -145,8 +145,8 @@ export default function OrderConfirmationPage() {
         <div className="max-w-3xl mx-auto">
           {/* Success Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full mb-4">
-              <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-[#DCFCE7] rounded-full mb-4">
+              <CheckCircle2 className="w-12 h-12 text-[#22C55E]" />
             </div>
             <h1 className="text-3xl font-bold mb-2">
               {locale === 'ar' ? '✨ تم تقديم طلبك بنجاح!' : '✨ Order Placed Successfully!'}
@@ -308,7 +308,7 @@ export default function OrderConfirmationPage() {
           </div>
 
           {/* Additional Info */}
-          <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-center text-muted-foreground">
               {locale === 'ar'
                 ? 'سيتم إعلامك بتحديثات الطلب عبر الهاتف'

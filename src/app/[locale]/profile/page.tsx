@@ -53,7 +53,7 @@ export default function SettingsPage() {
   // Loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted">
         <Header showBack backHref={`/${locale}`} />
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -67,46 +67,52 @@ export default function SettingsPage() {
       icon: User,
       label: t('menu.account'),
       href: `/${locale}/profile/account`,
-      color: 'text-blue-600',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
     },
     {
       icon: MapPin,
       label: t('menu.addresses'),
       href: `/${locale}/profile/addresses`,
-      color: 'text-green-600',
+      color: 'text-[#22C55E]',
+      bgColor: 'bg-[#DCFCE7]',
     },
     {
       icon: Mail,
       label: t('menu.email'),
       href: `/${locale}/profile/email`,
-      color: 'text-purple-600',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
     },
     {
       icon: Lock,
       label: t('menu.password'),
       href: `/${locale}/profile/password`,
-      color: 'text-red-600',
+      color: 'text-[#EF4444]',
+      bgColor: 'bg-[#FEF2F2]',
     },
     {
       icon: Globe,
       label: t('menu.language'),
       href: `/${locale}/profile/language`,
-      color: 'text-indigo-600',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
     },
     {
       icon: MapPinned,
       label: t('menu.governorate'),
       href: `/${locale}/profile/governorate`,
-      color: 'text-cyan-600',
+      color: 'text-[#3B82F6]',
+      bgColor: 'bg-[#dbeafe]',
     },
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <Header showBack backHref={`/${locale}`} />
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        <h1 className="text-2xl font-bold text-foreground mb-6">
           {t('title')}
         </h1>
 
@@ -118,17 +124,17 @@ export default function SettingsPage() {
 
             return (
               <Link key={item.href} href={item.href}>
-                <Card className="p-4 hover:bg-gray-100 transition-colors cursor-pointer">
+                <Card className="p-4 hover:bg-muted transition-colors cursor-pointer">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg bg-gray-100 ${item.color}`}>
+                      <div className={`p-2 rounded-lg ${item.bgColor} ${item.color}`}>
                         <Icon className="w-5 h-5" />
                       </div>
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-foreground">
                         {item.label}
                       </span>
                     </div>
-                    <ChevronIcon className="w-5 h-5 text-gray-400" />
+                    <ChevronIcon className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </Card>
               </Link>
@@ -137,14 +143,14 @@ export default function SettingsPage() {
 
           {/* Logout Button */}
           <Card
-            className="p-4 hover:bg-red-50 transition-colors cursor-pointer border-red-200"
+            className="p-4 hover:bg-[#FEF2F2] transition-colors cursor-pointer border-[#EF4444]/30"
             onClick={handleLogout}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-100 text-red-600">
+              <div className="p-2 rounded-lg bg-[#FEF2F2] text-[#EF4444]">
                 <LogOut className="w-5 h-5" />
               </div>
-              <span className="font-medium text-red-600">
+              <span className="font-medium text-[#EF4444]">
                 {t('menu.logout')}
               </span>
             </div>

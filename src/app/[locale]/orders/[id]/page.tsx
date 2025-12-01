@@ -224,7 +224,7 @@ export default function OrderTrackingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b sticky top-0 z-50 shadow-sm">
+      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
@@ -275,13 +275,13 @@ export default function OrderTrackingPage() {
               <CardTitle className="flex items-center justify-between">
                 <span>{locale === 'ar' ? 'حالة الطلب' : 'Order Status'}</span>
                 {isDelivered && (
-                  <span className="text-sm font-normal text-green-600 dark:text-green-400 flex items-center gap-1">
+                  <span className="text-sm font-normal text-green-600 flex items-center gap-1">
                     <CheckCircle2 className="w-4 h-4" />
                     {locale === 'ar' ? 'تم التوصيل' : 'Delivered'}
                   </span>
                 )}
                 {isCancelled && (
-                  <span className="text-sm font-normal text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <span className="text-sm font-normal text-red-600 flex items-center gap-1">
                     <XCircle className="w-4 h-4" />
                     {locale === 'ar' ? 'ملغي' : 'Cancelled'}
                   </span>
@@ -292,7 +292,7 @@ export default function OrderTrackingPage() {
               {isCancelled ? (
                 <div className="text-center py-8">
                   <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                  <p className="text-lg font-semibold text-red-600 dark:text-red-400">
+                  <p className="text-lg font-semibold text-red-600">
                     {locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled'}
                   </p>
                   {order.cancelled_at && (
@@ -319,7 +319,7 @@ export default function OrderTrackingPage() {
                               ${isCompleted
                                 ? isCurrent
                                   ? 'bg-primary text-white'
-                                  : 'bg-green-500 text-white'
+                                  : 'bg-[#22C55E] text-white'
                                 : 'bg-muted text-muted-foreground'
                               }
                             `}
@@ -348,7 +348,7 @@ export default function OrderTrackingPage() {
                             <div
                               className={`
                                 absolute w-0.5 h-6 ${isRTL ? 'right-5' : 'left-5'}
-                                ${isCompleted ? 'bg-green-500' : 'bg-muted'}
+                                ${isCompleted ? 'bg-[#22C55E]' : 'bg-muted'}
                               `}
                               style={{ top: `${(index + 1) * 72 - 12}px` }}
                             />

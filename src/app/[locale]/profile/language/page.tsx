@@ -48,7 +48,7 @@ export default function LanguagePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted">
         <Header showBack backHref={`/${locale}/profile`} />
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -58,14 +58,14 @@ export default function LanguagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <Header showBack backHref={`/${locale}/profile`} backLabel={t('title')} />
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           {t('title')}
         </h1>
-        <p className="text-gray-600 mb-6">
+        <p className="text-muted-foreground mb-6">
           {t('description')}
         </p>
 
@@ -75,17 +75,17 @@ export default function LanguagePage() {
             className={`p-4 cursor-pointer transition-all ${
               selectedLanguage === 'ar'
                 ? 'border-2 border-primary bg-primary/5'
-                : 'hover:bg-gray-100'
+                : 'hover:bg-muted'
             } ${changing ? 'opacity-50 pointer-events-none' : ''}`}
             onClick={() => handleLanguageChange('ar')}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${selectedLanguage === 'ar' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'}`}>
+                <div className={`p-2 rounded-lg ${selectedLanguage === 'ar' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                   <Globe className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-foreground">
                     العربية
                   </h3>
                   {selectedLanguage === 'ar' && (
@@ -107,17 +107,17 @@ export default function LanguagePage() {
             className={`p-4 cursor-pointer transition-all ${
               selectedLanguage === 'en'
                 ? 'border-2 border-primary bg-primary/5'
-                : 'hover:bg-gray-100'
+                : 'hover:bg-muted'
             } ${changing ? 'opacity-50 pointer-events-none' : ''}`}
             onClick={() => handleLanguageChange('en')}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${selectedLanguage === 'en' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'}`}>
+                <div className={`p-2 rounded-lg ${selectedLanguage === 'en' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                   <Globe className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-foreground">
                     English
                   </h3>
                   {selectedLanguage === 'en' && (

@@ -98,7 +98,7 @@ export default function ProvidersPage() {
   }
 
   const getStatusColor = (status: Provider['status']) => {
-    return status === 'open' ? 'text-green-600' : 'text-red-600'
+    return status === 'open' ? 'text-[#22C55E]' : 'text-[#EF4444]'
   }
 
   const categories = [
@@ -197,7 +197,7 @@ export default function ProvidersPage() {
                       )}
 
                       {/* Status Badge */}
-                      <div className="absolute top-4 right-4 bg-white dark:bg-gray-900 px-3 py-1 rounded-full shadow-lg">
+                      <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full shadow-lg">
                         <span className={`text-sm font-medium ${getStatusColor(provider.status)}`}>
                           {getStatusText(provider.status)}
                         </span>
@@ -205,7 +205,7 @@ export default function ProvidersPage() {
 
                       {/* Logo */}
                       {provider.logo_url && (
-                        <div className="absolute bottom-4 left-4 w-16 h-16 bg-white dark:bg-gray-900 rounded-full border-4 border-white dark:border-gray-900 shadow-lg overflow-hidden">
+                        <div className="absolute bottom-4 left-4 w-16 h-16 bg-white rounded-full border-4 border-white shadow-lg overflow-hidden">
                           <img
                             src={provider.logo_url}
                             alt={getProviderName(provider)}
