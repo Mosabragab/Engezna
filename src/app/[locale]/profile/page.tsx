@@ -14,8 +14,6 @@ import {
   Lock,
   Globe,
   MapPinned,
-  ChevronRight,
-  ChevronLeft,
   LogOut,
   Loader2,
 } from 'lucide-react'
@@ -24,7 +22,6 @@ export default function SettingsPage() {
   const locale = useLocale()
   const t = useTranslations('settings')
   const router = useRouter()
-  const isRTL = locale === 'ar'
 
   const [authLoading, setAuthLoading] = useState(true)
 
@@ -120,21 +117,17 @@ export default function SettingsPage() {
         <div className="space-y-3">
           {menuItems.map((item) => {
             const Icon = item.icon
-            const ChevronIcon = isRTL ? ChevronLeft : ChevronRight
 
             return (
               <Link key={item.href} href={item.href}>
                 <Card className="p-4 hover:bg-muted transition-colors cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${item.bgColor} ${item.color}`}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <span className="font-medium text-foreground">
-                        {item.label}
-                      </span>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${item.bgColor} ${item.color}`}>
+                      <Icon className="w-5 h-5" />
                     </div>
-                    <ChevronIcon className="w-5 h-5 text-muted-foreground" />
+                    <span className="font-medium text-foreground">
+                      {item.label}
+                    </span>
                   </div>
                 </Card>
               </Link>

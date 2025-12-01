@@ -1,21 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Header } from '@/components/shared/Header'
-import {
-  UtensilsCrossed,
-  Coffee,
-  ShoppingBasket,
-  Apple,
-  Star,
-  Clock,
-  DollarSign,
-  MapPin,
-} from 'lucide-react'
+import { CustomerLayout } from '@/components/customer/layout'
+import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared'
+import { VoiceOrderFAB } from '@/components/customer/voice'
+import { Star, Clock, Percent, ArrowUpDown } from 'lucide-react'
 
 type Provider = {
   id: string
@@ -32,14 +23,10 @@ type Provider = {
   min_order_amount: number
   estimated_delivery_time_min: number
   status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval'
+  is_featured?: boolean
 }
 
-const categoryIcons = {
-  restaurant: UtensilsCrossed,
-  coffee_shop: Coffee,
-  grocery: ShoppingBasket,
-  vegetables_fruits: Apple,
-}
+type SortOption = 'rating' | 'delivery_time' | 'delivery_fee'
 
 export default function ProvidersPage() {
   const t = useTranslations('providers')
@@ -47,10 +34,59 @@ export default function ProvidersPage() {
   const [providers, setProviders] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<SortOption | null>(null)
+  const [showOpenOnly, setShowOpenOnly] = useState(false)
+  const [showOffersOnly, setShowOffersOnly] = useState(false)
 
   useEffect(() => {
     fetchProviders()
   }, [selectedCategory])
+
+  // Filter and sort providers client-side
+  const filteredProviders = useMemo(() => {
+    let result = [...providers]
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(
+        (p) =>
+          p.name_ar.toLowerCase().includes(query) ||
+          p.name_en.toLowerCase().includes(query) ||
+          (p.description_ar?.toLowerCase().includes(query)) ||
+          (p.description_en?.toLowerCase().includes(query))
+      )
+    }
+
+    // Open only filter
+    if (showOpenOnly) {
+      result = result.filter((p) => p.status === 'open')
+    }
+
+    // Offers filter (featured providers)
+    if (showOffersOnly) {
+      result = result.filter((p) => p.is_featured)
+    }
+
+    // Sort
+    if (sortBy) {
+      result.sort((a, b) => {
+        switch (sortBy) {
+          case 'rating':
+            return b.rating - a.rating
+          case 'delivery_time':
+            return a.estimated_delivery_time_min - b.estimated_delivery_time_min
+          case 'delivery_fee':
+            return a.delivery_fee - b.delivery_fee
+          default:
+            return 0
+        }
+      })
+    }
+
+    return result
+  }, [providers, searchQuery, sortBy, showOpenOnly, showOffersOnly])
 
   async function fetchProviders() {
     setLoading(true)
@@ -78,29 +114,6 @@ export default function ProvidersPage() {
     setLoading(false)
   }
 
-  const getProviderName = (provider: Provider) => {
-    return locale === 'ar' ? provider.name_ar : provider.name_en
-  }
-
-  const getProviderDescription = (provider: Provider) => {
-    return locale === 'ar' ? provider.description_ar : provider.description_en
-  }
-
-  const getStatusText = (status: Provider['status']) => {
-    switch (status) {
-      case 'open':
-        return locale === 'ar' ? 'مفتوح' : 'Open'
-      case 'closed':
-        return locale === 'ar' ? 'مغلق' : 'Closed'
-      default:
-        return locale === 'ar' ? 'غير متاح' : 'Unavailable'
-    }
-  }
-
-  const getStatusColor = (status: Provider['status']) => {
-    return status === 'open' ? 'text-[#22C55E]' : 'text-[#EF4444]'
-  }
-
   const categories = [
     { id: 'all', name_ar: 'الكل', name_en: 'All' },
     { id: 'restaurant', name_ar: 'المطاعم', name_en: 'Restaurants' },
@@ -109,35 +122,46 @@ export default function ProvidersPage() {
     { id: 'vegetables_fruits', name_ar: 'الخضار والفواكه', name_en: 'Vegetables & Fruits' },
   ]
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <Header />
+  const handleSortToggle = (option: SortOption) => {
+    setSortBy(sortBy === option ? null : option)
+  }
 
+  return (
+    <CustomerLayout showHeader={true} showBottomNav={true}>
       {/* Page Content */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="px-4 py-4">
         {/* Page Title */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
-            {locale === 'ar' ? 'اختر المتجر المفضل لديك' : 'Choose Your Favorite Provider'}
+        <div className="mb-4">
+          <h1 className="text-xl font-bold text-slate-900">
+            {locale === 'ar' ? 'المتاجر' : 'Stores'}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-slate-500 text-sm">
             {locale === 'ar'
-              ? 'اطلب من أفضل المطاعم والكافيهات في بني سويف'
-              : 'Order from the best restaurants and coffee shops in Beni Suef'}
+              ? 'اطلب من أفضل المطاعم والمتاجر'
+              : 'Order from the best restaurants and stores'}
           </p>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-4">
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onSearch={setSearchQuery}
+            placeholder={locale === 'ar' ? 'ابحث عن متجر...' : 'Search for a store...'}
+          />
+        </div>
+
         {/* Category Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide -mx-4 px-4">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`px-6 py-2 rounded-full whitespace-nowrap transition-all ${
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 selectedCategory === category.id
-                  ? 'bg-primary text-primary-foreground shadow-lg'
-                  : 'bg-muted hover:bg-muted/80'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30'
               }`}
             >
               {locale === 'ar' ? category.name_ar : category.name_en}
@@ -145,130 +169,99 @@ export default function ProvidersPage() {
           ))}
         </div>
 
+        {/* Filter Chips */}
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide -mx-4 px-4">
+          <FilterChip
+            label={locale === 'ar' ? 'مفتوح الآن' : 'Open Now'}
+            isActive={showOpenOnly}
+            onClick={() => setShowOpenOnly(!showOpenOnly)}
+          />
+          <FilterChip
+            label={locale === 'ar' ? 'عروض' : 'Offers'}
+            icon={<Percent className="w-3.5 h-3.5" />}
+            isActive={showOffersOnly}
+            onClick={() => setShowOffersOnly(!showOffersOnly)}
+          />
+          <FilterChip
+            label={locale === 'ar' ? 'الأعلى تقييماً' : 'Top Rated'}
+            icon={<Star className="w-3.5 h-3.5" />}
+            isActive={sortBy === 'rating'}
+            onClick={() => handleSortToggle('rating')}
+          />
+          <FilterChip
+            label={locale === 'ar' ? 'الأسرع توصيلاً' : 'Fastest'}
+            icon={<Clock className="w-3.5 h-3.5" />}
+            isActive={sortBy === 'delivery_time'}
+            onClick={() => handleSortToggle('delivery_time')}
+          />
+          <FilterChip
+            label={locale === 'ar' ? 'أقل رسوم توصيل' : 'Lowest Fee'}
+            icon={<ArrowUpDown className="w-3.5 h-3.5" />}
+            isActive={sortBy === 'delivery_fee'}
+            onClick={() => handleSortToggle('delivery_fee')}
+          />
+        </div>
+
+        {/* Results count */}
+        {!loading && (
+          <div className="text-sm text-slate-500 mb-4">
+            {locale === 'ar'
+              ? `${filteredProviders.length} متجر`
+              : `${filteredProviders.length} stores found`}
+          </div>
+        )}
+
         {/* Loading State */}
         {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-card rounded-xl border animate-pulse">
-                <div className="h-48 bg-muted rounded-t-xl" />
-                <div className="p-6 space-y-3">
-                  <div className="h-6 bg-muted rounded w-3/4" />
-                  <div className="h-4 bg-muted rounded w-full" />
-                  <div className="h-4 bg-muted rounded w-2/3" />
+              <div key={i} className="bg-white rounded-xl border border-slate-100 animate-pulse">
+                <div className="h-40 bg-slate-100 rounded-t-xl" />
+                <div className="p-4 space-y-3">
+                  <div className="h-5 bg-slate-100 rounded w-3/4" />
+                  <div className="h-4 bg-slate-100 rounded w-full" />
+                  <div className="h-4 bg-slate-100 rounded w-2/3" />
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Providers Grid */}
-        {!loading && providers.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-xl text-muted-foreground">
-              {locale === 'ar' ? 'لا توجد متاجر متاحة حالياً' : 'No providers available'}
-            </p>
-          </div>
+        {/* Empty State */}
+        {!loading && filteredProviders.length === 0 && (
+          <EmptyState
+            icon="store"
+            title={locale === 'ar' ? 'لا توجد متاجر' : 'No stores found'}
+            description={
+              searchQuery
+                ? locale === 'ar'
+                  ? 'جرب البحث بكلمات أخرى'
+                  : 'Try searching with different keywords'
+                : locale === 'ar'
+                  ? 'لا توجد متاجر متاحة في هذا القسم'
+                  : 'No stores available in this category'
+            }
+            actionLabel={searchQuery ? (locale === 'ar' ? 'مسح البحث' : 'Clear search') : undefined}
+            onAction={searchQuery ? () => setSearchQuery('') : undefined}
+          />
         )}
 
-        {!loading && providers.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {providers.map((provider) => {
-              const Icon = categoryIcons[provider.category]
-
-              return (
-                <Link
-                  key={provider.id}
-                  href={`/${locale}/providers/${provider.id}`}
-                  className="group"
-                >
-                  <div className="bg-card rounded-xl border hover:shadow-xl transition-all duration-300 overflow-hidden h-full">
-                    {/* Cover Image */}
-                    <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/5 overflow-hidden">
-                      {provider.cover_image_url ? (
-                        <img
-                          src={provider.cover_image_url}
-                          alt={getProviderName(provider)}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Icon className="w-16 h-16 text-primary/30" />
-                        </div>
-                      )}
-
-                      {/* Status Badge */}
-                      <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full shadow-lg">
-                        <span className={`text-sm font-medium ${getStatusColor(provider.status)}`}>
-                          {getStatusText(provider.status)}
-                        </span>
-                      </div>
-
-                      {/* Logo */}
-                      {provider.logo_url && (
-                        <div className="absolute bottom-4 left-4 w-16 h-16 bg-white rounded-full border-4 border-white shadow-lg overflow-hidden">
-                          <img
-                            src={provider.logo_url}
-                            alt={getProviderName(provider)}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Provider Info */}
-                    <div className="p-6">
-                      {/* Name */}
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
-                        {getProviderName(provider)}
-                      </h3>
-
-                      {/* Description */}
-                      {getProviderDescription(provider) && (
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                          {getProviderDescription(provider)}
-                        </p>
-                      )}
-
-                      {/* Rating */}
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-semibold">{provider.rating.toFixed(1)}</span>
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          ({provider.total_reviews} {locale === 'ar' ? 'تقييم' : 'reviews'})
-                        </span>
-                      </div>
-
-                      {/* Details */}
-                      <div className="space-y-2 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4" />
-                          <span>
-                            {provider.estimated_delivery_time_min} {locale === 'ar' ? 'دقيقة' : 'min'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4" />
-                          <span>
-                            {locale === 'ar' ? 'توصيل' : 'Delivery'}: {provider.delivery_fee} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          <span>
-                            {locale === 'ar' ? 'الحد الأدنى' : 'Min'}: {provider.min_order_amount} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
+        {/* Providers Grid */}
+        {!loading && filteredProviders.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredProviders.map((provider) => (
+              <ProviderCard
+                key={provider.id}
+                provider={provider}
+                variant="default"
+              />
+            ))}
           </div>
         )}
       </div>
-    </div>
+
+      {/* Voice Order FAB */}
+      <VoiceOrderFAB />
+    </CustomerLayout>
   )
 }

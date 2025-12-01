@@ -1,23 +1,24 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
 import { Button } from '@/components/ui/button'
+import { ProductCard, RatingStars, StatusBadge, EmptyState } from '@/components/customer/shared'
+import { VoiceOrderFAB } from '@/components/customer/voice'
 import {
-  Star,
   Clock,
-  DollarSign,
+  Truck,
   MapPin,
-  Phone,
-  Plus,
-  Minus,
   ShoppingCart,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Heart,
+  Share2,
+  Star,
 } from 'lucide-react'
 
 type Provider = {
@@ -47,16 +48,20 @@ type MenuItem = {
   description_ar: string | null
   description_en: string | null
   price: number
+  original_price?: number | null
   image_url: string | null
   is_available: boolean
   is_vegetarian: boolean
   is_spicy: boolean
   preparation_time_min: number
+  category_id?: string | null
 }
 
-type CartItem = {
-  menuItem: MenuItem
-  quantity: number
+type MenuCategory = {
+  id: string
+  name_ar: string
+  name_en: string
+  display_order: number
 }
 
 export default function ProviderDetailPage() {
@@ -70,7 +75,10 @@ export default function ProviderDetailPage() {
 
   const [provider, setProvider] = useState<Provider | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [categories, setCategories] = useState<MenuCategory[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const categoriesRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchProviderData()
@@ -93,12 +101,22 @@ export default function ProviderDetailPage() {
       setProvider(providerData)
     }
 
+    // Fetch menu categories
+    const { data: categoriesData } = await supabase
+      .from('menu_categories')
+      .select('*')
+      .eq('provider_id', providerId)
+      .order('display_order')
+
+    if (categoriesData && categoriesData.length > 0) {
+      setCategories(categoriesData)
+    }
+
     // Fetch menu items
     const { data: menuData, error: menuError } = await supabase
       .from('menu_items')
       .select('*')
       .eq('provider_id', providerId)
-      .eq('is_available', true)
       .order('display_order')
 
     if (menuError) {
@@ -109,6 +127,15 @@ export default function ProviderDetailPage() {
 
     setLoading(false)
   }
+
+  // Filter menu items by category
+  const filteredMenuItems = selectedCategory
+    ? menuItems.filter((item) => item.category_id === selectedCategory)
+    : menuItems
+
+  // Get available items
+  const availableItems = filteredMenuItems.filter((item) => item.is_available)
+  const unavailableItems = filteredMenuItems.filter((item) => !item.is_available)
 
   const handleAddToCart = (menuItem: MenuItem) => {
     if (provider) {
@@ -163,202 +190,265 @@ export default function ProviderDetailPage() {
     )
   }
 
+  const handleQuantityChange = (item: MenuItem, quantity: number) => {
+    const currentQty = getItemQuantity(item.id)
+    if (quantity > currentQty) {
+      handleAddToCart(item)
+    } else if (quantity < currentQty) {
+      removeItem(item.id)
+    }
+  }
+
+  const mapProviderStatus = (status: string): 'open' | 'closed' | 'busy' | 'paused' | 'pending' => {
+    switch (status) {
+      case 'open':
+        return 'open'
+      case 'closed':
+        return 'closed'
+      case 'temporarily_paused':
+        return 'paused'
+      case 'pending_approval':
+        return 'pending'
+      default:
+        return 'closed'
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <Link href={`/${locale}/providers`} className="flex items-center gap-2 text-muted-foreground hover:text-primary">
-              {locale === 'ar' ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'رجوع' : 'Back'}</span>
+            <Link href={`/${locale}/providers`} className="flex items-center gap-2 text-slate-500 hover:text-primary">
+              <span className="text-sm">{locale === 'ar' ? 'رجوع' : 'Back'}</span>
             </Link>
-            <Link href={`/${locale}`} className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-            </Link>
+            <div className="flex items-center gap-3">
+              <button className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-red-500 transition-colors">
+                <Heart className="w-5 h-5" />
+              </button>
+              <button className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
+                <Share2 className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Provider Header */}
+      {/* Provider Cover & Info */}
       <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Logo */}
-            {provider.logo_url && (
-              <div className="w-24 h-24 rounded-xl overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
-                <img
-                  src={provider.logo_url}
-                  alt={getName(provider)}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+        {/* Cover Image */}
+        <div className="h-44 bg-slate-100 relative">
+          {provider.cover_image_url ? (
+            <img
+              src={provider.cover_image_url}
+              alt={getName(provider)}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <span className="text-6xl">🏪</span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
 
-            {/* Info */}
-            <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{getName(provider)}</h1>
-              {getDescription(provider) && (
-                <p className="text-muted-foreground mb-4">{getDescription(provider)}</p>
-              )}
+          {/* Logo overlay */}
+          {provider.logo_url && (
+            <div className="absolute bottom-0 start-4 translate-y-1/2 w-20 h-20 rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-white z-10">
+              <img
+                src={provider.logo_url}
+                alt={getName(provider)}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </div>
 
-              <div className="flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold">{provider.rating.toFixed(1)}</span>
-                  <span className="text-muted-foreground">
-                    ({provider.total_reviews} {locale === 'ar' ? 'تقييم' : 'reviews'})
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="w-4 h-4" />
-                  <span>
-                    {provider.estimated_delivery_time_min} {locale === 'ar' ? 'دقيقة' : 'min'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <DollarSign className="w-4 h-4" />
-                  <span>
-                    {locale === 'ar' ? 'توصيل' : 'Delivery'}: {provider.delivery_fee} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>
-                    {locale === 'ar' ? 'الحد الأدنى' : 'Min order'}: {provider.min_order_amount} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                  </span>
-                </div>
-              </div>
+        {/* Provider Info */}
+        <div className="px-4 pt-12 pb-4">
+          {/* Name & Status */}
+          <div className="flex items-start justify-between gap-2">
+            <h1 className="text-xl font-bold text-slate-900">
+              {getName(provider)}
+            </h1>
+            <StatusBadge status={mapProviderStatus(provider.status)} size="sm" />
+          </div>
+
+          {/* Rating */}
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-full">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <span className="font-semibold text-sm text-amber-700">{provider.rating.toFixed(1)}</span>
+            </div>
+            <span className="text-sm text-slate-400">
+              ({provider.total_reviews} {locale === 'ar' ? 'تقييم' : 'reviews'})
+            </span>
+          </div>
+
+          {/* Quick Info Pills */}
+          <div className="flex flex-wrap gap-2 mt-3">
+            <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full text-sm text-slate-600">
+              <Clock className="w-4 h-4 text-primary" />
+              <span>{provider.estimated_delivery_time_min} {locale === 'ar' ? 'دقيقة' : 'min'}</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full text-sm text-slate-600">
+              <Truck className="w-4 h-4 text-primary" />
+              <span>
+                {provider.delivery_fee === 0
+                  ? (locale === 'ar' ? 'توصيل مجاني' : 'Free delivery')
+                  : `${provider.delivery_fee} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
+                }
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full text-sm text-slate-600">
+              <MapPin className="w-4 h-4 text-primary" />
+              <span>{locale === 'ar' ? 'حد أدنى' : 'Min'} {provider.min_order_amount} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
             </div>
           </div>
+
+          {/* Description */}
+          {getDescription(provider) && (
+            <p className="text-sm text-slate-500 mt-3 leading-relaxed">{getDescription(provider)}</p>
+          )}
         </div>
       </div>
 
-      {/* Menu */}
-      <div className="container mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold mb-6">
-          {locale === 'ar' ? 'القائمة' : 'Menu'}
-        </h2>
-
-        {menuItems.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              {locale === 'ar' ? 'لا توجد عناصر في القائمة حالياً' : 'No menu items available'}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {menuItems.map((item) => {
-              const quantity = getItemQuantity(item.id)
-
-              return (
-                <div
-                  key={item.id}
-                  className="bg-card rounded-xl border p-4 hover:shadow-lg transition-all"
+      {/* Category Navigation - Sticky */}
+      {categories.length > 0 && (
+        <div
+          ref={categoriesRef}
+          className="bg-white border-b sticky top-[57px] z-40 shadow-sm"
+        >
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 px-4 py-3">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                  selectedCategory === null
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {locale === 'ar' ? 'الكل' : 'All'}
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                    selectedCategory === category.id
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
                 >
-                  {/* Item Image */}
-                  {item.image_url && (
-                    <div className="w-full h-40 rounded-lg overflow-hidden mb-4">
-                      <img
-                        src={item.image_url}
-                        alt={getName(item)}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-
-                  {/* Item Info */}
-                  <h3 className="font-bold text-lg mb-1">{getName(item)}</h3>
-                  {getDescription(item) && (
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                      {getDescription(item)}
-                    </p>
-                  )}
-
-                  {/* Tags */}
-                  <div className="flex gap-2 mb-3">
-                    {item.is_vegetarian && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                        {locale === 'ar' ? 'نباتي' : 'Vegetarian'}
-                      </span>
-                    )}
-                    {item.is_spicy && (
-                      <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
-                        {locale === 'ar' ? 'حار' : 'Spicy'}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Price and Add to Cart */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold text-primary">
-                      {item.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                    </span>
-
-                    {quantity === 0 ? (
-                      <Button
-                        onClick={() => handleAddToCart(item)}
-                        size="sm"
-                        className="gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        {locale === 'ar' ? 'إضافة' : 'Add'}
-                      </Button>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => removeItem(item.id)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                        <span className="font-bold w-8 text-center">{quantity}</span>
-                        <Button
-                          onClick={() => handleAddToCart(item)}
-                          size="sm"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+                  {locale === 'ar' ? category.name_ar : category.name_en}
+                </button>
+              ))}
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* Menu */}
+      <div className="px-4 py-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-slate-900">
+            {locale === 'ar' ? 'القائمة' : 'Menu'}
+            {selectedCategory && categories.length > 0 && (
+              <span className="text-slate-400 font-normal text-base">
+                {' - '}
+                {locale === 'ar'
+                  ? categories.find((c) => c.id === selectedCategory)?.name_ar
+                  : categories.find((c) => c.id === selectedCategory)?.name_en}
+              </span>
+            )}
+          </h2>
+          <span className="text-sm text-slate-400">
+            {filteredMenuItems.length} {locale === 'ar' ? 'صنف' : 'items'}
+          </span>
+        </div>
+
+        {filteredMenuItems.length === 0 ? (
+          <EmptyState
+            icon="menu"
+            title={locale === 'ar' ? 'لا توجد عناصر' : 'No items found'}
+            description={
+              locale === 'ar'
+                ? 'لا توجد عناصر في هذا القسم حالياً'
+                : 'No menu items available in this category'
+            }
+          />
+        ) : (
+          <>
+            {/* Available Items */}
+            <div className="space-y-3">
+              {availableItems.map((item) => (
+                <ProductCard
+                  key={item.id}
+                  product={item}
+                  quantity={getItemQuantity(item.id)}
+                  onQuantityChange={(qty) => handleQuantityChange(item, qty)}
+                  variant="horizontal"
+                />
+              ))}
+            </div>
+
+            {/* Unavailable Items */}
+            {unavailableItems.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-slate-400 mb-3">
+                  {locale === 'ar' ? 'غير متاح حالياً' : 'Currently Unavailable'}
+                </h3>
+                <div className="space-y-3 opacity-50">
+                  {unavailableItems.map((item) => (
+                    <ProductCard
+                      key={item.id}
+                      product={item}
+                      variant="horizontal"
+                      showAddButton={false}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {/* Floating Cart Button */}
       {cartItemCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-2xl z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-2xl z-50 safe-area-bottom">
+          <div className="px-4 py-3">
+            <button
+              onClick={() => router.push(`/${locale}/cart`)}
+              className="w-full bg-primary text-white rounded-xl py-3 px-4 flex items-center justify-between hover:bg-primary/90 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                   <ShoppingCart className="w-5 h-5" />
-                  <span className="font-semibold">
-                    {cartItemCount} {locale === 'ar' ? 'عنصر' : 'items'}
-                  </span>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {locale === 'ar' ? 'المجموع' : 'Total'}: {cartTotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                <div className="text-start">
+                  <div className="font-semibold">
+                    {cartItemCount} {locale === 'ar' ? 'عنصر' : 'items'}
+                  </div>
+                  <div className="text-sm text-white/80">
+                    {locale === 'ar' ? 'عرض السلة' : 'View Cart'}
+                  </div>
                 </div>
               </div>
-
-              <Button
-                size="lg"
-                className="gap-2"
-                onClick={() => router.push(`/${locale}/checkout`)}
-              >
-                {locale === 'ar' ? 'إتمام الطلب' : 'Checkout'}
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-lg">
+                  {cartTotal.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                </span>
                 {locale === 'ar' ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
-              </Button>
-            </div>
+              </div>
+            </button>
           </div>
         </div>
       )}
+
+      {/* Voice Order FAB - Show only when cart is empty */}
+      {cartItemCount === 0 && <VoiceOrderFAB />}
     </div>
   )
 }

@@ -216,7 +216,6 @@ export default function CheckoutPage() {
               href={`/${locale}/providers/${provider?.id}`}
               className="flex items-center gap-2 text-muted-foreground hover:text-primary"
             >
-              {locale === 'ar' ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{locale === 'ar' ? 'رجوع' : 'Back'}</span>
             </Link>
             <Link href={`/${locale}`} className="text-xl font-bold text-primary">
