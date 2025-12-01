@@ -23,6 +23,8 @@ import {
   Megaphone,
   Tag,
   Loader2,
+  AlertTriangle,
+  Key,
 } from 'lucide-react'
 import { usePermissions } from '@/lib/permissions/use-permissions'
 import type { ResourceCode } from '@/types/permissions'
@@ -180,6 +182,18 @@ export function AdminSidebar({
 
   // System navigation items
   const systemNavItems: NavItem[] = [
+    {
+      icon: Key,
+      label: { ar: 'الأدوار', en: 'Roles' },
+      path: `/${locale}/admin/roles`,
+      resource: 'roles',
+    },
+    {
+      icon: AlertTriangle,
+      label: { ar: 'قواعد التصعيد', en: 'Escalation Rules' },
+      path: `/${locale}/admin/escalation-rules`,
+      resource: 'escalation_rules',
+    },
     {
       icon: Activity,
       label: { ar: 'سجل النشاط', en: 'Activity Log' },

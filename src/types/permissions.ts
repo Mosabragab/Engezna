@@ -32,7 +32,9 @@ export type ResourceCode =
   | 'announcements'
   | 'promotions'
   | 'settings'
-  | 'activity_log';
+  | 'activity_log'
+  | 'roles'
+  | 'escalation_rules';
 
 // الإجراءات المتاحة
 export type ActionCode =
@@ -345,6 +347,18 @@ export const RESOURCE_CONFIG: Record<ResourceCode, {
     icon: 'History',
     href: '/admin/activity',
     label: { ar: 'سجل النشاط', en: 'Activity Log' },
+    category: 'system',
+  },
+  roles: {
+    icon: 'Shield',
+    href: '/admin/roles',
+    label: { ar: 'الأدوار', en: 'Roles' },
+    category: 'system',
+  },
+  escalation_rules: {
+    icon: 'AlertTriangle',
+    href: '/admin/escalation-rules',
+    label: { ar: 'قواعد التصعيد', en: 'Escalation Rules' },
     category: 'system',
   },
 };
