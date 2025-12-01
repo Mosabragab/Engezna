@@ -93,53 +93,71 @@ CREATE INDEX IF NOT EXISTS idx_actions_active ON actions(is_active);
 -- 3. ESCALATION RULES TABLE (قواعد التصعيد)
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS public.escalation_rules (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name_ar VARCHAR(200) NOT NULL,
-  name_en VARCHAR(200) NOT NULL,
-  description_ar TEXT,
-  description_en TEXT,
+-- Handle existing escalation_rules table
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'escalation_rules' AND table_schema = 'public') THEN
+    -- Table exists, ensure all columns are present
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'escalation_rules' AND column_name = 'notification_message_ar' AND table_schema = 'public') THEN
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS description_ar TEXT;
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS description_en TEXT;
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS trigger_conditions JSONB DEFAULT '{}'::JSONB;
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS escalate_to_role_id UUID;
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS escalate_to_admin_id UUID;
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS action_type VARCHAR(50) DEFAULT 'require_approval';
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS notification_message_ar TEXT;
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS notification_message_en TEXT;
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 0;
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS created_by UUID;
+      ALTER TABLE public.escalation_rules ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+      RAISE NOTICE 'Updated existing escalation_rules table with new columns';
+    END IF;
+  ELSE
+    CREATE TABLE public.escalation_rules (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name_ar VARCHAR(200) NOT NULL,
+      name_en VARCHAR(200) NOT NULL,
+      description_ar TEXT,
+      description_en TEXT,
 
-  -- متى يتم التصعيد
-  trigger_type VARCHAR(50) NOT NULL, -- 'threshold', 'count', 'time', 'pattern'
-  trigger_conditions JSONB NOT NULL DEFAULT '{}'::JSONB,
-  /*
-    أمثلة على trigger_conditions:
-    {
-      "resource": "orders",
-      "action": "refund",
-      "condition": {
-        "type": "amount_gt",
-        "value": 500
-      }
-    }
-    أو
-    {
-      "resource": "providers",
-      "action": "reject",
-      "condition": {
-        "type": "count_per_day",
-        "value": 3
-      }
-    }
-  */
+      -- متى يتم التصعيد
+      trigger_type VARCHAR(50) NOT NULL, -- 'threshold', 'count', 'time', 'pattern'
+      trigger_conditions JSONB NOT NULL DEFAULT '{}'::JSONB,
 
-  -- إلى من يتم التصعيد
-  escalate_to_role_id UUID REFERENCES roles(id) ON DELETE SET NULL,
-  escalate_to_admin_id UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+      -- إلى من يتم التصعيد
+      escalate_to_role_id UUID REFERENCES roles(id) ON DELETE SET NULL,
+      escalate_to_admin_id UUID REFERENCES admin_users(id) ON DELETE SET NULL,
 
-  -- الإجراء عند التصعيد
-  action_type VARCHAR(50) DEFAULT 'require_approval', -- 'require_approval', 'notify', 'block'
-  notification_message_ar TEXT,
-  notification_message_en TEXT,
+      -- الإجراء عند التصعيد
+      action_type VARCHAR(50) DEFAULT 'require_approval', -- 'require_approval', 'notify', 'block'
+      notification_message_ar TEXT,
+      notification_message_en TEXT,
 
-  priority INTEGER DEFAULT 0,
-  is_active BOOLEAN DEFAULT true,
+      priority INTEGER DEFAULT 0,
+      is_active BOOLEAN DEFAULT true,
 
-  created_by UUID REFERENCES admin_users(id) ON DELETE SET NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
+      created_by UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    );
+    RAISE NOTICE 'Created new escalation_rules table';
+  END IF;
+END $$;
+
+-- Ensure all columns exist before creating indexes
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS description_ar TEXT;
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS description_en TEXT;
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS trigger_conditions JSONB DEFAULT '{}'::JSONB;
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS escalate_to_role_id UUID;
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS escalate_to_admin_id UUID;
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS action_type VARCHAR(50) DEFAULT 'require_approval';
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS notification_message_ar TEXT;
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS notification_message_en TEXT;
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS priority INTEGER DEFAULT 0;
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS created_by UUID;
+ALTER TABLE escalation_rules ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 
 CREATE INDEX IF NOT EXISTS idx_escalation_rules_active ON escalation_rules(is_active);
 CREATE INDEX IF NOT EXISTS idx_escalation_rules_priority ON escalation_rules(priority);
