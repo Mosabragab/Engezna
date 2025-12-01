@@ -296,10 +296,10 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   // الصلاحيات الافتراضية للأدوار القديمة (للاستخدام في hasResource)
   const legacyRoleDefaultPermissions: Record<string, ResourceCode[]> = {
     super_admin: [], // super_admin يرى كل شيء
-    general_moderator: ['dashboard', 'providers', 'orders', 'customers', 'support', 'locations', 'promotions', 'team', 'tasks', 'announcements'],
-    store_supervisor: ['dashboard', 'providers', 'orders', 'support'],
-    support: ['dashboard', 'support', 'orders', 'customers'],
-    finance: ['dashboard', 'finance', 'orders', 'analytics'],
+    general_moderator: ['dashboard', 'providers', 'orders', 'customers', 'support', 'locations', 'promotions', 'team', 'tasks', 'messages', 'announcements'],
+    store_supervisor: ['dashboard', 'providers', 'orders', 'support', 'messages'],
+    support: ['dashboard', 'support', 'orders', 'customers', 'messages'],
+    finance: ['dashboard', 'finance', 'orders', 'analytics', 'messages'],
   };
 
   // هل يمكن الوصول للمورد؟
