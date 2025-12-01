@@ -43,14 +43,14 @@ type Order = {
 }
 
 const STATUS_CONFIG: Record<string, { icon: any; color: string; label_ar: string; label_en: string }> = {
-  pending: { icon: Clock, color: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30', label_ar: 'في الانتظار', label_en: 'Pending' },
-  accepted: { icon: CheckCircle2, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30', label_ar: 'تم القبول', label_en: 'Accepted' },
-  preparing: { icon: ChefHat, color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30', label_ar: 'جاري التحضير', label_en: 'Preparing' },
-  ready: { icon: Package, color: 'text-purple-600 bg-purple-100 dark:bg-purple-900/30', label_ar: 'جاهز', label_en: 'Ready' },
-  out_for_delivery: { icon: Truck, color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30', label_ar: 'في الطريق', label_en: 'On the way' },
-  delivered: { icon: CheckCircle2, color: 'text-green-600 bg-green-100 dark:bg-green-900/30', label_ar: 'تم التوصيل', label_en: 'Delivered' },
-  cancelled: { icon: XCircle, color: 'text-red-600 bg-red-100 dark:bg-red-900/30', label_ar: 'ملغي', label_en: 'Cancelled' },
-  rejected: { icon: XCircle, color: 'text-red-600 bg-red-100 dark:bg-red-900/30', label_ar: 'مرفوض', label_en: 'Rejected' },
+  pending: { icon: Clock, color: 'text-yellow-600 bg-yellow-100', label_ar: 'في الانتظار', label_en: 'Pending' },
+  accepted: { icon: CheckCircle2, color: 'text-blue-600 bg-blue-100', label_ar: 'تم القبول', label_en: 'Accepted' },
+  preparing: { icon: ChefHat, color: 'text-amber-600 bg-amber-100', label_ar: 'جاري التحضير', label_en: 'Preparing' },
+  ready: { icon: Package, color: 'text-purple-600 bg-purple-100', label_ar: 'جاهز', label_en: 'Ready' },
+  out_for_delivery: { icon: Truck, color: 'text-indigo-600 bg-indigo-100', label_ar: 'في الطريق', label_en: 'On the way' },
+  delivered: { icon: CheckCircle2, color: 'text-green-600 bg-green-100', label_ar: 'تم التوصيل', label_en: 'Delivered' },
+  cancelled: { icon: XCircle, color: 'text-red-600 bg-red-100', label_ar: 'ملغي', label_en: 'Cancelled' },
+  rejected: { icon: XCircle, color: 'text-red-600 bg-red-100', label_ar: 'مرفوض', label_en: 'Rejected' },
 }
 
 type FilterType = 'all' | 'active' | 'completed'
@@ -172,7 +172,7 @@ export default function OrderHistoryPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b sticky top-0 z-50 shadow-sm">
+      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link

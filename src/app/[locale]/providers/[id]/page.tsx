@@ -166,7 +166,7 @@ export default function ProviderDetailPage() {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b sticky top-0 z-50 shadow-sm">
+      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href={`/${locale}/providers`} className="flex items-center gap-2 text-muted-foreground hover:text-primary">
@@ -181,12 +181,12 @@ export default function ProviderDetailPage() {
       </header>
 
       {/* Provider Header */}
-      <div className="bg-white dark:bg-gray-900 border-b">
+      <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Logo */}
             {provider.logo_url && (
-              <div className="w-24 h-24 rounded-xl overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg flex-shrink-0">
+              <div className="w-24 h-24 rounded-xl overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
                 <img
                   src={provider.logo_url}
                   alt={getName(provider)}
@@ -278,12 +278,12 @@ export default function ProviderDetailPage() {
                   {/* Tags */}
                   <div className="flex gap-2 mb-3">
                     {item.is_vegetarian && (
-                      <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                         {locale === 'ar' ? 'نباتي' : 'Vegetarian'}
                       </span>
                     )}
                     {item.is_spicy && (
-                      <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
                         {locale === 'ar' ? 'حار' : 'Spicy'}
                       </span>
                     )}
@@ -332,7 +332,7 @@ export default function ProviderDetailPage() {
 
       {/* Floating Cart Button */}
       {cartItemCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t shadow-2xl z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-2xl z-50">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div>

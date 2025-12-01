@@ -109,7 +109,7 @@ export default function AccountPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted">
         <Header showBack backHref={`/${locale}/profile`} />
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -119,11 +119,11 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <Header showBack backHref={`/${locale}/profile`} backLabel={t('title')} />
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        <h1 className="text-2xl font-bold text-foreground mb-6">
           {t('title')}
         </h1>
 
@@ -211,7 +211,11 @@ export default function AccountPage() {
 
             {/* Message */}
             {message && (
-              <div className={`flex items-center gap-2 text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
+                message.type === 'success'
+                  ? 'text-[#22C55E] bg-[#DCFCE7]'
+                  : 'text-[#EF4444] bg-[#FEF2F2]'
+              }`}>
                 {message.type === 'success' && <Check className="w-4 h-4" />}
                 <span>{message.text}</span>
               </div>
