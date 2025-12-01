@@ -11,20 +11,40 @@
 -- 1. RESOURCES TABLE (الموارد)
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS public.resources (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  code VARCHAR(50) UNIQUE NOT NULL,
-  name_ar VARCHAR(100) NOT NULL,
-  name_en VARCHAR(100) NOT NULL,
-  description_ar TEXT,
-  description_en TEXT,
-  icon VARCHAR(50) DEFAULT 'Shield',
-  parent_resource_id UUID REFERENCES resources(id),
-  category VARCHAR(20) DEFAULT 'main', -- 'main', 'team', 'system'
-  sort_order INTEGER DEFAULT 0,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
+-- Drop and recreate if exists with old structure
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'resources' AND table_schema = 'public') THEN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'resources' AND column_name = 'category' AND table_schema = 'public') THEN
+      -- Table exists but without category column, add it
+      ALTER TABLE public.resources ADD COLUMN IF NOT EXISTS category VARCHAR(20) DEFAULT 'main';
+      ALTER TABLE public.resources ADD COLUMN IF NOT EXISTS parent_resource_id UUID REFERENCES resources(id);
+      ALTER TABLE public.resources ADD COLUMN IF NOT EXISTS icon VARCHAR(50) DEFAULT 'Shield';
+      ALTER TABLE public.resources ADD COLUMN IF NOT EXISTS description_ar TEXT;
+      ALTER TABLE public.resources ADD COLUMN IF NOT EXISTS description_en TEXT;
+      ALTER TABLE public.resources ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+      ALTER TABLE public.resources ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+      RAISE NOTICE 'Updated existing resources table with new columns';
+    END IF;
+  ELSE
+    -- Create the table
+    CREATE TABLE public.resources (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      code VARCHAR(50) UNIQUE NOT NULL,
+      name_ar VARCHAR(100) NOT NULL,
+      name_en VARCHAR(100) NOT NULL,
+      description_ar TEXT,
+      description_en TEXT,
+      icon VARCHAR(50) DEFAULT 'Shield',
+      parent_resource_id UUID REFERENCES resources(id),
+      category VARCHAR(20) DEFAULT 'main',
+      sort_order INTEGER DEFAULT 0,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    );
+    RAISE NOTICE 'Created new resources table';
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_resources_code ON resources(code);
 CREATE INDEX IF NOT EXISTS idx_resources_category ON resources(category);
@@ -34,19 +54,36 @@ CREATE INDEX IF NOT EXISTS idx_resources_active ON resources(is_active);
 -- 2. ACTIONS TABLE (الإجراءات)
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS public.actions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  code VARCHAR(50) UNIQUE NOT NULL,
-  name_ar VARCHAR(100) NOT NULL,
-  name_en VARCHAR(100) NOT NULL,
-  description_ar TEXT,
-  description_en TEXT,
-  severity VARCHAR(20) DEFAULT 'low', -- 'low', 'medium', 'high', 'critical'
-  requires_reason BOOLEAN DEFAULT false,
-  sort_order INTEGER DEFAULT 0,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
+-- Handle existing actions table
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'actions' AND table_schema = 'public') THEN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'actions' AND column_name = 'severity' AND table_schema = 'public') THEN
+      ALTER TABLE public.actions ADD COLUMN IF NOT EXISTS severity VARCHAR(20) DEFAULT 'low';
+      ALTER TABLE public.actions ADD COLUMN IF NOT EXISTS requires_reason BOOLEAN DEFAULT false;
+      ALTER TABLE public.actions ADD COLUMN IF NOT EXISTS description_ar TEXT;
+      ALTER TABLE public.actions ADD COLUMN IF NOT EXISTS description_en TEXT;
+      ALTER TABLE public.actions ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+      ALTER TABLE public.actions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+      RAISE NOTICE 'Updated existing actions table with new columns';
+    END IF;
+  ELSE
+    CREATE TABLE public.actions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      code VARCHAR(50) UNIQUE NOT NULL,
+      name_ar VARCHAR(100) NOT NULL,
+      name_en VARCHAR(100) NOT NULL,
+      description_ar TEXT,
+      description_en TEXT,
+      severity VARCHAR(20) DEFAULT 'low',
+      requires_reason BOOLEAN DEFAULT false,
+      sort_order INTEGER DEFAULT 0,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    );
+    RAISE NOTICE 'Created new actions table';
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_actions_code ON actions(code);
 CREATE INDEX IF NOT EXISTS idx_actions_severity ON actions(severity);
