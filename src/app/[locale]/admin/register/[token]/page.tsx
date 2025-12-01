@@ -27,17 +27,33 @@ import {
   ArrowLeft,
   XCircle,
   MapPin,
+  UserCog,
+  Store,
+  ShoppingCart,
+  TrendingUp,
+  MessageCircle,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-type AdminRole = 'super_admin' | 'general_moderator' | 'support' | 'finance'
+// Database role type
+interface DbRole {
+  id: string
+  code: string
+  name_ar: string
+  name_en: string
+  description_ar: string | null
+  description_en: string | null
+  color: string
+  icon: string
+}
 
 interface Invitation {
   id: string
   email: string
   full_name: string | null
-  role: AdminRole
+  role: string
+  role_id: string | null
   permissions: object
   assigned_regions: Array<{
     governorate_id: string | null
@@ -48,33 +64,27 @@ interface Invitation {
   expires_at: string
   invited_by: string
   inviter_name?: string
+  // Dynamic role info from database
+  roleInfo?: DbRole
 }
 
-const roleConfig: Record<AdminRole, { label: { ar: string; en: string }; icon: React.ElementType; color: string; description: { ar: string; en: string } }> = {
-  super_admin: {
-    label: { ar: 'المدير التنفيذي', en: 'Super Admin' },
-    icon: Crown,
-    color: 'text-amber-600 bg-amber-100 border-amber-200',
-    description: { ar: 'صلاحيات كاملة لإدارة المنصة', en: 'Full platform management access' },
-  },
-  general_moderator: {
-    label: { ar: 'مشرف عام', en: 'General Moderator' },
-    icon: ShieldCheck,
-    color: 'text-blue-600 bg-blue-100 border-blue-200',
-    description: { ar: 'إدارة المتاجر والطلبات والعملاء', en: 'Manage providers, orders and customers' },
-  },
-  support: {
-    label: { ar: 'مشرف دعم', en: 'Support' },
-    icon: Headphones,
-    color: 'text-purple-600 bg-purple-100 border-purple-200',
-    description: { ar: 'التعامل مع التذاكر والدعم الفني', en: 'Handle support tickets and inquiries' },
-  },
-  finance: {
-    label: { ar: 'مشرف مالي', en: 'Finance' },
-    icon: Wallet,
-    color: 'text-emerald-600 bg-emerald-100 border-emerald-200',
-    description: { ar: 'إدارة التسويات والتقارير المالية', en: 'Manage settlements and financial reports' },
-  },
+// Icon mapping for dynamic role icons
+function getRoleIcon(iconName: string): React.ElementType {
+  switch (iconName) {
+    case 'Crown': return Crown
+    case 'UserCog': return UserCog
+    case 'Headphones': return Headphones
+    case 'Wallet': return Wallet
+    case 'ShieldCheck': return ShieldCheck
+    case 'Shield': return Shield
+    case 'Store': return Store
+    case 'MapPin': return MapPin
+    case 'ShoppingCart': return ShoppingCart
+    case 'MessageCircle': return MessageCircle
+    case 'TrendingUp': return TrendingUp
+    case 'Eye': return Eye
+    default: return Shield
+  }
 }
 
 export default function AdminRegisterPage() {
@@ -188,9 +198,39 @@ export default function AdminRegisterPage() {
         })
         .eq('id', invitationData.id)
 
+      // Load role info from roles table
+      let roleInfo: DbRole | undefined = undefined
+
+      // First try using role_id if available
+      if (invitationData.role_id) {
+        const { data: roleData } = await supabase
+          .from('roles')
+          .select('*')
+          .eq('id', invitationData.role_id)
+          .single()
+
+        if (roleData) {
+          roleInfo = roleData
+        }
+      }
+
+      // Fallback: try to find role by code
+      if (!roleInfo && invitationData.role) {
+        const { data: roleData } = await supabase
+          .from('roles')
+          .select('*')
+          .eq('code', invitationData.role)
+          .single()
+
+        if (roleData) {
+          roleInfo = roleData
+        }
+      }
+
       setInvitation({
         ...invitationData,
         inviter_name: inviterName,
+        roleInfo: roleInfo,
       })
 
       // Pre-fill name if provided
@@ -380,7 +420,16 @@ export default function AdminRegisterPage() {
 
   if (!invitation) return null
 
-  const RoleIcon = roleConfig[invitation.role].icon
+  // Get role display info - use dynamic roleInfo if available, otherwise show raw role code
+  const roleInfo = invitation.roleInfo
+  const RoleIcon = roleInfo ? getRoleIcon(roleInfo.icon) : Shield
+  const roleName = roleInfo
+    ? (locale === 'ar' ? roleInfo.name_ar : roleInfo.name_en)
+    : invitation.role
+  const roleDescription = roleInfo
+    ? (locale === 'ar' ? roleInfo.description_ar : roleInfo.description_en)
+    : ''
+  const roleColor = roleInfo?.color || '#6B7280'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
@@ -413,7 +462,7 @@ export default function AdminRegisterPage() {
                   {locale === 'ar' ? 'دعوة للانضمام' : 'Invitation to Join'}
                 </h1>
                 <p className="text-sm text-white/80">
-                  {roleConfig[invitation.role].label[locale === 'ar' ? 'ar' : 'en']}
+                  {roleName}
                 </p>
               </div>
             </div>
@@ -553,12 +602,15 @@ export default function AdminRegisterPage() {
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <RoleIcon className="w-4 h-4 text-[#009DE0]" />
+                  <RoleIcon className="w-4 h-4" style={{ color: roleColor }} />
                   <span className="text-slate-700">
                     {locale === 'ar' ? 'الدور: ' : 'Role: '}
-                    <span className="font-medium">{roleConfig[invitation.role].label[locale === 'ar' ? 'ar' : 'en']}</span>
+                    <span className="font-medium" style={{ color: roleColor }}>{roleName}</span>
                   </span>
                 </div>
+                {roleDescription && (
+                  <p className="text-xs text-slate-500 ms-6">{roleDescription}</p>
+                )}
                 {invitation.assigned_regions && invitation.assigned_regions.length > 0 && (
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-[#009DE0]" />

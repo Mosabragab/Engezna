@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useState, useCallback, useTransition } from 'react'
+import { useState, useCallback, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -18,7 +18,21 @@ import {
   ChevronRight,
   Globe,
   Settings,
+  MessageSquare,
+  CheckCheck,
+  X,
 } from 'lucide-react'
+
+interface Notification {
+  id: string
+  admin_id: string
+  type: string
+  title: string
+  body: string | null
+  related_message_id: string | null
+  is_read: boolean
+  created_at: string
+}
 
 interface AdminHeaderProps {
   user: User
@@ -40,7 +54,105 @@ export function AdminHeader({
   const pathname = usePathname()
   const isRTL = locale === 'ar'
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const [isPending, startTransition] = useTransition()
+
+  // Load notifications on mount
+  useEffect(() => {
+    loadNotifications()
+    // Set up polling for new notifications every 30 seconds
+    const interval = setInterval(loadNotifications, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  async function loadNotifications() {
+    const supabase = createClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+
+    if (!authUser) return
+
+    // Get admin_id from admin_users
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('user_id', authUser.id)
+      .single()
+
+    if (!adminUser) return
+
+    // Fetch notifications
+    const { data: notifs, error } = await supabase
+      .from('admin_notifications')
+      .select('*')
+      .eq('admin_id', adminUser.id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (error) {
+      console.error('Error loading notifications:', error)
+      return
+    }
+
+    setNotifications(notifs || [])
+    setUnreadCount((notifs || []).filter(n => !n.is_read).length)
+  }
+
+  async function markAsRead(notificationId: string) {
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('admin_notifications')
+      .update({ is_read: true, read_at: new Date().toISOString() })
+      .eq('id', notificationId)
+
+    if (!error) {
+      setNotifications(prev =>
+        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+      )
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    }
+  }
+
+  async function markAllAsRead() {
+    const supabase = createClient()
+    const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id)
+
+    if (unreadIds.length === 0) return
+
+    const { error } = await supabase
+      .from('admin_notifications')
+      .update({ is_read: true, read_at: new Date().toISOString() })
+      .in('id', unreadIds)
+
+    if (!error) {
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+      setUnreadCount(0)
+    }
+  }
+
+  function getTimeSince(date: string): string {
+    const now = new Date()
+    const created = new Date(date)
+    const diff = now.getTime() - created.getTime()
+    const minutes = Math.floor(diff / (1000 * 60))
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+
+    if (days > 0) return locale === 'ar' ? `منذ ${days} يوم` : `${days}d ago`
+    if (hours > 0) return locale === 'ar' ? `منذ ${hours} ساعة` : `${hours}h ago`
+    return locale === 'ar' ? `منذ ${minutes} دقيقة` : `${minutes}m ago`
+  }
+
+  function handleNotificationClick(notification: Notification) {
+    markAsRead(notification.id)
+
+    // Navigate based on notification type
+    if (notification.type === 'message' && notification.related_message_id) {
+      router.push(`/${locale}/admin/messages`)
+    }
+    setNotificationsOpen(false)
+  }
 
   const switchLanguage = useCallback(() => {
     const newLocale = locale === 'ar' ? 'en' : 'ar'
@@ -121,14 +233,105 @@ export function AdminHeader({
           </Button>
 
           {/* Notifications */}
-          <button className="relative p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-lg transition-colors">
-            <Bell className="w-5 h-5" />
-            {notificationCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                {notificationCount > 9 ? '9+' : notificationCount}
-              </span>
+          <div className="relative">
+            <button
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              className="relative p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Bell className="w-5 h-5" />
+              {(unreadCount > 0 || notificationCount > 0) && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {(unreadCount || notificationCount) > 9 ? '9+' : (unreadCount || notificationCount)}
+                </span>
+              )}
+            </button>
+
+            {/* Notifications Dropdown */}
+            {notificationsOpen && (
+              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full mt-2 w-80 z-50`}>
+                <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                  {/* Header */}
+                  <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                    <h3 className="font-semibold text-slate-900">
+                      {locale === 'ar' ? 'الإشعارات' : 'Notifications'}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllAsRead}
+                          className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1"
+                        >
+                          <CheckCheck className="w-3 h-3" />
+                          {locale === 'ar' ? 'قراءة الكل' : 'Mark all read'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setNotificationsOpen(false)}
+                        className="text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Notifications List */}
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      notifications.map((notification) => (
+                        <button
+                          key={notification.id}
+                          onClick={() => handleNotificationClick(notification)}
+                          className={`w-full text-start px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors ${!notification.is_read ? 'bg-blue-50/50' : ''}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${notification.type === 'message' ? 'bg-blue-100' : 'bg-slate-100'}`}>
+                              <MessageSquare className={`w-4 h-4 ${notification.type === 'message' ? 'text-blue-600' : 'text-slate-600'}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm ${!notification.is_read ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>
+                                {notification.title}
+                              </p>
+                              {notification.body && (
+                                <p className="text-xs text-slate-500 truncate mt-0.5">
+                                  {notification.body}
+                                </p>
+                              )}
+                              <p className="text-xs text-slate-400 mt-1">
+                                {getTimeSince(notification.created_at)}
+                              </p>
+                            </div>
+                            {!notification.is_read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                            )}
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="py-8 text-center">
+                        <Bell className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+                        <p className="text-sm text-slate-500">
+                          {locale === 'ar' ? 'لا توجد إشعارات' : 'No notifications'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  {notifications.length > 0 && (
+                    <div className="px-4 py-2 border-t border-slate-100">
+                      <Link
+                        href={`/${locale}/admin/messages`}
+                        className="text-xs text-red-600 hover:text-red-700"
+                        onClick={() => setNotificationsOpen(false)}
+                      >
+                        {locale === 'ar' ? 'عرض جميع الرسائل' : 'View all messages'}
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
-          </button>
+          </div>
 
           {/* User Menu */}
           <div

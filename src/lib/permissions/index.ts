@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 export { PermissionService, createServerPermissionService } from './permission-service';
+export type { EscalationCheckResult } from './permission-service';
 export { PermissionsProvider, usePermissions, useCanAccess, usePermissionGate } from './use-permissions';
 export type {
   Permission,

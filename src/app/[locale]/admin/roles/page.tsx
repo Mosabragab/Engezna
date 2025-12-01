@@ -36,6 +36,12 @@ import {
   Wallet,
   Settings,
   Copy,
+  MapPin,
+  ShoppingCart,
+  MessageCircle,
+  TrendingUp,
+  ShieldCheck,
+  Store,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -108,6 +114,7 @@ export default function AdminRolesPage() {
   const [showViewModal, setShowViewModal] = useState(false)
   const [viewingRole, setViewingRole] = useState<ExtendedRole | null>(null)
   const [rolePermissions, setRolePermissions] = useState<DbRolePermission[]>([])
+  const [viewLoading, setViewLoading] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -281,9 +288,12 @@ export default function AdminRolesPage() {
 
   async function openViewModal(role: ExtendedRole) {
     setViewingRole(role)
+    setRolePermissions([]) // Reset permissions before loading
+    setViewLoading(true)
+    setShowViewModal(true) // Show modal immediately
 
     const supabase = createClient()
-    const { data: rolePerms } = await supabase
+    const { data: rolePerms, error } = await supabase
       .from('role_permissions')
       .select(`
         *,
@@ -296,11 +306,12 @@ export default function AdminRolesPage() {
       `)
       .eq('role_id', role.id)
 
-    if (rolePerms) {
-      setRolePermissions(rolePerms)
+    if (error) {
+      console.error('Error loading role permissions:', error)
     }
 
-    setShowViewModal(true)
+    setRolePermissions(rolePerms || [])
+    setViewLoading(false)
   }
 
   function toggleResource(resourceId: string) {
@@ -501,6 +512,13 @@ export default function AdminRolesPage() {
       case 'UserCog': return <UserCog className="w-5 h-5" />
       case 'Headphones': return <Headphones className="w-5 h-5" />
       case 'Wallet': return <Wallet className="w-5 h-5" />
+      case 'ShieldCheck': return <ShieldCheck className="w-5 h-5" />
+      case 'Store': return <Store className="w-5 h-5" />
+      case 'MapPin': return <MapPin className="w-5 h-5" />
+      case 'ShoppingCart': return <ShoppingCart className="w-5 h-5" />
+      case 'MessageCircle': return <MessageCircle className="w-5 h-5" />
+      case 'TrendingUp': return <TrendingUp className="w-5 h-5" />
+      case 'Eye': return <Eye className="w-5 h-5" />
       default: return <Shield className="w-5 h-5" />
     }
   }
@@ -704,17 +722,15 @@ export default function AdminRolesPage() {
                       <Eye className="w-4 h-4" />
                       {locale === 'ar' ? 'عرض' : 'View'}
                     </Button>
-                    {!role.is_system && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditModal(role)}
-                        className="flex-1 flex items-center justify-center gap-1"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        {locale === 'ar' ? 'تعديل' : 'Edit'}
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditModal(role)}
+                      className="flex-1 flex items-center justify-center gap-1"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      {locale === 'ar' ? 'تعديل' : 'Edit'}
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -866,6 +882,13 @@ export default function AdminRolesPage() {
                       <option value="Headphones">{locale === 'ar' ? 'دعم' : 'Support'}</option>
                       <option value="Wallet">{locale === 'ar' ? 'مالية' : 'Finance'}</option>
                       <option value="Shield">{locale === 'ar' ? 'درع' : 'Shield'}</option>
+                      <option value="ShieldCheck">{locale === 'ar' ? 'درع تحقق' : 'Shield Check'}</option>
+                      <option value="Store">{locale === 'ar' ? 'متجر' : 'Store'}</option>
+                      <option value="MapPin">{locale === 'ar' ? 'موقع' : 'Location'}</option>
+                      <option value="ShoppingCart">{locale === 'ar' ? 'عربة تسوق' : 'Shopping Cart'}</option>
+                      <option value="MessageCircle">{locale === 'ar' ? 'رسالة' : 'Message'}</option>
+                      <option value="TrendingUp">{locale === 'ar' ? 'تحليلات' : 'Analytics'}</option>
+                      <option value="Eye">{locale === 'ar' ? 'عين' : 'Eye'}</option>
                     </select>
                   </div>
                 </div>
@@ -1021,47 +1044,56 @@ export default function AdminRolesPage() {
 
             <div className="space-y-4">
               <h3 className="font-semibold text-slate-900">
-                {locale === 'ar' ? 'الصلاحيات' : 'Permissions'} ({rolePermissions.length})
+                {locale === 'ar' ? 'الصلاحيات' : 'Permissions'} ({viewLoading ? '...' : rolePermissions.length})
               </h3>
 
-              {/* Group by resource */}
-              {resources.map((resource) => {
-                const resourceRolePerms = rolePermissions.filter(
-                  rp => rp.permission?.resource?.code === resource.code
-                )
-
-                if (resourceRolePerms.length === 0) return null
-
-                return (
-                  <div key={resource.id} className="border border-slate-200 rounded-lg overflow-hidden">
-                    <div className="p-3 bg-slate-50 font-medium text-slate-900">
-                      {locale === 'ar' ? resource.name_ar : resource.name_en}
-                    </div>
-                    <div className="p-3 grid gap-2 sm:grid-cols-2">
-                      {resourceRolePerms.map((rp) => {
-                        const action = rp.permission?.action as any
-                        return (
-                          <div
-                            key={rp.id}
-                            className="flex items-center gap-2 p-2 bg-green-50 rounded text-green-700"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span className="text-sm">
-                              {locale === 'ar' ? action?.name_ar : action?.name_en}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
-
-              {rolePermissions.length === 0 && (
-                <div className="text-center py-8 text-slate-500">
-                  <Lock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p>{locale === 'ar' ? 'لا توجد صلاحيات لهذا الدور' : 'No permissions for this role'}</p>
+              {viewLoading ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="w-8 h-8 mx-auto mb-3 text-slate-400 animate-spin" />
+                  <p className="text-slate-500">{locale === 'ar' ? 'جاري تحميل الصلاحيات...' : 'Loading permissions...'}</p>
                 </div>
+              ) : (
+                <>
+                  {/* Group by resource */}
+                  {resources.map((resource) => {
+                    const resourceRolePerms = rolePermissions.filter(
+                      rp => rp.permission?.resource?.code === resource.code
+                    )
+
+                    if (resourceRolePerms.length === 0) return null
+
+                    return (
+                      <div key={resource.id} className="border border-slate-200 rounded-lg overflow-hidden">
+                        <div className="p-3 bg-slate-50 font-medium text-slate-900">
+                          {locale === 'ar' ? resource.name_ar : resource.name_en}
+                        </div>
+                        <div className="p-3 grid gap-2 sm:grid-cols-2">
+                          {resourceRolePerms.map((rp) => {
+                            const action = rp.permission?.action as any
+                            return (
+                              <div
+                                key={rp.id}
+                                className="flex items-center gap-2 p-2 bg-green-50 rounded text-green-700"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span className="text-sm">
+                                  {locale === 'ar' ? action?.name_ar : action?.name_en}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  {rolePermissions.length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      <Lock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                      <p>{locale === 'ar' ? 'لا توجد صلاحيات لهذا الدور' : 'No permissions for this role'}</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 

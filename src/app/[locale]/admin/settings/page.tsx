@@ -24,6 +24,10 @@ import {
   CheckCircle2,
   Building,
   Bell,
+  Lock,
+  Eye,
+  EyeOff,
+  User as UserIcon,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -85,7 +89,18 @@ export default function AdminSettingsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const [settings, setSettings] = useState<PlatformSettings>(defaultSettings)
-  const [activeTab, setActiveTab] = useState<'general' | 'payments' | 'delivery' | 'notifications'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'payments' | 'delivery' | 'notifications' | 'account'>('general')
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -145,11 +160,68 @@ export default function AdminSettingsPage() {
     setSaving(false)
   }
 
+  async function handleChangePassword() {
+    setPasswordError('')
+    setPasswordSuccess(false)
+
+    // Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError(locale === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError(locale === 'ar' ? 'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل' : 'New password must be at least 6 characters')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError(locale === 'ar' ? 'كلمة المرور الجديدة غير متطابقة' : 'New passwords do not match')
+      return
+    }
+
+    setChangingPassword(true)
+
+    const supabase = createClient()
+
+    // First verify current password by re-authenticating
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user?.email || '',
+      password: currentPassword,
+    })
+
+    if (signInError) {
+      setPasswordError(locale === 'ar' ? 'كلمة المرور الحالية غير صحيحة' : 'Current password is incorrect')
+      setChangingPassword(false)
+      return
+    }
+
+    // Update password
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+
+    if (updateError) {
+      setPasswordError(locale === 'ar' ? 'فشل في تغيير كلمة المرور' : 'Failed to change password')
+      setChangingPassword(false)
+      return
+    }
+
+    // Success
+    setPasswordSuccess(true)
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setTimeout(() => setPasswordSuccess(false), 3000)
+    setChangingPassword(false)
+  }
+
   const tabs = [
     { id: 'general', label: locale === 'ar' ? 'عام' : 'General', icon: Building },
     { id: 'payments', label: locale === 'ar' ? 'الدفع' : 'Payments', icon: CreditCard },
     { id: 'delivery', label: locale === 'ar' ? 'التوصيل' : 'Delivery', icon: Truck },
     { id: 'notifications', label: locale === 'ar' ? 'الإشعارات' : 'Notifications', icon: Bell },
+    { id: 'account', label: locale === 'ar' ? 'الحساب' : 'Account', icon: UserIcon },
   ]
 
   if (loading) {
@@ -508,29 +580,166 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            {/* Save Button */}
-            <div className="mt-8 pt-6 border-t border-slate-200 flex items-center justify-between">
-              {saveSuccess && (
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span>{locale === 'ar' ? 'تم الحفظ بنجاح' : 'Saved successfully'}</span>
+            {activeTab === 'account' && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                  {locale === 'ar' ? 'إعدادات الحساب' : 'Account Settings'}
+                </h3>
+
+                {/* Admin Email Display */}
+                <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-5 h-5 text-slate-500" />
+                    <div>
+                      <p className="text-sm text-slate-500">
+                        {locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                      </p>
+                      <p className="font-medium text-slate-900">{user?.email}</p>
+                    </div>
+                  </div>
                 </div>
-              )}
-              <div className={saveSuccess ? '' : 'ml-auto'}>
-                <Button
-                  onClick={handleSaveSettings}
-                  disabled={saving}
-                  className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
-                >
-                  {saving ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  {locale === 'ar' ? 'حفظ الإعدادات' : 'Save Settings'}
-                </Button>
+
+                {/* Change Password Section */}
+                <div className="border border-slate-200 rounded-lg p-6">
+                  <h4 className="font-medium text-slate-900 mb-4 flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-red-600" />
+                    {locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
+                  </h4>
+
+                  <div className="space-y-4 max-w-md">
+                    {/* Current Password */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'كلمة المرور الحالية' : 'Current Password'}
+                      </label>
+                      <div className="relative">
+                        <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                        <input
+                          type={showCurrentPassword ? 'text' : 'password'}
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          className={`w-full ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                          placeholder={locale === 'ar' ? 'أدخل كلمة المرور الحالية' : 'Enter current password'}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600`}
+                        >
+                          {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* New Password */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
+                      </label>
+                      <div className="relative">
+                        <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                        <input
+                          type={showNewPassword ? 'text' : 'password'}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className={`w-full ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                          placeholder={locale === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600`}
+                        >
+                          {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Confirm New Password */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password'}
+                      </label>
+                      <div className="relative">
+                        <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className={`w-full ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                          placeholder={locale === 'ar' ? 'أعد إدخال كلمة المرور الجديدة' : 'Re-enter new password'}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600`}
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Error Message */}
+                    {passwordError && (
+                      <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
+                        <AlertCircle className="w-5 h-5" />
+                        <span className="text-sm">{passwordError}</span>
+                      </div>
+                    )}
+
+                    {/* Success Message */}
+                    {passwordSuccess && (
+                      <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
+                        <CheckCircle2 className="w-5 h-5" />
+                        <span className="text-sm">
+                          {locale === 'ar' ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Submit Button */}
+                    <Button
+                      onClick={handleChangePassword}
+                      disabled={changingPassword}
+                      className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
+                    >
+                      {changingPassword ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Lock className="w-4 h-4" />
+                      )}
+                      {locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Save Button - Only show for platform settings tabs */}
+            {activeTab !== 'account' && (
+              <div className="mt-8 pt-6 border-t border-slate-200 flex items-center justify-between">
+                {saveSuccess && (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>{locale === 'ar' ? 'تم الحفظ بنجاح' : 'Saved successfully'}</span>
+                  </div>
+                )}
+                <div className={saveSuccess ? '' : 'ml-auto'}>
+                  <Button
+                    onClick={handleSaveSettings}
+                    disabled={saving}
+                    className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
+                  >
+                    {saving ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {locale === 'ar' ? 'حفظ الإعدادات' : 'Save Settings'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>

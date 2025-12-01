@@ -14,7 +14,19 @@ import type {
   ResourceCode,
   ActionCode,
   PermissionCode,
+  EscalationRule,
 } from '@/types/permissions';
+
+// نتيجة التحقق من التصعيد
+export interface EscalationCheckResult {
+  needsEscalation: boolean;
+  rules: EscalationRule[];
+  message?: { ar: string; en: string };
+  escalateTo?: {
+    roleId?: string;
+    adminId?: string;
+  };
+}
 
 export class PermissionService {
   private adminId: string;
@@ -398,6 +410,198 @@ export class PermissionService {
       assigned_only: customConstraints.assigned_only ?? roleConstraints.assigned_only,
       requires_approval: customConstraints.requires_approval ?? roleConstraints.requires_approval,
     };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // التحقق من قواعد التصعيد
+  // ═══════════════════════════════════════════════════════════════════════
+
+  async checkEscalation(
+    resource: ResourceCode,
+    action: ActionCode,
+    context?: { amount?: number; count?: number }
+  ): Promise<EscalationCheckResult> {
+    const supabase = createClient();
+
+    try {
+      // جلب قواعد التصعيد النشطة للمورد والإجراء
+      const { data: rules, error } = await supabase
+        .from('escalation_rules')
+        .select('*')
+        .eq('is_active', true)
+        .order('priority', { ascending: true });
+
+      if (error) {
+        console.error('Error loading escalation rules:', error);
+        return { needsEscalation: false, rules: [] };
+      }
+
+      const matchingRules: EscalationRule[] = [];
+
+      for (const rule of rules || []) {
+        const conditions = rule.trigger_conditions as {
+          resource?: string;
+          action?: string;
+          condition?: {
+            type: string;
+            value?: number;
+          };
+        };
+
+        // التحقق من تطابق المورد والإجراء
+        if (conditions.resource !== resource || conditions.action !== action) {
+          continue;
+        }
+
+        // التحقق من الشرط
+        const conditionType = conditions.condition?.type;
+        const conditionValue = conditions.condition?.value;
+
+        let matches = false;
+
+        switch (conditionType) {
+          case 'always':
+            matches = true;
+            break;
+
+          case 'amount_gt':
+            if (context?.amount !== undefined && conditionValue !== undefined) {
+              matches = context.amount > conditionValue;
+            }
+            break;
+
+          case 'count_per_day':
+            // هذا يحتاج تحقق من قاعدة البيانات لعدد المرات اليوم
+            // للتبسيط، نتركه كـ false حالياً
+            if (context?.count !== undefined && conditionValue !== undefined) {
+              matches = context.count >= conditionValue;
+            }
+            break;
+
+          default:
+            break;
+        }
+
+        if (matches) {
+          matchingRules.push({
+            id: rule.id,
+            name_ar: rule.name_ar,
+            name_en: rule.name_en,
+            trigger_type: rule.trigger_type,
+            trigger_conditions: rule.trigger_conditions,
+            escalate_to_role_id: rule.escalate_to_role_id,
+            escalate_to_admin_id: rule.escalate_to_admin_id,
+            action_type: rule.action_type,
+            priority: rule.priority,
+            is_active: rule.is_active,
+          });
+        }
+      }
+
+      if (matchingRules.length === 0) {
+        return { needsEscalation: false, rules: [] };
+      }
+
+      // أخذ القاعدة ذات الأولوية الأعلى
+      const primaryRule = matchingRules[0];
+
+      return {
+        needsEscalation: true,
+        rules: matchingRules,
+        message: {
+          ar: primaryRule.name_ar,
+          en: primaryRule.name_en,
+        },
+        escalateTo: {
+          roleId: primaryRule.escalate_to_role_id ?? undefined,
+          adminId: primaryRule.escalate_to_admin_id ?? undefined,
+        },
+      };
+    } catch (error) {
+      console.error('Error checking escalation:', error);
+      return { needsEscalation: false, rules: [] };
+    }
+  }
+
+  // التحقق الكامل من الصلاحية مع التصعيد
+  async canWithEscalation(
+    request: PermissionCheckRequest & { context?: { amount?: number; count?: number } }
+  ): Promise<PermissionCheckResult & { escalation?: EscalationCheckResult }> {
+    // أولاً: التحقق من الصلاحية الأساسية
+    const permissionResult = await this.can(request);
+
+    if (!permissionResult.allowed) {
+      return permissionResult;
+    }
+
+    // ثانياً: التحقق من قواعد التصعيد
+    const escalationResult = await this.checkEscalation(
+      request.resource,
+      request.action,
+      request.context
+    );
+
+    if (escalationResult.needsEscalation) {
+      // تحديد نوع الإجراء المطلوب بناءً على قاعدة التصعيد
+      const primaryRule = escalationResult.rules[0];
+
+      if (primaryRule.action_type === 'block') {
+        return {
+          allowed: false,
+          reason: 'denied',
+          escalation: escalationResult,
+        };
+      }
+
+      if (primaryRule.action_type === 'require_approval') {
+        return {
+          allowed: true,
+          requiresApproval: true,
+          escalation: escalationResult,
+        };
+      }
+
+      // للإشعار فقط - السماح مع تسجيل التصعيد
+      return {
+        ...permissionResult,
+        escalation: escalationResult,
+      };
+    }
+
+    return permissionResult;
+  }
+
+  // تسجيل إجراء في سجل الصلاحيات
+  async logPermissionAction(params: {
+    resourceCode: ResourceCode;
+    actionCode: ActionCode;
+    entityType?: string;
+    entityId?: string;
+    entityName?: string;
+    oldData?: Record<string, unknown>;
+    newData?: Record<string, unknown>;
+    status: 'success' | 'denied' | 'failed';
+    denialReason?: string;
+  }): Promise<void> {
+    const supabase = createClient();
+
+    try {
+      await supabase.from('activity_log').insert({
+        user_id: this.userId,
+        action: `${params.resourceCode}.${params.actionCode}`,
+        entity_type: params.entityType,
+        entity_id: params.entityId,
+        details: {
+          entity_name: params.entityName,
+          old_data: params.oldData,
+          new_data: params.newData,
+          status: params.status,
+          denial_reason: params.denialReason,
+        },
+      });
+    } catch (error) {
+      console.error('Error logging permission action:', error);
+    }
   }
 }
 

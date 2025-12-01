@@ -92,6 +92,11 @@ export default function AdminMessagesPage() {
     unread: 0,
     sent: 0,
   })
+  const [adminStatus, setAdminStatus] = useState<{
+    hasAdminRecord: boolean
+    isActive: boolean
+    adminId: string | null
+  }>({ hasAdminRecord: false, isActive: false, adminId: null })
 
   useEffect(() => {
     checkAuth()
@@ -116,14 +121,34 @@ export default function AdminMessagesPage() {
       if (profile?.role === 'admin') {
         setIsAdmin(true)
 
-        const { data: adminUser } = await supabase
+        const { data: adminUser, error: adminError } = await supabase
           .from('admin_users')
-          .select('id, role')
+          .select('id, role, is_active')
           .eq('user_id', user.id)
           .single()
 
+        if (adminError) {
+          console.error('Error fetching admin user:', adminError)
+        }
+
         if (adminUser) {
+          console.log('Admin user found:', { id: adminUser.id, role: adminUser.role, is_active: adminUser.is_active })
+          setAdminStatus({
+            hasAdminRecord: true,
+            isActive: adminUser.is_active,
+            adminId: adminUser.id,
+          })
+          if (!adminUser.is_active) {
+            console.warn('Admin user is not active - messaging may be restricted')
+          }
           setCurrentAdminId(adminUser.id)
+        } else {
+          console.warn('No admin_users entry found for this user - messaging will not work')
+          setAdminStatus({
+            hasAdminRecord: false,
+            isActive: false,
+            adminId: null,
+          })
         }
 
         await loadMessages(supabase)
@@ -135,6 +160,8 @@ export default function AdminMessagesPage() {
   }
 
   async function loadMessages(supabase: ReturnType<typeof createClient>) {
+    console.log('Loading messages for admin:', currentAdminId)
+
     const { data: messagesData, error } = await supabase
       .from('internal_messages')
       .select('*')
@@ -142,7 +169,13 @@ export default function AdminMessagesPage() {
 
     if (error) {
       console.error('Error loading messages:', error)
+      console.error('Error details - code:', error.code, 'message:', error.message)
       return
+    }
+
+    console.log('Messages loaded from database:', messagesData?.length || 0, 'messages')
+    if (messagesData && messagesData.length > 0) {
+      console.log('First message recipient_ids:', messagesData[0].recipient_ids)
     }
 
     // Load sender names
@@ -267,6 +300,12 @@ export default function AdminMessagesPage() {
   }
 
   async function handleSendMessage() {
+    // Validate sender ID exists
+    if (!currentAdminId) {
+      setFormError(locale === 'ar' ? 'لم يتم التعرف على حسابك. يرجى إعادة تسجيل الدخول.' : 'Your account was not recognized. Please log in again.')
+      return
+    }
+
     if (!formData.body) {
       setFormError(locale === 'ar' ? 'محتوى الرسالة مطلوب' : 'Message body is required')
       return
@@ -285,9 +324,20 @@ export default function AdminMessagesPage() {
       ? supervisors.filter(s => s.id !== currentAdminId).map(s => s.id)
       : formData.recipients
 
+    // Validate that we have at least one recipient
+    if (recipients.length === 0) {
+      setFormError(locale === 'ar' ? 'لا يوجد مستلمين متاحين' : 'No recipients available')
+      setFormLoading(false)
+      return
+    }
+
+    console.log('Sending message with:', { sender_id: currentAdminId, recipients, is_broadcast: formData.is_broadcast })
+
+    const messageId = crypto.randomUUID()
     const { error } = await supabase
       .from('internal_messages')
       .insert({
+        id: messageId,
         conversation_id: crypto.randomUUID(),
         sender_id: currentAdminId,
         recipient_ids: recipients,
@@ -300,9 +350,54 @@ export default function AdminMessagesPage() {
 
     if (error) {
       console.error('Error sending message:', error)
-      setFormError(locale === 'ar' ? 'حدث خطأ أثناء إرسال الرسالة' : 'Error sending message')
+      console.error('Error details:', { code: error.code, message: error.message, details: error.details, hint: error.hint })
+
+      // Show more detailed error message for debugging
+      let errorMessage = locale === 'ar' ? 'حدث خطأ أثناء إرسال الرسالة' : 'Error sending message'
+
+      // Handle specific error cases
+      if (error.code === '42501' || error.message?.includes('policy')) {
+        errorMessage = locale === 'ar'
+          ? 'ليس لديك صلاحية لإرسال الرسائل. تأكد من أن حسابك مفعل.'
+          : 'You do not have permission to send messages. Make sure your account is active.'
+      } else if (error.code === '23503') {
+        errorMessage = locale === 'ar'
+          ? 'خطأ في البيانات: تأكد من صحة المستلمين'
+          : 'Data error: Please verify the recipients'
+      } else if (error.message) {
+        errorMessage = `${errorMessage}: ${error.message}`
+      }
+
+      setFormError(errorMessage)
       setFormLoading(false)
       return
+    }
+
+    // Get sender name for notification
+    const currentSupervisor = supervisors.find(s => s.id === currentAdminId)
+    const senderName = currentSupervisor?.full_name || (locale === 'ar' ? 'مستخدم' : 'User')
+
+    // Create notifications for all recipients
+    const notifications = recipients.map(recipientId => ({
+      admin_id: recipientId,
+      type: 'message',
+      title: locale === 'ar'
+        ? `رسالة جديدة من ${senderName}`
+        : `New message from ${senderName}`,
+      body: formData.subject || (formData.body.length > 100 ? formData.body.substring(0, 100) + '...' : formData.body),
+      related_message_id: messageId,
+      is_read: false,
+    }))
+
+    if (notifications.length > 0) {
+      const { error: notifError } = await supabase
+        .from('admin_notifications')
+        .insert(notifications)
+
+      if (notifError) {
+        console.error('Error creating notifications:', notifError)
+        // Don't fail the whole operation if notifications fail
+      }
     }
 
     await loadMessages(supabase)
@@ -323,10 +418,16 @@ export default function AdminMessagesPage() {
     const supabase = createClient()
     const newReadBy = [...(message.read_by || []), currentAdminId]
 
-    await supabase
+    const { error } = await supabase
       .from('internal_messages')
       .update({ read_by: newReadBy })
       .eq('id', message.id)
+
+    if (error) {
+      console.error('Error marking message as read:', error)
+      // Don't show error to user for read status - it's not critical
+      return
+    }
 
     // Update local state
     setMessages(prev => prev.map(m =>
@@ -393,6 +494,30 @@ export default function AdminMessagesPage() {
         />
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          {/* Admin Status Warning */}
+          {(!adminStatus.hasAdminRecord || !adminStatus.isActive) && (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-yellow-800">
+                    {locale === 'ar' ? 'تحذير: مشكلة في حالة الحساب' : 'Warning: Account Status Issue'}
+                  </h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    {!adminStatus.hasAdminRecord
+                      ? (locale === 'ar'
+                          ? 'لا يوجد سجل مشرف لحسابك. يرجى التواصل مع مدير النظام لإنشاء سجل في جدول admin_users.'
+                          : 'No admin record found for your account. Please contact system admin to create an admin_users entry.')
+                      : (locale === 'ar'
+                          ? 'حسابك غير مفعل (is_active = false). لن تتمكن من رؤية الرسائل. يرجى التواصل مع مدير النظام.'
+                          : 'Your account is not active (is_active = false). You will not be able to see messages. Please contact system admin.')
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Panel - Folders & Actions */}
             <div className="w-full lg:w-64 space-y-4">

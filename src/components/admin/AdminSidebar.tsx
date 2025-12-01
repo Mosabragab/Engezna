@@ -23,6 +23,8 @@ import {
   Megaphone,
   Tag,
   Loader2,
+  AlertTriangle,
+  Key,
 } from 'lucide-react'
 import { usePermissions } from '@/lib/permissions/use-permissions'
 import type { ResourceCode } from '@/types/permissions'
@@ -59,7 +61,7 @@ export function AdminSidebar({
   const isRTL = locale === 'ar'
 
   // استخدام نظام الصلاحيات
-  const { loading, hasResource, isSuperAdmin, roles } = usePermissions()
+  const { loading, hasResource, isSuperAdmin, roles, legacyRole } = usePermissions()
 
   // جلب الدور الرئيسي للعرض
   const primaryRole = roles.find(r => r.is_primary) || roles[0]
@@ -71,6 +73,15 @@ export function AdminSidebar({
     // التحقق من وجود صلاحية view للمورد
     return hasResource(resource)
   }
+
+  // Log للتشخيص
+  console.log('[AdminSidebar] Permissions state:', {
+    loading,
+    isSuperAdmin,
+    legacyRole,
+    rolesCount: roles.length,
+    primaryRole: primaryRole?.role?.code
+  })
 
   // Main navigation items
   const mainNavItems: NavItem[] = [
@@ -156,7 +167,7 @@ export function AdminSidebar({
     },
     {
       icon: MessageSquare,
-      label: { ar: 'الرسائل', en: 'Messages' },
+      label: { ar: 'المراسلات الداخلية', en: 'Internal Messages' },
       path: `/${locale}/admin/messages`,
       badge: unreadMessages > 0 ? unreadMessages.toString() : undefined,
       resource: 'messages',
@@ -172,6 +183,18 @@ export function AdminSidebar({
   // System navigation items
   const systemNavItems: NavItem[] = [
     {
+      icon: Key,
+      label: { ar: 'الأدوار', en: 'Roles' },
+      path: `/${locale}/admin/roles`,
+      resource: 'roles',
+    },
+    {
+      icon: AlertTriangle,
+      label: { ar: 'قواعد التصعيد', en: 'Escalation Rules' },
+      path: `/${locale}/admin/escalation-rules`,
+      resource: 'escalation_rules',
+    },
+    {
       icon: Activity,
       label: { ar: 'سجل النشاط', en: 'Activity Log' },
       path: `/${locale}/admin/activity-log`,
@@ -186,9 +209,17 @@ export function AdminSidebar({
   ]
 
   // تصفية العناصر حسب الصلاحيات
-  const filteredMainNavItems = mainNavItems.filter(item => canAccess(item.resource))
-  const filteredTeamNavItems = teamNavItems.filter(item => canAccess(item.resource))
-  const filteredSystemNavItems = systemNavItems.filter(item => canAccess(item.resource))
+  // إذا كان isSuperAdmin، نعرض كل العناصر
+  const filteredMainNavItems = isSuperAdmin ? mainNavItems : mainNavItems.filter(item => canAccess(item.resource))
+  const filteredTeamNavItems = isSuperAdmin ? teamNavItems : teamNavItems.filter(item => canAccess(item.resource))
+  const filteredSystemNavItems = isSuperAdmin ? systemNavItems : systemNavItems.filter(item => canAccess(item.resource))
+
+  // Log للتشخيص
+  console.log('[AdminSidebar] Filtered items:', {
+    main: filteredMainNavItems.length,
+    team: filteredTeamNavItems.length,
+    system: filteredSystemNavItems.length
+  })
 
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname === item.path || pathname.startsWith(item.path + '/')

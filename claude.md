@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** November 30, 2025
-**Status:** Week 4 - 100% Complete ✅ (Admin Dashboard + Supervisor System)
+**Last Updated:** December 1, 2025
+**Status:** Week 4+ - Ongoing Improvements ✅ (Admin Dashboard + Roles Management)
 **Branch:** `main`
 
 ---
@@ -299,7 +299,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
   - [x] Western Arabic numerals (0-9) in English locale ✅
 - [x] Supervisor management page `/admin/supervisors` ✅
   - [x] Full CRUD operations ✅
-  - [x] Roles: super_admin, general_moderator, support, finance ✅
+  - [x] Roles: super_admin, general_moderator, store_supervisor, support, finance ✅
   - [x] Permission system for granular access control ✅
   - [x] Stats dashboard with role breakdown ✅
   - [x] Filter by status and role ✅
@@ -414,6 +414,42 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 
 ## 🐛 Recent Fixes
 
+### Work Session Dec 1, 2025 (Session 2) - Advanced Permissions & Storage Bucket ✅
+- ✅ **Supabase Storage Bucket Setup**:
+  - Created `public` storage bucket for images
+  - Configured file size limit (2MB) and allowed MIME types
+  - Storage policies already existed (Public Read, Auth Upload/Update/Delete)
+  - Logo and product image uploads now functional
+- ✅ **Advanced RBAC + ABAC Permission System** (from continued session):
+  - Created migration: `20251201100000_advanced_permissions_enhancement.sql`
+  - Added `resources` table with categories (main, admin, finance, support)
+  - Added `actions` table with types (read, write, manage, special)
+  - Added `escalation_rules` table for approval workflows
+  - Added `permission_audit_log` table for tracking
+  - Created `ConstraintsEditor.tsx` component for managing permission constraints
+  - Created supervisor permissions page (`/admin/supervisors/[id]/permissions`)
+  - Enhanced `permission-service.ts` with escalation logic
+  - Supports: geographic constraints, amount limits, time restrictions, ownership
+- ✅ **Documentation Updates**:
+  - Updated PRD.md Development Roadmap (Week 0-4 complete, Week 5+ planned)
+  - Updated migrations/README.md with complete migration list
+  - Marked Storage Bucket as complete in PRD.md
+
+### Work Session Dec 1, 2025 (Session 1) - Roles Page Fixes & Documentation Sync ✅
+- ✅ **Roles Page Permissions Display Fix**:
+  - Fixed permissions not showing in view modal
+  - Added loading state for permission fetching
+  - Reset rolePermissions state before loading new data
+  - Added error handling for permission queries
+- ✅ **Enable Editing for All Roles**:
+  - Removed `!role.is_system` condition that prevented editing system roles
+  - All roles now have Edit button (including system roles like super_admin, support, finance)
+  - System roles still have protected code field (cannot change the code)
+- ✅ **Documentation Sync**:
+  - Updated claude.md with December 1 session
+  - Reviewed and cleaned outdated information
+  - Updated version to 18.2
+
 ### Work Session Nov 30, 2025 - Admin Invitation System ✅
 - ✅ **Admin Invitations Database Schema**:
   - Created `admin_invitations` table with full schema
@@ -457,7 +493,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
   - Applied throughout admin dashboard
 - ✅ **Supervisor Management** (`/admin/supervisors`):
   - Full CRUD for admin team members
-  - Roles: super_admin, general_moderator, support, finance
+  - Roles: super_admin, general_moderator, store_supervisor, support, finance
   - Permission system with granular access control
   - Stats dashboard with role breakdown
   - Filter by status and role, search functionality
@@ -749,32 +785,26 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 
 ---
 
-## ⚠️ Pending Setup (Required for Logo Upload)
+## ✅ Storage Bucket Setup (COMPLETED Dec 1, 2025)
 
-Run this SQL in Supabase to enable logo uploads:
-
-```sql
--- Create storage bucket
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('public', 'public', true, 2097152, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
-ON CONFLICT (id) DO NOTHING;
-
--- Storage policies
-CREATE POLICY "Public Read" ON storage.objects FOR SELECT USING (bucket_id = 'public');
-CREATE POLICY "Auth Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'public' AND auth.role() = 'authenticated');
-CREATE POLICY "Auth Update" ON storage.objects FOR UPDATE USING (bucket_id = 'public' AND auth.role() = 'authenticated');
-CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE USING (bucket_id = 'public' AND auth.role() = 'authenticated');
-```
+The Supabase Storage bucket is now configured:
+- ✅ Bucket `public` created with 2MB file size limit
+- ✅ Allowed MIME types: jpeg, png, webp, gif
+- ✅ Storage policies active (Public Read, Auth Upload/Update/Delete)
+- ✅ Logo and product image uploads functional
 
 ---
 
-**Version:** 18.1 (Week 4 Complete - Documentation Sync)
-**Last Updated:** November 30, 2025
-**Next Review:** December 1, 2025
+**Version:** 18.3 (Advanced Permissions & Storage Bucket)
+**Last Updated:** December 1, 2025
+**Next Review:** December 2, 2025
 
-**🎉 Week 4 Complete!**
+**🎉 Week 4+ Ongoing Improvements!**
 - Full admin dashboard with unified components (AdminHeader, AdminSidebar)
 - Supervisor management with roles and permissions
+- Roles management page (`/admin/roles`) - View, Edit, Create, Delete roles
+- Fixed: Permissions display in role view modal
+- Fixed: Enable editing for all roles (including system roles)
 - Tasks management with assignment and tracking
 - Approvals workflow system
 - Internal messaging and team announcements

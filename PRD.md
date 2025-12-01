@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 4.0 (Week 4 Complete - Admin Dashboard + Supervisor System)
+**Version:** 4.1 (Week 4+ - Roles Page Fixes)
 **Date:** November 27, 2025
-**Last Updated:** November 30, 2025
+**Last Updated:** December 1, 2025
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -21,11 +21,11 @@
 
 ## 📊 Current Development Status
 
-**Phase:** Week 4 Complete - Admin Dashboard + Supervisor System (Nov 29, 2025)
-**Status:** Week 4 - 100% Complete ✅
+**Phase:** Week 4+ - Admin Dashboard + Roles Management
+**Status:** Week 4+ - Ongoing Improvements ✅
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~60% of MVP Complete
-**Last Session:** November 30, 2025 - Documentation Sync & Progress Review
+**Overall Progress:** ~65% of MVP Complete
+**Last Session:** December 1, 2025 - Roles Page Fixes & Documentation Sync
 
 ### What's Built ✅
 
@@ -114,7 +114,7 @@
   - ✅ Consistent Engezna Blue (#009DE0) theming
 - ✅ **Supervisor Management** (`/admin/supervisors`)
   - ✅ Full CRUD for admin team members
-  - ✅ Roles: super_admin, general_moderator, support, finance
+  - ✅ Roles: super_admin, general_moderator, store_supervisor, support, finance
   - ✅ Permission system for granular access control
   - ✅ Stats dashboard with role breakdown
   - ✅ Filter by status and role
@@ -971,10 +971,10 @@ reviews (
 - [x] Git repository setup and GitHub integration
 - [x] Design system foundation
   - [x] Tailwind CSS 3.4.17 configuration (downgraded from v4 for stability)
-  - [x] shadcn/ui components installation
+  - [x] shadcn/ui components installation (13 components)
   - [x] Dark mode support (next-themes)
   - [x] RTL layout support
-  - [x] Brand colors updated to Orange (#E85D04) and Gold (#FDB927)
+  - [x] Brand colors: Engezna Blue (#009DE0)
 - [x] Typography implementation
   - [x] Noto Sans Arabic (variable font)
   - [x] Noto Sans English (variable font)
@@ -1006,16 +1006,12 @@ reviews (
   - [x] Floating cart bar
   - [x] Cart persistence
   - [x] Multi-provider handling
-- [x] Documentation
-  - [x] PRD updated
-  - [x] README updated
-  - [x] claude.md updated
-  - [x] PROGRESS_UPDATE.md created
+- [x] Documentation (PRD, README, claude.md)
 
 **Time Invested:** ~20 hours
 **Sprint Velocity:** High (100% complete)
 
-### **Week 2 (Nov 23-24, 2025): Authentication & Checkout** ✅ 85% COMPLETE
+### **Week 2 (Nov 23-25, 2025): Authentication & Checkout** ✅ 100% COMPLETE
 
 **Completed Tasks:**
 - [x] Supabase Auth integration (email/password + OTP)
@@ -1036,74 +1032,220 @@ reviews (
   - [x] Success message
   - [x] Order details display
   - [x] Track order button
-- [x] Fixed TypeScript error in verifyOTP
-- [x] Documentation (WEEK_2_PROGRESS.md)
+- [x] **Order tracking page** (`/orders/[id]`)
+  - [x] Status timeline display
+  - [x] Real-time order status updates
+  - [x] Provider contact information
+  - [x] Order details and items
+  - [x] Live refresh functionality
+- [x] **Order history page** (`/orders`)
+  - [x] List of user's past orders
+  - [x] Order status badges
+  - [x] Filter tabs (all/active/completed)
+- [x] **My Orders navigation** in header with active count badge
+- [x] **Multi-page settings system** (7 pages)
+  - [x] Settings menu hub (`/profile`)
+  - [x] Account settings (`/profile/account`) - Edit first/last name, phone
+  - [x] Email change (`/profile/email`) - With password verification
+  - [x] Password change (`/profile/password`) - With validation
+  - [x] Language selection (`/profile/language`)
+  - [x] Address management (`/profile/addresses`) - Full CRUD with cascading dropdowns
+  - [x] Location settings (`/profile/governorate`) - Governorate and city selection
+- [x] Database migration for governorate_id and city_id columns
+- [x] 80+ new translation keys (AR/EN) for settings pages
 
-**Remaining:**
-- [ ] Order tracking page (button ready, page not built)
-- [ ] Order history page
+**Time Invested:** ~25 hours
+**Sprint Velocity:** Excellent (100% complete)
 
-**Time Invested:** ~15 hours
-**Sprint Velocity:** Excellent (85% complete)
+### **Week 3 (Nov 25-27, 2025): Partner Registration & Dashboard** ✅ 100% COMPLETE
 
-### **Week 3 (Nov 25 - Dec 1): Order Tracking & User Profile**
-- [ ] Order tracking page (`/orders/[id]`)
-  - [ ] Status timeline display
-  - [ ] Real-time order status updates
-  - [ ] Provider contact information
-  - [ ] Order details and items
-- [ ] Order history page (`/orders`)
-  - [ ] List of user's past orders
-  - [ ] Order status badges
-  - [ ] Reorder functionality
-- [ ] User profile page
-  - [ ] Profile information editing
-  - [ ] Address management (add, edit, delete)
-  - [ ] Default address selection
-  - [ ] Password change
-- [ ] Real-time subscriptions setup (Supabase)
+**Completed Tasks:**
+- [x] **Partner Registration** (`/partner/register`)
+  - [x] Multi-step registration (personal info + business type)
+  - [x] Business category dropdown (6 types: restaurant, cafe, supermarket, juice_shop, pharmacy, vegetables_fruits)
+  - [x] Partner role dropdown (owner/manager)
+  - [x] Creates provider with status "incomplete"
+- [x] **Complete Profile Page** (`/provider/complete-profile`)
+  - [x] Store info (name AR/EN, phone, governorate/city cascade, address)
+  - [x] Logo upload with preview (2MB limit)
+  - [x] Delivery settings (fee, time, minimum order, radius)
+  - [x] Submit for review → status "pending_approval"
+- [x] **Status-aware Provider Dashboard**
+  - [x] "incomplete" → Shows complete profile prompt
+  - [x] "pending_approval" → Shows under review message
+  - [x] "rejected" → Shows rejection reason + resubmit button
+  - [x] "approved/open/closed" → Shows full dashboard
+- [x] **Provider Orders Management** (`/provider/orders`)
+  - [x] Stats row (new/in-progress/completed/total)
+  - [x] Filter tabs (All, New, In Progress, Completed, Cancelled)
+  - [x] Order cards with customer info, items, delivery address
+  - [x] Accept/Reject buttons for pending orders
+  - [x] Status update flow (Accepted → Preparing → Ready → Out for Delivery → Delivered)
+  - [x] Order detail page (`/provider/orders/[id]`)
+  - [x] Auto-refresh orders every 60 seconds
+- [x] **Menu Management System** (`/provider/products`)
+  - [x] Products list with stats (total/available/unavailable)
+  - [x] Filter tabs and search functionality
+  - [x] Add product page (`/provider/products/new`)
+  - [x] Edit product page (`/provider/products/[id]`)
+  - [x] Product form with attributes (vegetarian, spicy, prep time, calories)
+  - [x] Image upload to Supabase Storage
+  - [x] Product categories (provider-specific)
+- [x] **Store Hours Management** (`/provider/store-hours`)
+  - [x] Weekly schedule (7 days)
+  - [x] Toggle days open/closed
+  - [x] Quick actions (Open all, Close all, Copy hours)
+- [x] **Promotions System** (`/provider/promotions`)
+  - [x] 3 promotion types (Percentage, Fixed Amount, Buy X Get Y)
+  - [x] Date range, minimum order, max discount options
+  - [x] Applies to all or specific products
+- [x] **Reports & Analytics** (`/provider/reports`)
+  - [x] Revenue cards (Today, This Week, This Month, Last Month)
+  - [x] Order stats and completion rate
+  - [x] Revenue chart (last 30 days)
+  - [x] Top 5 selling products
+- [x] **Finance Dashboard** (`/provider/finance`)
+  - [x] Total earnings and pending payout
+  - [x] Commission breakdown (6% platform fee)
+  - [x] Transaction history with date range filter
+- [x] **Provider Settings** (`/provider/settings`)
+  - [x] Store Info, Delivery, Status tabs
+  - [x] Toggle store status (Open/Temporarily Paused/Closed)
+- [x] **Provider Profile** (`/provider/profile`)
+  - [x] Account info, language switcher, password change, sign out
 
-### **Week 5-6 (Dec 23 - Jan 5): Provider Dashboard**
-- [ ] Provider registration
-- [ ] Menu management
-- [ ] Order management
-- [ ] Restaurant profile
-- [ ] Basic analytics
+**Time Invested:** ~40 hours
+**Sprint Velocity:** Excellent (100% complete)
 
-### **Week 7-8 (Jan 6-19): Provider Tools & Optimization**
-- [ ] Advanced menu management
-- [ ] Bulk operations
-- [ ] Provider mobile optimization
-- [ ] Performance analytics
-- [ ] Customer feedback system
-- [ ] Order history export
+### **Week 4 (Nov 28 - Dec 1, 2025): Admin Dashboard & Supervisor System** ✅ 100% COMPLETE
 
-### **Week 9-10 (Jan 20 - Feb 2): Admin Panel**
-- [ ] Dashboard
-- [ ] User management
-- [ ] Order monitoring
-- [ ] Financial reports
-- [ ] Content management
+**Completed Tasks:**
+- [x] **Unified Admin Components**
+  - [x] AdminHeader with language switcher, notifications, user menu
+  - [x] AdminSidebar with collapsible navigation
+  - [x] Consistent Engezna Blue (#009DE0) theming
+- [x] **Locale-aware Number Formatting**
+  - [x] Arabic-Indic numerals (٠-٩) in Arabic locale
+  - [x] Western Arabic numerals (0-9) in English locale
+  - [x] Utility at `/src/lib/utils/formatters.ts`
+- [x] **Supervisor Management** (`/admin/supervisors`)
+  - [x] Full CRUD for admin team members
+  - [x] Roles: super_admin, general_moderator, store_supervisor, support, finance
+  - [x] Permission system for granular access control
+  - [x] Stats dashboard with role breakdown
+  - [x] Filter by status and role
+- [x] **Roles Management** (`/admin/roles`)
+  - [x] Full CRUD for roles
+  - [x] View role permissions
+  - [x] Edit permissions for all roles (including system roles)
+- [x] **RBAC + ABAC Permission System**
+  - [x] Permission-based access control per resource and action
+  - [x] Geographic constraints (governorate, city, district)
+  - [x] Amount limits with approval thresholds
+  - [x] Time-based restrictions and field-level access
+  - [x] PermissionsProvider React context
+  - [x] `usePermissions` hook with `can()`, `canSync()`, `hasResource()` methods
+- [x] **Admin Invitation System**
+  - [x] `admin_invitations` database table
+  - [x] Invitation page (`/admin/supervisors/invite`)
+  - [x] Supervisor registration page (`/admin/register/[token]`)
+  - [x] Dedicated admin login (`/admin/login`)
+  - [x] Token validation with expiry
+- [x] **Tasks Management** (`/admin/tasks`)
+  - [x] Task assignment between director and supervisors
+  - [x] Status: new, accepted, in_progress, pending, completed, cancelled
+  - [x] Priority levels: urgent, high, medium, low
+  - [x] Deadline tracking with overdue indicators
+  - [x] Progress percentage tracking
+- [x] **Approvals System** (`/admin/approvals`)
+  - [x] Types: refund, customer_ban, provider_suspend, commission_change
+  - [x] Status workflow: pending, approved, approved_with_changes, rejected
+  - [x] Create/decision modals
+  - [x] Justification and response tracking
+- [x] **Internal Messages** (`/admin/messages`)
+  - [x] Inbox and sent views
+  - [x] Compose message modal
+  - [x] Broadcast to all team members
+  - [x] Read/unread tracking
+  - [x] Priority: urgent or normal
+- [x] **Announcements** (`/admin/announcements`)
+  - [x] Types: urgent, important, info
+  - [x] Pinned announcements
+  - [x] Expiry dates
+  - [x] CRUD for super admins
+- [x] **Brand Identity Refresh**
+  - [x] Updated from Orange (#E85D04) to Engezna Blue (#009DE0)
+  - [x] Light-only theme (dark mode removed)
+  - [x] New navigation bars for customer and provider
+  - [x] Updated all brand documentation
 
-### **Week 11-12 (Feb 3-16): Testing & Polish**
-- [ ] End-to-end testing
+**Time Invested:** ~35 hours
+**Sprint Velocity:** Excellent (100% complete)
+
+### **Week 5-6 (Dec 2-15, 2025): Admin Backend Integration & Payment** 🔄 PLANNED
+
+**High Priority Tasks:**
+- [ ] **Admin Backend Integration**
+  - [ ] Connect admin UI to actual database operations
+  - [ ] Provider approval workflow (approve/reject providers from DB)
+  - [ ] User management backend (manage users from DB)
+  - [ ] Platform analytics backend (real queries, not mock data)
+  - [ ] Financial reporting backend (actual payment/settlement processing)
+- [x] **Execute Supabase Storage SQL** ✅ (Dec 1, 2025)
+  - [x] Create storage bucket for images
+  - [x] Enable logo and product image uploads
+- [ ] **Payment Integration (Fawry)**
+  - [ ] Integrate Fawry Egyptian payment gateway
+  - [ ] Online payment support for customers
+  - [ ] Payment status tracking
+
+### **Week 7-8 (Dec 16-29, 2025): Notifications & Customer Features** 🔄 PLANNED
+
+**Medium Priority Tasks:**
+- [ ] **Notifications System**
+  - [ ] Real-time push notifications (Firebase)
+  - [ ] SMS notifications (Twilio or local provider)
+  - [ ] Email transactional notifications
+- [ ] **Customer Reviews & Ratings**
+  - [ ] Rate providers after order
+  - [ ] Leave reviews
+  - [ ] Display ratings on provider cards
+- [ ] **Order Cancellation**
+  - [ ] Allow customers to cancel orders
+  - [ ] Cancellation reason selection
+  - [ ] Refund handling
+- [ ] **Promo Codes System**
+  - [ ] Create promo codes in admin
+  - [ ] Apply discount codes at checkout
+  - [ ] Track promo code usage
+
+### **Week 9-10 (Dec 30 - Jan 12, 2026): Testing & Optimization** 🔄 PLANNED
+
+**Tasks:**
+- [ ] End-to-end testing (customer flow, provider flow, admin flow)
 - [ ] Performance optimization
-- [ ] Bug fixes
+- [ ] Bug fixes from testing
 - [ ] UI/UX refinements
+- [ ] Security audit
 - [ ] Beta testing with real users
 
-### **Week 13 (Feb 17-23): Launch Preparation**
+### **Week 11-12 (Jan 13-26, 2026): Launch Preparation** 🔄 PLANNED
+
+**Tasks:**
 - [ ] Restaurant onboarding (10 partners with delivery teams)
 - [ ] Verify provider delivery capability
 - [ ] Marketing materials
 - [ ] Launch campaign setup
 - [ ] Customer support training
 - [ ] Provider training sessions
+- [ ] Documentation finalization
 
-### **Week 14 (Feb 24 - Mar 2): SOFT LAUNCH** 🚀
-- [ ] Limited public release
-- [ ] Monitor performance
-- [ ] Gather feedback
+### **Week 13 (Jan 27 - Feb 2, 2026): SOFT LAUNCH** 🚀 PLANNED
+
+**Tasks:**
+- [ ] Limited public release in Beni Suef
+- [ ] Monitor performance and stability
+- [ ] Gather feedback from early users
 - [ ] Fix critical issues
 - [ ] Prepare for scale
 
@@ -1622,7 +1764,7 @@ engezna/
     - ✅ Unified AdminHeader with language switcher, notifications, user menu
     - ✅ Unified AdminSidebar with collapsible navigation
     - ✅ Locale-aware number formatting (Arabic-Indic numerals ٠-٩)
-    - ✅ Supervisor management with roles (super_admin, general_moderator, support, finance)
+    - ✅ Supervisor management with roles (super_admin, general_moderator, store_supervisor, support, finance)
     - ✅ Permission system for granular access control
     - ✅ Tasks management with assignment, priorities, and deadlines
     - ✅ Approvals workflow system for refunds, bans, commission changes
@@ -1640,13 +1782,29 @@ engezna/
     - ✅ Updated README.md with admin dashboard status
     - ✅ Updated claude.md with new features
   - **Next Priority:** Admin backend integration, payment integration
+- **v4.1** - December 1, 2025 - Roles Page Fixes & Documentation Sync
+  - **Status:** Week 4+ - Ongoing Improvements ✅
+  - **Roles Page Fixes:**
+    - ✅ Fixed permissions not showing in role view modal
+    - ✅ Added loading state for permission fetching
+    - ✅ Reset rolePermissions state before loading new data
+    - ✅ Added error handling for permission queries
+  - **Enable Editing for All Roles:**
+    - ✅ Removed `!role.is_system` condition that prevented editing system roles
+    - ✅ All roles now have Edit button (including super_admin, support, finance)
+    - ✅ System roles still have protected code field
+  - **Documentation Updates:**
+    - ✅ Updated claude.md with December 1 session
+    - ✅ Updated README.md with roles page fixes
+    - ✅ Updated PRD.md with v4.1
+  - **Next Priority:** Admin backend integration, payment integration
 
 ---
 
 **Approved By:**
-- **Mosab** - Founder & Product Lead - November 30, 2025
+- **Mosab** - Founder & Product Lead - December 1, 2025
 
-**Next Review Date:** December 1, 2025
+**Next Review Date:** December 2, 2025
 
 ---
 

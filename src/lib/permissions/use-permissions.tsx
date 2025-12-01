@@ -22,6 +22,7 @@ interface PermissionsContextValue {
   userId: string | null;
   roles: AdminRole[];
   isSuperAdmin: boolean;
+  legacyRole: string | null; // الدور من جدول admin_users (للتوافقية)
   accessibleResources: ResourceCode[];
   geographicScope: GeographicConstraint;
   can: (resource: ResourceCode, action: ActionCode, context?: PermissionCheckRequest['context']) => Promise<PermissionCheckResult>;
@@ -44,6 +45,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [adminId, setAdminId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [legacyRole, setLegacyRole] = useState<string | null>(null); // الدور من جدول admin_users
   const [cache, setCache] = useState<CachedPermissions>({
     permissions: new Map(),
     deniedPermissions: new Set(),
@@ -65,18 +67,64 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       }
       setUserId(user.id);
 
-      // جلب admin_id
+      // جلب بيانات الملف الشخصي للتحقق من الدور
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      // جلب admin_id و الدور (للتوافقية)
       const { data: adminUser } = await supabase
         .from('admin_users')
-        .select('id')
+        .select('id, role')
         .eq('user_id', user.id)
         .single();
 
+      // إذا لم يوجد سجل admin_users ولكن المستخدم admin في profiles
+      // نحتاج لإنشاء سجل admin_users له أولاً
       if (!adminUser) {
+        if (profile?.role === 'admin') {
+          // المستخدم admin في profiles لكن لا يوجد سجل admin_users
+          // هذه حالة استثنائية - فقط المستخدم الأول (المؤسس) يعامل كـ super_admin
+          // يجب إنشاء سجل admin_users له
+          console.log('[Permissions] No admin_users record, but profile.role is admin - creating admin_users record');
+
+          // إنشاء سجل admin_users للمستخدم
+          const { data: newAdminUser, error: createError } = await supabase
+            .from('admin_users')
+            .insert({
+              user_id: user.id,
+              role: 'super_admin', // المستخدم الأول يكون super_admin
+              is_active: true
+            })
+            .select('id, role')
+            .single();
+
+          if (createError) {
+            console.error('[Permissions] Failed to create admin_users record:', createError);
+            // كـ fallback مؤقت فقط للمستخدم الأول
+            setLegacyRole('super_admin');
+            setLoading(false);
+            return;
+          }
+
+          console.log('[Permissions] Created admin_users record:', newAdminUser);
+          setAdminId(newAdminUser.id);
+          setLegacyRole(newAdminUser.role);
+          setLoading(false);
+          return;
+        }
         setLoading(false);
         return;
       }
       setAdminId(adminUser.id);
+
+      // استخدام الدور الفعلي من admin_users
+      // لا نغير الدور - نستخدم ما هو مخزن في قاعدة البيانات
+      const effectiveRole = adminUser.role || null;
+      console.log('[Permissions] Admin user found:', { adminId: adminUser.id, role: adminUser.role, effectiveRole, profileRole: profile?.role });
+      setLegacyRole(effectiveRole);
 
       const newCache: CachedPermissions = {
         permissions: new Map(),
@@ -245,23 +293,58 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     [cache]
   );
 
+  // الصلاحيات الافتراضية للأدوار القديمة (للاستخدام في hasResource)
+  const legacyRoleDefaultPermissions: Record<string, ResourceCode[]> = {
+    super_admin: ['dashboard', 'providers', 'orders', 'customers', 'finance', 'analytics', 'support', 'locations', 'team', 'approvals', 'tasks', 'messages', 'announcements', 'promotions', 'settings', 'activity_log', 'roles', 'escalation_rules'], // super_admin يرى كل شيء
+    general_moderator: ['dashboard', 'providers', 'orders', 'customers', 'support', 'locations', 'promotions', 'team', 'tasks', 'messages', 'announcements'],
+    store_supervisor: ['dashboard', 'providers', 'orders', 'support', 'messages'],
+    support: ['dashboard', 'support', 'orders', 'customers', 'messages'],
+    finance: ['dashboard', 'finance', 'orders', 'analytics', 'messages'],
+  };
+
   // هل يمكن الوصول للمورد؟
   const hasResource = useCallback(
     (resource: ResourceCode): boolean => {
       const code = `${resource}.view` as PermissionCode;
       if (cache.deniedPermissions.has(code)) return false;
-      return cache.permissions.has(code);
+
+      // التحقق من النظام الجديد أولاً
+      if (cache.permissions.has(code)) return true;
+
+      // التحقق من صلاحيات الدور القديم كـ fallback
+      if (legacyRole && legacyRoleDefaultPermissions[legacyRole]) {
+        return legacyRoleDefaultPermissions[legacyRole].includes(resource);
+      }
+
+      return false;
     },
-    [cache]
+    [cache, legacyRole]
   );
 
-  // الموارد المتاحة
-  const accessibleResources: ResourceCode[] = Array.from(cache.permissions.keys())
+  // الموارد المتاحة من النظام الجديد
+  const newSystemResources: ResourceCode[] = Array.from(cache.permissions.keys())
     .filter(code => code.endsWith('.view'))
     .map(code => code.split('.')[0] as ResourceCode);
 
-  // هل super_admin؟
-  const isSuperAdmin = cache.roles.some(r => r.role?.code === 'super_admin');
+  // دمج الموارد من النظام الجديد والصلاحيات الافتراضية للدور القديم
+  const legacyResources = legacyRole ? (legacyRoleDefaultPermissions[legacyRole] || []) : [];
+  const accessibleResources: ResourceCode[] = [...new Set([...newSystemResources, ...legacyResources])];
+
+  // هل super_admin؟ (تحقق من الأدوار الجديدة أو الدور القديم كـ fallback)
+  const isSuperAdmin = cache.roles.some(r => r.role?.code === 'super_admin') || legacyRole === 'super_admin';
+
+  // Log للتشخيص
+  if (!loading && userId) {
+    console.log('[Permissions] State:', {
+      isSuperAdmin,
+      legacyRole,
+      rolesCount: cache.roles.length,
+      roles: cache.roles.map(r => r.role?.code),
+      permissionsCount: cache.permissions.size,
+      accessibleResources,
+      legacyResources: legacyRole ? (legacyRoleDefaultPermissions[legacyRole] || []) : []
+    });
+  }
 
   const value: PermissionsContextValue = {
     loading,
@@ -269,6 +352,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     userId,
     roles: cache.roles,
     isSuperAdmin,
+    legacyRole,
     accessibleResources: [...new Set(accessibleResources)],
     geographicScope: cache.geographicScope,
     can,
