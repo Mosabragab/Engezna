@@ -149,29 +149,62 @@ CREATE INDEX IF NOT EXISTS idx_escalation_trigger ON escalation_rules(trigger_ty
 -- 4. PERMISSION AUDIT LOG (سجل تغييرات الصلاحيات)
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS public.permission_audit_log (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+-- Handle existing permission_audit_log table
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'permission_audit_log' AND table_schema = 'public') THEN
+    -- Table exists, ensure all columns are present
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'permission_audit_log' AND column_name = 'target_type' AND table_schema = 'public') THEN
+      ALTER TABLE public.permission_audit_log ADD COLUMN IF NOT EXISTS action_type VARCHAR(50);
+      ALTER TABLE public.permission_audit_log ADD COLUMN IF NOT EXISTS target_type VARCHAR(50);
+      ALTER TABLE public.permission_audit_log ADD COLUMN IF NOT EXISTS target_id UUID;
+      ALTER TABLE public.permission_audit_log ADD COLUMN IF NOT EXISTS permission_code VARCHAR(100);
+      ALTER TABLE public.permission_audit_log ADD COLUMN IF NOT EXISTS old_value JSONB;
+      ALTER TABLE public.permission_audit_log ADD COLUMN IF NOT EXISTS new_value JSONB;
+      ALTER TABLE public.permission_audit_log ADD COLUMN IF NOT EXISTS reason TEXT;
+      ALTER TABLE public.permission_audit_log ADD COLUMN IF NOT EXISTS ip_address VARCHAR(45);
+      ALTER TABLE public.permission_audit_log ADD COLUMN IF NOT EXISTS user_agent TEXT;
+      RAISE NOTICE 'Updated existing permission_audit_log table with new columns';
+    END IF;
+  ELSE
+    -- Create the table
+    CREATE TABLE public.permission_audit_log (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-  -- من فعل
-  admin_id UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+      -- من فعل
+      admin_id UUID REFERENCES admin_users(id) ON DELETE SET NULL,
 
-  -- ماذا فعل
-  action_type VARCHAR(50) NOT NULL, -- 'grant', 'deny', 'revoke', 'modify'
-  target_type VARCHAR(50) NOT NULL, -- 'role', 'admin', 'role_permission', 'admin_permission'
-  target_id UUID NOT NULL,
+      -- ماذا فعل
+      action_type VARCHAR(50) NOT NULL, -- 'grant', 'deny', 'revoke', 'modify'
+      target_type VARCHAR(50) NOT NULL, -- 'role', 'admin', 'role_permission', 'admin_permission'
+      target_id UUID NOT NULL,
 
-  -- التفاصيل
-  permission_code VARCHAR(100),
-  old_value JSONB,
-  new_value JSONB,
-  reason TEXT,
+      -- التفاصيل
+      permission_code VARCHAR(100),
+      old_value JSONB,
+      new_value JSONB,
+      reason TEXT,
 
-  -- معلومات إضافية
-  ip_address VARCHAR(45),
-  user_agent TEXT,
+      -- معلومات إضافية
+      ip_address VARCHAR(45),
+      user_agent TEXT,
 
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    );
+    RAISE NOTICE 'Created new permission_audit_log table';
+  END IF;
+END $$;
+
+-- Ensure columns exist before creating indexes
+ALTER TABLE permission_audit_log ADD COLUMN IF NOT EXISTS action_type VARCHAR(50);
+ALTER TABLE permission_audit_log ADD COLUMN IF NOT EXISTS target_type VARCHAR(50);
+ALTER TABLE permission_audit_log ADD COLUMN IF NOT EXISTS target_id UUID;
+ALTER TABLE permission_audit_log ADD COLUMN IF NOT EXISTS permission_code VARCHAR(100);
+ALTER TABLE permission_audit_log ADD COLUMN IF NOT EXISTS old_value JSONB;
+ALTER TABLE permission_audit_log ADD COLUMN IF NOT EXISTS new_value JSONB;
+ALTER TABLE permission_audit_log ADD COLUMN IF NOT EXISTS reason TEXT;
+ALTER TABLE permission_audit_log ADD COLUMN IF NOT EXISTS ip_address VARCHAR(45);
+ALTER TABLE permission_audit_log ADD COLUMN IF NOT EXISTS user_agent TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_perm_audit_admin ON permission_audit_log(admin_id);
 CREATE INDEX IF NOT EXISTS idx_perm_audit_target ON permission_audit_log(target_type, target_id);
