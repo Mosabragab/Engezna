@@ -795,19 +795,90 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 18.3 (Advanced Permissions & Storage Bucket)
+**Version:** 19.0 (Customer Journey + PWA)
 **Last Updated:** December 1, 2025
-**Next Review:** December 2, 2025
+**Next Review:** December 3, 2025
 
-**🎉 Week 4+ Ongoing Improvements!**
+**🎉 Week 5: Customer Journey Implementation!**
 - Full admin dashboard with unified components (AdminHeader, AdminSidebar)
 - Supervisor management with roles and permissions
 - Roles management page (`/admin/roles`) - View, Edit, Create, Delete roles
-- Fixed: Permissions display in role view modal
-- Fixed: Enable editing for all roles (including system roles)
 - Tasks management with assignment and tracking
 - Approvals workflow system
 - Internal messaging and team announcements
-- Locale-aware number formatting (Arabic-Indic numerals)
-- District/neighborhood filtering in location settings
-- Ready for Week 5: Admin Backend Integration & Payment!
+
+---
+
+## 🚀 Week 5: Customer Journey + PWA (IN PROGRESS)
+
+### الخطة الجديدة - تحسين واجهة العملاء
+
+#### المرحلة 0: PWA Setup
+- [ ] Install and configure next-pwa
+- [ ] Create manifest.json with Engezna branding
+- [ ] Create PWA icons (72-512px)
+- [ ] Update layout.tsx with PWA metadata
+- [ ] Create InstallPrompt component
+
+#### المرحلة 1: المكونات المشتركة
+- [ ] CustomerLayout (wrapper with header + bottom nav)
+- [ ] CustomerHeader (location, notifications, profile)
+- [ ] BottomNavigation (home, browse, cart, favorites, profile)
+- [ ] ProviderCard (unified store card)
+- [ ] ProductCard (menu item card)
+- [ ] SearchBar, CategoryChip, FilterChip
+- [ ] RatingStars, PriceTag, StatusBadge
+- [ ] QuantitySelector, EmptyState
+
+#### المرحلة 2: الصفحات الجديدة
+- [ ] Homepage improvement (hero, categories, offers carousel)
+- [ ] Cart page `/cart` (NEW)
+- [ ] Favorites page `/favorites` (NEW)
+- [ ] Offers page `/offers` (NEW)
+- [ ] Improved providers listing
+- [ ] Improved provider detail
+
+#### المرحلة 3: Hooks & Database
+- [x] favorites table created ✅
+- [ ] useFavorites hook
+- [ ] useProviders hook (with filters)
+- [ ] useCart hook improvements
+
+#### المرحلة 4: الترجمات
+- [ ] Add all new translation keys (AR/EN)
+- [ ] PWA translations
+- [ ] Customer journey translations
+
+### هيكل الملفات الجديدة
+```
+src/
+├── components/
+│   ├── customer/
+│   │   ├── layout/
+│   │   │   ├── CustomerLayout.tsx
+│   │   │   ├── CustomerHeader.tsx
+│   │   │   └── BottomNavigation.tsx
+│   │   ├── shared/
+│   │   │   ├── ProviderCard.tsx
+│   │   │   ├── ProductCard.tsx
+│   │   │   ├── SearchBar.tsx
+│   │   │   └── ...
+│   │   ├── home/
+│   │   │   ├── HeroSection.tsx
+│   │   │   ├── CategoriesSection.tsx
+│   │   │   └── OffersCarousel.tsx
+│   │   └── cart/
+│   │       ├── CartItem.tsx
+│   │       └── CartSummary.tsx
+│   └── pwa/
+│       └── InstallPrompt.tsx
+├── hooks/
+│   └── customer/
+│       ├── useFavorites.ts
+│       ├── useProviders.ts
+│       └── useCart.ts
+└── app/[locale]/
+    ├── cart/page.tsx (NEW)
+    ├── favorites/page.tsx (NEW)
+    └── offers/page.tsx (NEW)
+```

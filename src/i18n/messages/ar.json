@@ -777,5 +777,88 @@
       "saved": "تم حفظ العنوان بنجاح",
       "error": "حدث خطأ أثناء الحفظ"
     }
+  },
+  "bottomNav": {
+    "home": "الرئيسية",
+    "browse": "تصفح",
+    "cart": "السلة",
+    "favorites": "المفضلة",
+    "profile": "حسابي"
+  },
+  "header": {
+    "location": "الموقع",
+    "notifications": "الإشعارات"
+  },
+  "cart": {
+    "title": "السلة",
+    "empty": "السلة فارغة",
+    "emptyDescription": "أضف منتجات من المتاجر للبدء",
+    "browsStores": "تصفح المتاجر",
+    "addMore": "أضف منتجات أخرى من",
+    "promoCode": "كود الخصم",
+    "promoPlaceholder": "أدخل الكود...",
+    "apply": "تطبيق",
+    "summary": "ملخص الطلب",
+    "subtotal": "المجموع الفرعي",
+    "deliveryFee": "رسوم التوصيل",
+    "discount": "الخصم",
+    "total": "الإجمالي",
+    "checkout": "متابعة الطلب",
+    "remove": "إزالة",
+    "edit": "تعديل"
+  },
+  "favorites": {
+    "title": "المفضلة",
+    "stores": "متجر",
+    "products": "المنتجات",
+    "empty": "لا توجد مفضلات بعد",
+    "emptyDescription": "أضف متاجر لقائمة المفضلة للوصول السريع",
+    "browse": "تصفح المتاجر",
+    "addedToFavorites": "تمت الإضافة للمفضلة",
+    "removedFromFavorites": "تمت الإزالة من المفضلة"
+  },
+  "offers": {
+    "title": "العروض",
+    "todayDeal": "عرض اليوم",
+    "freeDelivery": "توصيل مجاني",
+    "discounts": "خصومات المتاجر",
+    "code": "الكود",
+    "orderNow": "اطلب الآن",
+    "validUntil": "صالح حتى",
+    "expired": "منتهي"
+  },
+  "providers": {
+    "title": "المتاجر",
+    "searchPlaceholder": "ابحث عن مطعم أو أكلة...",
+    "all": "الكل",
+    "restaurants": "مطاعم",
+    "cafes": "كافيهات",
+    "grocery": "سوبر ماركت",
+    "juice": "عصائر",
+    "pharmacy": "صيدلية",
+    "vegetables": "خضار وفاكهة",
+    "topRated": "الأعلى تقييماً",
+    "fastest": "الأسرع توصيل",
+    "cheapest": "الأرخص",
+    "freeDelivery": "توصيل مجاني",
+    "results": "نتيجة",
+    "loadMore": "تحميل المزيد",
+    "noResults": "لا توجد نتائج",
+    "closed": "مغلق الآن",
+    "open": "مفتوح",
+    "minOrder": "الحد الأدنى",
+    "deliveryTime": "وقت التوصيل",
+    "deliveryFee": "رسوم التوصيل",
+    "free": "مجاني",
+    "rating": "التقييم",
+    "reviews": "تقييم",
+    "distance": "كم",
+    "mostOrdered": "الأكثر طلباً"
+  },
+  "pwa": {
+    "installTitle": "تثبيت إنجزنا",
+    "installDescription": "أضف التطبيق للشاشة الرئيسية للوصول السريع",
+    "installButton": "تثبيت",
+    "later": "لاحقاً"
   }
 }

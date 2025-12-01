@@ -777,5 +777,88 @@
       "saved": "Address saved successfully",
       "error": "An error occurred while saving"
     }
+  },
+  "bottomNav": {
+    "home": "Home",
+    "browse": "Browse",
+    "cart": "Cart",
+    "favorites": "Favorites",
+    "profile": "Profile"
+  },
+  "header": {
+    "location": "Location",
+    "notifications": "Notifications"
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "emptyDescription": "Add items from stores to get started",
+    "browsStores": "Browse Stores",
+    "addMore": "Add more items from",
+    "promoCode": "Promo Code",
+    "promoPlaceholder": "Enter code...",
+    "apply": "Apply",
+    "summary": "Order Summary",
+    "subtotal": "Subtotal",
+    "deliveryFee": "Delivery Fee",
+    "discount": "Discount",
+    "total": "Total",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "edit": "Edit"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "stores": "stores",
+    "products": "Products",
+    "empty": "No favorites yet",
+    "emptyDescription": "Add stores to your favorites for quick access",
+    "browse": "Browse Stores",
+    "addedToFavorites": "Added to favorites",
+    "removedFromFavorites": "Removed from favorites"
+  },
+  "offers": {
+    "title": "Offers",
+    "todayDeal": "Today's Deal",
+    "freeDelivery": "Free Delivery",
+    "discounts": "Store Discounts",
+    "code": "Code",
+    "orderNow": "Order Now",
+    "validUntil": "Valid until",
+    "expired": "Expired"
+  },
+  "providers": {
+    "title": "Stores",
+    "searchPlaceholder": "Search for a restaurant or food...",
+    "all": "All",
+    "restaurants": "Restaurants",
+    "cafes": "Cafes",
+    "grocery": "Grocery",
+    "juice": "Juice",
+    "pharmacy": "Pharmacy",
+    "vegetables": "Vegetables & Fruits",
+    "topRated": "Top Rated",
+    "fastest": "Fastest Delivery",
+    "cheapest": "Cheapest",
+    "freeDelivery": "Free Delivery",
+    "results": "results",
+    "loadMore": "Load More",
+    "noResults": "No results",
+    "closed": "Closed Now",
+    "open": "Open",
+    "minOrder": "Min Order",
+    "deliveryTime": "Delivery Time",
+    "deliveryFee": "Delivery Fee",
+    "free": "Free",
+    "rating": "Rating",
+    "reviews": "reviews",
+    "distance": "km",
+    "mostOrdered": "Most Ordered"
+  },
+  "pwa": {
+    "installTitle": "Install Engezna",
+    "installDescription": "Add the app to your home screen for quick access",
+    "installButton": "Install",
+    "later": "Later"
   }
 }
