@@ -165,9 +165,14 @@ export default function SupervisorPermissionsPage({ params }: PageProps) {
       .single()
 
     if (supervisorData) {
+      // Handle profile which might be returned as array from Supabase join
+      const profileData = Array.isArray(supervisorData.profile)
+        ? supervisorData.profile[0]
+        : supervisorData.profile
+
       setSupervisor({
         ...supervisorData,
-        profile: supervisorData.profile || undefined,
+        profile: profileData || undefined,
       })
     }
 
