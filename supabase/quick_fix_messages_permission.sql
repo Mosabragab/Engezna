@@ -95,4 +95,7 @@ LEFT JOIN admin_roles ar ON ar.admin_id = au.id
 LEFT JOIN roles r ON r.id = ar.role_id
 WHERE au.is_active = true;
 
-RAISE NOTICE 'Messages permission fix completed! الرسائل يجب أن تظهر الآن في القائمة الجانبية.';
+DO $$
+BEGIN
+  RAISE NOTICE 'Messages permission fix completed! الرسائل يجب أن تظهر الآن في القائمة الجانبية.';
+END $$;
