@@ -185,11 +185,14 @@ LEFT JOIN role_permissions rp ON rp.role_id = r.id
 GROUP BY r.id, r.name_ar, r.code
 ORDER BY r.sort_order;
 
-RAISE NOTICE '';
-RAISE NOTICE '============================================';
-RAISE NOTICE '✅ تمت المزامنة بنجاح!';
-RAISE NOTICE '============================================';
-RAISE NOTICE 'إذا كانت القائمة الجانبية لا تزال فارغة:';
-RAISE NOTICE '1. قم بتحديث الصفحة (Ctrl+F5)';
-RAISE NOTICE '2. تأكد أن المشرف له دور (role) صحيح في admin_users';
-RAISE NOTICE '============================================';
+DO $$
+BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '============================================';
+  RAISE NOTICE '✅ تمت المزامنة بنجاح!';
+  RAISE NOTICE '============================================';
+  RAISE NOTICE 'إذا كانت القائمة الجانبية لا تزال فارغة:';
+  RAISE NOTICE '1. قم بتحديث الصفحة (Ctrl+F5)';
+  RAISE NOTICE '2. تأكد أن المشرف له دور (role) صحيح في admin_users';
+  RAISE NOTICE '============================================';
+END $$;
