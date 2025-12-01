@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Header } from '@/components/shared/Header'
 import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared'
@@ -253,16 +252,11 @@ export default function ProvidersPage() {
         {!loading && filteredProviders.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredProviders.map((provider) => (
-              <Link
+              <ProviderCard
                 key={provider.id}
-                href={`/${locale}/providers/${provider.id}`}
-              >
-                <ProviderCard
-                  provider={provider}
-                  variant="default"
-                  showFavoriteButton={false}
-                />
-              </Link>
+                provider={provider}
+                variant="default"
+              />
             ))}
           </div>
         )}
