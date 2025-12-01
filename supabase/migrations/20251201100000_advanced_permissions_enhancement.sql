@@ -231,8 +231,16 @@ CREATE POLICY "System can insert audit log" ON permission_audit_log FOR INSERT
   USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid() AND is_active = true));
 
 -- ============================================================================
--- 7. SEED RESOURCES
+-- 7. SEED RESOURCES (with safe column handling)
 -- ============================================================================
+
+-- First ensure the category column exists
+ALTER TABLE resources ADD COLUMN IF NOT EXISTS category VARCHAR(20) DEFAULT 'main';
+ALTER TABLE resources ADD COLUMN IF NOT EXISTS icon VARCHAR(50) DEFAULT 'Shield';
+ALTER TABLE resources ADD COLUMN IF NOT EXISTS description_ar TEXT;
+ALTER TABLE resources ADD COLUMN IF NOT EXISTS description_en TEXT;
+ALTER TABLE resources ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+ALTER TABLE resources ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 
 INSERT INTO resources (code, name_ar, name_en, description_ar, description_en, icon, category, sort_order)
 VALUES
@@ -262,8 +270,16 @@ ON CONFLICT (code) DO UPDATE SET
   sort_order = EXCLUDED.sort_order;
 
 -- ============================================================================
--- 8. SEED ACTIONS
+-- 8. SEED ACTIONS (with safe column handling)
 -- ============================================================================
+
+-- First ensure the columns exist
+ALTER TABLE actions ADD COLUMN IF NOT EXISTS severity VARCHAR(20) DEFAULT 'low';
+ALTER TABLE actions ADD COLUMN IF NOT EXISTS requires_reason BOOLEAN DEFAULT false;
+ALTER TABLE actions ADD COLUMN IF NOT EXISTS description_ar TEXT;
+ALTER TABLE actions ADD COLUMN IF NOT EXISTS description_en TEXT;
+ALTER TABLE actions ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+ALTER TABLE actions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 
 INSERT INTO actions (code, name_ar, name_en, description_ar, description_en, severity, requires_reason, sort_order)
 VALUES
