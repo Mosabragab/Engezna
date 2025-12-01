@@ -1,890 +1,188 @@
 'use client'
 
-import { useTranslations, useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { CustomerNavbar } from '@/components/shared/CustomerNavbar'
-import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
+import { useLocale } from 'next-intl'
+import { useRouter } from 'next/navigation'
+import { CustomerLayout } from '@/components/customer/layout'
 import {
-  UtensilsCrossed,
-  Coffee,
-  ShoppingBasket,
-  Apple,
-  TrendingDown,
-  Zap,
-  MapPin,
-  Smartphone,
-  ChevronRight,
-  LayoutDashboard,
-  Store,
-  Shield,
-  Users,
-  BarChart3,
-  Settings,
-  Globe,
-} from 'lucide-react'
+  HeroSection,
+  CategoriesSection,
+  OffersCarousel,
+  ReorderSection,
+  TopRatedSection,
+  NearbySection,
+} from '@/components/customer/home'
+import { VoiceOrderFAB } from '@/components/customer/voice'
+import { useTopRatedProviders } from '@/hooks/customer/useProviders'
 import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
+// Demo offers data
+const demoOffers = [
+  {
+    id: '1',
+    title: 'خصم ٣٠٪',
+    titleEn: '30% Off',
+    description: 'على جميع البيتزا',
+    descriptionEn: 'On all pizzas',
+    providerName: 'سلطان بيتزا',
+    providerNameEn: 'Sultan Pizza',
+    discountPercentage: 30,
+    imageUrl: '/images/offers/pizza.jpg',
+    validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  },
+  {
+    id: '2',
+    title: 'توصيل مجاني',
+    titleEn: 'Free Delivery',
+    description: 'على الطلبات فوق ١٠٠ ج.م',
+    descriptionEn: 'On orders over 100 EGP',
+    providerName: 'لافندر كافيه',
+    providerNameEn: 'Lavender Cafe',
+    imageUrl: '/images/offers/coffee.jpg',
+    validUntil: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+  },
+  {
+    id: '3',
+    title: 'اشتري ١ واحصل ١',
+    titleEn: 'Buy 1 Get 1',
+    description: 'على جميع العصائر',
+    descriptionEn: 'On all juices',
+    providerName: 'عصائر الشفا',
+    providerNameEn: 'Al-Shifa Juices',
+    imageUrl: '/images/offers/juice.jpg',
+    validUntil: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+  },
+]
 
-// User role type
-type UserRole = 'customer' | 'provider_owner' | 'admin' | null
+// Demo last order
+const demoLastOrder = {
+  id: 'order-123',
+  providerName: 'Sultan Pizza',
+  providerNameAr: 'سلطان بيتزا',
+  providerLogo: undefined,
+  items: ['2 Chicken Shawarma', '1 Large Pizza'],
+  itemsAr: ['٢ شاورما فراخ', '١ بيتزا كبيرة'],
+  total: 140,
+  createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+}
 
-export default function Home() {
-  console.log('🏠 Homepage rendered')
-  const t = useTranslations('home')
-  const navT = useTranslations('nav')
+export default function HomePage() {
   const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const [user, setUser] = useState<User | null>(null)
-  const [userRole, setUserRole] = useState<UserRole>(null)
-  const [authLoading, setAuthLoading] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  
-  console.log('🌍 Locale:', locale, 'RTL:', isRTL)
+  const router = useRouter()
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false)
+  const [lastOrder, setLastOrder] = useState<typeof demoLastOrder | null>(null)
+  const [nearbyProviders, setNearbyProviders] = useState<any[]>([])
 
+  // Fetch top rated providers
+  const { providers: topRatedProviders, isLoading: topRatedLoading } = useTopRatedProviders(6)
+
+  // Load last order and nearby providers
   useEffect(() => {
-    checkAuth()
+    // For demo, show the last order
+    setLastOrder(demoLastOrder)
+
+    // Fetch nearby providers (using same hook but could be location-based)
+    fetchNearbyProviders()
   }, [])
 
-  async function checkAuth() {
+  async function fetchNearbyProviders() {
     const supabase = createClient()
-    
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-    
-    // If user exists, fetch their role
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-      
-      if (profile?.role) {
-        setUserRole(profile.role as UserRole)
-        console.log('👤 User role:', profile.role)
-      }
+    const { data } = await supabase
+      .from('providers')
+      .select('id, name_ar, name_en, logo_url, cover_image_url, category, status')
+      .in('status', ['open', 'closed'])
+      .limit(6)
+
+    if (data) {
+      // Add mock distance for demo
+      const withDistance = data.map((p, i) => ({
+        ...p,
+        distance: 0.5 + i * 0.3,
+      }))
+      setNearbyProviders(withDistance)
     }
-    
-    setAuthLoading(false)
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-        
-        setUserRole(profile?.role as UserRole || null)
-      } else {
-        setUserRole(null)
-      }
-    })
-    
-    return () => subscription.unsubscribe()
   }
 
-  async function handleSignOut() {
-    console.log('🚪 Signing out from homepage...')
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    setUserRole(null)
-    
-    // Refresh the page to update auth state
-    window.location.reload()
+  const handleVoiceClick = () => {
+    setIsVoiceOpen(true)
   }
 
-  // Helper function to check user roles
-  const isProvider = userRole === 'provider_owner'
-  const isAdmin = userRole === 'admin'
-  const isCustomer = userRole === 'customer' || (!isProvider && !isAdmin && user)
-  const isGuest = !user
-
-  // Show customer-focused content only to guests and customers
-  const showCustomerContent = isGuest || isCustomer
-
-  // Get the appropriate dashboard link based on role
-  const getDashboardLink = () => {
-    if (isAdmin) return `/${locale}/admin`
-    if (isProvider) return `/${locale}/provider`
-    return `/${locale}/providers`
+  const handleSearchClick = () => {
+    router.push(`/${locale}/providers`)
   }
 
-  // Get the appropriate button text based on role
-  const getHeaderButtonText = () => {
-    if (isAdmin) return locale === 'ar' ? 'لوحة الإدارة' : 'Admin Panel'
-    if (isProvider) return locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'
-    return locale === 'ar' ? 'المتاجر' : 'Stores'
+  const handleCategoryClick = (categoryId: string) => {
+    router.push(`/${locale}/providers?category=${categoryId}`)
   }
 
-  // Get header button icon based on role
-  const getHeaderButtonIcon = () => {
-    if (isAdmin) return <Shield className="w-4 h-4 mr-1" />
-    if (isProvider) return <LayoutDashboard className="w-4 h-4 mr-1" />
-    return <Store className="w-4 h-4 mr-1" />
+  const handleViewAllOffers = () => {
+    router.push(`/${locale}/offers`)
+  }
+
+  const handleViewAllTopRated = () => {
+    router.push(`/${locale}/providers?sort=rating`)
+  }
+
+  const handleViewAllNearby = () => {
+    router.push(`/${locale}/providers?sort=distance`)
+  }
+
+  const handleReorder = (orderId: string) => {
+    // Would add items to cart and navigate
+    router.push(`/${locale}/cart`)
+  }
+
+  const handleViewOrderDetails = (orderId: string) => {
+    router.push(`/${locale}/orders/${orderId}`)
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation Header */}
-      <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo - Right side in RTL */}
-            <Link href={`/${locale}`} className="flex items-center">
-              <span className="text-2xl font-bold text-primary font-arabic">
-                {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-              </span>
-            </Link>
+    <CustomerLayout showHeader={true} showBottomNav={true}>
+      <div className="pb-4">
+        {/* Hero Section with Voice CTA */}
+        <HeroSection
+          onVoiceClick={handleVoiceClick}
+          onSearchClick={handleSearchClick}
+        />
 
-            {/* Desktop Navigation - Center */}
-            <nav className="hidden md:flex items-center gap-8">
-              <Link
-                href={`/${locale}`}
-                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
-              >
-                {navT('home')}
-              </Link>
-              <a
-                href="#services"
-                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
-              >
-                {navT('services')}
-              </a>
-              <a
-                href="#about"
-                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
-              >
-                {navT('about')}
-              </a>
-              <a
-                href="#contact"
-                className="text-sm font-medium text-gray-700 hover:text-primary transition-colors"
-              >
-                {navT('contact')}
-              </a>
-            </nav>
+        {/* Categories */}
+        <CategoriesSection
+          onCategoryClick={handleCategoryClick}
+          className="mt-4"
+        />
 
-            {/* Actions - Left side in RTL */}
-            <div className="flex items-center gap-3">
-              {/* Auth Section */}
-              {authLoading ? (
-                <div className="hidden md:block w-24 h-9 bg-gray-100 animate-pulse rounded-lg" />
-              ) : user ? (
-                <div className="hidden md:flex items-center gap-3">
-                  {/* Role-based Navigation Button */}
-                  {(isProvider || isAdmin) && (
-                    <Link href={getDashboardLink()}>
-                      <Button
-                        size="sm"
-                        className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
-                      >
-                        {getHeaderButtonIcon()}
-                        {getHeaderButtonText()}
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              ) : (
-                <Link href={`/${locale}/auth/login`} className="hidden md:block">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-primary text-primary hover:bg-primary hover:text-white"
-                  >
-                    {navT('login')}
-                  </Button>
-                </Link>
-              )}
+        {/* Offers Carousel */}
+        <OffersCarousel
+          offers={demoOffers}
+          onViewAll={handleViewAllOffers}
+          className="mt-6"
+        />
 
-              {/* Separator */}
-              <div className="hidden md:block w-px h-6 bg-gray-200" />
+        {/* Reorder Section */}
+        <ReorderSection
+          lastOrder={lastOrder}
+          onReorder={handleReorder}
+          onViewDetails={handleViewOrderDetails}
+          className="mt-2"
+        />
 
-              {/* Language Switcher */}
-              <LanguageSwitcher variant="compact" />
+        {/* Top Rated */}
+        <TopRatedSection
+          providers={topRatedProviders}
+          onViewAll={handleViewAllTopRated}
+          className="mt-2"
+        />
 
-              {/* Mobile Menu Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="md:hidden"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? (
-                  <span className="text-lg">✕</span>
-                ) : (
-                  <span className="text-lg">☰</span>
-                )}
-              </Button>
-            </div>
-          </div>
+        {/* Nearby */}
+        <NearbySection
+          providers={nearbyProviders}
+          onViewAll={handleViewAllNearby}
+          className="mt-2"
+        />
+      </div>
 
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="md:hidden border-t py-4 space-y-4">
-              {/* Navigation Links */}
-              <nav className="flex flex-col gap-2">
-                <Link
-                  href={`/${locale}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
-                >
-                  {navT('home')}
-                </Link>
-                <a
-                  href="#services"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
-                >
-                  {navT('services')}
-                </a>
-                <a
-                  href="#about"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
-                >
-                  {navT('about')}
-                </a>
-                <a
-                  href="#contact"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-primary rounded-lg transition-colors"
-                >
-                  {navT('contact')}
-                </a>
-              </nav>
-
-              {/* Auth Section - Mobile */}
-              <div className="border-t pt-4 px-4">
-                {authLoading ? (
-                  <div className="w-full h-10 bg-gray-100 animate-pulse rounded-lg" />
-                ) : user ? (
-                  <div className="space-y-2">
-                    {(isProvider || isAdmin) && (
-                      <Link href={getDashboardLink()}>
-                        <Button
-                          className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          {getHeaderButtonIcon()}
-                          {getHeaderButtonText()}
-                        </Button>
-                      </Link>
-                    )}
-                    <Button
-                      variant="outline"
-                      className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
-                      onClick={() => {
-                        handleSignOut()
-                        setMobileMenuOpen(false)
-                      }}
-                    >
-                      {navT('logout')}
-                    </Button>
-                  </div>
-                ) : (
-                  <Link href={`/${locale}/auth/login`}>
-                    <Button
-                      className="w-full bg-primary hover:bg-primary/90"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {navT('login')}
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Hero Section - Different for each role */}
-      <section className="relative overflow-hidden bg-white">
-        <div className="container mx-auto px-4 py-20 md:py-32">
-          <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-            {/* Coming Soon Badge */}
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary border border-primary/20">
-              {t('comingSoon')}
-            </div>
-
-            {/* Main Heading - Role-specific for Admin */}
-            {isAdmin ? (
-              <>
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-cyan-500 to-sky-500 bg-clip-text text-transparent">
-                  {locale === 'ar' ? 'لوحة إدارة إنجزنا' : 'Engezna Admin Panel'}
-                </h1>
-                <p className="text-xl md:text-2xl text-muted-foreground mb-4">
-                  {locale === 'ar' ? 'إدارة المنصة والمستخدمين والمتاجر' : 'Manage platform, users, and stores'}
-                </p>
-                <p className="text-base md:text-lg text-muted-foreground mb-10 max-w-2xl">
-                  {locale === 'ar' 
-                    ? 'مرحباً بك في لوحة الإدارة. يمكنك من هنا مراقبة أداء المنصة وإدارة المستخدمين والمتاجر.'
-                    : 'Welcome to the admin panel. Monitor platform performance and manage users and stores from here.'}
-                </p>
-              </>
-            ) : isProvider ? (
-              <>
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
-                  {locale === 'ar' ? 'مرحباً بك يا شريك!' : 'Welcome, Partner!'}
-                </h1>
-                <p className="text-xl md:text-2xl text-muted-foreground mb-4">
-                  {locale === 'ar' ? 'إدارة متجرك وزيادة مبيعاتك' : 'Manage your store and grow your sales'}
-                </p>
-                <p className="text-base md:text-lg text-muted-foreground mb-10 max-w-2xl">
-                  {locale === 'ar' 
-                    ? 'أنت الآن شريك في منصة إنجزنا. يمكنك إدارة متجرك ومنتجاتك وطلباتك من لوحة التحكم.'
-                    : 'You are now a partner on Engezna platform. Manage your store, products, and orders from your dashboard.'}
-                </p>
-              </>
-            ) : (
-              <>
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
-                  {t('heroTitle')}
-                </h1>
-                <p className="text-xl md:text-2xl text-muted-foreground mb-4">
-                  {t('heroSubtitle')}
-                </p>
-                <p className="text-base md:text-lg text-muted-foreground mb-10 max-w-2xl">
-                  {t('heroDescription')}
-                </p>
-              </>
-            )}
-
-            {/* CTA Buttons - Role Aware */}
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              {isAdmin ? (
-                // Admin CTAs
-                <>
-                  <Link href={`/${locale}/admin`}>
-                    <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto bg-red-600 hover:bg-red-700">
-                      <Shield className={`${isRTL ? 'ml-2' : 'mr-2'} h-5 w-5`} />
-                      {locale === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
-                    </Button>
-                  </Link>
-                  <Link href={`/${locale}/providers`}>
-                    <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 w-full sm:w-auto">
-                      <Store className={`${isRTL ? 'ml-2' : 'mr-2'} h-5 w-5`} />
-                      {locale === 'ar' ? 'تصفح المتاجر' : 'Browse Stores'}
-                    </Button>
-                  </Link>
-                </>
-              ) : isProvider ? (
-                // Provider CTAs
-                <>
-                  <Link href={`/${locale}/provider`}>
-                    <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto">
-                      <LayoutDashboard className={`${isRTL ? 'ml-2' : 'mr-2'} h-5 w-5`} />
-                      {locale === 'ar' ? 'لوحة التحكم' : 'Go to Dashboard'}
-                    </Button>
-                  </Link>
-                  <Link href={`/${locale}/provider`}>
-                    <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 w-full sm:w-auto">
-                      <Store className={`${isRTL ? 'ml-2' : 'mr-2'} h-5 w-5`} />
-                      {locale === 'ar' ? 'إدارة المتجر' : 'Manage Store'}
-                    </Button>
-                  </Link>
-                </>
-              ) : (
-                // Guest/Customer CTAs
-                <>
-                  <Link href={user ? `/${locale}/providers` : `/${locale}/auth/login`}>
-                    <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto">
-                      {t('ctaOrder')}
-                      <ChevronRight className={`${isRTL ? 'mr-2 rotate-180' : 'ml-2'} h-5 w-5`} />
-                    </Button>
-                  </Link>
-                  <Link href={isProvider ? `/${locale}/provider` : `/${locale}/partner/register`}>
-                    <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 w-full sm:w-auto">
-                      {t('ctaPartner')}
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Decorative Elements - Only visible for Admin */}
-        {isAdmin && (
-          <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-            <div className="absolute top-20 left-10 w-64 h-64 bg-red-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-20 right-10 w-96 h-96 bg-red-500/5 rounded-full blur-3xl"></div>
-          </div>
-        )}
-      </section>
-
-      {/* Admin Quick Stats Section - Only for Admin */}
-      {isAdmin && (
-        <section className="py-12 bg-gradient-to-br from-red-50 to-slate-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2 text-slate-900">
-                {locale === 'ar' ? 'نظرة سريعة على المنصة' : 'Platform Overview'}
-              </h2>
-              <p className="text-slate-600">
-                {locale === 'ar' ? 'إحصائيات سريعة عن أداء المنصة' : 'Quick stats about platform performance'}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
-                <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-slate-900">0</div>
-                <div className="text-sm text-slate-500">{locale === 'ar' ? 'المستخدمين' : 'Users'}</div>
-              </div>
-              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
-                <Store className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-slate-900">4</div>
-                <div className="text-sm text-slate-500">{locale === 'ar' ? 'المتاجر' : 'Stores'}</div>
-              </div>
-              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
-                <ShoppingBasket className="w-8 h-8 text-cyan-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-slate-900">0</div>
-                <div className="text-sm text-slate-500">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
-              </div>
-              <div className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm">
-                <BarChart3 className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-slate-900">0 EGP</div>
-                <div className="text-sm text-slate-500">{locale === 'ar' ? 'الإيرادات' : 'Revenue'}</div>
-              </div>
-            </div>
-            <div className="text-center mt-6">
-              <Link href={`/${locale}/admin`}>
-                <Button variant="default" className="bg-red-600 hover:bg-red-700 text-white">
-                  {locale === 'ar' ? 'عرض التفاصيل' : 'View Details'}
-                  <ChevronRight className={`${isRTL ? 'mr-2 rotate-180' : 'ml-2'} h-4 w-4`} />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Provider Quick Actions - Only for Providers */}
-      {isProvider && (
-        <section className="py-12 bg-gradient-to-br from-primary/5 to-slate-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2 text-slate-900">
-                {locale === 'ar' ? 'إجراءات سريعة' : 'Quick Actions'}
-              </h2>
-              <p className="text-slate-600">
-                {locale === 'ar' ? 'الوصول السريع لأهم الوظائف' : 'Quick access to important functions'}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Link href={`/${locale}/provider`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
-                <LayoutDashboard className="w-8 h-8 text-primary mx-auto mb-2" />
-                <div className="font-medium text-slate-900">{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</div>
-              </Link>
-              <Link href={`/${locale}/provider/orders`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
-                <ShoppingBasket className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <div className="font-medium text-slate-900">{locale === 'ar' ? 'الطلبات' : 'Orders'}</div>
-              </Link>
-              <Link href={`/${locale}/provider/products`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
-                <Store className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <div className="font-medium text-slate-900">{locale === 'ar' ? 'المنتجات' : 'Products'}</div>
-              </Link>
-              <Link href={`/${locale}/provider/settings`} className="bg-white rounded-xl p-6 text-center border border-slate-200 shadow-sm hover:border-primary hover:shadow-md transition-all">
-                <Settings className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                <div className="font-medium text-slate-900">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</div>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Service Categories Section - Show for all */}
-      <section id="services" className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          {/* Section Header */}
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              {t('categories.title')}
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              {t('categories.subtitle')}
-            </p>
-          </div>
-
-          {/* Categories Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Restaurants */}
-            <div className="group bg-background rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 border border-border/50">
-              <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                <UtensilsCrossed className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3">
-                {t('categories.restaurants.title')}
-              </h3>
-              <p className="text-muted-foreground">
-                {t('categories.restaurants.description')}
-              </p>
-            </div>
-
-            {/* Coffee Shops */}
-            <div className="group bg-background rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 border border-border/50">
-              <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                <Coffee className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3">
-                {t('categories.coffee.title')}
-              </h3>
-              <p className="text-muted-foreground">
-                {t('categories.coffee.description')}
-              </p>
-            </div>
-
-            {/* Groceries */}
-            <div className="group bg-background rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 border border-border/50">
-              <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                <ShoppingBasket className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3">
-                {t('categories.groceries.title')}
-              </h3>
-              <p className="text-muted-foreground">
-                {t('categories.groceries.description')}
-              </p>
-            </div>
-
-            {/* Vegetables & Fruits */}
-            <div className="group bg-background rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 border border-border/50">
-              <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                <Apple className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3">
-                {t('categories.vegetables.title')}
-              </h3>
-              <p className="text-muted-foreground">
-                {t('categories.vegetables.description')}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section - Show for all */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          {/* Section Header */}
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              {t('features.title')}
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              {t('features.subtitle')}
-            </p>
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Low Commission */}
-            <div className="text-center">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <TrendingDown className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">
-                {t('features.lowCommission.title')}
-              </h3>
-              <p className="text-muted-foreground">
-                {t('features.lowCommission.description')}
-              </p>
-            </div>
-
-            {/* Fast Delivery */}
-            <div className="text-center">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Zap className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">
-                {t('features.fastDelivery.title')}
-              </h3>
-              <p className="text-muted-foreground">
-                {t('features.fastDelivery.description')}
-              </p>
-            </div>
-
-            {/* Local Focus */}
-            <div className="text-center">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <MapPin className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">
-                {t('features.localFocus.title')}
-              </h3>
-              <p className="text-muted-foreground">
-                {t('features.localFocus.description')}
-              </p>
-            </div>
-
-            {/* Easy to Use */}
-            <div className="text-center">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Smartphone className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">
-                {t('features.easyToUse.title')}
-              </h3>
-              <p className="text-muted-foreground">
-                {t('features.easyToUse.description')}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section - Only for Guests and Customers */}
-      {showCustomerContent && (
-        <section className="py-20 bg-muted/30">
-          <div className="container mx-auto px-4">
-            {/* Section Header */}
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                {t('howItWorks.title')}
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                {t('howItWorks.subtitle')}
-              </p>
-            </div>
-
-            {/* Steps for Customers */}
-            <div className="mb-20">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Step 1 */}
-                <div className="relative">
-                  <div className="bg-background rounded-2xl p-8 shadow-lg border border-border/50 h-full">
-                    <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-2xl font-bold mb-6">
-                      1
-                    </div>
-                    <h3 className="text-xl font-bold mb-3">
-                      {t('howItWorks.customer.step1.title')}
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {t('howItWorks.customer.step1.description')}
-                    </p>
-                  </div>
-                  {/* Arrow for desktop */}
-                  <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                    <ChevronRight className={`w-8 h-8 text-primary ${isRTL ? 'rotate-180' : ''}`} />
-                  </div>
-                </div>
-
-                {/* Step 2 */}
-                <div className="relative">
-                  <div className="bg-background rounded-2xl p-8 shadow-lg border border-border/50 h-full">
-                    <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-2xl font-bold mb-6">
-                      2
-                    </div>
-                    <h3 className="text-xl font-bold mb-3">
-                      {t('howItWorks.customer.step2.title')}
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {t('howItWorks.customer.step2.description')}
-                    </p>
-                  </div>
-                  {/* Arrow for desktop */}
-                  <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                    <ChevronRight className={`w-8 h-8 text-primary ${isRTL ? 'rotate-180' : ''}`} />
-                  </div>
-                </div>
-
-                {/* Step 3 */}
-                <div>
-                  <div className="bg-background rounded-2xl p-8 shadow-lg border border-border/50 h-full">
-                    <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-2xl font-bold mb-6">
-                      3
-                    </div>
-                    <h3 className="text-xl font-bold mb-3">
-                      {t('howItWorks.customer.step3.title')}
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {t('howItWorks.customer.step3.description')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* For Providers - Only show if not already a provider */}
-            <div className="bg-primary/5 rounded-3xl p-8 md:p-12 border-2 border-primary/20">
-              <div className="text-center mb-12">
-                <h3 className="text-2xl md:text-4xl font-bold mb-3">
-                  {t('howItWorks.provider.title')}
-                </h3>
-                <p className="text-lg text-muted-foreground">
-                  {t('howItWorks.provider.subtitle')}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Provider Step 1 */}
-                <div className="bg-background rounded-xl p-6">
-                  <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xl font-bold mb-4">
-                    1
-                  </div>
-                  <h4 className="text-lg font-bold mb-2">
-                    {t('howItWorks.provider.step1.title')}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {t('howItWorks.provider.step1.description')}
-                  </p>
-                </div>
-
-                {/* Provider Step 2 */}
-                <div className="bg-background rounded-xl p-6">
-                  <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xl font-bold mb-4">
-                    2
-                  </div>
-                  <h4 className="text-lg font-bold mb-2">
-                    {t('howItWorks.provider.step2.title')}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {t('howItWorks.provider.step2.description')}
-                  </p>
-                </div>
-
-                {/* Provider Step 3 */}
-                <div className="bg-background rounded-xl p-6">
-                  <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xl font-bold mb-4">
-                    3
-                  </div>
-                  <h4 className="text-lg font-bold mb-2">
-                    {t('howItWorks.provider.step3.title')}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {t('howItWorks.provider.step3.description')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Customer CTA Section - Only for Guests and Customers */}
-      {showCustomerContent && (
-        <section className="py-20 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                {t('cta.customer.title')}
-              </h2>
-              <p className="text-lg text-muted-foreground mb-8">
-                {t('cta.customer.subtitle')}
-              </p>
-              <Link href={user ? `/${locale}/providers` : `/${locale}/auth/login`}>
-                <Button size="lg" className="text-lg px-10 py-6 shadow-xl hover:shadow-2xl transition-all">
-                  {t('cta.customer.button')}
-                  <ChevronRight className={`${isRTL ? 'mr-2 rotate-180' : 'ml-2'} h-5 w-5`} />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Provider CTA Section - Different for each role */}
-      {showCustomerContent && (
-        <section className="py-20 bg-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                {t('cta.provider.title')}
-              </h2>
-              <p className="text-lg text-muted-foreground mb-8">
-                {t('cta.provider.subtitle')}
-              </p>
-              <Link href={user ? `/${locale}/provider` : `/${locale}/auth/signup`}>
-                <Button size="lg" variant="outline" className="text-lg px-10 py-6 border-2">
-                  {t('cta.provider.button')}
-                  <ChevronRight className={`${isRTL ? 'mr-2 rotate-180' : 'ml-2'} h-5 w-5`} />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Footer */}
-      <footer id="contact" className="bg-background border-t">
-        <div className="container mx-auto px-4 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
-            {/* About */}
-            <div>
-              <div className="text-2xl font-bold text-primary mb-4">
-                {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-              </div>
-              <h3 className="font-bold text-lg mb-3">
-                {t('footer.about.title')}
-              </h3>
-              <p className="text-muted-foreground">
-                {t('footer.about.description')}
-              </p>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h3 className="font-bold text-lg mb-4">
-                {t('footer.links.title')}
-              </h3>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    {t('footer.links.aboutUs')}
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    {t('footer.links.terms')}
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    {t('footer.links.privacy')}
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    {t('footer.links.contact')}
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h3 className="font-bold text-lg mb-4">
-                {t('footer.contact.title')}
-              </h3>
-              <ul className="space-y-2">
-                <li className="text-muted-foreground">
-                  {t('footer.contact.address')}
-                </li>
-                <li className="text-muted-foreground">
-                  {t('footer.contact.email')}
-                </li>
-                <li className="text-muted-foreground">
-                  {t('footer.contact.phone')}
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Copyright */}
-          <div className="border-t pt-8 text-center text-muted-foreground">
-            {t('footer.copyright')}
-          </div>
-        </div>
-      </footer>
-    </div>
+      {/* Voice Order FAB */}
+      <VoiceOrderFAB />
+    </CustomerLayout>
   )
 }

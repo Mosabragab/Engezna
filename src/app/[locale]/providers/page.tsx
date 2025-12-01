@@ -3,8 +3,9 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { Header } from '@/components/shared/Header'
+import { CustomerLayout } from '@/components/customer/layout'
 import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared'
+import { VoiceOrderFAB } from '@/components/customer/voice'
 import { Star, Clock, Percent, ArrowUpDown } from 'lucide-react'
 
 type Provider = {
@@ -126,21 +127,18 @@ export default function ProvidersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <Header />
-
+    <CustomerLayout showHeader={true} showBottomNav={true}>
       {/* Page Content */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="px-4 py-4">
         {/* Page Title */}
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-1 text-slate-900">
-            {locale === 'ar' ? 'اختر المتجر المفضل لديك' : 'Choose Your Favorite Provider'}
+        <div className="mb-4">
+          <h1 className="text-xl font-bold text-slate-900">
+            {locale === 'ar' ? 'المتاجر' : 'Stores'}
           </h1>
           <p className="text-slate-500 text-sm">
             {locale === 'ar'
-              ? 'اطلب من أفضل المطاعم والكافيهات في بني سويف'
-              : 'Order from the best restaurants and coffee shops in Beni Suef'}
+              ? 'اطلب من أفضل المطاعم والمتاجر'
+              : 'Order from the best restaurants and stores'}
           </p>
         </div>
 
@@ -155,15 +153,15 @@ export default function ProvidersPage() {
         </div>
 
         {/* Category Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide -mx-4 px-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide -mx-4 px-4">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 selectedCategory === category.id
-                  ? 'bg-primary text-white shadow-md'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30'
               }`}
             >
               {locale === 'ar' ? category.name_ar : category.name_en}
@@ -172,7 +170,7 @@ export default function ProvidersPage() {
         </div>
 
         {/* Filter Chips */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide -mx-4 px-4">
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide -mx-4 px-4">
           <FilterChip
             label={locale === 'ar' ? 'مفتوح الآن' : 'Open Now'}
             isActive={showOpenOnly}
@@ -250,7 +248,7 @@ export default function ProvidersPage() {
 
         {/* Providers Grid */}
         {!loading && filteredProviders.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredProviders.map((provider) => (
               <ProviderCard
                 key={provider.id}
@@ -261,6 +259,9 @@ export default function ProvidersPage() {
           </div>
         )}
       </div>
-    </div>
+
+      {/* Voice Order FAB */}
+      <VoiceOrderFAB />
+    </CustomerLayout>
   )
 }

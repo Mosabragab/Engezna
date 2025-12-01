@@ -1,3 +1,6 @@
 export { HeroSection } from './HeroSection'
 export { CategoriesSection } from './CategoriesSection'
 export { OffersCarousel } from './OffersCarousel'
+export { ReorderSection } from './ReorderSection'
+export { TopRatedSection } from './TopRatedSection'
+export { NearbySection } from './NearbySection'
