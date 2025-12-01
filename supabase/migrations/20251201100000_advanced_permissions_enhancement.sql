@@ -261,7 +261,7 @@ CREATE POLICY "Admins can view permission audit log" ON permission_audit_log FOR
 -- Permission Audit Log: System can insert
 DROP POLICY IF EXISTS "System can insert audit log" ON permission_audit_log;
 CREATE POLICY "System can insert audit log" ON permission_audit_log FOR INSERT
-  USING (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid() AND is_active = true));
+  WITH CHECK (EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid() AND is_active = true));
 
 -- ============================================================================
 -- 7. SEED RESOURCES (with safe column handling)
