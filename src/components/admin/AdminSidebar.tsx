@@ -59,7 +59,7 @@ export function AdminSidebar({
   const isRTL = locale === 'ar'
 
   // استخدام نظام الصلاحيات
-  const { loading, hasResource, isSuperAdmin, roles } = usePermissions()
+  const { loading, hasResource, isSuperAdmin, roles, legacyRole } = usePermissions()
 
   // جلب الدور الرئيسي للعرض
   const primaryRole = roles.find(r => r.is_primary) || roles[0]
@@ -71,6 +71,15 @@ export function AdminSidebar({
     // التحقق من وجود صلاحية view للمورد
     return hasResource(resource)
   }
+
+  // Log للتشخيص
+  console.log('[AdminSidebar] Permissions state:', {
+    loading,
+    isSuperAdmin,
+    legacyRole,
+    rolesCount: roles.length,
+    primaryRole: primaryRole?.role?.code
+  })
 
   // Main navigation items
   const mainNavItems: NavItem[] = [
@@ -186,9 +195,17 @@ export function AdminSidebar({
   ]
 
   // تصفية العناصر حسب الصلاحيات
-  const filteredMainNavItems = mainNavItems.filter(item => canAccess(item.resource))
-  const filteredTeamNavItems = teamNavItems.filter(item => canAccess(item.resource))
-  const filteredSystemNavItems = systemNavItems.filter(item => canAccess(item.resource))
+  // إذا كان isSuperAdmin، نعرض كل العناصر
+  const filteredMainNavItems = isSuperAdmin ? mainNavItems : mainNavItems.filter(item => canAccess(item.resource))
+  const filteredTeamNavItems = isSuperAdmin ? teamNavItems : teamNavItems.filter(item => canAccess(item.resource))
+  const filteredSystemNavItems = isSuperAdmin ? systemNavItems : systemNavItems.filter(item => canAccess(item.resource))
+
+  // Log للتشخيص
+  console.log('[AdminSidebar] Filtered items:', {
+    main: filteredMainNavItems.length,
+    team: filteredTeamNavItems.length,
+    system: filteredSystemNavItems.length
+  })
 
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname === item.path || pathname.startsWith(item.path + '/')

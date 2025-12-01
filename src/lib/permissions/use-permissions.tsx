@@ -87,6 +87,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         if (profile?.role === 'admin') {
           // المستخدم admin في profiles لكن لا يوجد سجل admin_users
           // نعتبره super_admin مؤقتاً حتى يتم إنشاء سجل admin_users
+          console.log('[Permissions] No admin_users record, but profile.role is admin - treating as super_admin');
           setLegacyRole('super_admin');
           setLoading(false);
           return;
@@ -95,8 +96,13 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         return;
       }
       setAdminId(adminUser.id);
-      // استخدام الدور من admin_users أو super_admin إذا كان admin في profiles
-      setLegacyRole(adminUser.role || (profile?.role === 'admin' ? 'super_admin' : null));
+
+      // استخدام الدور من admin_users
+      // إذا كان المستخدم admin في profiles، نعتبره super_admin بغض النظر عن admin_users.role
+      // هذا يضمن أن المستخدمين القدامى الذين كانوا admin يستمرون في العمل
+      const effectiveRole = profile?.role === 'admin' ? 'super_admin' : (adminUser.role || null);
+      console.log('[Permissions] Admin user found:', { adminId: adminUser.id, role: adminUser.role, effectiveRole, profileRole: profile?.role });
+      setLegacyRole(effectiveRole);
 
       const newCache: CachedPermissions = {
         permissions: new Map(),
@@ -282,6 +288,17 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
   // هل super_admin؟ (تحقق من الأدوار الجديدة أو الدور القديم كـ fallback)
   const isSuperAdmin = cache.roles.some(r => r.role?.code === 'super_admin') || legacyRole === 'super_admin';
+
+  // Log للتشخيص
+  if (!loading && userId) {
+    console.log('[Permissions] State:', {
+      isSuperAdmin,
+      legacyRole,
+      rolesCount: cache.roles.length,
+      roles: cache.roles.map(r => r.role?.code),
+      permissionsCount: cache.permissions.size
+    });
+  }
 
   const value: PermissionsContextValue = {
     loading,
