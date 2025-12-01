@@ -299,7 +299,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
   - [x] Western Arabic numerals (0-9) in English locale ✅
 - [x] Supervisor management page `/admin/supervisors` ✅
   - [x] Full CRUD operations ✅
-  - [x] Roles: super_admin, general_moderator, support, finance ✅
+  - [x] Roles: super_admin, general_moderator, store_supervisor, support, finance ✅
   - [x] Permission system for granular access control ✅
   - [x] Stats dashboard with role breakdown ✅
   - [x] Filter by status and role ✅
@@ -457,7 +457,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
   - Applied throughout admin dashboard
 - ✅ **Supervisor Management** (`/admin/supervisors`):
   - Full CRUD for admin team members
-  - Roles: super_admin, general_moderator, support, finance
+  - Roles: super_admin, general_moderator, store_supervisor, support, finance
   - Permission system with granular access control
   - Stats dashboard with role breakdown
   - Filter by status and role, search functionality

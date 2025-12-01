@@ -114,7 +114,7 @@
   - ✅ Consistent Engezna Blue (#009DE0) theming
 - ✅ **Supervisor Management** (`/admin/supervisors`)
   - ✅ Full CRUD for admin team members
-  - ✅ Roles: super_admin, general_moderator, support, finance
+  - ✅ Roles: super_admin, general_moderator, store_supervisor, support, finance
   - ✅ Permission system for granular access control
   - ✅ Stats dashboard with role breakdown
   - ✅ Filter by status and role
@@ -1622,7 +1622,7 @@ engezna/
     - ✅ Unified AdminHeader with language switcher, notifications, user menu
     - ✅ Unified AdminSidebar with collapsible navigation
     - ✅ Locale-aware number formatting (Arabic-Indic numerals ٠-٩)
-    - ✅ Supervisor management with roles (super_admin, general_moderator, support, finance)
+    - ✅ Supervisor management with roles (super_admin, general_moderator, store_supervisor, support, finance)
     - ✅ Permission system for granular access control
     - ✅ Tasks management with assignment, priorities, and deadlines
     - ✅ Approvals workflow system for refunds, bans, commission changes
