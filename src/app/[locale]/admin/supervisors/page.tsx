@@ -32,6 +32,7 @@ import {
   Save,
   AlertCircle,
   MapPin,
+  Key,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -914,6 +915,16 @@ export default function AdminSupervisorsPage() {
                                     <Eye className="w-4 h-4 text-green-500" />
                                   )}
                                 </Button>
+                                <Link href={`/${locale}/admin/supervisors/${supervisor.id}/permissions`}>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    title={locale === 'ar' ? 'إدارة الصلاحيات' : 'Manage Permissions'}
+                                  >
+                                    <Key className="w-4 h-4 text-purple-500" />
+                                  </Button>
+                                </Link>
                                 <Button
                                   variant="ghost"
                                   size="sm"
