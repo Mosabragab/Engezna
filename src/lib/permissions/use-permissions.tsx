@@ -67,6 +67,13 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       }
       setUserId(user.id);
 
+      // جلب بيانات الملف الشخصي للتحقق من الدور
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
       // جلب admin_id و الدور (للتوافقية)
       const { data: adminUser } = await supabase
         .from('admin_users')
@@ -74,12 +81,22 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         .eq('user_id', user.id)
         .single();
 
+      // إذا لم يوجد سجل admin_users ولكن المستخدم admin في profiles
+      // نعتبره super_admin كـ fallback
       if (!adminUser) {
+        if (profile?.role === 'admin') {
+          // المستخدم admin في profiles لكن لا يوجد سجل admin_users
+          // نعتبره super_admin مؤقتاً حتى يتم إنشاء سجل admin_users
+          setLegacyRole('super_admin');
+          setLoading(false);
+          return;
+        }
         setLoading(false);
         return;
       }
       setAdminId(adminUser.id);
-      setLegacyRole(adminUser.role); // حفظ الدور القديم كـ fallback
+      // استخدام الدور من admin_users أو super_admin إذا كان admin في profiles
+      setLegacyRole(adminUser.role || (profile?.role === 'admin' ? 'super_admin' : null));
 
       const newCache: CachedPermissions = {
         permissions: new Map(),

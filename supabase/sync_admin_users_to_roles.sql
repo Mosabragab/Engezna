@@ -3,10 +3,36 @@
 -- مزامنة المشرفين مع نظام الأدوار الجديد
 -- ============================================================================
 -- This script:
--- 1. Creates missing tables if needed
+-- 1. Creates admin_users records for profiles with role='admin'
 -- 2. Syncs all admin_users to admin_roles
 -- 3. Ensures all roles have proper permissions
 -- ============================================================================
+
+-- Step 0: Create admin_users for profiles with role='admin' if missing
+DO $$
+DECLARE
+  v_count INTEGER := 0;
+BEGIN
+  INSERT INTO admin_users (user_id, role, is_active, created_at, updated_at)
+  SELECT
+    p.id as user_id,
+    'super_admin'::admin_role as role,
+    true as is_active,
+    NOW() as created_at,
+    NOW() as updated_at
+  FROM profiles p
+  WHERE p.role = 'admin'
+    AND NOT EXISTS (
+      SELECT 1 FROM admin_users au WHERE au.user_id = p.id
+    )
+  ON CONFLICT (user_id) DO NOTHING;
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  IF v_count > 0 THEN
+    RAISE NOTICE '✓ تم إنشاء % سجل admin_users جديد من profiles', v_count;
+  END IF;
+END $$;
 
 -- Step 1: Check if required tables exist
 DO $$
