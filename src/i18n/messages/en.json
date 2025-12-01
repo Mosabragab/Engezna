@@ -860,5 +860,29 @@
     "installDescription": "Add the app to your home screen for quick access",
     "installButton": "Install",
     "later": "Later"
+  },
+  "voiceOrder": {
+    "title": "Voice Assistant",
+    "subtitle": "Order with your voice",
+    "tapToSpeak": "Tap to speak",
+    "tapToStop": "Tap to stop",
+    "processing": "Processing...",
+    "thinking": "Thinking...",
+    "orderItems": "Order Items",
+    "cancel": "Cancel",
+    "addToCart": "Add to Cart",
+    "total": "Total",
+    "confirmOrder": "Confirm Order",
+    "orderConfirmed": "Order confirmed!",
+    "orderCancelled": "Order cancelled",
+    "welcomeMessage": "Hello! 👋 I'm your voice assistant. Tell me what you'd like to order today?",
+    "exampleOrder": "Example: I want 2 chicken shawarma from Al-Ameer restaurant",
+    "errorMicrophone": "Could not access microphone. Please allow microphone access in your browser settings.",
+    "errorProcessing": "Error processing your request. Please try again.",
+    "errorAudio": "Error processing audio. Please try again.",
+    "couldNotUnderstand": "Could not understand the audio. Please try again.",
+    "orderAddedToCart": "Order added to cart successfully! 🎉",
+    "howCanIHelp": "How can I help you?",
+    "currency": "EGP"
   }
 }
