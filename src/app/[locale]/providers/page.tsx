@@ -155,8 +155,27 @@ export default function ProvidersPage() {
       if (error) {
         console.error('Error fetching providers:', error.message, error.details, error.hint)
       } else {
-        console.log('Providers loaded:', data?.length || 0, userCityId ? `for city ${userCityId}` : 'all cities')
-        setProviders(data || [])
+        // Fallback: If no providers found for user's city, show all providers
+        if (data?.length === 0 && userCityId) {
+          console.log('No providers in user city, fetching all providers...')
+          let fallbackQuery = supabase
+            .from('providers')
+            .select('*')
+            .in('status', ['open', 'closed'])
+            .order('is_featured', { ascending: false })
+            .order('rating', { ascending: false })
+
+          if (selectedCategory !== 'all') {
+            fallbackQuery = fallbackQuery.eq('category', selectedCategory)
+          }
+
+          const { data: allProviders } = await fallbackQuery
+          console.log('Fallback providers loaded:', allProviders?.length || 0)
+          setProviders(allProviders || [])
+        } else {
+          console.log('Providers loaded:', data?.length || 0, userCityId ? `for city ${userCityId}` : 'all cities')
+          setProviders(data || [])
+        }
       }
     } catch (err) {
       console.error('Unexpected error fetching providers:', err)

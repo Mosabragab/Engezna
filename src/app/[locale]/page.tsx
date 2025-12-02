@@ -114,7 +114,22 @@ export default function HomePage() {
 
     const { data } = await query.limit(6)
 
-    if (data) {
+    // Fallback: If no providers found for user's city, show all providers
+    if (data?.length === 0 && cityId) {
+      const { data: allData } = await supabase
+        .from('providers')
+        .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id')
+        .in('status', ['open', 'closed'])
+        .limit(6)
+
+      if (allData) {
+        const withDistance = allData.map((p, i) => ({
+          ...p,
+          distance: 0.5 + i * 0.3,
+        }))
+        setNearbyProviders(withDistance)
+      }
+    } else if (data) {
       // Add mock distance for demo
       const withDistance = data.map((p, i) => ({
         ...p,
@@ -141,7 +156,20 @@ export default function HomePage() {
 
     const { data } = await query.limit(6)
 
-    if (data) {
+    // Fallback: If no providers found for user's city, show all providers
+    if (data?.length === 0 && cityId) {
+      const { data: allData } = await supabase
+        .from('providers')
+        .select('*')
+        .in('status', ['open', 'closed'])
+        .order('is_featured', { ascending: false })
+        .order('rating', { ascending: false })
+        .limit(6)
+
+      if (allData) {
+        setTopRatedProviders(allData)
+      }
+    } else if (data) {
       setTopRatedProviders(data)
     }
   }
