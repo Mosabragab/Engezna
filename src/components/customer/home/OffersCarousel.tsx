@@ -17,6 +17,7 @@ interface Offer {
   discount_percentage?: number
 }
 
+// Unified brand colors - all offers use blue gradient
 const demoOffers: Offer[] = [
   {
     id: '1',
@@ -33,7 +34,7 @@ const demoOffers: Offer[] = [
     title_en: 'Free Delivery',
     description_ar: 'للطلبات فوق 100 جنيه',
     description_en: 'On orders above 100 EGP',
-    background_color: '#10B981',
+    background_color: '#0088CC',
   },
   {
     id: '3',
@@ -41,7 +42,7 @@ const demoOffers: Offer[] = [
     title_en: 'Weekend Deals',
     description_ar: 'خصومات تصل إلى 50%',
     description_en: 'Up to 50% off',
-    background_color: '#F59E0B',
+    background_color: '#0077B6',
     discount_percentage: 50,
   },
 ]

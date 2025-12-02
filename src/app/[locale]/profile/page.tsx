@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Header } from '@/components/shared/Header'
+import { CustomerLayout } from '@/components/customer/layout'
 import { Card } from '@/components/ui/card'
 import {
   User,
@@ -16,14 +16,24 @@ import {
   MapPinned,
   LogOut,
   Loader2,
+  ChevronLeft,
+  Phone,
 } from 'lucide-react'
+
+interface UserProfile {
+  full_name: string | null
+  phone: string | null
+  email: string | null
+}
 
 export default function SettingsPage() {
   const locale = useLocale()
   const t = useTranslations('settings')
   const router = useRouter()
+  const isRTL = locale === 'ar'
 
   const [authLoading, setAuthLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
   useEffect(() => {
     checkAuth()
@@ -38,6 +48,19 @@ export default function SettingsPage() {
       return
     }
 
+    // Fetch user profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, phone')
+      .eq('id', user.id)
+      .single()
+
+    setUserProfile({
+      full_name: profile?.full_name || null,
+      phone: profile?.phone || null,
+      email: user.email || null,
+    })
+
     setAuthLoading(false)
   }
 
@@ -50,106 +73,113 @@ export default function SettingsPage() {
   // Loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-muted">
-        <Header showBack backHref={`/${locale}`} />
+      <CustomerLayout
+        headerTitle={t('title')}
+        showBackButton
+        showBottomNav={true}
+      >
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </div>
+      </CustomerLayout>
     )
   }
 
+  // Unified colors - all icons use primary blue
   const menuItems = [
     {
       icon: User,
       label: t('menu.account'),
       href: `/${locale}/profile/account`,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
     },
     {
       icon: MapPin,
       label: t('menu.addresses'),
       href: `/${locale}/profile/addresses`,
-      color: 'text-[#22C55E]',
-      bgColor: 'bg-[#DCFCE7]',
     },
     {
       icon: Mail,
       label: t('menu.email'),
       href: `/${locale}/profile/email`,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
     },
     {
       icon: Lock,
       label: t('menu.password'),
       href: `/${locale}/profile/password`,
-      color: 'text-[#EF4444]',
-      bgColor: 'bg-[#FEF2F2]',
     },
     {
       icon: Globe,
       label: t('menu.language'),
       href: `/${locale}/profile/language`,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
     },
     {
       icon: MapPinned,
       label: t('menu.governorate'),
       href: `/${locale}/profile/governorate`,
-      color: 'text-[#3B82F6]',
-      bgColor: 'bg-[#dbeafe]',
     },
   ]
 
   return (
-    <div className="min-h-screen bg-muted">
-      <Header showBack backHref={`/${locale}`} />
+    <CustomerLayout
+      headerTitle={t('title')}
+      showBackButton
+      showBottomNav={true}
+    >
+      <div className="px-4 py-4 pb-24">
+        {/* User Info Card */}
+        {userProfile && (
+          <Card className="p-4 mb-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
+                <User className="w-7 h-7 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="font-bold text-slate-900 truncate">
+                  {userProfile.full_name || (isRTL ? 'مستخدم' : 'User')}
+                </h2>
+                {userProfile.phone && (
+                  <p className="text-sm text-slate-500 flex items-center gap-1">
+                    <Phone className="w-3 h-3" />
+                    {userProfile.phone}
+                  </p>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
 
-      <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <h1 className="text-2xl font-bold text-foreground mb-6">
-          {t('title')}
-        </h1>
-
-        {/* Settings Menu Items */}
-        <div className="space-y-3">
-          {menuItems.map((item) => {
+        {/* Settings Menu Items - Unified colors */}
+        <Card className="overflow-hidden">
+          {menuItems.map((item, index) => {
             const Icon = item.icon
 
             return (
               <Link key={item.href} href={item.href}>
-                <Card className="p-4 hover:bg-muted transition-colors cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${item.bgColor} ${item.color}`}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <span className="font-medium text-foreground">
-                      {item.label}
-                    </span>
+                <div className={`flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors ${
+                  index < menuItems.length - 1 ? 'border-b border-slate-100' : ''
+                }`}>
+                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Icon className="w-5 h-5 text-primary" />
                   </div>
-                </Card>
+                  <span className="flex-1 font-medium text-slate-900">
+                    {item.label}
+                  </span>
+                  <ChevronLeft className={`w-5 h-5 text-slate-400 ${isRTL ? '' : 'rotate-180'}`} />
+                </div>
               </Link>
             )
           })}
+        </Card>
 
-          {/* Logout Button */}
-          <Card
-            className="p-4 hover:bg-[#FEF2F2] transition-colors cursor-pointer border-[#EF4444]/30"
-            onClick={handleLogout}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[#FEF2F2] text-[#EF4444]">
-                <LogOut className="w-5 h-5" />
-              </div>
-              <span className="font-medium text-[#EF4444]">
-                {t('menu.logout')}
-              </span>
-            </div>
-          </Card>
-        </div>
-      </main>
-    </div>
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="w-full mt-4 bg-red-50 text-red-500 py-3 rounded-xl font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+        >
+          <LogOut className="w-5 h-5" />
+          {t('menu.logout')}
+        </button>
+      </div>
+    </CustomerLayout>
   )
 }

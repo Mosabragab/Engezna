@@ -19,39 +19,39 @@ interface Category {
   bgColor: string
 }
 
-// Categories that match the database provider categories
+// Categories with unified brand colors (primary blue)
 const defaultCategories: Category[] = [
   {
     id: 'restaurant',
     name_ar: 'مطاعم',
     name_en: 'Restaurants',
     icon: <UtensilsCrossed className="w-6 h-6" />,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-100',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'cafe',
     name_ar: 'مقاهي',
     name_en: 'Cafes',
     icon: <Coffee className="w-6 h-6" />,
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-100',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'supermarket',
     name_ar: 'بقالة',
     name_en: 'Groceries',
     icon: <ShoppingBasket className="w-6 h-6" />,
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   {
     id: 'vegetables_fruits',
     name_ar: 'خضار وفواكه',
     name_en: 'Vegetables & Fruits',
     icon: <Apple className="w-6 h-6" />,
-    color: 'text-red-500',
-    bgColor: 'bg-red-100',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
 ]
 

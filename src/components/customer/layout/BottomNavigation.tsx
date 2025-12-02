@@ -56,10 +56,10 @@ export function BottomNavigation() {
               >
                 <div className="relative">
                   <Icon className={`w-6 h-6 ${active ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
-                  {/* Cart Badge */}
+                  {/* Cart Badge - Red color for visibility */}
                   {isCart && cartItemsCount > 0 && (
-                    <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] flex items-center justify-center bg-primary text-white text-[10px] font-bold rounded-full px-1">
-                      {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                    <span className="absolute -top-2 -end-2 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+                      {cartItemsCount > 9 ? '9+' : cartItemsCount}
                     </span>
                   )}
                 </div>
