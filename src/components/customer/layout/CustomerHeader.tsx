@@ -112,20 +112,12 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             )}
           </div>
 
-          {/* Center - Title or Logo */}
-          <div className="absolute left-1/2 -translate-x-1/2">
-            {title ? (
-              <h1 className="text-xl font-bold text-primary">
-                {title}
-              </h1>
-            ) : (
-              <Link href={`/${locale}`}>
-                <span className="text-xl font-bold text-primary">
-                  {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-                </span>
-              </Link>
-            )}
-          </div>
+          {/* Center - Always show Logo as link to home */}
+          <Link href={`/${locale}`} className="absolute left-1/2 -translate-x-1/2">
+            <span className="text-xl font-bold text-primary">
+              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
+            </span>
+          </Link>
 
           {/* Right Section - Custom Action or Notifications & Profile */}
           <div className="flex items-center gap-2">
