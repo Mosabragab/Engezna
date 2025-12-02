@@ -15,7 +15,7 @@ import {
 import { VoiceOrderFAB } from '@/components/customer/voice'
 import { createClient } from '@/lib/supabase/client'
 
-// Demo offers data
+// Demo offers data - Unified blue gradient colors per brand guidelines
 const demoOffers = [
   {
     id: '1',
@@ -23,7 +23,7 @@ const demoOffers = [
     title_en: '30% Off',
     description_ar: 'على جميع البيتزا من سلطان بيتزا',
     description_en: 'On all pizzas from Sultan Pizza',
-    background_color: '#F97316',
+    background_color: '#009DE0',
     discount_percentage: 30,
     image_url: '/images/offers/pizza.jpg',
   },
@@ -33,7 +33,7 @@ const demoOffers = [
     title_en: 'Free Delivery',
     description_ar: 'على الطلبات فوق ١٠٠ ج.م من لافندر كافيه',
     description_en: 'On orders over 100 EGP from Lavender Cafe',
-    background_color: '#10B981',
+    background_color: '#0088CC',
     image_url: '/images/offers/coffee.jpg',
   },
   {
@@ -42,7 +42,7 @@ const demoOffers = [
     title_en: 'Buy 1 Get 1',
     description_ar: 'على جميع العصائر من عصائر الشفا',
     description_en: 'On all juices from Al-Shifa Juices',
-    background_color: '#8B5CF6',
+    background_color: '#0077B6',
     discount_percentage: 50,
     image_url: '/images/offers/juice.jpg',
   },

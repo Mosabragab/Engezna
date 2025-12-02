@@ -42,6 +42,7 @@ export default function ProvidersPage() {
   const [showOffersOnly, setShowOffersOnly] = useState(false)
   const [userCityId, setUserCityId] = useState<string | null>(null)
   const [userCityName, setUserCityName] = useState<string | null>(null)
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false)
 
   // Favorites hook
   const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites()
@@ -214,6 +215,7 @@ export default function ProvidersPage() {
             onChange={setSearchQuery}
             onSearch={setSearchQuery}
             placeholder={locale === 'ar' ? 'ابحث عن متجر...' : 'Search for a store...'}
+            onVoiceClick={() => setIsVoiceOpen(true)}
           />
         </div>
 
@@ -328,7 +330,7 @@ export default function ProvidersPage() {
       </div>
 
       {/* Voice Order FAB */}
-      <VoiceOrderFAB />
+      <VoiceOrderFAB isOpen={isVoiceOpen} onOpenChange={setIsVoiceOpen} />
     </CustomerLayout>
   )
 }
