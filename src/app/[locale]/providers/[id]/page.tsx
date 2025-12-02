@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
+import { useFavorites } from '@/hooks/customer'
 import { Button } from '@/components/ui/button'
 import { ProductCard, RatingStars, StatusBadge, EmptyState } from '@/components/customer/shared'
 import { VoiceOrderFAB } from '@/components/customer/voice'
@@ -72,6 +73,7 @@ export default function ProviderDetailPage() {
   const t = useTranslations()
 
   const { addItem, removeItem, getItemQuantity, getTotal, getItemCount } = useCart()
+  const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites()
 
   const [provider, setProvider] = useState<Provider | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
@@ -162,6 +164,16 @@ export default function ProviderDetailPage() {
     return locale === 'ar' ? item.description_ar : item.description_en
   }
 
+  const isProviderFavorite = isFavorite(providerId)
+
+  const handleFavoriteClick = async () => {
+    if (!isAuthenticated) {
+      router.push(`/${locale}/auth/login`)
+      return
+    }
+    await toggleFavorite(providerId)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -224,8 +236,15 @@ export default function ProviderDetailPage() {
               <span className="text-sm">{locale === 'ar' ? 'رجوع' : 'Back'}</span>
             </Link>
             <div className="flex items-center gap-3">
-              <button className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-red-500 transition-colors">
-                <Heart className="w-5 h-5" />
+              <button
+                onClick={handleFavoriteClick}
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                  isProviderFavorite
+                    ? 'bg-red-50 text-red-500'
+                    : 'bg-slate-100 text-slate-500 hover:text-red-500'
+                }`}
+              >
+                <Heart className={`w-5 h-5 ${isProviderFavorite ? 'fill-red-500' : ''}`} />
               </button>
               <button className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
                 <Share2 className="w-5 h-5" />
