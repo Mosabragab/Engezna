@@ -93,7 +93,7 @@ export default function LoginPage() {
               break
             case 'customer':
             default:
-              redirectPath = `/${locale}/providers` // Redirect customers to providers page
+              redirectPath = `/${locale}` // Redirect customers to home page
               break
           }
         }

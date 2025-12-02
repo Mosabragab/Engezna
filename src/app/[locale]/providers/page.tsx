@@ -94,28 +94,33 @@ export default function ProvidersPage() {
 
   async function fetchProviders() {
     setLoading(true)
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    let query = supabase
-      .from('providers')
-      .select('*')
-      .in('status', ['open', 'closed'])
-      .order('is_featured', { ascending: false })
-      .order('rating', { ascending: false })
+      let query = supabase
+        .from('providers')
+        .select('*')
+        .in('status', ['open', 'closed'])
+        .order('is_featured', { ascending: false })
+        .order('rating', { ascending: false })
 
-    if (selectedCategory !== 'all') {
-      query = query.eq('category', selectedCategory)
+      if (selectedCategory !== 'all') {
+        query = query.eq('category', selectedCategory)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Error fetching providers:', error.message, error.details, error.hint)
+      } else {
+        console.log('Providers loaded:', data?.length || 0)
+        setProviders(data || [])
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching providers:', err)
+    } finally {
+      setLoading(false)
     }
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Error fetching providers:', error)
-    } else {
-      setProviders(data || [])
-    }
-
-    setLoading(false)
   }
 
   const categories = [
