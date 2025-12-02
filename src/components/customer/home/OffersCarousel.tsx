@@ -70,43 +70,30 @@ export function OffersCarousel({
 }: OffersCarouselProps) {
   const locale = useLocale()
   const scrollRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
-  const isRTL = locale === 'ar'
 
   const sectionTitle = title || (locale === 'ar' ? 'العروض' : 'Offers')
 
-  // Get card element for width calculation
-  const getCardWidth = useCallback(() => {
-    if (!scrollRef.current) return 0
-    const card = scrollRef.current.querySelector('[data-offer-card]') as HTMLElement
-    if (!card) return 0
-    const gap = 16 // gap-4 = 16px
-    return card.offsetWidth + gap
-  }, [])
-
-  // Scroll to specific index
+  // Scroll to specific card using scrollIntoView (works with RTL)
   const scrollToIndex = useCallback((index: number) => {
-    if (!scrollRef.current) return
-    const cardWidth = getCardWidth()
-    if (cardWidth === 0) return
-
-    const scrollPosition = index * cardWidth
-    scrollRef.current.scrollTo({
-      left: scrollPosition,
-      behavior: 'smooth',
-    })
-  }, [getCardWidth])
+    const card = cardRefs.current[index]
+    if (card) {
+      card.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      })
+    }
+  }, [])
 
   // Auto-play with pause support
   useEffect(() => {
     if (!autoPlay || offers.length <= 1 || isPaused) return
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => {
-        const nextIndex = (prev + 1) % offers.length
-        return nextIndex
-      })
+      setCurrentIndex((prev) => (prev + 1) % offers.length)
     }, autoPlayInterval)
 
     return () => clearInterval(interval)
@@ -125,19 +112,32 @@ export function OffersCarousel({
     setCurrentIndex((prev) => (prev + 1) % offers.length)
   }
 
-  // Handle manual scroll to update current index
-  const handleScroll = useCallback(() => {
-    if (!scrollRef.current) return
-    const cardWidth = getCardWidth()
-    if (cardWidth === 0) return
+  // Update current index based on scroll position using IntersectionObserver
+  useEffect(() => {
+    const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[]
+    if (cards.length === 0) return
 
-    const scrollLeft = scrollRef.current.scrollLeft
-    const newIndex = Math.round(scrollLeft / cardWidth)
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+            const index = cards.indexOf(entry.target as HTMLDivElement)
+            if (index !== -1 && index !== currentIndex) {
+              setCurrentIndex(index)
+            }
+          }
+        })
+      },
+      {
+        root: scrollRef.current,
+        threshold: 0.5,
+      }
+    )
 
-    if (newIndex !== currentIndex && newIndex >= 0 && newIndex < offers.length) {
-      setCurrentIndex(newIndex)
-    }
-  }, [currentIndex, offers.length, getCardWidth])
+    cards.forEach((card) => observer.observe(card))
+
+    return () => observer.disconnect()
+  }, [offers.length, currentIndex])
 
   // Pause on touch/mouse interaction
   const handleInteractionStart = () => setIsPaused(true)
@@ -185,7 +185,6 @@ export function OffersCarousel({
       <div className="relative">
         <div
           ref={scrollRef}
-          onScroll={handleScroll}
           onTouchStart={handleInteractionStart}
           onTouchEnd={handleInteractionEnd}
           onMouseEnter={handleInteractionStart}
@@ -193,10 +192,10 @@ export function OffersCarousel({
           className="overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4"
         >
           <div className="flex gap-4">
-            {offers.map((offer) => {
+            {offers.map((offer, index) => {
               const OfferContent = (
                 <div
-                  data-offer-card
+                  ref={(el) => { cardRefs.current[index] = el }}
                   className="flex-shrink-0 w-[85vw] max-w-sm snap-center rounded-2xl p-6 text-white relative overflow-hidden"
                   style={{ backgroundColor: offer.background_color || '#009DE0' }}
                 >
