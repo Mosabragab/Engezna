@@ -10,6 +10,7 @@ import { useFavorites } from '@/hooks/customer'
 import { Button } from '@/components/ui/button'
 import { ProductCard, RatingStars, StatusBadge, EmptyState } from '@/components/customer/shared'
 import { VoiceOrderFAB } from '@/components/customer/voice'
+import { BottomNavigation } from '@/components/customer/layout'
 import {
   Clock,
   Truck,
@@ -232,9 +233,9 @@ export default function ProviderDetailPage() {
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <Link href={`/${locale}/providers`} className="flex items-center gap-2 text-slate-500 hover:text-primary">
-              <span className="text-sm">{locale === 'ar' ? 'رجوع' : 'Back'}</span>
-            </Link>
+            <h1 className="font-bold text-lg text-slate-900 truncate max-w-[200px]">
+              {getName(provider)}
+            </h1>
             <div className="flex items-center gap-3">
               <button
                 onClick={handleFavoriteClick}
@@ -468,6 +469,9 @@ export default function ProviderDetailPage() {
 
       {/* Voice Order FAB - Show only when cart is empty */}
       {cartItemCount === 0 && <VoiceOrderFAB />}
+
+      {/* Bottom Navigation */}
+      <BottomNavigation />
     </div>
   )
 }

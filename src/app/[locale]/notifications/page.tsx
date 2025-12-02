@@ -185,8 +185,8 @@ export default function NotificationsPage() {
     return (
       <CustomerLayout
         headerTitle={locale === 'ar' ? 'الإشعارات' : 'Notifications'}
-        showBackButton
-        showBottomNav={false}
+        showBackButton={false}
+        showBottomNav={true}
       >
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -200,8 +200,8 @@ export default function NotificationsPage() {
     return (
       <CustomerLayout
         headerTitle={locale === 'ar' ? 'الإشعارات' : 'Notifications'}
-        showBackButton
-        showBottomNav={false}
+        showBackButton={false}
+        showBottomNav={true}
       >
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
           <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4">
@@ -226,10 +226,10 @@ export default function NotificationsPage() {
   return (
     <CustomerLayout
       headerTitle={locale === 'ar' ? 'الإشعارات' : 'Notifications'}
-      showBackButton
-      showBottomNav={false}
+      showBackButton={false}
+      showBottomNav={true}
     >
-      <div className="px-4 py-4">
+      <div className="px-4 py-4 pb-4">
         {/* Header with mark all as read */}
         <div className="flex items-center justify-between mb-4">
           <div>
