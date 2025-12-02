@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { Header } from '@/components/shared/Header'
+import { BottomNavigation } from '@/components/customer/layout'
 import { Card } from '@/components/ui/card'
-import { Globe, Loader2, Check } from 'lucide-react'
+import { Globe, Loader2, Check, User } from 'lucide-react'
 
 export default function LanguagePage() {
   const locale = useLocale()
@@ -48,18 +49,43 @@ export default function LanguagePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-muted">
-        <Header showBack backHref={`/${locale}/profile`} />
+      <div className="min-h-screen bg-muted pb-20">
+        <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <Link href={`/${locale}/profile`} className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors">
+                <User className="w-5 h-5" />
+              </Link>
+              <Link href={`/${locale}`} className="text-xl font-bold text-primary">
+                {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
+              </Link>
+              <div className="w-9" />
+            </div>
+          </div>
+        </header>
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
+        <BottomNavigation />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-muted">
-      <Header showBack backHref={`/${locale}/profile`} backLabel={t('title')} />
+    <div className="min-h-screen bg-muted pb-20">
+      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Link href={`/${locale}/profile`} className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors">
+              <User className="w-5 h-5" />
+            </Link>
+            <Link href={`/${locale}`} className="text-xl font-bold text-primary">
+              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
+            </Link>
+            <div className="w-9" />
+          </div>
+        </div>
+      </header>
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
         <h1 className="text-2xl font-bold text-foreground mb-2">
@@ -135,6 +161,8 @@ export default function LanguagePage() {
           </Card>
         </div>
       </main>
+
+      <BottomNavigation />
     </div>
   )
 }
