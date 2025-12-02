@@ -55,26 +55,40 @@ export default function OffersPage() {
   async function fetchOffers() {
     const supabase = createClient()
 
-    // Fetch active promo codes
-    const { data: promos } = await supabase
-      .from('promo_codes')
-      .select('*')
-      .eq('is_active', true)
-      .gte('valid_until', new Date().toISOString())
-      .order('valid_until', { ascending: true })
-      .limit(5)
+    // Fetch active promo codes - wrap in try-catch in case table doesn't exist
+    try {
+      const { data: promos, error } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .eq('is_active', true)
+        .gte('valid_until', new Date().toISOString())
+        .order('valid_until', { ascending: true })
+        .limit(5)
+
+      if (!error && promos) {
+        setPromoCodes(promos)
+      }
+    } catch (error) {
+      console.log('promo_codes table may not exist yet')
+    }
 
     // Fetch providers with free delivery
-    const { data: providers } = await supabase
-      .from('providers')
-      .select('*')
-      .eq('delivery_fee', 0)
-      .in('status', ['open', 'closed'])
-      .order('rating', { ascending: false })
-      .limit(6)
+    try {
+      const { data: providers, error } = await supabase
+        .from('providers')
+        .select('*')
+        .eq('delivery_fee', 0)
+        .in('status', ['open', 'closed'])
+        .order('rating', { ascending: false })
+        .limit(6)
 
-    if (promos) setPromoCodes(promos)
-    if (providers) setFreeDeliveryProviders(providers)
+      if (!error && providers) {
+        setFreeDeliveryProviders(providers)
+      }
+    } catch (error) {
+      console.log('Error fetching providers:', error)
+    }
+
     setIsLoading(false)
   }
 

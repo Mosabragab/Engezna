@@ -152,14 +152,30 @@ export function VoiceOrderButton({
         body: formData,
       })
 
+      const data = await response.json()
+
+      // Handle API configuration errors
       if (!response.ok) {
-        throw new Error('Transcription failed')
+        if (response.status === 500 && data.error?.includes('not configured')) {
+          alert(locale === 'ar'
+            ? 'خدمة التعرف على الصوت غير متوفرة حالياً. يرجى استخدام الكتابة بدلاً من ذلك.'
+            : 'Voice recognition service is currently unavailable. Please use text input instead.'
+          )
+          return
+        }
+        throw new Error(data.error || 'Transcription failed')
       }
 
-      const data = await response.json()
-      if (data.transcript) {
-        onTranscript(data.transcript)
+      // Handle empty transcript
+      if (!data.transcript) {
+        alert(locale === 'ar'
+          ? data.message || 'لم نتمكن من فهم الصوت. يرجى التحدث بوضوح والمحاولة مرة أخرى.'
+          : data.message || 'Could not understand the audio. Please speak clearly and try again.'
+        )
+        return
       }
+
+      onTranscript(data.transcript)
     } catch (error) {
       console.error('Error sending audio:', error)
       alert(locale === 'ar'

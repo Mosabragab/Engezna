@@ -30,42 +30,61 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
 
   async function checkAuth() {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
 
-    // Get notification count if user is logged in
-    if (user) {
-      const { count } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
 
-      setNotificationCount(count || 0)
+      if (!user) return
+
+      // Get notification count - wrap in try-catch in case table doesn't exist
+      try {
+        const { count } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('is_read', false)
+
+        setNotificationCount(count || 0)
+      } catch (error) {
+        console.log('Notifications table may not exist yet')
+        setNotificationCount(0)
+      }
 
       // Get user's current location from profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select(`
-          governorate_id,
-          city_id,
-          governorates:governorate_id (name_ar, name_en),
-          cities:city_id (name_ar, name_en)
-        `)
-        .eq('id', user.id)
-        .single()
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select(`
+            governorate_id,
+            city_id,
+            governorates:governorate_id (name_ar, name_en),
+            cities:city_id (name_ar, name_en)
+          `)
+          .eq('id', user.id)
+          .single()
 
-      if (profile) {
-        // Supabase returns joined data as the object directly
-        const govData = profile.governorates as unknown as { name_ar: string; name_en: string } | null
-        const cityData = profile.cities as unknown as { name_ar: string; name_en: string } | null
-
-        if (cityData && cityData.name_ar) {
-          setCurrentLocation(locale === 'ar' ? cityData.name_ar : cityData.name_en)
-        } else if (govData && govData.name_ar) {
-          setCurrentLocation(locale === 'ar' ? govData.name_ar : govData.name_en)
+        if (error) {
+          console.log('Error fetching profile location:', error.message)
+          return
         }
+
+        if (profile) {
+          // Supabase returns joined data as the object directly
+          const govData = profile.governorates as unknown as { name_ar: string; name_en: string } | null
+          const cityData = profile.cities as unknown as { name_ar: string; name_en: string } | null
+
+          if (cityData && cityData.name_ar) {
+            setCurrentLocation(locale === 'ar' ? cityData.name_ar : cityData.name_en)
+          } else if (govData && govData.name_ar) {
+            setCurrentLocation(locale === 'ar' ? govData.name_ar : govData.name_en)
+          }
+        }
+      } catch (error) {
+        console.log('Error fetching location:', error)
       }
+    } catch (error) {
+      console.error('Error checking auth:', error)
     }
   }
 

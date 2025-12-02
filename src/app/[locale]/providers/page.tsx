@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { CustomerLayout } from '@/components/customer/layout'
 import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared'
 import { VoiceOrderFAB } from '@/components/customer/voice'
+import { useFavorites } from '@/hooks/customer'
 import { Star, Clock, Percent, ArrowUpDown } from 'lucide-react'
 
 type Provider = {
@@ -38,6 +39,9 @@ export default function ProvidersPage() {
   const [sortBy, setSortBy] = useState<SortOption | null>(null)
   const [showOpenOnly, setShowOpenOnly] = useState(false)
   const [showOffersOnly, setShowOffersOnly] = useState(false)
+
+  // Favorites hook
+  const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites()
 
   useEffect(() => {
     fetchProviders()
@@ -254,6 +258,8 @@ export default function ProvidersPage() {
                 key={provider.id}
                 provider={provider}
                 variant="default"
+                isFavorite={isFavorite(provider.id)}
+                onFavoriteToggle={isAuthenticated ? () => toggleFavorite(provider.id) : undefined}
               />
             ))}
           </div>
