@@ -170,7 +170,7 @@ export default function GovernoratePage() {
     if (!userId) return
 
     if (!governorateId) {
-      setMessage({ type: 'error', text: t('error') })
+      setMessage({ type: 'error', text: locale === 'ar' ? 'يرجى اختيار المحافظة' : 'Please select a governorate' })
       return
     }
 
@@ -179,20 +179,59 @@ export default function GovernoratePage() {
 
     const supabase = createClient()
 
-    // Note: This assumes governorate_id, city_id, and district_id columns exist in profiles table
-    // If they don't exist, you'll need to add them via migration first
+    // First, check if columns exist by attempting a select
+    const { data: currentProfile, error: selectError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single()
+
+    if (selectError) {
+      console.error('Error fetching profile:', selectError)
+      setMessage({
+        type: 'error',
+        text: locale === 'ar' ? 'خطأ في جلب البيانات' : 'Error fetching profile'
+      })
+      setSaving(false)
+      return
+    }
+
+    // Try to update with location data
     const { error } = await supabase
       .from('profiles')
       .update({
         governorate_id: governorateId,
         city_id: cityId || null,
         district_id: districtId || null,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
 
     if (error) {
       console.error('Error saving governorate:', error)
-      setMessage({ type: 'error', text: t('error') })
+      // Provide more specific error messages
+      if (error.code === '42703' || error.message.includes('column')) {
+        setMessage({
+          type: 'error',
+          text: locale === 'ar'
+            ? 'خطأ في قاعدة البيانات: الأعمدة المطلوبة غير موجودة'
+            : 'Database error: Required columns do not exist'
+        })
+      } else if (error.code === '42501') {
+        setMessage({
+          type: 'error',
+          text: locale === 'ar'
+            ? 'ليس لديك صلاحية لتعديل هذه البيانات'
+            : 'You do not have permission to update this data'
+        })
+      } else {
+        setMessage({
+          type: 'error',
+          text: locale === 'ar'
+            ? `حدث خطأ: ${error.message}`
+            : `Error: ${error.message}`
+        })
+      }
     } else {
       setMessage({ type: 'success', text: t('saved') })
       setTimeout(() => setMessage(null), 3000)

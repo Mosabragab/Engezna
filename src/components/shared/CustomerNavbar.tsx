@@ -159,14 +159,17 @@ export function CustomerNavbar() {
                     </Button>
                   </Link>
 
-                  {/* Logout */}
+                  {/* Logout - Always shows text to match brand identity */}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={handleSignOut}
-                    className="text-gray-500 hover:text-red-600"
+                    className="flex items-center gap-1.5 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                   >
                     <LogOut className="w-4 h-4" />
+                    <span className="text-xs">
+                      {locale === 'ar' ? 'خروج' : 'Logout'}
+                    </span>
                   </Button>
                 </>
               ) : (

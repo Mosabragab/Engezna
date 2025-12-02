@@ -126,7 +126,7 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
                   </Button>
                 </Link>
                 
-                {/* Sign Out Button */}
+                {/* Sign Out Button - Always shows text to match brand identity */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -134,7 +134,7 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
                   className="flex items-center gap-1.5 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">
+                  <span className="text-xs sm:text-sm">
                     {locale === 'ar' ? 'خروج' : 'Logout'}
                   </span>
                 </Button>
