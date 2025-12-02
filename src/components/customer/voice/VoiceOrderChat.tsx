@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocale } from 'next-intl'
-import { X, ShoppingCart, Trash2, Loader2, Bot, User } from 'lucide-react'
+import { X, ShoppingCart, Trash2, Loader2, Bot, User, Send, Mic } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { VoiceOrderButton } from './VoiceOrderButton'
 import { useVoiceOrder, VoiceOrderMessage, CartItem } from '@/hooks/customer/useVoiceOrder'
@@ -17,6 +17,8 @@ export function VoiceOrderChat({ isOpen, onClose, onAddToCart }: VoiceOrderChatP
   const locale = useLocale()
   const isRTL = locale === 'ar'
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [textInput, setTextInput] = useState('')
+  const [inputMode, setInputMode] = useState<'text' | 'voice'>('text')
 
   const {
     messages,
@@ -42,6 +44,20 @@ export function VoiceOrderChat({ isOpen, onClose, onAddToCart }: VoiceOrderChatP
 
   const handleTranscript = (transcript: string) => {
     processTranscript(transcript)
+  }
+
+  const handleTextSubmit = () => {
+    if (textInput.trim() && !isProcessing) {
+      processTranscript(textInput.trim())
+      setTextInput('')
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleTextSubmit()
+    }
   }
 
   const handleConfirmOrder = async () => {
@@ -78,10 +94,10 @@ export function VoiceOrderChat({ isOpen, onClose, onAddToCart }: VoiceOrderChatP
             </div>
             <div>
               <h2 className="font-semibold text-slate-900">
-                {locale === 'ar' ? 'المساعد الصوتي' : 'Voice Assistant'}
+                {locale === 'ar' ? 'المساعد الذكي' : 'Smart Assistant'}
               </h2>
               <p className="text-xs text-slate-500">
-                {locale === 'ar' ? 'اطلب بصوتك' : 'Order with your voice'}
+                {locale === 'ar' ? 'اطلب بالصوت أو الكتابة' : 'Order by voice or text'}
               </p>
             </div>
           </div>
@@ -164,15 +180,66 @@ export function VoiceOrderChat({ isOpen, onClose, onAddToCart }: VoiceOrderChatP
           </div>
         )}
 
-        {/* Voice Input Area */}
+        {/* Input Area - Text or Voice */}
         <div className="border-t border-slate-100 p-4 bg-white rounded-b-2xl">
-          <div className="flex flex-col items-center">
-            <VoiceOrderButton
-              onTranscript={handleTranscript}
-              isProcessing={isProcessing}
-              size="lg"
-            />
-          </div>
+          {inputMode === 'text' ? (
+            // Text Input Mode
+            <div className="flex items-end gap-2">
+              <div className="flex-1 relative">
+                <textarea
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder={locale === 'ar' ? 'اكتب طلبك هنا... مثال: عايز 2 برجر و بيبسي' : 'Type your order... e.g., I want 2 burgers and a pepsi'}
+                  className="w-full px-4 py-3 pe-12 border border-slate-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm min-h-[48px] max-h-[120px]"
+                  rows={1}
+                  disabled={isProcessing}
+                />
+              </div>
+
+              {/* Voice Mode Toggle Button */}
+              <button
+                onClick={() => setInputMode('voice')}
+                className="w-12 h-12 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors flex-shrink-0"
+                title={locale === 'ar' ? 'التحويل للصوت' : 'Switch to voice'}
+              >
+                <Mic className="w-5 h-5" />
+              </button>
+
+              {/* Send Button */}
+              <button
+                onClick={handleTextSubmit}
+                disabled={!textInput.trim() || isProcessing}
+                className={cn(
+                  'w-12 h-12 flex items-center justify-center rounded-full transition-colors flex-shrink-0',
+                  textInput.trim() && !isProcessing
+                    ? 'bg-primary hover:bg-primary/90 text-white'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                )}
+              >
+                {isProcessing ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+          ) : (
+            // Voice Input Mode
+            <div className="flex flex-col items-center">
+              <VoiceOrderButton
+                onTranscript={handleTranscript}
+                isProcessing={isProcessing}
+                size="lg"
+              />
+              <button
+                onClick={() => setInputMode('text')}
+                className="mt-3 text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                {locale === 'ar' ? 'أو اكتب رسالتك' : 'or type your message'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
