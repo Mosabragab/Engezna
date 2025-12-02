@@ -298,6 +298,8 @@ export default function CompleteProfilePage() {
           estimated_delivery_time_min: data.estimatedDeliveryTime,
           min_order_amount: data.minOrderAmount,
           delivery_radius_km: data.deliveryRadius,
+          governorate_id: data.governorateId,
+          city_id: data.cityId,
           status: 'pending_approval', // Change status to pending approval
           updated_at: new Date().toISOString(),
         })

@@ -28,6 +28,7 @@ interface UseProvidersOptions {
   limit?: number
   hasOffers?: boolean
   status?: string[]
+  cityId?: string | null
 }
 
 export function useProviders(options: UseProvidersOptions = {}) {
@@ -44,6 +45,7 @@ export function useProviders(options: UseProvidersOptions = {}) {
     limit = 20,
     hasOffers,
     status = ['open', 'closed'],
+    cityId,
   } = options
 
   const fetchProviders = useCallback(async (append = false) => {
@@ -57,6 +59,11 @@ export function useProviders(options: UseProvidersOptions = {}) {
         .from('providers')
         .select('*')
         .in('status', status)
+
+      // City filter - filter providers by user's city
+      if (cityId) {
+        query = query.eq('city_id', cityId)
+      }
 
       // Category filter
       if (category && category !== 'all') {
@@ -109,12 +116,12 @@ export function useProviders(options: UseProvidersOptions = {}) {
     } finally {
       setIsLoading(false)
     }
-  }, [category, sort, search, limit, status, offset])
+  }, [category, sort, search, limit, status, offset, cityId])
 
   useEffect(() => {
     setOffset(0)
     fetchProviders(false)
-  }, [category, sort, search])
+  }, [category, sort, search, cityId])
 
   const loadMore = useCallback(() => {
     if (!isLoading && hasMore) {

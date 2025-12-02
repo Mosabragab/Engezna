@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { CustomerLayout } from '@/components/customer/layout'
@@ -13,7 +13,6 @@ import {
   NearbySection,
 } from '@/components/customer/home'
 import { VoiceOrderFAB } from '@/components/customer/voice'
-import { useTopRatedProviders } from '@/hooks/customer/useProviders'
 import { createClient } from '@/lib/supabase/client'
 
 // Demo offers data
@@ -67,26 +66,53 @@ export default function HomePage() {
   const [isVoiceOpen, setIsVoiceOpen] = useState(false)
   const [lastOrder, setLastOrder] = useState<typeof demoLastOrder | null>(null)
   const [nearbyProviders, setNearbyProviders] = useState<any[]>([])
+  const [topRatedProviders, setTopRatedProviders] = useState<any[]>([])
+  const [userCityId, setUserCityId] = useState<string | null>(null)
 
-  // Fetch top rated providers
-  const { providers: topRatedProviders, isLoading: topRatedLoading } = useTopRatedProviders(6)
-
-  // Load last order and nearby providers
+  // Load user's city and providers
   useEffect(() => {
+    loadUserCityAndProviders()
     // For demo, show the last order
     setLastOrder(demoLastOrder)
-
-    // Fetch nearby providers (using same hook but could be location-based)
-    fetchNearbyProviders()
   }, [])
 
-  async function fetchNearbyProviders() {
+  async function loadUserCityAndProviders() {
     const supabase = createClient()
-    const { data } = await supabase
+    const { data: { user } } = await supabase.auth.getUser()
+
+    let cityId: string | null = null
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('city_id')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.city_id) {
+        cityId = profile.city_id
+        setUserCityId(cityId)
+      }
+    }
+
+    // Fetch providers filtered by city
+    fetchNearbyProviders(cityId)
+    fetchTopRatedProviders(cityId)
+  }
+
+  async function fetchNearbyProviders(cityId: string | null) {
+    const supabase = createClient()
+
+    let query = supabase
       .from('providers')
-      .select('id, name_ar, name_en, logo_url, cover_image_url, category, status')
+      .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id')
       .in('status', ['open', 'closed'])
-      .limit(6)
+
+    // Filter by city if user has set one
+    if (cityId) {
+      query = query.eq('city_id', cityId)
+    }
+
+    const { data } = await query.limit(6)
 
     if (data) {
       // Add mock distance for demo
@@ -95,6 +121,28 @@ export default function HomePage() {
         distance: 0.5 + i * 0.3,
       }))
       setNearbyProviders(withDistance)
+    }
+  }
+
+  async function fetchTopRatedProviders(cityId: string | null) {
+    const supabase = createClient()
+
+    let query = supabase
+      .from('providers')
+      .select('*')
+      .in('status', ['open', 'closed'])
+      .order('is_featured', { ascending: false })
+      .order('rating', { ascending: false })
+
+    // Filter by city if user has set one
+    if (cityId) {
+      query = query.eq('city_id', cityId)
+    }
+
+    const { data } = await query.limit(6)
+
+    if (data) {
+      setTopRatedProviders(data)
     }
   }
 
