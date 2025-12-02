@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 4.2 (Week 5 - Customer Journey + TypeScript Fixes)
+**Version:** 4.3 (Week 5 - City-Based Filtering & UI Fixes)
 **Date:** November 27, 2025
-**Last Updated:** December 1, 2025 (Session 4)
+**Last Updated:** December 2, 2025 (Session 5)
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -25,7 +25,7 @@
 **Status:** Week 5 - Customer Journey + PWA ✅
 **Target Launch:** February 2026 (12 weeks development)
 **Overall Progress:** ~70% of MVP Complete
-**Last Session:** December 1, 2025 (Session 4) - TypeScript Fixes & Homepage Updates
+**Last Session:** December 2, 2025 (Session 5) - City-Based Filtering & UI Fixes
 
 ### What's Built ✅
 
@@ -1820,13 +1820,35 @@ engezna/
     - ✅ Updated claude.md (v19.1)
     - ✅ Updated PRD.md (v4.2)
   - **Next Priority:** UI improvements based on user feedback
+- **v4.3** - December 2, 2025 - City-Based Filtering & UI Fixes
+  - **Status:** Week 5 - Customer Journey Improvements ✅
+  - **City-Based Provider Filtering:**
+    - ✅ Providers shown to customers filtered by their selected city
+    - ✅ Added city filtering to home page and providers page
+    - ✅ Updated useProviders hook to support cityId option
+    - ✅ Display user's city name with link to change location
+  - **Voice Ordering Improvements:**
+    - ✅ Added microphone button to providers search bar
+    - ✅ Connected VoiceOrderFAB to providers page
+  - **Header Component Improvements:**
+    - ✅ Added hideAuth prop to hide auth section for internal pages
+    - ✅ Added RTL-aware arrow icons to back button
+    - ✅ Applied hideAuth to governorate and addresses pages
+  - **UI Fixes:**
+    - ✅ Offer cards updated to blue gradient colors (#009DE0, #0088CC, #0077B6)
+    - ✅ Category text shortened ("خضار وفواكه" → "خضار")
+    - ✅ Category card width increased for better display
+    - ✅ Governorate page error handling improved
+  - **Documentation Updates:**
+    - ✅ Updated README.md, claude.md, PRD.md with session 5 changes
+  - **Next Priority:** Continue customer journey improvements
 
 ---
 
 **Approved By:**
-- **Mosab** - Founder & Product Lead - December 1, 2025
+- **Mosab** - Founder & Product Lead - December 2, 2025
 
-**Next Review Date:** December 2, 2025
+**Next Review Date:** December 3, 2025
 
 ---
 

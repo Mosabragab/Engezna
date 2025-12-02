@@ -72,6 +72,11 @@ Version: 2.1
 - Deals: `#00C27A`
 - Premium: `#FFD166`
 
+### Offer Cards Gradient (Blue Shades)
+- Primary: `#009DE0`
+- Secondary: `#0088CC`
+- Tertiary: `#0077B6`
+
 ---
 
 ## 5. Typography

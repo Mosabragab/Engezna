@@ -349,7 +349,7 @@ npm run type-check   # TypeScript type checking
 **Phase:** Week 5 - Customer Journey + PWA Implementation
 **Status:** Week 5 - Customer Journey Improvements ✅
 **Overall Progress:** ~70% of MVP Complete
-**Last Updated:** December 1, 2025 (Session 4)
+**Last Updated:** December 2, 2025 (Session 5)
 
 **Week 5 Features (NEW!):**
 - ✅ PWA Foundation (manifest.json, InstallPrompt component)
@@ -362,6 +362,10 @@ npm run type-check   # TypeScript type checking
 - ✅ Location selector connected to database (governorate/city)
 - ✅ Categories synced with database provider types
 - ✅ 83+ new translation keys (AR/EN)
+- ✅ **City-based provider filtering** (customers see only providers in their city)
+- ✅ **Voice microphone button** in providers search bar
+- ✅ **Header component improvements** (hideAuth prop, RTL-aware back arrow)
+- ✅ **Offer cards blue gradient** (#009DE0, #0088CC, #0077B6)
 
 **Week 4 Features:**
 - ✅ Unified AdminHeader and AdminSidebar components
@@ -560,7 +564,7 @@ npm run dev
 **المرحلة:** الأسبوع 5 - تحسين رحلة العميل + PWA
 **الحالة:** الأسبوع 5 - تحسينات رحلة العميل ✅
 **التقدم الكلي:** ~70% من MVP مكتمل
-**آخر تحديث:** 1 ديسمبر 2025 (الجلسة 4)
+**آخر تحديث:** 2 ديسمبر 2025 (الجلسة 5)
 
 **مميزات الأسبوع 5 (جديد!):**
 - ✅ أساسيات PWA (manifest.json، مكون InstallPrompt)
@@ -570,6 +574,9 @@ npm run dev
 - ✅ نظام الطلب الصوتي
 - ✅ اختيار الموقع مرتبط بقاعدة البيانات
 - ✅ الأقسام متوافقة مع أنواع المتاجر في قاعدة البيانات
+- ✅ **تصفية المتاجر حسب المدينة** (يرى العميل فقط المتاجر في مدينته)
+- ✅ **زر الميكروفون** في شريط البحث بصفحة المتاجر
+- ✅ **تحسينات مكون الهيدر** (إخفاء القسم للصفحات الداخلية)
 
 **ما يعمل ✅**
 
