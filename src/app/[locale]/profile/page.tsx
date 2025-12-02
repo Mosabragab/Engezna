@@ -18,6 +18,7 @@ import {
   Loader2,
   ChevronLeft,
   Phone,
+  ShoppingBag,
 } from 'lucide-react'
 
 interface UserProfile {
@@ -87,6 +88,11 @@ export default function SettingsPage() {
 
   // Unified colors - all icons use primary blue
   const menuItems = [
+    {
+      icon: ShoppingBag,
+      label: t('menu.orders'),
+      href: `/${locale}/orders`,
+    },
     {
       icon: User,
       label: t('menu.account'),

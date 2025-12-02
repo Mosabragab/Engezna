@@ -182,6 +182,7 @@
   "settings": {
     "title": "Settings",
     "menu": {
+      "orders": "My Orders",
       "account": "Account Information",
       "addresses": "Delivery Addresses",
       "email": "Change Email",
