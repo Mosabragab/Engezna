@@ -119,32 +119,29 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             </span>
           </Link>
 
-          {/* Right Section - Custom Action or Notifications & Profile */}
-          <div className="flex items-center gap-2">
-            {rightAction ? (
-              rightAction
-            ) : (
-              <>
-                {/* Notifications */}
-                <Link href={`/${locale}/notifications`}>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 relative">
-                    <Bell className="h-5 w-5 text-slate-600" />
-                    {notificationCount > 0 && (
-                      <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
-                        {notificationCount > 9 ? '9+' : notificationCount}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
+          {/* Right Section - Custom Action + Notifications & Profile */}
+          <div className="flex items-center gap-1">
+            {/* Custom Action (e.g., refresh button) */}
+            {rightAction && rightAction}
 
-                {/* Profile */}
-                <Link href={user ? `/${locale}/profile` : `/${locale}/auth/login`}>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <User className="h-5 w-5 text-slate-600" />
-                  </Button>
-                </Link>
-              </>
-            )}
+            {/* Notifications */}
+            <Link href={`/${locale}/notifications`}>
+              <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+                <Bell className="h-5 w-5 text-slate-600" />
+                {notificationCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+
+            {/* Profile */}
+            <Link href={user ? `/${locale}/profile` : `/${locale}/auth/login`}>
+              <Button variant="ghost" size="icon" className="h-9 w-9">
+                <User className="h-5 w-5 text-slate-600" />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
