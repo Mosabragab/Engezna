@@ -414,6 +414,35 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 
 ## 🐛 Recent Fixes
 
+### Work Session Dec 2, 2025 (Session 6) - UI Consistency & Offers Carousel ✅
+- ✅ **Unified Customer Pages with CustomerLayout**:
+  - Converted all settings pages to use `CustomerLayout` for consistent UI
+  - Pages updated: account, addresses, email, password, language, governorate
+  - Converted orders page to use `CustomerLayout` with refresh button as `rightAction`
+- ✅ **Header Improvements**:
+  - Always show "إنجزنا" logo in header center as link to home
+  - Logo replaces page title in header (title only shows in page content)
+  - Show notifications and profile icons alongside custom header actions
+  - Added `headerRightAction` prop to CustomerLayout for custom buttons
+- ✅ **Settings Menu Update**:
+  - Added "طلباتي" (My Orders) link to settings menu with ShoppingBag icon
+  - Added translations for orders menu item (AR/EN)
+- ✅ **Offers Carousel Auto-Scroll**:
+  - Rewrote carousel with CSS transform instead of native scroll
+  - Uses `translateX` for reliable movement (works with RTL)
+  - Auto-scrolls every 4 seconds with smooth 500ms transition
+  - Pauses on user interaction (touch/hover)
+  - Resumes after 3 seconds of no interaction
+- ✅ **Files Modified**:
+  - `src/components/customer/layout/CustomerHeader.tsx` - Always show logo, rightAction support
+  - `src/components/customer/layout/CustomerLayout.tsx` - Added headerRightAction prop
+  - `src/app/[locale]/orders/page.tsx` - Converted to CustomerLayout
+  - `src/app/[locale]/profile/page.tsx` - Added orders menu item
+  - `src/app/[locale]/profile/*/page.tsx` - All settings pages converted to CustomerLayout
+  - `src/components/customer/home/OffersCarousel.tsx` - Rewritten with CSS transform
+  - `src/i18n/messages/ar.json` - Added orders translation
+  - `src/i18n/messages/en.json` - Added orders translation
+
 ### Work Session Dec 2, 2025 (Session 5) - City-Based Filtering & UI Fixes ✅
 - ✅ **City-Based Provider Filtering**:
   - Providers shown to customers are now filtered by their selected city
@@ -894,8 +923,8 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 20.0 (City-Based Filtering & UI Fixes)
-**Last Updated:** December 2, 2025 (Session 5)
+**Version:** 21.0 (UI Consistency & Offers Carousel)
+**Last Updated:** December 2, 2025 (Session 6)
 **Next Review:** December 3, 2025
 
 **🎉 Week 5: Customer Journey Implementation!**
