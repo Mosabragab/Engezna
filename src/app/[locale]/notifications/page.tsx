@@ -34,19 +34,30 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     checkAuthAndLoadNotifications()
-  }, [])
+  }, [locale, router])
 
   async function checkAuthAndLoadNotifications() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    try {
+      const supabase = createClient()
+      const { data: { user }, error } = await supabase.auth.getUser()
 
-    if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/notifications`)
-      return
+      if (error) {
+        console.error('Auth error:', error)
+        setIsLoading(false)
+        return
+      }
+
+      if (!user) {
+        router.push(`/${locale}/auth/login?redirect=/notifications`)
+        return
+      }
+
+      setUser(user)
+      await loadNotifications(user.id)
+    } catch (err) {
+      console.error('Auth check failed:', err)
+      setIsLoading(false)
     }
-
-    setUser(user)
-    await loadNotifications(user.id)
   }
 
   async function loadNotifications(userId: string) {
