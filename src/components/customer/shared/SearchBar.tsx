@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, X } from 'lucide-react'
+import { Search, X, Mic } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState } from 'react'
 
@@ -9,6 +9,7 @@ interface SearchBarProps {
   value?: string
   onChange?: (value: string) => void
   onSearch?: (value: string) => void
+  onVoiceClick?: () => void
   autoFocus?: boolean
   className?: string
 }
@@ -18,6 +19,7 @@ export function SearchBar({
   value: externalValue,
   onChange,
   onSearch,
+  onVoiceClick,
   autoFocus = false,
   className = '',
 }: SearchBarProps) {
@@ -53,8 +55,8 @@ export function SearchBar({
 
   return (
     <div className={`relative ${className}`}>
-      <div className="relative">
-        <Search className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 ${isRTL ? 'right-4' : 'left-4'}`} />
+      <div className="relative flex items-center bg-slate-100 rounded-full border border-slate-200 focus-within:ring-2 focus-within:ring-primary focus-within:bg-white focus-within:border-primary">
+        <Search className={`w-5 h-5 text-slate-400 ${isRTL ? 'mr-4' : 'ml-4'}`} />
         <input
           type="text"
           value={value}
@@ -62,18 +64,27 @@ export function SearchBar({
           onKeyDown={handleKeyDown}
           placeholder={placeholder || t('searchPlaceholder')}
           autoFocus={autoFocus}
-          className={`w-full h-12 bg-slate-100 rounded-full outline-none transition-all focus:ring-2 focus:ring-primary focus:bg-white ${
-            isRTL ? 'pr-12 pl-10' : 'pl-12 pr-10'
+          className={`flex-1 h-12 bg-transparent outline-none px-3 ${
+            isRTL ? 'text-right' : 'text-left'
           }`}
         />
         {value && (
           <button
             onClick={handleClear}
-            className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600 ${
-              isRTL ? 'left-3' : 'right-3'
-            }`}
+            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600"
           >
             <X className="w-4 h-4" />
+          </button>
+        )}
+        {onVoiceClick && (
+          <button
+            onClick={onVoiceClick}
+            className={`w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary hover:text-white text-primary transition-colors ${
+              isRTL ? 'ml-1' : 'mr-1'
+            }`}
+            aria-label={locale === 'ar' ? 'البحث بالصوت' : 'Voice search'}
+          >
+            <Mic className="w-5 h-5" />
           </button>
         )}
       </div>

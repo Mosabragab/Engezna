@@ -7,7 +7,8 @@ import { NextRequest } from 'next/server'
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'always'
+  localePrefix: 'always',
+  localeDetection: false  // Disable browser language detection - always use Arabic by default
 })
 
 export default async function proxy(request: NextRequest) {
@@ -34,6 +35,6 @@ export const config = {
   matcher: [
     '/',
     '/(ar|en)/:path*',
-    '/((?!_next|_vercel|.*\\..*).*)'
+    '/((?!api|_next|_vercel|.*\\..*).*)'
   ]
 }

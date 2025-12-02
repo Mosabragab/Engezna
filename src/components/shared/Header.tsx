@@ -17,9 +17,10 @@ type HeaderProps = {
   showBack?: boolean
   backHref?: string
   backLabel?: string
+  hideAuth?: boolean // Hide auth section (logout, orders) for internal pages
 }
 
-export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
+export function Header({ showBack = false, backHref, backLabel, hideAuth = false }: HeaderProps) {
   const locale = useLocale()
   const isRTL = locale === 'ar'
   const [user, setUser] = useState<User | null>(null)
@@ -84,9 +85,14 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
           {showBack ? (
             <Link
               href={backHref || `/${locale}`}
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary"
+              className="flex items-center gap-2 text-slate-600 hover:text-primary transition-colors"
             >
-              <span>{backLabel || (locale === 'ar' ? 'رجوع' : 'Back')}</span>
+              {isRTL ? (
+                <ArrowRight className="w-5 h-5" />
+              ) : (
+                <ArrowLeft className="w-5 h-5" />
+              )}
+              <span className="text-sm font-medium">{backLabel || (locale === 'ar' ? 'رجوع' : 'Back')}</span>
             </Link>
           ) : (
             <Link href={`/${locale}`} className="text-2xl font-bold text-primary">
@@ -101,52 +107,54 @@ export function Header({ showBack = false, backHref, backLabel }: HeaderProps) {
             </Link>
           )}
           
-          {/* Right Side - Auth & Navigation */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {authLoading ? (
-              <div className="w-20 h-8 bg-muted animate-pulse rounded" />
-            ) : user ? (
-              <>
-                {/* My Orders Link */}
-                <Link href={`/${locale}/orders`}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="relative flex items-center gap-1.5"
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                    <span className="hidden sm:inline">
-                      {locale === 'ar' ? 'طلباتي' : 'My Orders'}
-                    </span>
-                    {activeOrdersCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-bold">
-                        {activeOrdersCount}
+          {/* Right Side - Auth & Navigation (hidden for internal pages) */}
+          {!hideAuth && (
+            <div className="flex items-center gap-2 sm:gap-3">
+              {authLoading ? (
+                <div className="w-20 h-8 bg-muted animate-pulse rounded" />
+              ) : user ? (
+                <>
+                  {/* My Orders Link */}
+                  <Link href={`/${locale}/orders`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="relative flex items-center gap-1.5"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      <span className="hidden sm:inline">
+                        {locale === 'ar' ? 'طلباتي' : 'My Orders'}
                       </span>
-                    )}
+                      {activeOrdersCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-bold">
+                          {activeOrdersCount}
+                        </span>
+                      )}
+                    </Button>
+                  </Link>
+
+                  {/* Sign Out Button - Always shows text to match brand identity */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSignOut}
+                    className="flex items-center gap-1.5 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="text-xs sm:text-sm">
+                      {locale === 'ar' ? 'خروج' : 'Logout'}
+                    </span>
+                  </Button>
+                </>
+              ) : (
+                <Link href={`/${locale}/auth/login`}>
+                  <Button variant="default" size="sm">
+                    {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
                   </Button>
                 </Link>
-                
-                {/* Sign Out Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSignOut}
-                  className="flex items-center gap-1.5 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">
-                    {locale === 'ar' ? 'خروج' : 'Logout'}
-                  </span>
-                </Button>
-              </>
-            ) : (
-              <Link href={`/${locale}/auth/login`}>
-                <Button variant="default" size="sm">
-                  {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
-                </Button>
-              </Link>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </header>

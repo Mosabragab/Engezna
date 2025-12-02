@@ -1,8 +1,8 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 1, 2025
-**Status:** Week 5 - Customer Journey + PWA (Session 4) ✅
-**Branch:** `claude/customer-journey-implementation-01Wm8f1cqUiz65guGpegD3q9`
+**Last Updated:** December 2, 2025
+**Status:** Week 5 - Customer Journey + PWA (Session 5) ✅
+**Branch:** `claude/project-status-review-016FGFeGUc5SPwpCVeNcUMFR`
 
 ---
 
@@ -413,6 +413,39 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Dec 2, 2025 (Session 5) - City-Based Filtering & UI Fixes ✅
+- ✅ **City-Based Provider Filtering**:
+  - Providers shown to customers are now filtered by their selected city
+  - Added `userCityId` state to home page and providers page
+  - Updated `fetchNearbyProviders` and `fetchTopRatedProviders` to filter by city
+  - Updated `useProviders` hook to support `cityId` option
+  - Display user's city name with link to change location
+- ✅ **Voice Microphone Button**:
+  - Added `isVoiceOpen` state to providers page
+  - Added `onVoiceClick` prop to SearchBar component
+  - Added `VoiceOrderFAB` to providers page
+- ✅ **Header Component Improvements**:
+  - Added `hideAuth` prop to hide auth section for internal pages
+  - Added RTL-aware arrow icons (ArrowLeft/ArrowRight) to back button
+  - Applied `hideAuth` to governorate and addresses pages
+- ✅ **Offer Cards Blue Gradient Colors**:
+  - Updated demo offers colors from orange/green/purple to blue gradient
+  - New colors: #009DE0, #0088CC, #0077B6 (Brand Guidelines v2.1)
+- ✅ **Category Text Fixes**:
+  - Shortened Arabic text "خضار وفواكه" to "خضار" for better display
+  - Increased category card width from `w-20` to `w-[88px]`
+- ✅ **Governorate Page Improvements**:
+  - Better error handling with specific error messages
+  - Fixed logout button displaying as arrow icon
+- ✅ **Files Modified**:
+  - `src/app/[locale]/page.tsx` - City filtering + offer colors
+  - `src/app/[locale]/providers/page.tsx` - City filtering + voice button
+  - `src/components/shared/Header.tsx` - hideAuth prop + arrow icons
+  - `src/components/customer/home/CategoriesSection.tsx` - Shortened text + width
+  - `src/hooks/customer/useProviders.ts` - cityId support
+  - `src/app/[locale]/profile/governorate/page.tsx` - hideAuth applied
+  - `src/app/[locale]/profile/addresses/page.tsx` - hideAuth applied
 
 ### Work Session Dec 1, 2025 (Session 4) - TypeScript Fixes & Homepage Updates ✅
 - ✅ **TypeScript Type Fixes**:
@@ -861,9 +894,9 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 19.1 (TypeScript Fixes & Homepage Updates)
-**Last Updated:** December 1, 2025 (Session 4)
-**Next Review:** December 2, 2025
+**Version:** 20.0 (City-Based Filtering & UI Fixes)
+**Last Updated:** December 2, 2025 (Session 5)
+**Next Review:** December 3, 2025
 
 **🎉 Week 5: Customer Journey Implementation!**
 - Full admin dashboard with unified components (AdminHeader, AdminSidebar)

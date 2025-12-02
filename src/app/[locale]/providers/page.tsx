@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { CustomerLayout } from '@/components/customer/layout'
 import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared'
 import { VoiceOrderFAB } from '@/components/customer/voice'
-import { Star, Clock, Percent, ArrowUpDown } from 'lucide-react'
+import { useFavorites } from '@/hooks/customer'
+import { Star, Clock, Percent, ArrowUpDown, MapPin } from 'lucide-react'
 
 type Provider = {
   id: string
@@ -24,6 +25,7 @@ type Provider = {
   estimated_delivery_time_min: number
   status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval'
   is_featured?: boolean
+  city_id?: string
 }
 
 type SortOption = 'rating' | 'delivery_time' | 'delivery_fee'
@@ -38,10 +40,49 @@ export default function ProvidersPage() {
   const [sortBy, setSortBy] = useState<SortOption | null>(null)
   const [showOpenOnly, setShowOpenOnly] = useState(false)
   const [showOffersOnly, setShowOffersOnly] = useState(false)
+  const [userCityId, setUserCityId] = useState<string | null>(null)
+  const [userCityName, setUserCityName] = useState<string | null>(null)
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false)
+
+  // Favorites hook
+  const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites()
+
+  // Load user's city on mount
+  useEffect(() => {
+    loadUserCity()
+  }, [])
 
   useEffect(() => {
     fetchProviders()
-  }, [selectedCategory])
+  }, [selectedCategory, userCityId])
+
+  async function loadUserCity() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('city_id')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.city_id) {
+        setUserCityId(profile.city_id)
+
+        // Get city name for display
+        const { data: city } = await supabase
+          .from('cities')
+          .select('name_ar, name_en')
+          .eq('id', profile.city_id)
+          .single()
+
+        if (city) {
+          setUserCityName(locale === 'ar' ? city.name_ar : city.name_en)
+        }
+      }
+    }
+  }
 
   // Filter and sort providers client-side
   const filteredProviders = useMemo(() => {
@@ -90,28 +131,57 @@ export default function ProvidersPage() {
 
   async function fetchProviders() {
     setLoading(true)
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    let query = supabase
-      .from('providers')
-      .select('*')
-      .in('status', ['open', 'closed'])
-      .order('is_featured', { ascending: false })
-      .order('rating', { ascending: false })
+      let query = supabase
+        .from('providers')
+        .select('*')
+        .in('status', ['open', 'closed'])
+        .order('is_featured', { ascending: false })
+        .order('rating', { ascending: false })
 
-    if (selectedCategory !== 'all') {
-      query = query.eq('category', selectedCategory)
+      // Filter by user's city if set
+      if (userCityId) {
+        query = query.eq('city_id', userCityId)
+      }
+
+      if (selectedCategory !== 'all') {
+        query = query.eq('category', selectedCategory)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Error fetching providers:', error.message, error.details, error.hint)
+      } else {
+        // Fallback: If no providers found for user's city, show all providers
+        if (data?.length === 0 && userCityId) {
+          console.log('No providers in user city, fetching all providers...')
+          let fallbackQuery = supabase
+            .from('providers')
+            .select('*')
+            .in('status', ['open', 'closed'])
+            .order('is_featured', { ascending: false })
+            .order('rating', { ascending: false })
+
+          if (selectedCategory !== 'all') {
+            fallbackQuery = fallbackQuery.eq('category', selectedCategory)
+          }
+
+          const { data: allProviders } = await fallbackQuery
+          console.log('Fallback providers loaded:', allProviders?.length || 0)
+          setProviders(allProviders || [])
+        } else {
+          console.log('Providers loaded:', data?.length || 0, userCityId ? `for city ${userCityId}` : 'all cities')
+          setProviders(data || [])
+        }
+      }
+    } catch (err) {
+      console.error('Unexpected error fetching providers:', err)
+    } finally {
+      setLoading(false)
     }
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Error fetching providers:', error)
-    } else {
-      setProviders(data || [])
-    }
-
-    setLoading(false)
   }
 
   const categories = [
@@ -130,15 +200,30 @@ export default function ProvidersPage() {
     <CustomerLayout showHeader={true} showBottomNav={true}>
       {/* Page Content */}
       <div className="px-4 py-4">
-        {/* Page Title */}
+        {/* Page Title with Location */}
         <div className="mb-4">
-          <h1 className="text-xl font-bold text-slate-900">
-            {locale === 'ar' ? 'المتاجر' : 'Stores'}
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-slate-900">
+              {locale === 'ar' ? 'المتاجر' : 'Stores'}
+            </h1>
+            {userCityName && (
+              <a
+                href={`/${locale}/profile/governorate`}
+                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                <MapPin className="w-4 h-4" />
+                <span>{userCityName}</span>
+              </a>
+            )}
+          </div>
           <p className="text-slate-500 text-sm">
-            {locale === 'ar'
-              ? 'اطلب من أفضل المطاعم والمتاجر'
-              : 'Order from the best restaurants and stores'}
+            {userCityName
+              ? locale === 'ar'
+                ? `متاجر متاحة في ${userCityName}`
+                : `Stores available in ${userCityName}`
+              : locale === 'ar'
+                ? 'اطلب من أفضل المطاعم والمتاجر'
+                : 'Order from the best restaurants and stores'}
           </p>
         </div>
 
@@ -149,6 +234,7 @@ export default function ProvidersPage() {
             onChange={setSearchQuery}
             onSearch={setSearchQuery}
             placeholder={locale === 'ar' ? 'ابحث عن متجر...' : 'Search for a store...'}
+            onVoiceClick={() => setIsVoiceOpen(true)}
           />
         </div>
 
@@ -254,6 +340,8 @@ export default function ProvidersPage() {
                 key={provider.id}
                 provider={provider}
                 variant="default"
+                isFavorite={isFavorite(provider.id)}
+                onFavoriteToggle={isAuthenticated ? () => toggleFavorite(provider.id) : undefined}
               />
             ))}
           </div>
@@ -261,7 +349,7 @@ export default function ProvidersPage() {
       </div>
 
       {/* Voice Order FAB */}
-      <VoiceOrderFAB />
+      <VoiceOrderFAB isOpen={isVoiceOpen} onOpenChange={setIsVoiceOpen} />
     </CustomerLayout>
   )
 }

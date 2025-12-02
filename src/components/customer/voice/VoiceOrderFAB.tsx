@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import { Mic } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -23,7 +23,17 @@ export function VoiceOrderFAB({
 }: VoiceOrderFABProps) {
   const locale = useLocale()
   const [internalIsOpen, setInternalIsOpen] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
   const addItem = useCart((state) => state.addItem)
+
+  // Show tooltip for new users
+  useEffect(() => {
+    const seen = localStorage.getItem('engezna_voice_tooltip_seen')
+    if (!seen) {
+      const timer = setTimeout(() => setShowTooltip(true), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [])
 
   // Use external state if provided, otherwise use internal
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
@@ -75,13 +85,29 @@ export function VoiceOrderFAB({
     setIsOpen(false)
   }
 
+  const handleClick = () => {
+    setShowTooltip(false)
+    localStorage.setItem('engezna_voice_tooltip_seen', 'true')
+    setIsOpen(true)
+  }
+
   return (
     <>
       {/* Floating Action Button - only show if showFAB is true */}
       {showFAB && (
         <>
+          {/* Tooltip for new users */}
+          {showTooltip && !isOpen && (
+            <div className="fixed z-40 bottom-36 end-4 sm:bottom-24 sm:end-6 animate-bounce">
+              <div className="bg-slate-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg">
+                {locale === 'ar' ? '🎤 اطلب بصوتك!' : '🎤 Order with voice!'}
+              </div>
+              <div className="absolute -bottom-2 end-5 w-0 h-0 border-x-8 border-t-8 border-transparent border-t-slate-900" />
+            </div>
+          )}
+
           <button
-            onClick={() => setIsOpen(true)}
+            onClick={handleClick}
             className={cn(
               'fixed z-40 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95',
               'bottom-20 end-4 sm:bottom-6 sm:end-6', // Position above bottom nav on mobile
@@ -94,19 +120,6 @@ export function VoiceOrderFAB({
             {/* Pulse Animation */}
             <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20" />
           </button>
-
-          {/* Tooltip on hover - Desktop only */}
-          <div
-            className={cn(
-              'fixed z-40 hidden sm:block',
-              'bottom-6 end-24',
-              'bg-slate-900 text-white text-sm px-3 py-1.5 rounded-lg shadow-lg',
-              'opacity-0 pointer-events-none transition-opacity group-hover:opacity-100',
-              isOpen && 'hidden'
-            )}
-          >
-            {locale === 'ar' ? 'اطلب بصوتك 🎤' : 'Order with voice 🎤'}
-          </div>
         </>
       )}
 

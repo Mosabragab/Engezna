@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { CustomerLayout } from '@/components/customer/layout'
@@ -13,10 +13,9 @@ import {
   NearbySection,
 } from '@/components/customer/home'
 import { VoiceOrderFAB } from '@/components/customer/voice'
-import { useTopRatedProviders } from '@/hooks/customer/useProviders'
 import { createClient } from '@/lib/supabase/client'
 
-// Demo offers data
+// Demo offers data - Unified blue gradient colors per brand guidelines
 const demoOffers = [
   {
     id: '1',
@@ -24,7 +23,7 @@ const demoOffers = [
     title_en: '30% Off',
     description_ar: 'على جميع البيتزا من سلطان بيتزا',
     description_en: 'On all pizzas from Sultan Pizza',
-    background_color: '#F97316',
+    background_color: '#009DE0',
     discount_percentage: 30,
     image_url: '/images/offers/pizza.jpg',
   },
@@ -34,7 +33,7 @@ const demoOffers = [
     title_en: 'Free Delivery',
     description_ar: 'على الطلبات فوق ١٠٠ ج.م من لافندر كافيه',
     description_en: 'On orders over 100 EGP from Lavender Cafe',
-    background_color: '#10B981',
+    background_color: '#0088CC',
     image_url: '/images/offers/coffee.jpg',
   },
   {
@@ -43,7 +42,7 @@ const demoOffers = [
     title_en: 'Buy 1 Get 1',
     description_ar: 'على جميع العصائر من عصائر الشفا',
     description_en: 'On all juices from Al-Shifa Juices',
-    background_color: '#8B5CF6',
+    background_color: '#0077B6',
     discount_percentage: 50,
     image_url: '/images/offers/juice.jpg',
   },
@@ -67,34 +66,111 @@ export default function HomePage() {
   const [isVoiceOpen, setIsVoiceOpen] = useState(false)
   const [lastOrder, setLastOrder] = useState<typeof demoLastOrder | null>(null)
   const [nearbyProviders, setNearbyProviders] = useState<any[]>([])
+  const [topRatedProviders, setTopRatedProviders] = useState<any[]>([])
+  const [userCityId, setUserCityId] = useState<string | null>(null)
 
-  // Fetch top rated providers
-  const { providers: topRatedProviders, isLoading: topRatedLoading } = useTopRatedProviders(6)
-
-  // Load last order and nearby providers
+  // Load user's city and providers
   useEffect(() => {
+    loadUserCityAndProviders()
     // For demo, show the last order
     setLastOrder(demoLastOrder)
-
-    // Fetch nearby providers (using same hook but could be location-based)
-    fetchNearbyProviders()
   }, [])
 
-  async function fetchNearbyProviders() {
+  async function loadUserCityAndProviders() {
     const supabase = createClient()
-    const { data } = await supabase
-      .from('providers')
-      .select('id, name_ar, name_en, logo_url, cover_image_url, category, status')
-      .in('status', ['open', 'closed'])
-      .limit(6)
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (data) {
+    let cityId: string | null = null
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('city_id')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.city_id) {
+        cityId = profile.city_id
+        setUserCityId(cityId)
+      }
+    }
+
+    // Fetch providers filtered by city
+    fetchNearbyProviders(cityId)
+    fetchTopRatedProviders(cityId)
+  }
+
+  async function fetchNearbyProviders(cityId: string | null) {
+    const supabase = createClient()
+
+    let query = supabase
+      .from('providers')
+      .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id')
+      .in('status', ['open', 'closed'])
+
+    // Filter by city if user has set one
+    if (cityId) {
+      query = query.eq('city_id', cityId)
+    }
+
+    const { data } = await query.limit(6)
+
+    // Fallback: If no providers found for user's city, show all providers
+    if (data?.length === 0 && cityId) {
+      const { data: allData } = await supabase
+        .from('providers')
+        .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id')
+        .in('status', ['open', 'closed'])
+        .limit(6)
+
+      if (allData) {
+        const withDistance = allData.map((p, i) => ({
+          ...p,
+          distance: 0.5 + i * 0.3,
+        }))
+        setNearbyProviders(withDistance)
+      }
+    } else if (data) {
       // Add mock distance for demo
       const withDistance = data.map((p, i) => ({
         ...p,
         distance: 0.5 + i * 0.3,
       }))
       setNearbyProviders(withDistance)
+    }
+  }
+
+  async function fetchTopRatedProviders(cityId: string | null) {
+    const supabase = createClient()
+
+    let query = supabase
+      .from('providers')
+      .select('*')
+      .in('status', ['open', 'closed'])
+      .order('is_featured', { ascending: false })
+      .order('rating', { ascending: false })
+
+    // Filter by city if user has set one
+    if (cityId) {
+      query = query.eq('city_id', cityId)
+    }
+
+    const { data } = await query.limit(6)
+
+    // Fallback: If no providers found for user's city, show all providers
+    if (data?.length === 0 && cityId) {
+      const { data: allData } = await supabase
+        .from('providers')
+        .select('*')
+        .in('status', ['open', 'closed'])
+        .order('is_featured', { ascending: false })
+        .order('rating', { ascending: false })
+        .limit(6)
+
+      if (allData) {
+        setTopRatedProviders(allData)
+      }
+    } else if (data) {
+      setTopRatedProviders(data)
     }
   }
 

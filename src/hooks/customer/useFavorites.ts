@@ -124,23 +124,45 @@ export function useFavorites() {
 
     const supabase = createClient()
 
+    // Optimistic update - immediately update UI
+    setFavoriteIds(prev => new Set([...prev, providerId]))
+
     try {
+      // Insert favorite
       const { error } = await supabase
         .from('favorites')
         .insert({ user_id: user.id, provider_id: providerId })
 
       if (error) {
+        // Rollback on error
+        setFavoriteIds(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(providerId)
+          return newSet
+        })
         console.error('Error adding favorite:', error)
         return false
       }
 
-      // Update local state
-      setFavoriteIds(prev => new Set([...prev, providerId]))
+      // Fetch only the single provider data we need (not all favorites)
+      const { data: providerData } = await supabase
+        .from('providers')
+        .select('id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status')
+        .eq('id', providerId)
+        .single()
 
-      // Reload to get full provider data
-      await loadFavorites(user.id)
+      if (providerData) {
+        setFavoriteProviders(prev => [providerData, ...prev])
+      }
+
       return true
     } catch (error) {
+      // Rollback on error
+      setFavoriteIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(providerId)
+        return newSet
+      })
       console.error('Error adding favorite:', error)
       return false
     }
@@ -151,6 +173,18 @@ export function useFavorites() {
 
     const supabase = createClient()
 
+    // Store current state for rollback
+    const previousProviders = favoriteProviders
+    const previousIds = new Set(favoriteIds)
+
+    // Optimistic update - immediately update UI
+    setFavoriteIds(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(providerId)
+      return newSet
+    })
+    setFavoriteProviders(prev => prev.filter(p => p.id !== providerId))
+
     try {
       const { error } = await supabase
         .from('favorites')
@@ -159,24 +193,22 @@ export function useFavorites() {
         .eq('provider_id', providerId)
 
       if (error) {
+        // Rollback on error
+        setFavoriteIds(previousIds)
+        setFavoriteProviders(previousProviders)
         console.error('Error removing favorite:', error)
         return false
       }
 
-      // Update local state
-      setFavoriteIds(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(providerId)
-        return newSet
-      })
-      setFavoriteProviders(prev => prev.filter(p => p.id !== providerId))
-
       return true
     } catch (error) {
+      // Rollback on error
+      setFavoriteIds(previousIds)
+      setFavoriteProviders(previousProviders)
       console.error('Error removing favorite:', error)
       return false
     }
-  }, [user])
+  }, [user, favoriteProviders, favoriteIds])
 
   const toggleFavorite = useCallback(async (providerId: string) => {
     if (favoriteIds.has(providerId)) {

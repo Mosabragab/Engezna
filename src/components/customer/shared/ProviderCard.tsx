@@ -100,8 +100,8 @@ export function ProviderCard({
   return (
     <Link href={`/${locale}/providers/${provider.id}`} className="block group">
       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-lg transition-all duration-300">
-        {/* Cover Image */}
-        <div className="relative aspect-[16/9] bg-slate-100">
+        {/* Cover Image - Compact height */}
+        <div className="relative h-32 bg-slate-100">
           {provider.cover_image_url ? (
             <img
               src={provider.cover_image_url}
@@ -110,7 +110,7 @@ export function ProviderCard({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-              <span className="text-6xl">🏪</span>
+              <span className="text-5xl">🏪</span>
             </div>
           )}
 
