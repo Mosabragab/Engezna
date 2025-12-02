@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useRef, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
@@ -61,7 +61,7 @@ interface OffersCarouselProps {
 export function OffersCarousel({
   offers = demoOffers,
   autoPlay = true,
-  autoPlayInterval = 5000,
+  autoPlayInterval = 4000,
   title,
   showArrows = true,
   showViewAll = false,
@@ -69,33 +69,22 @@ export function OffersCarousel({
   className = '',
 }: OffersCarouselProps) {
   const locale = useLocale()
-  const scrollRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const isRTL = locale === 'ar'
 
   const sectionTitle = title || (locale === 'ar' ? 'العروض' : 'Offers')
 
   // Auto-play
   useEffect(() => {
-    if (!autoPlay || offers.length <= 1) return
+    if (!autoPlay || offers.length <= 1 || isPaused) return
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % offers.length)
     }, autoPlayInterval)
 
     return () => clearInterval(interval)
-  }, [autoPlay, autoPlayInterval, offers.length])
-
-  // Scroll to current index
-  useEffect(() => {
-    if (scrollRef.current) {
-      const scrollWidth = scrollRef.current.scrollWidth
-      const itemWidth = scrollWidth / offers.length
-      scrollRef.current.scrollTo({
-        left: currentIndex * itemWidth,
-        behavior: 'smooth',
-      })
-    }
-  }, [currentIndex, offers.length])
+  }, [autoPlay, autoPlayInterval, offers.length, isPaused])
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + offers.length) % offers.length)
@@ -105,18 +94,23 @@ export function OffersCarousel({
     setCurrentIndex((prev) => (prev + 1) % offers.length)
   }
 
-  const handleScroll = () => {
-    if (scrollRef.current) {
-      const scrollLeft = scrollRef.current.scrollLeft
-      const itemWidth = scrollRef.current.scrollWidth / offers.length
-      const newIndex = Math.round(scrollLeft / itemWidth)
-      if (newIndex !== currentIndex) {
-        setCurrentIndex(newIndex)
-      }
-    }
+  // Pause on interaction
+  const handleInteractionStart = () => setIsPaused(true)
+  const handleInteractionEnd = () => {
+    setTimeout(() => setIsPaused(false), 3000)
   }
 
   if (offers.length === 0) return null
+
+  // Calculate transform based on RTL and current index
+  // Card width is 85vw, gap is 16px (gap-4)
+  const getTransform = () => {
+    const cardWidthPercent = 85
+    const gapPx = 16
+    // In RTL, we move in positive direction; in LTR, negative direction
+    const direction = isRTL ? 1 : -1
+    return `translateX(calc(${direction * currentIndex * cardWidthPercent}vw + ${direction * currentIndex * gapPx}px))`
+  }
 
   return (
     <section className={`bg-slate-50 px-4 py-6 ${className}`}>
@@ -152,83 +146,86 @@ export function OffersCarousel({
       </div>
 
       {/* Carousel */}
-      <div className="relative">
+      <div
+        className="relative overflow-hidden -mx-4 px-4"
+        onTouchStart={handleInteractionStart}
+        onTouchEnd={handleInteractionEnd}
+        onMouseEnter={handleInteractionStart}
+        onMouseLeave={handleInteractionEnd}
+      >
         <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4"
+          className="flex gap-4 transition-transform duration-500 ease-in-out"
+          style={{ transform: getTransform() }}
         >
-          <div className="flex gap-4">
-            {offers.map((offer) => {
-              const OfferContent = (
-                <div
-                  className="flex-shrink-0 w-[85vw] max-w-sm snap-center rounded-2xl p-6 text-white relative overflow-hidden"
-                  style={{ backgroundColor: offer.background_color || '#009DE0' }}
-                >
-                  {/* Background decoration */}
-                  <div className="absolute -top-10 -end-10 w-32 h-32 bg-white/10 rounded-full" />
-                  <div className="absolute -bottom-6 -start-6 w-24 h-24 bg-white/10 rounded-full" />
+          {offers.map((offer) => {
+            const OfferContent = (
+              <div
+                className="flex-shrink-0 w-[85vw] max-w-sm rounded-2xl p-6 text-white relative overflow-hidden"
+                style={{ backgroundColor: offer.background_color || '#009DE0' }}
+              >
+                {/* Background decoration */}
+                <div className="absolute -top-10 -end-10 w-32 h-32 bg-white/10 rounded-full" />
+                <div className="absolute -bottom-6 -start-6 w-24 h-24 bg-white/10 rounded-full" />
 
-                  {/* Discount badge */}
-                  {offer.discount_percentage && (
-                    <div className="absolute top-4 end-4 bg-white text-slate-900 font-bold text-sm px-2 py-1 rounded-lg">
-                      {offer.discount_percentage}%
-                    </div>
-                  )}
-
-                  {/* Content */}
-                  <div className="relative z-10">
-                    <h3 className="text-xl font-bold mb-2">
-                      {locale === 'ar' ? offer.title_ar : offer.title_en}
-                    </h3>
-                    {(offer.description_ar || offer.description_en) && (
-                      <p className="text-white/90 text-sm">
-                        {locale === 'ar' ? offer.description_ar : offer.description_en}
-                      </p>
-                    )}
+                {/* Discount badge */}
+                {offer.discount_percentage && (
+                  <div className="absolute top-4 end-4 bg-white text-slate-900 font-bold text-sm px-2 py-1 rounded-lg">
+                    {offer.discount_percentage}%
                   </div>
+                )}
 
-                  {/* Image placeholder */}
-                  {offer.image_url && (
-                    <div className="absolute bottom-4 end-4 w-24 h-24">
-                      <img
-                        src={offer.image_url}
-                        alt=""
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
+                {/* Content */}
+                <div className="relative z-10">
+                  <h3 className="text-xl font-bold mb-2">
+                    {locale === 'ar' ? offer.title_ar : offer.title_en}
+                  </h3>
+                  {(offer.description_ar || offer.description_en) && (
+                    <p className="text-white/90 text-sm">
+                      {locale === 'ar' ? offer.description_ar : offer.description_en}
+                    </p>
                   )}
                 </div>
-              )
 
-              return offer.link ? (
-                <Link key={offer.id} href={offer.link}>
-                  {OfferContent}
-                </Link>
-              ) : (
-                <div key={offer.id}>{OfferContent}</div>
-              )
-            })}
-          </div>
+                {/* Image placeholder */}
+                {offer.image_url && (
+                  <div className="absolute bottom-4 end-4 w-24 h-24">
+                    <img
+                      src={offer.image_url}
+                      alt=""
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+              </div>
+            )
+
+            return offer.link ? (
+              <Link key={offer.id} href={offer.link}>
+                {OfferContent}
+              </Link>
+            ) : (
+              <div key={offer.id}>{OfferContent}</div>
+            )
+          })}
         </div>
-
-        {/* Dots indicator */}
-        {offers.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5 mt-4">
-            {offers.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  index === currentIndex
-                    ? 'bg-primary w-4'
-                    : 'bg-slate-300 hover:bg-slate-400'
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* Dots indicator */}
+      {offers.length > 1 && (
+        <div className="flex items-center justify-center gap-1.5 mt-4">
+          {offers.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`w-2 h-2 rounded-full transition-all ${
+                index === currentIndex
+                  ? 'bg-primary w-4'
+                  : 'bg-slate-300 hover:bg-slate-400'
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   )
 }

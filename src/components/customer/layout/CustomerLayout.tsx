@@ -11,6 +11,7 @@ interface CustomerLayoutProps {
   headerTitle?: string
   showBackButton?: boolean
   transparentHeader?: boolean
+  headerRightAction?: React.ReactNode
 }
 
 export function CustomerLayout({
@@ -20,6 +21,7 @@ export function CustomerLayout({
   headerTitle,
   showBackButton = false,
   transparentHeader = false,
+  headerRightAction,
 }: CustomerLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
@@ -29,6 +31,7 @@ export function CustomerLayout({
           title={headerTitle}
           showBackButton={showBackButton}
           transparent={transparentHeader}
+          rightAction={headerRightAction}
         />
       )}
 

@@ -6,14 +6,12 @@ import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth'
+import { CustomerLayout } from '@/components/customer/layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Clock,
   ShoppingBag,
-  Home,
-  ArrowLeft,
-  ArrowRight,
   CheckCircle2,
   XCircle,
   Package,
@@ -156,47 +154,44 @@ export default function OrderHistoryPage() {
   const filteredOrders = filterOrders(orders)
   const activeCount = orders.filter(o => !['delivered', 'cancelled', 'rejected'].includes(o.status)).length
 
+  // Refresh button for header
+  const refreshButton = (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-9 w-9"
+      onClick={handleRefresh}
+      disabled={refreshing}
+    >
+      <RefreshCw className={`h-5 w-5 text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
+    </Button>
+  )
+
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">
-            {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-          </p>
+      <CustomerLayout
+        headerTitle={locale === 'ar' ? 'طلباتي' : 'My Orders'}
+        showBottomNav={true}
+        headerRightAction={refreshButton}
+      >
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+            </p>
+          </div>
         </div>
-      </div>
+      </CustomerLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}`}
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary"
-            >
-              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'الرئيسية' : 'Home'}</span>
-            </Link>
-            <Link href={`/${locale}`} className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-            </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </div>
-      </header>
-
+    <CustomerLayout
+      headerTitle={locale === 'ar' ? 'طلباتي' : 'My Orders'}
+      showBottomNav={true}
+      headerRightAction={refreshButton}
+    >
       <div className="container mx-auto px-4 py-6">
         <div className="max-w-3xl mx-auto">
           {/* Page Title */}
@@ -340,7 +335,7 @@ export default function OrderHistoryPage() {
 
           {/* Bottom Actions */}
           {orders.length > 0 && (
-            <div className="mt-8 text-center">
+            <div className="mt-8 text-center pb-4">
               <Link href={`/${locale}/providers`}>
                 <Button variant="outline" size="lg">
                   <Store className="w-5 h-5 mr-2" />
@@ -351,6 +346,6 @@ export default function OrderHistoryPage() {
           )}
         </div>
       </div>
-    </div>
+    </CustomerLayout>
   )
 }

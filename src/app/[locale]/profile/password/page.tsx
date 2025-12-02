@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { BottomNavigation } from '@/components/customer/layout'
+import { CustomerLayout } from '@/components/customer/layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { Lock, Loader2, Check, AlertCircle, User } from 'lucide-react'
+import { Lock, Loader2, Check, AlertCircle } from 'lucide-react'
 
 type Profile = {
   id: string
@@ -127,43 +126,16 @@ export default function PasswordPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20">
-        <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <Link href={`/${locale}/profile`} className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors">
-                <User className="w-5 h-5" />
-              </Link>
-              <Link href={`/${locale}`} className="text-xl font-bold text-primary">
-                {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-              </Link>
-              <div className="w-9" />
-            </div>
-          </div>
-        </header>
+      <CustomerLayout headerTitle={t('title')} showBottomNav={true}>
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-        <BottomNavigation />
-      </div>
+      </CustomerLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <Link href={`/${locale}/profile`} className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors">
-              <User className="w-5 h-5" />
-            </Link>
-            <Link href={`/${locale}`} className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-            </Link>
-            <div className="w-9" />
-          </div>
-        </div>
-      </header>
+    <CustomerLayout headerTitle={t('title')} showBottomNav={true}>
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">
@@ -259,8 +231,6 @@ export default function PasswordPage() {
           </CardContent>
         </Card>
       </main>
-
-      <BottomNavigation />
-    </div>
+    </CustomerLayout>
   )
 }

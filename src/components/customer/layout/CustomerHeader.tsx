@@ -13,9 +13,10 @@ interface CustomerHeaderProps {
   showBackButton?: boolean
   title?: string
   transparent?: boolean
+  rightAction?: React.ReactNode  // Custom action button (e.g., refresh)
 }
 
-export function CustomerHeader({ showBackButton = false, title, transparent = false }: CustomerHeaderProps) {
+export function CustomerHeader({ showBackButton = false, title, transparent = false, rightAction }: CustomerHeaderProps) {
   const locale = useLocale()
   const router = useRouter()
   const t = useTranslations('header')
@@ -92,47 +93,37 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
     <header className={`sticky top-0 z-40 ${transparent ? 'bg-transparent' : 'bg-white border-b border-slate-100 shadow-sm'}`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-14">
-          {/* Left Section - Back button or Location */}
+          {/* Left Section - Location (only on home page without title) */}
           <div className="flex items-center gap-3">
-            {showBackButton ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.back()}
-                className="text-slate-500 hover:text-primary"
-              >
-                {locale === 'ar' ? 'رجوع' : 'Back'}
-              </Button>
-            ) : (
+            {!title ? (
               <button
                 onClick={() => router.push(`/${locale}/profile/governorate`)}
                 className="flex items-center gap-2 text-sm hover:bg-slate-50 rounded-lg px-2 py-1 transition-colors"
               >
-                <MapPin className="h-4 w-4 text-primary" />
+                <MapPin className="h-5 w-5 text-primary" />
                 <span className="font-medium text-slate-900 max-w-[150px] truncate">
                   {currentLocation}
                 </span>
                 <ChevronDown className="h-4 w-4 text-slate-400" />
               </button>
-            )}
-
-            {/* Title if provided */}
-            {title && showBackButton && (
-              <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
+            ) : (
+              // Empty placeholder to maintain layout balance
+              <div className="w-9 h-9" />
             )}
           </div>
 
-          {/* Center - Logo (only on home without back button) */}
-          {!showBackButton && !title && (
-            <Link href={`/${locale}`} className="absolute left-1/2 -translate-x-1/2">
-              <span className="text-xl font-bold text-primary">
-                {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-              </span>
-            </Link>
-          )}
+          {/* Center - Always show Logo as link to home */}
+          <Link href={`/${locale}`} className="absolute left-1/2 -translate-x-1/2">
+            <span className="text-xl font-bold text-primary">
+              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
+            </span>
+          </Link>
 
-          {/* Right Section - Notifications & Profile */}
-          <div className="flex items-center gap-2">
+          {/* Right Section - Custom Action + Notifications & Profile */}
+          <div className="flex items-center gap-1">
+            {/* Custom Action (e.g., refresh button) */}
+            {rightAction && rightAction}
+
             {/* Notifications */}
             <Link href={`/${locale}/notifications`}>
               <Button variant="ghost" size="icon" className="h-9 w-9 relative">

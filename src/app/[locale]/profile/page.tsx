@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { BottomNavigation } from '@/components/customer/layout'
+import { CustomerLayout } from '@/components/customer/layout'
 import { Card } from '@/components/ui/card'
 import {
   User,
@@ -71,11 +71,26 @@ export default function SettingsPage() {
     router.push(`/${locale}/auth/login`)
   }
 
+  // Loading state
+  if (authLoading) {
+    return (
+      <CustomerLayout
+        headerTitle={t('title')}
+        showBackButton
+        showBottomNav={true}
+      >
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </CustomerLayout>
+    )
+  }
+
   // Unified colors - all icons use primary blue
   const menuItems = [
     {
       icon: ShoppingBag,
-      label: locale === 'ar' ? 'طلباتي' : 'My Orders',
+      label: t('menu.orders'),
       href: `/${locale}/orders`,
     },
     {
@@ -110,49 +125,12 @@ export default function SettingsPage() {
     },
   ]
 
-  // Loading state
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-muted pb-20">
-        {/* Header */}
-        <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <User className="w-5 h-5" />
-              </div>
-              <Link href={`/${locale}`} className="text-xl font-bold text-primary">
-                {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-              </Link>
-              <div className="w-9" />
-            </div>
-          </div>
-        </header>
-        <div className="flex items-center justify-center h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-        <BottomNavigation />
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-muted pb-20">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <User className="w-5 h-5" />
-            </div>
-            <Link href={`/${locale}`} className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-            </Link>
-            <div className="w-9" />
-          </div>
-        </div>
-      </header>
-
+    <CustomerLayout
+      headerTitle={t('title')}
+      showBackButton
+      showBottomNav={true}
+    >
       <div className="px-4 py-4 pb-24">
         {/* User Info Card */}
         {userProfile && (
@@ -208,8 +186,6 @@ export default function SettingsPage() {
           {t('menu.logout')}
         </button>
       </div>
-
-      <BottomNavigation />
-    </div>
+    </CustomerLayout>
   )
 }
