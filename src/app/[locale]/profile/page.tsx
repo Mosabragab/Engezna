@@ -75,7 +75,7 @@ export default function SettingsPage() {
     return (
       <CustomerLayout
         headerTitle={t('title')}
-        showBackButton
+        showBackButton={false}
         showBottomNav={true}
       >
         <div className="flex items-center justify-center h-[60vh]">
@@ -122,7 +122,7 @@ export default function SettingsPage() {
   return (
     <CustomerLayout
       headerTitle={t('title')}
-      showBackButton
+      showBackButton={false}
       showBottomNav={true}
     >
       <div className="px-4 py-4 pb-24">

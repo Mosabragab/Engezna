@@ -54,7 +54,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <CustomerLayout headerTitle={t('title')} showBackButton showBottomNav={false}>
+      <CustomerLayout headerTitle={t('title')} showBackButton={false} showBottomNav={true}>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
           <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4">
             <ShoppingBag className="w-12 h-12 text-slate-300" />
@@ -73,7 +73,7 @@ export default function CartPage() {
   }
 
   return (
-    <CustomerLayout headerTitle={t('title')} showBackButton showBottomNav={false}>
+    <CustomerLayout headerTitle={t('title')} showBackButton={false} showBottomNav={true}>
       <div className="px-4 py-4 pb-32">
         {/* Provider Info */}
         {provider && (
