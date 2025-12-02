@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { Header } from '@/components/shared/Header'
+import { CustomerLayout } from '@/components/customer/layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -143,18 +143,16 @@ export default function EmailPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header showBack backHref={`/${locale}/profile`} />
+      <CustomerLayout headerTitle={t('title')} showBottomNav={true}>
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </div>
+      </CustomerLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header showBack backHref={`/${locale}/profile`} backLabel={t('title')} />
+    <CustomerLayout headerTitle={t('title')} showBottomNav={true}>
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">
@@ -265,6 +263,6 @@ export default function EmailPage() {
           </CardContent>
         </Card>
       </main>
-    </div>
+    </CustomerLayout>
   )
 }

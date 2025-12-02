@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { Header } from '@/components/shared/Header'
+import { CustomerLayout } from '@/components/customer/layout'
 import { Card } from '@/components/ui/card'
 import { Globe, Loader2, Check } from 'lucide-react'
 
@@ -48,18 +48,16 @@ export default function LanguagePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-muted">
-        <Header showBack backHref={`/${locale}/profile`} />
+      <CustomerLayout headerTitle={t('title')} showBottomNav={true}>
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </div>
+      </CustomerLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-muted">
-      <Header showBack backHref={`/${locale}/profile`} backLabel={t('title')} />
+    <CustomerLayout headerTitle={t('title')} showBottomNav={true}>
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
         <h1 className="text-2xl font-bold text-foreground mb-2">
@@ -135,6 +133,6 @@ export default function LanguagePage() {
           </Card>
         </div>
       </main>
-    </div>
+    </CustomerLayout>
   )
 }

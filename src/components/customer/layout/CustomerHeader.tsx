@@ -13,9 +13,10 @@ interface CustomerHeaderProps {
   showBackButton?: boolean
   title?: string
   transparent?: boolean
+  rightAction?: React.ReactNode  // Custom action button (e.g., refresh)
 }
 
-export function CustomerHeader({ showBackButton = false, title, transparent = false }: CustomerHeaderProps) {
+export function CustomerHeader({ showBackButton = false, title, transparent = false, rightAction }: CustomerHeaderProps) {
   const locale = useLocale()
   const router = useRouter()
   const t = useTranslations('header')
@@ -92,65 +93,66 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
     <header className={`sticky top-0 z-40 ${transparent ? 'bg-transparent' : 'bg-white border-b border-slate-100 shadow-sm'}`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-14">
-          {/* Left Section - Back button or Location */}
+          {/* Left Section - Location (only on home page without title) */}
           <div className="flex items-center gap-3">
-            {showBackButton ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.back()}
-                className="text-slate-500 hover:text-primary"
-              >
-                {locale === 'ar' ? 'رجوع' : 'Back'}
-              </Button>
-            ) : (
+            {!title ? (
               <button
                 onClick={() => router.push(`/${locale}/profile/governorate`)}
                 className="flex items-center gap-2 text-sm hover:bg-slate-50 rounded-lg px-2 py-1 transition-colors"
               >
-                <MapPin className="h-4 w-4 text-primary" />
+                <MapPin className="h-5 w-5 text-primary" />
                 <span className="font-medium text-slate-900 max-w-[150px] truncate">
                   {currentLocation}
                 </span>
                 <ChevronDown className="h-4 w-4 text-slate-400" />
               </button>
-            )}
-
-            {/* Title if provided */}
-            {title && showBackButton && (
-              <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
+            ) : (
+              // Empty placeholder to maintain layout balance
+              <div className="w-9 h-9" />
             )}
           </div>
 
-          {/* Center - Logo (only on home without back button) */}
-          {!showBackButton && !title && (
-            <Link href={`/${locale}`} className="absolute left-1/2 -translate-x-1/2">
-              <span className="text-xl font-bold text-primary">
-                {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-              </span>
-            </Link>
-          )}
+          {/* Center - Title or Logo */}
+          <div className="absolute left-1/2 -translate-x-1/2">
+            {title ? (
+              <h1 className="text-xl font-bold text-primary">
+                {title}
+              </h1>
+            ) : (
+              <Link href={`/${locale}`}>
+                <span className="text-xl font-bold text-primary">
+                  {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
+                </span>
+              </Link>
+            )}
+          </div>
 
-          {/* Right Section - Notifications & Profile */}
+          {/* Right Section - Custom Action or Notifications & Profile */}
           <div className="flex items-center gap-2">
-            {/* Notifications */}
-            <Link href={`/${locale}/notifications`}>
-              <Button variant="ghost" size="icon" className="h-9 w-9 relative">
-                <Bell className="h-5 w-5 text-slate-600" />
-                {notificationCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                  </span>
-                )}
-              </Button>
-            </Link>
+            {rightAction ? (
+              rightAction
+            ) : (
+              <>
+                {/* Notifications */}
+                <Link href={`/${locale}/notifications`}>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+                    <Bell className="h-5 w-5 text-slate-600" />
+                    {notificationCount > 0 && (
+                      <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+                        {notificationCount > 9 ? '9+' : notificationCount}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
 
-            {/* Profile */}
-            <Link href={user ? `/${locale}/profile` : `/${locale}/auth/login`}>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <User className="h-5 w-5 text-slate-600" />
-              </Button>
-            </Link>
+                {/* Profile */}
+                <Link href={user ? `/${locale}/profile` : `/${locale}/auth/login`}>
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <User className="h-5 w-5 text-slate-600" />
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
