@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
@@ -61,7 +61,7 @@ interface OffersCarouselProps {
 export function OffersCarousel({
   offers = demoOffers,
   autoPlay = true,
-  autoPlayInterval = 5000,
+  autoPlayInterval = 4000,
   title,
   showArrows = true,
   showViewAll = false,
@@ -71,31 +71,51 @@ export function OffersCarousel({
   const locale = useLocale()
   const scrollRef = useRef<HTMLDivElement>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const isRTL = locale === 'ar'
 
   const sectionTitle = title || (locale === 'ar' ? 'العروض' : 'Offers')
 
-  // Auto-play
+  // Get card element for width calculation
+  const getCardWidth = useCallback(() => {
+    if (!scrollRef.current) return 0
+    const card = scrollRef.current.querySelector('[data-offer-card]') as HTMLElement
+    if (!card) return 0
+    const gap = 16 // gap-4 = 16px
+    return card.offsetWidth + gap
+  }, [])
+
+  // Scroll to specific index
+  const scrollToIndex = useCallback((index: number) => {
+    if (!scrollRef.current) return
+    const cardWidth = getCardWidth()
+    if (cardWidth === 0) return
+
+    const scrollPosition = index * cardWidth
+    scrollRef.current.scrollTo({
+      left: scrollPosition,
+      behavior: 'smooth',
+    })
+  }, [getCardWidth])
+
+  // Auto-play with pause support
   useEffect(() => {
-    if (!autoPlay || offers.length <= 1) return
+    if (!autoPlay || offers.length <= 1 || isPaused) return
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % offers.length)
+      setCurrentIndex((prev) => {
+        const nextIndex = (prev + 1) % offers.length
+        return nextIndex
+      })
     }, autoPlayInterval)
 
     return () => clearInterval(interval)
-  }, [autoPlay, autoPlayInterval, offers.length])
+  }, [autoPlay, autoPlayInterval, offers.length, isPaused])
 
-  // Scroll to current index
+  // Scroll when index changes
   useEffect(() => {
-    if (scrollRef.current) {
-      const scrollWidth = scrollRef.current.scrollWidth
-      const itemWidth = scrollWidth / offers.length
-      scrollRef.current.scrollTo({
-        left: currentIndex * itemWidth,
-        behavior: 'smooth',
-      })
-    }
-  }, [currentIndex, offers.length])
+    scrollToIndex(currentIndex)
+  }, [currentIndex, scrollToIndex])
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + offers.length) % offers.length)
@@ -105,15 +125,25 @@ export function OffersCarousel({
     setCurrentIndex((prev) => (prev + 1) % offers.length)
   }
 
-  const handleScroll = () => {
-    if (scrollRef.current) {
-      const scrollLeft = scrollRef.current.scrollLeft
-      const itemWidth = scrollRef.current.scrollWidth / offers.length
-      const newIndex = Math.round(scrollLeft / itemWidth)
-      if (newIndex !== currentIndex) {
-        setCurrentIndex(newIndex)
-      }
+  // Handle manual scroll to update current index
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return
+    const cardWidth = getCardWidth()
+    if (cardWidth === 0) return
+
+    const scrollLeft = scrollRef.current.scrollLeft
+    const newIndex = Math.round(scrollLeft / cardWidth)
+
+    if (newIndex !== currentIndex && newIndex >= 0 && newIndex < offers.length) {
+      setCurrentIndex(newIndex)
     }
+  }, [currentIndex, offers.length, getCardWidth])
+
+  // Pause on touch/mouse interaction
+  const handleInteractionStart = () => setIsPaused(true)
+  const handleInteractionEnd = () => {
+    // Resume after a short delay
+    setTimeout(() => setIsPaused(false), 3000)
   }
 
   if (offers.length === 0) return null
@@ -156,12 +186,17 @@ export function OffersCarousel({
         <div
           ref={scrollRef}
           onScroll={handleScroll}
+          onTouchStart={handleInteractionStart}
+          onTouchEnd={handleInteractionEnd}
+          onMouseEnter={handleInteractionStart}
+          onMouseLeave={handleInteractionEnd}
           className="overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4"
         >
           <div className="flex gap-4">
             {offers.map((offer) => {
               const OfferContent = (
                 <div
+                  data-offer-card
                   className="flex-shrink-0 w-[85vw] max-w-sm snap-center rounded-2xl p-6 text-white relative overflow-hidden"
                   style={{ backgroundColor: offer.background_color || '#009DE0' }}
                 >
