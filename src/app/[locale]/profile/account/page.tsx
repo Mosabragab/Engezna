@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { CustomerLayout } from '@/components/customer/layout'
@@ -9,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Mail, Phone, Loader2, Check, Info } from 'lucide-react'
+import { Mail, Phone, Loader2, Check, Info, User } from 'lucide-react'
 
 type Profile = {
   id: string
