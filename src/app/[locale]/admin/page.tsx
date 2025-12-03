@@ -111,55 +111,24 @@ export default function AdminDashboard() {
   }
 
   async function loadDashboardData(supabase: ReturnType<typeof createClient>) {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    const weekAgo = new Date()
-    weekAgo.setDate(weekAgo.getDate() - 7)
-
-    const monthAgo = new Date()
-    monthAgo.setDate(monthAgo.getDate() - 30)
-
-    const twoMonthsAgo = new Date()
-    twoMonthsAgo.setDate(twoMonthsAgo.getDate() - 60)
-
     try {
+      // Load stats from API
+      const statsResponse = await fetch('/api/admin/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'dashboard' }),
+      })
+      const statsResult = await statsResponse.json()
+
+      // Load recent orders and pending providers in parallel
       const [
-        { data: ordersToday },
-        { data: ordersWeek },
-        { data: ordersLastWeek },
-        { data: ordersMonth },
-        { data: ordersLastMonth },
-        { data: activeProviders },
         { data: pendingProvidersData },
-        { data: totalCustomers },
-        { data: newCustomersToday },
-        { data: pendingSettlementsData },
         { data: recentOrdersData },
       ] = await Promise.all([
-        supabase.from('orders').select('id').gte('created_at', today.toISOString()),
-        supabase.from('orders').select('id').gte('created_at', weekAgo.toISOString()),
-        supabase.from('orders').select('id')
-          .gte('created_at', new Date(weekAgo.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString())
-          .lt('created_at', weekAgo.toISOString()),
-        supabase.from('orders').select('total, platform_commission')
-          .eq('status', 'delivered')
-          .gte('created_at', monthAgo.toISOString()),
-        supabase.from('orders').select('total')
-          .eq('status', 'delivered')
-          .gte('created_at', twoMonthsAgo.toISOString())
-          .lt('created_at', monthAgo.toISOString()),
-        supabase.from('providers').select('id')
-          .in('status', ['open', 'closed', 'temporarily_paused', 'on_vacation']),
         supabase.from('providers').select('id, name_ar, name_en, category, created_at, phone')
-          .eq('status', 'pending_approval')
+          .in('status', ['pending_approval', 'pending_review'])
           .order('created_at', { ascending: false })
           .limit(5),
-        supabase.from('profiles').select('id').eq('role', 'customer'),
-        supabase.from('profiles').select('id')
-          .eq('role', 'customer')
-          .gte('created_at', today.toISOString()),
-        supabase.from('settlements').select('id').eq('status', 'pending'),
         supabase.from('orders')
           .select(`
             id,
@@ -174,35 +143,25 @@ export default function AdminDashboard() {
           .limit(5),
       ])
 
-      const gmvMonth = ordersMonth?.reduce((sum, o) => sum + (o.total || 0), 0) || 0
-      const gmvLastMonth = ordersLastMonth?.reduce((sum, o) => sum + (o.total || 0), 0) || 0
-      const commissionsMonth = ordersMonth?.reduce((sum, o) => sum + (o.platform_commission || 0), 0) || 0
-
-      const ordersWeekCount = ordersWeek?.length || 0
-      const ordersLastWeekCount = ordersLastWeek?.length || 0
-      const ordersChange = ordersLastWeekCount > 0
-        ? Math.round(((ordersWeekCount - ordersLastWeekCount) / ordersLastWeekCount) * 100)
-        : 0
-
-      const gmvChange = gmvLastMonth > 0
-        ? Math.round(((gmvMonth - gmvLastMonth) / gmvLastMonth) * 100)
-        : 0
-
-      setStats({
-        ordersToday: ordersToday?.length || 0,
-        ordersWeek: ordersWeekCount,
-        ordersChange,
-        gmvMonth,
-        gmvChange,
-        activeProviders: activeProviders?.length || 0,
-        pendingProviders: pendingProvidersData?.length || 0,
-        totalCustomers: totalCustomers?.length || 0,
-        newCustomersToday: newCustomersToday?.length || 0,
-        openTickets: 0,
-        pendingApprovals: 0,
-        commissionsMonth,
-        pendingSettlements: pendingSettlementsData?.length || 0,
-      })
+      // Set stats from API response
+      if (statsResult.success && statsResult.data) {
+        const apiStats = statsResult.data
+        setStats({
+          ordersToday: apiStats.orders?.todayCount || 0,
+          ordersWeek: apiStats.orders?.thisMonthCount || 0,
+          ordersChange: apiStats.orders?.changePercent || 0,
+          gmvMonth: apiStats.finance?.thisMonthRevenue || 0,
+          gmvChange: apiStats.finance?.changePercent || 0,
+          activeProviders: apiStats.providers?.approved || 0,
+          pendingProviders: apiStats.providers?.pending || 0,
+          totalCustomers: apiStats.users?.customers || 0,
+          newCustomersToday: apiStats.users?.newThisMonth || 0,
+          openTickets: 0,
+          pendingApprovals: apiStats.providers?.pending || 0,
+          commissionsMonth: apiStats.finance?.totalCommission || 0,
+          pendingSettlements: apiStats.finance?.pendingSettlement || 0,
+        })
+      }
 
       setPendingProviders(pendingProvidersData || [])
       const transformedOrders = (recentOrdersData || []).map((order: {
