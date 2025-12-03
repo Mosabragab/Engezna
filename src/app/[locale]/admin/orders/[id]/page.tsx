@@ -70,15 +70,35 @@ interface OrderDetails {
   cancelled_at: string | null
   cancellation_reason: string | null
   delivery_address: {
+    // Geographic hierarchy
+    governorate_id?: string
+    governorate_ar?: string
+    governorate_en?: string
+    city_id?: string
+    city_ar?: string
+    city_en?: string
+    district_id?: string
+    district_ar?: string
+    district_en?: string
+    // Address details
     address?: string
+    address_line1?: string
+    address_line2?: string
     street?: string
     building?: string
     floor?: string
     apartment?: string
-    notes?: string
+    landmark?: string
+    // Contact & notes
     phone?: string
+    full_name?: string
+    notes?: string
+    delivery_instructions?: string
+    // Location
     lat?: number
     lng?: number
+    // Reference
+    address_id?: string
   } | string | null
   delivery_notes: string | null
   customer_notes: string | null
@@ -661,34 +681,88 @@ export default function AdminOrderDetailsPage() {
                 </div>
                 <div className="p-4">
                   {order.delivery_address ? (
-                    <div className="text-slate-600 text-sm space-y-1">
+                    <div className="text-slate-600 text-sm space-y-2">
                       {typeof order.delivery_address === 'string' ? (
                         <p>{order.delivery_address}</p>
                       ) : (
                         <>
-                          {order.delivery_address.address && (
-                            <p>{order.delivery_address.address}</p>
+                          {/* Geographic Hierarchy */}
+                          {(order.delivery_address.governorate_ar || order.delivery_address.city_ar || order.delivery_address.district_ar) && (
+                            <div className="flex flex-wrap gap-2 text-xs mb-2">
+                              {order.delivery_address.governorate_ar && (
+                                <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                                  {locale === 'ar' ? order.delivery_address.governorate_ar : order.delivery_address.governorate_en}
+                                </span>
+                              )}
+                              {order.delivery_address.city_ar && (
+                                <span className="bg-green-50 text-green-700 px-2 py-1 rounded">
+                                  {locale === 'ar' ? order.delivery_address.city_ar : order.delivery_address.city_en}
+                                </span>
+                              )}
+                              {order.delivery_address.district_ar && (
+                                <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded">
+                                  {locale === 'ar' ? order.delivery_address.district_ar : order.delivery_address.district_en}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Address Details */}
+                          {(order.delivery_address.address || order.delivery_address.address_line1) && (
+                            <p className="font-medium text-slate-800">
+                              {order.delivery_address.address || order.delivery_address.address_line1}
+                            </p>
                           )}
                           {order.delivery_address.street && (
                             <p>{locale === 'ar' ? 'الشارع:' : 'Street:'} {order.delivery_address.street}</p>
                           )}
-                          {order.delivery_address.building && (
-                            <p>{locale === 'ar' ? 'المبنى:' : 'Building:'} {order.delivery_address.building}</p>
-                          )}
-                          {order.delivery_address.floor && (
-                            <p>{locale === 'ar' ? 'الطابق:' : 'Floor:'} {order.delivery_address.floor}</p>
-                          )}
-                          {order.delivery_address.apartment && (
-                            <p>{locale === 'ar' ? 'الشقة:' : 'Apartment:'} {order.delivery_address.apartment}</p>
-                          )}
-                          {order.delivery_address.phone && (
-                            <p className="flex items-center gap-1">
-                              <Phone className="w-3 h-3" />
-                              {order.delivery_address.phone}
+
+                          {/* Building Info */}
+                          {(order.delivery_address.building || order.delivery_address.floor || order.delivery_address.apartment) && (
+                            <p>
+                              {order.delivery_address.building && (
+                                <span>{locale === 'ar' ? 'مبنى' : 'Bldg'} {order.delivery_address.building}</span>
+                              )}
+                              {order.delivery_address.floor && (
+                                <span>{order.delivery_address.building ? ' - ' : ''}{locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}</span>
+                              )}
+                              {order.delivery_address.apartment && (
+                                <span>{(order.delivery_address.building || order.delivery_address.floor) ? ' - ' : ''}{locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}</span>
+                              )}
                             </p>
                           )}
+
+                          {/* Landmark */}
+                          {order.delivery_address.landmark && (
+                            <p className="text-slate-500">
+                              {locale === 'ar' ? 'علامة مميزة:' : 'Landmark:'} {order.delivery_address.landmark}
+                            </p>
+                          )}
+
+                          {/* Contact */}
+                          {order.delivery_address.phone && (
+                            <p className="flex items-center gap-1 mt-2 pt-2 border-t border-slate-100">
+                              <Phone className="w-3 h-3" />
+                              <a href={`tel:${order.delivery_address.phone}`} className="hover:text-red-600">
+                                {order.delivery_address.phone}
+                              </a>
+                            </p>
+                          )}
+                          {order.delivery_address.full_name && (
+                            <p className="text-slate-500">{order.delivery_address.full_name}</p>
+                          )}
+
+                          {/* Delivery Instructions */}
+                          {order.delivery_address.delivery_instructions && (
+                            <div className="mt-2 p-2 bg-amber-50 rounded text-amber-800 text-xs">
+                              <strong>{locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}</strong>
+                              <p>{order.delivery_address.delivery_instructions}</p>
+                            </div>
+                          )}
+
+                          {/* Notes */}
                           {order.delivery_address.notes && (
-                            <p className="text-slate-500 italic">{order.delivery_address.notes}</p>
+                            <p className="text-slate-500 italic text-xs">{order.delivery_address.notes}</p>
                           )}
                         </>
                       )}
