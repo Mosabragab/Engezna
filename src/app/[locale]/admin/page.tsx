@@ -126,7 +126,7 @@ export default function AdminDashboard() {
         { data: recentOrdersData },
       ] = await Promise.all([
         supabase.from('providers').select('id, name_ar, name_en, category, created_at, phone')
-          .in('status', ['pending_approval', 'pending_review'])
+          .in('status', ['pending_approval', 'incomplete'])
           .order('created_at', { ascending: false })
           .limit(5),
         supabase.from('orders')

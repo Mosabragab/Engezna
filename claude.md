@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** December 3, 2025
-**Status:** Week 5 - Admin Backend Integration Phase 0 (Session 8) ✅
+**Status:** Week 5 - Admin Dashboard Zeros Fix (Session 9) ✅
 **Branch:** `claude/review-project-files-01H152HAQGVtbcLSv8d7o6qd`
 
 ---
@@ -413,6 +413,36 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Dec 3, 2025 (Session 9) - Admin Dashboard Zeros Fix ✅
+- ✅ **Fixed Provider Status Values Across Admin Module**:
+  - Updated `src/lib/admin/types.ts`:
+    - Changed `ProviderStatus` type from `pending_review`/`pending_documents` to correct values
+    - Now includes: `pending_approval`, `incomplete`, `approved`, `rejected`, `suspended`, `open`, `closed`, `temporarily_paused`, `on_vacation`
+    - Updated `PROVIDER_STATUS_LABELS` with correct Arabic/English labels
+  - Updated `src/lib/admin/statistics.ts`:
+    - Fixed `getDashboardStats()` to use correct status values for pending/approved counts
+    - Fixed `getPendingProvidersCount()` to query `pending_approval` and `incomplete` statuses
+  - Updated `src/lib/admin/providers.ts`:
+    - Fixed `getPendingProviders()` to use correct status values
+    - Fixed `approveProvider()` validation to accept `pending_approval`, `incomplete`, `rejected`
+    - Fixed `rejectProvider()` validation to accept `pending_approval`, `incomplete`, `approved`
+  - Updated `src/hooks/admin/useAdminProviders.ts`:
+    - Fixed `usePendingProviders()` initial filters to use correct status values
+  - Updated `src/app/[locale]/admin/page.tsx`:
+    - Fixed pending providers query to use `pending_approval` and `incomplete`
+  - Updated `src/app/[locale]/admin/providers/[id]/page.tsx`:
+    - Fixed status colors and labels for all provider statuses
+    - Added `incomplete`, `on_vacation` status handling
+    - Fixed approve/reject button condition to check correct statuses
+- ✅ **Root Cause**: Admin module was using non-existent status values (`pending_review`, `pending_documents`) that don't match the database enum (`pending_approval`)
+- ✅ **Files Modified**:
+  - `src/lib/admin/types.ts`
+  - `src/lib/admin/statistics.ts`
+  - `src/lib/admin/providers.ts`
+  - `src/hooks/admin/useAdminProviders.ts`
+  - `src/app/[locale]/admin/page.tsx`
+  - `src/app/[locale]/admin/providers/[id]/page.tsx`
 
 ### Work Session Dec 3, 2025 (Session 8) - Admin Backend Integration Phase 0 ✅
 - ✅ **Admin Module TypeScript Types** (`src/lib/admin/types.ts`):
@@ -1021,8 +1051,8 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 23.0 (Admin Backend Integration Phase 0)
-**Last Updated:** December 3, 2025 (Session 8)
+**Version:** 24.0 (Admin Dashboard Zeros Fix)
+**Last Updated:** December 3, 2025 (Session 9)
 **Next Review:** December 4, 2025
 
 **🎉 Week 5: Admin Backend Integration Phase 0 Complete!**

@@ -381,7 +381,7 @@ export function useAdminProviders(
 export function usePendingProviders() {
   return useAdminProviders({
     initialFilters: {
-      status: ['pending_review', 'pending_documents'],
+      status: ['pending_approval', 'incomplete'],
       sortBy: 'created_at',
       sortOrder: 'asc',
     },

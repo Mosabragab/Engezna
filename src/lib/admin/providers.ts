@@ -185,7 +185,7 @@ export async function getPendingProviders(
   limit = PAGE_SIZE
 ): Promise<OperationResult<PaginatedResult<AdminProvider>>> {
   return getProviders({
-    status: ['pending_review', 'pending_documents'],
+    status: ['pending_approval', 'incomplete'],
     page,
     limit,
     sortBy: 'created_at',
@@ -221,7 +221,7 @@ export async function approveProvider(
     }
 
     // Validate status transition
-    const validStatuses: ProviderStatus[] = ['pending_review', 'pending_documents', 'rejected'];
+    const validStatuses: ProviderStatus[] = ['pending_approval', 'incomplete', 'rejected'];
     if (!validStatuses.includes(current.status)) {
       return {
         success: false,
@@ -314,7 +314,7 @@ export async function rejectProvider(
     }
 
     // Validate status transition
-    const validStatuses: ProviderStatus[] = ['pending_review', 'pending_documents', 'approved'];
+    const validStatuses: ProviderStatus[] = ['pending_approval', 'incomplete', 'approved'];
     if (!validStatuses.includes(current.status)) {
       return {
         success: false,

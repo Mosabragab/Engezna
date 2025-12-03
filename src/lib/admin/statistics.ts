@@ -101,10 +101,10 @@ export async function getDashboardStats(
     const providerStats = {
       total: providers.length,
       pending: providers.filter(
-        (p) => p.status === 'pending_review' || p.status === 'pending_documents'
+        (p) => p.status === 'pending_approval' || p.status === 'incomplete'
       ).length,
       approved: providers.filter(
-        (p) => p.status === 'approved' || p.status === 'open' || p.status === 'closed'
+        (p) => p.status === 'approved' || p.status === 'open' || p.status === 'closed' || p.status === 'temporarily_paused' || p.status === 'on_vacation'
       ).length,
       rejected: providers.filter((p) => p.status === 'rejected').length,
       suspended: providers.filter((p) => p.status === 'suspended').length,
@@ -519,7 +519,7 @@ export async function getPendingProvidersCount(): Promise<OperationResult<number
     const { count, error } = await supabase
       .from('providers')
       .select('*', { count: 'exact', head: true })
-      .in('status', ['pending_review', 'pending_documents']);
+      .in('status', ['pending_approval', 'incomplete']);
 
     if (error) {
       return { success: false, error: error.message };

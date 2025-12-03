@@ -4,13 +4,15 @@
 
 // حالات مقدم الخدمة
 export type ProviderStatus =
-  | 'pending_review'
-  | 'pending_documents'
+  | 'pending_approval'
+  | 'incomplete'
   | 'approved'
   | 'rejected'
   | 'suspended'
   | 'open'
-  | 'closed';
+  | 'closed'
+  | 'temporarily_paused'
+  | 'on_vacation';
 
 // حالات المستخدم
 export type UserStatus = 'active' | 'inactive' | 'banned';
@@ -325,13 +327,15 @@ export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 
 export const PROVIDER_STATUS_LABELS: Record<ProviderStatus, { ar: string; en: string }> = {
-  pending_review: { ar: 'في انتظار المراجعة', en: 'Pending Review' },
-  pending_documents: { ar: 'في انتظار المستندات', en: 'Pending Documents' },
+  pending_approval: { ar: 'في انتظار الموافقة', en: 'Pending Approval' },
+  incomplete: { ar: 'غير مكتمل', en: 'Incomplete' },
   approved: { ar: 'معتمد', en: 'Approved' },
   rejected: { ar: 'مرفوض', en: 'Rejected' },
   suspended: { ar: 'موقوف', en: 'Suspended' },
   open: { ar: 'مفتوح', en: 'Open' },
   closed: { ar: 'مغلق', en: 'Closed' },
+  temporarily_paused: { ar: 'متوقف مؤقتاً', en: 'Temporarily Paused' },
+  on_vacation: { ar: 'في إجازة', en: 'On Vacation' },
 };
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, { ar: string; en: string }> = {

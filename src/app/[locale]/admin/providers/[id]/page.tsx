@@ -296,8 +296,9 @@ export default function ProviderDetailPage() {
       case 'open': return 'bg-green-100 text-green-700'
       case 'closed': return 'bg-slate-100 text-slate-700'
       case 'pending_approval': return 'bg-amber-100 text-amber-700'
-      case 'pending_review': return 'bg-amber-100 text-amber-700'
+      case 'incomplete': return 'bg-orange-100 text-orange-700'
       case 'temporarily_paused': return 'bg-yellow-100 text-yellow-700'
+      case 'on_vacation': return 'bg-blue-100 text-blue-700'
       case 'suspended': return 'bg-red-100 text-red-700'
       case 'rejected': return 'bg-red-100 text-red-700'
       default: return 'bg-slate-100 text-slate-700'
@@ -308,9 +309,10 @@ export default function ProviderDetailPage() {
     const labels: Record<string, { ar: string; en: string }> = {
       open: { ar: 'مفتوح', en: 'Open' },
       closed: { ar: 'مغلق', en: 'Closed' },
-      pending_approval: { ar: 'قيد المراجعة', en: 'Pending Review' },
-      pending_review: { ar: 'قيد المراجعة', en: 'Pending Review' },
+      pending_approval: { ar: 'قيد المراجعة', en: 'Pending Approval' },
+      incomplete: { ar: 'غير مكتمل', en: 'Incomplete' },
       temporarily_paused: { ar: 'متوقف مؤقتاً', en: 'Paused' },
+      on_vacation: { ar: 'في إجازة', en: 'On Vacation' },
       suspended: { ar: 'موقوف', en: 'Suspended' },
       rejected: { ar: 'مرفوض', en: 'Rejected' },
     }
@@ -526,7 +528,7 @@ export default function ProviderDetailPage() {
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2 lg:flex-col">
-                  {provider.status === 'pending_approval' || provider.status === 'pending_review' ? (
+                  {provider.status === 'pending_approval' || provider.status === 'incomplete' ? (
                     <>
                       <Button
                         onClick={() => openActionModal('approve')}
