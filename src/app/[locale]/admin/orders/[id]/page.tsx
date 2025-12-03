@@ -38,11 +38,17 @@ export const dynamic = 'force-dynamic'
 
 interface OrderItem {
   id: string
-  product_name: string
+  product_id: string
   quantity: number
   unit_price: number
   total_price: number
   notes: string | null
+  product?: {
+    id: string
+    name_ar: string
+    name_en: string
+    image_url?: string
+  }
 }
 
 interface OrderDetails {
@@ -429,7 +435,11 @@ export default function AdminOrderDetailsPage() {
                     order.items.map((item) => (
                       <div key={item.id} className="p-4 flex items-center justify-between">
                         <div className="flex-1">
-                          <p className="font-medium text-slate-900">{item.product_name}</p>
+                          <p className="font-medium text-slate-900">
+                            {item.product
+                              ? (locale === 'ar' ? item.product.name_ar : item.product.name_en)
+                              : (locale === 'ar' ? 'منتج غير معروف' : 'Unknown product')}
+                          </p>
                           <p className="text-sm text-slate-500">
                             {formatCurrency(item.unit_price, locale)} x {formatNumber(item.quantity, locale)}
                           </p>
