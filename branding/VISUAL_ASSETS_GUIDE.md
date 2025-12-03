@@ -1,5 +1,6 @@
 # Engezna – Visual Assets Guide (For Designers)
-Version: 1.0
+Version: 2.0
+Last Updated: 2025-12-03
 
 ---
 
@@ -29,12 +30,58 @@ Version: 1.0
    - Below it: عايز تطلب؟ إنجزنا
    - English use: "Want to order? Engezna!"
 
-### 1.2 Clear Space & Minimum Size
+### 1.2 Animated Logo (NEW! - v2.0)
+
+**Primary Animated Logo:**
+- Font: **Aref Ruqaa** (Arabic Calligraphy Style)
+- Text: "إنجزنا"
+- Color: **#0F172A (Charcoal)** - NOT the brand blue
+- Animation: RTL reveal (right-to-left, mimicking Arabic writing)
+- Duration: 1.8 seconds
+
+**Animation Concept:**
+The animated logo reveals the Arabic text "إنجزنا" character by character from right to left, as if being written by an invisible pen. This creates an elegant calligraphic effect that:
+- Respects Arabic reading direction (RTL)
+- Creates a memorable brand impression
+- Conveys sophistication and authenticity
+
+**When to Use Animated Logo:**
+- App splash screens
+- Website hero sections
+- Marketing videos intro/outro
+- Social media intros
+- Loading screens
+
+**When to Use Static Logo:**
+- Navigation headers
+- Footer
+- App icons
+- Print materials
+- Small sizes (below 24px)
+
+**Size Specifications:**
+
+| Context | Size | Font Size | With Pen |
+|---------|------|-----------|----------|
+| Splash Screen | 2xl | 72px | Yes |
+| Hero Section | xl | 56px | Optional |
+| Large Display | lg | 42px | Optional |
+| Standard | md | 30px | No |
+| Header/Nav | sm | 24px | No |
+| Minimal | xs | 18px | No |
+
+**Optional Pen Decoration:**
+- A small pen icon (🖊️ or similar) can appear on the left side of the logo
+- Only use with sizes `lg` and above
+- Adds a calligraphy/writing visual metaphor
+
+### 1.3 Clear Space & Minimum Size
 
 - Clear space: at least **1x** the height of the Arabic word "إنجزنا" around the logo.
 - Minimum size:
   - Mobile: 24px height for icon-only, 32px for wordmark.
   - Web: 40px height recommended.
+  - Animated logo: Minimum 30px (md size) for visibility of animation.
 
 ---
 

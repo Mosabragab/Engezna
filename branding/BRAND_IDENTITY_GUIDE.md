@@ -1,6 +1,6 @@
 # Engezna – Brand Identity Guide
-Version: 2.0
-Last Updated: 2025-11-27
+Version: 3.0
+Last Updated: 2025-12-03
 
 ---
 
@@ -8,6 +8,7 @@ Last Updated: 2025-11-27
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.0 | 2025-12-03 | Added Animated Logo System, Aref Ruqaa Typography, Logo Animation Specifications |
 | 2.1 | 2025-11-27 | Updated Semantic Colors (Professional Dashboard Standards), Text Hierarchy System |
 | 2.0 | 2025-11-27 | Added Navigation Bar Standards, Light-Only Theme Decision, UI/UX Guidelines |
 | 1.0 | 2025-11-27 | Initial brand identity guide with Engezna Blue (#009DE0) |
@@ -255,12 +256,80 @@ Key positioning pillars:
   - Weights: 400, 500, 600, 700
   - Usage: English headings, CTAs, labels.
 
+**Logo Typography (Arabic Calligraphy):**
+- **Aref Ruqaa**
+  - Weight: 700 (Bold)
+  - Usage: Animated logo text "إنجزنا" only
+  - Color: Charcoal (#0F172A) - NOT Engezna Blue
+  - Source: Google Fonts `https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&display=swap`
+
 **Guidelines:**
 - Use **Medium (500)** for primary buttons and key labels.
 - Use **Bold (700)** for titles and emphasis.
 - Keep line-height generous for Arabic: 1.5–1.7.
 
-### 7.7 Icon Guidelines
+### 7.7 Animated Logo System (NEW!)
+
+**Overview:**
+The Engezna animated logo uses a unique RTL reveal animation that writes the Arabic text "إنجزنا" from right to left, mimicking Arabic calligraphy writing direction.
+
+**Logo Component Specifications:**
+
+| Property | Value | Notes |
+|----------|-------|-------|
+| **Font Family** | Aref Ruqaa | Arabic calligraphy style |
+| **Font Weight** | 700 (Bold) | For strong visual impact |
+| **Text Color** | #0F172A (Charcoal) | NOT the primary blue |
+| **Animation Direction** | RTL (Right to Left) | Matches Arabic writing |
+| **Animation Duration** | 1.8 seconds | Smooth reveal effect |
+| **Animation Type** | Clip-path reveal | Uses `inset(0 0% 0 0)` to `inset(0 100% 0 0)` |
+
+**Size Variants:**
+
+| Size | Font Size | Usage |
+|------|-----------|-------|
+| `xs` | 18px | Very small spaces |
+| `sm` | 24px | Header navigation |
+| `md` | 30px | Standard display |
+| `lg` | 42px | Large displays |
+| `xl` | 56px | Hero sections |
+| `2xl` | 72px | Splash screens |
+
+**Animation Keyframes:**
+```css
+@keyframes reveal-rtl {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0% 0 0); }
+}
+```
+
+**Component Props:**
+- `size`: xs | sm | md | lg | xl | 2xl
+- `showPen`: boolean - Show decorative pen icon on left
+- `loop`: boolean - Loop the animation continuously
+- `loopDelay`: number - Delay between loop iterations (ms)
+- `static`: boolean - Disable animation
+- `bgColor`: string - Background color for mask
+- `className`: string - Additional CSS classes
+
+**Usage Examples:**
+```tsx
+// Header logo (small, no pen)
+<EngeznaLogo size="sm" showPen={false} />
+
+// Splash screen (large with pen)
+<EngeznaLogo size="2xl" showPen={true} />
+
+// Static logo (no animation)
+<EngeznaLogo size="md" static={true} />
+```
+
+**Implementation Files:**
+- Component: `src/components/ui/EngeznaLogo.tsx`
+- Splash Screen: `src/components/customer/SplashScreen.tsx`
+- Font Loading: `src/app/[locale]/layout.tsx`
+
+### 7.8 Icon Guidelines
 
 **Icon Library:** Lucide React (lucide-react)
 
