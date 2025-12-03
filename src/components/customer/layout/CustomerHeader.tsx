@@ -102,7 +102,7 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
                 className="flex items-center gap-2 text-sm hover:bg-slate-50 rounded-lg px-2 py-1 transition-colors"
               >
                 <MapPin className="h-5 w-5 text-primary" />
-                <span className="font-medium text-slate-900 max-w-[150px] truncate">
+                <span className="font-medium text-primary max-w-[150px] truncate">
                   {currentLocation}
                 </span>
                 <ChevronDown className="h-4 w-4 text-slate-400" />
