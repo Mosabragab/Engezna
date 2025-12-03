@@ -52,7 +52,7 @@ export async function getOrders(
         `
         *,
         customer:profiles(id, full_name, phone),
-        provider:providers(id, name_ar, name_en, governorate_id, city_id, district_id)
+        provider:providers(id, name_ar, name_en, governorate_id, city_id)
       `,
         { count: 'exact' }
       );
