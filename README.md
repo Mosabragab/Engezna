@@ -349,11 +349,24 @@ npm run type-check   # TypeScript type checking
 ### 📊 Current Status
 
 **Phase:** Week 5 - Customer Journey + Animated Logo
-**Status:** Week 5 - Animated Logo & Documentation ✅
-**Overall Progress:** ~72% of MVP Complete
-**Last Updated:** December 3, 2025 (Session 7)
+**Status:** Week 5 - Analytics Geographic Filtering Fix ✅
+**Overall Progress:** ~73% of MVP Complete
+**Last Updated:** December 3, 2025 (Session 10)
 
-**Session 7 Features (NEW!):**
+**Session 10 Features (NEW!):**
+- ✅ **Fixed Admin Analytics Geographic Filtering**
+  - Fixed analytics showing zeros when selecting a governorate
+  - Added fallback name-based filtering for old orders without IDs
+  - Main analytics now filters by both provider location AND delivery_address
+  - Regional analytics matches by name when IDs are not present
+  - Files: `admin/analytics/page.tsx`, `admin/analytics/regions/page.tsx`
+
+**Session 9 Features:**
+- ✅ **Fixed Admin Dashboard Zeros Issue**
+  - Updated provider status values across admin module
+  - Fixed pending providers count and approval logic
+
+**Session 7 Features:**
 - ✅ **Animated Engezna Logo** (`EngeznaLogo.tsx` component)
   - RTL reveal animation (right-to-left, mimicking Arabic writing)
   - Aref Ruqaa Google Font for Arabic calligraphy style
@@ -576,11 +589,23 @@ npm run dev
 ### 📊 الحالة الحالية
 
 **المرحلة:** الأسبوع 5 - رحلة العميل + اللوجو المتحرك
-**الحالة:** الأسبوع 5 - اللوجو المتحرك والتوثيق ✅
-**التقدم الكلي:** ~72% من MVP مكتمل
-**آخر تحديث:** 3 ديسمبر 2025 (الجلسة 7)
+**الحالة:** الأسبوع 5 - إصلاح فلترة التحليلات الجغرافية ✅
+**التقدم الكلي:** ~73% من MVP مكتمل
+**آخر تحديث:** 3 ديسمبر 2025 (الجلسة 10)
 
-**مميزات الجلسة 7 (جديد!):**
+**مميزات الجلسة 10 (جديد!):**
+- ✅ **إصلاح فلترة التحليلات الجغرافية**
+  - إصلاح ظهور أصفار عند اختيار المحافظة
+  - إضافة فلترة احتياطية بالاسم للطلبات القديمة بدون IDs
+  - التحليلات الرئيسية تفلتر حسب موقع المتجر وعنوان التوصيل
+  - التحليلات الإقليمية تطابق بالاسم عند عدم وجود IDs
+
+**مميزات الجلسة 9:**
+- ✅ **إصلاح مشكلة الأصفار في لوحة الإدارة**
+  - تحديث قيم حالة المتاجر في وحدة الإدارة
+  - إصلاح عد المتاجر المعلقة ومنطق الموافقة
+
+**مميزات الجلسة 7:**
 - ✅ **لوجو إنجزنا المتحرك** (مكون `EngeznaLogo.tsx`)
   - أنيميشن RTL reveal (من اليمين لليسار مثل الكتابة العربية)
   - خط Aref Ruqaa للكاليغرافي العربي

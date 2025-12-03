@@ -1,8 +1,8 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** December 3, 2025
-**Status:** Week 5 - Admin Dashboard Zeros Fix (Session 9) ✅
-**Branch:** `claude/review-project-files-01H152HAQGVtbcLSv8d7o6qd`
+**Status:** Week 5 - Analytics Geographic Filtering Fix (Session 10) ✅
+**Branch:** `claude/provider-layout-setup-01Aa9ByAaekcxRUeTJkZUSEC`
 
 ---
 
@@ -413,6 +413,25 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Dec 3, 2025 (Session 10) - Analytics Geographic Filtering Fix ✅
+- ✅ **Fixed Admin Analytics Geographic Filtering**:
+  - **Root Cause**: When selecting a governorate in admin analytics, page showed zeros because:
+    1. Main analytics filtered orders only by provider's geographic location (IDs)
+    2. Old orders' delivery_address had only text names (governorate_ar/en) without geographic IDs
+    3. Regional analytics filtered only by delivery_address IDs, not by name fallback
+  - Updated `src/app/[locale]/admin/analytics/page.tsx`:
+    - Added geographic name lookup for selected filters
+    - Implemented hybrid filtering: matches orders by provider location OR delivery_address
+    - Falls back to name matching when IDs aren't present in delivery_address
+    - Now filters by `governorate_id` OR `governorate_ar` OR `governorate_en`
+  - Updated `src/app/[locale]/admin/analytics/regions/page.tsx`:
+    - Added helper functions: `matchesGovernorate()`, `matchesCity()`, `matchesDistrict()`
+    - Each function matches by ID first, then falls back to Arabic or English name
+    - Applied to all three view levels (governorates, cities, districts)
+- ✅ **Files Modified**:
+  - `src/app/[locale]/admin/analytics/page.tsx` - Hybrid geographic filtering
+  - `src/app/[locale]/admin/analytics/regions/page.tsx` - Name-based fallback matching
 
 ### Work Session Dec 3, 2025 (Session 9) - Admin Dashboard Zeros Fix ✅
 - ✅ **Fixed Provider Status Values Across Admin Module**:
@@ -1051,9 +1070,14 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 24.0 (Admin Dashboard Zeros Fix)
-**Last Updated:** December 3, 2025 (Session 9)
+**Version:** 25.0 (Analytics Geographic Filtering Fix)
+**Last Updated:** December 3, 2025 (Session 10)
 **Next Review:** December 4, 2025
+
+**🎉 Week 5: Analytics Geographic Filtering Fixed!**
+- Fixed admin analytics showing zeros when filtering by governorate
+- Added fallback name-based filtering for old orders without geographic IDs
+- Both main analytics and regional analytics now properly support filtering
 
 **🎉 Week 5: Admin Backend Integration Phase 0 Complete!**
 - Full admin dashboard with unified components (AdminHeader, AdminSidebar)

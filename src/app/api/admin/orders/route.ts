@@ -53,7 +53,12 @@ export async function POST(request: NextRequest) {
       // ───────────────────────────────────────────────────────────────────
       case 'list': {
         const filters: OrderFilters = params.filters || {};
+        console.log('[Orders API] Fetching orders with filters:', filters);
         const result = await getOrders(filters);
+        console.log('[Orders API] Result success:', result.success, 'Data count:', result.data?.data?.length || 0);
+        if (!result.success) {
+          console.error('[Orders API] Error:', result.error);
+        }
         return NextResponse.json(result);
       }
 

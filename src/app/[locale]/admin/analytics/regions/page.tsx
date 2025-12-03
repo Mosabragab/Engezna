@@ -221,16 +221,38 @@ export default function AdminRegionalAnalyticsPage() {
     // Calculate stats based on view level
     let stats: RegionStats[] = []
 
+    // Helper function to match geographic location by ID or name
+    const matchesGovernorate = (addr: any, gov: Governorate) => {
+      if (!addr) return false
+      return addr.governorate_id === gov.id ||
+        addr.governorate_ar === gov.name_ar ||
+        addr.governorate_en === gov.name_en
+    }
+
+    const matchesCity = (addr: any, city: City) => {
+      if (!addr) return false
+      return addr.city_id === city.id ||
+        addr.city_ar === city.name_ar ||
+        addr.city_en === city.name_en
+    }
+
+    const matchesDistrict = (addr: any, district: District) => {
+      if (!addr) return false
+      return addr.district_id === district.id ||
+        addr.district_ar === district.name_ar ||
+        addr.district_en === district.name_en
+    }
+
     if (viewLevel === 'governorates') {
       stats = governorates.map(gov => {
         const govProviders = providers.filter(p => p.governorate_id === gov.id)
         const govOrders = orders.filter(o => {
           const addr = o.delivery_address as any
-          return addr?.governorate_id === gov.id
+          return matchesGovernorate(addr, gov)
         })
         const prevGovOrders = prevOrders.filter(o => {
           const addr = o.delivery_address as any
-          return addr?.governorate_id === gov.id
+          return matchesGovernorate(addr, gov)
         })
 
         const ordersCount = govOrders.length
@@ -268,11 +290,11 @@ export default function AdminRegionalAnalyticsPage() {
         const cityProviders = providers.filter(p => p.city_id === city.id)
         const cityOrders = orders.filter(o => {
           const addr = o.delivery_address as any
-          return addr?.city_id === city.id
+          return matchesCity(addr, city)
         })
         const prevCityOrders = prevOrders.filter(o => {
           const addr = o.delivery_address as any
-          return addr?.city_id === city.id
+          return matchesCity(addr, city)
         })
 
         const ordersCount = cityOrders.length
@@ -313,11 +335,11 @@ export default function AdminRegionalAnalyticsPage() {
         const districtProviders = providers.filter(p => p.district_id === district.id)
         const districtOrders = orders.filter(o => {
           const addr = o.delivery_address as any
-          return addr?.district_id === district.id
+          return matchesDistrict(addr, district)
         })
         const prevDistrictOrders = prevOrders.filter(o => {
           const addr = o.delivery_address as any
-          return addr?.district_id === district.id
+          return matchesDistrict(addr, district)
         })
 
         const ordersCount = districtOrders.length

@@ -48,11 +48,30 @@ type Order = {
   total: number
   payment_method: string
   delivery_address: {
-    address: string
-    phone: string
-    full_name: string
+    // Geographic hierarchy
+    governorate_id?: string
+    governorate_ar?: string
+    governorate_en?: string
+    city_id?: string
+    city_ar?: string
+    city_en?: string
+    district_id?: string
+    district_ar?: string
+    district_en?: string
+    // Address details
+    address?: string
+    address_line1?: string
+    street?: string
+    building?: string
+    floor?: string
+    apartment?: string
+    landmark?: string
+    // Contact
+    phone?: string
+    full_name?: string
     notes?: string
-  }
+    delivery_instructions?: string
+  } | null
   customer_notes: string | null
   created_at: string
   customer: {
@@ -89,7 +108,7 @@ const NEXT_STATUS: Record<string, string> = {
   out_for_delivery: 'delivered',
 }
 
-type FilterType = 'all' | 'pending' | 'active' | 'out_for_delivery' | 'completed' | 'cancelled'
+type FilterType = 'all' | 'pending' | 'active' | 'ready' | 'out_for_delivery' | 'completed' | 'cancelled'
 
 export default function ProviderOrdersPage() {
   const locale = useLocale()
@@ -295,8 +314,10 @@ export default function ProviderOrdersPage() {
         return orders.filter(o => o.status === 'pending')
       case 'active':
         return orders.filter(o =>
-          ['accepted', 'preparing', 'ready'].includes(o.status)
+          ['accepted', 'preparing'].includes(o.status)
         )
+      case 'ready':
+        return orders.filter(o => o.status === 'ready')
       case 'out_for_delivery':
         return orders.filter(o => o.status === 'out_for_delivery')
       case 'completed':
@@ -310,7 +331,8 @@ export default function ProviderOrdersPage() {
 
   const filteredOrders = filterOrders(orders)
   const pendingCount = orders.filter(o => o.status === 'pending').length
-  const activeCount = orders.filter(o => ['accepted', 'preparing', 'ready'].includes(o.status)).length
+  const activeCount = orders.filter(o => ['accepted', 'preparing'].includes(o.status)).length
+  const readyCount = orders.filter(o => o.status === 'ready').length
   const outForDeliveryCount = orders.filter(o => o.status === 'out_for_delivery').length
 
   const getStatusConfig = (status: string) => {
@@ -443,6 +465,19 @@ export default function ProviderOrdersPage() {
             <span className="mx-1 text-xs opacity-70">({activeCount})</span>
           </Button>
           <Button
+            variant={filter === 'ready' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('ready')}
+            className={filter !== 'ready' ? 'border-slate-300 text-slate-600' : ''}
+          >
+            {locale === 'ar' ? 'جاهز' : 'Ready'}
+            {readyCount > 0 && (
+              <span className="mx-1 bg-primary/20 text-primary text-xs px-1.5 rounded-full">
+                {readyCount}
+              </span>
+            )}
+          </Button>
+          <Button
             variant={filter === 'out_for_delivery' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('out_for_delivery')}
@@ -482,6 +517,10 @@ export default function ProviderOrdersPage() {
                 ? locale === 'ar' ? 'لا توجد طلبات جديدة' : 'No new orders'
                 : filter === 'active'
                 ? locale === 'ar' ? 'لا توجد طلبات قيد التنفيذ' : 'No orders in progress'
+                : filter === 'ready'
+                ? locale === 'ar' ? 'لا توجد طلبات جاهزة' : 'No ready orders'
+                : filter === 'out_for_delivery'
+                ? locale === 'ar' ? 'لا توجد طلبات في الطريق' : 'No orders on the way'
                 : filter === 'completed'
                 ? locale === 'ar' ? 'لا توجد طلبات مكتملة' : 'No completed orders'
                 : locale === 'ar' ? 'لا توجد طلبات ملغية' : 'No cancelled orders'}
@@ -566,10 +605,67 @@ export default function ProviderOrdersPage() {
                     <div className="p-4 border-b border-slate-200 bg-white/80">
                       <div className="flex items-start gap-2 text-sm">
                         <MapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-slate-600">{order.delivery_address?.address}</span>
+                        <div className="flex-1 space-y-1">
+                          {/* Geographic Tags */}
+                          {order.delivery_address && (order.delivery_address.governorate_ar || order.delivery_address.city_ar || order.delivery_address.district_ar) && (
+                            <div className="flex flex-wrap gap-1.5 mb-2">
+                              {order.delivery_address.governorate_ar && (
+                                <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
+                                  {locale === 'ar' ? order.delivery_address.governorate_ar : order.delivery_address.governorate_en}
+                                </span>
+                              )}
+                              {order.delivery_address.city_ar && (
+                                <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
+                                  {locale === 'ar' ? order.delivery_address.city_ar : order.delivery_address.city_en}
+                                </span>
+                              )}
+                              {order.delivery_address.district_ar && (
+                                <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
+                                  {locale === 'ar' ? order.delivery_address.district_ar : order.delivery_address.district_en}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Street Address */}
+                          <p className="text-slate-700 font-medium">
+                            {order.delivery_address?.address || order.delivery_address?.address_line1}
+                          </p>
+
+                          {/* Building Details */}
+                          {order.delivery_address && (order.delivery_address.building || order.delivery_address.floor || order.delivery_address.apartment) && (
+                            <p className="text-slate-600 text-xs">
+                              {order.delivery_address.building && (
+                                <span>{locale === 'ar' ? 'مبنى' : 'Bldg'} {order.delivery_address.building}</span>
+                              )}
+                              {order.delivery_address.floor && (
+                                <span>{order.delivery_address.building ? ' - ' : ''}{locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}</span>
+                              )}
+                              {order.delivery_address.apartment && (
+                                <span>{(order.delivery_address.building || order.delivery_address.floor) ? ' - ' : ''}{locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}</span>
+                              )}
+                            </p>
+                          )}
+
+                          {/* Landmark */}
+                          {order.delivery_address?.landmark && (
+                            <p className="text-slate-500 text-xs">
+                              {locale === 'ar' ? 'علامة مميزة:' : 'Landmark:'} {order.delivery_address.landmark}
+                            </p>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Delivery Instructions */}
+                      {order.delivery_address?.delivery_instructions && (
+                        <div className="mt-2 mx-6 p-2 bg-amber-50 rounded text-xs text-amber-800">
+                          <strong>{locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}</strong> {order.delivery_address.delivery_instructions}
+                        </div>
+                      )}
+
+                      {/* Notes */}
                       {order.delivery_address?.notes && (
-                        <p className="text-xs text-slate-500 mt-1 mr-6">
+                        <p className="text-xs text-slate-500 mt-1 mx-6 italic">
                           {order.delivery_address.notes}
                         </p>
                       )}

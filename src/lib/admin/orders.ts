@@ -51,8 +51,8 @@ export async function getOrders(
       .select(
         `
         *,
-        customer:profiles!customer_id(id, full_name, phone),
-        provider:providers!provider_id(id, name_ar, name_en)
+        customer:profiles(id, full_name, phone),
+        provider:providers(id, name_ar, name_en, governorate_id, city_id, district_id)
       `,
         { count: 'exact' }
       );
@@ -135,8 +135,8 @@ export async function getOrderById(
       .select(
         `
         *,
-        customer:profiles!customer_id(id, full_name, phone, email),
-        provider:providers!provider_id(id, name_ar, name_en, phone, commission_rate)
+        customer:profiles(id, full_name, phone, email),
+        provider:providers(id, name_ar, name_en, phone, commission_rate)
       `
       )
       .eq('id', orderId)
@@ -152,12 +152,7 @@ export async function getOrderById(
     // Fetch order items
     const { data: items, error: itemsError } = await supabase
       .from('order_items')
-      .select(
-        `
-        *,
-        product:products(id, name_ar, name_en, image_url)
-      `
-      )
+      .select('*')
       .eq('order_id', orderId);
 
     if (itemsError) {
@@ -203,7 +198,7 @@ export async function cancelOrder(
     // Fetch current order
     const { data: current, error: fetchError } = await supabase
       .from('orders')
-      .select('*, provider:providers!provider_id(name_ar)')
+      .select('*, provider:providers(name_ar)')
       .eq('id', orderId)
       .single();
 
@@ -233,8 +228,8 @@ export async function cancelOrder(
       .select(
         `
         *,
-        customer:profiles!customer_id(id, full_name, phone),
-        provider:providers!provider_id(id, name_ar, name_en)
+        customer:profiles(id, full_name, phone),
+        provider:providers(id, name_ar, name_en)
       `
       )
       .single();
@@ -334,8 +329,8 @@ export async function initiateRefund(
       .select(
         `
         *,
-        customer:profiles!customer_id(id, full_name, phone),
-        provider:providers!provider_id(id, name_ar, name_en)
+        customer:profiles(id, full_name, phone),
+        provider:providers(id, name_ar, name_en)
       `
       )
       .single();
@@ -458,8 +453,8 @@ export async function updateOrderStatus(
       .select(
         `
         *,
-        customer:profiles!customer_id(id, full_name, phone),
-        provider:providers!provider_id(id, name_ar, name_en)
+        customer:profiles(id, full_name, phone),
+        provider:providers(id, name_ar, name_en)
       `
       )
       .single();
@@ -573,15 +568,15 @@ export async function getOrderStats(): Promise<
 interface OrderItem {
   id: string;
   order_id: string;
-  product_id: string;
+  menu_item_id: string;
+  item_name_ar: string;
+  item_name_en: string;
+  item_price: string;
   quantity: number;
-  unit_price: number;
-  total_price: number;
-  notes?: string;
-  product?: {
-    id: string;
-    name_ar: string;
-    name_en: string;
-    image_url?: string;
-  };
+  unit_price: string;
+  total_price: string;
+  customizations?: unknown;
+  special_instructions?: string;
+  created_at: string;
+  updated_at: string;
 }
