@@ -64,7 +64,17 @@ interface OrderDetails {
   delivered_at: string | null
   cancelled_at: string | null
   cancellation_reason: string | null
-  delivery_address: string | null
+  delivery_address: {
+    address?: string
+    street?: string
+    building?: string
+    floor?: string
+    apartment?: string
+    notes?: string
+    phone?: string
+    lat?: number
+    lng?: number
+  } | string | null
   delivery_notes: string | null
   customer_notes: string | null
   customer: {
@@ -644,7 +654,38 @@ export default function AdminOrderDetailsPage() {
                 </div>
                 <div className="p-4">
                   {order.delivery_address ? (
-                    <p className="text-slate-600 text-sm">{order.delivery_address}</p>
+                    <div className="text-slate-600 text-sm space-y-1">
+                      {typeof order.delivery_address === 'string' ? (
+                        <p>{order.delivery_address}</p>
+                      ) : (
+                        <>
+                          {order.delivery_address.address && (
+                            <p>{order.delivery_address.address}</p>
+                          )}
+                          {order.delivery_address.street && (
+                            <p>{locale === 'ar' ? 'الشارع:' : 'Street:'} {order.delivery_address.street}</p>
+                          )}
+                          {order.delivery_address.building && (
+                            <p>{locale === 'ar' ? 'المبنى:' : 'Building:'} {order.delivery_address.building}</p>
+                          )}
+                          {order.delivery_address.floor && (
+                            <p>{locale === 'ar' ? 'الطابق:' : 'Floor:'} {order.delivery_address.floor}</p>
+                          )}
+                          {order.delivery_address.apartment && (
+                            <p>{locale === 'ar' ? 'الشقة:' : 'Apartment:'} {order.delivery_address.apartment}</p>
+                          )}
+                          {order.delivery_address.phone && (
+                            <p className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" />
+                              {order.delivery_address.phone}
+                            </p>
+                          )}
+                          {order.delivery_address.notes && (
+                            <p className="text-slate-500 italic">{order.delivery_address.notes}</p>
+                          )}
+                        </>
+                      )}
+                    </div>
                   ) : (
                     <p className="text-slate-500 text-sm">{locale === 'ar' ? 'لم يتم تحديد عنوان' : 'No address specified'}</p>
                   )}
