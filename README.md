@@ -41,7 +41,7 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 - 🔍 Search and filter by cuisine, rating, delivery time
 - 🛒 Easy ordering with real-time tracking
 - 💳 Multiple payment options (Cash on Delivery, online)
-- 🌙 Dark mode support
+- 🎨 Clean light theme (consistent brand experience)
 - 🌍 Bilingual interface (Arabic/English)
 - 📱 Mobile-first responsive design
 
@@ -68,7 +68,7 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 - **Styling:** Tailwind CSS 3.4.17 with custom design tokens
 - **UI Components:** shadcn/ui (Radix UI primitives)
 - **Internationalization:** next-intl 4.5.5
-- **Theme:** next-themes (dark mode support)
+- **Theme:** Light-only (brand consistency)
 - **State Management:** Zustand
 - **Forms:** React Hook Form + Zod
 
@@ -324,7 +324,7 @@ engezna/
 
 #### **Components**
 All components support:
-- ✅ Dark mode
+- ✅ Light-only theme (consistent brand experience)
 - ✅ RTL (Right-to-Left) layout
 - ✅ Responsive design
 - ✅ Accessibility (WCAG 2.1 AA)
@@ -511,7 +511,7 @@ Proprietary - All rights reserved. This project is not open source.
 - 🔍 البحث والتصفية حسب نوع الطعام والتقييم ووقت التوصيل
 - 🛒 طلب سهل مع تتبع فوري
 - 💳 خيارات دفع متعددة (الدفع عند الاستلام، الدفع الإلكتروني)
-- 🌙 دعم الوضع الليلي
+- 🎨 ثيم فاتح أنيق (تجربة علامة تجارية متناسقة)
 - 🌍 واجهة ثنائية اللغة (عربي/إنجليزي)
 - 📱 تصميم متجاوب يبدأ بالموبايل
 
@@ -618,7 +618,7 @@ npm run dev
 - ✅ نظام الإعدادات متعدد الصفحات (7 صفحات)
 - ✅ إدارة العناوين مع القوائم المتسلسلة
 - ✅ دعم ثنائي اللغة (عربي/إنجليزي) مع RTL كامل
-- ✅ الوضع الليلي/النهاري
+- ✅ ثيم فاتح موحد (لتناسق العلامة التجارية)
 
 **مميزات المتاجر (مكتملة 100%):**
 - ✅ تسجيل الشركاء (تدفق متعدد الخطوات)
