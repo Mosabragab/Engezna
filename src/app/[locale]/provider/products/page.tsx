@@ -7,13 +7,12 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ProviderLayout } from '@/components/provider'
 import {
   Package,
   Plus,
   Edit,
   Trash2,
-  ArrowLeft,
-  ArrowRight,
   RefreshCw,
   Search,
   ToggleLeft,
@@ -23,9 +22,6 @@ import {
   Clock,
   Eye,
   EyeOff,
-  MoreVertical,
-  Filter,
-  Store,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -197,35 +193,11 @@ export default function ProviderProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
-            >
-              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
-            </Link>
-            <h1 className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'إدارة المنتجات' : 'Products'}
-            </h1>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="text-slate-500 hover:text-slate-900"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6">
+    <ProviderLayout
+      pageTitle={{ ar: 'إدارة المنتجات', en: 'Products' }}
+      pageSubtitle={{ ar: 'إدارة قائمة منتجاتك', en: 'Manage your product menu' }}
+    >
+      <div className="">
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 border border-slate-200">
@@ -497,6 +469,6 @@ export default function ProviderProductsPage() {
           </div>
         )}
       </div>
-    </div>
+    </ProviderLayout>
   )
 }

@@ -7,9 +7,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { ProviderLayout } from '@/components/provider'
 import {
-  ArrowLeft,
-  ArrowRight,
   BarChart3,
   TrendingUp,
   TrendingDown,
@@ -253,37 +252,11 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
-            >
-              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
-            </Link>
-            <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              {locale === 'ar' ? 'التقارير والإحصائيات' : 'Reports & Analytics'}
-            </h1>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="border-slate-300"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6">
-        <div className="max-w-6xl mx-auto space-y-6">
+    <ProviderLayout
+      pageTitle={{ ar: 'التقارير والإحصائيات', en: 'Reports & Analytics' }}
+      pageSubtitle={{ ar: 'عرض ملخص الأداء والإحصائيات', en: 'View performance summary and statistics' }}
+    >
+      <div className="max-w-6xl mx-auto space-y-6">
           {/* Page Description */}
           <p className="text-sm text-slate-500">
             {locale === 'ar'
@@ -505,7 +478,6 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+    </ProviderLayout>
   )
 }

@@ -9,9 +9,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { ProviderLayout } from '@/components/provider'
 import {
-  ArrowLeft,
-  ArrowRight,
   Settings,
   Store,
   Truck,
@@ -32,6 +31,8 @@ import {
   LogOut,
   User,
   Loader2,
+  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -346,28 +347,11 @@ export default function ProviderSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
-            >
-              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
-            </Link>
-            <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              {locale === 'ar' ? 'إعدادات المتجر' : 'Store Settings'}
-            </h1>
-            <div className="w-20" />
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6">
+    <ProviderLayout
+      pageTitle={{ ar: 'إعدادات المتجر', en: 'Store Settings' }}
+      pageSubtitle={{ ar: 'إدارة إعدادات متجرك', en: 'Manage your store settings' }}
+    >
+      <div className="max-w-4xl mx-auto">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-2">
@@ -830,7 +814,7 @@ export default function ProviderSettingsPage() {
                           </p>
                         </div>
                       </div>
-                      {isRTL ? <ArrowLeft className="w-5 h-5 text-slate-400" /> : <ArrowRight className="w-5 h-5 text-slate-400" />}
+                      {isRTL ? <ChevronLeft className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
                     </button>
                   ) : (
                     <div className="space-y-4">
@@ -995,6 +979,6 @@ export default function ProviderSettingsPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </ProviderLayout>
   )
 }
