@@ -89,51 +89,46 @@ export default function AdminOrdersPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
-        await loadOrders(supabase)
+        await loadOrders()
       }
     }
 
     setLoading(false)
   }
 
-  async function loadOrders(supabase: ReturnType<typeof createClient>) {
-    const { data } = await supabase
-      .from('orders')
-      .select(`
-        id,
-        order_number,
-        status,
-        total,
-        subtotal,
-        delivery_fee,
-        platform_commission,
-        payment_method,
-        payment_status,
-        created_at,
-        delivered_at,
-        customer:profiles!orders_customer_id_fkey(id, full_name, phone),
-        provider:providers(id, name_ar, name_en, governorate_id, city_id, district_id)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(100)
-
-    if (data) {
-      setOrders(data as unknown as Order[])
-
-      const pending = data.filter(o => o.status === 'pending').length
-      const inProgress = data.filter(o => ['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)).length
-      const delivered = data.filter(o => o.status === 'delivered').length
-      const cancelled = data.filter(o => ['cancelled', 'rejected'].includes(o.status)).length
-      const totalRevenue = data.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total || 0), 0)
-
-      setStats({
-        total: data.length,
-        pending,
-        inProgress,
-        delivered,
-        cancelled,
-        totalRevenue,
+  async function loadOrders() {
+    try {
+      const response = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'list',
+          filters: { limit: 100 }
+        }),
       })
+      const result = await response.json()
+
+      if (result.success && result.data) {
+        const data = result.data.data as Order[]
+        setOrders(data)
+
+        const pending = data.filter(o => o.status === 'pending').length
+        const inProgress = data.filter(o => ['accepted', 'preparing', 'ready', 'out_for_delivery', 'confirmed', 'delivering'].includes(o.status)).length
+        const delivered = data.filter(o => o.status === 'delivered').length
+        const cancelled = data.filter(o => ['cancelled', 'rejected'].includes(o.status)).length
+        const totalRevenue = data.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total || 0), 0)
+
+        setStats({
+          total: data.length,
+          pending,
+          inProgress,
+          delivered,
+          cancelled,
+          totalRevenue,
+        })
+      }
+    } catch (error) {
+      console.error('Error loading orders:', error)
     }
   }
 
@@ -365,10 +360,7 @@ export default function AdminOrdersPage() {
 
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    const supabase = createClient()
-                    loadOrders(supabase)
-                  }}
+                  onClick={() => loadOrders()}
                   className="flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
