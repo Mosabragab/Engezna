@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 4.5 (Week 5 - Admin Backend Integration Phase 0)
+**Version:** 4.6 (Week 5 - Analytics Geographic Filtering Fix)
 **Date:** November 27, 2025
-**Last Updated:** December 3, 2025 (Session 8)
+**Last Updated:** December 3, 2025 (Session 10)
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -22,10 +22,18 @@
 ## 📊 Current Development Status
 
 **Phase:** Week 5 - Admin Backend Integration
-**Status:** Week 5 - Admin Backend Integration Phase 0 ✅
+**Status:** Week 5 - Analytics Geographic Filtering Fix ✅
 **Target Launch:** February 2026 (12 weeks development)
 **Overall Progress:** ~75% of MVP Complete
-**Last Session:** December 3, 2025 (Session 8) - Admin Backend Integration Phase 0
+**Last Session:** December 3, 2025 (Session 10) - Analytics Geographic Filtering Fix
+
+### Session 10 Updates (December 3, 2025)
+- ✅ **Fixed Admin Analytics Geographic Filtering**
+  - Fixed analytics showing zeros when selecting a governorate
+  - Added fallback name-based filtering for old orders without IDs
+  - Main analytics now filters by both provider location AND delivery_address
+  - Regional analytics matches by name when IDs are not present
+  - Files: `admin/analytics/page.tsx`, `admin/analytics/regions/page.tsx`
 
 ### What's Built ✅
 
