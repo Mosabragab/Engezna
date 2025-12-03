@@ -69,6 +69,16 @@ export {
   getTodayRevenue,
 } from './statistics';
 
+// User functions
+export {
+  getUsers,
+  getUserById,
+  banUser,
+  unbanUser,
+  changeUserRole,
+  getUserStats,
+} from './users';
+
 // Audit functions
 export {
   logAuditAction,
