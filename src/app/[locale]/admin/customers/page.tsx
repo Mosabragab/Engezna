@@ -217,17 +217,28 @@ export default function AdminCustomersPage() {
 
   async function handleBanCustomer(customerId: string, ban: boolean) {
     setActionLoading(customerId)
-    const supabase = createClient()
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ is_banned: ban })
-      .eq('id', customerId)
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: ban ? 'ban' : 'unban',
+          userId: customerId,
+          reason: ban ? 'تم الحظر بواسطة المسؤول' : undefined,
+        }),
+      });
+      const result = await response.json();
 
-    if (!error) {
-      setCustomers(prev => prev.map(c =>
-        c.id === customerId ? { ...c, is_banned: ban } : c
-      ))
+      if (result.success) {
+        setCustomers(prev => prev.map(c =>
+          c.id === customerId ? { ...c, is_banned: ban } : c
+        ))
+      } else {
+        console.error('Ban/unban failed:', result.error)
+      }
+    } catch (error) {
+      console.error('Error banning/unbanning user:', error)
     }
 
     setActionLoading(null)

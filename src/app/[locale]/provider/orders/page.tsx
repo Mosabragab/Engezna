@@ -94,7 +94,7 @@ const NEXT_STATUS: Record<string, string> = {
   out_for_delivery: 'delivered',
 }
 
-type FilterType = 'all' | 'pending' | 'active' | 'completed' | 'cancelled'
+type FilterType = 'all' | 'pending' | 'active' | 'out_for_delivery' | 'completed' | 'cancelled'
 
 export default function ProviderOrdersPage() {
   const locale = useLocale()
@@ -300,8 +300,10 @@ export default function ProviderOrdersPage() {
         return orders.filter(o => o.status === 'pending')
       case 'active':
         return orders.filter(o =>
-          ['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)
+          ['accepted', 'preparing', 'ready'].includes(o.status)
         )
+      case 'out_for_delivery':
+        return orders.filter(o => o.status === 'out_for_delivery')
       case 'completed':
         return orders.filter(o => o.status === 'delivered')
       case 'cancelled':
@@ -313,7 +315,8 @@ export default function ProviderOrdersPage() {
 
   const filteredOrders = filterOrders(orders)
   const pendingCount = orders.filter(o => o.status === 'pending').length
-  const activeCount = orders.filter(o => ['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)).length
+  const activeCount = orders.filter(o => ['accepted', 'preparing', 'ready'].includes(o.status)).length
+  const outForDeliveryCount = orders.filter(o => o.status === 'out_for_delivery').length
 
   const getStatusConfig = (status: string) => {
     return STATUS_CONFIG[status] || STATUS_CONFIG.pending
@@ -453,6 +456,15 @@ export default function ProviderOrdersPage() {
           >
             {locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}
             <span className="mx-1 text-xs opacity-70">({activeCount})</span>
+          </Button>
+          <Button
+            variant={filter === 'out_for_delivery' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('out_for_delivery')}
+            className={filter !== 'out_for_delivery' ? 'border-slate-300 text-slate-600' : ''}
+          >
+            {locale === 'ar' ? 'في الطريق' : 'On the Way'}
+            <span className="mx-1 text-xs opacity-70">({outForDeliveryCount})</span>
           </Button>
           <Button
             variant={filter === 'completed' ? 'default' : 'outline'}

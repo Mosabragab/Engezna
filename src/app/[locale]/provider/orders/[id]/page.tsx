@@ -285,10 +285,10 @@ export default function ProviderOrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
           </p>
         </div>
@@ -298,10 +298,10 @@ export default function ProviderOrderDetailPage() {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <XCircle className="w-16 h-16 text-slate-500 mx-auto mb-4" />
-          <p className="text-xl text-slate-300 mb-4">
+          <XCircle className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+          <p className="text-xl text-slate-600 mb-4">
             {locale === 'ar' ? 'الطلب غير موجود' : 'Order not found'}
           </p>
           <Link href={`/${locale}/provider/orders`}>
@@ -320,14 +320,14 @@ export default function ProviderOrderDetailPage() {
   const canTakeAction = !isCancelled && !isDelivered
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
               href={`/${locale}/provider/orders`}
-              className="flex items-center gap-2 text-slate-400 hover:text-white"
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
             >
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{locale === 'ar' ? 'الطلبات' : 'Orders'}</span>
@@ -339,7 +339,7 @@ export default function ProviderOrderDetailPage() {
               variant="ghost"
               size="sm"
               onClick={() => checkAuthAndLoadOrder()}
-              className="text-slate-400 hover:text-white"
+              className="text-slate-500 hover:text-slate-900"
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
@@ -350,24 +350,24 @@ export default function ProviderOrderDetailPage() {
       <div className="container mx-auto px-4 py-6">
         <div className="max-w-3xl mx-auto space-y-6">
           {/* Order Date */}
-          <div className="flex items-center gap-2 text-slate-400 text-sm">
+          <div className="flex items-center gap-2 text-slate-500 text-sm">
             <Calendar className="w-4 h-4" />
             {formatFullDate(order.created_at)}
           </div>
 
           {/* Status Timeline */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between text-white">
+              <CardTitle className="flex items-center justify-between text-slate-900">
                 <span>{locale === 'ar' ? 'حالة الطلب' : 'Order Status'}</span>
                 {isDelivered && (
-                  <span className="text-sm font-normal text-green-400 flex items-center gap-1">
+                  <span className="text-sm font-normal text-green-600 flex items-center gap-1">
                     <CheckCircle2 className="w-4 h-4" />
                     {locale === 'ar' ? 'تم التوصيل' : 'Delivered'}
                   </span>
                 )}
                 {isCancelled && (
-                  <span className="text-sm font-normal text-red-400 flex items-center gap-1">
+                  <span className="text-sm font-normal text-red-600 flex items-center gap-1">
                     <XCircle className="w-4 h-4" />
                     {order.status === 'rejected'
                       ? locale === 'ar' ? 'مرفوض' : 'Rejected'
@@ -380,18 +380,18 @@ export default function ProviderOrderDetailPage() {
               {isCancelled ? (
                 <div className="text-center py-8">
                   <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                  <p className="text-lg font-semibold text-red-400">
+                  <p className="text-lg font-semibold text-red-600">
                     {order.status === 'rejected'
                       ? locale === 'ar' ? 'تم رفض الطلب' : 'Order Rejected'
                       : locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled'}
                   </p>
                   {order.cancellation_reason && (
-                    <p className="text-sm text-slate-400 mt-2">
+                    <p className="text-sm text-slate-500 mt-2">
                       {locale === 'ar' ? 'السبب:' : 'Reason:'} {order.cancellation_reason}
                     </p>
                   )}
                   {order.cancelled_at && (
-                    <p className="text-sm text-slate-500 mt-2">
+                    <p className="text-sm text-slate-400 mt-2">
                       {formatDate(order.cancelled_at)}
                     </p>
                   )}
@@ -421,7 +421,7 @@ export default function ProviderOrderDetailPage() {
                               ? isCurrent
                                 ? 'bg-primary text-white'
                                 : 'bg-green-500 text-white'
-                              : 'bg-slate-700 text-slate-500'
+                              : 'bg-slate-100 text-slate-400'
                             }
                           `}
                         >
@@ -432,7 +432,7 @@ export default function ProviderOrderDetailPage() {
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className={`font-medium ${isCompleted ? 'text-white' : 'text-slate-500'}`}>
+                          <p className={`font-medium ${isCompleted ? 'text-slate-900' : 'text-slate-400'}`}>
                             {locale === 'ar' ? status.label_ar : status.label_en}
                           </p>
                           {timestamp && (
@@ -452,12 +452,12 @@ export default function ProviderOrderDetailPage() {
 
               {/* Action Buttons */}
               {canTakeAction && (
-                <div className="mt-6 pt-6 border-t border-slate-700 flex gap-3">
+                <div className="mt-6 pt-6 border-t border-slate-200 flex gap-3">
                   {order.status === 'pending' && (
                     <>
                       <Button
                         variant="outline"
-                        className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/20"
+                        className="flex-1 border-red-500/50 text-red-600 hover:bg-red-50"
                         onClick={handleRejectOrder}
                         disabled={actionLoading}
                       >
@@ -502,9 +502,9 @@ export default function ProviderOrderDetailPage() {
           </Card>
 
           {/* Customer Info */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-slate-900">
                 <User className="w-5 h-5" />
                 {locale === 'ar' ? 'معلومات العميل' : 'Customer Information'}
               </CardTitle>
@@ -512,26 +512,26 @@ export default function ProviderOrderDetailPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-white">{order.delivery_address?.full_name || customer?.full_name || 'N/A'}</p>
+                  <p className="font-medium text-slate-900">{order.delivery_address?.full_name || customer?.full_name || 'N/A'}</p>
                   {customer?.email && (
-                    <p className="text-sm text-slate-400">{customer.email}</p>
+                    <p className="text-sm text-slate-500">{customer.email}</p>
                   )}
                 </div>
                 <a
                   href={`tel:${order.delivery_address?.phone}`}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary/20 text-primary rounded-lg hover:bg-primary/30"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20"
                 >
                   <Phone className="w-4 h-4" />
                   {locale === 'ar' ? 'اتصال' : 'Call'}
                 </a>
               </div>
-              <div className="pt-4 border-t border-slate-700">
+              <div className="pt-4 border-t border-slate-200">
                 <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-slate-500 mt-1 flex-shrink-0" />
+                  <MapPin className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-white">{order.delivery_address?.address}</p>
+                    <p className="text-slate-900">{order.delivery_address?.address}</p>
                     {order.delivery_address?.notes && (
-                      <p className="text-sm text-slate-400 mt-1">
+                      <p className="text-sm text-slate-500 mt-1">
                         {locale === 'ar' ? 'ملاحظات العنوان:' : 'Address notes:'} {order.delivery_address.notes}
                       </p>
                     )}
@@ -539,14 +539,14 @@ export default function ProviderOrderDetailPage() {
                 </div>
               </div>
               {order.customer_notes && (
-                <div className="pt-4 border-t border-slate-700">
+                <div className="pt-4 border-t border-slate-200">
                   <div className="flex items-start gap-2">
-                    <MessageSquare className="w-4 h-4 text-slate-500 mt-1 flex-shrink-0" />
+                    <MessageSquare className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="text-sm text-slate-400 mb-1">
+                      <p className="text-sm text-slate-500 mb-1">
                         {locale === 'ar' ? 'ملاحظات الطلب:' : 'Order notes:'}
                       </p>
-                      <p className="text-white">{order.customer_notes}</p>
+                      <p className="text-slate-900">{order.customer_notes}</p>
                     </div>
                   </div>
                 </div>
@@ -555,12 +555,12 @@ export default function ProviderOrderDetailPage() {
           </Card>
 
           {/* Order Items */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-slate-900">
                 <ShoppingCart className="w-5 h-5" />
                 {locale === 'ar' ? 'تفاصيل الطلب' : 'Order Details'}
-                <span className="text-sm font-normal text-slate-400">
+                <span className="text-sm font-normal text-slate-500">
                   ({orderItems.length} {locale === 'ar' ? 'منتج' : 'items'})
                 </span>
               </CardTitle>
@@ -568,26 +568,26 @@ export default function ProviderOrderDetailPage() {
             <CardContent>
               <div className="space-y-4 mb-6">
                 {orderItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start pb-4 border-b border-slate-700 last:border-0 last:pb-0">
+                  <div key={item.id} className="flex justify-between items-start pb-4 border-b border-slate-200 last:border-0 last:pb-0">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 bg-primary/20 text-primary text-xs rounded flex items-center justify-center font-bold">
+                        <span className="w-6 h-6 bg-primary/10 text-primary text-xs rounded flex items-center justify-center font-bold">
                           {item.quantity}x
                         </span>
-                        <p className="font-medium text-white">
+                        <p className="font-medium text-slate-900">
                           {locale === 'ar' ? item.item_name_ar : item.item_name_en}
                         </p>
                       </div>
-                      <p className="text-sm text-slate-400 mt-1 mr-8">
+                      <p className="text-sm text-slate-500 mt-1 mr-8">
                         {item.unit_price.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'} {locale === 'ar' ? 'للوحدة' : 'each'}
                       </p>
                       {item.special_instructions && (
-                        <p className="text-xs text-slate-500 mt-1 mr-8 italic">
+                        <p className="text-xs text-slate-400 mt-1 mr-8 italic">
                           {item.special_instructions}
                         </p>
                       )}
                     </div>
-                    <p className="font-semibold text-white">
+                    <p className="font-semibold text-slate-900">
                       {item.total_price.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                     </p>
                   </div>
@@ -595,23 +595,23 @@ export default function ProviderOrderDetailPage() {
               </div>
 
               {/* Totals */}
-              <div className="pt-4 border-t border-slate-700 space-y-2">
+              <div className="pt-4 border-t border-slate-200 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">{locale === 'ar' ? 'المجموع الفرعي' : 'Subtotal'}</span>
-                  <span className="text-white">{order.subtotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                  <span className="text-slate-500">{locale === 'ar' ? 'المجموع الفرعي' : 'Subtotal'}</span>
+                  <span className="text-slate-900">{order.subtotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-                  <span className="text-white">{order.delivery_fee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                  <span className="text-slate-500">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
+                  <span className="text-slate-900">{order.delivery_fee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                 </div>
                 {order.discount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-green-400">{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
-                    <span className="text-green-400">-{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                    <span className="text-green-600">{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
+                    <span className="text-green-600">-{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-lg font-bold pt-2 border-t border-slate-700">
-                  <span className="text-white">{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
+                <div className="flex justify-between text-lg font-bold pt-2 border-t border-slate-200">
+                  <span className="text-slate-900">{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
                   <span className="text-primary">{order.total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                 </div>
               </div>
@@ -619,9 +619,9 @@ export default function ProviderOrderDetailPage() {
           </Card>
 
           {/* Payment Info */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-slate-900">
                 <CreditCard className="w-5 h-5" />
                 {locale === 'ar' ? 'معلومات الدفع' : 'Payment Information'}
               </CardTitle>
@@ -629,12 +629,12 @@ export default function ProviderOrderDetailPage() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-white">
+                  <p className="font-medium text-slate-900">
                     {order.payment_method === 'cash'
                       ? locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'
                       : locale === 'ar' ? 'دفع إلكتروني' : 'Online Payment'}
                   </p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-slate-500">
                     {order.payment_status === 'pending'
                       ? locale === 'ar' ? 'في انتظار الدفع' : 'Pending'
                       : order.payment_status === 'completed'
@@ -644,10 +644,10 @@ export default function ProviderOrderDetailPage() {
                 </div>
                 <div className={`px-3 py-1 rounded-full text-sm ${
                   order.payment_status === 'completed'
-                    ? 'bg-green-500/20 text-green-400'
+                    ? 'bg-green-100 text-green-700'
                     : order.payment_status === 'pending'
-                    ? 'bg-yellow-500/20 text-yellow-400'
-                    : 'bg-red-500/20 text-red-400'
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : 'bg-red-100 text-red-700'
                 }`}>
                   {order.payment_status === 'completed'
                     ? locale === 'ar' ? 'مدفوع' : 'Paid'
@@ -658,11 +658,11 @@ export default function ProviderOrderDetailPage() {
               </div>
 
               {/* Provider earnings info */}
-              <div className="mt-4 pt-4 border-t border-slate-700 bg-slate-700/30 rounded-lg p-4">
-                <p className="text-sm text-slate-400 mb-2">
+              <div className="mt-4 pt-4 border-t border-slate-200 bg-green-50 rounded-lg p-4">
+                <p className="text-sm text-slate-600 mb-2">
                   {locale === 'ar' ? 'صافي الأرباح (بعد العمولة)' : 'Net Earnings (after commission)'}
                 </p>
-                <p className="text-2xl font-bold text-green-400">
+                <p className="text-2xl font-bold text-green-600">
                   {(order.total - (order.platform_commission || 0)).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">

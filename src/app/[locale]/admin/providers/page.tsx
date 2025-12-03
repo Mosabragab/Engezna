@@ -208,51 +208,64 @@ export default function AdminProvidersPage() {
     if (!confirmAction) return
 
     setActionLoading(true)
-    const supabase = createClient()
 
-    const updateData: any = { status: confirmAction.newStatus }
+    try {
+      let result;
 
-    // For rejection, we could store the reason in a notes field or activity log
-    // For now, just update the status
-
-    const { error } = await supabase
-      .from('providers')
-      .update(updateData)
-      .eq('id', confirmAction.providerId)
-
-    if (!error) {
-      // Log this activity (if activity_log table exists and admin is logged in)
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          const { data: adminUser } = await supabase
-            .from('admin_users')
-            .select('id')
-            .eq('user_id', user.id)
-            .single()
-
-          if (adminUser) {
-            await supabase
-              .from('activity_log')
-              .insert({
-                admin_id: adminUser.id,
-                action_type: `provider_${confirmAction.action}`,
-                entity_type: 'provider',
-                entity_id: confirmAction.providerId,
-                details: {
-                  provider_name: confirmAction.providerName,
-                  new_status: confirmAction.newStatus,
-                  reason: rejectionReason || null,
-                },
-              })
-          }
-        }
-      } catch (e) {
-        // Activity logging is optional, don't fail the operation
-        console.error('Failed to log activity:', e)
+      // Use API routes for proper audit logging
+      if (confirmAction.action === 'approve') {
+        const response = await fetch('/api/admin/providers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'approve',
+            providerId: confirmAction.providerId,
+          }),
+        });
+        result = await response.json();
+      } else if (confirmAction.action === 'reject') {
+        const response = await fetch('/api/admin/providers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'reject',
+            providerId: confirmAction.providerId,
+            reason: rejectionReason || 'لم يتم تحديد السبب',
+          }),
+        });
+        result = await response.json();
+      } else if (confirmAction.action === 'pause') {
+        const response = await fetch('/api/admin/providers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'suspend',
+            providerId: confirmAction.providerId,
+            reason: rejectionReason || 'إيقاف مؤقت',
+          }),
+        });
+        result = await response.json();
+      } else {
+        // resume/reactivate
+        const response = await fetch('/api/admin/providers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'reactivate',
+            providerId: confirmAction.providerId,
+          }),
+        });
+        result = await response.json();
       }
 
-      await loadProviders(supabase)
+      if (result.success) {
+        const supabase = createClient()
+        await loadProviders(supabase)
+      } else {
+        console.error('Operation failed:', result.error)
+      }
+    } catch (error) {
+      console.error('Error executing status change:', error)
     }
 
     setActionLoading(false)

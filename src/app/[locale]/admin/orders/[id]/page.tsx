@@ -116,68 +116,67 @@ export default function AdminOrderDetailsPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
-        await loadOrder(supabase)
+        await loadOrder()
       }
     }
 
     setLoading(false)
   }
 
-  async function loadOrder(supabase: ReturnType<typeof createClient>) {
-    // Load order
-    const { data: orderData, error } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        customer:profiles!orders_customer_id_fkey(id, full_name, phone, email, avatar_url),
-        provider:providers(id, name_ar, name_en, phone, address)
-      `)
-      .eq('id', orderId)
-      .single()
+  async function loadOrder() {
+    try {
+      const response = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get', orderId }),
+      })
+      const result = await response.json()
 
-    if (error || !orderData) {
+      if (result.success && result.data) {
+        setOrder(result.data as OrderDetails)
+      }
+    } catch (error) {
       console.error('Error loading order:', error)
-      return
     }
-
-    // Load order items
-    const { data: itemsData } = await supabase
-      .from('order_items')
-      .select('*')
-      .eq('order_id', orderId)
-
-    setOrder({
-      ...orderData,
-      items: itemsData || [],
-    } as unknown as OrderDetails)
   }
 
   async function handleStatusChange(newStatus: string) {
     if (!order) return
 
     setActionLoading(true)
-    const supabase = createClient()
 
-    const updateData: any = { status: newStatus }
+    try {
+      // For cancel status, show reason prompt
+      let reason: string | null = null
+      if (newStatus === 'cancelled') {
+        reason = window.prompt(locale === 'ar' ? 'أدخل سبب الإلغاء:' : 'Enter cancellation reason:')
+        if (!reason) {
+          setActionLoading(false)
+          return
+        }
+      }
 
-    // Set timestamp based on status
-    if (newStatus === 'accepted') updateData.accepted_at = new Date().toISOString()
-    else if (newStatus === 'preparing') updateData.preparing_at = new Date().toISOString()
-    else if (newStatus === 'ready') updateData.ready_at = new Date().toISOString()
-    else if (newStatus === 'out_for_delivery') updateData.picked_up_at = new Date().toISOString()
-    else if (newStatus === 'delivered') {
-      updateData.delivered_at = new Date().toISOString()
-      updateData.payment_status = 'completed'
-    }
-    else if (newStatus === 'cancelled') updateData.cancelled_at = new Date().toISOString()
+      const response = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: newStatus === 'cancelled' ? 'cancel' : 'updateStatus',
+          orderId: order.id,
+          status: newStatus,
+          reason: reason,
+          note: reason,
+        }),
+      })
+      const result = await response.json()
 
-    const { error } = await supabase
-      .from('orders')
-      .update(updateData)
-      .eq('id', order.id)
-
-    if (!error) {
-      await loadOrder(supabase)
+      if (result.success) {
+        await loadOrder()
+      } else {
+        console.error('Status update failed:', result.error)
+        alert(result.error || (locale === 'ar' ? 'فشل تحديث الحالة' : 'Failed to update status'))
+      }
+    } catch (error) {
+      console.error('Error updating status:', error)
     }
 
     setActionLoading(false)
@@ -303,7 +302,7 @@ export default function AdminOrderDetailsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => loadOrder(createClient())}
+                onClick={() => loadOrder()}
                 className="flex items-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
