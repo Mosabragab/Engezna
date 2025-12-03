@@ -108,7 +108,7 @@ const NEXT_STATUS: Record<string, string> = {
   out_for_delivery: 'delivered',
 }
 
-type FilterType = 'all' | 'pending' | 'active' | 'out_for_delivery' | 'completed' | 'cancelled'
+type FilterType = 'all' | 'pending' | 'active' | 'ready' | 'out_for_delivery' | 'completed' | 'cancelled'
 
 export default function ProviderOrdersPage() {
   const locale = useLocale()
@@ -314,8 +314,10 @@ export default function ProviderOrdersPage() {
         return orders.filter(o => o.status === 'pending')
       case 'active':
         return orders.filter(o =>
-          ['accepted', 'preparing', 'ready'].includes(o.status)
+          ['accepted', 'preparing'].includes(o.status)
         )
+      case 'ready':
+        return orders.filter(o => o.status === 'ready')
       case 'out_for_delivery':
         return orders.filter(o => o.status === 'out_for_delivery')
       case 'completed':
@@ -329,7 +331,8 @@ export default function ProviderOrdersPage() {
 
   const filteredOrders = filterOrders(orders)
   const pendingCount = orders.filter(o => o.status === 'pending').length
-  const activeCount = orders.filter(o => ['accepted', 'preparing', 'ready'].includes(o.status)).length
+  const activeCount = orders.filter(o => ['accepted', 'preparing'].includes(o.status)).length
+  const readyCount = orders.filter(o => o.status === 'ready').length
   const outForDeliveryCount = orders.filter(o => o.status === 'out_for_delivery').length
 
   const getStatusConfig = (status: string) => {
@@ -462,6 +465,19 @@ export default function ProviderOrdersPage() {
             <span className="mx-1 text-xs opacity-70">({activeCount})</span>
           </Button>
           <Button
+            variant={filter === 'ready' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('ready')}
+            className={filter !== 'ready' ? 'border-slate-300 text-slate-600' : ''}
+          >
+            {locale === 'ar' ? 'جاهز' : 'Ready'}
+            {readyCount > 0 && (
+              <span className="mx-1 bg-primary/20 text-primary text-xs px-1.5 rounded-full">
+                {readyCount}
+              </span>
+            )}
+          </Button>
+          <Button
             variant={filter === 'out_for_delivery' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('out_for_delivery')}
@@ -501,6 +517,10 @@ export default function ProviderOrdersPage() {
                 ? locale === 'ar' ? 'لا توجد طلبات جديدة' : 'No new orders'
                 : filter === 'active'
                 ? locale === 'ar' ? 'لا توجد طلبات قيد التنفيذ' : 'No orders in progress'
+                : filter === 'ready'
+                ? locale === 'ar' ? 'لا توجد طلبات جاهزة' : 'No ready orders'
+                : filter === 'out_for_delivery'
+                ? locale === 'ar' ? 'لا توجد طلبات في الطريق' : 'No orders on the way'
                 : filter === 'completed'
                 ? locale === 'ar' ? 'لا توجد طلبات مكتملة' : 'No completed orders'
                 : locale === 'ar' ? 'لا توجد طلبات ملغية' : 'No cancelled orders'}
