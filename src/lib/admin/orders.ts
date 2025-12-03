@@ -51,8 +51,8 @@ export async function getOrders(
       .select(
         `
         *,
-        customer:profiles!customer_id(id, full_name, phone),
-        provider:providers!provider_id(id, name_ar, name_en)
+        customer:profiles(id, full_name, phone),
+        provider:providers(id, name_ar, name_en, governorate_id, city_id, district_id)
       `,
         { count: 'exact' }
       );
@@ -135,8 +135,8 @@ export async function getOrderById(
       .select(
         `
         *,
-        customer:profiles!customer_id(id, full_name, phone, email),
-        provider:providers!provider_id(id, name_ar, name_en, phone, commission_rate)
+        customer:profiles(id, full_name, phone, email),
+        provider:providers(id, name_ar, name_en, phone, commission_rate)
       `
       )
       .eq('id', orderId)
@@ -203,7 +203,7 @@ export async function cancelOrder(
     // Fetch current order
     const { data: current, error: fetchError } = await supabase
       .from('orders')
-      .select('*, provider:providers!provider_id(name_ar)')
+      .select('*, provider:providers(name_ar)')
       .eq('id', orderId)
       .single();
 
@@ -233,8 +233,8 @@ export async function cancelOrder(
       .select(
         `
         *,
-        customer:profiles!customer_id(id, full_name, phone),
-        provider:providers!provider_id(id, name_ar, name_en)
+        customer:profiles(id, full_name, phone),
+        provider:providers(id, name_ar, name_en)
       `
       )
       .single();
@@ -334,8 +334,8 @@ export async function initiateRefund(
       .select(
         `
         *,
-        customer:profiles!customer_id(id, full_name, phone),
-        provider:providers!provider_id(id, name_ar, name_en)
+        customer:profiles(id, full_name, phone),
+        provider:providers(id, name_ar, name_en)
       `
       )
       .single();
@@ -458,8 +458,8 @@ export async function updateOrderStatus(
       .select(
         `
         *,
-        customer:profiles!customer_id(id, full_name, phone),
-        provider:providers!provider_id(id, name_ar, name_en)
+        customer:profiles(id, full_name, phone),
+        provider:providers(id, name_ar, name_en)
       `
       )
       .single();
