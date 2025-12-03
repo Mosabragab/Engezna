@@ -331,14 +331,14 @@ A localized, bilingual (Arabic/English) food delivery platform that:
 - **Language:** TypeScript 5.x ✅
 - **Styling:** Tailwind CSS 3.4.17 ✅
   - Custom configuration with brand design tokens
-  - Dark mode support via next-themes ✅
+  - Light-only theme (brand consistency) ✅
   - Full RTL (Right-to-Left) support for Arabic ✅
   - Custom scrollbar styling
   - Gradient backgrounds
 - **UI Components:** shadcn/ui (Radix UI) ✅
   - 13 components: Button, Card, Avatar, Badge, Dialog, Dropdown Menu, Input, Label, Select, Separator, Switch, Tabs, Textarea
   - All components themed with brand colors (Orange #E85D04, Gold #FDB927)
-  - Full dark mode support
+  - Light-only theme support
 - **Internationalization:** next-intl 4.5.5 ✅
   - Configured for Arabic (default) and English
   - Locale routing working (/ar, /en)
@@ -676,7 +676,7 @@ reviews (
 #### **Implemented Components** ✅
 1. **Logo Component** (`/components/shared/Logo.tsx`)
    - 6 variations (language × variant × size)
-   - Theme-aware (light/dark mode)
+   - Light-only theme
    - Fully typed with TypeScript
 
 2. **Header** (`/components/shared/Header.tsx`) ✅ NEW
@@ -702,7 +702,7 @@ reviews (
    - Avatar, Dialog, Dropdown Menu
    - Label, Select, Separator
    - Slot, Switch, Tabs
-   - All support dark mode and RTL
+   - All support light theme and RTL
 
 #### **Customer App** 🔄 PLANNED (Week 1-2)
 - Restaurant cards with images
@@ -861,7 +861,7 @@ reviews (
 - Fast, responsive interface
 - Real-time order updates
 - Bilingual (Arabic/English)
-- Dark mode support
+- Light-only theme
 
 ---
 
@@ -972,7 +972,7 @@ reviews (
 - [x] Design system foundation
   - [x] Tailwind CSS 3.4.17 configuration (downgraded from v4 for stability)
   - [x] shadcn/ui components installation (13 components)
-  - [x] Dark mode support (next-themes)
+  - [x] Light-only theme (brand consistency)
   - [x] RTL layout support
   - [x] Brand colors: Engezna Blue (#009DE0)
 - [x] Typography implementation
@@ -1414,7 +1414,7 @@ engezna/
 │   ├── components/
 │   │   ├── shared/
 │   │   │   ├── Logo.tsx           # ✅ Logo component (6 variations)
-│   │   │   ├── ThemeProvider.tsx  # ✅ Dark mode provider
+│   │   │   ├── ThemeProvider.tsx  # ✅ Theme provider (light-only)
 │   │   │   ├── ThemeToggle.tsx    # ✅ Sun/moon toggle
 │   │   │   └── LanguageSwitcher.tsx # ⚠️ Language dropdown (blocked)
 │   │   └── ui/                    # ✅ shadcn/ui components
@@ -1458,11 +1458,11 @@ engezna/
 |------|--------|-------|
 | `src/lib/fonts.ts` | ✅ Complete | Noto Sans Arabic & English configured |
 | `src/components/shared/Logo.tsx` | ✅ Complete | 6 variations, fully typed |
-| `src/components/shared/ThemeToggle.tsx` | ✅ Complete | Dark mode working perfectly |
+| `src/components/shared/ThemeToggle.tsx` | ⚠️ Deprecated | Light-only theme (no toggle needed) |
 | `src/components/shared/LanguageSwitcher.tsx` | ⚠️ Blocked | Created but non-functional (routing) |
 | `src/app/[locale]/page.tsx` | ⚠️ Blocked | Returns 404 despite correct structure |
 | `src/middleware.ts` | ⚠️ Blocked | Executes but routes fail |
-| `tailwind.config.ts` | ✅ Complete | Custom theme, dark mode, RTL support |
+| `tailwind.config.ts` | ✅ Complete | Custom theme, light-only, RTL support |
 | `PRD.md` | ✅ Complete | Comprehensive documentation |
 
 ---

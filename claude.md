@@ -227,7 +227,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ### Week 0: Foundation (100% ✅)
 - [x] Next.js 16 + TypeScript + Tailwind setup
 - [x] Supabase connection
-- [x] Dark mode + RTL support
+- [x] Light-only theme + RTL support
 - [x] Bilingual (Arabic/English)
 - [x] Homepage + brand identity
 - [x] Deployed to production
