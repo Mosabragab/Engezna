@@ -109,7 +109,7 @@ export default function FinancePage() {
     // Get all delivered orders
     const { data: orders } = await supabase
       .from('orders')
-      .select('id, total, status, created_at')
+      .select('id, order_number, total, status, created_at')
       .eq('provider_id', provId)
       .eq('status', 'delivered')
       .order('created_at', { ascending: false })
@@ -154,7 +154,7 @@ export default function FinancePage() {
         type: 'order' as const,
         amount: (order.total || 0) - ((order.total || 0) * COMMISSION_RATE),
         status: 'completed' as const,
-        description: `#${order.id.slice(0, 8).toUpperCase()}`,
+        description: locale === 'ar' ? `طلب #${order.order_number || order.id.slice(0, 8).toUpperCase()}` : `Order #${order.order_number || order.id.slice(0, 8).toUpperCase()}`,
         created_at: order.created_at,
         order_id: order.id,
       }))

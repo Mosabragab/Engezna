@@ -88,25 +88,66 @@ export default function AdminActivityLogPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
-        await loadActivityLogs(supabase)
+        await loadActivityLogs()
       }
     }
 
     setLoading(false)
   }
 
-  async function loadActivityLogs(supabase: ReturnType<typeof createClient>) {
-    const { data } = await supabase
-      .from('activity_log')
-      .select(`
-        *,
-        admin:profiles!activity_log_admin_id_fkey(full_name, email)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(200)
+  async function loadActivityLogs() {
+    try {
+      const response = await fetch('/api/admin/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list', limit: 200 }),
+      })
+      const result = await response.json()
 
-    if (data) {
-      setLogs(data as ActivityLog[])
+      if (result.success && result.data) {
+        // Transform audit log entries to activity log format
+        const transformedLogs = result.data.entries.map((entry: {
+          id: string
+          admin_id: string
+          action_code: string
+          entity_type: string
+          entity_id: string | null
+          entity_name: string | null
+          old_data: Record<string, unknown> | null
+          new_data: Record<string, unknown> | null
+          changes: Record<string, unknown> | null
+          ip_address: string | null
+          created_at: string
+        }) => ({
+          id: entry.id,
+          admin_id: entry.admin_id,
+          action: entry.action_code,
+          entity_type: entry.entity_type,
+          entity_id: entry.entity_id,
+          details: entry.changes || entry.new_data || null,
+          ip_address: entry.ip_address,
+          user_agent: null,
+          created_at: entry.created_at,
+          admin: null, // Will be null from API, but we can display admin_id
+        }))
+        setLogs(transformedLogs as ActivityLog[])
+      }
+    } catch (error) {
+      console.error('Error loading activity logs:', error)
+      // Fallback to direct Supabase call if API fails
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('activity_log')
+        .select(`
+          *,
+          admin:profiles!activity_log_admin_id_fkey(full_name, email)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(200)
+
+      if (data) {
+        setLogs(data as ActivityLog[])
+      }
     }
   }
 
@@ -297,10 +338,7 @@ export default function AdminActivityLogPage() {
 
               <Button
                 variant="outline"
-                onClick={() => {
-                  const supabase = createClient()
-                  loadActivityLogs(supabase)
-                }}
+                onClick={() => loadActivityLogs()}
                 className="flex items-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" />

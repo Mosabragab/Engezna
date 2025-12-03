@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, AdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
+import type { GeoFilterValue } from '@/components/admin'
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -54,6 +55,7 @@ export default function AdminAnalyticsPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { geoFilter, setGeoFilter } = useGeoFilter()
 
   const [periodFilter, setPeriodFilter] = useState<FilterPeriod>('month')
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
@@ -80,7 +82,7 @@ export default function AdminAnalyticsPage() {
       const supabase = createClient()
       loadAnalytics(supabase)
     }
-  }, [periodFilter, isAdmin])
+  }, [periodFilter, isAdmin, geoFilter])
 
   async function checkAuth() {
     const supabase = createClient()
@@ -125,11 +127,55 @@ export default function AdminAnalyticsPage() {
 
     const startDate = getDateRange(periodFilter)
 
-    const { data: ordersData } = await supabase
+    // Get providers with geographic info for filtering
+    let providersForFilterQuery = supabase
+      .from('providers')
+      .select('id, governorate_id, city_id, district_id')
+
+    if (geoFilter.governorate_id) {
+      providersForFilterQuery = providersForFilterQuery.eq('governorate_id', geoFilter.governorate_id)
+    }
+    if (geoFilter.city_id) {
+      providersForFilterQuery = providersForFilterQuery.eq('city_id', geoFilter.city_id)
+    }
+    if (geoFilter.district_id) {
+      providersForFilterQuery = providersForFilterQuery.eq('district_id', geoFilter.district_id)
+    }
+
+    const { data: filteredProviders } = await providersForFilterQuery
+    const filteredProviderIds = (filteredProviders || []).map(p => p.id)
+
+    // Get orders - filter by provider IDs if geographic filter is active
+    let ordersQuery = supabase
       .from('orders')
       .select('id, total, platform_commission, created_at, status, provider_id')
       .gte('created_at', startDate)
       .eq('status', 'delivered')
+
+    // Only filter by provider IDs if geographic filter is active
+    if (geoFilter.governorate_id || geoFilter.city_id || geoFilter.district_id) {
+      if (filteredProviderIds.length > 0) {
+        ordersQuery = ordersQuery.in('provider_id', filteredProviderIds)
+      } else {
+        // No providers match the filter, return empty results
+        setDailyStats([])
+        setTopProviders([])
+        setCategoryStats([])
+        setOverview({
+          totalOrders: 0,
+          ordersChange: 0,
+          totalRevenue: 0,
+          revenueChange: 0,
+          newCustomers: 0,
+          customersChange: 0,
+          avgOrderValue: 0,
+          avgOrderChange: 0,
+        })
+        return
+      }
+    }
+
+    const { data: ordersData } = await ordersQuery
 
     const orders = ordersData || []
 
@@ -344,21 +390,36 @@ export default function AdminAnalyticsPage() {
         />
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          {/* Period Filter */}
-          <div className="flex flex-wrap items-center gap-2 mb-6">
-            {(['week', 'month', 'quarter', 'year'] as FilterPeriod[]).map((period) => (
-              <button
-                key={period}
-                onClick={() => setPeriodFilter(period)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  periodFilter === period
-                    ? 'bg-red-600 text-white shadow-md'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                {getPeriodLabel(period)}
-              </button>
-            ))}
+          {/* Filters */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Period Filter */}
+              <div className="flex flex-wrap items-center gap-2">
+                {(['week', 'month', 'quarter', 'year'] as FilterPeriod[]).map((period) => (
+                  <button
+                    key={period}
+                    onClick={() => setPeriodFilter(period)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      periodFilter === period
+                        ? 'bg-red-600 text-white shadow-md'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    {getPeriodLabel(period)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Geographic Filter */}
+              <div className="flex items-center gap-3 lg:ml-auto pt-2 lg:pt-0 lg:border-l lg:border-slate-200 lg:pl-4">
+                <span className="text-sm text-slate-500 whitespace-nowrap">{locale === 'ar' ? 'فلترة جغرافية:' : 'Location:'}</span>
+                <GeoFilter
+                  value={geoFilter}
+                  onChange={setGeoFilter}
+                  showDistrict={true}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Overview Stats */}
