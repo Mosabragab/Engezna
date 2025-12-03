@@ -38,17 +38,16 @@ export const dynamic = 'force-dynamic'
 
 interface OrderItem {
   id: string
-  product_id: string
+  order_id: string
+  menu_item_id: string
+  item_name_ar: string
+  item_name_en: string
+  item_price: string
   quantity: number
-  unit_price: number
-  total_price: number
-  notes: string | null
-  product?: {
-    id: string
-    name_ar: string
-    name_en: string
-    image_url?: string
-  }
+  unit_price: string
+  total_price: string
+  customizations?: unknown
+  special_instructions?: string | null
 }
 
 interface OrderDetails {
@@ -436,19 +435,17 @@ export default function AdminOrderDetailsPage() {
                       <div key={item.id} className="p-4 flex items-center justify-between">
                         <div className="flex-1">
                           <p className="font-medium text-slate-900">
-                            {item.product
-                              ? (locale === 'ar' ? item.product.name_ar : item.product.name_en)
-                              : (locale === 'ar' ? 'منتج غير معروف' : 'Unknown product')}
+                            {locale === 'ar' ? item.item_name_ar : item.item_name_en}
                           </p>
                           <p className="text-sm text-slate-500">
-                            {formatCurrency(item.unit_price, locale)} x {formatNumber(item.quantity, locale)}
+                            {formatCurrency(parseFloat(item.unit_price), locale)} x {formatNumber(item.quantity, locale)}
                           </p>
-                          {item.notes && (
-                            <p className="text-xs text-slate-400 mt-1">{item.notes}</p>
+                          {item.special_instructions && (
+                            <p className="text-xs text-slate-400 mt-1">{item.special_instructions}</p>
                           )}
                         </div>
                         <p className="font-semibold text-slate-900">
-                          {formatCurrency(item.total_price, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                          {formatCurrency(parseFloat(item.total_price), locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                         </p>
                       </div>
                     ))

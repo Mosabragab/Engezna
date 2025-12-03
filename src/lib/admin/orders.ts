@@ -152,12 +152,7 @@ export async function getOrderById(
     // Fetch order items
     const { data: items, error: itemsError } = await supabase
       .from('order_items')
-      .select(
-        `
-        *,
-        product:products(id, name_ar, name_en, image_url)
-      `
-      )
+      .select('*')
       .eq('order_id', orderId);
 
     if (itemsError) {
@@ -573,15 +568,15 @@ export async function getOrderStats(): Promise<
 interface OrderItem {
   id: string;
   order_id: string;
-  product_id: string;
+  menu_item_id: string;
+  item_name_ar: string;
+  item_name_en: string;
+  item_price: string;
   quantity: number;
-  unit_price: number;
-  total_price: number;
-  notes?: string;
-  product?: {
-    id: string;
-    name_ar: string;
-    name_en: string;
-    image_url?: string;
-  };
+  unit_price: string;
+  total_price: string;
+  customizations?: unknown;
+  special_instructions?: string;
+  created_at: string;
+  updated_at: string;
 }
