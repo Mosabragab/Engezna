@@ -7,9 +7,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { ProviderLayout } from '@/components/provider'
 import {
-  ArrowLeft,
-  ArrowRight,
   Wallet,
   DollarSign,
   TrendingUp,
@@ -215,37 +214,11 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
-            >
-              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
-            </Link>
-            <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-              <Wallet className="w-5 h-5" />
-              {locale === 'ar' ? 'المالية والمدفوعات' : 'Finance & Payments'}
-            </h1>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="border-slate-300"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+    <ProviderLayout
+      pageTitle={{ ar: 'المالية والمدفوعات', en: 'Finance & Payments' }}
+      pageSubtitle={{ ar: 'إدارة الأرباح والمدفوعات', en: 'Manage earnings and payments' }}
+    >
+      <div className="max-w-4xl mx-auto space-y-6">
           {/* Main Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="bg-[hsl(158_100%_38%/0.15)] border-[hsl(158_100%_38%/0.3)]">
@@ -452,7 +425,6 @@ export default function FinancePage() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+    </ProviderLayout>
   )
 }

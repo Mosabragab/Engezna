@@ -3,13 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { ProviderLayout } from '@/components/provider'
 import {
-  ArrowLeft,
-  ArrowRight,
   Clock,
   Save,
   RefreshCw,
@@ -69,7 +67,6 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
 export default function StoreHoursPage() {
   const locale = useLocale()
   const router = useRouter()
-  const isRTL = locale === 'ar'
 
   const [providerId, setProviderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -231,29 +228,11 @@ export default function StoreHoursPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
-            >
-              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
-            </Link>
-            <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              {locale === 'ar' ? 'ساعات العمل' : 'Store Hours'}
-            </h1>
-            <div className="w-20" />
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6">
-        <div className="max-w-2xl mx-auto space-y-6">
+    <ProviderLayout
+      pageTitle={{ ar: 'ساعات العمل', en: 'Store Hours' }}
+      pageSubtitle={{ ar: 'إدارة ساعات عمل متجرك', en: 'Manage your store hours' }}
+    >
+      <div className="max-w-2xl mx-auto space-y-6">
           {/* Quick Actions */}
           <Card className="bg-white border-slate-200">
             <CardContent className="pt-6">
@@ -442,7 +421,6 @@ export default function StoreHoursPage() {
             )}
           </Button>
         </div>
-      </div>
-    </div>
+    </ProviderLayout>
   )
 }

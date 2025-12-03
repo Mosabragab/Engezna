@@ -7,28 +7,23 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ProviderLayout } from '@/components/provider'
 import {
   Clock,
   ShoppingBag,
-  ArrowLeft,
-  ArrowRight,
   CheckCircle2,
   XCircle,
   Package,
   Truck,
   ChefHat,
-  Store,
   RefreshCw,
   ChevronRight,
   ChevronLeft,
   Phone,
   MapPin,
   User,
-  AlertCircle,
   Check,
   X,
-  Home,
-  Menu,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -343,35 +338,25 @@ export default function ProviderOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
-            >
-              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
-            </Link>
-            <h1 className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'إدارة الطلبات' : 'Order Management'}
-            </h1>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="text-slate-500 hover:text-slate-900"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </div>
-      </header>
+    <ProviderLayout
+      pageTitle={{ ar: 'إدارة الطلبات', en: 'Order Management' }}
+      pageSubtitle={{ ar: 'إدارة طلبات متجرك', en: 'Manage your store orders' }}
+    >
+      {/* Refresh Button */}
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="text-slate-500 hover:text-slate-900"
+        >
+          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''} me-2`} />
+          {locale === 'ar' ? 'تحديث' : 'Refresh'}
+        </Button>
+      </div>
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="">
         {/* Stats Row - Using new semantic card backgrounds */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {/* New Orders - Warning Yellow */}
@@ -671,6 +656,6 @@ export default function ProviderOrdersPage() {
           </div>
         )}
       </div>
-    </div>
+    </ProviderLayout>
   )
 }

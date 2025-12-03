@@ -8,9 +8,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { ProviderLayout } from '@/components/provider'
 import {
-  ArrowLeft,
-  ArrowRight,
   Tag,
   Plus,
   Percent,
@@ -311,31 +310,19 @@ export default function PromotionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/provider`}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
-            >
-              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
-            </Link>
-            <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-              <Tag className="w-5 h-5" />
-              {locale === 'ar' ? 'العروض والخصومات' : 'Promotions'}
-            </h1>
-            <Button size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
-              <Plus className="w-4 h-4 mr-1" />
-              {locale === 'ar' ? 'عرض جديد' : 'New Promotion'}
-            </Button>
-          </div>
-        </div>
-      </header>
+    <ProviderLayout
+      pageTitle={{ ar: 'العروض والخصومات', en: 'Promotions' }}
+      pageSubtitle={{ ar: 'إدارة العروض والخصومات', en: 'Manage promotions and discounts' }}
+    >
+      {/* Add Promotion Button */}
+      <div className="flex justify-end mb-4">
+        <Button size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
+          <Plus className="w-4 h-4 me-1" />
+          {locale === 'ar' ? 'عرض جديد' : 'New Promotion'}
+        </Button>
+      </div>
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3">
@@ -822,6 +809,6 @@ export default function PromotionsPage() {
           </Card>
         </div>
       )}
-    </div>
+    </ProviderLayout>
   )
 }
