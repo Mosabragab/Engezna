@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import {
   LogOut,
   ShoppingBag,
@@ -95,15 +96,15 @@ export function Header({ showBack = false, backHref, backLabel, hideAuth = false
               <span className="text-sm font-medium">{backLabel || (locale === 'ar' ? 'رجوع' : 'Back')}</span>
             </Link>
           ) : (
-            <Link href={`/${locale}`} className="text-2xl font-bold text-primary">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
+            <Link href={`/${locale}`}>
+              <EngeznaLogo size="sm" showPen={false} bgColor="white" />
             </Link>
           )}
-          
+
           {/* Center - Logo (when showing back) */}
           {showBack && (
-            <Link href={`/${locale}`} className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
+            <Link href={`/${locale}`}>
+              <EngeznaLogo size="xs" showPen={false} bgColor="white" />
             </Link>
           )}
           
