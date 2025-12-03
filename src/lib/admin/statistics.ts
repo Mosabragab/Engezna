@@ -119,36 +119,35 @@ export async function getDashboardStats(
     // إحصائيات المستخدمين - User Statistics
     // ───────────────────────────────────────────────────────────────────
 
-    let usersQuery = supabase.from('users').select('role, is_active, created_at');
-    if (governorateId) usersQuery = usersQuery.eq('governorate_id', governorateId);
-    if (cityId) usersQuery = usersQuery.eq('city_id', cityId);
+    // Query from profiles table (not users table)
+    const profilesQuery = supabase.from('profiles').select('role, created_at');
 
-    const { data: usersData, error: usersError } = await usersQuery;
+    const { data: profilesData, error: profilesError } = await profilesQuery;
 
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
-      return { success: false, error: usersError.message };
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      return { success: false, error: profilesError.message };
     }
 
-    const users = usersData || [];
-    const usersThisMonth = users.filter(
-      (u) => new Date(u.created_at) >= new Date(startOfMonth)
+    const profiles = profilesData || [];
+    const profilesThisMonth = profiles.filter(
+      (p) => new Date(p.created_at) >= new Date(startOfMonth)
     );
-    const usersLastMonth = users.filter(
-      (u) =>
-        new Date(u.created_at) >= new Date(startOfPreviousMonth) &&
-        new Date(u.created_at) < new Date(startOfMonth)
+    const profilesLastMonth = profiles.filter(
+      (p) =>
+        new Date(p.created_at) >= new Date(startOfPreviousMonth) &&
+        new Date(p.created_at) < new Date(startOfMonth)
     );
 
     const userStats = {
-      total: users.length,
-      active: users.filter((u) => u.is_active).length,
-      inactive: users.filter((u) => !u.is_active).length,
-      customers: users.filter((u) => u.role === 'customer').length,
-      providers: users.filter((u) => u.role === 'provider').length,
-      admins: users.filter((u) => u.role === 'admin').length,
-      newThisMonth: usersThisMonth.length,
-      changePercent: calculateChangePercent(usersThisMonth.length, usersLastMonth.length),
+      total: profiles.length,
+      active: profiles.length, // All profiles are considered active
+      inactive: 0,
+      customers: profiles.filter((p) => p.role === 'customer').length,
+      providers: profiles.filter((p) => p.role === 'provider').length,
+      admins: profiles.filter((p) => p.role === 'admin').length,
+      newThisMonth: profilesThisMonth.length,
+      changePercent: calculateChangePercent(profilesThisMonth.length, profilesLastMonth.length),
     };
 
     // ───────────────────────────────────────────────────────────────────
