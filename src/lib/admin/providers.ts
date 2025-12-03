@@ -454,6 +454,87 @@ export async function suspendProvider(
   }
 }
 
+/**
+ * إعادة تفعيل مقدم خدمة موقوف
+ * Reactivate a suspended provider
+ */
+export async function reactivateProvider(
+  adminId: string,
+  providerId: string
+): Promise<OperationResult<AdminProvider>> {
+  try {
+    const supabase = createAdminClient();
+
+    // Fetch current provider
+    const { data: current, error: fetchError } = await supabase
+      .from('providers')
+      .select('*')
+      .eq('id', providerId)
+      .single();
+
+    if (fetchError || !current) {
+      return { success: false, error: 'Provider not found', errorCode: 'NOT_FOUND' };
+    }
+
+    // Can only reactivate suspended providers
+    if (current.status !== 'suspended') {
+      return {
+        success: false,
+        error: `Cannot reactivate provider with status: ${current.status}`,
+        errorCode: 'INVALID_STATUS_TRANSITION',
+      };
+    }
+
+    // Update provider
+    const { data: updated, error: updateError } = await supabase
+      .from('providers')
+      .update({
+        status: 'approved',
+        rejection_reason: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', providerId)
+      .select(
+        `
+        *,
+        governorate:governorates(id, name_ar, name_en),
+        city:cities(id, name_ar, name_en)
+      `
+      )
+      .single();
+
+    if (updateError) {
+      return { success: false, error: updateError.message, errorCode: 'DATABASE_ERROR' };
+    }
+
+    // Log audit action
+    await logAuditAction(adminId, {
+      action: 'reactivate',
+      resourceType: 'provider',
+      resourceId: providerId,
+      resourceName: current.name_ar,
+      oldData: { status: current.status },
+      newData: { status: 'approved' },
+    });
+
+    // Log activity
+    await logActivity(
+      adminId,
+      'provider_reactivated',
+      `تم إعادة تفعيل مقدم الخدمة: ${current.name_ar}`,
+      { providerId, providerName: current.name_ar }
+    );
+
+    return { success: true, data: updated as AdminProvider };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Unknown error',
+      errorCode: 'DATABASE_ERROR',
+    };
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // تحديث مقدم الخدمة - Update Provider
 // ═══════════════════════════════════════════════════════════════════════

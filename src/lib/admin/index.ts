@@ -51,6 +51,7 @@ export {
   approveProvider,
   rejectProvider,
   suspendProvider,
+  reactivateProvider,
   updateProviderCommission,
   toggleProviderFeatured,
   getProviderStats,

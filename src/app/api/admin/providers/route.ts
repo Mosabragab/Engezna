@@ -6,6 +6,7 @@ import {
   approveProvider,
   rejectProvider,
   suspendProvider,
+  reactivateProvider,
   updateProviderCommission,
   toggleProviderFeatured,
   getProviderStats,
@@ -128,6 +129,21 @@ export async function POST(request: NextRequest) {
           );
         }
         const result = await suspendProvider(user.id, providerId, reason);
+        return NextResponse.json(result);
+      }
+
+      // ───────────────────────────────────────────────────────────────────
+      // إعادة تفعيل مقدم خدمة
+      // ───────────────────────────────────────────────────────────────────
+      case 'reactivate': {
+        const { providerId } = params;
+        if (!providerId) {
+          return NextResponse.json(
+            { success: false, error: 'Provider ID is required' },
+            { status: 400 }
+          );
+        }
+        const result = await reactivateProvider(user.id, providerId);
         return NextResponse.json(result);
       }
 
