@@ -98,6 +98,7 @@ export default function AdminOrdersPage() {
 
   async function loadOrders() {
     try {
+      console.log('[Admin Orders] Fetching orders...')
       const response = await fetch('/api/admin/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,9 +108,11 @@ export default function AdminOrdersPage() {
         }),
       })
       const result = await response.json()
+      console.log('[Admin Orders] API Response:', result)
 
       if (result.success && result.data) {
         const data = result.data.data as Order[]
+        console.log('[Admin Orders] Orders received:', data.length)
         setOrders(data)
 
         const pending = data.filter(o => o.status === 'pending').length
@@ -126,9 +129,11 @@ export default function AdminOrdersPage() {
           cancelled,
           totalRevenue,
         })
+      } else {
+        console.error('[Admin Orders] API Error:', result.error || 'Unknown error')
       }
     } catch (error) {
-      console.error('Error loading orders:', error)
+      console.error('[Admin Orders] Fetch Error:', error)
     }
   }
 
