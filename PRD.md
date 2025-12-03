@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 4.3 (Week 5 - City-Based Filtering & UI Fixes)
+**Version:** 4.4 (Week 5 - Animated Logo & Documentation)
 **Date:** November 27, 2025
-**Last Updated:** December 2, 2025 (Session 5)
+**Last Updated:** December 3, 2025 (Session 7)
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -22,10 +22,10 @@
 ## 📊 Current Development Status
 
 **Phase:** Week 5 - Customer Journey Implementation
-**Status:** Week 5 - Customer Journey + PWA ✅
+**Status:** Week 5 - Customer Journey + Animated Logo ✅
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~70% of MVP Complete
-**Last Session:** December 2, 2025 (Session 5) - City-Based Filtering & UI Fixes
+**Overall Progress:** ~72% of MVP Complete
+**Last Session:** December 3, 2025 (Session 7) - Animated Logo & Documentation
 
 ### What's Built ✅
 
@@ -331,14 +331,14 @@ A localized, bilingual (Arabic/English) food delivery platform that:
 - **Language:** TypeScript 5.x ✅
 - **Styling:** Tailwind CSS 3.4.17 ✅
   - Custom configuration with brand design tokens
-  - Dark mode support via next-themes ✅
+  - Light-only theme (brand consistency) ✅
   - Full RTL (Right-to-Left) support for Arabic ✅
   - Custom scrollbar styling
   - Gradient backgrounds
 - **UI Components:** shadcn/ui (Radix UI) ✅
   - 13 components: Button, Card, Avatar, Badge, Dialog, Dropdown Menu, Input, Label, Select, Separator, Switch, Tabs, Textarea
   - All components themed with brand colors (Orange #E85D04, Gold #FDB927)
-  - Full dark mode support
+  - Light-only theme support
 - **Internationalization:** next-intl 4.5.5 ✅
   - Configured for Arabic (default) and English
   - Locale routing working (/ar, /en)
@@ -676,7 +676,7 @@ reviews (
 #### **Implemented Components** ✅
 1. **Logo Component** (`/components/shared/Logo.tsx`)
    - 6 variations (language × variant × size)
-   - Theme-aware (light/dark mode)
+   - Light-only theme
    - Fully typed with TypeScript
 
 2. **Header** (`/components/shared/Header.tsx`) ✅ NEW
@@ -702,7 +702,7 @@ reviews (
    - Avatar, Dialog, Dropdown Menu
    - Label, Select, Separator
    - Slot, Switch, Tabs
-   - All support dark mode and RTL
+   - All support light theme and RTL
 
 #### **Customer App** 🔄 PLANNED (Week 1-2)
 - Restaurant cards with images
@@ -861,7 +861,7 @@ reviews (
 - Fast, responsive interface
 - Real-time order updates
 - Bilingual (Arabic/English)
-- Dark mode support
+- Light-only theme
 
 ---
 
@@ -972,7 +972,7 @@ reviews (
 - [x] Design system foundation
   - [x] Tailwind CSS 3.4.17 configuration (downgraded from v4 for stability)
   - [x] shadcn/ui components installation (13 components)
-  - [x] Dark mode support (next-themes)
+  - [x] Light-only theme (brand consistency)
   - [x] RTL layout support
   - [x] Brand colors: Engezna Blue (#009DE0)
 - [x] Typography implementation
@@ -1414,7 +1414,7 @@ engezna/
 │   ├── components/
 │   │   ├── shared/
 │   │   │   ├── Logo.tsx           # ✅ Logo component (6 variations)
-│   │   │   ├── ThemeProvider.tsx  # ✅ Dark mode provider
+│   │   │   ├── ThemeProvider.tsx  # ✅ Theme provider (light-only)
 │   │   │   ├── ThemeToggle.tsx    # ✅ Sun/moon toggle
 │   │   │   └── LanguageSwitcher.tsx # ⚠️ Language dropdown (blocked)
 │   │   └── ui/                    # ✅ shadcn/ui components
@@ -1458,11 +1458,11 @@ engezna/
 |------|--------|-------|
 | `src/lib/fonts.ts` | ✅ Complete | Noto Sans Arabic & English configured |
 | `src/components/shared/Logo.tsx` | ✅ Complete | 6 variations, fully typed |
-| `src/components/shared/ThemeToggle.tsx` | ✅ Complete | Dark mode working perfectly |
+| `src/components/shared/ThemeToggle.tsx` | ⚠️ Deprecated | Light-only theme (no toggle needed) |
 | `src/components/shared/LanguageSwitcher.tsx` | ⚠️ Blocked | Created but non-functional (routing) |
 | `src/app/[locale]/page.tsx` | ⚠️ Blocked | Returns 404 despite correct structure |
 | `src/middleware.ts` | ⚠️ Blocked | Executes but routes fail |
-| `tailwind.config.ts` | ✅ Complete | Custom theme, dark mode, RTL support |
+| `tailwind.config.ts` | ✅ Complete | Custom theme, light-only, RTL support |
 | `PRD.md` | ✅ Complete | Comprehensive documentation |
 
 ---
@@ -1842,13 +1842,36 @@ engezna/
   - **Documentation Updates:**
     - ✅ Updated README.md, claude.md, PRD.md with session 5 changes
   - **Next Priority:** Continue customer journey improvements
+- **v4.4** - December 3, 2025 - Animated Logo & Documentation
+  - **Status:** Week 5 - Animated Logo System ✅
+  - **Animated Engezna Logo:**
+    - ✅ Created `EngeznaLogo.tsx` component with RTL reveal animation
+    - ✅ Uses Aref Ruqaa Google Font for Arabic calligraphy style
+    - ✅ Animation reveals text right-to-left (1.8s duration)
+    - ✅ Size variants: xs, sm, md, lg, xl, 2xl
+    - ✅ Props: showPen, loop, loopDelay, static, bgColor
+    - ✅ Logo text color: #0F172A (Charcoal)
+  - **Splash Screen Component:**
+    - ✅ Created `SplashScreen.tsx` for app loading screen
+    - ✅ Uses EngeznaLogo size="2xl" with pen decoration
+    - ✅ Configurable duration and onComplete callback
+  - **Header Updates:**
+    - ✅ Updated `CustomerHeader.tsx` to use EngeznaLogo
+    - ✅ Updated shared `Header.tsx` to use EngeznaLogo
+    - ✅ Added Aref Ruqaa font to `layout.tsx`
+    - ✅ Changed location text color to match MapPin icon (blue)
+  - **Documentation Updates:**
+    - ✅ Updated BRAND_IDENTITY_GUIDE.md (v3.0) with animated logo specs
+    - ✅ Updated VISUAL_ASSETS_GUIDE.md (v2.0) with logo guidelines
+    - ✅ Added Aref Ruqaa typography documentation
+  - **Next Priority:** Admin backend integration, payment integration
 
 ---
 
 **Approved By:**
-- **Mosab** - Founder & Product Lead - December 2, 2025
+- **Mosab** - Founder & Product Lead - December 3, 2025
 
-**Next Review Date:** December 3, 2025
+**Next Review Date:** December 4, 2025
 
 ---
 

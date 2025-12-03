@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { MapPin, Bell, User, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface CustomerHeaderProps {
@@ -101,7 +102,7 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
                 className="flex items-center gap-2 text-sm hover:bg-slate-50 rounded-lg px-2 py-1 transition-colors"
               >
                 <MapPin className="h-5 w-5 text-primary" />
-                <span className="font-medium text-slate-900 max-w-[150px] truncate">
+                <span className="font-medium text-primary max-w-[150px] truncate">
                   {currentLocation}
                 </span>
                 <ChevronDown className="h-4 w-4 text-slate-400" />
@@ -112,11 +113,9 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             )}
           </div>
 
-          {/* Center - Always show Logo as link to home */}
+          {/* Center - Always show Animated Logo as link to home */}
           <Link href={`/${locale}`} className="absolute left-1/2 -translate-x-1/2">
-            <span className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-            </span>
+            <EngeznaLogo size="sm" showPen={false} bgColor="white" />
           </Link>
 
           {/* Right Section - Custom Action + Notifications & Profile */}

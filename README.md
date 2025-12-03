@@ -41,7 +41,7 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 - 🔍 Search and filter by cuisine, rating, delivery time
 - 🛒 Easy ordering with real-time tracking
 - 💳 Multiple payment options (Cash on Delivery, online)
-- 🌙 Dark mode support
+- 🎨 Clean light theme (consistent brand experience)
 - 🌍 Bilingual interface (Arabic/English)
 - 📱 Mobile-first responsive design
 
@@ -68,7 +68,7 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 - **Styling:** Tailwind CSS 3.4.17 with custom design tokens
 - **UI Components:** shadcn/ui (Radix UI primitives)
 - **Internationalization:** next-intl 4.5.5
-- **Theme:** next-themes (dark mode support)
+- **Theme:** Light-only (brand consistency)
 - **State Management:** Zustand
 - **Forms:** React Hook Form + Zod
 
@@ -96,12 +96,13 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 
 #### **⚠️ Important Note - Project Status**
 
-This project is in **active development** (Week 5 - Customer Journey + PWA ✅). What you'll see:
+This project is in **active development** (Week 5 - Customer Journey + Animated Logo ✅). What you'll see:
 
 **Works (Customer Features):**
-- ✅ Design system, theming (dark/light mode)
+- ✅ Design system, theming (light-only mode)
 - ✅ Language switching (Arabic/English)
 - ✅ Navigation and routing
+- ✅ **Animated Engezna Logo** (RTL reveal animation with Aref Ruqaa font)
 - ✅ **Database deployed with real data** (4 providers, 30 menu items)
 - ✅ **Provider browsing** (browse restaurants, coffee shops, groceries)
 - ✅ **Provider detail pages** (view menus, ratings, delivery info)
@@ -316,13 +317,14 @@ engezna/
 **Note:** Brand colors updated from Orange (#E85D04) to Engezna Blue (#009DE0) as of November 27, 2025.
 
 #### **Typography**
-- **Arabic:** Noto Sans Arabic (Variable Font)
-- **English:** Noto Sans (Variable Font)
+- **Arabic UI:** Noto Sans Arabic (Variable Font)
+- **English UI:** Noto Sans (Variable Font)
+- **Logo:** Aref Ruqaa (Arabic Calligraphy for animated logo)
 - **Weights:** 400, 500, 600, 700
 
 #### **Components**
 All components support:
-- ✅ Dark mode
+- ✅ Light-only theme (consistent brand experience)
 - ✅ RTL (Right-to-Left) layout
 - ✅ Responsive design
 - ✅ Accessibility (WCAG 2.1 AA)
@@ -346,12 +348,24 @@ npm run type-check   # TypeScript type checking
 
 ### 📊 Current Status
 
-**Phase:** Week 5 - Customer Journey + PWA Implementation
-**Status:** Week 5 - Customer Journey Improvements ✅
-**Overall Progress:** ~70% of MVP Complete
-**Last Updated:** December 2, 2025 (Session 5)
+**Phase:** Week 5 - Customer Journey + Animated Logo
+**Status:** Week 5 - Animated Logo & Documentation ✅
+**Overall Progress:** ~72% of MVP Complete
+**Last Updated:** December 3, 2025 (Session 7)
 
-**Week 5 Features (NEW!):**
+**Session 7 Features (NEW!):**
+- ✅ **Animated Engezna Logo** (`EngeznaLogo.tsx` component)
+  - RTL reveal animation (right-to-left, mimicking Arabic writing)
+  - Aref Ruqaa Google Font for Arabic calligraphy style
+  - Size variants: xs, sm, md, lg, xl, 2xl
+  - Props: showPen, loop, loopDelay, static, bgColor
+  - Logo text color: #0F172A (Charcoal)
+- ✅ **Splash Screen Component** (`SplashScreen.tsx`)
+- ✅ **Header Updates** - Using animated logo in CustomerHeader and shared Header
+- ✅ **Location Text Color** - Changed to match MapPin icon (blue)
+- ✅ **Documentation Updates** - Brand guides updated with logo specs
+
+**Week 5 Features:**
 - ✅ PWA Foundation (manifest.json, InstallPrompt component)
 - ✅ CustomerLayout with header and bottom navigation
 - ✅ 11 shared UI components (ProviderCard, ProductCard, SearchBar, etc.)
@@ -497,7 +511,7 @@ Proprietary - All rights reserved. This project is not open source.
 - 🔍 البحث والتصفية حسب نوع الطعام والتقييم ووقت التوصيل
 - 🛒 طلب سهل مع تتبع فوري
 - 💳 خيارات دفع متعددة (الدفع عند الاستلام، الدفع الإلكتروني)
-- 🌙 دعم الوضع الليلي
+- 🎨 ثيم فاتح أنيق (تجربة علامة تجارية متناسقة)
 - 🌍 واجهة ثنائية اللغة (عربي/إنجليزي)
 - 📱 تصميم متجاوب يبدأ بالموبايل
 
@@ -561,12 +575,22 @@ npm run dev
 
 ### 📊 الحالة الحالية
 
-**المرحلة:** الأسبوع 5 - تحسين رحلة العميل + PWA
-**الحالة:** الأسبوع 5 - تحسينات رحلة العميل ✅
-**التقدم الكلي:** ~70% من MVP مكتمل
-**آخر تحديث:** 2 ديسمبر 2025 (الجلسة 5)
+**المرحلة:** الأسبوع 5 - رحلة العميل + اللوجو المتحرك
+**الحالة:** الأسبوع 5 - اللوجو المتحرك والتوثيق ✅
+**التقدم الكلي:** ~72% من MVP مكتمل
+**آخر تحديث:** 3 ديسمبر 2025 (الجلسة 7)
 
-**مميزات الأسبوع 5 (جديد!):**
+**مميزات الجلسة 7 (جديد!):**
+- ✅ **لوجو إنجزنا المتحرك** (مكون `EngeznaLogo.tsx`)
+  - أنيميشن RTL reveal (من اليمين لليسار مثل الكتابة العربية)
+  - خط Aref Ruqaa للكاليغرافي العربي
+  - أحجام: xs, sm, md, lg, xl, 2xl
+  - لون النص: #0F172A (رمادي داكن)
+- ✅ **مكون شاشة البداية** (`SplashScreen.tsx`)
+- ✅ **تحديثات الهيدر** - استخدام اللوجو المتحرك
+- ✅ **لون نص الموقع** - تغيير للأزرق ليتناسب مع الأيقونة
+
+**مميزات الأسبوع 5:**
 - ✅ أساسيات PWA (manifest.json، مكون InstallPrompt)
 - ✅ تخطيط العميل مع الهيدر والتنقل السفلي
 - ✅ 11 مكون واجهة مستخدم مشترك
@@ -594,7 +618,7 @@ npm run dev
 - ✅ نظام الإعدادات متعدد الصفحات (7 صفحات)
 - ✅ إدارة العناوين مع القوائم المتسلسلة
 - ✅ دعم ثنائي اللغة (عربي/إنجليزي) مع RTL كامل
-- ✅ الوضع الليلي/النهاري
+- ✅ ثيم فاتح موحد (لتناسق العلامة التجارية)
 
 **مميزات المتاجر (مكتملة 100%):**
 - ✅ تسجيل الشركاء (تدفق متعدد الخطوات)

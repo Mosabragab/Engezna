@@ -61,6 +61,12 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning>
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className={`${notoSans.variable} ${notoSansArabic.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
