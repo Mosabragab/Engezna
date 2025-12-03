@@ -96,7 +96,7 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 
 #### **⚠️ Important Note - Project Status**
 
-This project is in **active development** (Week 5 - Customer Journey + Animated Logo ✅). What you'll see:
+This project is in **active development** (Week 5 - Admin Backend Integration Phase 0 ✅). What you'll see:
 
 **Works (Customer Features):**
 - ✅ Design system, theming (light-only mode)
