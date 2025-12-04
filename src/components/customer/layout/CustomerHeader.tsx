@@ -115,7 +115,7 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
 
           {/* Center - Always show Animated Logo as link to home */}
           <Link href={`/${locale}`} className="absolute left-1/2 -translate-x-1/2">
-            <EngeznaLogo size="sm" showPen={false} bgColor="white" />
+            <EngeznaLogo size="md" showPen={false} bgColor="white" />
           </Link>
 
           {/* Right Section - Custom Action + Notifications & Profile */}
