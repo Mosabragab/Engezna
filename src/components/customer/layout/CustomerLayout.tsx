@@ -3,11 +3,13 @@
 import { ReactNode } from 'react'
 import { CustomerHeader } from './CustomerHeader'
 import { BottomNavigation } from './BottomNavigation'
+import { Footer } from '@/components/shared/Footer'
 
 interface CustomerLayoutProps {
   children: ReactNode
   showHeader?: boolean
   showBottomNav?: boolean
+  showFooter?: boolean
   headerTitle?: string
   showBackButton?: boolean
   transparentHeader?: boolean
@@ -18,13 +20,14 @@ export function CustomerLayout({
   children,
   showHeader = true,
   showBottomNav = true,
+  showFooter = true,
   headerTitle,
   showBackButton = false,
   transparentHeader = false,
   headerRightAction,
 }: CustomerLayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       {showHeader && (
         <CustomerHeader
@@ -36,11 +39,18 @@ export function CustomerLayout({
       )}
 
       {/* Main Content */}
-      <main className={`${showBottomNav ? 'pb-20' : ''}`}>
+      <main className={`flex-1 ${showBottomNav ? 'pb-20' : ''}`}>
         {children}
       </main>
 
-      {/* Bottom Navigation */}
+      {/* Footer - Hidden on mobile when bottom nav is shown */}
+      {showFooter && (
+        <div className={showBottomNav ? 'hidden md:block' : ''}>
+          <Footer />
+        </div>
+      )}
+
+      {/* Bottom Navigation - Mobile only */}
       {showBottomNav && <BottomNavigation />}
     </div>
   )

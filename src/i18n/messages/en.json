@@ -919,5 +919,78 @@
     "orderAddedToCart": "Order added to cart successfully! 🎉",
     "howCanIHelp": "How can I help you?",
     "currency": "EGP"
+  },
+  "footer": {
+    "tagline": "Want to order? Engezna!",
+    "description": "Engezna platform… faster delivery between you and the nearest merchant",
+    "forCustomers": "For Customers",
+    "forPartners": "For Partners",
+    "contactUs": "Contact Us",
+    "home": "Home",
+    "myOrders": "My Orders",
+    "favorites": "Favorites",
+    "myAccount": "My Account",
+    "becomePartner": "Become a Partner",
+    "partnerLogin": "Partner Login",
+    "features": "Features",
+    "faq": "FAQ",
+    "support": "Support",
+    "whatsappSupport": "WhatsApp Support",
+    "availableCities": "Available Cities",
+    "copyright": "© 2025 Engezna - All rights reserved",
+    "privacy": "Privacy Policy",
+    "terms": "Terms & Conditions",
+    "registerNow": "Register Now"
+  },
+  "partnerLanding": {
+    "heroTitle": "Grow Your Business with Engezna",
+    "heroSubtitle": "Join the largest delivery platform in the governorates - your orders won't get lost anymore",
+    "registerFree": "Register for Free",
+    "alreadyPartner": "Already a partner?",
+    "login": "Sign In",
+    "whyEngezna": "Why Engezna?",
+    "benefits": {
+      "freeRegistration": "Free Registration Forever",
+      "freeRegistrationDesc": "No registration fees… ever",
+      "zeroCommission": "0% Commission for 9 Months",
+      "zeroCommissionDesc": "Start with zero commission, then only 6%",
+      "easyDashboard": "Easy Dashboard",
+      "easyDashboardDesc": "Manage orders and products with ease",
+      "localDelivery": "Local Delivery Your Way",
+      "localDeliveryDesc": "You control the delivery and pricing",
+      "analytics": "Reports & Analytics",
+      "analyticsDesc": "Track your store performance and orders in detail",
+      "support": "24/7 Support",
+      "supportDesc": "Support team ready to help you anytime"
+    },
+    "howItWorks": "How to Start?",
+    "steps": {
+      "step1Title": "Create Your Account",
+      "step1Desc": "Register your basic info in minutes",
+      "step2Title": "Complete Store Info",
+      "step2Desc": "Add your store details and products",
+      "step3Title": "Start Receiving Orders",
+      "step3Desc": "After approval, start receiving orders immediately"
+    },
+    "faqTitle": "Frequently Asked Questions",
+    "faqs": {
+      "q1": "What's the commission per order?",
+      "a1": "Commission is 0% for the first 9 months, then only 6% per order.",
+      "q2": "Is registration free?",
+      "a2": "Yes! Registration is free forever with no hidden fees.",
+      "q3": "How do I receive my earnings?",
+      "a3": "Your earnings are transferred weekly to your bank account or e-wallet.",
+      "q4": "Do I need delivery drivers?",
+      "a4": "No, you control delivery your way - with your own drivers or yourself.",
+      "q5": "Which cities are available?",
+      "a5": "We currently operate in Beni Suef, Minya, Assiut, Sohag, and Qena, and expanding soon."
+    },
+    "readyToJoin": "Ready to Join?",
+    "readyToJoinSubtitle": "Start your journey with us today and increase your sales",
+    "stats": {
+      "partners": "Active Partners",
+      "orders": "Monthly Orders",
+      "cities": "Governorates"
+    }
   }
 }
