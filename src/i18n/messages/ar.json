@@ -177,6 +177,22 @@
       "successTitle": "تحقق من بريدك الإلكتروني",
       "successMessage": "لقد أرسلنا لك رابط إعادة تعيين كلمة المرور. يرجى التحقق من بريدك الإلكتروني.",
       "backToLogin": "العودة لتسجيل الدخول"
+    },
+    "resetPassword": {
+      "title": "تعيين كلمة المرور الجديدة",
+      "description": "أدخل كلمة المرور الجديدة لحسابك",
+      "newPassword": "كلمة المرور الجديدة",
+      "newPasswordPlaceholder": "أدخل كلمة المرور الجديدة",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور",
+      "resetButton": "تعيين كلمة المرور",
+      "resetting": "جاري التعيين...",
+      "successTitle": "تم تغيير كلمة المرور!",
+      "successMessage": "تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.",
+      "goToLogin": "الذهاب لتسجيل الدخول",
+      "invalidLink": "رابط غير صالح",
+      "invalidLinkMessage": "رابط إعادة تعيين كلمة المرور غير صالح أو منتهي الصلاحية. يرجى طلب رابط جديد.",
+      "requestNewLink": "طلب رابط جديد"
     }
   },
   "settings": {
@@ -330,6 +346,24 @@
       "successTitle": "تم الإرسال للمراجعة!",
       "successMessage": "سيتم مراجعة طلبك وإعلامك بالنتيجة قريباً.",
       "progress": "التقدم"
+    },
+    "login": {
+      "title": "تسجيل دخول الشركاء",
+      "description": "سجل دخولك للوصول إلى لوحة تحكم الشريك",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "أدخل بريدك الإلكتروني",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "أدخل كلمة المرور",
+      "forgotPassword": "نسيت كلمة المرور؟",
+      "loginButton": "تسجيل الدخول",
+      "loggingIn": "جاري تسجيل الدخول...",
+      "noAccount": "ليس لديك حساب؟",
+      "registerLink": "سجل كشريك",
+      "notProvider": "لست شريكاً؟",
+      "notProviderTitle": "هذا الحساب ليس حساب شريك",
+      "notProviderMessage": "يبدو أنك مسجل كزبون. هل تريد التسجيل كشريك جديد؟",
+      "customerLoginLink": "تسجيل دخول العملاء",
+      "backToHome": "العودة للصفحة الرئيسية"
     }
   },
   "providerOrders": {

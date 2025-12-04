@@ -22,7 +22,6 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
-  console.log('📺 Login page rendered')
   const t = useTranslations('auth.login')
   const locale = useLocale()
   const router = useRouter()
@@ -38,24 +37,19 @@ export default function LoginPage() {
   })
 
   const onSubmit = async (data: LoginFormData) => {
-    console.log('🔑 Login form submitted:', { email: data.email }) // Debug log
     setIsLoading(true)
     setError(null)
 
     try {
       const supabase = createClient()
-      console.log('📡 Supabase client created') // Debug log
-      
+
       // Sign in with email and password
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: data.email.toLowerCase().trim(),
         password: data.password,
       })
 
-      console.log('🔐 Auth response:', { user: authData?.user?.email, error: authError?.message }) // Debug log
-
       if (authError) {
-        console.error('❌ Auth error:', authError)
         // Provide more specific error messages
         if (authError.message.includes('Invalid login credentials')) {
           setError('البريد الإلكتروني أو كلمة المرور غير صحيحة / Invalid email or password')
@@ -68,8 +62,6 @@ export default function LoginPage() {
       }
 
       if (authData.user) {
-        console.log('✅ User authenticated:', authData.user.email) // Debug log
-        
         // Fetch user profile to get role
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
@@ -77,13 +69,10 @@ export default function LoginPage() {
           .eq('id', authData.user.id)
           .single()
 
-        console.log('👤 Profile fetch result:', { profile, error: profileError }) // Debug log
-
         // Don't fail login if profile fetch fails - just redirect to homepage
         let redirectPath = `/${locale}`
         
         if (profile?.role) {
-          console.log('🎭 User role:', profile.role) // Debug log
           switch (profile.role) {
             case 'admin':
               redirectPath = `/${locale}/admin`
@@ -98,16 +87,12 @@ export default function LoginPage() {
           }
         }
 
-        console.log('🚀 Redirecting to:', redirectPath) // Debug log
-        
         // Use window.location for more reliable redirect
         setTimeout(() => {
-          console.log('🚀 Executing redirect to:', redirectPath)
           window.location.href = redirectPath
-        }, 1000) // Give time to see success message
+        }, 500)
       }
     } catch (err) {
-      console.error('💥 Unexpected error:', err)
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
       setIsLoading(false)

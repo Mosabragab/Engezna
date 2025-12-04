@@ -177,6 +177,22 @@
       "successTitle": "Check Your Email",
       "successMessage": "We've sent you a password reset link. Please check your email.",
       "backToLogin": "Back to Login"
+    },
+    "resetPassword": {
+      "title": "Set New Password",
+      "description": "Enter a new password for your account",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter password",
+      "resetButton": "Reset Password",
+      "resetting": "Resetting...",
+      "successTitle": "Password Changed!",
+      "successMessage": "Your password has been changed successfully. You can now sign in with your new password.",
+      "goToLogin": "Go to Login",
+      "invalidLink": "Invalid Link",
+      "invalidLinkMessage": "This password reset link is invalid or expired. Please request a new one.",
+      "requestNewLink": "Request New Link"
     }
   },
   "settings": {
@@ -330,6 +346,24 @@
       "successTitle": "Submitted for Review!",
       "successMessage": "Your application will be reviewed and you'll be notified soon.",
       "progress": "Progress"
+    },
+    "login": {
+      "title": "Partner Login",
+      "description": "Sign in to access your partner dashboard",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "forgotPassword": "Forgot password?",
+      "loginButton": "Sign In",
+      "loggingIn": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register as partner",
+      "notProvider": "Not a partner?",
+      "notProviderTitle": "This account is not a partner account",
+      "notProviderMessage": "It seems you are registered as a customer. Would you like to register as a new partner?",
+      "customerLoginLink": "Customer login",
+      "backToHome": "Back to home"
     }
   },
   "providerOrders": {
