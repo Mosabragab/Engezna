@@ -10,11 +10,10 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Link from 'next/link'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import {
-  Store,
   Coffee,
   ShoppingCart,
   Apple,
@@ -25,7 +24,14 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Store,
+  Mail,
+  Lock,
+  Phone,
+  Eye,
+  EyeOff,
+  RefreshCw
 } from 'lucide-react'
 
 // Business category options with icons
@@ -87,6 +93,8 @@ export default function PartnerRegisterPage() {
 
   const businessCategory = watch('businessCategory')
   const partnerRole = watch('partnerRole')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Handle next step
   const handleNextStep = async () => {
@@ -181,16 +189,23 @@ export default function PartnerRegisterPage() {
   // Success state
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <Link href={`/${locale}`} className="inline-block">
+              <EngeznaLogo size="lg" static showPen={false} />
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden p-8">
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8 text-green-600" />
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-10 h-10 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold">{t('successTitle')}</h2>
-              <p className="text-muted-foreground">{t('successMessage')}</p>
-              <div className="bg-amber-100 border border-amber-200 rounded-lg p-4 mt-4">
+              <h2 className="text-2xl font-bold text-slate-900">{t('successTitle')}</h2>
+              <p className="text-slate-600">{t('successMessage')}</p>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-amber-800 text-start">
@@ -199,122 +214,171 @@ export default function PartnerRegisterPage() {
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-              <Store className="w-8 h-8 text-primary" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold text-center">
-            {t('title')}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {t('description')}
-          </CardDescription>
-
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center gap-2 pt-4">
-            <div className={`w-3 h-3 rounded-full transition-colors ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
-            <div className={`w-12 h-1 rounded-full transition-colors ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-            <div className={`w-3 h-3 rounded-full transition-colors ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-          </div>
-          <p className="text-center text-sm text-muted-foreground">
-            {step === 1 ? t('step1Title') : t('step2Title')}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-lg">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link href={`/${locale}`} className="inline-block">
+            <EngeznaLogo size="lg" static showPen={false} />
+          </Link>
+          <p className="text-sm text-slate-600 mt-2">
+            {locale === 'ar' ? 'انضم لشبكة شركائنا' : 'Join Our Partner Network'}
           </p>
-        </CardHeader>
+        </div>
 
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-5 text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <Store className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">
+                  {t('title')}
+                </h1>
+                <p className="text-sm text-white/80">
+                  {t('description')}
+                </p>
+              </div>
+            </div>
+
+            {/* Step Indicator */}
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <div className={`w-3 h-3 rounded-full transition-colors ${step >= 1 ? 'bg-white' : 'bg-white/30'}`} />
+              <div className={`w-12 h-1 rounded-full transition-colors ${step >= 2 ? 'bg-white' : 'bg-white/30'}`} />
+              <div className={`w-3 h-3 rounded-full transition-colors ${step >= 2 ? 'bg-white' : 'bg-white/30'}`} />
+            </div>
+            <p className="text-center text-sm text-white/80 mt-2">
+              {step === 1 ? t('step1Title') : t('step2Title')}
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
             {error && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
-                {error}
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{error}</span>
               </div>
             )}
 
             {/* Step 1: Personal Information */}
             {step === 1 && (
               <>
+                {/* Full Name */}
                 <div className="space-y-2">
                   <Label htmlFor="fullName">{t('fullName')}</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    placeholder={t('fullNamePlaceholder')}
-                    {...register('fullName')}
-                    disabled={isLoading}
-                    className={errors.fullName ? 'border-destructive' : ''}
-                  />
+                  <div className="relative">
+                    <User className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                    <Input
+                      id="fullName"
+                      type="text"
+                      placeholder={t('fullNamePlaceholder')}
+                      {...register('fullName')}
+                      disabled={isLoading}
+                      className={`${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} ${errors.fullName ? 'border-destructive' : ''}`}
+                    />
+                  </div>
                   {errors.fullName && (
                     <p className="text-sm text-destructive">{errors.fullName.message}</p>
                   )}
                 </div>
 
+                {/* Phone */}
                 <div className="space-y-2">
                   <Label htmlFor="phone">{t('phone')}</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder={t('phonePlaceholder')}
-                    {...register('phone')}
-                    disabled={isLoading}
-                    className={errors.phone ? 'border-destructive' : ''}
-                    dir="ltr"
-                  />
+                  <div className="relative">
+                    <Phone className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder={t('phonePlaceholder')}
+                      {...register('phone')}
+                      disabled={isLoading}
+                      className={`${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} ${errors.phone ? 'border-destructive' : ''}`}
+                      dir="ltr"
+                    />
+                  </div>
                   {errors.phone && (
                     <p className="text-sm text-destructive">{errors.phone.message}</p>
                   )}
                 </div>
 
+                {/* Email */}
                 <div className="space-y-2">
                   <Label htmlFor="email">{t('email')}</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder={t('emailPlaceholder')}
-                    {...register('email')}
-                    disabled={isLoading}
-                    className={errors.email ? 'border-destructive' : ''}
-                    dir="ltr"
-                  />
+                  <div className="relative">
+                    <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder={t('emailPlaceholder')}
+                      {...register('email')}
+                      disabled={isLoading}
+                      className={`${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} ${errors.email ? 'border-destructive' : ''}`}
+                      dir="ltr"
+                    />
+                  </div>
                   {errors.email && (
                     <p className="text-sm text-destructive">{errors.email.message}</p>
                   )}
                 </div>
 
+                {/* Password */}
                 <div className="space-y-2">
                   <Label htmlFor="password">{t('password')}</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder={t('passwordPlaceholder')}
-                    {...register('password')}
-                    disabled={isLoading}
-                    className={errors.password ? 'border-destructive' : ''}
-                  />
+                  <div className="relative">
+                    <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={t('passwordPlaceholder')}
+                      {...register('password')}
+                      disabled={isLoading}
+                      className={`${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} ${errors.password ? 'border-destructive' : ''}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600`}
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                   {errors.password && (
                     <p className="text-sm text-destructive">{errors.password.message}</p>
                   )}
                 </div>
 
+                {/* Confirm Password */}
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder={t('confirmPasswordPlaceholder')}
-                    {...register('confirmPassword')}
-                    disabled={isLoading}
-                    className={errors.confirmPassword ? 'border-destructive' : ''}
-                  />
+                  <div className="relative">
+                    <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder={t('confirmPasswordPlaceholder')}
+                      {...register('confirmPassword')}
+                      disabled={isLoading}
+                      className={`${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600`}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                   {errors.confirmPassword && (
                     <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
                   )}
@@ -322,12 +386,12 @@ export default function PartnerRegisterPage() {
 
                 <Button
                   type="button"
-                  className="w-full"
+                  className="w-full py-3"
                   onClick={handleNextStep}
                   disabled={isLoading}
                 >
                   {t('nextStep')}
-                  {isRTL ? <ArrowLeft className="w-4 h-4 mr-2" /> : <ArrowRight className="w-4 h-4 ml-2" />}
+                  {isRTL ? <ArrowLeft className="w-4 h-4 me-2" /> : <ArrowRight className="w-4 h-4 ms-2" />}
                 </Button>
               </>
             )}
@@ -394,7 +458,7 @@ export default function PartnerRegisterPage() {
                 </div>
 
                 {/* Info Notice */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-blue-800">
@@ -407,47 +471,63 @@ export default function PartnerRegisterPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 py-3"
                     onClick={handlePrevStep}
                     disabled={isLoading}
                   >
-                    {isRTL ? <ArrowRight className="w-4 h-4 ml-2" /> : <ArrowLeft className="w-4 h-4 mr-2" />}
+                    {isRTL ? <ArrowRight className="w-4 h-4 me-2" /> : <ArrowLeft className="w-4 h-4 me-2" />}
                     {t('prevStep')}
                   </Button>
                   <Button
                     type="submit"
-                    className="flex-1"
+                    className="flex-1 py-3"
                     disabled={isLoading}
                   >
-                    {isLoading ? t('registering') : t('registerButton')}
+                    {isLoading ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      t('registerButton')
+                    )}
                   </Button>
                 </div>
               </>
             )}
           </form>
-        </CardContent>
+        </div>
 
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-sm text-center text-muted-foreground">
+        {/* Links */}
+        <div className="text-center mt-6 space-y-3">
+          <p className="text-slate-600">
             {t('hasAccount')}{' '}
             <Link
               href={`/${locale}/provider/login`}
-              className="text-primary hover:underline font-medium"
+              className="text-primary font-medium hover:underline"
             >
               {t('loginLink')}
             </Link>
-          </div>
-          <div className="text-sm text-center text-muted-foreground">
+          </p>
+          <p className="text-slate-600 text-sm">
             {t('isCustomer')}{' '}
             <Link
               href={`/${locale}/auth/signup`}
-              className="text-primary hover:underline font-medium"
+              className="text-primary hover:underline"
             >
               {t('customerSignupLink')}
             </Link>
-          </div>
-        </CardFooter>
-      </Card>
+          </p>
+        </div>
+
+        {/* Back to Home */}
+        <div className="text-center mt-4">
+          <Link
+            href={`/${locale}`}
+            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+          >
+            {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+            {locale === 'ar' ? 'العودة للصفحة الرئيسية' : 'Back to Home'}
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
