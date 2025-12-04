@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import Link from 'next/link'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 
 // Form validation schema
 const forgotPasswordSchema = z.object({
@@ -84,8 +86,17 @@ export default function ForgotPasswordPage() {
     )
   }
 
+  const isRTL = locale === 'ar'
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
+      {/* Logo - Links back to home */}
+      <div className="mb-6">
+        <Link href={`/${locale}`} className="inline-block">
+          <EngeznaLogo size="lg" static showPen={false} />
+        </Link>
+      </div>
+
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
@@ -139,6 +150,15 @@ export default function ForgotPasswordPage() {
           </div>
         </CardFooter>
       </Card>
+
+      {/* Back to Home Link */}
+      <Link
+        href={`/${locale}`}
+        className="mt-6 inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+        {locale === 'ar' ? 'العودة للصفحة الرئيسية' : 'Back to Home'}
+      </Link>
     </div>
   )
 }
