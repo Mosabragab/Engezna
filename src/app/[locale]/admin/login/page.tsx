@@ -4,8 +4,8 @@ import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { createClient } from '@/lib/supabase/client'
 import {
   Shield,
@@ -170,13 +170,7 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href={`/${locale}`} className="inline-block">
-            <Image
-              src="/engezna-logo.png"
-              alt="Engezna"
-              width={180}
-              height={60}
-              className="h-14 w-auto mx-auto"
-            />
+            <EngeznaLogo size="lg" static showPen={false} />
           </Link>
           <p className="text-sm text-slate-600 mt-2">
             {locale === 'ar' ? 'لوحة تحكم المشرفين' : 'Admin Dashboard'}

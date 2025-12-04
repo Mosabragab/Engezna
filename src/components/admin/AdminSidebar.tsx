@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   Key,
 } from 'lucide-react'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { usePermissions } from '@/lib/permissions/use-permissions'
 import type { ResourceCode } from '@/types/permissions'
 
@@ -267,18 +268,11 @@ export function AdminSidebar({
         {/* Logo */}
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center justify-between">
-            <Link href={`/${locale}/admin`} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#009DE0] rounded-xl flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg text-slate-900">
-                  {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-                </h1>
-                <p className="text-xs text-slate-500">
-                  {locale === 'ar' ? 'لوحة المشرفين' : 'Admin Panel'}
-                </p>
-              </div>
+            <Link href={`/${locale}/admin`} className="flex flex-col">
+              <EngeznaLogo size="md" static showPen={false} />
+              <p className="text-xs text-slate-500 mt-1">
+                {locale === 'ar' ? 'لوحة المشرفين' : 'Admin Panel'}
+              </p>
             </Link>
             <button
               onClick={onClose}

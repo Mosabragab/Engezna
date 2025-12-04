@@ -8,20 +8,20 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import {
-  Shield,
   Menu,
   Bell,
-  ChevronDown,
   LogOut,
-  User as UserIcon,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  User as UserIcon,
   Globe,
   Settings,
   MessageSquare,
   CheckCheck,
   X,
 } from 'lucide-react'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
 interface Notification {
   id: string
@@ -196,13 +196,8 @@ export function AdminHeader({
             <Menu className="w-6 h-6" />
           </button>
 
-          <Link href={`/${locale}/admin`} className="lg:hidden flex items-center gap-2">
-            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-red-600">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-            </span>
+          <Link href={`/${locale}/admin`} className="lg:hidden">
+            <EngeznaLogo size="sm" static showPen={false} />
           </Link>
         </div>
 
