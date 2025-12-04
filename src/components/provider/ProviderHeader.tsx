@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import {
-  Store,
   Menu,
   Bell,
   LogOut,
@@ -13,6 +12,7 @@ import {
   ChevronRight,
   User as UserIcon,
 } from 'lucide-react'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User } from '@supabase/supabase-js'
 
 interface ProviderHeaderProps {
@@ -49,13 +49,8 @@ export function ProviderHeader({
           </button>
 
           {/* Logo - visible on mobile, hidden on desktop */}
-          <Link href={`/${locale}/provider`} className="lg:hidden flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Store className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-primary">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-            </span>
+          <Link href={`/${locale}/provider`} className="lg:hidden">
+            <EngeznaLogo size="sm" static showPen={false} />
           </Link>
         </div>
 
