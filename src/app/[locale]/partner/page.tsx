@@ -23,6 +23,7 @@ import {
   Users,
   ShoppingBag,
   Building2,
+  Home,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -123,59 +124,77 @@ export default function PartnerLandingPage() {
           <div className="absolute bottom-20 left-20 w-72 h-72 bg-[#00C27A] rounded-full blur-3xl" />
         </div>
 
-        <div className="container mx-auto px-4 py-16 md:py-24 relative">
-          {/* Nav */}
-          <div className="flex items-center justify-between mb-12">
-            <Link href={`/${locale}`}>
-              <EngeznaLogo size="md" static showPen={false} />
-            </Link>
-            <Link
-              href={`/${locale}/provider/login`}
-              className="text-[#009DE0] hover:text-[#0086c3] font-medium flex items-center gap-2"
-            >
-              {t('alreadyPartner')}
-              {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-            </Link>
-          </div>
-
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Animated Logo */}
-            <div className="mb-8">
-              <EngeznaLogo size="xl" showPen loop loopDelay={3000} />
-            </div>
-
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#0F172A] mb-6">
-              {t('heroTitle')}
-            </h1>
-            <p className="text-xl md:text-2xl text-[#475569] mb-8 max-w-2xl mx-auto">
-              {t('heroSubtitle')}
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href={`/${locale}/partner/register`}>
-                <Button size="lg" className="bg-[#009DE0] hover:bg-[#0086c3] text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-[#009DE0]/25">
-                  <Store className="w-5 h-5 me-2" strokeWidth={1.8} />
-                  {t('registerFree')}
-                </Button>
+        <div className="container mx-auto px-4 relative">
+          {/* Header Nav */}
+          <header className="py-6 border-b border-[#E2E8F0]/50">
+            <div className="flex items-center justify-between">
+              {/* Left - Already Partner */}
+              <Link
+                href={`/${locale}/provider/login`}
+                className="text-[#009DE0] hover:text-[#0086c3] font-medium flex items-center gap-2 text-sm md:text-base"
+              >
+                {t('alreadyPartner')}
+                {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
               </Link>
-              <Link href={`/${locale}/provider/login`}>
-                <Button variant="outline" size="lg" className="px-8 py-6 text-lg rounded-xl border-[#E2E8F0]">
-                  {t('login')}
-                </Button>
+
+              {/* Center - Logo with Animation */}
+              <Link href={`/${locale}/partner`} className="absolute left-1/2 -translate-x-1/2">
+                <EngeznaLogo size="lg" showPen loop loopDelay={4000} />
+              </Link>
+
+              {/* Right - Home Link */}
+              <Link
+                href={`/${locale}`}
+                className="text-[#475569] hover:text-[#0F172A] font-medium flex items-center gap-2 text-sm md:text-base"
+              >
+                <Home className="w-4 h-4" strokeWidth={1.8} />
+                {locale === 'ar' ? 'الصفحة الرئيسية' : 'Home'}
               </Link>
             </div>
+          </header>
 
-            {/* Stats */}
-            <div className="mt-16 grid grid-cols-3 gap-8 max-w-lg mx-auto">
-              {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <stat.icon className="w-6 h-6 text-[#009DE0]" strokeWidth={1.8} />
+          {/* Hero Content */}
+          <div className="py-20 md:py-28">
+            <div className="max-w-4xl mx-auto text-center">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#0F172A] mb-6 animate-fade-in">
+                {t('heroTitle')}
+              </h1>
+              <p className="text-xl md:text-2xl text-[#475569] mb-10 max-w-2xl mx-auto">
+                {t('heroSubtitle')}
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+                <Link href={`/${locale}/partner/register`}>
+                  <Button size="lg" className="bg-[#009DE0] hover:bg-[#0086c3] text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-[#009DE0]/25 transition-all hover:scale-105">
+                    <Store className="w-5 h-5 me-2" strokeWidth={1.8} />
+                    {t('registerFree')}
+                  </Button>
+                </Link>
+                <Link href={`/${locale}/provider/login`}>
+                  <Button variant="outline" size="lg" className="px-8 py-6 text-lg rounded-xl border-[#E2E8F0] hover:bg-[#F8FAFC]">
+                    {t('login')}
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Stats with Animation */}
+              <div className="grid grid-cols-3 gap-6 md:gap-12 max-w-xl mx-auto">
+                {stats.map((stat, index) => (
+                  <div
+                    key={stat.label}
+                    className="text-center animate-fade-in-up"
+                    style={{ animationDelay: `${index * 150}ms` }}
+                  >
+                    <div className="flex items-center justify-center mb-3">
+                      <div className="w-12 h-12 bg-[#E0F4FF] rounded-xl flex items-center justify-center">
+                        <stat.icon className="w-6 h-6 text-[#009DE0]" strokeWidth={1.8} />
+                      </div>
+                    </div>
+                    <div className="text-3xl md:text-4xl font-bold text-[#0F172A]">{stat.value}</div>
+                    <div className="text-sm md:text-base text-[#475569]">{stat.label}</div>
                   </div>
-                  <div className="text-3xl font-bold text-[#0F172A]">{stat.value}</div>
-                  <div className="text-sm text-[#475569]">{stat.label}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>

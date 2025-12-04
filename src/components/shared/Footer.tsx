@@ -28,7 +28,7 @@ export function Footer() {
     { href: `/${locale}`, label: t('home'), icon: Home },
     { href: `/${locale}/orders`, label: t('myOrders'), icon: ShoppingBag },
     { href: `/${locale}/favorites`, label: t('favorites'), icon: Heart },
-    { href: `/${locale}/settings`, label: t('myAccount'), icon: User },
+    { href: `/${locale}/profile/account`, label: t('myAccount'), icon: User },
   ]
 
   const partnerLinks = [
