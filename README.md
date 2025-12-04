@@ -96,18 +96,20 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 
 #### **⚠️ Important Note - Project Status**
 
-This project is in **active development** (Week 5 - Logo Brand Consistency Update ✅). What you'll see:
+This project is in **active development** (Week 5 - Auth, Footer, Partner & Logo Updates ✅). What you'll see:
 
 **Works (Customer Features):**
 - ✅ Design system, theming (light-only mode)
 - ✅ Language switching (Arabic/English)
 - ✅ Navigation and routing
 - ✅ **Animated Engezna Logo** (RTL reveal animation with Aref Ruqaa font, unified across all pages)
+- ✅ **Footer** (4-column layout: Brand, Customers, Partners, Contact)
 - ✅ **Database deployed with real data** (4 providers, 30 menu items)
 - ✅ **Provider browsing** (browse restaurants, coffee shops, groceries)
 - ✅ **Provider detail pages** (view menus, ratings, delivery info)
 - ✅ **Shopping cart** (add/remove items, calculate totals, global state)
 - ✅ **User authentication** (signup/login with email or OTP)
+- ✅ **Reset Password page** (full password reset flow)
 - ✅ **Checkout flow** (address input, payment method selection)
 - ✅ **Order placement** (creates orders in database)
 - ✅ **Order confirmation** (order details, tracking button ready)
@@ -123,7 +125,9 @@ This project is in **active development** (Week 5 - Logo Brand Consistency Updat
 - ✅ **Location settings** (select governorate and city)
 
 **Works (Provider Features):**
+- ✅ **Partner Landing Page** (`/partner` - benefits, CTA, animations)
 - ✅ **Partner Registration** (multi-step registration for businesses)
+- ✅ **Dedicated Provider Login** (`/provider/login`)
 - ✅ **Business Profile Completion** (store info, logo upload, delivery settings)
 - ✅ **Status-aware Dashboard** (incomplete/pending/approved states)
 - ✅ **Orders Management** (accept/reject orders, status updates)

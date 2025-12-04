@@ -414,39 +414,87 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 
 ## 🐛 Recent Fixes
 
-### Work Session Dec 4, 2025 (Session 11) - Logo Brand Consistency Update ✅
-- ✅ **Unified EngeznaLogo Component Across All Pages**:
-  - All pages now use `EngeznaLogo` component with Aref Ruqaa font
-  - Replaced custom text/icon implementations with brand-consistent logo
+### Work Session Dec 4, 2025 (Session 11) - Auth, Footer, Partner & Logo Updates ✅
+
+#### Part 1: Auth System Enhancements
+- ✅ **Reset Password Page** (NEW):
+  - Created `src/app/[locale]/auth/reset-password/page.tsx`
+  - Full form with password validation and confirmation
+  - Added translations (AR/EN)
+- ✅ **Provider Login Page** (NEW):
+  - Created `src/app/[locale]/provider/login/page.tsx`
+  - Dedicated login for service providers
+  - Uses `EngeznaLogo size="lg"` with brand styling
+- ✅ **Auth Pages Improvements**:
+  - Added EngeznaLogo + back-to-home link to login, signup, forgot-password pages
+  - Removed debug console.logs from customer login page
+  - Updated partner register to link to provider login
+
+#### Part 2: Footer & Partner Landing Page
+- ✅ **Footer Component** (NEW):
+  - Created `src/components/shared/Footer.tsx`
+  - 4-column layout: Brand | Customers | Partners | Contact
+  - Mobile responsive (stacked columns)
+  - Links to all major sections
+  - Fixed "حسابي" link to `/profile/account`
+- ✅ **Partner Landing Page** (NEW):
+  - Created `src/app/[locale]/partner/page.tsx`
+  - Hero section with benefits and CTA
+  - Centered logo in header with navigation links
+  - CSS animations (fade-in, fade-in-up)
+- ✅ **CustomerLayout Update**:
+  - Added Footer component
+  - Footer hidden on mobile when bottom nav shown
+
+#### Part 3: Logo Brand Consistency (EngeznaLogo Unification)
 - ✅ **Customer Pages**:
-  - `CustomerHeader.tsx`: Changed logo size from `sm` to `md` for better visibility
+  - `CustomerHeader.tsx`: Changed logo size from `sm` to `md`
 - ✅ **Provider Pages**:
-  - `ProviderHeader.tsx`: Replaced Store icon + text with `EngeznaLogo size="sm"`
-  - `ProviderSidebar.tsx`: Replaced Store icon + text with `EngeznaLogo size="md"`
-  - Removed unused `Store` icon import
+  - `ProviderHeader.tsx`: Replaced Store icon with `EngeznaLogo size="sm"`
+  - `ProviderSidebar.tsx`: Replaced Store icon with `EngeznaLogo size="md"`
+  - `provider/page.tsx`: Fixed inline sidebar/header (was using old Store icon)
+  - `ProviderLayout.tsx`: Updated login prompt to use EngeznaLogo
 - ✅ **Admin Pages**:
-  - `AdminHeader.tsx`: Replaced Shield icon + text with `EngeznaLogo size="sm"`
-  - `AdminSidebar.tsx`: Replaced Shield icon + text with `EngeznaLogo size="md"`
+  - `AdminHeader.tsx`: Replaced Shield icon with `EngeznaLogo size="sm"`
+  - `AdminSidebar.tsx`: Replaced Shield icon with `EngeznaLogo size="md"`
   - `admin/login/page.tsx`: Replaced PNG image with `EngeznaLogo size="lg"`
-  - Removed unused `Shield` import from AdminHeader
 - ✅ **Logo Size Summary**:
   | Page | Size | Type |
   |------|------|------|
   | Customer Header | `md` | animated |
   | Partner Landing | `lg` | animated + loop |
   | Provider Login | `lg` | static |
+  | Provider Dashboard Sidebar | `md` | static |
+  | Provider Dashboard Header (mobile) | `sm` | static |
   | Provider Header (mobile) | `sm` | static |
   | Provider Sidebar | `md` | static |
   | Admin Login | `lg` | static |
   | Admin Header (mobile) | `sm` | static |
   | Admin Sidebar | `md` | static |
-- ✅ **Files Modified**:
-  - `src/components/customer/layout/CustomerHeader.tsx`
-  - `src/components/provider/ProviderHeader.tsx`
-  - `src/components/provider/ProviderSidebar.tsx`
-  - `src/components/admin/AdminHeader.tsx`
-  - `src/components/admin/AdminSidebar.tsx`
-  - `src/app/[locale]/admin/login/page.tsx`
+
+#### Files Created (NEW):
+- `src/app/[locale]/auth/reset-password/page.tsx`
+- `src/app/[locale]/provider/login/page.tsx`
+- `src/components/shared/Footer.tsx`
+- `src/app/[locale]/partner/page.tsx`
+
+#### Files Modified:
+- `src/app/[locale]/auth/login/page.tsx` (removed debug logs, added logo)
+- `src/app/[locale]/auth/signup/page.tsx` (added logo + back link)
+- `src/app/[locale]/auth/forgot-password/page.tsx` (added logo + back link)
+- `src/app/[locale]/partner/register/page.tsx` (link to provider login)
+- `src/components/customer/layout/CustomerLayout.tsx` (added Footer)
+- `src/components/customer/layout/CustomerHeader.tsx` (logo sm→md)
+- `src/components/provider/ProviderHeader.tsx` (EngeznaLogo)
+- `src/components/provider/ProviderSidebar.tsx` (EngeznaLogo)
+- `src/components/provider/ProviderLayout.tsx` (EngeznaLogo)
+- `src/app/[locale]/provider/page.tsx` (EngeznaLogo in inline sidebar/header)
+- `src/components/admin/AdminHeader.tsx` (EngeznaLogo)
+- `src/components/admin/AdminSidebar.tsx` (EngeznaLogo)
+- `src/app/[locale]/admin/login/page.tsx` (EngeznaLogo)
+- `src/app/globals.css` (added animations)
+- `src/i18n/messages/ar.json` (footer, partner, resetPassword translations)
+- `src/i18n/messages/en.json` (footer, partner, resetPassword translations)
 
 ### Work Session Dec 3, 2025 (Session 10) - Analytics Geographic Filtering Fix ✅
 - ✅ **Fixed Admin Analytics Geographic Filtering**:
@@ -1104,14 +1152,16 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 26.0 (Logo Brand Consistency Update)
+**Version:** 27.0 (Auth, Footer, Partner & Logo Updates)
 **Last Updated:** December 4, 2025 (Session 11)
 **Next Review:** December 5, 2025
 
-**🎉 Week 5: Logo Brand Consistency Update Complete!**
-- Unified EngeznaLogo component across all pages (Customer, Provider, Admin)
-- All pages now use Aref Ruqaa font for brand consistency
-- Logo sizes standardized: lg for login pages, md for sidebars/headers, sm for mobile headers
+**🎉 Week 5: Session 11 Complete!**
+- ✅ Auth System: Reset password page, Provider login page, auth pages improvements
+- ✅ Footer Component: 4-column layout with customer/partner sections
+- ✅ Partner Landing Page: Hero with benefits, CTA, centered logo header
+- ✅ Logo Unification: All pages now use EngeznaLogo with Aref Ruqaa font
+- ✅ Logo sizes standardized: lg for login pages, md for sidebars/headers, sm for mobile
 
 **🎉 Week 5: Analytics Geographic Filtering Fixed!**
 - Fixed admin analytics showing zeros when filtering by governorate
