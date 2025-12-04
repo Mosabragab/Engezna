@@ -431,7 +431,7 @@ export default function PartnerRegisterPage() {
           <div className="text-sm text-center text-muted-foreground">
             {t('hasAccount')}{' '}
             <Link
-              href={`/${locale}/auth/login`}
+              href={`/${locale}/provider/login`}
               className="text-primary hover:underline font-medium"
             >
               {t('loginLink')}

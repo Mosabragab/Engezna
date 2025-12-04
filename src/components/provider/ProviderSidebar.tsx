@@ -4,7 +4,6 @@ import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Store,
   Package,
   ShoppingBag,
   BarChart3,
@@ -15,6 +14,7 @@ import {
   Tag,
   X,
 } from 'lucide-react'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
 interface NavItem {
   icon: React.ElementType
@@ -141,18 +141,11 @@ export function ProviderSidebar({
         {/* Logo */}
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center justify-between">
-            <Link href={`/${locale}/provider`} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                <Store className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg text-slate-900">
-                  {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-                </h1>
-                <p className="text-xs text-slate-500">
-                  {locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}
-                </p>
-              </div>
+            <Link href={`/${locale}/provider`} className="flex flex-col">
+              <EngeznaLogo size="md" static showPen={false} />
+              <p className="text-xs text-slate-500 mt-1">
+                {locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}
+              </p>
             </Link>
             <button
               onClick={onClose}

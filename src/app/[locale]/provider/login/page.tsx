@@ -1,14 +1,19 @@
 'use client'
 
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import {
-  Shield,
+  Store,
   Mail,
   Lock,
   Eye,
@@ -20,19 +25,34 @@ import {
   ArrowLeft,
 } from 'lucide-react'
 
+// Form validation schema
+const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
+type LoginFormData = z.infer<typeof loginSchema>
+
 export const dynamic = 'force-dynamic'
 
-export default function AdminLoginPage() {
+export default function ProviderLoginPage() {
   const locale = useLocale()
+  const t = useTranslations('partner.login')
   const router = useRouter()
   const isRTL = locale === 'ar'
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  })
 
   useEffect(() => {
     checkExistingAuth()
@@ -43,39 +63,23 @@ export default function AdminLoginPage() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-      // Check if user is admin
+      // Check if user is provider_owner
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single()
 
-      if (profile?.role === 'admin') {
-        // Check if admin is active
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('is_active')
-          .eq('user_id', user.id)
-          .single()
-
-        if (adminUser?.is_active) {
-          router.push(`/${locale}/admin`)
-          return
-        }
+      if (profile?.role === 'provider_owner') {
+        router.push(`/${locale}/provider`)
+        return
       }
     }
 
     setCheckingAuth(false)
   }
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
-
-    if (!email || !password) {
-      setError(locale === 'ar' ? 'البريد الإلكتروني وكلمة المرور مطلوبان' : 'Email and password are required')
-      return
-    }
-
+  async function onSubmit(data: LoginFormData) {
     setLoading(true)
     setError('')
 
@@ -84,8 +88,8 @@ export default function AdminLoginPage() {
     try {
       // Sign in
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password,
+        email: data.email.toLowerCase().trim(),
+        password: data.password,
       })
 
       if (signInError) {
@@ -104,52 +108,24 @@ export default function AdminLoginPage() {
         return
       }
 
-      // Check if user has admin role
+      // Check if user has provider_owner role
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', authData.user.id)
         .single()
 
-      if (profile?.role !== 'admin') {
+      if (profile?.role !== 'provider_owner') {
         await supabase.auth.signOut()
-        setError(locale === 'ar' ? 'هذا الحساب ليس حساب مشرف' : 'This account is not an admin account')
+        setError(locale === 'ar' ? t('notProviderTitle') : t('notProviderTitle'))
         setLoading(false)
         return
       }
 
-      // Check if admin is active
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('is_active, role')
-        .eq('user_id', authData.user.id)
-        .single()
-
-      if (!adminUser) {
-        await supabase.auth.signOut()
-        setError(locale === 'ar' ? 'لم يتم العثور على سجل المشرف' : 'Admin record not found')
-        setLoading(false)
-        return
-      }
-
-      if (!adminUser.is_active) {
-        await supabase.auth.signOut()
-        setError(locale === 'ar' ? 'حسابك معطل. تواصل مع المدير التنفيذي.' : 'Your account is deactivated. Contact the administrator.')
-        setLoading(false)
-        return
-      }
-
-      // Update last active
-      await supabase
-        .from('admin_users')
-        .update({ last_active_at: new Date().toISOString() })
-        .eq('user_id', authData.user.id)
-
-      // Redirect to admin dashboard
-      router.push(`/${locale}/admin`)
+      // Redirect to provider dashboard
+      router.push(`/${locale}/provider`)
 
     } catch (err) {
-      console.error('Login error:', err)
       setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     }
 
@@ -159,7 +135,7 @@ export default function AdminLoginPage() {
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#009DE0] border-t-transparent"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
       </div>
     )
   }
@@ -173,30 +149,30 @@ export default function AdminLoginPage() {
             <EngeznaLogo size="lg" static showPen={false} />
           </Link>
           <p className="text-sm text-slate-600 mt-2">
-            {locale === 'ar' ? 'لوحة تحكم المشرفين' : 'Admin Dashboard'}
+            {locale === 'ar' ? 'بوابة الشركاء' : 'Partner Portal'}
           </p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#009DE0] to-[#0080b8] px-6 py-5 text-white">
+          <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-5 text-white">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <Shield className="w-6 h-6" />
+                <Store className="w-6 h-6" />
               </div>
               <div>
                 <h1 className="text-xl font-bold">
-                  {locale === 'ar' ? 'تسجيل دخول المشرفين' : 'Admin Login'}
+                  {t('title')}
                 </h1>
                 <p className="text-sm text-white/80">
-                  {locale === 'ar' ? 'سجل دخولك للوصول للوحة التحكم' : 'Sign in to access the dashboard'}
+                  {t('description')}
                 </p>
               </div>
             </div>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleLogin} className="p-6 space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -205,38 +181,37 @@ export default function AdminLoginPage() {
             )}
 
             {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                {locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="email">{t('email')}</Label>
               <div className="relative">
                 <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
-                <input
+                <Input
+                  id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={locale === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#009DE0] focus:border-transparent`}
+                  placeholder={t('emailPlaceholder')}
+                  {...register('email')}
+                  disabled={loading}
+                  className={`${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} ${errors.email ? 'border-destructive' : ''}`}
                   dir="ltr"
-                  required
                 />
               </div>
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
             </div>
 
             {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                {locale === 'ar' ? 'كلمة المرور' : 'Password'}
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="password">{t('password')}</Label>
               <div className="relative">
                 <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
-                <input
+                <Input
+                  id="password"
                   type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={locale === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password'}
-                  className={`w-full ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#009DE0] focus:border-transparent`}
-                  required
+                  placeholder={t('passwordPlaceholder')}
+                  {...register('password')}
+                  disabled={loading}
+                  className={`${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} ${errors.password ? 'border-destructive' : ''}`}
                 />
                 <button
                   type="button"
@@ -246,56 +221,69 @@ export default function AdminLoginPage() {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
             </div>
 
             {/* Forgot Password Link */}
             <div className="text-end">
               <Link
                 href={`/${locale}/auth/forgot-password`}
-                className="text-sm text-[#009DE0] hover:underline"
+                className="text-sm text-primary hover:underline"
               >
-                {locale === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
+                {t('forgotPassword')}
               </Link>
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#009DE0] hover:bg-[#0080b8] py-3"
+              className="w-full py-3"
             >
               {loading ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
               ) : (
                 <>
                   <LogIn className="w-5 h-5 me-2" />
-                  {locale === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
+                  {t('loginButton')}
                 </>
               )}
             </Button>
           </form>
         </div>
 
+        {/* Register link */}
+        <div className="text-center mt-6 space-y-3">
+          <p className="text-slate-600">
+            {t('noAccount')}{' '}
+            <Link
+              href={`/${locale}/partner/register`}
+              className="text-primary font-medium hover:underline"
+            >
+              {t('registerLink')}
+            </Link>
+          </p>
+          <p className="text-slate-600 text-sm">
+            {t('notProvider')}{' '}
+            <Link
+              href={`/${locale}/auth/login`}
+              className="text-primary hover:underline"
+            >
+              {t('customerLoginLink')}
+            </Link>
+          </p>
+        </div>
+
         {/* Back to main site */}
-        <div className="text-center mt-6">
+        <div className="text-center mt-4">
           <Link
             href={`/${locale}`}
             className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900"
           >
             {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-            {locale === 'ar' ? 'العودة للموقع الرئيسي' : 'Back to main site'}
+            {t('backToHome')}
           </Link>
-        </div>
-
-        {/* Info Box */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
-          <p className="font-medium mb-1">
-            {locale === 'ar' ? 'ملاحظة للمشرفين الجدد:' : 'Note for new supervisors:'}
-          </p>
-          <p className="text-blue-700">
-            {locale === 'ar'
-              ? 'إذا كنت مدعواً للانضمام، استخدم رابط الدعوة المرسل إليك لإنشاء حسابك أولاً.'
-              : 'If you have been invited to join, use the invitation link sent to you to create your account first.'}
-          </p>
         </div>
       </div>
     </div>
