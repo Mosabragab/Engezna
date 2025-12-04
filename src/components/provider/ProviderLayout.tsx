@@ -3,9 +3,9 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
-import { Store } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ProviderSidebar } from './ProviderSidebar'
 import { ProviderHeader } from './ProviderHeader'
 import type { User } from '@supabase/supabase-js'
@@ -82,7 +82,9 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-          <Store className="w-16 h-16 text-primary mx-auto mb-4" />
+          <div className="flex justify-center mb-4">
+            <EngeznaLogo size="lg" static showPen={false} />
+          </div>
           <h1 className="text-2xl font-bold mb-2 text-slate-900">
             {locale === 'ar' ? 'لوحة مقدم الخدمة' : 'Provider Dashboard'}
           </h1>

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import {
-  Store,
   Package,
   ShoppingBag,
   BarChart3,
@@ -33,6 +32,7 @@ import {
   User as UserIcon,
   ChevronDown,
 } from 'lucide-react'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -247,14 +247,9 @@ export default function ProviderDashboard() {
         {/* Logo */}
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center justify-between">
-            <Link href={`/${locale}/provider`} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                <Store className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg text-slate-900">{locale === 'ar' ? 'إنجزنا' : 'Engezna'}</h1>
-                <p className="text-xs text-slate-500">{locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}</p>
-              </div>
+            <Link href={`/${locale}/provider`} className="flex flex-col">
+              <EngeznaLogo size="md" static showPen={false} />
+              <p className="text-xs text-slate-500 mt-1">{locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}</p>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -333,13 +328,8 @@ export default function ProviderDashboard() {
               </button>
 
               {/* Logo - visible on mobile, hidden on desktop (sidebar has it) */}
-              <Link href={`/${locale}/provider`} className="lg:hidden flex items-center gap-2">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <Store className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-lg font-bold text-primary">
-                  {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-                </span>
+              <Link href={`/${locale}/provider`} className="lg:hidden">
+                <EngeznaLogo size="sm" static showPen={false} />
               </Link>
 
             </div>
