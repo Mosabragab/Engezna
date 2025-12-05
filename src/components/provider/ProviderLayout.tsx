@@ -51,12 +51,12 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
 
       if (providerData && providerData.length > 0) {
         setProvider(providerData[0])
-        // Load pending orders count
+        // Load pending orders count - only truly NEW orders that need action
         const { data: pendingData } = await supabase
           .from('orders')
           .select('id')
           .eq('provider_id', providerData[0].id)
-          .in('status', ['pending', 'accepted', 'preparing'])
+          .eq('status', 'pending')
         setPendingOrders(pendingData?.length || 0)
       }
     }
