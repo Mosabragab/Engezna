@@ -368,7 +368,7 @@ export default function FinancePage() {
         {/* Main Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Confirmed Earnings */}
-          <Card className="bg-[hsl(158_100%_38%/0.15)] border-[hsl(158_100%_38%/0.3)]">
+          <Card className="bg-[hsl(var(--deal)/0.1)] border-[hsl(var(--deal)/0.3)]">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <CheckCircle2 className="w-8 h-8 text-deal" />
@@ -379,7 +379,7 @@ export default function FinancePage() {
           </Card>
 
           {/* Pending Collection */}
-          <Card className="bg-[hsl(42_100%_70%/0.15)] border-[hsl(42_100%_70%/0.3)]">
+          <Card className="bg-[hsl(var(--premium)/0.15)] border-[hsl(var(--premium)/0.3)]">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <AlertCircle className="w-8 h-8 text-premium" />
@@ -390,14 +390,14 @@ export default function FinancePage() {
           </Card>
 
           {/* Period Earnings */}
-          <Card className="bg-[hsl(198_100%_44%/0.15)] border-[hsl(198_100%_44%/0.3)]">
+          <Card className="bg-[hsl(var(--primary)/0.1)] border-[hsl(var(--primary)/0.3)]">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <TrendingUp className="w-8 h-8 text-primary" />
                 <span className={`text-xs px-2 py-1 rounded-full ${
                   Number(getGrowthPercentage()) >= 0
-                    ? 'text-deal bg-[hsl(158_100%_38%/0.2)]'
-                    : 'text-error bg-[hsl(358_100%_68%/0.2)]'
+                    ? 'text-deal bg-[hsl(var(--deal)/0.15)]'
+                    : 'text-error bg-[hsl(var(--error)/0.15)]'
                 }`}>
                   {Number(getGrowthPercentage()) >= 0 ? '+' : ''}{getGrowthPercentage()}%
                 </span>
@@ -413,7 +413,7 @@ export default function FinancePage() {
           </Card>
 
           {/* Total Commission */}
-          <Card className="bg-[hsl(194_86%_58%/0.15)] border-[hsl(194_86%_58%/0.3)]">
+          <Card className="bg-[hsl(var(--info)/0.1)] border-[hsl(var(--info)/0.3)]">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
                 <Banknote className="w-8 h-8 text-info" />
@@ -445,21 +445,21 @@ export default function FinancePage() {
 
         {/* Pending Collection Alert */}
         {stats.pendingCollection > 0 && (
-          <Card className="bg-amber-50 border-amber-200">
+          <Card className="bg-card-warning border-[hsl(var(--warning)/0.3)]">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-amber-800 mb-1">
+                  <p className="font-medium text-slate-800 mb-1">
                     {locale === 'ar' ? 'لديك مبالغ في انتظار التحصيل' : 'You have pending collections'}
                   </p>
-                  <p className="text-sm text-amber-700">
+                  <p className="text-sm text-slate-600">
                     {locale === 'ar'
                       ? `هناك ${formatCurrency(stats.pendingCollection)} من طلبات الدفع عند الاستلام بانتظار تأكيد استلام المبلغ. اذهب لصفحة الطلبات لتأكيد استلام المدفوعات.`
                       : `You have ${formatCurrency(stats.pendingCollection)} from cash on delivery orders pending payment confirmation. Go to orders page to confirm received payments.`}
                   </p>
                   <Link href={`/${locale}/provider/orders`}>
-                    <Button variant="outline" size="sm" className="mt-3 border-amber-300 text-amber-700 hover:bg-amber-100">
+                    <Button variant="outline" size="sm" className="mt-3 border-[hsl(var(--warning)/0.5)] text-slate-700 hover:bg-[hsl(var(--warning)/0.15)] hover:text-slate-900">
                       {locale === 'ar' ? 'عرض الطلبات' : 'View Orders'}
                     </Button>
                   </Link>
@@ -569,9 +569,9 @@ export default function FinancePage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        txn.status === 'completed' ? 'bg-[hsl(158_100%_38%/0.2)]' :
-                        txn.status === 'pending' ? 'bg-[hsl(42_100%_70%/0.2)]' :
-                        'bg-[hsl(358_100%_68%/0.2)]'
+                        txn.status === 'completed' ? 'bg-[hsl(var(--deal)/0.15)]' :
+                        txn.status === 'pending' ? 'bg-[hsl(var(--premium)/0.2)]' :
+                        'bg-[hsl(var(--error)/0.15)]'
                       }`}>
                         {txn.status === 'completed' ? (
                           <ArrowUpRight className="w-5 h-5 text-deal" />
