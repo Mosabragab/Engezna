@@ -25,6 +25,7 @@ interface ProviderHeaderProps {
   onMenuClick: () => void
   onSignOut: () => void
   pendingOrders?: number
+  totalNotifications?: number
   providerId?: string
   pageTitle?: { ar: string; en: string }
   pageSubtitle?: { ar: string; en: string }
@@ -51,6 +52,7 @@ export function ProviderHeader({
   onMenuClick,
   onSignOut,
   pendingOrders = 0,
+  totalNotifications,
   providerId,
   pageTitle,
   pageSubtitle,
@@ -169,9 +171,9 @@ export function ProviderHeader({
               className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
             >
               <Bell className="w-5 h-5" />
-              {pendingOrders > 0 && (
+              {(totalNotifications ?? pendingOrders) > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {pendingOrders > 9 ? '9+' : pendingOrders}
+                  {(totalNotifications ?? pendingOrders) > 9 ? '9+' : (totalNotifications ?? pendingOrders)}
                 </span>
               )}
             </button>

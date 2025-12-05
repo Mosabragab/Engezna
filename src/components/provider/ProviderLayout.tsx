@@ -32,6 +32,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pendingOrders, setPendingOrders] = useState(0)
+  const [unrespondedReviews, setUnrespondedReviews] = useState(0)
 
   useEffect(() => {
     checkAuth()
@@ -51,13 +52,21 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
 
       if (providerData && providerData.length > 0) {
         setProvider(providerData[0])
-        // Load pending orders count - only truly NEW orders that need action
-        const { data: pendingData } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('provider_id', providerData[0].id)
-          .eq('status', 'pending')
-        setPendingOrders(pendingData?.length || 0)
+        // Load pending orders count and unresponded reviews count in parallel
+        const [pendingResult, reviewsResult] = await Promise.all([
+          supabase
+            .from('orders')
+            .select('id')
+            .eq('provider_id', providerData[0].id)
+            .eq('status', 'pending'),
+          supabase
+            .from('reviews')
+            .select('id')
+            .eq('provider_id', providerData[0].id)
+            .is('provider_response', null)
+        ])
+        setPendingOrders(pendingResult.data?.length || 0)
+        setUnrespondedReviews(reviewsResult.data?.length || 0)
       }
     }
 
@@ -121,6 +130,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           onMenuClick={() => setSidebarOpen(true)}
           onSignOut={handleSignOut}
           pendingOrders={pendingOrders}
+          totalNotifications={pendingOrders + unrespondedReviews}
           providerId={provider?.id}
           pageTitle={pageTitle}
           pageSubtitle={pageSubtitle}

@@ -58,6 +58,7 @@ interface DashboardStats {
   activeProducts: number
   totalOrders: number
   totalCustomers: number
+  unrespondedReviews: number
 }
 
 export default function ProviderDashboard() {
@@ -76,6 +77,7 @@ export default function ProviderDashboard() {
     activeProducts: 0,
     totalOrders: 0,
     totalCustomers: 0,
+    unrespondedReviews: 0,
   })
 
   // Real-time order notifications
@@ -122,7 +124,8 @@ export default function ProviderDashboard() {
       { data: todayOrdersData },
       { data: pendingData },
       { data: productsData },
-      { data: allOrdersData }
+      { data: allOrdersData },
+      { data: unrespondedReviewsData }
     ] = await Promise.all([
       supabase
         .from('orders')
@@ -133,7 +136,7 @@ export default function ProviderDashboard() {
         .from('orders')
         .select('id')
         .eq('provider_id', providerId)
-        .in('status', ['pending', 'accepted', 'preparing']),
+        .eq('status', 'pending'),
       supabase
         .from('menu_items')
         .select('id')
@@ -142,7 +145,12 @@ export default function ProviderDashboard() {
       supabase
         .from('orders')
         .select('id, customer_id')
+        .eq('provider_id', providerId),
+      supabase
+        .from('reviews')
+        .select('id')
         .eq('provider_id', providerId)
+        .is('provider_response', null)
     ])
 
     const uniqueCustomers = new Set(allOrdersData?.map(o => o.customer_id) || [])
@@ -155,6 +163,7 @@ export default function ProviderDashboard() {
       activeProducts: productsData?.length || 0,
       totalOrders: allOrdersData?.length || 0,
       totalCustomers: uniqueCustomers.size,
+      unrespondedReviews: unrespondedReviewsData?.length || 0,
     })
   }
 
@@ -367,15 +376,15 @@ export default function ProviderDashboard() {
 
             {/* Left Side (RTL): Actions */}
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Notifications - Real-time order count */}
+              {/* Notifications - Combined orders + reviews count */}
               <Link
                 href={`/${locale}/provider/orders`}
                 className={`relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors ${hasNewOrder ? 'animate-pulse' : ''}`}
               >
                 <Bell className="w-5 h-5" />
-                {stats.pendingOrders > 0 && (
+                {(stats.pendingOrders + stats.unrespondedReviews) > 0 && (
                   <span className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ${hasNewOrder ? 'animate-bounce' : ''}`}>
-                    {stats.pendingOrders > 9 ? '9+' : stats.pendingOrders}
+                    {(stats.pendingOrders + stats.unrespondedReviews) > 9 ? '9+' : (stats.pendingOrders + stats.unrespondedReviews)}
                   </span>
                 )}
               </Link>
