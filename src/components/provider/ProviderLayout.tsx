@@ -121,6 +121,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           onMenuClick={() => setSidebarOpen(true)}
           onSignOut={handleSignOut}
           pendingOrders={pendingOrders}
+          providerId={provider?.id}
           pageTitle={pageTitle}
           pageSubtitle={pageSubtitle}
         />
