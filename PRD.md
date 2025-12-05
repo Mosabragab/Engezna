@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 4.8 (Week 5 - Auth, Footer, Partner & Logo Updates)
+**Version:** 5.0 (Week 5 - Complete Feature Set)
 **Date:** November 27, 2025
-**Last Updated:** December 4, 2025 (Session 11)
+**Last Updated:** December 5, 2025 (Session 12)
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -22,10 +22,44 @@
 ## 📊 Current Development Status
 
 **Phase:** Week 5 - Admin Backend Integration
-**Status:** Week 5 - Auth, Footer, Partner & Logo Updates ✅
+**Status:** Week 5 - Complete Feature Set ✅
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~78% of MVP Complete
-**Last Session:** December 4, 2025 (Session 11)
+**Overall Progress:** ~88% of MVP Complete
+**Last Session:** December 5, 2025 (Session 12)
+
+### Session 12 Updates (December 5, 2025)
+
+**Order Cancellation Feature:**
+- ✅ Added cancellation button on order tracking page
+- ✅ Cancellation allowed for pending/confirmed/accepted orders
+- ✅ Cancellation modal with reason selection (bilingual)
+- ✅ Database update with cancellation details
+
+**Reviews & Ratings System (Complete):**
+- ✅ Customer review submission on order tracking page (for delivered orders)
+- ✅ Star rating (1-5) with optional comment
+- ✅ Reviews display on provider detail page with customer names
+- ✅ Provider can respond to reviews
+- ✅ Provider reviews management page (`/provider/reviews`)
+- ✅ Reviews menu item in provider sidebar
+
+**Favorites Feature:**
+- ✅ Customers can favorite/unfavorite providers
+- ✅ Favorites page (`/favorites`) showing saved providers
+
+**Real-time Notifications (Supabase Realtime):**
+- ✅ useNotifications hook with real-time subscriptions
+- ✅ useProviderOrderNotifications hook for provider order alerts
+- ✅ Live unread count in customer header
+- ✅ Real-time order notifications for providers
+- ✅ Notifications page refactored to use hooks
+
+**Promo Codes System:**
+- ✅ Promo code validation (validity, limits, restrictions)
+- ✅ Promo code input UI in checkout
+- ✅ Discount calculation and display
+- ✅ Promo code usage tracking
+- ✅ Order creation with discount applied
 
 ### Session 11 Updates (December 4, 2025)
 
@@ -201,19 +235,19 @@
 - ⚠️ Vodafone Cash - NOT available
 
 **Notifications:**
-- ⚠️ **Real-time push notifications** - No Firebase integration
+- ✅ **Real-time notifications** - Supabase Realtime for live updates ✅ (Session 12)
 - ⚠️ **SMS notifications** - No Twilio/SMS provider integration
-- ⚠️ **Email notifications** - No transactional emails (order updates, etc.)
+- ⏸️ **Email notifications** - **مؤجل** (يتطلب خدمة بريد خارجية مثل Resend/SendGrid + API Keys + قوالب بريد إلكتروني)
 
 **Customer Features Missing:**
-- ⚠️ **Order cancellation** - Customers cannot cancel orders
-- ⚠️ **Reviews/Ratings** - Cannot rate providers or leave reviews
-- ⚠️ **Favorites** - No favorites/wishlist feature
-- ⚠️ **Promo codes** - Cannot apply discount codes
+- ✅ **Order cancellation** - Customers can cancel pending/confirmed/accepted orders ✅ (Session 12)
+- ✅ **Reviews/Ratings** - Customers can rate providers and leave reviews ✅ (Session 12)
+- ✅ **Favorites** - Customers can favorite providers ✅ (Session 12)
+- ✅ **Promo codes** - Full promo code system in checkout ✅ (Session 12)
 - ⚠️ **Scheduled orders** - Cannot order for later
 
 **Provider Features Missing:**
-- ⚠️ **Real-time order notifications** - Only auto-refresh every 60s, no push
+- ✅ **Real-time order notifications** - Supabase Realtime subscription ✅ (Session 12)
 - ⚠️ **Multi-user support** - No staff accounts for providers
 - ⚠️ **Inventory management** - No stock tracking
 
@@ -267,15 +301,17 @@
 4. **Payment Integration (Fawry)** - Online payment support
 5. **Advanced Analytics** - Time-series charts, performance metrics
 
-**Medium Priority:**
-6. Customer reviews and ratings system
-7. Order cancellation flow for customers
-8. Real-time notifications (Supabase Realtime or Firebase)
-9. Email transactional notifications
+**Medium Priority (Completed ✅):**
+6. ✅ Customer reviews and ratings system (Session 12)
+7. ✅ Order cancellation flow for customers (Session 12)
+8. ✅ Favorites/wishlist feature (Session 12)
+
+**Current Priority:**
+9. ✅ Real-time notifications (Supabase Realtime) - COMPLETE (Session 12)
+10. ⏸️ Email transactional notifications - **مؤجل** (يتطلب خدمة خارجية)
+11. ✅ Promo codes system - COMPLETE (Session 12)
 
 **Lower Priority:**
-10. Promo codes system
-11. Favorites/wishlist feature
 12. Google Maps integration
 
 ---
@@ -1257,23 +1293,23 @@ reviews (
 
 ### **Week 7-8 (Dec 16-29, 2025): Notifications & Customer Features** 🔄 PLANNED
 
-**Medium Priority Tasks:**
-- [ ] **Notifications System**
-  - [ ] Real-time push notifications (Firebase)
+**Medium Priority Tasks (MOSTLY COMPLETE ✅):**
+- [x] **Notifications System**
+  - [x] Real-time notifications (Supabase Realtime) ✅
   - [ ] SMS notifications (Twilio or local provider)
-  - [ ] Email transactional notifications
-- [ ] **Customer Reviews & Ratings**
-  - [ ] Rate providers after order
-  - [ ] Leave reviews
-  - [ ] Display ratings on provider cards
-- [ ] **Order Cancellation**
-  - [ ] Allow customers to cancel orders
-  - [ ] Cancellation reason selection
+  - [⏸️] Email transactional notifications - **مؤجل** (يتطلب Resend/SendGrid + API Keys)
+- [x] **Customer Reviews & Ratings** ✅
+  - [x] Rate providers after order
+  - [x] Leave reviews
+  - [x] Display ratings on provider cards
+- [x] **Order Cancellation** ✅
+  - [x] Allow customers to cancel orders
+  - [x] Cancellation reason selection
   - [ ] Refund handling
-- [ ] **Promo Codes System**
-  - [ ] Create promo codes in admin
-  - [ ] Apply discount codes at checkout
-  - [ ] Track promo code usage
+- [x] **Promo Codes System** ✅
+  - [ ] Create promo codes in admin (Admin UI needed)
+  - [x] Apply discount codes at checkout ✅
+  - [x] Track promo code usage ✅
 
 ### **Week 9-10 (Dec 30 - Jan 12, 2026): Testing & Optimization** 🔄 PLANNED
 

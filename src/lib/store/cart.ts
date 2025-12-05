@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 export type MenuItem = {
   id: string
@@ -24,6 +24,7 @@ export type Provider = {
   min_order_amount: number
   estimated_delivery_time_min: number
   commission_rate?: number
+  category?: string
 }
 
 export type CartItem = {
@@ -34,6 +35,8 @@ export type CartItem = {
 type CartState = {
   cart: CartItem[]
   provider: Provider | null
+  _hasHydrated: boolean
+  setHasHydrated: (state: boolean) => void
   addItem: (menuItem: MenuItem, provider: Provider) => void
   removeItem: (menuItemId: string) => void
   updateQuantity: (menuItemId: string, quantity: number) => void
@@ -49,6 +52,10 @@ export const useCart = create<CartState>()(
     (set, get) => ({
       cart: [],
       provider: null,
+      _hasHydrated: false,
+      setHasHydrated: (state: boolean) => {
+        set({ _hasHydrated: state })
+      },
 
       addItem: (menuItem, provider) => {
         const currentProvider = get().provider
@@ -153,6 +160,10 @@ export const useCart = create<CartState>()(
     }),
     {
       name: 'engezna-cart',
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true)
+      },
     }
   )
 )

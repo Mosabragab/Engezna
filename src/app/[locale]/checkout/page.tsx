@@ -24,6 +24,9 @@ import {
   ChevronDown,
   Plus,
   Check,
+  Tag,
+  X,
+  Loader2,
 } from 'lucide-react'
 
 interface Governorate {
@@ -68,11 +71,31 @@ interface SavedAddress {
   district?: District | null
 }
 
+interface PromoCode {
+  id: string
+  code: string
+  description_ar: string | null
+  description_en: string | null
+  discount_type: 'percentage' | 'fixed'
+  discount_value: number
+  max_discount_amount: number | null
+  min_order_amount: number
+  usage_limit: number | null
+  usage_count: number
+  per_user_limit: number
+  valid_from: string
+  valid_until: string
+  is_active: boolean
+  applicable_categories: string[] | null
+  applicable_providers: string[] | null
+  first_order_only: boolean
+}
+
 export default function CheckoutPage() {
   const locale = useLocale()
   const router = useRouter()
   const { user, isAuthenticated, loading: authLoading } = useAuth()
-  const { cart, provider, getSubtotal, getTotal, clearCart } = useCart()
+  const { cart, provider, getSubtotal, getTotal, clearCart, _hasHydrated } = useCart()
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -82,6 +105,13 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState('')
   const [additionalNotes, setAdditionalNotes] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash')
+
+  // Promo code
+  const [promoCodeInput, setPromoCodeInput] = useState('')
+  const [appliedPromoCode, setAppliedPromoCode] = useState<PromoCode | null>(null)
+  const [promoCodeError, setPromoCodeError] = useState<string | null>(null)
+  const [promoCodeLoading, setPromoCodeLoading] = useState(false)
+  const [discountAmount, setDiscountAmount] = useState(0)
 
   // Address mode: 'saved' or 'new'
   const [addressMode, setAddressMode] = useState<'saved' | 'new'>('saved')
@@ -249,6 +279,224 @@ export default function CheckoutPage() {
     return null
   }
 
+  // Promo code validation
+  const handleApplyPromoCode = async () => {
+    // Debug logging for mobile troubleshooting
+    console.log('handleApplyPromoCode called', {
+      promoCodeInput,
+      hasUser: !!user,
+      hasProvider: !!provider,
+      hasHydrated: _hasHydrated,
+      userId: user?.id,
+      providerId: provider?.id
+    })
+
+    if (!promoCodeInput.trim()) {
+      setPromoCodeError(locale === 'ar' ? 'يرجى إدخال كود الخصم' : 'Please enter a promo code')
+      return
+    }
+
+    // Wait for hydration if not ready yet
+    if (!_hasHydrated) {
+      setPromoCodeError(locale === 'ar' ? 'جاري تحميل البيانات...' : 'Loading data...')
+      return
+    }
+
+    if (!user) {
+      setPromoCodeError(locale === 'ar' ? 'يرجى تسجيل الدخول أولاً' : 'Please login first')
+      return
+    }
+
+    if (!provider) {
+      setPromoCodeError(locale === 'ar' ? 'يرجى إضافة منتجات للسلة أولاً' : 'Please add items to cart first')
+      return
+    }
+
+    setPromoCodeLoading(true)
+    setPromoCodeError(null)
+
+    try {
+      const supabase = createClient()
+      const code = promoCodeInput.trim().toUpperCase()
+      const now = new Date()
+
+      console.log('Attempting to fetch promo code:', code, 'at', now.toISOString())
+
+      // Fetch the promo code using ilike for case-insensitive match
+      const { data: promoCode, error } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .ilike('code', code)
+        .maybeSingle()
+
+      console.log('Promo code fetch result:', { promoCode, error })
+
+      if (error) {
+        console.error('Supabase error:', error)
+        setPromoCodeError(
+          locale === 'ar'
+            ? `خطأ في الاستعلام: ${error.message}`
+            : `Query error: ${error.message}`
+        )
+        return
+      }
+
+      if (!promoCode) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? 'كود غير موجود'
+            : 'Promo code not found'
+        )
+        return
+      }
+
+      // Check if active
+      if (!promoCode.is_active) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? 'هذا الكود غير مفعل'
+            : 'This promo code is not active'
+        )
+        return
+      }
+
+      // Check date validity
+      const validFrom = new Date(promoCode.valid_from)
+      const validUntil = new Date(promoCode.valid_until)
+
+      if (now < validFrom) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? 'هذا الكود لم يبدأ بعد'
+            : 'This promo code is not valid yet'
+        )
+        return
+      }
+
+      if (now > validUntil) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? 'انتهت صلاحية هذا الكود'
+            : 'This promo code has expired'
+        )
+        return
+      }
+
+      const subtotal = getSubtotal()
+
+      // Check minimum order amount
+      if (subtotal < promoCode.min_order_amount) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? `الحد الأدنى للطلب لاستخدام هذا الكود: ${promoCode.min_order_amount} ج.م`
+            : `Minimum order for this code: ${promoCode.min_order_amount} EGP`
+        )
+        return
+      }
+
+      // Check usage limit
+      if (promoCode.usage_limit && promoCode.usage_count >= promoCode.usage_limit) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? 'تم استنفاد الحد الأقصى لاستخدام هذا الكود'
+            : 'This promo code has reached its usage limit'
+        )
+        return
+      }
+
+      // Check per-user limit
+      const { count: userUsageCount } = await supabase
+        .from('promo_code_usage')
+        .select('*', { count: 'exact', head: true })
+        .eq('promo_code_id', promoCode.id)
+        .eq('user_id', user.id)
+
+      if (userUsageCount && userUsageCount >= promoCode.per_user_limit) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? 'لقد استخدمت هذا الكود بالفعل'
+            : 'You have already used this promo code'
+        )
+        return
+      }
+
+      // Check first order only
+      if (promoCode.first_order_only) {
+        const { count: orderCount } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('customer_id', user.id)
+          .not('status', 'eq', 'cancelled')
+
+        if (orderCount && orderCount > 0) {
+          setPromoCodeError(
+            locale === 'ar'
+              ? 'هذا الكود متاح للطلب الأول فقط'
+              : 'This code is valid for first order only'
+          )
+          return
+        }
+      }
+
+      // Check applicable categories
+      if (promoCode.applicable_categories && promoCode.applicable_categories.length > 0) {
+        if (!promoCode.applicable_categories.includes(provider.category)) {
+          setPromoCodeError(
+            locale === 'ar'
+              ? 'هذا الكود غير متاح لهذا النوع من المتاجر'
+              : 'This code is not valid for this store type'
+          )
+          return
+        }
+      }
+
+      // Check applicable providers
+      if (promoCode.applicable_providers && promoCode.applicable_providers.length > 0) {
+        if (!promoCode.applicable_providers.includes(provider.id)) {
+          setPromoCodeError(
+            locale === 'ar'
+              ? 'هذا الكود غير متاح لهذا المتجر'
+              : 'This code is not valid for this store'
+          )
+          return
+        }
+      }
+
+      // Calculate discount
+      let discount = 0
+      if (promoCode.discount_type === 'percentage') {
+        discount = (subtotal * promoCode.discount_value) / 100
+        if (promoCode.max_discount_amount && discount > promoCode.max_discount_amount) {
+          discount = promoCode.max_discount_amount
+        }
+      } else {
+        discount = promoCode.discount_value
+      }
+
+      // Ensure discount doesn't exceed subtotal
+      discount = Math.min(discount, subtotal)
+
+      setAppliedPromoCode(promoCode)
+      setDiscountAmount(discount)
+      setPromoCodeInput('')
+    } catch (err) {
+      console.error('Error applying promo code:', err)
+      setPromoCodeError(
+        locale === 'ar'
+          ? 'حدث خطأ أثناء التحقق من الكود'
+          : 'An error occurred while validating the code'
+      )
+    } finally {
+      setPromoCodeLoading(false)
+    }
+  }
+
+  const handleRemovePromoCode = () => {
+    setAppliedPromoCode(null)
+    setDiscountAmount(0)
+    setPromoCodeError(null)
+  }
+
   const buildDeliveryAddressJson = () => {
     if (addressMode === 'saved') {
       const addr = getSelectedAddress()
@@ -369,6 +617,9 @@ export default function CheckoutPage() {
         Date.now() + (provider.estimated_delivery_time_min || 30) * 60 * 1000
       ).toISOString()
 
+      // Calculate final total with discount
+      const finalTotal = subtotal + (provider.delivery_fee || 0) - discountAmount
+
       // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -378,14 +629,15 @@ export default function CheckoutPage() {
           status: 'pending',
           subtotal: subtotal,
           delivery_fee: provider.delivery_fee,
-          discount: 0,
-          total: getTotal(),
+          discount: discountAmount,
+          total: finalTotal,
           platform_commission: platformCommission,
           payment_method: paymentMethod,
           payment_status: 'pending',
           delivery_address: deliveryAddressJson,
           customer_notes: additionalNotes || null,
           estimated_delivery_time: estimatedDeliveryTime,
+          promo_code: appliedPromoCode?.code || null,
         })
         .select()
         .single()
@@ -393,6 +645,22 @@ export default function CheckoutPage() {
       if (orderError) {
         console.error('Order creation error:', orderError)
         throw orderError
+      }
+
+      // Record promo code usage if applied
+      if (appliedPromoCode) {
+        await supabase.from('promo_code_usage').insert({
+          promo_code_id: appliedPromoCode.id,
+          user_id: user.id,
+          order_id: order.id,
+          discount_amount: discountAmount,
+        })
+
+        // Increment promo code usage count
+        await supabase
+          .from('promo_codes')
+          .update({ usage_count: appliedPromoCode.usage_count + 1 })
+          .eq('id', appliedPromoCode.id)
       }
 
       // Create order items
@@ -431,7 +699,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (authLoading || !cart || cart.length === 0) {
+  if (authLoading || !_hasHydrated || !cart || cart.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -440,7 +708,8 @@ export default function CheckoutPage() {
   }
 
   const subtotal = getSubtotal()
-  const total = getTotal()
+  const deliveryFee = provider?.delivery_fee || 0
+  const total = subtotal + deliveryFee - discountAmount
 
   return (
     <div className="min-h-screen bg-background">
@@ -853,6 +1122,65 @@ export default function CheckoutPage() {
                     ))}
                   </div>
 
+                  {/* Promo Code Section */}
+                  <div className="pb-4 border-b">
+                    <Label className="text-sm font-medium mb-2 block">
+                      <Tag className="w-4 h-4 inline-block me-1" />
+                      {locale === 'ar' ? 'كود الخصم' : 'Promo Code'}
+                    </Label>
+
+                    {appliedPromoCode ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Check className="w-4 h-4 text-green-600" />
+                            <span className="font-semibold text-green-700">{appliedPromoCode.code}</span>
+                          </div>
+                          <p className="text-sm text-green-600 mt-1">
+                            {appliedPromoCode.discount_type === 'percentage'
+                              ? `${appliedPromoCode.discount_value}% ${locale === 'ar' ? 'خصم' : 'off'}`
+                              : `${appliedPromoCode.discount_value} ${locale === 'ar' ? 'ج.م خصم' : 'EGP off'}`}
+                            {appliedPromoCode.max_discount_amount && ` (${locale === 'ar' ? 'الحد الأقصى' : 'max'} ${appliedPromoCode.max_discount_amount} ${locale === 'ar' ? 'ج.م' : 'EGP'})`}
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleRemovePromoCode}
+                          className="text-red-500 hover:text-red-700 p-1"
+                          title={locale === 'ar' ? 'إزالة الكود' : 'Remove code'}
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          value={promoCodeInput}
+                          onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                          placeholder={locale === 'ar' ? 'أدخل الكود' : 'Enter code'}
+                          disabled={promoCodeLoading}
+                          className="flex-1"
+                          onKeyDown={(e) => e.key === 'Enter' && handleApplyPromoCode()}
+                        />
+                        <Button
+                          onClick={handleApplyPromoCode}
+                          disabled={promoCodeLoading || !promoCodeInput.trim()}
+                          variant="outline"
+                          size="default"
+                        >
+                          {promoCodeLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            locale === 'ar' ? 'تطبيق' : 'Apply'
+                          )}
+                        </Button>
+                      </div>
+                    )}
+
+                    {promoCodeError && (
+                      <p className="text-sm text-destructive mt-2">{promoCodeError}</p>
+                    )}
+                  </div>
+
                   {/* Pricing */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -861,8 +1189,14 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-                      <span>{provider?.delivery_fee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                      <span>{deliveryFee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                     </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
+                        <span>-{discountAmount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-lg font-bold pt-2 border-t">
                       <span>{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
                       <span className="text-primary">{total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>

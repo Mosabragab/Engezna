@@ -41,8 +41,12 @@ interface PromoCode {
   valid_from: string
   valid_until: string
   usage_limit: number | null
-  used_count: number
+  usage_count: number
+  per_user_limit: number
   is_active: boolean
+  applicable_categories: string[] | null
+  applicable_providers: string[] | null
+  first_order_only: boolean
   created_at: string
 }
 
@@ -136,7 +140,7 @@ export default function AdminPromotionsPage() {
       const now = new Date()
       const active = (data || []).filter(p => p.is_active && new Date(p.valid_until) >= now).length
       const expired = (data || []).filter(p => new Date(p.valid_until) < now).length
-      const totalUsage = (data || []).reduce((sum, p) => sum + (p.used_count || 0), 0)
+      const totalUsage = (data || []).reduce((sum, p) => sum + (p.usage_count || 0), 0)
 
       setStats({
         total: (data || []).length,
@@ -182,6 +186,13 @@ export default function AdminPromotionsPage() {
     const supabase = createClient()
 
     try {
+      // Convert dates to ISO format with timezone
+      const validFromDate = new Date(formData.valid_from)
+      validFromDate.setHours(0, 0, 0, 0)
+
+      const validUntilDate = new Date(formData.valid_until)
+      validUntilDate.setHours(23, 59, 59, 999)
+
       const { error } = await supabase
         .from('promo_codes')
         .insert({
@@ -192,11 +203,15 @@ export default function AdminPromotionsPage() {
           discount_value: formData.discount_value,
           min_order_amount: formData.min_order_amount,
           max_discount_amount: formData.max_discount_amount || null,
-          valid_from: formData.valid_from,
-          valid_until: formData.valid_until,
+          valid_from: validFromDate.toISOString(),
+          valid_until: validUntilDate.toISOString(),
           usage_limit: formData.usage_limit || null,
+          usage_count: 0,
+          per_user_limit: 1,
           is_active: formData.is_active,
-          used_count: 0,
+          applicable_categories: null,
+          applicable_providers: null,
+          first_order_only: false,
         })
 
       if (error) throw error
@@ -486,7 +501,7 @@ export default function AdminPromotionsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm text-slate-600">
-                            {promo.used_count || 0}
+                            {promo.usage_count || 0}
                             {promo.usage_limit && ` / ${promo.usage_limit}`}
                           </span>
                         </td>

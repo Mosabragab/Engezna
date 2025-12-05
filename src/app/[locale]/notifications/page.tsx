@@ -1,156 +1,66 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Bell, Package, Tag, Gift, Info, Check, Trash2, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { CustomerLayout } from '@/components/customer/layout'
 import { Button } from '@/components/ui/button'
-import type { User } from '@supabase/supabase-js'
-
-interface Notification {
-  id: string
-  user_id: string
-  type: 'order' | 'promotion' | 'system' | 'offer'
-  title_ar: string
-  title_en: string
-  message_ar: string
-  message_en: string
-  is_read: boolean
-  created_at: string
-  data?: Record<string, unknown>
-}
+import { useNotifications } from '@/hooks/customer'
 
 export default function NotificationsPage() {
   const locale = useLocale()
   const router = useRouter()
-  const isRTL = locale === 'ar'
-
-  const [user, setUser] = useState<User | null>(null)
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [markingRead, setMarkingRead] = useState<string | null>(null)
 
+  // Use real-time notifications hook
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    isAuthenticated,
+    markAsRead: markAsReadHook,
+    markAllAsRead: markAllAsReadHook,
+    deleteNotification: deleteNotificationHook,
+  } = useNotifications()
+
+  // Wrapper functions to handle loading state
+  const handleMarkAsRead = async (id: string) => {
+    setMarkingRead(id)
+    await markAsReadHook(id)
+    setMarkingRead(null)
+  }
+
+  const handleMarkAllAsRead = async () => {
+    await markAllAsReadHook()
+  }
+
+  const handleDeleteNotification = async (id: string) => {
+    await deleteNotificationHook(id)
+  }
+
+  // Redirect to login if not authenticated
   useEffect(() => {
-    checkAuthAndLoadNotifications()
-  }, [locale, router])
-
-  async function checkAuthAndLoadNotifications() {
-    try {
-      const supabase = createClient()
-      const { data: { user }, error } = await supabase.auth.getUser()
-
-      if (error) {
-        console.error('Auth error:', error)
-        setIsLoading(false)
-        return
-      }
-
-      if (!user) {
-        router.push(`/${locale}/auth/login?redirect=/notifications`)
-        return
-      }
-
-      setUser(user)
-      await loadNotifications(user.id)
-    } catch (err) {
-      console.error('Auth check failed:', err)
-      setIsLoading(false)
+    if (!isLoading && !isAuthenticated) {
+      router.push(`/${locale}/auth/login?redirect=/notifications`)
     }
-  }
-
-  async function loadNotifications(userId: string) {
-    setIsLoading(true)
-    const supabase = createClient()
-
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(50)
-
-      if (error) {
-        console.error('Error loading notifications:', error)
-        // If table doesn't exist, show empty state
-        setNotifications([])
-      } else {
-        setNotifications(data || [])
-      }
-    } catch (error) {
-      console.error('Error:', error)
-      setNotifications([])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  async function markAsRead(notificationId: string) {
-    if (!user) return
-
-    setMarkingRead(notificationId)
-    const supabase = createClient()
-
-    try {
-      await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId)
-        .eq('user_id', user.id)
-
-      setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
-      )
-    } catch (error) {
-      console.error('Error marking as read:', error)
-    } finally {
-      setMarkingRead(null)
-    }
-  }
-
-  async function markAllAsRead() {
-    if (!user) return
-
-    const supabase = createClient()
-
-    try {
-      await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false)
-
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
-    } catch (error) {
-      console.error('Error marking all as read:', error)
-    }
-  }
-
-  async function deleteNotification(notificationId: string) {
-    if (!user) return
-
-    const supabase = createClient()
-
-    try {
-      await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId)
-        .eq('user_id', user.id)
-
-      setNotifications(prev => prev.filter(n => n.id !== notificationId))
-    } catch (error) {
-      console.error('Error deleting notification:', error)
-    }
-  }
+  }, [isLoading, isAuthenticated, locale, router])
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'order':
+      case 'order_update':
+      case 'order_accepted':
+      case 'order_preparing':
+      case 'order_ready':
+      case 'order_out_for_delivery':
+      case 'order_delivered':
         return <Package className="w-5 h-5 text-primary" />
+      case 'order_cancelled':
+      case 'order_rejected':
+        return <Package className="w-5 h-5 text-red-500" />
       case 'promotion':
+      case 'promo':
         return <Tag className="w-5 h-5 text-red-500" />
       case 'offer':
         return <Gift className="w-5 h-5 text-green-500" />
@@ -177,8 +87,6 @@ export default function NotificationsPage() {
       return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')
     }
   }
-
-  const unreadCount = notifications.filter(n => !n.is_read).length
 
   // Loading state
   if (isLoading) {
@@ -248,7 +156,7 @@ export default function NotificationsPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={markAllAsRead}
+              onClick={handleMarkAllAsRead}
               className="text-primary"
             >
               <Check className="w-4 h-4 me-1" />
@@ -282,7 +190,7 @@ export default function NotificationsPage() {
                     {locale === 'ar' ? notification.title_ar : notification.title_en}
                   </h3>
                   <p className="text-sm text-slate-600 mt-1">
-                    {locale === 'ar' ? notification.message_ar : notification.message_en}
+                    {locale === 'ar' ? notification.body_ar : notification.body_en}
                   </p>
                   <span className="text-xs text-slate-400 mt-2 block">
                     {formatDate(notification.created_at)}
@@ -293,7 +201,7 @@ export default function NotificationsPage() {
                 <div className="flex items-start gap-1">
                   {!notification.is_read && (
                     <button
-                      onClick={() => markAsRead(notification.id)}
+                      onClick={() => handleMarkAsRead(notification.id)}
                       disabled={markingRead === notification.id}
                       className="p-2 text-slate-400 hover:text-primary rounded-full hover:bg-slate-100"
                       title={locale === 'ar' ? 'تحديد كمقروء' : 'Mark as read'}
@@ -306,7 +214,7 @@ export default function NotificationsPage() {
                     </button>
                   )}
                   <button
-                    onClick={() => deleteNotification(notification.id)}
+                    onClick={() => handleDeleteNotification(notification.id)}
                     className="p-2 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50"
                     title={locale === 'ar' ? 'حذف' : 'Delete'}
                   >

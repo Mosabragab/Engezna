@@ -21,6 +21,10 @@ import {
   Heart,
   Share2,
   Star,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  User,
 } from 'lucide-react'
 
 type Provider = {
@@ -66,6 +70,18 @@ type MenuCategory = {
   display_order: number
 }
 
+type Review = {
+  id: string
+  rating: number
+  comment: string | null
+  provider_response: string | null
+  provider_response_at: string | null
+  created_at: string
+  profiles: {
+    full_name: string | null
+  } | { full_name: string | null }[] | null
+}
+
 export default function ProviderDetailPage() {
   const params = useParams()
   const providerId = params.id as string
@@ -79,8 +95,10 @@ export default function ProviderDetailPage() {
   const [provider, setProvider] = useState<Provider | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [categories, setCategories] = useState<MenuCategory[]>([])
+  const [reviews, setReviews] = useState<Review[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showAllReviews, setShowAllReviews] = useState(false)
   const categoriesRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -128,6 +146,28 @@ export default function ProviderDetailPage() {
       setMenuItems(menuData || [])
     }
 
+    // Fetch reviews for this provider
+    const { data: reviewsData, error: reviewsError } = await supabase
+      .from('reviews')
+      .select(`
+        id,
+        rating,
+        comment,
+        provider_response,
+        provider_response_at,
+        created_at,
+        profiles:customer_id (
+          full_name
+        )
+      `)
+      .eq('provider_id', providerId)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (!reviewsError && reviewsData) {
+      setReviews(reviewsData as Review[])
+    }
+
     setLoading(false)
   }
 
@@ -150,6 +190,7 @@ export default function ProviderDetailPage() {
         min_order_amount: provider.min_order_amount,
         estimated_delivery_time_min: provider.estimated_delivery_time_min,
         commission_rate: provider.commission_rate,
+        category: provider.category,
       })
     }
   }
@@ -332,6 +373,101 @@ export default function ProviderDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Reviews Section */}
+      {reviews.length > 0 && (
+        <div className="bg-white border-b">
+          <div className="px-4 py-4">
+            {/* Section Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                <h2 className="text-lg font-bold text-slate-900">
+                  {locale === 'ar' ? 'التقييمات' : 'Reviews'}
+                </h2>
+                <span className="text-sm text-slate-400">
+                  ({provider.total_reviews})
+                </span>
+              </div>
+              {reviews.length > 3 && (
+                <button
+                  onClick={() => setShowAllReviews(!showAllReviews)}
+                  className="text-primary text-sm font-medium flex items-center gap-1"
+                >
+                  {showAllReviews
+                    ? (locale === 'ar' ? 'عرض أقل' : 'Show Less')
+                    : (locale === 'ar' ? 'عرض الكل' : 'View All')}
+                  {showAllReviews ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Reviews List */}
+            <div className="space-y-4">
+              {(showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
+                <div key={review.id} className="border-b border-slate-100 last:border-0 pb-4 last:pb-0">
+                  {/* Review Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">
+                          {(Array.isArray(review.profiles) ? review.profiles[0]?.full_name : review.profiles?.full_name) || (locale === 'ar' ? 'مستخدم' : 'Customer')}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {new Date(review.created_at).toLocaleDateString(
+                            locale === 'ar' ? 'ar-EG' : 'en-US',
+                            { year: 'numeric', month: 'short', day: 'numeric' }
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    {/* Rating Stars */}
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-3.5 h-3.5 ${
+                            star <= review.rating
+                              ? 'text-yellow-400 fill-yellow-400'
+                              : 'text-slate-200'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Review Comment */}
+                  {review.comment && (
+                    <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                      {review.comment}
+                    </p>
+                  )}
+
+                  {/* Provider Response */}
+                  {review.provider_response && (
+                    <div className="mt-3 p-3 bg-primary/5 rounded-lg border-s-4 border-primary">
+                      <div className="flex items-center gap-1 mb-1">
+                        <MessageSquare className="w-3 h-3 text-primary" />
+                        <p className="text-xs font-medium text-primary">
+                          {locale === 'ar' ? 'رد المتجر' : 'Store Response'}
+                        </p>
+                      </div>
+                      <p className="text-sm text-slate-600">{review.provider_response}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Category Navigation - Sticky */}
       {categories.length > 0 && (

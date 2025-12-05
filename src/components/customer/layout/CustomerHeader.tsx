@@ -8,6 +8,7 @@ import { MapPin, Bell, User, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
+import { useNotifications } from '@/hooks/customer'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface CustomerHeaderProps {
@@ -23,8 +24,10 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
   const t = useTranslations('header')
 
   const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [notificationCount, setNotificationCount] = useState(0)
   const [currentLocation, setCurrentLocation] = useState(locale === 'ar' ? 'بني سويف' : 'Beni Suef')
+
+  // Use real-time notifications hook
+  const { unreadCount } = useNotifications()
 
   useEffect(() => {
     checkAuth()
@@ -38,20 +41,6 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
       setUser(user)
 
       if (!user) return
-
-      // Get notification count - wrap in try-catch in case table doesn't exist
-      try {
-        const { count } = await supabase
-          .from('notifications')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('is_read', false)
-
-        setNotificationCount(count || 0)
-      } catch (error) {
-        console.log('Notifications table may not exist yet')
-        setNotificationCount(0)
-      }
 
       // Get user's current location from profile
       try {
@@ -123,13 +112,13 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             {/* Custom Action (e.g., refresh button) */}
             {rightAction && rightAction}
 
-            {/* Notifications */}
+            {/* Notifications - Real-time updates */}
             <Link href={`/${locale}/notifications`}>
               <Button variant="ghost" size="icon" className="h-9 w-9 relative">
                 <Bell className="h-5 w-5 text-slate-600" />
-                {notificationCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
-                    {notificationCount > 9 ? '9+' : notificationCount}
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </Button>
