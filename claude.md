@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** December 5, 2025
-**Status:** Week 5 - Complete Feature Set (Session 12) ✅
+**Status:** Week 5 - Complete Feature Set (Session 13) ✅
 **Branch:** `claude/project-progress-review-019c9eWZ1GRxLZtNz6Bp9DD4`
 
 ---
@@ -1394,3 +1394,88 @@ src/
 ### تحسينات الصفحات الموجودة
 - **`/providers`**: أضيف SearchBar، FilterChip للفلترة والترتيب، EmptyState
 - **`/providers/[id]`**: أضيف ProductCard، RatingStars، StatusBadge، sticky category navigation
+
+---
+
+## 📋 Session 13: Notifications & Reviews Fix (December 5, 2025)
+
+### ✅ المهام المكتملة
+
+#### 1. إصلاح مشكلة البروموكود على الموبايل
+- **الحالة:** ✅ مكتمل
+- **السبب:** كانت مشكلة Cache
+- **الحل:** تم إضافة hydration tracking لـ zustand cart store
+- **الملف:** `src/store/cartStore.ts`
+
+#### 2. نظام إشعارات العملاء (Customer Notifications)
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - إنشاء جدول `customer_notifications` جديد
+  - Trigger تلقائي لإرسال إشعار عند تغيير حالة الطلب
+  - تحديث `useNotifications` hook للعمل مع الجدول الجديد
+  - تحديث صفحة الإشعارات لعرض الأنواع الجديدة
+- **الملفات:**
+  - `supabase/migrations/20251205000001_fix_notifications_and_reviews.sql`
+  - `src/hooks/customer/useNotifications.ts`
+  - `src/app/[locale]/notifications/page.tsx`
+
+#### 3. نظام إشعارات الأدمن (Admin Notifications)
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - إشعار عند إلغاء طلب من أي طرف
+  - إشعار عند تسجيل مزود خدمة جديد
+  - إشعار عند إنشاء تذكرة دعم فني
+  - إشعار عند طلب موافقة
+  - Function لفحص الطلبات المتأخرة (أكثر من ساعتين)
+- **الملف:** `supabase/migrations/20251205000002_fix_reviews_and_add_admin_notifications.sql`
+
+#### 4. تفعيل pg_cron للطلبات المتأخرة
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - تفعيل pg_cron extension
+  - جدولة فحص الطلبات المتأخرة كل 30 دقيقة
+  - Function `check_delayed_orders_and_notify()` لإرسال تنبيهات
+
+### ⚠️ المهام المعلقة
+
+#### مشكلة التقييمات (Reviews) - لم تُحل بعد
+- **الحالة:** ❌ لم تُحل
+- **الخطأ:** `infinite recursion detected in policy for relation "providers"`
+- **المحاولات:**
+  1. Migration 1: تبسيط RLS policies
+  2. Migration 2: إصلاح إضافي
+  3. Migration 3: استخدام SECURITY DEFINER functions
+- **الملف الأخير:** `supabase/migrations/20251205000003_urgent_fix_reviews_rls.sql`
+- **السبب المحتمل:** المشكلة في policy على جدول `providers` نفسه وليس `reviews`
+- **الحل المقترح:** فحص وإصلاح RLS policies على جدول `providers`
+
+### 📁 الملفات المُعدّلة في هذه الجلسة
+
+| الملف | الوصف |
+|-------|-------|
+| `supabase/migrations/20251205000001_fix_notifications_and_reviews.sql` | جدول إشعارات العملاء + triggers |
+| `supabase/migrations/20251205000002_fix_reviews_and_add_admin_notifications.sql` | إشعارات الأدمن + pg_cron function |
+| `supabase/migrations/20251205000003_urgent_fix_reviews_rls.sql` | محاولة إصلاح RLS للتقييمات |
+| `src/hooks/customer/useNotifications.ts` | تحديث للعمل مع customer_notifications |
+| `src/app/[locale]/notifications/page.tsx` | تحديث عرض الإشعارات |
+| `src/app/[locale]/orders/[id]/page.tsx` | إضافة debugging للتقييمات |
+| `src/store/cartStore.ts` | إضافة hydration tracking |
+
+### 📊 الـ Commits
+
+```
+f2293ce fix: Add SECURITY DEFINER functions to fix reviews RLS infinite recursion
+e018d3b feat: Fix reviews RLS and add comprehensive admin notifications
+4317bbf fix: Fix notifications build error and update admin notification logic
+3926332 feat: Add customer notifications and fix admin notifications
+91f179c fix: Add hydration check and better debugging for mobile promo code issues
+```
+
+### 🔧 الخطوات المطلوبة للجلسة القادمة
+
+1. **إصلاح مشكلة التقييمات:**
+   - فحص RLS policies على جدول `providers` بالكامل
+   - قد تكون المشكلة في policy على providers تتحقق من reviews
+   - إنشاء SECURITY DEFINER functions لكل استعلام يتضمن providers
+
+---
