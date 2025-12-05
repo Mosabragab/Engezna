@@ -43,6 +43,7 @@ type Order = {
   order_number: string
   customer_id: string
   status: string
+  payment_status: string
   subtotal: number
   delivery_fee: number
   total: number
@@ -179,6 +180,7 @@ export default function ProviderOrdersPage() {
         order_number,
         customer_id,
         status,
+        payment_status,
         subtotal,
         delivery_fee,
         total,
@@ -281,6 +283,24 @@ export default function ProviderOrdersPage() {
     setActionLoading(null)
   }
 
+  const handleConfirmPayment = async (orderId: string) => {
+    setActionLoading(orderId)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        payment_status: 'completed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+
+    if (!error && providerId) {
+      await loadOrders(providerId)
+    }
+    setActionLoading(null)
+  }
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
@@ -334,6 +354,8 @@ export default function ProviderOrdersPage() {
   const activeCount = orders.filter(o => ['accepted', 'preparing'].includes(o.status)).length
   const readyCount = orders.filter(o => o.status === 'ready').length
   const outForDeliveryCount = orders.filter(o => o.status === 'out_for_delivery').length
+  const completedCount = orders.filter(o => o.status === 'delivered').length
+  const cancelledCount = orders.filter(o => ['cancelled', 'rejected'].includes(o.status)).length
 
   const getStatusConfig = (status: string) => {
     return STATUS_CONFIG[status] || STATUS_CONFIG.pending
@@ -471,11 +493,7 @@ export default function ProviderOrdersPage() {
             className={filter !== 'ready' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'جاهز' : 'Ready'}
-            {readyCount > 0 && (
-              <span className="mx-1 bg-primary/20 text-primary text-xs px-1.5 rounded-full">
-                {readyCount}
-              </span>
-            )}
+            <span className="mx-1 text-xs opacity-70">({readyCount})</span>
           </Button>
           <Button
             variant={filter === 'out_for_delivery' ? 'default' : 'outline'}
@@ -493,6 +511,7 @@ export default function ProviderOrdersPage() {
             className={filter !== 'completed' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'مكتمل' : 'Completed'}
+            <span className="mx-1 text-xs opacity-70">({completedCount})</span>
           </Button>
           <Button
             variant={filter === 'cancelled' ? 'default' : 'outline'}
@@ -501,6 +520,7 @@ export default function ProviderOrdersPage() {
             className={filter !== 'cancelled' ? 'border-slate-300 text-slate-600' : ''}
           >
             {locale === 'ar' ? 'ملغي' : 'Cancelled'}
+            <span className="mx-1 text-xs opacity-70">({cancelledCount})</span>
           </Button>
         </div>
 
@@ -677,11 +697,24 @@ export default function ProviderOrdersPage() {
                         <p className="text-2xl font-bold text-primary">
                           {order.total.toFixed(2)} <span className="text-sm">{locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                         </p>
-                        <p className="text-xs text-slate-500">
-                          {order.payment_method === 'cash'
-                            ? locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'
-                            : locale === 'ar' ? 'دفع إلكتروني' : 'Online Payment'}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-slate-500">
+                            {order.payment_method === 'cash'
+                              ? locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'
+                              : locale === 'ar' ? 'دفع إلكتروني' : 'Online Payment'}
+                          </p>
+                          {order.status === 'delivered' && (
+                            <span className={`text-xs px-1.5 py-0.5 rounded ${
+                              order.payment_status === 'completed'
+                                ? 'bg-[hsl(var(--deal)/0.15)] text-deal'
+                                : 'bg-[hsl(var(--premium)/0.2)] text-amber-600'
+                            }`}>
+                              {order.payment_status === 'completed'
+                                ? (locale === 'ar' ? 'تم الدفع' : 'Paid')
+                                : (locale === 'ar' ? 'معلق' : 'Pending')}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Action Buttons */}
@@ -732,6 +765,22 @@ export default function ProviderOrdersPage() {
                                 )}
                               </>
                             )}
+                          </Button>
+                        )}
+
+                        {order.status === 'delivered' && order.payment_status === 'pending' && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleConfirmPayment(order.id)}
+                            disabled={isLoading}
+                            className="bg-deal hover:bg-deal/90"
+                          >
+                            {isLoading ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-4 h-4 me-1" />
+                            )}
+                            {locale === 'ar' ? 'تم استلام المبلغ' : 'Payment Received'}
                           </Button>
                         )}
 
