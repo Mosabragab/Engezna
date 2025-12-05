@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { useProviderOrderNotifications } from '@/hooks/customer'
 import type { User } from '@supabase/supabase-js'
 import {
   Package,
@@ -75,6 +76,16 @@ export default function ProviderDashboard() {
     totalOrders: 0,
     totalCustomers: 0,
   })
+
+  // Real-time order notifications
+  const { newOrderCount, hasNewOrder } = useProviderOrderNotifications(provider?.id || null)
+
+  // Update stats when real-time count changes
+  useEffect(() => {
+    if (newOrderCount !== stats.pendingOrders && provider) {
+      setStats(prev => ({ ...prev, pendingOrders: newOrderCount }))
+    }
+  }, [newOrderCount, provider, stats.pendingOrders])
 
   useEffect(() => {
     checkAuth()
@@ -350,15 +361,18 @@ export default function ProviderDashboard() {
 
             {/* Left Side (RTL): Actions */}
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Notifications */}
-              <button className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors">
+              {/* Notifications - Real-time order count */}
+              <Link
+                href={`/${locale}/provider/orders`}
+                className={`relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors ${hasNewOrder ? 'animate-pulse' : ''}`}
+              >
                 <Bell className="w-5 h-5" />
                 {stats.pendingOrders > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ${hasNewOrder ? 'animate-bounce' : ''}`}>
                     {stats.pendingOrders > 9 ? '9+' : stats.pendingOrders}
                   </span>
                 )}
-              </button>
+              </Link>
 
               {/* Account Dropdown */}
               <div
