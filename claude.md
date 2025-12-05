@@ -1,8 +1,8 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 4, 2025
-**Status:** Week 5 - Logo Brand Consistency Update (Session 11) ✅
-**Branch:** `claude/provider-layout-setup-01Aa9ByAaekcxRUeTJkZUSEC`
+**Last Updated:** December 5, 2025
+**Status:** Week 5 - Reviews & Ratings + Order Cancellation Complete (Session 12) ✅
+**Branch:** `claude/project-progress-review-019c9eWZ1GRxLZtNz6Bp9DD4`
 
 ---
 
@@ -363,9 +363,9 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 - ❌ Email notifications - No transactional emails (order updates, etc.)
 
 ### Customer Features Missing
-- ❌ Order cancellation - Customers cannot cancel orders
-- ❌ Reviews/Ratings - Cannot rate providers or leave reviews
-- ❌ Favorite restaurants - No favorites/wishlist feature
+- ✅ Order cancellation - Customers can cancel pending/confirmed/accepted orders ✅ (Session 12)
+- ✅ Reviews/Ratings - Customers can rate providers and leave reviews ✅ (Session 12)
+- ✅ Favorite restaurants - Favorites feature working ✅ (Session 12)
 - ❌ Promo codes - Cannot apply discount codes
 - ❌ Scheduled orders - Cannot order for later
 
@@ -407,21 +407,80 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 5. [ ] **Payment Integration (Fawry)** - Online payment support
 6. [ ] **Advanced Analytics** - Time-series charts, performance metrics
 
-### Medium Priority
-7. [ ] Customer reviews and ratings system
-8. [ ] Order cancellation flow for customers
-9. [ ] Real-time notifications (Supabase Realtime or Firebase)
-10. [ ] Email transactional notifications
+### Medium Priority (Completed ✅)
+7. [x] Customer reviews and ratings system ✅ (Session 12)
+8. [x] Order cancellation flow for customers ✅ (Session 12)
+9. [x] Favorites/wishlist feature ✅ (Session 12)
+
+### Current Priority
+10. [ ] Real-time notifications (Supabase Realtime)
+11. [ ] Email transactional notifications
+12. [ ] Promo codes system
 
 ### Lower Priority
-11. [ ] Support/Help page `/provider/support`
-12. [ ] Promo codes system
-13. [ ] Favorites/wishlist feature
+13. [ ] Support/Help page `/provider/support`
 14. [ ] Google Maps integration
 
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Dec 5, 2025 (Session 12) - Reviews & Ratings + Order Cancellation ✅
+
+#### Part 1: Order Cancellation Feature
+- ✅ **Order Cancellation for Customers**:
+  - Added cancellation button on order tracking page for cancellable orders
+  - Cancellation allowed for statuses: `pending`, `confirmed`, `accepted`
+  - Cancellation modal with reason selection (bilingual)
+  - Database update with `cancelled_at`, `cancellation_reason`, `cancelled_by`
+  - Order status timeline shows cancellation status
+
+#### Part 2: Reviews & Ratings System (Complete)
+- ✅ **Customer Review Submission** (`/orders/[id]/page.tsx`):
+  - Added Review type with full schema
+  - Added review state variables (showReviewModal, reviewRating, reviewComment, existingReview)
+  - Fetch existing review when loading order details
+  - `handleSubmitReview` function for creating/updating reviews
+  - Review Section UI for delivered orders (shows existing or prompt to add)
+  - Review Modal with star rating (1-5), comment textarea, submit/cancel buttons
+  - StarRating component with size variants (sm, md, lg) and readonly mode
+
+- ✅ **Reviews Display on Provider Page** (`/providers/[id]/page.tsx`):
+  - Added Review type with profiles join (customer names)
+  - Added reviews state and showAllReviews toggle
+  - Fetch reviews with customer profiles from Supabase
+  - Reviews Section after provider info, before category navigation
+  - Display: reviewer name, date, star rating, comment, provider response
+  - "Show all reviews" / "Show less" toggle
+
+- ✅ **Provider Reviews Management** (`/provider/reviews/page.tsx` - NEW FILE):
+  - Stats overview: Average rating, Total reviews, Response rate
+  - Rating distribution chart (1-5 stars) with clickable filters
+  - Reviews list with customer info and order reference
+  - Response modal for providers to reply to reviews
+  - Provider response updates `provider_response` and `provider_response_at`
+  - Full bilingual support (AR/EN)
+  - ~400 lines of code
+
+- ✅ **Provider Sidebar Update** (`ProviderSidebar.tsx`):
+  - Added Star icon import
+  - Added Reviews menu item linking to `/provider/reviews`
+
+#### Files Created:
+- `src/app/[locale]/provider/reviews/page.tsx` (NEW - Provider reviews management)
+
+#### Files Modified:
+- `src/app/[locale]/orders/[id]/page.tsx` (Customer review submission + order cancellation)
+- `src/app/[locale]/providers/[id]/page.tsx` (Reviews display on provider detail page)
+- `src/components/provider/ProviderSidebar.tsx` (Reviews menu item)
+
+#### Database Tables Used:
+- `reviews` table with columns:
+  - `id`, `order_id`, `customer_id`, `provider_id`
+  - `rating` (1-5), `comment`, `provider_response`, `provider_response_at`
+  - `created_at`, `updated_at`
+
+---
 
 ### Work Session Dec 4, 2025 (Session 11) - Auth, Footer, Partner & Logo Updates ✅
 
@@ -1161,16 +1220,15 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 27.0 (Auth, Footer, Partner & Logo Updates)
-**Last Updated:** December 4, 2025 (Session 11)
-**Next Review:** December 5, 2025
+**Version:** 28.0 (Reviews & Ratings + Order Cancellation)
+**Last Updated:** December 5, 2025 (Session 12)
+**Next Review:** December 6, 2025
 
-**🎉 Week 5: Session 11 Complete!**
-- ✅ Auth System: Reset password page, Provider login page, auth pages improvements
-- ✅ Footer Component: 4-column layout with customer/partner sections
-- ✅ Partner Landing Page: Hero with benefits, CTA, centered logo header
-- ✅ Logo Unification: All pages now use EngeznaLogo with Aref Ruqaa font
-- ✅ Logo sizes standardized: lg for login pages, md for sidebars/headers, sm for mobile
+**🎉 Week 5: Session 12 Complete!**
+- ✅ Order Cancellation: Customers can cancel pending/confirmed/accepted orders
+- ✅ Reviews & Ratings: Complete system for customers to rate and review providers
+- ✅ Provider Reviews Page: Dashboard for providers to view and respond to reviews
+- ✅ Favorites Feature: Customers can favorite providers
 
 **🎉 Week 5: Analytics Geographic Filtering Fixed!**
 - Fixed admin analytics showing zeros when filtering by governorate

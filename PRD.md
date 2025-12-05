@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 4.8 (Week 5 - Auth, Footer, Partner & Logo Updates)
+**Version:** 4.9 (Week 5 - Reviews & Ratings + Order Cancellation)
 **Date:** November 27, 2025
-**Last Updated:** December 4, 2025 (Session 11)
+**Last Updated:** December 5, 2025 (Session 12)
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -22,10 +22,30 @@
 ## 📊 Current Development Status
 
 **Phase:** Week 5 - Admin Backend Integration
-**Status:** Week 5 - Auth, Footer, Partner & Logo Updates ✅
+**Status:** Week 5 - Reviews & Ratings + Order Cancellation ✅
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~78% of MVP Complete
-**Last Session:** December 4, 2025 (Session 11)
+**Overall Progress:** ~82% of MVP Complete
+**Last Session:** December 5, 2025 (Session 12)
+
+### Session 12 Updates (December 5, 2025)
+
+**Order Cancellation Feature:**
+- ✅ Added cancellation button on order tracking page
+- ✅ Cancellation allowed for pending/confirmed/accepted orders
+- ✅ Cancellation modal with reason selection (bilingual)
+- ✅ Database update with cancellation details
+
+**Reviews & Ratings System (Complete):**
+- ✅ Customer review submission on order tracking page (for delivered orders)
+- ✅ Star rating (1-5) with optional comment
+- ✅ Reviews display on provider detail page with customer names
+- ✅ Provider can respond to reviews
+- ✅ Provider reviews management page (`/provider/reviews`)
+- ✅ Reviews menu item in provider sidebar
+
+**Favorites Feature:**
+- ✅ Customers can favorite/unfavorite providers
+- ✅ Favorites page (`/favorites`) showing saved providers
 
 ### Session 11 Updates (December 4, 2025)
 
@@ -206,9 +226,9 @@
 - ⚠️ **Email notifications** - No transactional emails (order updates, etc.)
 
 **Customer Features Missing:**
-- ⚠️ **Order cancellation** - Customers cannot cancel orders
-- ⚠️ **Reviews/Ratings** - Cannot rate providers or leave reviews
-- ⚠️ **Favorites** - No favorites/wishlist feature
+- ✅ **Order cancellation** - Customers can cancel pending/confirmed/accepted orders ✅ (Session 12)
+- ✅ **Reviews/Ratings** - Customers can rate providers and leave reviews ✅ (Session 12)
+- ✅ **Favorites** - Customers can favorite providers ✅ (Session 12)
 - ⚠️ **Promo codes** - Cannot apply discount codes
 - ⚠️ **Scheduled orders** - Cannot order for later
 
@@ -267,15 +287,17 @@
 4. **Payment Integration (Fawry)** - Online payment support
 5. **Advanced Analytics** - Time-series charts, performance metrics
 
-**Medium Priority:**
-6. Customer reviews and ratings system
-7. Order cancellation flow for customers
-8. Real-time notifications (Supabase Realtime or Firebase)
-9. Email transactional notifications
+**Medium Priority (Completed ✅):**
+6. ✅ Customer reviews and ratings system (Session 12)
+7. ✅ Order cancellation flow for customers (Session 12)
+8. ✅ Favorites/wishlist feature (Session 12)
+
+**Current Priority:**
+9. Real-time notifications (Supabase Realtime)
+10. Email transactional notifications
+11. Promo codes system
 
 **Lower Priority:**
-10. Promo codes system
-11. Favorites/wishlist feature
 12. Google Maps integration
 
 ---

@@ -24,6 +24,8 @@ import {
   RefreshCw,
   AlertTriangle,
   X,
+  Star,
+  MessageSquare,
 } from 'lucide-react'
 
 // Cancellation reasons
@@ -35,6 +37,42 @@ const CANCELLATION_REASONS = [
   { id: 'found_alternative', label_ar: 'وجدت بديل آخر', label_en: 'Found an alternative' },
   { id: 'other', label_ar: 'سبب آخر', label_en: 'Other reason' },
 ]
+
+// Star component for rating
+function StarRating({ rating, onRatingChange, size = 'md', readonly = false }: {
+  rating: number
+  onRatingChange?: (rating: number) => void
+  size?: 'sm' | 'md' | 'lg'
+  readonly?: boolean
+}) {
+  const sizeClasses = {
+    sm: 'w-4 h-4',
+    md: 'w-8 h-8',
+    lg: 'w-10 h-10',
+  }
+
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={readonly}
+          onClick={() => onRatingChange?.(star)}
+          className={`${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110'} transition-transform`}
+        >
+          <svg
+            className={`${sizeClasses[size]} ${star <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-300'}`}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        </button>
+      ))}
+    </div>
+  )
+}
 
 type Order = {
   id: string
@@ -102,6 +140,19 @@ type Provider = {
   logo_url: string | null
 }
 
+type Review = {
+  id: string
+  order_id: string
+  customer_id: string
+  provider_id: string
+  rating: number
+  comment: string | null
+  provider_response: string | null
+  provider_response_at: string | null
+  created_at: string
+  updated_at: string
+}
+
 const ORDER_STATUSES = [
   { key: 'pending', icon: Clock, label_ar: 'في الانتظار', label_en: 'Pending' },
   { key: 'accepted', icon: CheckCircle2, label_ar: 'تم القبول', label_en: 'Accepted' },
@@ -130,6 +181,13 @@ export default function OrderTrackingPage() {
   const [cancelReason, setCancelReason] = useState('')
   const [cancelNote, setCancelNote] = useState('')
   const [cancelling, setCancelling] = useState(false)
+
+  // Review state
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
+  const [existingReview, setExistingReview] = useState<Review | null>(null)
+  const [submittingReview, setSubmittingReview] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -187,6 +245,19 @@ export default function OrderTrackingPage() {
       setProvider(providerData)
     }
 
+    // Fetch existing review for this order
+    const { data: reviewData } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('order_id', orderId)
+      .single()
+
+    if (reviewData) {
+      setExistingReview(reviewData)
+      setReviewRating(reviewData.rating)
+      setReviewComment(reviewData.comment || '')
+    }
+
     setLoading(false)
   }
 
@@ -233,6 +304,68 @@ export default function OrderTrackingPage() {
   }
 
   const canCancelOrder = order?.status === 'pending'
+
+  // Submit review
+  const handleSubmitReview = async () => {
+    if (!reviewRating || !order || !user) return
+
+    setSubmittingReview(true)
+    const supabase = createClient()
+
+    try {
+      if (existingReview) {
+        // Update existing review
+        const { error } = await supabase
+          .from('reviews')
+          .update({
+            rating: reviewRating,
+            comment: reviewComment || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingReview.id)
+
+        if (error) {
+          console.error('Error updating review:', error)
+          alert(locale === 'ar' ? 'حدث خطأ أثناء تحديث التقييم' : 'Error updating review')
+        } else {
+          setExistingReview({
+            ...existingReview,
+            rating: reviewRating,
+            comment: reviewComment || null,
+            updated_at: new Date().toISOString(),
+          })
+          setShowReviewModal(false)
+        }
+      } else {
+        // Create new review
+        const { data, error } = await supabase
+          .from('reviews')
+          .insert({
+            order_id: order.id,
+            customer_id: user.id,
+            provider_id: order.provider_id,
+            rating: reviewRating,
+            comment: reviewComment || null,
+          })
+          .select()
+          .single()
+
+        if (error) {
+          console.error('Error submitting review:', error)
+          alert(locale === 'ar' ? 'حدث خطأ أثناء إرسال التقييم' : 'Error submitting review')
+        } else {
+          setExistingReview(data)
+          setShowReviewModal(false)
+        }
+      }
+    } catch (err) {
+      console.error('Error:', err)
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  const canReviewOrder = order?.status === 'delivered'
 
   const getStatusIndex = (status: string) => {
     if (status === 'cancelled' || status === 'rejected') return -1
@@ -591,6 +724,64 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
+        {/* Review Section - For delivered orders */}
+        {canReviewOrder && (
+          <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
+            <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-3">
+              <Star className="w-5 h-5 text-yellow-500" />
+              {locale === 'ar' ? 'تقييم الطلب' : 'Rate Your Order'}
+            </h3>
+
+            {existingReview ? (
+              // Display existing review
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <StarRating rating={existingReview.rating} readonly size="sm" />
+                  <span className="text-sm text-slate-500">
+                    ({existingReview.rating}/5)
+                  </span>
+                </div>
+                {existingReview.comment && (
+                  <p className="text-slate-600 text-sm mb-3 p-3 bg-slate-50 rounded-lg">
+                    &quot;{existingReview.comment}&quot;
+                  </p>
+                )}
+                {existingReview.provider_response && (
+                  <div className="mt-3 p-3 bg-primary/5 rounded-lg border-s-4 border-primary">
+                    <p className="text-xs text-slate-500 mb-1">
+                      {locale === 'ar' ? 'رد المتجر:' : 'Store Response:'}
+                    </p>
+                    <p className="text-sm text-slate-700">{existingReview.provider_response}</p>
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowReviewModal(true)}
+                  className="mt-3 text-primary text-sm font-medium hover:underline flex items-center gap-1"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  {locale === 'ar' ? 'تعديل التقييم' : 'Edit Review'}
+                </button>
+              </div>
+            ) : (
+              // Prompt to add review
+              <div className="text-center py-4">
+                <p className="text-slate-600 mb-3">
+                  {locale === 'ar'
+                    ? 'كيف كانت تجربتك مع هذا الطلب؟'
+                    : 'How was your experience with this order?'}
+                </p>
+                <button
+                  onClick={() => setShowReviewModal(true)}
+                  className="bg-primary text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mx-auto"
+                >
+                  <Star className="w-5 h-5" />
+                  {locale === 'ar' ? 'أضف تقييمك' : 'Add Your Review'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex gap-3 pb-4">
           <button
@@ -704,6 +895,142 @@ export default function OrderTrackingPage() {
                   <>
                     <XCircle className="w-4 h-4" />
                     {locale === 'ar' ? 'تأكيد الإلغاء' : 'Confirm Cancel'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Star className="w-5 h-5 text-yellow-500" />
+                {existingReview
+                  ? (locale === 'ar' ? 'تعديل التقييم' : 'Edit Review')
+                  : (locale === 'ar' ? 'إضافة تقييم' : 'Add Review')}
+              </h3>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4">
+              {/* Provider Info */}
+              {provider && (
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
+                  {provider.logo_url ? (
+                    <img
+                      src={provider.logo_url}
+                      alt={locale === 'ar' ? provider.name_ar : provider.name_en}
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Store className="w-6 h-6 text-primary" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-slate-900">
+                      {locale === 'ar' ? provider.name_ar : provider.name_en}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {locale === 'ar' ? 'طلب رقم:' : 'Order:'} #{order?.order_number || order?.id.slice(0, 8)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Star Rating */}
+              <div className="text-center mb-6">
+                <p className="text-slate-600 mb-3">
+                  {locale === 'ar'
+                    ? 'كيف تقيم تجربتك؟'
+                    : 'How would you rate your experience?'}
+                </p>
+                <div className="flex justify-center">
+                  <StarRating
+                    rating={reviewRating}
+                    onRatingChange={setReviewRating}
+                    size="lg"
+                  />
+                </div>
+                {reviewRating > 0 && (
+                  <p className="text-sm text-slate-500 mt-2">
+                    {reviewRating === 1 && (locale === 'ar' ? 'سيء جداً' : 'Very Poor')}
+                    {reviewRating === 2 && (locale === 'ar' ? 'سيء' : 'Poor')}
+                    {reviewRating === 3 && (locale === 'ar' ? 'جيد' : 'Good')}
+                    {reviewRating === 4 && (locale === 'ar' ? 'جيد جداً' : 'Very Good')}
+                    {reviewRating === 5 && (locale === 'ar' ? 'ممتاز' : 'Excellent')}
+                  </p>
+                )}
+              </div>
+
+              {/* Comment */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {locale === 'ar' ? 'أضف تعليقاً (اختياري)' : 'Add a comment (optional)'}
+                </label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder={
+                    locale === 'ar'
+                      ? 'شاركنا رأيك عن الطلب والخدمة...'
+                      : 'Share your thoughts about the order and service...'
+                  }
+                  className="w-full p-3 border border-slate-200 rounded-xl resize-none h-28 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  maxLength={500}
+                />
+                <p className="text-xs text-slate-400 text-end mt-1">
+                  {reviewComment.length}/500
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex gap-3 p-4 border-t">
+              <button
+                onClick={() => {
+                  setShowReviewModal(false)
+                  // Reset to existing values if editing
+                  if (existingReview) {
+                    setReviewRating(existingReview.rating)
+                    setReviewComment(existingReview.comment || '')
+                  } else {
+                    setReviewRating(0)
+                    setReviewComment('')
+                  }
+                }}
+                className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
+              >
+                {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button
+                onClick={handleSubmitReview}
+                disabled={reviewRating === 0 || submittingReview}
+                className="flex-1 bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {submittingReview ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {locale === 'ar' ? 'جاري الإرسال...' : 'Submitting...'}
+                  </>
+                ) : (
+                  <>
+                    <Star className="w-4 h-4" />
+                    {existingReview
+                      ? (locale === 'ar' ? 'تحديث التقييم' : 'Update Review')
+                      : (locale === 'ar' ? 'إرسال التقييم' : 'Submit Review')}
                   </>
                 )}
               </button>

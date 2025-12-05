@@ -13,6 +13,7 @@ import {
   Wallet,
   Tag,
   X,
+  Star,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
@@ -66,6 +67,11 @@ export function ProviderSidebar({
       icon: BarChart3,
       label: { ar: 'التقارير', en: 'Reports' },
       path: `/${locale}/provider/reports`,
+    },
+    {
+      icon: Star,
+      label: { ar: 'التقييمات', en: 'Reviews' },
+      path: `/${locale}/provider/reviews`,
     },
     {
       icon: Tag,

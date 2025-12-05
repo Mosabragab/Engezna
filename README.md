@@ -158,8 +158,9 @@ This project is in **active development** (Week 5 - Auth, Footer, Partner & Logo
 - ⚠️ **Admin backend integration** (Phase 0 complete - providers/users connected, advanced analytics pending)
 - ❌ **Online payment** (Fawry NOT integrated, only Cash on Delivery)
 - ❌ **Real-time push notifications** (no Firebase/SMS integration)
-- ❌ **Order cancellation** (customers cannot cancel orders)
-- ❌ **Reviews/Ratings** (cannot rate providers)
+- ✅ **Order cancellation** (Session 12 - customers can cancel pending/confirmed/accepted orders)
+- ✅ **Reviews/Ratings** (Session 12 - customers can rate providers and leave reviews)
+- ✅ **Favorites** (Session 12 - customers can favorite providers)
 - ❌ **Promo codes** (cannot apply discount codes)
 - ✅ **Supabase Storage bucket** (Configured and working)
 
@@ -171,7 +172,11 @@ This project is in **active development** (Week 5 - Auth, Footer, Partner & Logo
 - Complete checkout flow (`/checkout`)
 - Place order and view confirmation
 - Track orders with status timeline (`/orders/[id]`)
+- Cancel pending/confirmed/accepted orders
+- Rate and review providers after delivery
 - View order history with filters (`/orders`)
+- Favorite/unfavorite providers
+- View favorites (`/favorites`)
 - Access settings menu (`/profile`)
 - Edit account information (`/profile/account`)
 - Manage delivery addresses (`/profile/addresses`)
@@ -188,6 +193,7 @@ This project is in **active development** (Week 5 - Auth, Footer, Partner & Logo
 - Manage menu items (`/provider/products`) - Add/Edit/Delete
 - Set store hours (`/provider/store-hours`)
 - Create promotions (`/provider/promotions`)
+- View and respond to reviews (`/provider/reviews`)
 - View analytics (`/provider/reports`)
 - View earnings (`/provider/finance`)
 - Update store settings (`/provider/settings`)
@@ -352,11 +358,25 @@ npm run type-check   # TypeScript type checking
 ### 📊 Current Status
 
 **Phase:** Week 5 - Admin Backend Integration + UI Polish
-**Status:** Week 5 - Auth, Footer, Partner & Logo Updates ✅
-**Overall Progress:** ~78% of MVP Complete
-**Last Updated:** December 4, 2025 (Session 11)
+**Status:** Week 5 - Reviews & Ratings + Order Cancellation ✅
+**Overall Progress:** ~82% of MVP Complete
+**Last Updated:** December 5, 2025 (Session 12)
 
-**Session 11 Features (NEW!):**
+**Session 12 Features (NEW!):**
+- ✅ **Order Cancellation**
+  - Customers can cancel pending/confirmed/accepted orders
+  - Cancellation modal with reason selection (bilingual)
+- ✅ **Reviews & Ratings System**
+  - Customer review submission on order tracking page (delivered orders)
+  - Star rating (1-5) with optional comment
+  - Reviews display on provider detail page
+  - Provider reviews management page (`/provider/reviews`)
+  - Providers can respond to reviews
+- ✅ **Favorites Feature**
+  - Customers can favorite/unfavorite providers
+  - Favorites page (`/favorites`)
+
+**Session 11 Features:**
 - ✅ **Auth System Enhancements**
   - Created Reset Password page (`/auth/reset-password`)
   - Created dedicated Provider Login page (`/provider/login`)
@@ -474,8 +494,9 @@ npm run type-check   # TypeScript type checking
 - ⚠️ **Admin backend integration** - Phase 0 complete (providers, users), advanced analytics pending
 - ❌ **Online payment** - Fawry NOT integrated (only Cash on Delivery works)
 - ❌ **Push notifications** - No Firebase/SMS integration
-- ❌ **Order cancellation** - Customers cannot cancel orders
-- ❌ **Reviews/Ratings** - Cannot rate providers or leave reviews
+- ✅ **Order cancellation** - Customers can cancel pending/confirmed/accepted orders (Session 12)
+- ✅ **Reviews/Ratings** - Customers can rate providers and leave reviews (Session 12)
+- ✅ **Favorites** - Customers can favorite providers (Session 12)
 - ❌ **Promo codes** - Cannot apply discount codes
 - ✅ **Supabase Storage bucket** - Configured and working (logo/image uploads functional)
 - ❌ **Email notifications** - No transactional emails
