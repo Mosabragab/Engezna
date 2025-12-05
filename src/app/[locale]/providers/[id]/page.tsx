@@ -190,6 +190,7 @@ export default function ProviderDetailPage() {
         min_order_amount: provider.min_order_amount,
         estimated_delivery_time_min: provider.estimated_delivery_time_min,
         commission_rate: provider.commission_rate,
+        category: provider.category,
       })
     }
   }

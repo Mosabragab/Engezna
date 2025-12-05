@@ -24,6 +24,7 @@ export type Provider = {
   min_order_amount: number
   estimated_delivery_time_min: number
   commission_rate?: number
+  category?: string
 }
 
 export type CartItem = {
