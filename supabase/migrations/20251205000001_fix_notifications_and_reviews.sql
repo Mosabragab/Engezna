@@ -62,23 +62,53 @@ CREATE POLICY "System can insert customer notifications"
   WITH CHECK (true);
 
 -- ============================================================================
--- FUNCTION: Create admin notification for new orders
--- دالة: إنشاء إشعار للأدمن عند وصول طلب جديد
+-- FUNCTION: Create admin notification for cancelled/rejected orders
+-- دالة: إنشاء إشعار للأدمن عند إلغاء أو رفض الطلب
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION notify_admin_new_order()
+CREATE OR REPLACE FUNCTION notify_admin_order_cancelled()
 RETURNS TRIGGER AS $$
 DECLARE
   v_admin_id UUID;
   v_order_number TEXT;
   v_provider_name TEXT;
+  v_customer_name TEXT;
+  v_title TEXT;
+  v_body TEXT;
 BEGIN
+  -- Only trigger if status changed to cancelled or rejected
+  IF OLD.status = NEW.status THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.status NOT IN ('cancelled', 'rejected') THEN
+    RETURN NEW;
+  END IF;
+
   -- Get order number
   v_order_number := COALESCE(NEW.order_number, 'ORD-' || LEFT(NEW.id::text, 8));
 
   -- Get provider name
   SELECT name_ar INTO v_provider_name
   FROM providers WHERE id = NEW.provider_id;
+
+  -- Get customer name
+  SELECT full_name INTO v_customer_name
+  FROM profiles WHERE id = NEW.customer_id;
+
+  -- Set notification content based on who cancelled
+  IF NEW.status = 'cancelled' THEN
+    IF NEW.cancelled_by = 'customer' THEN
+      v_title := 'إلغاء طلب من العميل #' || v_order_number;
+      v_body := 'قام العميل ' || COALESCE(v_customer_name, 'غير معروف') || ' بإلغاء طلبه من ' || COALESCE(v_provider_name, 'متجر');
+    ELSE
+      v_title := 'إلغاء طلب #' || v_order_number;
+      v_body := 'تم إلغاء الطلب من ' || COALESCE(v_provider_name, 'متجر');
+    END IF;
+  ELSE -- rejected
+    v_title := 'رفض طلب #' || v_order_number;
+    v_body := 'قام ' || COALESCE(v_provider_name, 'المتجر') || ' برفض طلب العميل ' || COALESCE(v_customer_name, 'غير معروف');
+  END IF;
 
   -- Notify all active admins
   FOR v_admin_id IN
@@ -91,9 +121,9 @@ BEGIN
       body
     ) VALUES (
       v_admin_id,
-      'new_order',
-      'طلب جديد #' || v_order_number,
-      'تم استلام طلب جديد من ' || COALESCE(v_provider_name, 'متجر')
+      'order_' || NEW.status,
+      v_title,
+      v_body
     );
   END LOOP;
 
@@ -101,12 +131,28 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create trigger for new orders
+-- Create trigger for order cancellations (admin notifications)
 DROP TRIGGER IF EXISTS trigger_notify_admin_new_order ON orders;
-CREATE TRIGGER trigger_notify_admin_new_order
-  AFTER INSERT ON orders
+DROP TRIGGER IF EXISTS trigger_notify_admin_order_cancelled ON orders;
+CREATE TRIGGER trigger_notify_admin_order_cancelled
+  AFTER UPDATE ON orders
   FOR EACH ROW
-  EXECUTE FUNCTION notify_admin_new_order();
+  WHEN (OLD.status IS DISTINCT FROM NEW.status AND NEW.status IN ('cancelled', 'rejected'))
+  EXECUTE FUNCTION notify_admin_order_cancelled();
+
+-- ============================================================================
+-- NOTE: For "orders not completed in 2 hours" notifications
+-- ملاحظة: إشعارات الطلبات التي لم تكتمل خلال ساعتين
+-- ============================================================================
+-- This requires a scheduled function (cron job) which can be implemented using:
+-- 1. Supabase Edge Functions with pg_cron extension
+-- 2. External cron service calling an API endpoint
+--
+-- Example query to find such orders:
+-- SELECT * FROM orders
+-- WHERE status NOT IN ('delivered', 'cancelled', 'rejected')
+-- AND created_at < NOW() - INTERVAL '2 hours';
+-- ============================================================================
 
 -- ============================================================================
 -- FUNCTION: Create customer notification when order status changes

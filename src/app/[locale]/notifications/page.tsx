@@ -50,7 +50,15 @@ export default function NotificationsPage() {
     switch (type) {
       case 'order':
       case 'order_update':
+      case 'order_accepted':
+      case 'order_preparing':
+      case 'order_ready':
+      case 'order_out_for_delivery':
+      case 'order_delivered':
         return <Package className="w-5 h-5 text-primary" />
+      case 'order_cancelled':
+      case 'order_rejected':
+        return <Package className="w-5 h-5 text-red-500" />
       case 'promotion':
       case 'promo':
         return <Tag className="w-5 h-5 text-red-500" />
@@ -182,7 +190,7 @@ export default function NotificationsPage() {
                     {locale === 'ar' ? notification.title_ar : notification.title_en}
                   </h3>
                   <p className="text-sm text-slate-600 mt-1">
-                    {locale === 'ar' ? notification.message_ar : notification.message_en}
+                    {locale === 'ar' ? notification.body_ar : notification.body_en}
                   </p>
                   <span className="text-xs text-slate-400 mt-2 block">
                     {formatDate(notification.created_at)}
