@@ -291,18 +291,32 @@ export default function CheckoutPage() {
       const code = promoCodeInput.trim().toUpperCase()
       const now = new Date()
 
-      // Fetch the promo code (without date filters, we'll check in JS for better error messages)
+      console.log('Attempting to fetch promo code:', code)
+
+      // Fetch the promo code using ilike for case-insensitive match
       const { data: promoCode, error } = await supabase
         .from('promo_codes')
         .select('*')
-        .eq('code', code)
-        .single()
+        .ilike('code', code)
+        .maybeSingle()
 
-      if (error || !promoCode) {
+      console.log('Promo code fetch result:', { promoCode, error })
+
+      if (error) {
+        console.error('Supabase error:', error)
         setPromoCodeError(
           locale === 'ar'
-            ? 'كود غير صالح'
-            : 'Invalid promo code'
+            ? `خطأ في الاستعلام: ${error.message}`
+            : `Query error: ${error.message}`
+        )
+        return
+      }
+
+      if (!promoCode) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? 'كود غير موجود'
+            : 'Promo code not found'
         )
         return
       }
