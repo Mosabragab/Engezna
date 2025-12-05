@@ -70,6 +70,10 @@ export default function ProviderDashboard() {
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [pendingOrdersList, setPendingOrdersList] = useState<Array<{id: string, order_number: string, total: number, created_at: string}>>([])
+  const [unrespondedReviewsList, setUnrespondedReviewsList] = useState<Array<{id: string, rating: number, comment: string | null, created_at: string}>>([])
+  const [loadingNotifications, setLoadingNotifications] = useState(false)
   const [stats, setStats] = useState<DashboardStats>({
     todayOrders: 0,
     todayRevenue: 0,
@@ -93,6 +97,54 @@ export default function ProviderDashboard() {
   useEffect(() => {
     checkAuth()
   }, [])
+
+  // Load notifications when dropdown opens
+  useEffect(() => {
+    if (notificationsOpen && provider) {
+      loadNotifications()
+    }
+  }, [notificationsOpen, provider])
+
+  async function loadNotifications() {
+    if (!provider) return
+    setLoadingNotifications(true)
+    const supabase = createClient()
+
+    const [ordersResult, reviewsResult] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id, order_number, total, created_at')
+        .eq('provider_id', provider.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('reviews')
+        .select('id, rating, comment, created_at')
+        .eq('provider_id', provider.id)
+        .is('provider_response', null)
+        .order('created_at', { ascending: false })
+        .limit(5)
+    ])
+
+    setPendingOrdersList(ordersResult.data || [])
+    setUnrespondedReviewsList(reviewsResult.data || [])
+    setLoadingNotifications(false)
+  }
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffMins < 1) return locale === 'ar' ? 'الآن' : 'Just now'
+    if (diffMins < 60) return locale === 'ar' ? `منذ ${diffMins} دقيقة` : `${diffMins}m ago`
+    if (diffHours < 24) return locale === 'ar' ? `منذ ${diffHours} ساعة` : `${diffHours}h ago`
+    return locale === 'ar' ? `منذ ${diffDays} يوم` : `${diffDays}d ago`
+  }
 
   async function checkAuth() {
     const supabase = createClient()
@@ -376,18 +428,134 @@ export default function ProviderDashboard() {
 
             {/* Left Side (RTL): Actions */}
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Notifications - Combined orders + reviews count */}
-              <Link
-                href={`/${locale}/provider/orders`}
-                className={`relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors ${hasNewOrder ? 'animate-pulse' : ''}`}
+              {/* Notifications Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => setNotificationsOpen(true)}
+                onMouseLeave={() => setNotificationsOpen(false)}
               >
-                <Bell className="w-5 h-5" />
-                {(stats.pendingOrders + stats.unrespondedReviews) > 0 && (
-                  <span className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ${hasNewOrder ? 'animate-bounce' : ''}`}>
-                    {(stats.pendingOrders + stats.unrespondedReviews) > 9 ? '9+' : (stats.pendingOrders + stats.unrespondedReviews)}
-                  </span>
+                <button
+                  className={`relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors ${hasNewOrder ? 'animate-pulse' : ''}`}
+                >
+                  <Bell className="w-5 h-5" />
+                  {(stats.pendingOrders + stats.unrespondedReviews) > 0 && (
+                    <span className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ${hasNewOrder ? 'animate-bounce' : ''}`}>
+                      {(stats.pendingOrders + stats.unrespondedReviews) > 9 ? '9+' : (stats.pendingOrders + stats.unrespondedReviews)}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notifications Dropdown Panel */}
+                {notificationsOpen && (
+                  <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-80 sm:w-96 z-50`}>
+                    <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
+                        <h3 className="font-semibold text-slate-900">
+                          {locale === 'ar' ? 'الإشعارات' : 'Notifications'}
+                        </h3>
+                      </div>
+
+                      {/* Content */}
+                      <div className="max-h-96 overflow-y-auto">
+                        {loadingNotifications ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
+                          </div>
+                        ) : pendingOrdersList.length === 0 && unrespondedReviewsList.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Bell className="w-12 h-12 text-slate-200 mx-auto mb-2" />
+                            <p className="text-slate-500">
+                              {locale === 'ar' ? 'لا توجد إشعارات جديدة' : 'No new notifications'}
+                            </p>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Pending Orders */}
+                            {pendingOrdersList.length > 0 && (
+                              <div>
+                                <div className="px-4 py-2 bg-yellow-50 border-b border-yellow-100">
+                                  <p className="text-xs font-medium text-yellow-700 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {locale === 'ar' ? 'طلبات بانتظار القبول' : 'Orders Pending Acceptance'}
+                                  </p>
+                                </div>
+                                {pendingOrdersList.map((order) => (
+                                  <Link
+                                    key={order.id}
+                                    href={`/${locale}/provider/orders/${order.id}`}
+                                    className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 border-b border-slate-100 transition-colors"
+                                  >
+                                    <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                      <ShoppingBag className="w-5 h-5 text-yellow-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-slate-900">
+                                        {locale === 'ar' ? 'طلب جديد' : 'New Order'} #{order.order_number || order.id.slice(0, 8)}
+                                      </p>
+                                      <p className="text-xs text-slate-500">
+                                        {order.total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'} • {formatTimeAgo(order.created_at)}
+                                      </p>
+                                    </div>
+                                    <ChevronLeft className={`w-4 h-4 text-slate-400 ${isRTL ? '' : 'rotate-180'}`} />
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Unresponded Reviews */}
+                            {unrespondedReviewsList.length > 0 && (
+                              <div>
+                                <div className="px-4 py-2 bg-primary/5 border-b border-primary/10">
+                                  <p className="text-xs font-medium text-primary flex items-center gap-1">
+                                    <Star className="w-3 h-3" />
+                                    {locale === 'ar' ? 'تقييمات بانتظار الرد' : 'Reviews Awaiting Response'}
+                                  </p>
+                                </div>
+                                {unrespondedReviewsList.map((review) => (
+                                  <Link
+                                    key={review.id}
+                                    href={`/${locale}/provider/reviews`}
+                                    className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 border-b border-slate-100 transition-colors"
+                                  >
+                                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                      <Star className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1 mb-0.5">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                          <Star
+                                            key={star}
+                                            className={`w-3 h-3 ${star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200'}`}
+                                          />
+                                        ))}
+                                      </div>
+                                      <p className="text-xs text-slate-500 truncate">
+                                        {review.comment || (locale === 'ar' ? 'بدون تعليق' : 'No comment')}
+                                      </p>
+                                    </div>
+                                    <ChevronLeft className={`w-4 h-4 text-slate-400 ${isRTL ? '' : 'rotate-180'}`} />
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="px-4 py-3 bg-slate-50 border-t border-slate-200">
+                        <Link
+                          href={`/${locale}/provider/orders`}
+                          className="text-sm text-primary hover:underline font-medium"
+                        >
+                          {locale === 'ar' ? 'عرض كل الطلبات' : 'View All Orders'}
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </Link>
+              </div>
 
               {/* Account Dropdown */}
               <div

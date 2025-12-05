@@ -163,9 +163,12 @@ export function ProviderHeader({
         {/* Left Side (RTL): Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Notifications Dropdown */}
-          <div className="relative">
+          <div
+            className="relative"
+            onMouseEnter={() => setNotificationsOpen(true)}
+            onMouseLeave={() => setNotificationsOpen(false)}
+          >
             <button
-              onClick={() => setNotificationsOpen(!notificationsOpen)}
               className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
             >
               <Bell className="w-5 h-5" />
@@ -178,26 +181,13 @@ export function ProviderHeader({
 
             {/* Notifications Dropdown Panel */}
             {notificationsOpen && (
-              <>
-                {/* Backdrop */}
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setNotificationsOpen(false)}
-                />
-
-                {/* Dropdown */}
-                <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden`}>
+              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-80 sm:w-96 z-50`}>
+                <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
                     <h3 className="font-semibold text-slate-900">
                       {locale === 'ar' ? 'الإشعارات' : 'Notifications'}
                     </h3>
-                    <button
-                      onClick={() => setNotificationsOpen(false)}
-                      className="text-slate-400 hover:text-slate-600"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
                   </div>
 
                   {/* Content */}
@@ -293,14 +283,13 @@ export function ProviderHeader({
                   <div className="px-4 py-3 bg-slate-50 border-t border-slate-200">
                     <Link
                       href={`/${locale}/provider/orders`}
-                      onClick={() => setNotificationsOpen(false)}
                       className="text-sm text-primary hover:underline font-medium"
                     >
                       {locale === 'ar' ? 'عرض كل الطلبات' : 'View All Orders'}
                     </Link>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
 
