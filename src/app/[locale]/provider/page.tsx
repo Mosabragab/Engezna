@@ -28,6 +28,7 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
+  Star,
   DollarSign,
   Bell,
   User as UserIcon,
@@ -185,6 +186,11 @@ export default function ProviderDashboard() {
       icon: BarChart3,
       label: locale === 'ar' ? 'التقارير' : 'Reports',
       path: `/${locale}/provider/reports`
+    },
+    {
+      icon: Star,
+      label: locale === 'ar' ? 'التقييمات' : 'Reviews',
+      path: `/${locale}/provider/reviews`
     },
     {
       icon: Tag,
