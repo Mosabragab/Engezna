@@ -248,6 +248,25 @@ export default function ProviderOrderDetailPage() {
     setActionLoading(false)
   }
 
+  const handleConfirmPayment = async () => {
+    if (!order) return
+    setActionLoading(true)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        payment_status: 'completed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', order.id)
+
+    if (!error) {
+      await checkAuthAndLoadOrder()
+    }
+    setActionLoading(false)
+  }
+
   const getStatusIndex = (status: string) => {
     if (status === 'cancelled' || status === 'rejected') return -1
     return ORDER_STATUSES.findIndex(s => s.key === status)
@@ -656,6 +675,32 @@ export default function ProviderOrderDetailPage() {
                     : locale === 'ar' ? 'فشل' : 'Failed'}
                 </div>
               </div>
+
+              {/* Confirm Payment Button - Only for cash orders that are delivered and pending payment */}
+              {order.payment_method === 'cash' &&
+               order.status === 'delivered' &&
+               order.payment_status === 'pending' && (
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                  <Button
+                    onClick={handleConfirmPayment}
+                    disabled={actionLoading}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    size="lg"
+                  >
+                    {actionLoading ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                    )}
+                    {locale === 'ar' ? 'تأكيد استلام المبلغ' : 'Confirm Payment Received'}
+                  </Button>
+                  <p className="text-xs text-slate-500 text-center mt-2">
+                    {locale === 'ar'
+                      ? 'اضغط هنا بعد استلام المبلغ من العميل'
+                      : 'Click after receiving payment from customer'}
+                  </p>
+                </div>
+              )}
 
               {/* Provider earnings info */}
               <div className="mt-4 pt-4 border-t border-slate-200 bg-green-50 rounded-lg p-4">
