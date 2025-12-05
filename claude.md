@@ -360,7 +360,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ### Notifications
 - ✅ Real-time notifications (Supabase Realtime) - Live updates for customers and providers ✅ (Session 12)
 - ❌ SMS notifications - No Twilio/SMS provider integration
-- ❌ Email notifications - No transactional emails (order updates, etc.)
+- ⏸️ Email notifications - **مؤجل** (يتطلب خدمة بريد خارجية مثل Resend/SendGrid + API Keys)
 
 ### Customer Features Missing
 - ✅ Order cancellation - Customers can cancel pending/confirmed/accepted orders ✅ (Session 12)

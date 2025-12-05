@@ -237,7 +237,7 @@
 **Notifications:**
 - ✅ **Real-time notifications** - Supabase Realtime for live updates ✅ (Session 12)
 - ⚠️ **SMS notifications** - No Twilio/SMS provider integration
-- ⚠️ **Email notifications** - No transactional emails (order updates, etc.)
+- ⏸️ **Email notifications** - **مؤجل** (يتطلب خدمة بريد خارجية مثل Resend/SendGrid + API Keys + قوالب بريد إلكتروني)
 
 **Customer Features Missing:**
 - ✅ **Order cancellation** - Customers can cancel pending/confirmed/accepted orders ✅ (Session 12)
@@ -307,9 +307,9 @@
 8. ✅ Favorites/wishlist feature (Session 12)
 
 **Current Priority:**
-9. Real-time notifications (Supabase Realtime)
-10. Email transactional notifications
-11. Promo codes system
+9. ✅ Real-time notifications (Supabase Realtime) - COMPLETE (Session 12)
+10. ⏸️ Email transactional notifications - **مؤجل** (يتطلب خدمة خارجية)
+11. ✅ Promo codes system - COMPLETE (Session 12)
 
 **Lower Priority:**
 12. Google Maps integration
@@ -1293,23 +1293,23 @@ reviews (
 
 ### **Week 7-8 (Dec 16-29, 2025): Notifications & Customer Features** 🔄 PLANNED
 
-**Medium Priority Tasks:**
-- [ ] **Notifications System**
-  - [ ] Real-time push notifications (Firebase)
+**Medium Priority Tasks (MOSTLY COMPLETE ✅):**
+- [x] **Notifications System**
+  - [x] Real-time notifications (Supabase Realtime) ✅
   - [ ] SMS notifications (Twilio or local provider)
-  - [ ] Email transactional notifications
-- [ ] **Customer Reviews & Ratings**
-  - [ ] Rate providers after order
-  - [ ] Leave reviews
-  - [ ] Display ratings on provider cards
-- [ ] **Order Cancellation**
-  - [ ] Allow customers to cancel orders
-  - [ ] Cancellation reason selection
+  - [⏸️] Email transactional notifications - **مؤجل** (يتطلب Resend/SendGrid + API Keys)
+- [x] **Customer Reviews & Ratings** ✅
+  - [x] Rate providers after order
+  - [x] Leave reviews
+  - [x] Display ratings on provider cards
+- [x] **Order Cancellation** ✅
+  - [x] Allow customers to cancel orders
+  - [x] Cancellation reason selection
   - [ ] Refund handling
-- [ ] **Promo Codes System**
-  - [ ] Create promo codes in admin
-  - [ ] Apply discount codes at checkout
-  - [ ] Track promo code usage
+- [x] **Promo Codes System** ✅
+  - [ ] Create promo codes in admin (Admin UI needed)
+  - [x] Apply discount codes at checkout ✅
+  - [x] Track promo code usage ✅
 
 ### **Week 9-10 (Dec 30 - Jan 12, 2026): Testing & Optimization** 🔄 PLANNED
 

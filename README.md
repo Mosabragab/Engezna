@@ -168,7 +168,7 @@ This project is in **active development** (Week 5 - Complete Feature Set ✅). W
 - ✅ **Order cancellation** (Session 12 - customers can cancel pending/confirmed/accepted orders)
 - ✅ **Reviews/Ratings** (Session 12 - customers can rate providers and leave reviews)
 - ✅ **Favorites** (Session 12 - customers can favorite providers)
-- ❌ **Promo codes** (cannot apply discount codes)
+- ✅ **Promo codes** (apply discount codes at checkout) - Session 12
 - ✅ **Supabase Storage bucket** (Configured and working)
 
 **What You Can Test (Customer):**
@@ -365,8 +365,8 @@ npm run type-check   # TypeScript type checking
 ### 📊 Current Status
 
 **Phase:** Week 5 - Admin Backend Integration + UI Polish
-**Status:** Week 5 - Reviews & Ratings + Order Cancellation ✅
-**Overall Progress:** ~82% of MVP Complete
+**Status:** Week 5 - Complete Feature Set ✅
+**Overall Progress:** ~88% of MVP Complete
 **Last Updated:** December 5, 2025 (Session 12)
 
 **Session 12 Features (NEW!):**
@@ -379,6 +379,17 @@ npm run type-check   # TypeScript type checking
   - Reviews display on provider detail page
   - Provider reviews management page (`/provider/reviews`)
   - Providers can respond to reviews
+- ✅ **Real-time Notifications (Supabase Realtime)**
+  - useNotifications hook with live subscriptions
+  - useProviderOrderNotifications for provider alerts
+  - Live unread count in customer header
+  - Real-time order notifications for providers
+- ✅ **Promo Codes System**
+  - Promo code validation (validity, limits, restrictions)
+  - Promo code input UI in checkout
+  - Discount calculation and display
+  - Order creation with discount applied
+- ⏸️ **Email Notifications** - مؤجل (يتطلب Resend/SendGrid + API Keys)
 - ✅ **Favorites Feature**
   - Customers can favorite/unfavorite providers
   - Favorites page (`/favorites`)
@@ -504,9 +515,9 @@ npm run type-check   # TypeScript type checking
 - ✅ **Order cancellation** - Customers can cancel pending/confirmed/accepted orders (Session 12)
 - ✅ **Reviews/Ratings** - Customers can rate providers and leave reviews (Session 12)
 - ✅ **Favorites** - Customers can favorite providers (Session 12)
-- ❌ **Promo codes** - Cannot apply discount codes
+- ✅ **Promo codes** - Apply discount codes at checkout (Session 12)
 - ✅ **Supabase Storage bucket** - Configured and working (logo/image uploads functional)
-- ❌ **Email notifications** - No transactional emails
+- ⏸️ **Email notifications** - **مؤجل** (يتطلب خدمة بريد خارجية مثل Resend/SendGrid + API Keys)
 
 **Foundation Quality:** ✅ Excellent
 - Solid architecture with clear separation of concerns
@@ -631,12 +642,20 @@ npm run dev
 
 ### 📊 الحالة الحالية
 
-**المرحلة:** الأسبوع 5 - رحلة العميل + اللوجو المتحرك
-**الحالة:** الأسبوع 5 - إصلاح فلترة التحليلات الجغرافية ✅
-**التقدم الكلي:** ~73% من MVP مكتمل
-**آخر تحديث:** 3 ديسمبر 2025 (الجلسة 10)
+**المرحلة:** الأسبوع 5 - مجموعة الميزات الكاملة
+**الحالة:** الأسبوع 5 - مجموعة الميزات الكاملة ✅
+**التقدم الكلي:** ~88% من MVP مكتمل
+**آخر تحديث:** 5 ديسمبر 2025 (الجلسة 12)
 
-**مميزات الجلسة 10 (جديد!):**
+**مميزات الجلسة 12 (جديد!):**
+- ✅ **إلغاء الطلبات** - يمكن للعملاء إلغاء الطلبات المعلقة/المؤكدة/المقبولة
+- ✅ **التقييمات والمراجعات** - تقييم المتاجر وكتابة المراجعات
+- ✅ **الإشعارات الفورية** - Supabase Realtime للتحديثات المباشرة
+- ✅ **أكواد الخصم** - تطبيق أكواد الخصم عند الدفع
+- ✅ **المفضلة** - حفظ المتاجر المفضلة
+- ⏸️ **إشعارات البريد** - مؤجل (يتطلب Resend/SendGrid + API Keys)
+
+**مميزات الجلسة 10:**
 - ✅ **إصلاح فلترة التحليلات الجغرافية**
   - إصلاح ظهور أصفار عند اختيار المحافظة
   - إضافة فلترة احتياطية بالاسم للطلبات القديمة بدون IDs
@@ -724,11 +743,11 @@ npm run dev
 - ❌ **تكامل الخلفية للإدارة** - الواجهة مكتملة لكن غير متصلة بقاعدة البيانات
 - ❌ **الدفع الإلكتروني** - فوري غير مدمج (فقط الدفع عند الاستلام)
 - ❌ **الإشعارات الفورية** - لا يوجد تكامل Firebase/SMS
-- ❌ **إلغاء الطلبات** - لا يمكن للعملاء إلغاء الطلبات
-- ❌ **التقييمات والمراجعات** - لا يمكن تقييم المتاجر
-- ❌ **أكواد الخصم** - لا يمكن تطبيق أكواد الخصم
-- ❌ **Supabase Storage bucket** - SQL موفر لكن غير منفذ (رفع الشعارات قد يفشل)
-- ❌ **إشعارات البريد** - لا توجد رسائل بريد للمعاملات
+- ✅ **إلغاء الطلبات** - يمكن للعملاء إلغاء الطلبات المعلقة/المؤكدة/المقبولة (الجلسة 12)
+- ✅ **التقييمات والمراجعات** - يمكن تقييم المتاجر وكتابة المراجعات (الجلسة 12)
+- ✅ **أكواد الخصم** - يمكن تطبيق أكواد الخصم عند الدفع (الجلسة 12)
+- ✅ **Supabase Storage bucket** - تم التكوين ويعمل (رفع الشعارات والصور)
+- ⏸️ **إشعارات البريد** - **مؤجل** (يتطلب خدمة بريد خارجية مثل Resend/SendGrid + API Keys)
 
 **جودة الأساس:** ✅ ممتازة
 - بنية معمارية قوية مع فصل واضح للمسؤوليات
