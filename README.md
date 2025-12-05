@@ -96,7 +96,7 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 
 #### **⚠️ Important Note - Project Status**
 
-This project is in **active development** (Week 5 - Auth, Footer, Partner & Logo Updates ✅). What you'll see:
+This project is in **active development** (Week 5 - Complete Feature Set ✅). What you'll see:
 
 **Works (Customer Features):**
 - ✅ Design system, theming (light-only mode)
@@ -123,6 +123,11 @@ This project is in **active development** (Week 5 - Auth, Footer, Partner & Logo
 - ✅ **Address management** (full CRUD with cascading dropdowns)
 - ✅ **Language selection** (switch between AR/EN)
 - ✅ **Location settings** (select governorate and city)
+- ✅ **Order cancellation** (cancel pending/confirmed/accepted orders)
+- ✅ **Reviews & Ratings** (rate providers after delivery)
+- ✅ **Favorites** (save favorite providers)
+- ✅ **Real-time notifications** (Supabase Realtime subscription)
+- ✅ **Promo codes** (apply discount codes at checkout)
 
 **Works (Provider Features):**
 - ✅ **Partner Landing Page** (`/partner` - benefits, CTA, animations)
@@ -139,6 +144,8 @@ This project is in **active development** (Week 5 - Auth, Footer, Partner & Logo
 - ✅ **Provider Settings** (store info, delivery settings, status toggle)
 - ✅ **Provider Profile** (password change, language, sign out)
 - ✅ **Auto-refresh Orders** (every 60 seconds)
+- ✅ **Real-time Order Notifications** (Supabase Realtime)
+- ✅ **Reviews Management** (`/provider/reviews` - view and respond)
 
 **Works (Admin Features - Week 4):**
 - ✅ **Unified Admin Components** (AdminHeader, AdminSidebar with Engezna Blue theming)

@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 4.9 (Week 5 - Reviews & Ratings + Order Cancellation)
+**Version:** 5.0 (Week 5 - Complete Feature Set)
 **Date:** November 27, 2025
 **Last Updated:** December 5, 2025 (Session 12)
 **Project Lead:** Mosab
@@ -22,9 +22,9 @@
 ## 📊 Current Development Status
 
 **Phase:** Week 5 - Admin Backend Integration
-**Status:** Week 5 - Reviews & Ratings + Order Cancellation ✅
+**Status:** Week 5 - Complete Feature Set ✅
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~82% of MVP Complete
+**Overall Progress:** ~88% of MVP Complete
 **Last Session:** December 5, 2025 (Session 12)
 
 ### Session 12 Updates (December 5, 2025)
@@ -46,6 +46,20 @@
 **Favorites Feature:**
 - ✅ Customers can favorite/unfavorite providers
 - ✅ Favorites page (`/favorites`) showing saved providers
+
+**Real-time Notifications (Supabase Realtime):**
+- ✅ useNotifications hook with real-time subscriptions
+- ✅ useProviderOrderNotifications hook for provider order alerts
+- ✅ Live unread count in customer header
+- ✅ Real-time order notifications for providers
+- ✅ Notifications page refactored to use hooks
+
+**Promo Codes System:**
+- ✅ Promo code validation (validity, limits, restrictions)
+- ✅ Promo code input UI in checkout
+- ✅ Discount calculation and display
+- ✅ Promo code usage tracking
+- ✅ Order creation with discount applied
 
 ### Session 11 Updates (December 4, 2025)
 
@@ -221,7 +235,7 @@
 - ⚠️ Vodafone Cash - NOT available
 
 **Notifications:**
-- ⚠️ **Real-time push notifications** - No Firebase integration
+- ✅ **Real-time notifications** - Supabase Realtime for live updates ✅ (Session 12)
 - ⚠️ **SMS notifications** - No Twilio/SMS provider integration
 - ⚠️ **Email notifications** - No transactional emails (order updates, etc.)
 
@@ -229,11 +243,11 @@
 - ✅ **Order cancellation** - Customers can cancel pending/confirmed/accepted orders ✅ (Session 12)
 - ✅ **Reviews/Ratings** - Customers can rate providers and leave reviews ✅ (Session 12)
 - ✅ **Favorites** - Customers can favorite providers ✅ (Session 12)
-- ⚠️ **Promo codes** - Cannot apply discount codes
+- ✅ **Promo codes** - Full promo code system in checkout ✅ (Session 12)
 - ⚠️ **Scheduled orders** - Cannot order for later
 
 **Provider Features Missing:**
-- ⚠️ **Real-time order notifications** - Only auto-refresh every 60s, no push
+- ✅ **Real-time order notifications** - Supabase Realtime subscription ✅ (Session 12)
 - ⚠️ **Multi-user support** - No staff accounts for providers
 - ⚠️ **Inventory management** - No stock tracking
 

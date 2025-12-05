@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** December 5, 2025
-**Status:** Week 5 - Reviews & Ratings + Order Cancellation Complete (Session 12) ✅
+**Status:** Week 5 - Complete Feature Set (Session 12) ✅
 **Branch:** `claude/project-progress-review-019c9eWZ1GRxLZtNz6Bp9DD4`
 
 ---
@@ -44,8 +44,8 @@
 - **Name:** Engezna (إنجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
-- **Status:** Week 5 Complete - Auth, Footer, Partner & Logo Updates ✅
-- **Progress:** ~78% of MVP Complete
+- **Status:** Week 5 Complete - Full Feature Set ✅
+- **Progress:** ~88% of MVP Complete
 - **Live URL:** https://engezna.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
@@ -358,7 +358,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 - ❌ Vodafone Cash - NOT available
 
 ### Notifications
-- ❌ Real-time push notifications - No Firebase integration
+- ✅ Real-time notifications (Supabase Realtime) - Live updates for customers and providers ✅ (Session 12)
 - ❌ SMS notifications - No Twilio/SMS provider integration
 - ❌ Email notifications - No transactional emails (order updates, etc.)
 
@@ -366,11 +366,11 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 - ✅ Order cancellation - Customers can cancel pending/confirmed/accepted orders ✅ (Session 12)
 - ✅ Reviews/Ratings - Customers can rate providers and leave reviews ✅ (Session 12)
 - ✅ Favorite restaurants - Favorites feature working ✅ (Session 12)
-- ❌ Promo codes - Cannot apply discount codes
+- ✅ Promo codes - Full promo code system in checkout ✅ (Session 12)
 - ❌ Scheduled orders - Cannot order for later
 
 ### Provider Features Missing
-- ❌ Real-time order notifications - Only auto-refresh every 60s, no push
+- ✅ Real-time order notifications - Supabase Realtime subscription ✅ (Session 12)
 - ❌ Multi-user support - No staff accounts for providers
 - ❌ Inventory management - No stock tracking
 
@@ -402,10 +402,15 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 2. [x] **Supabase Storage** - Bucket configured, uploads working ✅
 3. [x] **UI/UX Improvements** - Auth pages, Footer, Partner page, Logo unification ✅
 4. [x] **Analytics Geographic Filtering** - Fixed filtering issues ✅
+5. [x] **Order Cancellation** - Customers can cancel orders ✅ (Session 12)
+6. [x] **Reviews & Ratings** - Complete review system ✅ (Session 12)
+7. [x] **Favorites** - Customers can favorite providers ✅ (Session 12)
+8. [x] **Real-time Notifications** - Supabase Realtime subscriptions ✅ (Session 12)
+9. [x] **Promo Codes** - Full promo system in checkout ✅ (Session 12)
 
 ### High Priority (Current)
-5. [ ] **Payment Integration (Fawry)** - Online payment support
-6. [ ] **Advanced Analytics** - Time-series charts, performance metrics
+10. [ ] **Payment Integration (Fawry)** - Online payment support
+11. [ ] **Advanced Analytics** - Time-series charts, performance metrics
 
 ### Medium Priority (Completed ✅)
 7. [x] Customer reviews and ratings system ✅ (Session 12)
@@ -425,7 +430,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 
 ## 🐛 Recent Fixes
 
-### Work Session Dec 5, 2025 (Session 12) - Reviews & Ratings + Order Cancellation ✅
+### Work Session Dec 5, 2025 (Session 12) - Complete Feature Set ✅
 
 #### Part 1: Order Cancellation Feature
 - ✅ **Order Cancellation for Customers**:
@@ -479,6 +484,60 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
   - `id`, `order_id`, `customer_id`, `provider_id`
   - `rating` (1-5), `comment`, `provider_response`, `provider_response_at`
   - `created_at`, `updated_at`
+
+#### Part 3: Real-time Notifications (Supabase Realtime)
+- ✅ **useNotifications Hook** (`src/hooks/customer/useNotifications.ts`):
+  - Subscribes to notifications table via Supabase Realtime
+  - Real-time INSERT, UPDATE, DELETE listeners
+  - markAsRead, markAllAsRead, deleteNotification functions
+  - Unread count tracking
+
+- ✅ **useProviderOrderNotifications Hook**:
+  - Real-time pending order count for providers
+  - Subscribes to orders table changes
+  - hasNewOrder flag for animation triggers
+
+- ✅ **CustomerHeader Updates**:
+  - Bell icon shows live unread count with pulse animation
+  - Uses useNotifications hook for real-time updates
+
+- ✅ **Provider Dashboard Updates**:
+  - Bell icon links to orders page
+  - Animated when new orders arrive
+  - Real-time pending order count
+
+- ✅ **Notifications Page Refactor**:
+  - Uses useNotifications hook instead of local state
+  - Real-time updates without manual refresh
+
+#### Part 4: Promo Codes System
+- ✅ **Promo Code Validation** (checkout page):
+  - Code validity checks (active, date range)
+  - Minimum order amount validation
+  - Usage limits (total and per-user)
+  - First order only restriction
+  - Category/provider restrictions
+
+- ✅ **Promo Code UI**:
+  - Input field in order summary
+  - Applied code display with discount info
+  - Remove code button
+  - Error messages for invalid codes
+
+- ✅ **Order Creation with Promo**:
+  - Discount amount calculated and applied
+  - Promo code recorded in order
+  - Promo code usage tracked in promo_code_usage table
+  - Usage count incremented
+
+#### Additional Files Modified (Parts 3-4):
+- `src/hooks/customer/useNotifications.ts` (NEW)
+- `src/hooks/customer/index.ts`
+- `src/components/customer/layout/CustomerHeader.tsx`
+- `src/app/[locale]/provider/page.tsx`
+- `src/app/[locale]/notifications/page.tsx`
+- `src/app/[locale]/checkout/page.tsx`
+- `src/lib/store/cart.ts`
 
 ---
 
@@ -1220,7 +1279,7 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 28.0 (Reviews & Ratings + Order Cancellation)
+**Version:** 29.0 (Complete Feature Set - Session 12)
 **Last Updated:** December 5, 2025 (Session 12)
 **Next Review:** December 6, 2025
 
@@ -1229,6 +1288,8 @@ The Supabase Storage bucket is now configured:
 - ✅ Reviews & Ratings: Complete system for customers to rate and review providers
 - ✅ Provider Reviews Page: Dashboard for providers to view and respond to reviews
 - ✅ Favorites Feature: Customers can favorite providers
+- ✅ Real-time Notifications: Supabase Realtime for live updates
+- ✅ Promo Codes: Full promo system with validation and checkout integration
 
 **🎉 Week 5: Analytics Geographic Filtering Fixed!**
 - Fixed admin analytics showing zeros when filtering by governorate
