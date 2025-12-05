@@ -95,7 +95,7 @@ export default function CheckoutPage() {
   const locale = useLocale()
   const router = useRouter()
   const { user, isAuthenticated, loading: authLoading } = useAuth()
-  const { cart, provider, getSubtotal, getTotal, clearCart } = useCart()
+  const { cart, provider, getSubtotal, getTotal, clearCart, _hasHydrated } = useCart()
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -281,7 +281,36 @@ export default function CheckoutPage() {
 
   // Promo code validation
   const handleApplyPromoCode = async () => {
-    if (!promoCodeInput.trim() || !user || !provider) return
+    // Debug logging for mobile troubleshooting
+    console.log('handleApplyPromoCode called', {
+      promoCodeInput,
+      hasUser: !!user,
+      hasProvider: !!provider,
+      hasHydrated: _hasHydrated,
+      userId: user?.id,
+      providerId: provider?.id
+    })
+
+    if (!promoCodeInput.trim()) {
+      setPromoCodeError(locale === 'ar' ? 'يرجى إدخال كود الخصم' : 'Please enter a promo code')
+      return
+    }
+
+    // Wait for hydration if not ready yet
+    if (!_hasHydrated) {
+      setPromoCodeError(locale === 'ar' ? 'جاري تحميل البيانات...' : 'Loading data...')
+      return
+    }
+
+    if (!user) {
+      setPromoCodeError(locale === 'ar' ? 'يرجى تسجيل الدخول أولاً' : 'Please login first')
+      return
+    }
+
+    if (!provider) {
+      setPromoCodeError(locale === 'ar' ? 'يرجى إضافة منتجات للسلة أولاً' : 'Please add items to cart first')
+      return
+    }
 
     setPromoCodeLoading(true)
     setPromoCodeError(null)
@@ -291,7 +320,7 @@ export default function CheckoutPage() {
       const code = promoCodeInput.trim().toUpperCase()
       const now = new Date()
 
-      console.log('Attempting to fetch promo code:', code)
+      console.log('Attempting to fetch promo code:', code, 'at', now.toISOString())
 
       // Fetch the promo code using ilike for case-insensitive match
       const { data: promoCode, error } = await supabase
@@ -670,7 +699,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (authLoading || !cart || cart.length === 0) {
+  if (authLoading || !_hasHydrated || !cart || cart.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
