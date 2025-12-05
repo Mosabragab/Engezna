@@ -338,6 +338,14 @@ export default function OrderTrackingPage() {
         }
       } else {
         // Create new review
+        console.log('Submitting review:', {
+          order_id: order.id,
+          customer_id: user.id,
+          provider_id: order.provider_id,
+          rating: reviewRating,
+          order_status: order.status
+        })
+
         const { data, error } = await supabase
           .from('reviews')
           .insert({
@@ -352,7 +360,11 @@ export default function OrderTrackingPage() {
 
         if (error) {
           console.error('Error submitting review:', error)
-          alert(locale === 'ar' ? 'حدث خطأ أثناء إرسال التقييم' : 'Error submitting review')
+          // Show more detailed error for debugging
+          const errorMsg = locale === 'ar'
+            ? `حدث خطأ أثناء إرسال التقييم: ${error.message || error.code || 'خطأ غير معروف'}`
+            : `Error submitting review: ${error.message || error.code || 'Unknown error'}`
+          alert(errorMsg)
         } else {
           setExistingReview(data)
           setShowReviewModal(false)

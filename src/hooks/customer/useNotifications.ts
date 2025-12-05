@@ -6,15 +6,14 @@ import type { User, RealtimeChannel } from '@supabase/supabase-js'
 
 interface Notification {
   id: string
-  user_id: string
-  type: 'order_update' | 'promo' | 'system' | 'chat'
+  customer_id: string
+  type: string // 'order_accepted', 'order_preparing', 'order_ready', 'order_delivered', 'order_cancelled', 'promo', 'system'
   title_ar: string
   title_en: string
-  message_ar: string
-  message_en: string
-  order_id: string | null
-  provider_id: string | null
-  action_url: string | null
+  body_ar: string | null
+  body_en: string | null
+  related_order_id: string | null
+  related_provider_id: string | null
   is_read: boolean
   read_at: string | null
   created_at: string
@@ -33,9 +32,9 @@ export function useNotifications() {
 
     try {
       const { data, error } = await supabase
-        .from('notifications')
+        .from('customer_notifications')
         .select('*')
-        .eq('user_id', userId)
+        .eq('customer_id', userId)
         .order('created_at', { ascending: false })
         .limit(50)
 
@@ -62,14 +61,14 @@ export function useNotifications() {
 
     // Create new subscription
     const newChannel = supabase
-      .channel(`notifications:${userId}`)
+      .channel(`customer_notifications:${userId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
+          table: 'customer_notifications',
+          filter: `customer_id=eq.${userId}`,
         },
         (payload) => {
           const newNotification = payload.new as Notification
@@ -91,8 +90,8 @@ export function useNotifications() {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
+          table: 'customer_notifications',
+          filter: `customer_id=eq.${userId}`,
         },
         (payload) => {
           const updatedNotification = payload.new as Notification
@@ -113,8 +112,8 @@ export function useNotifications() {
         {
           event: 'DELETE',
           schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
+          table: 'customer_notifications',
+          filter: `customer_id=eq.${userId}`,
         },
         (payload) => {
           const deletedId = (payload.old as { id: string }).id
@@ -169,10 +168,10 @@ export function useNotifications() {
 
     try {
       await supabase
-        .from('notifications')
+        .from('customer_notifications')
         .update({ is_read: true, read_at: new Date().toISOString() })
         .eq('id', notificationId)
-        .eq('user_id', user.id)
+        .eq('customer_id', user.id)
 
       setNotifications(prev =>
         prev.map(n =>
@@ -193,9 +192,9 @@ export function useNotifications() {
 
     try {
       await supabase
-        .from('notifications')
+        .from('customer_notifications')
         .update({ is_read: true, read_at: new Date().toISOString() })
-        .eq('user_id', user.id)
+        .eq('customer_id', user.id)
         .eq('is_read', false)
 
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() })))
@@ -215,10 +214,10 @@ export function useNotifications() {
       const notification = notifications.find(n => n.id === notificationId)
 
       await supabase
-        .from('notifications')
+        .from('customer_notifications')
         .delete()
         .eq('id', notificationId)
-        .eq('user_id', user.id)
+        .eq('customer_id', user.id)
 
       setNotifications(prev => prev.filter(n => n.id !== notificationId))
       if (notification && !notification.is_read) {
