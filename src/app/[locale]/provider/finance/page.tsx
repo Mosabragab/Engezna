@@ -604,14 +604,14 @@ export default function FinancePage() {
                     <div className="text-end">
                       <p className={`font-bold ${
                         txn.status === 'completed' ? 'text-deal' :
-                        txn.status === 'pending' ? 'text-premium' :
+                        txn.status === 'pending' ? 'text-amber-600' :
                         'text-error'
                       }`}>
                         +{formatCurrency(txn.amount)}
                       </p>
                       <p className={`text-xs ${
                         txn.status === 'completed' ? 'text-deal' :
-                        txn.status === 'pending' ? 'text-premium' :
+                        txn.status === 'pending' ? 'text-amber-600' :
                         'text-error'
                       }`}>
                         {txn.status === 'completed'
