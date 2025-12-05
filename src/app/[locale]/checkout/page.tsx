@@ -289,23 +289,52 @@ export default function CheckoutPage() {
     try {
       const supabase = createClient()
       const code = promoCodeInput.trim().toUpperCase()
-      const now = new Date().toISOString()
+      const now = new Date()
 
-      // Fetch the promo code
+      // Fetch the promo code (without date filters, we'll check in JS for better error messages)
       const { data: promoCode, error } = await supabase
         .from('promo_codes')
         .select('*')
         .eq('code', code)
-        .eq('is_active', true)
-        .lte('valid_from', now)
-        .gte('valid_until', now)
         .single()
 
       if (error || !promoCode) {
         setPromoCodeError(
           locale === 'ar'
-            ? 'كود الخصم غير صالح أو منتهي الصلاحية'
-            : 'Invalid or expired promo code'
+            ? 'كود غير صالح'
+            : 'Invalid promo code'
+        )
+        return
+      }
+
+      // Check if active
+      if (!promoCode.is_active) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? 'هذا الكود غير مفعل'
+            : 'This promo code is not active'
+        )
+        return
+      }
+
+      // Check date validity
+      const validFrom = new Date(promoCode.valid_from)
+      const validUntil = new Date(promoCode.valid_until)
+
+      if (now < validFrom) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? 'هذا الكود لم يبدأ بعد'
+            : 'This promo code is not valid yet'
+        )
+        return
+      }
+
+      if (now > validUntil) {
+        setPromoCodeError(
+          locale === 'ar'
+            ? 'انتهت صلاحية هذا الكود'
+            : 'This promo code has expired'
         )
         return
       }
