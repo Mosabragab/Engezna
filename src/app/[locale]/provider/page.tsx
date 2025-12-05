@@ -181,7 +181,7 @@ export default function ProviderDashboard() {
     ] = await Promise.all([
       supabase
         .from('orders')
-        .select('id, total, status')
+        .select('id, total, status, payment_status')
         .eq('provider_id', providerId)
         .gte('created_at', today.toISOString()),
       supabase
@@ -206,11 +206,12 @@ export default function ProviderDashboard() {
     ])
 
     const uniqueCustomers = new Set(allOrdersData?.map(o => o.customer_id) || [])
-    const deliveredOrders = todayOrdersData?.filter(o => o.status === 'delivered') || []
+    // Only count confirmed payments for today's revenue
+    const confirmedOrders = todayOrdersData?.filter(o => o.status === 'delivered' && o.payment_status === 'completed') || []
 
     setStats({
       todayOrders: todayOrdersData?.length || 0,
-      todayRevenue: deliveredOrders.reduce((sum, o) => sum + (o.total || 0), 0),
+      todayRevenue: confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0),
       pendingOrders: pendingData?.length || 0,
       activeProducts: productsData?.length || 0,
       totalOrders: allOrdersData?.length || 0,
