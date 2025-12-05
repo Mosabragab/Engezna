@@ -112,8 +112,6 @@ export function ProviderHeader({
     setLoadingNotifications(false)
   }
 
-  const totalNotifications = pendingOrders + unrespondedReviews.length
-
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
