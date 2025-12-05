@@ -22,7 +22,19 @@ import {
   Store,
   XCircle,
   RefreshCw,
+  AlertTriangle,
+  X,
 } from 'lucide-react'
+
+// Cancellation reasons
+const CANCELLATION_REASONS = [
+  { id: 'changed_mind', label_ar: 'غيرت رأيي', label_en: 'Changed my mind' },
+  { id: 'wrong_order', label_ar: 'طلب خاطئ', label_en: 'Wrong order' },
+  { id: 'duplicate_order', label_ar: 'طلب مكرر', label_en: 'Duplicate order' },
+  { id: 'long_wait', label_ar: 'وقت انتظار طويل', label_en: 'Long wait time' },
+  { id: 'found_alternative', label_ar: 'وجدت بديل آخر', label_en: 'Found an alternative' },
+  { id: 'other', label_ar: 'سبب آخر', label_en: 'Other reason' },
+]
 
 type Order = {
   id: string
@@ -113,6 +125,12 @@ export default function OrderTrackingPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
+  // Cancellation state
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelNote, setCancelNote] = useState('')
+  const [cancelling, setCancelling] = useState(false)
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.push(`/${locale}/auth/login?redirect=/orders/${orderId}`)
@@ -177,6 +195,44 @@ export default function OrderTrackingPage() {
     await loadOrderDetails()
     setRefreshing(false)
   }
+
+  const handleCancelOrder = async () => {
+    if (!cancelReason || !order) return
+
+    setCancelling(true)
+    const supabase = createClient()
+
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          status: 'cancelled',
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: cancelReason,
+          cancellation_note: cancelNote || null,
+          cancelled_by: 'customer',
+        })
+        .eq('id', order.id)
+        .eq('status', 'pending') // Only allow cancellation if still pending
+
+      if (error) {
+        console.error('Error cancelling order:', error)
+        alert(locale === 'ar' ? 'حدث خطأ أثناء إلغاء الطلب' : 'Error cancelling order')
+      } else {
+        // Update local state
+        setOrder({ ...order, status: 'cancelled', cancelled_at: new Date().toISOString() })
+        setShowCancelModal(false)
+        setCancelReason('')
+        setCancelNote('')
+      }
+    } catch (err) {
+      console.error('Error:', err)
+    } finally {
+      setCancelling(false)
+    }
+  }
+
+  const canCancelOrder = order?.status === 'pending'
 
   const getStatusIndex = (status: string) => {
     if (status === 'cancelled' || status === 'rejected') return -1
@@ -517,6 +573,24 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
+        {/* Cancel Order Button - Only show for pending orders */}
+        {canCancelOrder && (
+          <div className="mb-4">
+            <button
+              onClick={() => setShowCancelModal(true)}
+              className="w-full bg-red-50 border border-red-200 text-red-600 py-3 rounded-xl font-semibold hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+            >
+              <XCircle className="w-5 h-5" />
+              {locale === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
+            </button>
+            <p className="text-xs text-slate-500 text-center mt-2">
+              {locale === 'ar'
+                ? 'يمكنك إلغاء الطلب فقط قبل قبوله من المتجر'
+                : 'You can only cancel before the store accepts the order'}
+            </p>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex gap-3 pb-4">
           <button
@@ -534,6 +608,109 @@ export default function OrderTrackingPage() {
           </button>
         </div>
       </div>
+
+      {/* Cancel Order Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                {locale === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
+              </h3>
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4">
+              <p className="text-slate-600 mb-4">
+                {locale === 'ar'
+                  ? 'هل أنت متأكد من إلغاء هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.'
+                  : 'Are you sure you want to cancel this order? This action cannot be undone.'}
+              </p>
+
+              {/* Cancellation Reasons */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {locale === 'ar' ? 'سبب الإلغاء *' : 'Cancellation Reason *'}
+                </label>
+                <div className="space-y-2">
+                  {CANCELLATION_REASONS.map((reason) => (
+                    <label
+                      key={reason.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                        cancelReason === reason.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="cancelReason"
+                        value={reason.id}
+                        checked={cancelReason === reason.id}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        className="w-4 h-4 text-primary"
+                      />
+                      <span className="text-slate-700">
+                        {locale === 'ar' ? reason.label_ar : reason.label_en}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Additional Note */}
+              {cancelReason === 'other' && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {locale === 'ar' ? 'ملاحظات إضافية' : 'Additional Notes'}
+                  </label>
+                  <textarea
+                    value={cancelNote}
+                    onChange={(e) => setCancelNote(e.target.value)}
+                    placeholder={locale === 'ar' ? 'اكتب سبب الإلغاء...' : 'Write your reason...'}
+                    className="w-full p-3 border border-slate-200 rounded-xl resize-none h-24 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex gap-3 p-4 border-t">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
+              >
+                {locale === 'ar' ? 'تراجع' : 'Go Back'}
+              </button>
+              <button
+                onClick={handleCancelOrder}
+                disabled={!cancelReason || cancelling}
+                className="flex-1 bg-red-500 text-white py-3 rounded-xl font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {cancelling ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {locale === 'ar' ? 'جاري الإلغاء...' : 'Cancelling...'}
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4" />
+                    {locale === 'ar' ? 'تأكيد الإلغاء' : 'Confirm Cancel'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </CustomerLayout>
   )
 }
