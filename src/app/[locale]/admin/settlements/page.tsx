@@ -244,12 +244,14 @@ export default function AdminSettlementsPage() {
       const COMMISSION_RATE = 0.06 // 6%
 
       for (const provider of activeProviders) {
-        // Get delivered orders for this provider in the period
+        // Get delivered orders WITH confirmed payment for this provider in the period
+        // This ensures COD orders are only included after provider confirms receiving cash
         const { data: orders } = await supabase
           .from('orders')
           .select('id, total')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
+          .eq('payment_status', 'completed')  // Only orders with confirmed payment
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString())
 
@@ -300,12 +302,14 @@ export default function AdminSettlementsPage() {
       const supabase = createClient()
       const COMMISSION_RATE = 0.06 // 6%
 
-      // Get delivered orders for this provider in the period
+      // Get delivered orders WITH confirmed payment for this provider in the period
+      // This ensures COD orders are only included after provider confirms receiving cash
       const { data: orders } = await supabase
         .from('orders')
         .select('id, total')
         .eq('provider_id', generateForm.providerId)
         .eq('status', 'delivered')
+        .eq('payment_status', 'completed')  // Only orders with confirmed payment
         .gte('created_at', generateForm.periodStart)
         .lte('created_at', generateForm.periodEnd + 'T23:59:59')
 
