@@ -196,7 +196,7 @@ export default function CartPage() {
         </div>
 
         {/* Order Summary */}
-        <div className="bg-white rounded-xl border border-slate-100 p-4 mb-6">
+        <div className="bg-white rounded-xl border border-slate-100 p-4 pb-28">
           <h4 className="font-semibold text-slate-900 mb-4">{t('summary')}</h4>
 
           <div className="space-y-3">
@@ -231,8 +231,8 @@ export default function CartPage() {
       </div>
 
       {/* Fixed Checkout Button - positioned above bottom nav */}
-      <div className="fixed bottom-20 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-slate-100 z-40">
-        <div className="px-4 py-2.5">
+      <div className="fixed bottom-20 left-0 right-0 bg-white border-t border-slate-200 z-40">
+        <div className="px-4 py-3">
           {provider && provider.min_order_amount > subtotal && (
             <div className="bg-amber-50 text-amber-700 text-xs rounded-lg px-3 py-1.5 mb-2 text-center">
               {locale === 'ar'
