@@ -118,16 +118,17 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             {rightAction && rightAction}
 
             {/* Cart - Hidden on mobile (bottom nav has cart) */}
-            <Link href={`/${locale}/cart`} className="hidden md:block">
-              <Button variant="ghost" size="icon" className="h-9 w-9 relative">
-                <ShoppingCart className="h-5 w-5 text-slate-600" />
-                {cartItemCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-primary text-white text-[10px] font-bold rounded-full px-1">
-                    {cartItemCount > 9 ? '9+' : cartItemCount}
-                  </span>
-                )}
-              </Button>
-            </Link>
+            <button
+              onClick={() => router.push(`/${locale}/cart`)}
+              className="hidden md:flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors relative"
+            >
+              <ShoppingCart className="h-5 w-5 text-slate-600" />
+              {cartItemCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-primary text-white text-[10px] font-bold rounded-full px-1">
+                  {cartItemCount > 9 ? '9+' : cartItemCount}
+                </span>
+              )}
+            </button>
 
             {/* Notifications - Real-time updates */}
             <Link href={`/${locale}/notifications`}>

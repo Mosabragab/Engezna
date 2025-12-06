@@ -100,6 +100,7 @@ export default function CheckoutPage() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [orderPlaced, setOrderPlaced] = useState(false) // Prevent redirect after order is placed
 
   // User information
   const [fullName, setFullName] = useState('')
@@ -139,6 +140,9 @@ export default function CheckoutPage() {
   const [deliveryInstructions, setDeliveryInstructions] = useState('')
 
   useEffect(() => {
+    // Don't redirect if order was just placed (cart cleared after success)
+    if (orderPlaced) return
+
     // Redirect if cart is empty
     if (!cart || cart.length === 0) {
       router.push(`/${locale}/providers`)
@@ -690,7 +694,10 @@ export default function CheckoutPage() {
         throw itemsError
       }
 
-      // Clear cart and redirect
+      // Mark order as placed to prevent useEffect from redirecting
+      setOrderPlaced(true)
+
+      // Clear cart and redirect to confirmation page
       clearCart()
       router.push(`/${locale}/orders/${order.id}/confirmation`)
     } catch (err) {
@@ -705,7 +712,18 @@ export default function CheckoutPage() {
     }
   }
 
-  if (authLoading || !_hasHydrated || !cart || cart.length === 0) {
+  // Show loading while auth is loading or cart is hydrating
+  // Also show loading if order was placed (navigating to confirmation)
+  if (authLoading || !_hasHydrated || orderPlaced) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  // Cart empty check is handled by useEffect redirect
+  if (!cart || cart.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
