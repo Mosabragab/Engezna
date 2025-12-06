@@ -148,6 +148,7 @@ This project is in **active development** (Week 5 - Complete Feature Set ✅). W
 - ✅ **Auto-refresh Orders** (every 60 seconds)
 - ✅ **Real-time Order Notifications** (Supabase Realtime)
 - ✅ **Reviews Management** (`/provider/reviews` - view and respond)
+- ✅ **Settlements Page** (`/provider/settlements` - view dues and payment history)
 
 **Works (Admin Features - Week 4):**
 - ✅ **Unified Admin Components** (AdminHeader, AdminSidebar with Engezna Blue theming)
@@ -162,6 +163,7 @@ This project is in **active development** (Week 5 - Complete Feature Set ✅). W
 - ✅ **Internal Messages** (inbox/sent, compose, broadcast, read tracking)
 - ✅ **Announcements** (team notifications with types: urgent, important, info)
 - ✅ **Locale-aware number formatting** (Arabic-Indic numerals ٠-٩ in Arabic)
+- ✅ **Settlements Management** (`/admin/settlements` - generate, record payments, track dues)
 
 **Doesn't Work Yet:**
 - ⚠️ **Admin backend integration** (Phase 0 complete - providers/users connected, advanced analytics pending)
@@ -369,9 +371,30 @@ npm run type-check   # TypeScript type checking
 **Phase:** Week 5 - Admin Backend Integration + UI Polish
 **Status:** Week 5 - Complete Feature Set ✅
 **Overall Progress:** ~88% of MVP Complete
-**Last Updated:** December 5, 2025 (Session 12)
+**Last Updated:** December 7, 2025 (Session 15)
 
-**Session 12 Features (NEW!):**
+**Session 15 Features (NEW!):**
+- ✅ **Settlements System (Complete)**
+  - Admin settlements page (`/admin/settlements`) with stats, generation, and payment recording
+  - Provider settlements page (`/provider/settlements`) with history and dues overview
+  - Settlement generation with period selector (daily, every 3 days, weekly)
+  - **CRITICAL**: Only includes orders with BOTH `status='delivered'` AND `payment_status='completed'`
+  - 6% platform commission rate applied
+  - Payment methods: cash, bank_transfer, instapay, vodafone_cash
+- ✅ **Voice to Chat Transition**
+  - Converted voice ordering to text chat ("دردش واطلب" / "Chat & Order")
+  - ChatFAB replaces VoiceOrderFAB (message icon instead of microphone)
+  - TextChat component for text-based AI ordering
+  - Removed Deepgram, kept OpenAI for smart processing
+- ✅ **Dynamic Footer & Expansion Analytics**
+  - Footer dynamically fetches active governorates from database
+  - Added Expansion Analytics tab to Admin Locations page (Super Admin only)
+  - Governorate ranking with expansion readiness score (0-100%)
+- ✅ **Governorate Selection at Registration**
+  - New users must select governorate during signup
+  - Migration to update existing users with default governorate
+
+**Session 12 Features:**
 - ✅ **Order Cancellation**
   - Customers can cancel pending/confirmed/accepted orders
   - Cancellation modal with reason selection (bilingual)
@@ -647,9 +670,19 @@ npm run dev
 **المرحلة:** الأسبوع 5 - مجموعة الميزات الكاملة
 **الحالة:** الأسبوع 5 - مجموعة الميزات الكاملة ✅
 **التقدم الكلي:** ~88% من MVP مكتمل
-**آخر تحديث:** 5 ديسمبر 2025 (الجلسة 12)
+**آخر تحديث:** 7 ديسمبر 2025 (الجلسة 15)
 
-**مميزات الجلسة 12 (جديد!):**
+**مميزات الجلسة 15 (جديد!):**
+- ✅ **نظام التسويات** - إدارة تسويات المتاجر والمدفوعات
+  - صفحة تسويات الإدارة (`/admin/settlements`)
+  - صفحة تسويات المتجر (`/provider/settlements`)
+  - يشمل فقط الطلبات المسلمة والمدفوعة
+  - نسبة عمولة 6% للمنصة
+- ✅ **تحويل الصوت للدردشة** - "دردش واطلب" بدلاً من الميكروفون
+- ✅ **تحليلات التوسع** - مؤشر جاهزية التوسع للمحافظات
+- ✅ **اختيار المحافظة عند التسجيل** - إلزامي للمستخدمين الجدد
+
+**مميزات الجلسة 12:**
 - ✅ **إلغاء الطلبات** - يمكن للعملاء إلغاء الطلبات المعلقة/المؤكدة/المقبولة
 - ✅ **التقييمات والمراجعات** - تقييم المتاجر وكتابة المراجعات
 - ✅ **الإشعارات الفورية** - Supabase Realtime للتحديثات المباشرة

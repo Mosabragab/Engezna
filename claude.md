@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** December 7, 2025
-**Status:** Week 5 - Complete Feature Set (Session 15) ✅
+**Status:** Week 5 - Complete Feature Set (Session 15 Part 3) ✅
 **Branch:** `claude/project-progress-review-019c9eWZ1GRxLZtNz6Bp9DD4`
 
 ---
@@ -158,6 +158,26 @@
 6. ✅ Transaction history with date range filter
 7. ✅ Net earnings after commission deduction
 8. ✅ Link from provider dashboard
+
+### Settlements System (NEW! ✅)
+#### Admin Settlements (`/admin/settlements`)
+1. ✅ Stats overview: Pending dues, Overdue dues, Total paid
+2. ✅ Settlement generation with period selector (daily, every 3 days, weekly)
+3. ✅ Custom settlement creation for specific provider and date range
+4. ✅ Settlement list with provider info, period, orders, revenue, status
+5. ✅ Payment recording modal (cash, bank transfer, InstaPay, Vodafone Cash)
+6. ✅ Status filtering (all, pending, processing, completed, failed)
+7. ✅ Geographic filtering by governorate/city
+8. ✅ **CRITICAL**: Only includes orders where both `status='delivered'` AND `payment_status='completed'`
+9. ✅ 6% platform commission rate applied
+
+#### Provider Settlements (`/provider/settlements`)
+1. ✅ Stats overview: Total due, Total paid, Pending count, Overdue count
+2. ✅ Settlement history list with expandable details
+3. ✅ Settlement card showing period, orders, gross revenue, commission, net payout
+4. ✅ Status badges (pending, processing, completed, failed)
+5. ✅ Payment details for completed settlements (date, method)
+6. ✅ Full bilingual support (AR/EN)
 
 ### Provider Profile (NEW! ✅)
 1. ✅ Visit `/ar/provider/profile` or `/en/provider/profile`
@@ -346,7 +366,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 - ✅ **User management backend** - Ban, unban, change role with audit logging
 - ✅ **Provider detail page** - Full view with stats and action controls
 - ⚠️ **Platform analytics backend** - Basic stats implemented, advanced queries pending
-- ❌ **Financial reporting backend** - No actual payment/settlement processing
+- ✅ **Settlements system** - Admin and provider settlements pages complete (Session 15)
 
 ### Storage (Complete ✅)
 - ✅ Supabase Storage bucket - Configured and working (Dec 1, 2025)
@@ -430,6 +450,49 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Dec 7, 2025 (Session 15 Part 3) - Settlements System ✅
+
+#### Settlements Management System
+- ✅ **Admin Settlements Page** (`/admin/settlements` - NEW):
+  - Stats cards: Pending dues, Overdue dues, Total paid
+  - Period selector: Daily, Every 3 days, Weekly
+  - Generate settlements for all active providers
+  - Custom settlement creation for specific provider/period
+  - Payment recording with method selection (cash, bank_transfer, instapay, vodafone_cash)
+  - Status filtering and geographic filtering
+  - Settlement list with provider info, period, orders, revenue, net payout
+  - **CRITICAL FIX**: Settlement generation now checks BOTH `status='delivered'` AND `payment_status='completed'`
+    - This ensures COD orders are only included after payment is confirmed
+    - Prevents settlements from including delivered but unpaid orders
+
+- ✅ **Provider Settlements Page** (`/provider/settlements` - NEW):
+  - Stats overview: Total due, Total paid, Pending settlements, Overdue settlements
+  - Settlement history with expandable cards
+  - Shows gross revenue, platform commission (6%), net payout
+  - Payment details for completed settlements
+  - Full bilingual support (AR/EN)
+
+- ✅ **Navigation Updates**:
+  - Added "التسويات" (Settlements) menu item to AdminSidebar with Receipt icon
+  - Added "التسويات" (Settlements) menu item to ProviderSidebar with Receipt icon
+
+- ✅ **Database Migration** (`20251207000002_settlements_system.sql`):
+  - `settlements` table with full schema
+  - Columns: provider_id, period_start, period_end, total_orders, gross_revenue
+  - platform_commission, net_payout, status, paid_at, payment_method, payment_reference
+  - orders_included (array), notes, processed_by, approved_at, rejected_at, rejection_reason
+
+#### Files Created:
+- `src/app/[locale]/admin/settlements/page.tsx` (~850 lines)
+- `src/app/[locale]/provider/settlements/page.tsx` (~420 lines)
+- `supabase/migrations/20251207000002_settlements_system.sql`
+
+#### Files Modified:
+- `src/components/admin/AdminSidebar.tsx` - Added Settlements menu item
+- `src/components/provider/ProviderSidebar.tsx` - Added Settlements menu item
+
+---
 
 ### Work Session Dec 5, 2025 (Session 12) - Complete Feature Set ✅
 
