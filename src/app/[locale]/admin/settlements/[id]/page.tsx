@@ -158,7 +158,7 @@ export default function SettlementDetailPage() {
 
     // Load orders included in this settlement
     if (settlementData?.orders_included && settlementData.orders_included.length > 0) {
-      const { data: ordersData } = await supabase
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select(`
           id,
@@ -168,10 +168,14 @@ export default function SettlementDetailPage() {
           platform_commission,
           payment_method,
           created_at,
-          customer:users!customer_id(full_name)
+          customer:profiles!customer_id(full_name)
         `)
         .in('id', settlementData.orders_included)
         .order('created_at', { ascending: false })
+
+      if (ordersError) {
+        console.error('Error loading orders:', ordersError)
+      }
 
       if (ordersData) {
         setOrders(ordersData as unknown as Order[])
