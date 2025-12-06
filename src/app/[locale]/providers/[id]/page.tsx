@@ -10,12 +10,11 @@ import { useFavorites } from '@/hooks/customer'
 import { Button } from '@/components/ui/button'
 import { ProductCard, RatingStars, StatusBadge, EmptyState } from '@/components/customer/shared'
 import { VoiceOrderFAB } from '@/components/customer/voice'
-import { BottomNavigation } from '@/components/customer/layout'
+import { BottomNavigation, CustomerHeader } from '@/components/customer/layout'
 import {
   Clock,
   Truck,
   MapPin,
-  ShoppingCart,
   Heart,
   Share2,
   Star,
@@ -268,43 +267,8 @@ export default function ProviderDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h1 className="font-bold text-lg text-slate-900 truncate max-w-[200px]">
-              {getName(provider)}
-            </h1>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleFavoriteClick}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-                  isProviderFavorite
-                    ? 'bg-red-50 text-red-500'
-                    : 'bg-slate-100 text-slate-500 hover:text-red-500'
-                }`}
-              >
-                <Heart className={`w-5 h-5 ${isProviderFavorite ? 'fill-red-500' : ''}`} />
-              </button>
-              <button className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
-                <Share2 className="w-5 h-5" />
-              </button>
-              {/* Cart Icon - Hidden on mobile (bottom nav has cart), consistent styling with CustomerHeader */}
-              {cartItemCount > 0 && (
-                <button
-                  onClick={() => router.push(`/${locale}/cart`)}
-                  className="hidden md:flex w-9 h-9 rounded-full bg-slate-100 items-center justify-center text-slate-600 relative hover:bg-slate-200 transition-colors"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  <span className="absolute top-0 right-0 min-w-[16px] h-4 flex items-center justify-center bg-primary text-white text-[10px] font-bold rounded-full px-1">
-                    {cartItemCount > 9 ? '9+' : cartItemCount}
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Main Header - Consistent across all customer pages */}
+      <CustomerHeader />
 
       {/* Provider Cover & Info */}
       <div className="bg-white border-b">
@@ -322,6 +286,23 @@ export default function ProviderDetailPage() {
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+
+          {/* Provider Actions - Favorite & Share on cover image */}
+          <div className="absolute top-3 start-3 flex items-center gap-2">
+            <button
+              onClick={handleFavoriteClick}
+              className={`w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors ${
+                isProviderFavorite
+                  ? 'bg-white/90 text-red-500'
+                  : 'bg-white/80 text-slate-600 hover:text-red-500'
+              }`}
+            >
+              <Heart className={`w-5 h-5 ${isProviderFavorite ? 'fill-red-500' : ''}`} />
+            </button>
+            <button className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-600 hover:text-primary transition-colors">
+              <Share2 className="w-5 h-5" />
+            </button>
+          </div>
 
           {/* Logo overlay */}
           {provider.logo_url && (
@@ -483,7 +464,7 @@ export default function ProviderDetailPage() {
       {categories.length > 0 && (
         <div
           ref={categoriesRef}
-          className="bg-white border-b sticky top-[57px] z-40 shadow-sm"
+          className="bg-white border-b sticky top-14 z-40 shadow-sm"
         >
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-2 px-4 py-3">
