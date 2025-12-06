@@ -25,6 +25,7 @@ import {
   Loader2,
   AlertTriangle,
   Key,
+  Receipt,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { usePermissions } from '@/lib/permissions/use-permissions'
@@ -115,6 +116,12 @@ export function AdminSidebar({
       icon: Wallet,
       label: { ar: 'المالية', en: 'Finance' },
       path: `/${locale}/admin/finance`,
+      resource: 'finance',
+    },
+    {
+      icon: Receipt,
+      label: { ar: 'التسويات', en: 'Settlements' },
+      path: `/${locale}/admin/settlements`,
       resource: 'finance',
     },
     {

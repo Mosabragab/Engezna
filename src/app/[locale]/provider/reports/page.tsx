@@ -20,6 +20,12 @@ import {
   RefreshCw,
   Star,
   Award,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Filter,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -62,6 +68,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month')
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'completed' | 'pending'>('all')
+  const [allOrders, setAllOrders] = useState<any[]>([])
 
   // Stats
   const [orderStats, setOrderStats] = useState<OrderStats>({ total: 0, completed: 0, cancelled: 0, pending: 0 })
@@ -138,6 +146,9 @@ export default function ReportsPage() {
     }
 
     if (orders) {
+      // Store all orders for filtering
+      setAllOrders(orders)
+
       // Order stats
       const completed = orders.filter(o => o.status === 'delivered').length
       const cancelled = orders.filter(o => ['cancelled', 'rejected'].includes(o.status)).length
@@ -227,6 +238,98 @@ export default function ReportsPage() {
     setRefreshing(false)
   }
 
+  // Get filtered orders based on payment status
+  const getFilteredOrders = () => {
+    if (paymentFilter === 'all') return allOrders
+    if (paymentFilter === 'completed') return allOrders.filter(o => o.payment_status === 'completed')
+    return allOrders.filter(o => o.payment_status === 'pending')
+  }
+
+  // Export to CSV/Excel
+  const handleExportExcel = () => {
+    const filteredOrders = getFilteredOrders()
+    if (filteredOrders.length === 0) {
+      alert(locale === 'ar' ? 'لا توجد بيانات للتصدير' : 'No data to export')
+      return
+    }
+
+    // Create CSV content
+    const headers = locale === 'ar'
+      ? ['رقم الطلب', 'التاريخ', 'الإجمالي', 'الحالة', 'حالة الدفع']
+      : ['Order ID', 'Date', 'Total', 'Status', 'Payment Status']
+
+    const rows = filteredOrders.map(order => [
+      order.id.slice(0, 8),
+      new Date(order.created_at).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US'),
+      order.total.toFixed(2),
+      order.status,
+      order.payment_status
+    ])
+
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const BOM = '\uFEFF' // UTF-8 BOM for Arabic support
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `reports_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  // Export summary to text/print
+  const handleExportPDF = () => {
+    const filteredOrders = getFilteredOrders()
+    const confirmedOrders = filteredOrders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
+    const totalRevenue = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+
+    const content = locale === 'ar' ? `
+تقرير الأداء - ${new Date().toLocaleDateString('ar-EG')}
+========================================
+
+إجمالي الطلبات: ${filteredOrders.length}
+الطلبات المكتملة: ${filteredOrders.filter(o => o.status === 'delivered').length}
+الطلبات الملغية: ${filteredOrders.filter(o => ['cancelled', 'rejected'].includes(o.status)).length}
+
+الإيرادات المؤكدة: ${totalRevenue.toFixed(2)} ج.م
+عدد العملاء: ${new Set(filteredOrders.map(o => o.customer_id)).size}
+
+فلتر حالة الدفع: ${paymentFilter === 'all' ? 'الكل' : paymentFilter === 'completed' ? 'مؤكد' : 'معلق'}
+    ` : `
+Performance Report - ${new Date().toLocaleDateString('en-US')}
+========================================
+
+Total Orders: ${filteredOrders.length}
+Completed Orders: ${filteredOrders.filter(o => o.status === 'delivered').length}
+Cancelled Orders: ${filteredOrders.filter(o => ['cancelled', 'rejected'].includes(o.status)).length}
+
+Confirmed Revenue: ${totalRevenue.toFixed(2)} EGP
+Customers: ${new Set(filteredOrders.map(o => o.customer_id)).size}
+
+Payment Filter: ${paymentFilter === 'all' ? 'All' : paymentFilter === 'completed' ? 'Confirmed' : 'Pending'}
+    `
+
+    // Open print dialog
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(`
+        <html dir="${locale === 'ar' ? 'rtl' : 'ltr'}">
+          <head>
+            <title>${locale === 'ar' ? 'تقرير الأداء' : 'Performance Report'}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 40px; white-space: pre-wrap; }
+            </style>
+          </head>
+          <body>${content}</body>
+        </html>
+      `)
+      printWindow.document.close()
+      printWindow.print()
+    }
+  }
+
   const formatCurrency = (amount: number) => {
     return `${amount.toFixed(0)} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
   }
@@ -263,6 +366,77 @@ export default function ReportsPage() {
               ? 'عرض ملخص الأداء وإحصائيات الطلبات خلال الفترة الأخيرة'
               : 'View performance summary and order statistics for the recent period'}
           </p>
+
+          {/* Filters and Export Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white rounded-xl border border-slate-200">
+            {/* Payment Status Filter */}
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-500" />
+              <span className="text-sm text-slate-600 font-medium">
+                {locale === 'ar' ? 'حالة الدفع:' : 'Payment Status:'}
+              </span>
+              <div className="flex gap-1">
+                <Button
+                  variant={paymentFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPaymentFilter('all')}
+                  className={paymentFilter === 'all' ? 'bg-primary' : ''}
+                >
+                  {locale === 'ar' ? 'الكل' : 'All'}
+                </Button>
+                <Button
+                  variant={paymentFilter === 'completed' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPaymentFilter('completed')}
+                  className={paymentFilter === 'completed' ? 'bg-green-600 hover:bg-green-700' : ''}
+                >
+                  <CheckCircle2 className="w-3 h-3 ml-1" />
+                  {locale === 'ar' ? 'مؤكد' : 'Confirmed'}
+                </Button>
+                <Button
+                  variant={paymentFilter === 'pending' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPaymentFilter('pending')}
+                  className={paymentFilter === 'pending' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+                >
+                  <Clock className="w-3 h-3 ml-1" />
+                  {locale === 'ar' ? 'معلق' : 'Pending'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Export Buttons */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportExcel}
+                className="flex items-center gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                <span>{locale === 'ar' ? 'تصدير Excel' : 'Export Excel'}</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPDF}
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4 text-red-600" />
+                <span>{locale === 'ar' ? 'طباعة التقرير' : 'Print Report'}</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <span>{locale === 'ar' ? 'تحديث' : 'Refresh'}</span>
+              </Button>
+            </div>
+          </div>
 
           {/* Revenue Overview - Unified Blue Theme */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

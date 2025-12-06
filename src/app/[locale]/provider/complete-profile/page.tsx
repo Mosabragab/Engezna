@@ -51,6 +51,8 @@ interface Provider {
   delivery_radius_km: number | null
   status: string
   category: string
+  governorate_id: string | null
+  city_id: string | null
 }
 
 // Form validation schema
@@ -84,6 +86,7 @@ export default function CompleteProfilePage() {
   const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [cities, setCities] = useState<City[]>([])
   const [filteredCities, setFilteredCities] = useState<City[]>([])
+  const [governorateLocked, setGovernorateLocked] = useState(false) // Governorate locked from registration
 
   // Logo upload state
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -168,6 +171,15 @@ export default function CompleteProfilePage() {
       if (providerData.logo_url) {
         setLogoUrl(providerData.logo_url)
         setLogoPreview(providerData.logo_url)
+      }
+
+      // Pre-fill governorate if set (locked from registration)
+      if (providerData.governorate_id) {
+        setValue('governorateId', providerData.governorate_id)
+        setGovernorateLocked(true) // Lock governorate - cannot be changed
+      }
+      if (providerData.city_id) {
+        setValue('cityId', providerData.city_id)
       }
 
       // Load governorates
@@ -285,24 +297,31 @@ export default function CompleteProfilePage() {
       const supabase = createClient()
 
       // Update provider record
+      // Note: governorate_id is only updated if not already set (locked from registration)
+      const updateData: Record<string, unknown> = {
+        name_ar: data.storeNameAr,
+        name_en: data.storeNameEn,
+        phone: data.storePhone,
+        address_ar: data.address,
+        address_en: data.address, // Use same address for now
+        logo_url: finalLogoUrl,
+        delivery_fee: data.deliveryFee,
+        estimated_delivery_time_min: data.estimatedDeliveryTime,
+        min_order_amount: data.minOrderAmount,
+        delivery_radius_km: data.deliveryRadius,
+        city_id: data.cityId,
+        status: 'pending_approval', // Change status to pending approval
+        updated_at: new Date().toISOString(),
+      }
+
+      // Only update governorate if not locked (not set during registration)
+      if (!governorateLocked) {
+        updateData.governorate_id = data.governorateId
+      }
+
       const { error: updateError } = await supabase
         .from('providers')
-        .update({
-          name_ar: data.storeNameAr,
-          name_en: data.storeNameEn,
-          phone: data.storePhone,
-          address_ar: data.address,
-          address_en: data.address, // Use same address for now
-          logo_url: finalLogoUrl,
-          delivery_fee: data.deliveryFee,
-          estimated_delivery_time_min: data.estimatedDeliveryTime,
-          min_order_amount: data.minOrderAmount,
-          delivery_radius_km: data.deliveryRadius,
-          governorate_id: data.governorateId,
-          city_id: data.cityId,
-          status: 'pending_approval', // Change status to pending approval
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', provider?.id)
 
       if (updateError) {
@@ -471,13 +490,20 @@ export default function CompleteProfilePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{t('governorate')}</Label>
+                    <Label className="flex items-center gap-2">
+                      {t('governorate')}
+                      {governorateLocked && (
+                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                          {locale === 'ar' ? 'مثبت' : 'Locked'}
+                        </span>
+                      )}
+                    </Label>
                     <Select
                       value={governorateId}
                       onValueChange={(value) => setValue('governorateId', value)}
-                      disabled={isSaving}
+                      disabled={isSaving || governorateLocked}
                     >
-                      <SelectTrigger className={errors.governorateId ? 'border-destructive' : ''}>
+                      <SelectTrigger className={`${errors.governorateId ? 'border-destructive' : ''} ${governorateLocked ? 'bg-slate-50 cursor-not-allowed' : ''}`}>
                         <SelectValue placeholder={t('governoratePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -488,7 +514,12 @@ export default function CompleteProfilePage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.governorateId && (
+                    {governorateLocked && (
+                      <p className="text-xs text-slate-500">
+                        {locale === 'ar' ? 'تم تحديد المحافظة عند التسجيل ولا يمكن تغييرها' : 'Governorate was set during registration and cannot be changed'}
+                      </p>
+                    )}
+                    {errors.governorateId && !governorateLocked && (
                       <p className="text-sm text-destructive">{errors.governorateId.message}</p>
                     )}
                   </div>

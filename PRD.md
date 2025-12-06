@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 5.1 (Week 5 - Complete Feature Set)
+**Version:** 5.2 (Week 5 - Complete Feature Set)
 **Date:** November 27, 2025
-**Last Updated:** December 6, 2025 (Session 14)
+**Last Updated:** December 7, 2025 (Session 15 Part 3)
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -25,7 +25,73 @@
 **Status:** Week 5 - Complete Feature Set ✅
 **Target Launch:** February 2026 (12 weeks development)
 **Overall Progress:** ~90% of MVP Complete
-**Last Session:** December 6, 2025 (Session 14)
+**Last Session:** December 7, 2025 (Session 15)
+
+### Session 15 Updates (December 7, 2025)
+
+**Part 4: Smart Settlements (COD vs Online):**
+- ✅ **Payment-aware settlement logic**:
+  - COD orders: Provider collects cash → Owes 6% commission to Engezna
+  - Online orders: Engezna collects payment → Owes 94% payout to provider
+  - Net balance calculation determines who pays whom
+- ✅ Database schema update (`20251207000003_settlements_cod_online_breakdown.sql`):
+  - `cod_orders_count`, `cod_gross_revenue`, `cod_commission_owed`
+  - `online_orders_count`, `online_gross_revenue`, `online_platform_commission`, `online_payout_owed`
+  - `net_balance`, `settlement_direction`
+- ✅ UI improvements:
+  - "عمولة إنجزنا" instead of "المنصة" (professional branding)
+  - Dynamic provider name instead of generic "مزود"
+  - Orange badges for COD with commission owed
+  - Blue badges for Online with payout owed
+  - Color-coded net balance (green = Engezna pays, red = provider pays)
+- ✅ Settlement detail page with full breakdown:
+  - COD Section (orange): Revenue, Engezna commission due
+  - Online Section (blue): Revenue, commission, provider payout
+  - Net Balance Card with direction indicator
+
+**Part 3: Settlements System:**
+- ✅ Admin settlements page (`/admin/settlements`) with full management:
+  - Stats cards: Pending dues, Overdue dues, Total paid
+  - Period selector: Daily, Every 3 days, Weekly
+  - Generate settlements for all active providers
+  - Custom settlement creation for specific provider/period
+  - Payment recording with method selection (cash, bank_transfer, instapay, vodafone_cash)
+  - Status filtering and geographic filtering
+  - Settlement list with provider info, period, orders, revenue, net payout
+- ✅ Provider settlements page (`/provider/settlements`) with:
+  - Stats overview: Total due, Total paid, Pending settlements, Overdue settlements
+  - Settlement history with expandable cards
+  - Shows gross revenue, platform commission (6%), net payout
+  - Payment details for completed settlements
+- ✅ **CRITICAL FIX**: Settlement generation now checks BOTH `status='delivered'` AND `payment_status='completed'`
+  - This ensures COD orders are only included after payment is confirmed
+  - Prevents settlements from including delivered but unpaid orders
+- ✅ Navigation updates:
+  - Added "التسويات" (Settlements) menu item to AdminSidebar
+  - Added "التسويات" (Settlements) menu item to ProviderSidebar
+- ✅ Database migration: `20251207000002_settlements_system.sql`
+
+**Part 2: Dynamic Footer & Governorate Analytics:**
+- ✅ Footer now dynamically fetches active governorates from database
+- ✅ When admin adds/removes a governorate, it automatically appears/disappears in Footer
+- ✅ Updated translations: "المدن المتاحة" → "المحافظات المتاحة"
+- ✅ Added "Expansion Analytics" tab to Admin Locations page (Super Admin only)
+- ✅ Summary stats: Total providers, customers, orders, revenue across all governorates
+- ✅ Governorate ranking table with expansion readiness score (0-100%)
+- ✅ Readiness formula: Providers (40%) + Customers (30%) + Orders (20%) + Coverage (10%)
+- ✅ Growth rate indicator (last 30 days vs previous 30 days)
+- ✅ Smart expansion recommendations:
+  - Promising governorates for activation
+  - Governorates needing development
+  - Top performing governorates
+
+**Part 1: Voice to Chat Transition:**
+- ✅ Fixed notification badge rapid flashing (removed animate-pulse)
+- ✅ Converted voice ordering to text chat ("دردش واطلب" / "Chat & Order")
+- ✅ ChatFAB replaces VoiceOrderFAB (message icon instead of microphone)
+- ✅ TextChat component replaces VoiceOrderChat (text input only)
+- ✅ Removed Deepgram (transcription API), kept OpenAI for smart order processing
+- ✅ Removed microphone button from HeroSection and SearchBar
 
 ### Session 14 Updates (December 6, 2025)
 
@@ -257,7 +323,7 @@
 - ✅ **User management backend** - Ban, unban, change role with audit logging
 - ✅ **Provider detail page** - Full view with stats and action controls
 - ⚠️ **Platform analytics backend** - Basic stats implemented, advanced queries pending
-- ⚠️ **Financial settlements** - No actual payment processing
+- ✅ **Financial settlements** - Admin and provider settlements pages complete (Session 15)
 
 **Storage (Complete ✅):**
 - ✅ **Supabase Storage bucket** - Configured and working (Dec 1, 2025)

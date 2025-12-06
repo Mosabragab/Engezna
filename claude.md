@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** December 7, 2025
-**Status:** Week 5 - Complete Feature Set (Session 15) ✅
+**Status:** Week 5 - Complete Feature Set (Session 15 Part 4) ✅
 **Branch:** `claude/project-progress-review-019c9eWZ1GRxLZtNz6Bp9DD4`
 
 ---
@@ -158,6 +158,45 @@
 6. ✅ Transaction history with date range filter
 7. ✅ Net earnings after commission deduction
 8. ✅ Link from provider dashboard
+
+### Settlements System (NEW! ✅)
+**Smart COD vs Online Payment Handling:**
+- **COD (الدفع عند الاستلام)**: Provider collects cash → Owes commission to Engezna
+- **Online Payments**: Engezna collects payment → Owes payout to provider
+- **Net Balance**: Calculates who owes whom based on both payment types
+
+#### Admin Settlements (`/admin/settlements`)
+1. ✅ Stats overview: Pending dues, Overdue dues, Total paid
+2. ✅ Settlement generation with period selector (daily, every 3 days, weekly)
+3. ✅ Custom settlement creation for specific provider and date range
+4. ✅ **COD/Online Breakdown Display**:
+   - Orange: COD orders with commission owed to Engezna
+   - Blue: Online orders with payout owed to provider
+5. ✅ Net balance with direction indicator (who pays whom)
+6. ✅ Provider name displayed instead of generic "مزود"
+7. ✅ "عمولة إنجزنا" instead of "المنصة"
+8. ✅ Payment recording modal (cash, bank transfer, InstaPay, Vodafone Cash)
+9. ✅ Status filtering (all, pending, processing, completed, failed)
+10. ✅ Geographic filtering by governorate/city
+11. ✅ **CRITICAL**: Only includes orders where both `status='delivered'` AND `payment_status='completed'`
+12. ✅ 6% platform commission rate applied
+
+#### Admin Settlement Detail (`/admin/settlements/[id]`)
+1. ✅ Provider info with phone and period
+2. ✅ Orders summary (total, COD count, online count)
+3. ✅ **COD Section** (orange): Revenue, Engezna commission due
+4. ✅ **Online Section** (blue): Revenue, commission deducted, payout due
+5. ✅ **Net Balance Card**: Color-coded (green = Engezna pays, red = provider pays)
+6. ✅ Orders table with payment method column (نقدي/إلكتروني)
+7. ✅ Confirm payment / Mark failed actions
+
+#### Provider Settlements (`/provider/settlements`)
+1. ✅ Stats overview: Total due, Total paid, Pending count, Overdue count
+2. ✅ Settlement history list with expandable details
+3. ✅ Settlement card showing period, orders, gross revenue, commission, net payout
+4. ✅ Status badges (pending, processing, completed, failed)
+5. ✅ Payment details for completed settlements (date, method)
+6. ✅ Full bilingual support (AR/EN)
 
 ### Provider Profile (NEW! ✅)
 1. ✅ Visit `/ar/provider/profile` or `/en/provider/profile`
@@ -346,7 +385,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 - ✅ **User management backend** - Ban, unban, change role with audit logging
 - ✅ **Provider detail page** - Full view with stats and action controls
 - ⚠️ **Platform analytics backend** - Basic stats implemented, advanced queries pending
-- ❌ **Financial reporting backend** - No actual payment/settlement processing
+- ✅ **Settlements system** - Admin and provider settlements pages complete (Session 15)
 
 ### Storage (Complete ✅)
 - ✅ Supabase Storage bucket - Configured and working (Dec 1, 2025)
@@ -430,6 +469,90 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Dec 7, 2025 (Session 15 Part 4) - Smart Settlements (COD vs Online) ✅
+
+#### Smart Payment-Aware Settlements
+- ✅ **COD vs Online Payment Logic**:
+  - COD orders: Provider collects cash → Owes 6% commission to Engezna
+  - Online orders: Engezna collects payment → Owes 94% payout to provider
+  - Net balance calculation: Determines who pays whom
+
+- ✅ **Database Schema Update** (`20251207000003_settlements_cod_online_breakdown.sql`):
+  - `cod_orders_count`, `cod_gross_revenue`, `cod_commission_owed`
+  - `online_orders_count`, `online_gross_revenue`, `online_platform_commission`, `online_payout_owed`
+  - `net_balance`, `settlement_direction` (platform_pays_provider | provider_pays_platform | balanced)
+
+- ✅ **Settlement Generation Logic**:
+  - Separate queries for COD (payment_method='cash') and Online (payment_method!='cash')
+  - Calculate commission owed by provider from COD orders
+  - Calculate payout owed to provider from Online orders
+  - Net balance = online_payout_owed - cod_commission_owed
+
+- ✅ **Admin Settlements UI Updates**:
+  - "عمولة إنجزنا" instead of "المنصة" (professional branding)
+  - Provider name displayed dynamically instead of "مزود"
+  - Orange badges for COD with commission owed
+  - Blue badges for Online with payout owed
+  - Color-coded net balance (green = Engezna pays, red = provider pays)
+
+- ✅ **Settlement Detail Page** (`/admin/settlements/[id]`):
+  - COD Section (orange card): Orders, revenue, Engezna commission due
+  - Online Section (blue card): Orders, revenue, commission, provider payout
+  - Net Balance Card: Color-coded with clear direction indicator
+  - Orders table with payment method column (نقدي/إلكتروني)
+
+#### Files Created:
+- `supabase/migrations/20251207000003_settlements_cod_online_breakdown.sql`
+
+#### Files Modified:
+- `src/app/[locale]/admin/settlements/page.tsx` - COD/Online generation logic, UI updates
+- `src/app/[locale]/admin/settlements/[id]/page.tsx` - Full breakdown display
+
+---
+
+### Work Session Dec 7, 2025 (Session 15 Part 3) - Settlements System ✅
+
+#### Settlements Management System
+- ✅ **Admin Settlements Page** (`/admin/settlements` - NEW):
+  - Stats cards: Pending dues, Overdue dues, Total paid
+  - Period selector: Daily, Every 3 days, Weekly
+  - Generate settlements for all active providers
+  - Custom settlement creation for specific provider/period
+  - Payment recording with method selection (cash, bank_transfer, instapay, vodafone_cash)
+  - Status filtering and geographic filtering
+  - Settlement list with provider info, period, orders, revenue, net payout
+  - **CRITICAL FIX**: Settlement generation now checks BOTH `status='delivered'` AND `payment_status='completed'`
+    - This ensures COD orders are only included after payment is confirmed
+    - Prevents settlements from including delivered but unpaid orders
+
+- ✅ **Provider Settlements Page** (`/provider/settlements` - NEW):
+  - Stats overview: Total due, Total paid, Pending settlements, Overdue settlements
+  - Settlement history with expandable cards
+  - Shows gross revenue, platform commission (6%), net payout
+  - Payment details for completed settlements
+  - Full bilingual support (AR/EN)
+
+- ✅ **Navigation Updates**:
+  - Added "التسويات" (Settlements) menu item to AdminSidebar with Receipt icon
+  - Added "التسويات" (Settlements) menu item to ProviderSidebar with Receipt icon
+
+- ✅ **Database Migration** (`20251207000002_settlements_system.sql`):
+  - `settlements` table with full schema
+  - Columns: provider_id, period_start, period_end, total_orders, gross_revenue
+  - platform_commission, net_payout, status, paid_at, payment_method, payment_reference
+  - orders_included (array), notes, processed_by, approved_at, rejected_at, rejection_reason
+
+#### Files Created:
+- `src/app/[locale]/admin/settlements/page.tsx` (~850 lines)
+- `src/app/[locale]/provider/settlements/page.tsx` (~420 lines)
+- `supabase/migrations/20251207000002_settlements_system.sql`
+
+#### Files Modified:
+- `src/components/admin/AdminSidebar.tsx` - Added Settlements menu item
+- `src/components/provider/ProviderSidebar.tsx` - Added Settlements menu item
+
+---
 
 ### Work Session Dec 5, 2025 (Session 12) - Complete Feature Set ✅
 
@@ -1282,11 +1405,18 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 31.0 (Session 15 - Voice to Chat Transition)
-**Last Updated:** December 7, 2025 (Session 15)
+**Version:** 32.0 (Session 15 - Dynamic Footer & Analytics)
+**Last Updated:** December 7, 2025 (Session 15 continued)
 **Next Review:** December 8, 2025
 
-**🎉 Session 15: Voice to Chat Transition (دردش واطلب)!**
+**🎉 Session 15 (Part 2): Dynamic Footer & Governorate Analytics!**
+- ✅ Footer ديناميكي للمحافظات من قاعدة البيانات
+- ✅ تحديث "المدن" إلى "المحافظات" في الترجمات
+- ✅ تبويب تحليلات التوسع في صفحة المواقع للأدمن
+- ✅ مؤشر جاهزية التوسع لكل محافظة (0-100%)
+- ✅ توصيات ذكية للتوسع
+
+**🎉 Session 15 (Part 1): Voice to Chat Transition (دردش واطلب)!**
 - ✅ إصلاح وميض شارة الإشعارات
 - ✅ تحويل ميزة الطلب الصوتي إلى الدردشة النصية
 - ✅ ChatFAB بدلاً من VoiceOrderFAB
@@ -1415,7 +1545,62 @@ src/
 
 ---
 
-## 📋 Session 15: Voice to Chat Transition (December 7, 2025)
+## 📋 Session 15 Part 2: Dynamic Footer & Analytics (December 7, 2025)
+
+### ✅ المهام المكتملة
+
+#### 1. Footer ديناميكي للمحافظات
+- **الحالة:** ✅ مكتمل
+- **الوصف:** ربط شريط المحافظات في الـ Footer بقاعدة البيانات
+- **التغييرات:**
+  - Footer يجلب المحافظات النشطة من Supabase تلقائياً
+  - عند إضافة/إزالة محافظة من Admin، تظهر/تختفي في Footer
+  - إضافة حالة تحميل (loading spinner)
+  - إضافة fallback "قريباً" عند عدم وجود محافظات
+- **الملفات:**
+  - `src/components/shared/Footer.tsx` - إضافة useEffect لجلب البيانات
+  - `src/i18n/messages/ar.json` - تغيير availableCities → availableGovernorates
+  - `src/i18n/messages/en.json` - تغيير availableCities → availableGovernorates
+
+#### 2. تبويب تحليلات التوسع في صفحة المواقع
+- **الحالة:** ✅ مكتمل
+- **الوصف:** إضافة أدوات تحليل متقدمة للسوبر أدمن لمساعدته في قرارات التوسع
+- **المميزات:**
+  - تبويب جديد "تحليلات التوسع" (للسوبر أدمن فقط)
+  - إحصائيات إجمالية: مقدمي خدمات، عملاء، طلبات، إيرادات
+  - جدول تصنيف المحافظات حسب الجاهزية
+  - مؤشر جاهزية التوسع (0-100%) لكل محافظة
+  - معادلة الجاهزية: مقدمي خدمات (40%) + عملاء (30%) + طلبات (20%) + تغطية جغرافية (10%)
+  - مؤشر النمو (مقارنة آخر 30 يوم بالـ 30 يوم السابقين)
+  - توصيات ذكية للتوسع:
+    - محافظات واعدة للتفعيل
+    - محافظات تحتاج تطوير
+    - المحافظات الأفضل أداءً
+- **الملف:** `src/app/[locale]/admin/locations/page.tsx`
+
+### 📁 الملفات المُعدّلة
+
+| الملف | النوع | الوصف |
+|-------|-------|-------|
+| `src/components/shared/Footer.tsx` | تعديل | جلب المحافظات من قاعدة البيانات + حالة التحميل |
+| `src/i18n/messages/ar.json` | تعديل | تغيير "المدن المتاحة" → "المحافظات المتاحة" |
+| `src/i18n/messages/en.json` | تعديل | تغيير "Available Cities" → "Available Governorates" |
+| `src/app/[locale]/admin/locations/page.tsx` | تعديل | إضافة تبويب التحليلات + GovernorateAnalytics |
+
+### 📊 معادلة الجاهزية (Readiness Score)
+
+```
+Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
+
+- Provider Score = min(active_providers × 10, 40)  // max 40%
+- Customer Score = min(customers × 3, 30)          // max 30%
+- Order Score = min(completed_orders × 2, 20)      // max 20%
+- Coverage Score = min((cities + districts) × 2, 10) // max 10%
+```
+
+---
+
+## 📋 Session 15 Part 1: Voice to Chat Transition (December 7, 2025)
 
 ### ✅ المهام المكتملة
 
