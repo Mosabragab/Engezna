@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useCart } from '@/lib/store/cart'
 import { useAuth } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/client'
+import { CustomerLayout } from '@/components/customer/layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -717,29 +718,13 @@ export default function CheckoutPage() {
   const total = subtotal + deliveryFee - discountAmount
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/providers/${provider?.id}`}
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary"
-            >
-              <span>{locale === 'ar' ? 'رجوع' : 'Back'}</span>
-            </Link>
-            <Link href={`/${locale}`} className="text-xl font-bold text-primary">
-              {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8 pb-32">
+    <CustomerLayout
+      headerTitle={locale === 'ar' ? 'إتمام الطلب' : 'Checkout'}
+      showBackButton={true}
+      showBottomNav={true}
+    >
+      <div className="px-4 py-4 pb-32">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">
-            {locale === 'ar' ? 'إتمام الطلب' : 'Checkout'}
-          </h1>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Form */}
@@ -1210,8 +1195,8 @@ export default function CheckoutPage() {
 
                   {/* Login Prompt for Guests */}
                   {!isAuthenticated && (
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center mb-4">
-                      <p className="text-sm text-blue-700 mb-2">
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-center mb-3">
+                      <p className="text-xs text-blue-700">
                         {locale === 'ar'
                           ? 'يجب تسجيل الدخول لإكمال الطلب'
                           : 'You need to login to complete your order'}
@@ -1219,32 +1204,38 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {/* Place Order Button */}
-                  <Button
+                  {/* Place Order Button - Matching cart button style */}
+                  <button
                     onClick={handlePlaceOrder}
                     disabled={isLoading}
-                    className="w-full"
-                    size="lg"
+                    className="w-full bg-primary text-white rounded-lg py-3 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                   >
-                    {isLoading
-                      ? locale === 'ar'
-                        ? 'جاري تقديم الطلب...'
-                        : 'Placing Order...'
-                      : !isAuthenticated
-                      ? locale === 'ar'
-                        ? 'تسجيل الدخول لإكمال الطلب'
-                        : 'Login to Complete Order'
-                      : locale === 'ar'
-                      ? 'تأكيد الطلب'
-                      : 'Confirm Order'}
-                  </Button>
+                    <span>
+                      {isLoading
+                        ? locale === 'ar'
+                          ? 'جاري تقديم الطلب...'
+                          : 'Placing Order...'
+                        : !isAuthenticated
+                        ? locale === 'ar'
+                          ? 'تسجيل الدخول لإكمال الطلب'
+                          : 'Login to Complete Order'
+                        : locale === 'ar'
+                        ? 'تأكيد الطلب'
+                        : 'Confirm Order'}
+                    </span>
+                    {!isLoading && (
+                      <span className="bg-white/20 px-2.5 py-0.5 rounded-md text-sm">
+                        {total.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                      </span>
+                    )}
+                  </button>
 
                   {provider && subtotal < provider.min_order_amount && (
-                    <p className="text-sm text-destructive text-center">
+                    <div className="bg-amber-50 text-amber-700 text-xs rounded-lg px-3 py-1.5 mt-2 text-center">
                       {locale === 'ar'
-                        ? `الحد الأدنى للطلب: ${provider.min_order_amount} ج.م`
-                        : `Minimum order: ${provider.min_order_amount} EGP`}
-                    </p>
+                        ? `أضف ${(provider.min_order_amount - subtotal).toFixed(0)} ج.م للوصول للحد الأدنى`
+                        : `Add ${(provider.min_order_amount - subtotal).toFixed(0)} EGP to reach minimum order`}
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -1252,6 +1243,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-    </div>
+    </CustomerLayout>
   )
 }

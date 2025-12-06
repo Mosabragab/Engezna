@@ -231,10 +231,10 @@ export default function CartPage() {
       </div>
 
       {/* Fixed Checkout Button - positioned above bottom nav */}
-      <div className="fixed bottom-20 left-0 right-0 bg-white border-t shadow-2xl safe-area-bottom z-40">
-        <div className="px-4 py-3">
+      <div className="fixed bottom-20 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-slate-100 z-40">
+        <div className="px-4 py-2.5">
           {provider && provider.min_order_amount > subtotal && (
-            <div className="bg-amber-50 text-amber-700 text-sm rounded-lg px-3 py-2 mb-3 text-center">
+            <div className="bg-amber-50 text-amber-700 text-xs rounded-lg px-3 py-1.5 mb-2 text-center">
               {locale === 'ar'
                 ? `أضف ${(provider.min_order_amount - subtotal).toFixed(0)} ج.م للوصول للحد الأدنى`
                 : `Add ${(provider.min_order_amount - subtotal).toFixed(0)} EGP to reach minimum order`
@@ -244,10 +244,10 @@ export default function CartPage() {
           <button
             onClick={handleCheckout}
             disabled={!!(provider && provider.min_order_amount > subtotal)}
-            className="w-full bg-primary text-white rounded-xl py-4 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-primary text-white rounded-lg py-3 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
           >
             <span>{t('checkout')}</span>
-            <span className="bg-white/20 px-3 py-1 rounded-lg">{total.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+            <span className="bg-white/20 px-2.5 py-0.5 rounded-md text-sm">{total.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
           </button>
         </div>
       </div>
