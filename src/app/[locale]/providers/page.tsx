@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { CustomerLayout } from '@/components/customer/layout'
 import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared'
-import { VoiceOrderFAB } from '@/components/customer/voice'
+import { ChatFAB } from '@/components/customer/voice'
 import { useFavorites } from '@/hooks/customer'
 import { Star, Clock, Percent, ArrowUpDown, MapPin } from 'lucide-react'
 
@@ -42,7 +42,7 @@ export default function ProvidersPage() {
   const [showOffersOnly, setShowOffersOnly] = useState(false)
   const [userCityId, setUserCityId] = useState<string | null>(null)
   const [userCityName, setUserCityName] = useState<string | null>(null)
-  const [isVoiceOpen, setIsVoiceOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   // Favorites hook
   const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites()
@@ -234,7 +234,6 @@ export default function ProvidersPage() {
             onChange={setSearchQuery}
             onSearch={setSearchQuery}
             placeholder={locale === 'ar' ? 'ابحث عن متجر...' : 'Search for a store...'}
-            onVoiceClick={() => setIsVoiceOpen(true)}
           />
         </div>
 
@@ -348,8 +347,8 @@ export default function ProvidersPage() {
         )}
       </div>
 
-      {/* Voice Order FAB */}
-      <VoiceOrderFAB isOpen={isVoiceOpen} onOpenChange={setIsVoiceOpen} />
+      {/* Chat FAB */}
+      <ChatFAB isOpen={isChatOpen} onOpenChange={setIsChatOpen} />
     </CustomerLayout>
   )
 }

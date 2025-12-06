@@ -2,25 +2,25 @@
 
 import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
-import { Mic } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { VoiceOrderChat } from './VoiceOrderChat'
+import { TextChat } from './TextChat'
 import { useCart, MenuItem, Provider } from '@/lib/store/cart'
 import { CartItem } from '@/hooks/customer/useVoiceOrder'
 
-interface VoiceOrderFABProps {
+interface ChatFABProps {
   className?: string
   isOpen?: boolean
   onOpenChange?: (open: boolean) => void
   showFAB?: boolean
 }
 
-export function VoiceOrderFAB({
+export function ChatFAB({
   className,
   isOpen: externalIsOpen,
   onOpenChange,
   showFAB = true
-}: VoiceOrderFABProps) {
+}: ChatFABProps) {
   const locale = useLocale()
   const [internalIsOpen, setInternalIsOpen] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
@@ -28,7 +28,7 @@ export function VoiceOrderFAB({
 
   // Show tooltip for new users
   useEffect(() => {
-    const seen = localStorage.getItem('engezna_voice_tooltip_seen')
+    const seen = localStorage.getItem('engezna_chat_tooltip_seen')
     if (!seen) {
       const timer = setTimeout(() => setShowTooltip(true), 2000)
       return () => clearTimeout(timer)
@@ -87,7 +87,7 @@ export function VoiceOrderFAB({
 
   const handleClick = () => {
     setShowTooltip(false)
-    localStorage.setItem('engezna_voice_tooltip_seen', 'true')
+    localStorage.setItem('engezna_chat_tooltip_seen', 'true')
     setIsOpen(true)
   }
 
@@ -100,7 +100,7 @@ export function VoiceOrderFAB({
           {showTooltip && !isOpen && (
             <div className="fixed z-40 bottom-36 end-4 sm:bottom-24 sm:end-6 animate-bounce">
               <div className="bg-slate-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg">
-                {locale === 'ar' ? '🎤 اطلب بصوتك!' : '🎤 Order with voice!'}
+                {locale === 'ar' ? '💬 دردش واطلب!' : '💬 Chat & Order!'}
               </div>
               <div className="absolute -bottom-2 end-5 w-0 h-0 border-x-8 border-t-8 border-transparent border-t-slate-900" />
             </div>
@@ -113,18 +113,15 @@ export function VoiceOrderFAB({
               'bottom-20 end-4 sm:bottom-6 sm:end-6', // Position above bottom nav on mobile
               className
             )}
-            aria-label={locale === 'ar' ? 'اطلب بصوتك' : 'Order with voice'}
+            aria-label={locale === 'ar' ? 'دردش واطلب' : 'Chat and Order'}
           >
-            <Mic className="w-6 h-6" />
-
-            {/* Pulse Animation */}
-            <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20" />
+            <MessageCircle className="w-6 h-6" />
           </button>
         </>
       )}
 
-      {/* Voice Order Chat Modal */}
-      <VoiceOrderChat
+      {/* Text Chat Modal */}
+      <TextChat
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         onAddToCart={handleAddToCart}
@@ -132,3 +129,6 @@ export function VoiceOrderFAB({
     </>
   )
 }
+
+// Keep backward compatibility export
+export { ChatFAB as VoiceOrderFAB }

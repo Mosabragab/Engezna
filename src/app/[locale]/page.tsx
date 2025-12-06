@@ -12,7 +12,7 @@ import {
   TopRatedSection,
   NearbySection,
 } from '@/components/customer/home'
-import { VoiceOrderFAB } from '@/components/customer/voice'
+import { ChatFAB } from '@/components/customer/voice'
 import { createClient } from '@/lib/supabase/client'
 
 // Demo offers data - Unified blue gradient colors per brand guidelines
@@ -63,7 +63,7 @@ const demoLastOrder = {
 export default function HomePage() {
   const locale = useLocale()
   const router = useRouter()
-  const [isVoiceOpen, setIsVoiceOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const [lastOrder, setLastOrder] = useState<typeof demoLastOrder | null>(null)
   const [nearbyProviders, setNearbyProviders] = useState<any[]>([])
   const [topRatedProviders, setTopRatedProviders] = useState<any[]>([])
@@ -174,8 +174,8 @@ export default function HomePage() {
     }
   }
 
-  const handleVoiceClick = () => {
-    setIsVoiceOpen(true)
+  const handleChatClick = () => {
+    setIsChatOpen(true)
   }
 
   const handleSearchClick = () => {
@@ -210,9 +210,9 @@ export default function HomePage() {
   return (
     <CustomerLayout showHeader={true} showBottomNav={true}>
       <div className="pb-4">
-        {/* Hero Section with Voice CTA */}
+        {/* Hero Section with Chat CTA */}
         <HeroSection
-          onVoiceClick={handleVoiceClick}
+          onChatClick={handleChatClick}
           onSearchClick={handleSearchClick}
         />
 
@@ -252,10 +252,10 @@ export default function HomePage() {
         />
       </div>
 
-      {/* Voice Order FAB */}
-      <VoiceOrderFAB
-        isOpen={isVoiceOpen}
-        onOpenChange={setIsVoiceOpen}
+      {/* Chat FAB */}
+      <ChatFAB
+        isOpen={isChatOpen}
+        onOpenChange={setIsChatOpen}
       />
     </CustomerLayout>
   )

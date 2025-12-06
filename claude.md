@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 6, 2025
-**Status:** Week 5 - Complete Feature Set (Session 14) ✅
+**Last Updated:** December 7, 2025
+**Status:** Week 5 - Complete Feature Set (Session 15) ✅
 **Branch:** `claude/project-progress-review-019c9eWZ1GRxLZtNz6Bp9DD4`
 
 ---
@@ -793,10 +793,12 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
   - Updated `fetchNearbyProviders` and `fetchTopRatedProviders` to filter by city
   - Updated `useProviders` hook to support `cityId` option
   - Display user's city name with link to change location
-- ✅ **Voice Microphone Button**:
-  - Added `isVoiceOpen` state to providers page
-  - Added `onVoiceClick` prop to SearchBar component
-  - Added `VoiceOrderFAB` to providers page
+- ✅ **Chat & Order Feature** (تحويل من الصوت للدردشة - Session 15):
+  - تم تحويل VoiceOrderFAB إلى ChatFAB (زر دردشة بدل ميكروفون)
+  - تم إنشاء TextChat بدلاً من VoiceOrderChat (نص فقط بدون صوت)
+  - إزالة زر الميكروفون من HeroSection و SearchBar
+  - الإبقاء على OpenAI للمعالجة الذكية
+  - حذف Deepgram transcribe API
 - ✅ **Header Component Improvements**:
   - Added `hideAuth` prop to hide auth section for internal pages
   - Added RTL-aware arrow icons (ArrowLeft/ArrowRight) to back button
@@ -812,7 +814,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
   - Fixed logout button displaying as arrow icon
 - ✅ **Files Modified**:
   - `src/app/[locale]/page.tsx` - City filtering + offer colors
-  - `src/app/[locale]/providers/page.tsx` - City filtering + voice button
+  - `src/app/[locale]/providers/page.tsx` - City filtering + chat button
   - `src/components/shared/Header.tsx` - hideAuth prop + arrow icons
   - `src/components/customer/home/CategoriesSection.tsx` - Shortened text + width
   - `src/hooks/customer/useProviders.ts` - cityId support
@@ -1280,9 +1282,16 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 30.0 (Session 14 - Financial UX & Security)
-**Last Updated:** December 6, 2025 (Session 14)
-**Next Review:** December 7, 2025
+**Version:** 31.0 (Session 15 - Voice to Chat Transition)
+**Last Updated:** December 7, 2025 (Session 15)
+**Next Review:** December 8, 2025
+
+**🎉 Session 15: Voice to Chat Transition (دردش واطلب)!**
+- ✅ إصلاح وميض شارة الإشعارات
+- ✅ تحويل ميزة الطلب الصوتي إلى الدردشة النصية
+- ✅ ChatFAB بدلاً من VoiceOrderFAB
+- ✅ TextChat بدلاً من VoiceOrderChat
+- ✅ إزالة Deepgram والإبقاء على OpenAI
 
 **🎉 Session 14: Financial UX & Security Updates!**
 - ✅ Security Update: Patched CVE-2025-55182 & CVE-2025-66478 (RCE vulnerabilities)
@@ -1403,6 +1412,64 @@ src/
 ### تحسينات الصفحات الموجودة
 - **`/providers`**: أضيف SearchBar، FilterChip للفلترة والترتيب، EmptyState
 - **`/providers/[id]`**: أضيف ProductCard، RatingStars، StatusBadge، sticky category navigation
+
+---
+
+## 📋 Session 15: Voice to Chat Transition (December 7, 2025)
+
+### ✅ المهام المكتملة
+
+#### 1. إصلاح وميض شارة الإشعارات
+- **الحالة:** ✅ مكتمل
+- **المشكلة:** شارة عدد الإشعارات كانت تومض بسرعة مرهقة للعين (animate-pulse)
+- **الحل:** إزالة كلاس `animate-pulse` من شارة العدد
+- **الملف:** `src/components/customer/layout/CustomerHeader.tsx`
+
+#### 2. تحويل ميزة الطلب الصوتي إلى الدردشة النصية
+- **الحالة:** ✅ مكتمل
+- **المفهوم الجديد:** "دردش واطلب" بدلاً من "اطلب بصوتك"
+- **التغييرات:**
+  - تحويل `VoiceOrderFAB` إلى `ChatFAB` (أيقونة رسالة بدل ميكروفون)
+  - إنشاء `TextChat.tsx` بدلاً من `VoiceOrderChat.tsx` (إدخال نص فقط)
+  - تحديث `HeroSection.tsx` (إزالة زر الميكروفون الكبير + تغيير النصوص)
+  - تحديث `SearchBar.tsx` (إزالة أيقونة الميكروفون)
+  - حذف `VoiceOrderButton.tsx` (لم يعد مطلوباً)
+  - حذف Deepgram transcribe API route
+  - الإبقاء على OpenAI للمعالجة الذكية للطلبات
+
+#### 3. تحديث الصفحات الرئيسية
+- تحديث `/[locale]/page.tsx` لاستخدام ChatFAB و onChatClick
+- تحديث `/[locale]/providers/page.tsx` لاستخدام ChatFAB
+- تحديث رسالة الترحيب في useVoiceOrder hook
+
+### 📁 الملفات المُعدّلة/المنشأة
+
+| الملف | النوع | الوصف |
+|-------|-------|-------|
+| `src/components/customer/layout/CustomerHeader.tsx` | تعديل | إزالة animate-pulse من شارة الإشعارات |
+| `src/components/customer/voice/VoiceOrderFAB.tsx` | تعديل | تحويل إلى ChatFAB مع أيقونة MessageCircle |
+| `src/components/customer/voice/TextChat.tsx` | جديد | مكون الدردشة النصية مع OpenAI |
+| `src/components/customer/voice/index.ts` | تعديل | تحديث الـ exports |
+| `src/components/customer/home/HeroSection.tsx` | تعديل | إزالة زر الميكروفون + تغيير النصوص |
+| `src/components/customer/shared/SearchBar.tsx` | تعديل | إزالة onVoiceClick و Mic icon |
+| `src/app/[locale]/page.tsx` | تعديل | استخدام ChatFAB و handleChatClick |
+| `src/app/[locale]/providers/page.tsx` | تعديل | استخدام ChatFAB |
+| `src/hooks/customer/useVoiceOrder.ts` | تعديل | تحديث رسالة الترحيب |
+
+### 🗑️ الملفات المحذوفة
+
+| الملف | السبب |
+|-------|-------|
+| `src/components/customer/voice/VoiceOrderButton.tsx` | لم يعد مطلوباً (لا تسجيل صوتي) |
+| `src/components/customer/voice/VoiceOrderChat.tsx` | تم استبداله بـ TextChat.tsx |
+| `src/app/api/voice-order/transcribe/route.ts` | لم يعد مطلوباً (لا Deepgram) |
+
+### 📊 ملخص التغييرات
+
+- ❌ **تم إزالة:** زر الميكروفون الكبير، أيقونات الميكروفون، تسجيل الصوت، Deepgram API
+- ✅ **تم الإبقاء على:** OpenAI للمعالجة الذكية، سلة المشتريات، تأكيد الطلب
+- 🔄 **تم التحويل:** VoiceOrderFAB → ChatFAB، VoiceOrderChat → TextChat
+- 🌐 **المفهوم الجديد:** "دردش واطلب" / "Chat & Order"
 
 ---
 

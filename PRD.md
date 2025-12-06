@@ -1953,9 +1953,10 @@ engezna/
     - ✅ Added city filtering to home page and providers page
     - ✅ Updated useProviders hook to support cityId option
     - ✅ Display user's city name with link to change location
-  - **Voice Ordering Improvements:**
-    - ✅ Added microphone button to providers search bar
-    - ✅ Connected VoiceOrderFAB to providers page
+  - **AI Chat Ordering Feature (دردش واطلب):**
+    - ✅ ChatFAB with message icon (replaced microphone)
+    - ✅ TextChat component for text-based ordering with OpenAI
+    - ✅ Removed voice features, kept AI assistant functionality
   - **Header Component Improvements:**
     - ✅ Added hideAuth prop to hide auth section for internal pages
     - ✅ Added RTL-aware arrow icons to back button
