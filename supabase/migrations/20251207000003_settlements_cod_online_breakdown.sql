@@ -27,10 +27,58 @@ ALTER TABLE settlements ADD COLUMN IF NOT EXISTS settlement_direction TEXT
     CHECK (settlement_direction IN ('platform_pays_provider', 'provider_pays_platform', 'balanced'));
 
 -- =====================================================
--- STEP 2: Add payment_method to settlement_items
+-- STEP 2: Create settlement_items table if not exists
 -- =====================================================
 
-ALTER TABLE settlement_items ADD COLUMN IF NOT EXISTS payment_method TEXT;
+CREATE TABLE IF NOT EXISTS settlement_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    settlement_id UUID NOT NULL REFERENCES settlements(id) ON DELETE CASCADE,
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    order_total DECIMAL(10,2) NOT NULL,
+    commission_rate DECIMAL(5,2) DEFAULT 6.00,
+    commission_amount DECIMAL(10,2) NOT NULL,
+    delivery_fee DECIMAL(10,2) DEFAULT 0,
+    payment_method TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(settlement_id, order_id)
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_settlement_items_settlement_id ON settlement_items(settlement_id);
+CREATE INDEX IF NOT EXISTS idx_settlement_items_order_id ON settlement_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_settlement_items_payment_method ON settlement_items(payment_method);
+
+-- Add RLS policies
+ALTER TABLE settlement_items ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Admins can view all settlement items
+DROP POLICY IF EXISTS "Admins can view all settlement items" ON settlement_items;
+CREATE POLICY "Admins can view all settlement items"
+    ON settlement_items FOR SELECT
+    TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM users
+            WHERE users.id = auth.uid()
+            AND users.role = 'admin'
+        )
+    );
+
+-- Policy: Providers can view their own settlement items
+DROP POLICY IF EXISTS "Providers can view own settlement items" ON settlement_items;
+CREATE POLICY "Providers can view own settlement items"
+    ON settlement_items FOR SELECT
+    TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM settlements s
+            JOIN providers p ON s.provider_id = p.id
+            WHERE s.id = settlement_items.settlement_id
+            AND p.user_id = auth.uid()
+        )
+    );
+
+COMMENT ON TABLE settlement_items IS 'Individual order details within a settlement';
 
 -- =====================================================
 -- STEP 3: Update function to generate settlement with COD/Online breakdown
