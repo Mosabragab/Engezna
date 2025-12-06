@@ -441,29 +441,29 @@ export default function SettlementDetailPage() {
                 </span>
 
                 {settlement.status === 'pending' && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       onClick={() => setShowPaymentModal(true)}
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
                     >
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      {locale === 'ar' ? 'تأكيد الدفع' : 'Confirm Payment'}
+                      <CreditCard className="w-4 h-4" />
+                      <span>{locale === 'ar' ? 'تأكيد الدفع' : 'Confirm Payment'}</span>
                     </Button>
                     <Button
                       onClick={handleMarkFailed}
                       variant="outline"
-                      className="border-red-300 text-red-600 hover:bg-red-50"
+                      className="border-red-300 text-red-600 hover:bg-red-50 flex items-center gap-2"
                     >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      {locale === 'ar' ? 'فشل' : 'Mark Failed'}
+                      <XCircle className="w-4 h-4" />
+                      <span>{locale === 'ar' ? 'فشل' : 'Mark Failed'}</span>
                     </Button>
                     <Button
                       onClick={handleDeleteSettlement}
                       variant="outline"
-                      className="border-slate-300 text-slate-600 hover:bg-slate-50"
+                      className="border-slate-300 text-slate-600 hover:bg-slate-50 flex items-center gap-2"
                     >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {locale === 'ar' ? 'حذف' : 'Delete'}
+                      <Trash2 className="w-4 h-4" />
+                      <span>{locale === 'ar' ? 'حذف' : 'Delete'}</span>
                     </Button>
                   </div>
                 )}
