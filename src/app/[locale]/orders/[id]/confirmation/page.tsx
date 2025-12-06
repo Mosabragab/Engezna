@@ -66,14 +66,29 @@ export default function OrderConfirmationPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [provider, setProvider] = useState<Provider | null>(null)
   const [loading, setLoading] = useState(true)
+  const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
     loadOrderDetails()
-  }, [orderId])
+  }, [orderId, retryCount])
 
   const loadOrderDetails = async () => {
     setLoading(true)
     const supabase = createClient()
+
+    // Wait for auth to be ready
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      // If not authenticated, redirect to login
+      router.push(`/${locale}/auth/login?redirect=/orders/${orderId}/confirmation`)
+      return
+    }
+
+    // Small delay to ensure database transaction is committed
+    if (retryCount === 0) {
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
 
     // Fetch order
     const { data: orderData, error: orderError } = await supabase
@@ -84,6 +99,18 @@ export default function OrderConfirmationPage() {
 
     if (orderError) {
       console.error('Error fetching order:', orderError)
+      // Retry once if order not found (might be a timing issue)
+      if (retryCount < 2) {
+        setTimeout(() => setRetryCount(prev => prev + 1), 1000)
+        return
+      }
+      router.push(`/${locale}`)
+      return
+    }
+
+    // Verify order belongs to current user
+    if (orderData.customer_id !== user.id) {
+      console.error('Order does not belong to current user')
       router.push(`/${locale}`)
       return
     }
