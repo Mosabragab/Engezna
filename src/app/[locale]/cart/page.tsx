@@ -74,7 +74,7 @@ export default function CartPage() {
 
   return (
     <CustomerLayout headerTitle={t('title')} showBackButton={false} showBottomNav={true}>
-      <div className="px-4 py-4 pb-32">
+      <div className="px-4 py-4 pb-6">
         {/* Provider Info */}
         {provider && (
           <div className="bg-slate-50 rounded-xl p-4 mb-4 flex items-center justify-between">
@@ -196,7 +196,7 @@ export default function CartPage() {
         </div>
 
         {/* Order Summary */}
-        <div className="bg-white rounded-xl border border-slate-100 p-4 pb-28">
+        <div className="bg-white rounded-xl border border-slate-100 p-4">
           <h4 className="font-semibold text-slate-900 mb-4">{t('summary')}</h4>
 
           <div className="space-y-3">
@@ -226,29 +226,26 @@ export default function CartPage() {
               <span>{t('total')}</span>
               <span className="text-primary">{total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Fixed Checkout Button - positioned above bottom nav */}
-      <div className="fixed bottom-20 left-0 right-0 bg-white border-t border-slate-200 z-40">
-        <div className="px-4 py-3">
-          {provider && provider.min_order_amount > subtotal && (
-            <div className="bg-amber-50 text-amber-700 text-xs rounded-lg px-3 py-1.5 mb-2 text-center">
-              {locale === 'ar'
-                ? `أضف ${(provider.min_order_amount - subtotal).toFixed(0)} ج.م للوصول للحد الأدنى`
-                : `Add ${(provider.min_order_amount - subtotal).toFixed(0)} EGP to reach minimum order`
-              }
-            </div>
-          )}
-          <button
-            onClick={handleCheckout}
-            disabled={!!(provider && provider.min_order_amount > subtotal)}
-            className="w-full bg-primary text-white rounded-lg py-3 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-          >
-            <span>{t('checkout')}</span>
-            <span className="bg-white/20 px-2.5 py-0.5 rounded-md text-sm">{total.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
-          </button>
+            {/* Checkout Button - Inside card */}
+            {provider && provider.min_order_amount > subtotal && (
+              <div className="bg-amber-50 text-amber-700 text-xs rounded-lg px-3 py-1.5 text-center">
+                {locale === 'ar'
+                  ? `أضف ${(provider.min_order_amount - subtotal).toFixed(0)} ج.م للوصول للحد الأدنى`
+                  : `Add ${(provider.min_order_amount - subtotal).toFixed(0)} EGP to reach minimum order`
+                }
+              </div>
+            )}
+
+            <button
+              onClick={handleCheckout}
+              disabled={!!(provider && provider.min_order_amount > subtotal)}
+              className="w-full bg-primary text-white rounded-lg py-3 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-2"
+            >
+              <span>{t('checkout')}</span>
+              <span className="bg-white/20 px-2.5 py-0.5 rounded-md text-sm">{total.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </CustomerLayout>
