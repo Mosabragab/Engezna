@@ -438,14 +438,14 @@ npm run type-check   # TypeScript type checking
 - ✅ CustomerLayout with header and bottom navigation
 - ✅ 11 shared UI components (ProviderCard, ProductCard, SearchBar, etc.)
 - ✅ Home section components (HeroSection, CategoriesSection, OffersCarousel)
-- ✅ Voice ordering system with VoiceOrderFAB and VoiceOrderChat
+- ✅ AI Chat ordering system with ChatFAB and TextChat (دردش واطلب)
 - ✅ Customer hooks (useFavorites, useProviders)
 - ✅ New pages: /cart, /favorites, /offers
 - ✅ Location selector connected to database (governorate/city)
 - ✅ Categories synced with database provider types
 - ✅ 83+ new translation keys (AR/EN)
 - ✅ **City-based provider filtering** (customers see only providers in their city)
-- ✅ **Voice microphone button** in providers search bar
+- ✅ **AI Chat button** for smart ordering assistant (replaced voice)
 - ✅ **Header component improvements** (hideAuth prop, RTL-aware back arrow)
 - ✅ **Offer cards blue gradient** (#009DE0, #0088CC, #0077B6)
 
@@ -684,11 +684,11 @@ npm run dev
 - ✅ تخطيط العميل مع الهيدر والتنقل السفلي
 - ✅ 11 مكون واجهة مستخدم مشترك
 - ✅ مكونات الصفحة الرئيسية (HeroSection، CategoriesSection، OffersCarousel)
-- ✅ نظام الطلب الصوتي
+- ✅ نظام الدردشة الذكية للطلب (دردش واطلب)
 - ✅ اختيار الموقع مرتبط بقاعدة البيانات
 - ✅ الأقسام متوافقة مع أنواع المتاجر في قاعدة البيانات
 - ✅ **تصفية المتاجر حسب المدينة** (يرى العميل فقط المتاجر في مدينته)
-- ✅ **زر الميكروفون** في شريط البحث بصفحة المتاجر
+- ✅ **زر الدردشة الذكية** للمساعد الذكي (بديل عن الصوت)
 - ✅ **تحسينات مكون الهيدر** (إخفاء القسم للصفحات الداخلية)
 
 **ما يعمل ✅**

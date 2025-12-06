@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, X, Mic } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState } from 'react'
 
@@ -9,7 +9,6 @@ interface SearchBarProps {
   value?: string
   onChange?: (value: string) => void
   onSearch?: (value: string) => void
-  onVoiceClick?: () => void
   autoFocus?: boolean
   className?: string
 }
@@ -19,7 +18,6 @@ export function SearchBar({
   value: externalValue,
   onChange,
   onSearch,
-  onVoiceClick,
   autoFocus = false,
   className = '',
 }: SearchBarProps) {
@@ -71,20 +69,11 @@ export function SearchBar({
         {value && (
           <button
             onClick={handleClear}
-            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600"
+            className={`w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 ${
+              isRTL ? 'ml-2' : 'mr-2'
+            }`}
           >
             <X className="w-4 h-4" />
-          </button>
-        )}
-        {onVoiceClick && (
-          <button
-            onClick={onVoiceClick}
-            className={`w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary hover:text-white text-primary transition-colors ${
-              isRTL ? 'ml-1' : 'mr-1'
-            }`}
-            aria-label={locale === 'ar' ? 'البحث بالصوت' : 'Voice search'}
-          >
-            <Mic className="w-5 h-5" />
           </button>
         )}
       </div>

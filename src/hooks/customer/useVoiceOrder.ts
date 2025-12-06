@@ -230,8 +230,8 @@ export function useVoiceOrder() {
     clearMessages()
 
     const welcomeMessage = locale === 'ar'
-      ? 'مرحباً! 👋 أنا مساعدك الصوتي. قل لي ماذا تريد أن تطلب اليوم؟\n\nمثال: "عايز 2 شاورما فراخ من مطعم الأمير"'
-      : 'Hello! 👋 I\'m your voice assistant. Tell me what you\'d like to order today?\n\nExample: "I want 2 chicken shawarma from Al-Ameer restaurant"'
+      ? 'مرحباً! 👋 أنا مساعد إنجزنا الذكي. اكتب لي ماذا تريد أن تطلب اليوم؟\n\nمثال: "عايز 2 شاورما فراخ من مطعم الأمير"'
+      : 'Hello! 👋 I\'m Engezna\'s smart assistant. Tell me what you\'d like to order today?\n\nExample: "I want 2 chicken shawarma from Al-Ameer restaurant"'
 
     addMessage('assistant', welcomeMessage)
   }, [locale, clearMessages, addMessage])
