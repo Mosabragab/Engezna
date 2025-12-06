@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** December 7, 2025
-**Status:** Week 5 - Complete Feature Set (Session 15 Part 3) ✅
+**Status:** Week 5 - Complete Feature Set (Session 15 Part 4) ✅
 **Branch:** `claude/project-progress-review-019c9eWZ1GRxLZtNz6Bp9DD4`
 
 ---
@@ -160,16 +160,35 @@
 8. ✅ Link from provider dashboard
 
 ### Settlements System (NEW! ✅)
+**Smart COD vs Online Payment Handling:**
+- **COD (الدفع عند الاستلام)**: Provider collects cash → Owes commission to Engezna
+- **Online Payments**: Engezna collects payment → Owes payout to provider
+- **Net Balance**: Calculates who owes whom based on both payment types
+
 #### Admin Settlements (`/admin/settlements`)
 1. ✅ Stats overview: Pending dues, Overdue dues, Total paid
 2. ✅ Settlement generation with period selector (daily, every 3 days, weekly)
 3. ✅ Custom settlement creation for specific provider and date range
-4. ✅ Settlement list with provider info, period, orders, revenue, status
-5. ✅ Payment recording modal (cash, bank transfer, InstaPay, Vodafone Cash)
-6. ✅ Status filtering (all, pending, processing, completed, failed)
-7. ✅ Geographic filtering by governorate/city
-8. ✅ **CRITICAL**: Only includes orders where both `status='delivered'` AND `payment_status='completed'`
-9. ✅ 6% platform commission rate applied
+4. ✅ **COD/Online Breakdown Display**:
+   - Orange: COD orders with commission owed to Engezna
+   - Blue: Online orders with payout owed to provider
+5. ✅ Net balance with direction indicator (who pays whom)
+6. ✅ Provider name displayed instead of generic "مزود"
+7. ✅ "عمولة إنجزنا" instead of "المنصة"
+8. ✅ Payment recording modal (cash, bank transfer, InstaPay, Vodafone Cash)
+9. ✅ Status filtering (all, pending, processing, completed, failed)
+10. ✅ Geographic filtering by governorate/city
+11. ✅ **CRITICAL**: Only includes orders where both `status='delivered'` AND `payment_status='completed'`
+12. ✅ 6% platform commission rate applied
+
+#### Admin Settlement Detail (`/admin/settlements/[id]`)
+1. ✅ Provider info with phone and period
+2. ✅ Orders summary (total, COD count, online count)
+3. ✅ **COD Section** (orange): Revenue, Engezna commission due
+4. ✅ **Online Section** (blue): Revenue, commission deducted, payout due
+5. ✅ **Net Balance Card**: Color-coded (green = Engezna pays, red = provider pays)
+6. ✅ Orders table with payment method column (نقدي/إلكتروني)
+7. ✅ Confirm payment / Mark failed actions
 
 #### Provider Settlements (`/provider/settlements`)
 1. ✅ Stats overview: Total due, Total paid, Pending count, Overdue count
@@ -450,6 +469,47 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Dec 7, 2025 (Session 15 Part 4) - Smart Settlements (COD vs Online) ✅
+
+#### Smart Payment-Aware Settlements
+- ✅ **COD vs Online Payment Logic**:
+  - COD orders: Provider collects cash → Owes 6% commission to Engezna
+  - Online orders: Engezna collects payment → Owes 94% payout to provider
+  - Net balance calculation: Determines who pays whom
+
+- ✅ **Database Schema Update** (`20251207000003_settlements_cod_online_breakdown.sql`):
+  - `cod_orders_count`, `cod_gross_revenue`, `cod_commission_owed`
+  - `online_orders_count`, `online_gross_revenue`, `online_platform_commission`, `online_payout_owed`
+  - `net_balance`, `settlement_direction` (platform_pays_provider | provider_pays_platform | balanced)
+
+- ✅ **Settlement Generation Logic**:
+  - Separate queries for COD (payment_method='cash') and Online (payment_method!='cash')
+  - Calculate commission owed by provider from COD orders
+  - Calculate payout owed to provider from Online orders
+  - Net balance = online_payout_owed - cod_commission_owed
+
+- ✅ **Admin Settlements UI Updates**:
+  - "عمولة إنجزنا" instead of "المنصة" (professional branding)
+  - Provider name displayed dynamically instead of "مزود"
+  - Orange badges for COD with commission owed
+  - Blue badges for Online with payout owed
+  - Color-coded net balance (green = Engezna pays, red = provider pays)
+
+- ✅ **Settlement Detail Page** (`/admin/settlements/[id]`):
+  - COD Section (orange card): Orders, revenue, Engezna commission due
+  - Online Section (blue card): Orders, revenue, commission, provider payout
+  - Net Balance Card: Color-coded with clear direction indicator
+  - Orders table with payment method column (نقدي/إلكتروني)
+
+#### Files Created:
+- `supabase/migrations/20251207000003_settlements_cod_online_breakdown.sql`
+
+#### Files Modified:
+- `src/app/[locale]/admin/settlements/page.tsx` - COD/Online generation logic, UI updates
+- `src/app/[locale]/admin/settlements/[id]/page.tsx` - Full breakdown display
+
+---
 
 ### Work Session Dec 7, 2025 (Session 15 Part 3) - Settlements System ✅
 

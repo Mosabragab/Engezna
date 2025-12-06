@@ -374,9 +374,16 @@ npm run type-check   # TypeScript type checking
 **Last Updated:** December 7, 2025 (Session 15)
 
 **Session 15 Features (NEW!):**
-- ✅ **Settlements System (Complete)**
-  - Admin settlements page (`/admin/settlements`) with stats, generation, and payment recording
-  - Provider settlements page (`/provider/settlements`) with history and dues overview
+- ✅ **Smart Settlements System (Complete - Part 4)**
+  - **COD vs Online Payment Logic**:
+    - COD orders: Provider collects → Owes 6% commission to Engezna
+    - Online orders: Engezna collects → Owes 94% payout to provider
+    - Net balance determines who pays whom
+  - Admin settlements page with COD/Online breakdown (orange/blue color coding)
+  - Provider settlements page with history and dues overview
+  - Settlement detail page with full financial breakdown
+  - Professional naming: "عمولة إنجزنا" instead of "المنصة"
+  - Dynamic provider name display instead of generic "مزود"
   - Settlement generation with period selector (daily, every 3 days, weekly)
   - **CRITICAL**: Only includes orders with BOTH `status='delivered'` AND `payment_status='completed'`
   - 6% platform commission rate applied

@@ -51,6 +51,18 @@ interface Settlement {
   gross_revenue: number
   platform_commission: number
   net_payout: number
+  // COD breakdown
+  cod_orders_count: number
+  cod_gross_revenue: number
+  cod_commission_owed: number
+  // Online breakdown
+  online_orders_count: number
+  online_gross_revenue: number
+  online_platform_commission: number
+  online_payout_owed: number
+  // Net calculation
+  net_balance: number
+  settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
   status: 'pending' | 'processing' | 'completed' | 'failed'
   paid_at: string | null
   payment_method: string | null
@@ -71,6 +83,7 @@ interface Order {
   status: string
   total: number
   platform_commission: number
+  payment_method: string
   created_at: string
   customer: { full_name: string } | null
 }
@@ -152,6 +165,7 @@ export default function SettlementDetailPage() {
           status,
           total,
           platform_commission,
+          payment_method,
           created_at,
           customer:users!customer_id(full_name)
         `)
@@ -434,48 +448,140 @@ export default function SettlementDetailPage() {
             )}
           </div>
 
-          {/* Financial Summary */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-3 mb-2">
-                <Package className="w-5 h-5 text-blue-500" />
-                <span className="text-sm text-slate-600">{locale === 'ar' ? 'عدد الطلبات' : 'Total Orders'}</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900">
-                {formatNumber(settlement.total_orders, locale)}
-              </p>
-            </div>
+          {/* Financial Summary with COD/Online Breakdown */}
+          {(() => {
+            const providerName = locale === 'ar' ? settlement.provider?.name_ar : settlement.provider?.name_en
+            const isPlatformPays = settlement.settlement_direction === 'platform_pays_provider'
+            const isProviderPays = settlement.settlement_direction === 'provider_pays_platform'
 
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-3 mb-2">
-                <DollarSign className="w-5 h-5 text-green-500" />
-                <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Gross Revenue'}</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900">
-                {formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-              </p>
-            </div>
+            return (
+              <>
+                {/* Orders Summary */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Package className="w-5 h-5 text-blue-500" />
+                      <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</span>
+                    </div>
+                    <p className="text-2xl font-bold text-slate-900">
+                      {formatNumber(settlement.total_orders, locale)}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {locale === 'ar'
+                        ? `نقدي: ${settlement.cod_orders_count || 0} | إلكتروني: ${settlement.online_orders_count || 0}`
+                        : `COD: ${settlement.cod_orders_count || 0} | Online: ${settlement.online_orders_count || 0}`}
+                    </p>
+                  </div>
 
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-3 mb-2">
-                <Percent className="w-5 h-5 text-red-500" />
-                <span className="text-sm text-slate-600">{locale === 'ar' ? 'عمولة المنصة (6%)' : 'Platform Commission (6%)'}</span>
-              </div>
-              <p className="text-2xl font-bold text-red-600">
-                -{formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-              </p>
-            </div>
+                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-2">
+                      <DollarSign className="w-5 h-5 text-green-500" />
+                      <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Gross Revenue'}</span>
+                    </div>
+                    <p className="text-2xl font-bold text-slate-900">
+                      {formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                    </p>
+                  </div>
 
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white shadow-lg">
-              <div className="flex items-center gap-3 mb-2">
-                <Wallet className="w-5 h-5" />
-                <span className="text-sm text-green-100">{locale === 'ar' ? 'صافي المزود' : 'Net Payout'}</span>
-              </div>
-              <p className="text-2xl font-bold">
-                {formatCurrency(settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-              </p>
-            </div>
-          </div>
+                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Percent className="w-5 h-5 text-red-500" />
+                      <span className="text-sm text-slate-600">{locale === 'ar' ? 'عمولة إنجزنا (6%)' : 'Engezna Commission (6%)'}</span>
+                    </div>
+                    <p className="text-2xl font-bold text-red-600">
+                      {formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* COD/Online Breakdown */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                  {/* COD Section */}
+                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
+                    <h4 className="text-lg font-bold text-orange-800 mb-3 flex items-center gap-2">
+                      <Wallet className="w-5 h-5" />
+                      {locale === 'ar' ? 'طلبات الدفع عند الاستلام (نقدي)' : 'Cash on Delivery Orders'}
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-orange-700">{locale === 'ar' ? 'عدد الطلبات:' : 'Orders:'}</span>
+                        <span className="font-bold text-orange-900">{settlement.cod_orders_count || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-orange-700">{locale === 'ar' ? 'إجمالي الإيرادات:' : 'Revenue:'}</span>
+                        <span className="font-bold text-orange-900">{formatCurrency(settlement.cod_gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                      </div>
+                      <div className="border-t border-orange-300 pt-2 mt-2">
+                        <div className="flex justify-between">
+                          <span className="text-orange-700 font-medium">{locale === 'ar' ? 'عمولة إنجزنا المستحقة:' : 'Engezna Commission Due:'}</span>
+                          <span className="font-bold text-orange-900">{formatCurrency(settlement.cod_commission_owed || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                        </div>
+                        <p className="text-xs text-orange-600 mt-1">
+                          {locale === 'ar' ? `← ${providerName} يدفع لإنجزنا` : `→ ${providerName} pays Engezna`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Online Section */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+                    <h4 className="text-lg font-bold text-blue-800 mb-3 flex items-center gap-2">
+                      <CreditCard className="w-5 h-5" />
+                      {locale === 'ar' ? 'طلبات الدفع الإلكتروني' : 'Online Payment Orders'}
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-blue-700">{locale === 'ar' ? 'عدد الطلبات:' : 'Orders:'}</span>
+                        <span className="font-bold text-blue-900">{settlement.online_orders_count || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-blue-700">{locale === 'ar' ? 'إجمالي الإيرادات:' : 'Revenue:'}</span>
+                        <span className="font-bold text-blue-900">{formatCurrency(settlement.online_gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-600">{locale === 'ar' ? 'عمولة إنجزنا:' : 'Engezna Commission:'}</span>
+                        <span className="text-blue-800">-{formatCurrency(settlement.online_platform_commission || 0, locale)}</span>
+                      </div>
+                      <div className="border-t border-blue-300 pt-2 mt-2">
+                        <div className="flex justify-between">
+                          <span className="text-blue-700 font-medium">{locale === 'ar' ? `مستحق لـ${providerName}:` : `Due to ${providerName}:`}</span>
+                          <span className="font-bold text-blue-900">{formatCurrency(settlement.online_payout_owed || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                        </div>
+                        <p className="text-xs text-blue-600 mt-1">
+                          {locale === 'ar' ? `← إنجزنا تدفع لـ${providerName}` : `→ Engezna pays ${providerName}`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Net Balance */}
+                <div className={`rounded-xl p-5 mb-6 ${
+                  isPlatformPays ? 'bg-gradient-to-br from-green-500 to-green-600 text-white'
+                    : isProviderPays ? 'bg-gradient-to-br from-red-500 to-red-600 text-white'
+                    : 'bg-slate-100 text-slate-900'
+                }`}>
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div>
+                      <h4 className="text-lg font-bold mb-1">
+                        {locale === 'ar' ? 'الحساب النهائي' : 'Final Balance'}
+                      </h4>
+                      <p className={`text-sm ${isPlatformPays || isProviderPays ? 'opacity-80' : 'text-slate-600'}`}>
+                        {isPlatformPays
+                          ? (locale === 'ar' ? `إنجزنا تدفع لـ${providerName}` : `Engezna pays ${providerName}`)
+                          : isProviderPays
+                            ? (locale === 'ar' ? `${providerName} يدفع لإنجزنا` : `${providerName} pays Engezna`)
+                            : (locale === 'ar' ? 'التسوية متوازنة' : 'Settlement is balanced')}
+                      </p>
+                    </div>
+                    <div className="text-3xl font-bold">
+                      {formatCurrency(Math.abs(settlement.net_balance || 0), locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )
+          })()}
 
           {/* Payment Details (if completed) */}
           {settlement.status === 'completed' && settlement.paid_at && (
@@ -527,15 +633,17 @@ export default function SettlementDetailPage() {
                   <tr>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'رقم الطلب' : 'Order #'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'العميل' : 'Customer'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'التاريخ' : 'Date'}</th>
+                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'طريقة الدفع' : 'Payment'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الإجمالي' : 'Total'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'العمولة' : 'Commission'}</th>
+                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'عمولة إنجزنا' : 'Engezna Fee'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {orders.length > 0 ? (
-                    orders.map((order) => (
+                    orders.map((order) => {
+                      const isCOD = order.payment_method === 'cash'
+                      return (
                       <tr key={order.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3">
                           <span className="font-medium text-slate-900">#{order.order_number}</span>
@@ -548,8 +656,10 @@ export default function SettlementDetailPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          {formatDate(order.created_at, locale)}
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center text-xs px-2 py-1 rounded-full ${isCOD ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                            {isCOD ? (locale === 'ar' ? 'نقدي' : 'Cash') : (locale === 'ar' ? 'إلكتروني' : 'Online')}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="font-medium text-slate-900">
@@ -558,7 +668,7 @@ export default function SettlementDetailPage() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-red-600">
-                            -{formatCurrency(order.platform_commission || (order.total * 0.06), locale)}
+                            {formatCurrency(order.platform_commission || (order.total * 0.06), locale)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -567,7 +677,7 @@ export default function SettlementDetailPage() {
                           </span>
                         </td>
                       </tr>
-                    ))
+                    )})
                   ) : (
                     <tr>
                       <td colSpan={6} className="px-4 py-12 text-center">

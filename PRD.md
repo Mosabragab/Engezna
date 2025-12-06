@@ -29,6 +29,26 @@
 
 ### Session 15 Updates (December 7, 2025)
 
+**Part 4: Smart Settlements (COD vs Online):**
+- ✅ **Payment-aware settlement logic**:
+  - COD orders: Provider collects cash → Owes 6% commission to Engezna
+  - Online orders: Engezna collects payment → Owes 94% payout to provider
+  - Net balance calculation determines who pays whom
+- ✅ Database schema update (`20251207000003_settlements_cod_online_breakdown.sql`):
+  - `cod_orders_count`, `cod_gross_revenue`, `cod_commission_owed`
+  - `online_orders_count`, `online_gross_revenue`, `online_platform_commission`, `online_payout_owed`
+  - `net_balance`, `settlement_direction`
+- ✅ UI improvements:
+  - "عمولة إنجزنا" instead of "المنصة" (professional branding)
+  - Dynamic provider name instead of generic "مزود"
+  - Orange badges for COD with commission owed
+  - Blue badges for Online with payout owed
+  - Color-coded net balance (green = Engezna pays, red = provider pays)
+- ✅ Settlement detail page with full breakdown:
+  - COD Section (orange): Revenue, Engezna commission due
+  - Online Section (blue): Revenue, commission, provider payout
+  - Net Balance Card with direction indicator
+
 **Part 3: Settlements System:**
 - ✅ Admin settlements page (`/admin/settlements`) with full management:
   - Stats cards: Pending dues, Overdue dues, Total paid
