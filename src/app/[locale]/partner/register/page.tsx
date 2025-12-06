@@ -31,8 +31,17 @@ import {
   Phone,
   Eye,
   EyeOff,
-  RefreshCw
+  RefreshCw,
+  MapPin,
+  ChevronDown,
 } from 'lucide-react'
+
+interface Governorate {
+  id: string
+  name_ar: string
+  name_en: string
+  is_active: boolean
+}
 
 // Business category options with icons
 const businessCategories = [
@@ -59,6 +68,7 @@ const partnerSignupSchema = z.object({
   confirmPassword: z.string(),
   businessCategory: z.string().min(1, 'Please select a business category'),
   partnerRole: z.string().min(1, 'Please select your role'),
+  governorateId: z.string().min(1, 'Please select your governorate'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -75,6 +85,8 @@ export default function PartnerRegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [step, setStep] = useState(1) // Step 1: Personal Info, Step 2: Business Info
+  const [governorates, setGovernorates] = useState<Governorate[]>([])
+  const [loadingGovernorates, setLoadingGovernorates] = useState(true)
 
   const {
     register,
@@ -88,13 +100,33 @@ export default function PartnerRegisterPage() {
     defaultValues: {
       businessCategory: '',
       partnerRole: '',
+      governorateId: '',
     }
   })
 
   const businessCategory = watch('businessCategory')
   const partnerRole = watch('partnerRole')
+  const governorateId = watch('governorateId')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // Fetch governorates on mount
+  useEffect(() => {
+    async function fetchGovernorates() {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('governorates')
+        .select('id, name_ar, name_en, is_active')
+        .eq('is_active', true)
+        .order('name_ar')
+
+      if (!error && data) {
+        setGovernorates(data)
+      }
+      setLoadingGovernorates(false)
+    }
+    fetchGovernorates()
+  }, [])
 
   // Handle next step
   const handleNextStep = async () => {
@@ -145,6 +177,7 @@ export default function PartnerRegisterPage() {
             full_name: data.fullName,
             role: 'provider_owner',
             partner_role: data.partnerRole,
+            governorate_id: data.governorateId,
           })
 
         if (profileError) {
@@ -153,7 +186,7 @@ export default function PartnerRegisterPage() {
           return
         }
 
-        // 3. Create provider record with status "incomplete"
+        // 3. Create provider record with status "incomplete" and governorate_id
         const { error: providerError } = await supabase
           .from('providers')
           .insert({
@@ -165,6 +198,7 @@ export default function PartnerRegisterPage() {
             address_ar: '', // Will be completed later
             delivery_fee: 0, // Will be completed later
             status: 'incomplete',
+            governorate_id: data.governorateId, // Save governorate (fixed, non-editable later)
           })
 
         if (providerError) {
@@ -399,6 +433,46 @@ export default function PartnerRegisterPage() {
             {/* Step 2: Business Information */}
             {step === 2 && (
               <>
+                {/* Governorate Selection - Fixed after registration */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    {locale === 'ar' ? 'المحافظة' : 'Governorate'}
+                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                      {locale === 'ar' ? 'غير قابل للتغيير' : 'Cannot be changed'}
+                    </span>
+                  </Label>
+                  <div className="relative">
+                    <select
+                      value={governorateId}
+                      onChange={(e) => setValue('governorateId', e.target.value)}
+                      disabled={isLoading || loadingGovernorates}
+                      className={`w-full h-10 px-3 py-2 text-sm rounded-md border bg-background appearance-none cursor-pointer
+                        ${errors.governorateId ? 'border-destructive' : 'border-input'}
+                        focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
+                        disabled:cursor-not-allowed disabled:opacity-50`}
+                    >
+                      <option value="">
+                        {loadingGovernorates
+                          ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
+                          : (locale === 'ar' ? 'اختر المحافظة' : 'Select governorate')
+                        }
+                      </option>
+                      {governorates.map((gov) => (
+                        <option key={gov.id} value={gov.id}>
+                          {locale === 'ar' ? gov.name_ar : gov.name_en}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none`} />
+                  </div>
+                  {errors.governorateId && (
+                    <p className="text-sm text-destructive">
+                      {locale === 'ar' ? 'يرجى اختيار المحافظة' : errors.governorateId.message}
+                    </p>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label>{t('businessCategory')}</Label>
                   <Select

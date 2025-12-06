@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useForm } from 'react-hook-form'
@@ -13,13 +13,21 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { ArrowLeft, ArrowRight, MapPin, ChevronDown } from 'lucide-react'
+
+interface Governorate {
+  id: string
+  name_ar: string
+  name_en: string
+  is_active: boolean
+}
 
 // Form validation schema
 const signupSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
   phone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'Please enter a valid Egyptian phone number'),
   email: z.string().email('Invalid email address'),
+  governorateId: z.string().min(1, 'Please select your governorate'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -36,14 +44,41 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [governorates, setGovernorates] = useState<Governorate[]>([])
+  const [loadingGovernorates, setLoadingGovernorates] = useState(true)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
+    defaultValues: {
+      governorateId: '',
+    },
   })
+
+  const selectedGovernorateId = watch('governorateId')
+
+  // Fetch governorates on mount
+  useEffect(() => {
+    async function fetchGovernorates() {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('governorates')
+        .select('id, name_ar, name_en, is_active')
+        .eq('is_active', true)
+        .order('name_ar')
+
+      if (!error && data) {
+        setGovernorates(data)
+      }
+      setLoadingGovernorates(false)
+    }
+    fetchGovernorates()
+  }, [])
 
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true)
@@ -70,7 +105,7 @@ export default function SignupPage() {
       }
 
       if (authData.user) {
-        // Insert user profile data
+        // Insert user profile data with governorate_id
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -79,6 +114,7 @@ export default function SignupPage() {
             phone: data.phone,
             full_name: data.fullName,
             role: 'customer',
+            governorate_id: data.governorateId,
           })
 
         if (profileError) {
@@ -187,6 +223,43 @@ export default function SignupPage() {
               />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
+            </div>
+
+            {/* Governorate Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="governorateId" className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary" />
+                {locale === 'ar' ? 'المحافظة' : 'Governorate'}
+              </Label>
+              <div className="relative">
+                <select
+                  id="governorateId"
+                  {...register('governorateId')}
+                  disabled={isLoading || loadingGovernorates}
+                  className={`w-full h-10 px-3 py-2 text-sm rounded-md border bg-background appearance-none cursor-pointer
+                    ${errors.governorateId ? 'border-destructive' : 'border-input'}
+                    focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
+                    disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  <option value="">
+                    {loadingGovernorates
+                      ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
+                      : (locale === 'ar' ? 'اختر المحافظة' : 'Select governorate')
+                    }
+                  </option>
+                  {governorates.map((gov) => (
+                    <option key={gov.id} value={gov.id}>
+                      {locale === 'ar' ? gov.name_ar : gov.name_en}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none`} />
+              </div>
+              {errors.governorateId && (
+                <p className="text-sm text-destructive">
+                  {locale === 'ar' ? 'يرجى اختيار المحافظة' : errors.governorateId.message}
+                </p>
               )}
             </div>
 
