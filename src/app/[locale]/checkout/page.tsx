@@ -735,7 +735,7 @@ export default function CheckoutPage() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pb-32">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">
             {locale === 'ar' ? 'إتمام الطلب' : 'Checkout'}
@@ -1091,7 +1091,7 @@ export default function CheckoutPage() {
 
             {/* Right Column - Order Summary */}
             <div className="lg:col-span-1">
-              <Card className="sticky top-24">
+              <Card className="lg:sticky lg:top-24">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ShoppingCart className="w-5 h-5" />
@@ -1223,22 +1223,20 @@ export default function CheckoutPage() {
                   <Button
                     onClick={handlePlaceOrder}
                     disabled={isLoading}
-                    className="w-full text-white"
+                    className="w-full"
                     size="lg"
                   >
-                    <span className="text-white font-medium">
-                      {isLoading
-                        ? locale === 'ar'
-                          ? 'جاري تقديم الطلب...'
-                          : 'Placing Order...'
-                        : !isAuthenticated
-                        ? locale === 'ar'
-                          ? 'تسجيل الدخول لإكمال الطلب'
-                          : 'Login to Complete Order'
-                        : locale === 'ar'
-                        ? 'تأكيد الطلب'
-                        : 'Confirm Order'}
-                    </span>
+                    {isLoading
+                      ? locale === 'ar'
+                        ? 'جاري تقديم الطلب...'
+                        : 'Placing Order...'
+                      : !isAuthenticated
+                      ? locale === 'ar'
+                        ? 'تسجيل الدخول لإكمال الطلب'
+                        : 'Login to Complete Order'
+                      : locale === 'ar'
+                      ? 'تأكيد الطلب'
+                      : 'Confirm Order'}
                   </Button>
 
                   {provider && subtotal < provider.min_order_amount && (
