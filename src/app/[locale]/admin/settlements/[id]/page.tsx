@@ -30,6 +30,7 @@ import {
   Phone,
   DollarSign,
   Percent,
+  Trash2,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -245,6 +246,31 @@ export default function SettlementDetailPage() {
     }
   }
 
+  async function handleDeleteSettlement() {
+    if (!settlement) return
+
+    const confirmed = confirm(
+      locale === 'ar'
+        ? 'هل أنت متأكد من حذف هذه التسوية؟ لا يمكن التراجع عن هذا الإجراء.'
+        : 'Are you sure you want to delete this settlement? This action cannot be undone.'
+    )
+    if (!confirmed) return
+
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('settlements')
+      .delete()
+      .eq('id', settlement.id)
+
+    if (error) {
+      console.error('Error deleting settlement:', error)
+      alert(locale === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting settlement')
+    } else {
+      alert(locale === 'ar' ? 'تم حذف التسوية بنجاح' : 'Settlement deleted successfully')
+      router.push(`/${locale}/admin/settlements`)
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-700'
@@ -426,6 +452,14 @@ export default function SettlementDetailPage() {
                     >
                       <XCircle className="w-4 h-4 mr-2" />
                       {locale === 'ar' ? 'فشل' : 'Mark Failed'}
+                    </Button>
+                    <Button
+                      onClick={handleDeleteSettlement}
+                      variant="outline"
+                      className="border-slate-300 text-slate-600 hover:bg-slate-50"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {locale === 'ar' ? 'حذف' : 'Delete'}
                     </Button>
                   </div>
                 )}
