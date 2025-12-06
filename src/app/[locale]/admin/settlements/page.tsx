@@ -220,17 +220,67 @@ export default function AdminSettlementsPage() {
     setIsGenerating(true)
     try {
       const supabase = createClient()
-      const { data, error } = await supabase.rpc('generate_weekly_settlements', {
-        p_created_by: user?.id
-      })
 
-      if (error) {
-        console.error('Error generating settlements:', error)
-        alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء التسويات' : 'Error generating settlements')
-      } else {
-        alert(locale === 'ar' ? `تم إنشاء ${data} تسوية جديدة` : `Generated ${data} new settlements`)
-        await handleRefresh()
+      // Get last week's date range
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - 7)
+
+      // Get all active providers
+      const { data: activeProviders } = await supabase
+        .from('providers')
+        .select('id')
+        .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
+
+      if (!activeProviders || activeProviders.length === 0) {
+        alert(locale === 'ar' ? 'لا يوجد مزودين نشطين' : 'No active providers found')
+        return
       }
+
+      let createdCount = 0
+      const COMMISSION_RATE = 0.06 // 6%
+
+      for (const provider of activeProviders) {
+        // Get delivered orders for this provider in the period
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('id, total')
+          .eq('provider_id', provider.id)
+          .eq('status', 'delivered')
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString())
+
+        if (orders && orders.length > 0) {
+          const grossRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
+          const platformCommission = grossRevenue * COMMISSION_RATE
+          const netPayout = grossRevenue - platformCommission
+
+          // Create settlement
+          const { error: insertError } = await supabase
+            .from('settlements')
+            .insert({
+              provider_id: provider.id,
+              period_start: startDate.toISOString(),
+              period_end: endDate.toISOString(),
+              total_orders: orders.length,
+              gross_revenue: grossRevenue,
+              platform_commission: platformCommission,
+              net_payout: netPayout,
+              status: 'pending',
+              orders_included: orders.map(o => o.id),
+            })
+
+          if (!insertError) {
+            createdCount++
+          }
+        }
+      }
+
+      alert(locale === 'ar' ? `تم إنشاء ${createdCount} تسوية جديدة` : `Generated ${createdCount} new settlements`)
+      await handleRefresh()
+    } catch (error) {
+      console.error('Error generating settlements:', error)
+      alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء التسويات' : 'Error generating settlements')
     } finally {
       setIsGenerating(false)
     }
@@ -245,24 +295,53 @@ export default function AdminSettlementsPage() {
     setIsGenerating(true)
     try {
       const supabase = createClient()
-      const { data, error } = await supabase.rpc('generate_provider_settlement', {
-        p_provider_id: generateForm.providerId,
-        p_period_start: generateForm.periodStart,
-        p_period_end: generateForm.periodEnd,
-        p_created_by: user?.id
-      })
+      const COMMISSION_RATE = 0.06 // 6%
 
-      if (error) {
-        console.error('Error generating settlement:', error)
-        alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء التسوية' : 'Error generating settlement')
-      } else if (data) {
+      // Get delivered orders for this provider in the period
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('id, total')
+        .eq('provider_id', generateForm.providerId)
+        .eq('status', 'delivered')
+        .gte('created_at', generateForm.periodStart)
+        .lte('created_at', generateForm.periodEnd + 'T23:59:59')
+
+      if (!orders || orders.length === 0) {
+        alert(locale === 'ar' ? 'لا توجد طلبات في هذه الفترة' : 'No orders found in this period')
+        return
+      }
+
+      const grossRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const platformCommission = grossRevenue * COMMISSION_RATE
+      const netPayout = grossRevenue - platformCommission
+
+      // Create settlement
+      const { error: insertError } = await supabase
+        .from('settlements')
+        .insert({
+          provider_id: generateForm.providerId,
+          period_start: generateForm.periodStart,
+          period_end: generateForm.periodEnd,
+          total_orders: orders.length,
+          gross_revenue: grossRevenue,
+          platform_commission: platformCommission,
+          net_payout: netPayout,
+          status: 'pending',
+          orders_included: orders.map(o => o.id),
+        })
+
+      if (insertError) {
+        console.error('Error creating settlement:', insertError)
+        alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء التسوية' : 'Error creating settlement')
+      } else {
         alert(locale === 'ar' ? 'تم إنشاء التسوية بنجاح' : 'Settlement generated successfully')
         setShowGenerateModal(false)
         setGenerateForm({ providerId: '', periodStart: '', periodEnd: '' })
         await handleRefresh()
-      } else {
-        alert(locale === 'ar' ? 'لا توجد طلبات في هذه الفترة' : 'No orders found in this period')
       }
+    } catch (error) {
+      console.error('Error generating settlement:', error)
+      alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء التسوية' : 'Error generating settlement')
     } finally {
       setIsGenerating(false)
     }
@@ -277,18 +356,23 @@ export default function AdminSettlementsPage() {
     setIsProcessingPayment(true)
     try {
       const supabase = createClient()
-      const { data, error } = await supabase.rpc('record_settlement_payment', {
-        p_settlement_id: selectedSettlement.id,
-        p_amount: parseFloat(paymentForm.amount),
-        p_payment_method: paymentForm.method,
-        p_payment_reference: paymentForm.reference || null,
-        p_processed_by: user?.id
-      })
+
+      // Update settlement status to completed
+      const { error } = await supabase
+        .from('settlements')
+        .update({
+          status: 'completed',
+          paid_at: new Date().toISOString(),
+          payment_method: paymentForm.method,
+          payment_reference: paymentForm.reference || null,
+          processed_by: user?.id,
+        })
+        .eq('id', selectedSettlement.id)
 
       if (error) {
         console.error('Error recording payment:', error)
         alert(locale === 'ar' ? 'حدث خطأ أثناء تسجيل الدفع' : 'Error recording payment')
-      } else if (data) {
+      } else {
         alert(locale === 'ar' ? 'تم تسجيل الدفع بنجاح' : 'Payment recorded successfully')
         setShowPaymentModal(false)
         setSelectedSettlement(null)
@@ -301,19 +385,10 @@ export default function AdminSettlementsPage() {
   }
 
   async function handleUpdateOverdue() {
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase.rpc('update_overdue_settlements')
-
-      if (error) {
-        console.error('Error updating overdue:', error)
-      } else {
-        alert(locale === 'ar' ? `تم تحديث ${data} تسوية متأخرة` : `Updated ${data} overdue settlements`)
-        await handleRefresh()
-      }
-    } catch (error) {
-      console.error('Error:', error)
-    }
+    // This function is not needed since we don't have due dates
+    // Just refresh to get latest data
+    alert(locale === 'ar' ? 'تم تحديث البيانات' : 'Data updated')
+    await handleRefresh()
   }
 
   const getStatusColor = (status: string) => {
@@ -405,7 +480,7 @@ export default function AdminSettlementsPage() {
               <Button
                 onClick={() => setShowGenerateModal(true)}
                 variant="outline"
-                className="border-green-200 text-green-700 hover:bg-green-50"
+                className="border-green-500 text-green-700 hover:bg-green-600 hover:text-white hover:border-green-600"
               >
                 <Calendar className="w-4 h-4 mr-2" />
                 {locale === 'ar' ? 'إنشاء تسوية مخصصة' : 'Custom Settlement'}
@@ -414,7 +489,7 @@ export default function AdminSettlementsPage() {
               <Button
                 onClick={handleUpdateOverdue}
                 variant="outline"
-                className="border-red-200 text-red-700 hover:bg-red-50"
+                className="border-red-500 text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600"
               >
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 {locale === 'ar' ? 'تحديث المتأخرات' : 'Update Overdue'}
