@@ -42,18 +42,6 @@ interface Settlement {
   gross_revenue: number
   platform_commission: number
   net_payout: number
-  // COD breakdown - Provider collects cash, owes commission to Engezna
-  cod_orders_count: number
-  cod_gross_revenue: number
-  cod_commission_owed: number
-  // Online breakdown - Engezna collects, owes payout to provider
-  online_orders_count: number
-  online_gross_revenue: number
-  online_platform_commission: number
-  online_payout_owed: number
-  // Net calculation
-  net_balance: number
-  settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
   status: 'pending' | 'processing' | 'completed' | 'failed'
   paid_at: string | null
   payment_method: string | null
@@ -170,16 +158,11 @@ export default function AdminSettlementsPage() {
     setSettlements(settlementsTyped)
 
     // Load providers for the generate form
-    // Note: Database uses 'open' for active providers, 'temporarily_paused' for paused
-    const { data: providersData, error: providersError } = await supabase
+    const { data: providersData } = await supabase
       .from('providers')
       .select('id, name_ar, name_en, governorate_id, city_id')
-      .in('status', ['open', 'temporarily_paused'])
+      .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
       .order('name_ar')
-
-    if (providersError) {
-      console.error('Error loading providers:', providersError)
-    }
 
     setProviders((providersData || []) as Provider[])
 
@@ -247,16 +230,10 @@ export default function AdminSettlementsPage() {
       startDate.setDate(startDate.getDate() - settlementPeriod)
 
       // Get all active providers
-      const { data: activeProviders, error: providersError } = await supabase
+      const { data: activeProviders } = await supabase
         .from('providers')
         .select('id')
-        .in('status', ['open', 'temporarily_paused'])
-
-      if (providersError) {
-        console.error('Error fetching providers:', providersError)
-        alert(locale === 'ar' ? 'خطأ في جلب المزودين: ' + providersError.message : 'Error fetching providers: ' + providersError.message)
-        return
-      }
+        .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
 
       if (!activeProviders || activeProviders.length === 0) {
         alert(locale === 'ar' ? 'لا يوجد مزودين نشطين' : 'No active providers found')
@@ -267,50 +244,19 @@ export default function AdminSettlementsPage() {
       const COMMISSION_RATE = 0.06 // 6%
 
       for (const provider of activeProviders) {
-        // Get COD orders (cash) - Provider collected, owes commission to Engezna
-        const { data: codOrders } = await supabase
+        // Get delivered orders for this provider in the period
+        const { data: orders } = await supabase
           .from('orders')
-          .select('id, total, payment_method')
+          .select('id, total')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
-          .eq('payment_status', 'completed')
-          .eq('payment_method', 'cash')
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString())
 
-        // Get Online orders (card, wallet, etc.) - Engezna collected, owes payout to provider
-        const { data: onlineOrders } = await supabase
-          .from('orders')
-          .select('id, total, payment_method')
-          .eq('provider_id', provider.id)
-          .eq('status', 'delivered')
-          .eq('payment_status', 'completed')
-          .neq('payment_method', 'cash')
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString())
-
-        const codOrdersList = codOrders || []
-        const onlineOrdersList = onlineOrders || []
-        const allOrders = [...codOrdersList, ...onlineOrdersList]
-
-        if (allOrders.length > 0) {
-          // COD calculations
-          const codGrossRevenue = codOrdersList.reduce((sum, o) => sum + (o.total || 0), 0)
-          const codCommissionOwed = codGrossRevenue * COMMISSION_RATE
-
-          // Online calculations
-          const onlineGrossRevenue = onlineOrdersList.reduce((sum, o) => sum + (o.total || 0), 0)
-          const onlinePlatformCommission = onlineGrossRevenue * COMMISSION_RATE
-          const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
-
-          // Net balance: positive = Engezna pays provider, negative = provider pays Engezna
-          const netBalance = onlinePayoutOwed - codCommissionOwed
-          const settlementDirection = netBalance > 0 ? 'platform_pays_provider'
-            : netBalance < 0 ? 'provider_pays_platform' : 'balanced'
-
-          // Total calculations
-          const grossRevenue = codGrossRevenue + onlineGrossRevenue
-          const platformCommission = codCommissionOwed + onlinePlatformCommission
+        if (orders && orders.length > 0) {
+          const grossRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
+          const platformCommission = grossRevenue * COMMISSION_RATE
+          const netPayout = grossRevenue - platformCommission
 
           // Create settlement
           const { error: insertError } = await supabase
@@ -319,24 +265,12 @@ export default function AdminSettlementsPage() {
               provider_id: provider.id,
               period_start: startDate.toISOString(),
               period_end: endDate.toISOString(),
-              total_orders: allOrders.length,
+              total_orders: orders.length,
               gross_revenue: grossRevenue,
               platform_commission: platformCommission,
-              // COD breakdown
-              cod_orders_count: codOrdersList.length,
-              cod_gross_revenue: codGrossRevenue,
-              cod_commission_owed: codCommissionOwed,
-              // Online breakdown
-              online_orders_count: onlineOrdersList.length,
-              online_gross_revenue: onlineGrossRevenue,
-              online_platform_commission: onlinePlatformCommission,
-              online_payout_owed: onlinePayoutOwed,
-              // Net calculation
-              net_balance: netBalance,
-              settlement_direction: settlementDirection,
-              net_payout: Math.abs(netBalance),
+              net_payout: netPayout,
               status: 'pending',
-              orders_included: allOrders.map(o => o.id),
+              orders_included: orders.map(o => o.id),
             })
 
           if (!insertError) {
@@ -366,54 +300,23 @@ export default function AdminSettlementsPage() {
       const supabase = createClient()
       const COMMISSION_RATE = 0.06 // 6%
 
-      // Get COD orders
-      const { data: codOrders } = await supabase
+      // Get delivered orders for this provider in the period
+      const { data: orders } = await supabase
         .from('orders')
-        .select('id, total, payment_method')
+        .select('id, total')
         .eq('provider_id', generateForm.providerId)
         .eq('status', 'delivered')
-        .eq('payment_status', 'completed')
-        .eq('payment_method', 'cash')
         .gte('created_at', generateForm.periodStart)
         .lte('created_at', generateForm.periodEnd + 'T23:59:59')
 
-      // Get Online orders
-      const { data: onlineOrders } = await supabase
-        .from('orders')
-        .select('id, total, payment_method')
-        .eq('provider_id', generateForm.providerId)
-        .eq('status', 'delivered')
-        .eq('payment_status', 'completed')
-        .neq('payment_method', 'cash')
-        .gte('created_at', generateForm.periodStart)
-        .lte('created_at', generateForm.periodEnd + 'T23:59:59')
-
-      const codOrdersList = codOrders || []
-      const onlineOrdersList = onlineOrders || []
-      const allOrders = [...codOrdersList, ...onlineOrdersList]
-
-      if (allOrders.length === 0) {
+      if (!orders || orders.length === 0) {
         alert(locale === 'ar' ? 'لا توجد طلبات في هذه الفترة' : 'No orders found in this period')
         return
       }
 
-      // COD calculations
-      const codGrossRevenue = codOrdersList.reduce((sum, o) => sum + (o.total || 0), 0)
-      const codCommissionOwed = codGrossRevenue * COMMISSION_RATE
-
-      // Online calculations
-      const onlineGrossRevenue = onlineOrdersList.reduce((sum, o) => sum + (o.total || 0), 0)
-      const onlinePlatformCommission = onlineGrossRevenue * COMMISSION_RATE
-      const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
-
-      // Net balance
-      const netBalance = onlinePayoutOwed - codCommissionOwed
-      const settlementDirection = netBalance > 0 ? 'platform_pays_provider'
-        : netBalance < 0 ? 'provider_pays_platform' : 'balanced'
-
-      // Total calculations
-      const grossRevenue = codGrossRevenue + onlineGrossRevenue
-      const platformCommission = codCommissionOwed + onlinePlatformCommission
+      const grossRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const platformCommission = grossRevenue * COMMISSION_RATE
+      const netPayout = grossRevenue - platformCommission
 
       // Create settlement
       const { error: insertError } = await supabase
@@ -422,24 +325,12 @@ export default function AdminSettlementsPage() {
           provider_id: generateForm.providerId,
           period_start: generateForm.periodStart,
           period_end: generateForm.periodEnd,
-          total_orders: allOrders.length,
+          total_orders: orders.length,
           gross_revenue: grossRevenue,
           platform_commission: platformCommission,
-          // COD breakdown
-          cod_orders_count: codOrdersList.length,
-          cod_gross_revenue: codGrossRevenue,
-          cod_commission_owed: codCommissionOwed,
-          // Online breakdown
-          online_orders_count: onlineOrdersList.length,
-          online_gross_revenue: onlineGrossRevenue,
-          online_platform_commission: onlinePlatformCommission,
-          online_payout_owed: onlinePayoutOwed,
-          // Net calculation
-          net_balance: netBalance,
-          settlement_direction: settlementDirection,
-          net_payout: Math.abs(netBalance),
+          net_payout: netPayout,
           status: 'pending',
-          orders_included: allOrders.map(o => o.id),
+          orders_included: orders.map(o => o.id),
         })
 
       if (insertError) {
@@ -708,30 +599,27 @@ export default function AdminSettlementsPage() {
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'مقدم الخدمة' : 'Provider'}</th>
+                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'المزود' : 'Provider'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الفترة' : 'Period'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الطلبات' : 'Orders'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'التفاصيل المالية' : 'Financial Details'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الصافي' : 'Net Balance'}</th>
+                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الإيرادات' : 'Revenue'}</th>
+                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'صافي المزود' : 'Net Payout'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
                     <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'إجراءات' : 'Actions'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredSettlements.length > 0 ? (
-                    filteredSettlements.map((settlement) => {
-                      const providerName = locale === 'ar' ? settlement.provider?.name_ar : settlement.provider?.name_en
-                      const isPlatformPays = settlement.settlement_direction === 'platform_pays_provider'
-                      const isProviderPays = settlement.settlement_direction === 'provider_pays_platform'
-
-                      return (
+                    filteredSettlements.map((settlement) => (
                       <tr key={settlement.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
                               <Building className="w-5 h-5 text-slate-500" />
                             </div>
-                            <span className="font-medium text-slate-900">{providerName}</span>
+                            <span className="font-medium text-slate-900">
+                              {locale === 'ar' ? settlement.provider?.name_ar : settlement.provider?.name_en}
+                            </span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -741,45 +629,18 @@ export default function AdminSettlementsPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
+                          <span className="font-medium text-slate-900">{formatNumber(settlement.total_orders, locale)}</span>
+                        </td>
+                        <td className="px-4 py-3">
                           <div className="text-sm">
-                            <p className="font-medium text-slate-900">{formatNumber(settlement.total_orders, locale)}</p>
-                            <p className="text-xs text-slate-500">
-                              {locale === 'ar' ? `نقدي: ${settlement.cod_orders_count || 0} | إلكتروني: ${settlement.online_orders_count || 0}`
-                                : `COD: ${settlement.cod_orders_count || 0} | Online: ${settlement.online_orders_count || 0}`}
+                            <p className="font-bold text-slate-900">{formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                            <p className="text-xs text-red-500">
+                              -{locale === 'ar' ? 'عمولة' : 'Commission'}: {formatCurrency(settlement.platform_commission || 0, locale)}
                             </p>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="text-xs space-y-1">
-                            {(settlement.cod_orders_count || 0) > 0 && (
-                              <p className="text-orange-600">
-                                {locale === 'ar'
-                                  ? `نقدي: ${formatCurrency(settlement.cod_gross_revenue || 0, locale)} ← عمولة إنجزنا: ${formatCurrency(settlement.cod_commission_owed || 0, locale)}`
-                                  : `COD: ${formatCurrency(settlement.cod_gross_revenue || 0, locale)} → Engezna: ${formatCurrency(settlement.cod_commission_owed || 0, locale)}`}
-                              </p>
-                            )}
-                            {(settlement.online_orders_count || 0) > 0 && (
-                              <p className="text-blue-600">
-                                {locale === 'ar'
-                                  ? `إلكتروني: ${formatCurrency(settlement.online_gross_revenue || 0, locale)} ← مستحق لـ${providerName}: ${formatCurrency(settlement.online_payout_owed || 0, locale)}`
-                                  : `Online: ${formatCurrency(settlement.online_gross_revenue || 0, locale)} → ${providerName}: ${formatCurrency(settlement.online_payout_owed || 0, locale)}`}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm">
-                            <span className={`font-bold ${isPlatformPays ? 'text-green-600' : isProviderPays ? 'text-red-600' : 'text-slate-600'}`}>
-                              {formatCurrency(Math.abs(settlement.net_balance || 0), locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                            </span>
-                            <p className={`text-xs ${isPlatformPays ? 'text-green-500' : isProviderPays ? 'text-red-500' : 'text-slate-400'}`}>
-                              {isPlatformPays
-                                ? (locale === 'ar' ? `إنجزنا تدفع لـ${providerName}` : `Engezna pays ${providerName}`)
-                                : isProviderPays
-                                  ? (locale === 'ar' ? `${providerName} يدفع لإنجزنا` : `${providerName} pays Engezna`)
-                                  : (locale === 'ar' ? 'متوازن' : 'Balanced')}
-                            </p>
-                          </div>
+                          <span className="font-bold text-green-600">{formatCurrency(settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${getStatusColor(settlement.status)}`}>
@@ -816,10 +677,10 @@ export default function AdminSettlementsPage() {
                           </div>
                         </td>
                       </tr>
-                    )})
+                    ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-4 py-12 text-center">
+                      <td colSpan={8} className="px-4 py-12 text-center">
                         <Wallet className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                         <p className="text-slate-500">
                           {locale === 'ar' ? 'لا توجد تسويات' : 'No settlements found'}

@@ -138,12 +138,6 @@ export default function CheckoutPage() {
   const [deliveryInstructions, setDeliveryInstructions] = useState('')
 
   useEffect(() => {
-    // Redirect to login if not authenticated
-    if (!authLoading && !isAuthenticated) {
-      router.push(`/${locale}/auth/login?redirect=/checkout`)
-      return
-    }
-
     // Redirect if cart is empty
     if (!cart || cart.length === 0) {
       router.push(`/${locale}/providers`)
@@ -151,10 +145,15 @@ export default function CheckoutPage() {
     }
 
     // Load user data if authenticated
-    if (user) {
+    if (user && isAuthenticated) {
       loadUserData()
       loadSavedAddresses()
       loadGovernorates()
+    } else if (!authLoading && !isAuthenticated) {
+      // Load governorates for guest users too
+      loadGovernorates()
+      setAddressMode('new')
+      setLoadingAddresses(false)
     }
   }, [authLoading, isAuthenticated, cart, user])
 
@@ -584,7 +583,13 @@ export default function CheckoutPage() {
   }
 
   const handlePlaceOrder = async () => {
-    if (!user || !provider) return
+    // Check if user is authenticated - redirect to login if not
+    if (!isAuthenticated || !user) {
+      router.push(`/${locale}/auth/login?redirect=/checkout`)
+      return
+    }
+
+    if (!provider) return
 
     if (!validateForm()) return
 
@@ -1203,6 +1208,17 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  {/* Login Prompt for Guests */}
+                  {!isAuthenticated && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center mb-4">
+                      <p className="text-sm text-blue-700 mb-2">
+                        {locale === 'ar'
+                          ? 'يجب تسجيل الدخول لإكمال الطلب'
+                          : 'You need to login to complete your order'}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Place Order Button */}
                   <Button
                     onClick={handlePlaceOrder}
@@ -1214,6 +1230,10 @@ export default function CheckoutPage() {
                       ? locale === 'ar'
                         ? 'جاري تقديم الطلب...'
                         : 'Placing Order...'
+                      : !isAuthenticated
+                      ? locale === 'ar'
+                        ? 'تسجيل الدخول لإكمال الطلب'
+                        : 'Login to Complete Order'
                       : locale === 'ar'
                       ? 'تأكيد الطلب'
                       : 'Confirm Order'}
