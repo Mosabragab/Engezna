@@ -41,20 +41,19 @@ interface Settlement {
   total_orders: number
   gross_revenue: number
   platform_commission: number
-  delivery_fees_collected: number
-  net_amount_due: number
-  status: 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
-  amount_paid: number
-  payment_date: string | null
+  net_payout: number
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  paid_at: string | null
   payment_method: string | null
   payment_reference: string | null
-  due_date: string
-  is_overdue: boolean
-  overdue_days: number
+  orders_included: string[] | null
   notes: string | null
-  admin_notes: string | null
   created_at: string
   updated_at: string
+  processed_by: string | null
+  approved_at: string | null
+  rejected_at: string | null
+  rejection_reason: string | null
 }
 
 interface Provider {
@@ -65,7 +64,7 @@ interface Provider {
   city_id: string | null
 }
 
-type FilterStatus = 'all' | 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
+type FilterStatus = 'all' | 'pending' | 'processing' | 'completed' | 'failed'
 
 export default function AdminSettlementsPage() {
   const locale = useLocale()
@@ -165,17 +164,17 @@ export default function AdminSettlementsPage() {
     setProviders((providersData || []) as Provider[])
 
     // Calculate stats
-    const pending = settlementsTyped.filter(s => s.status === 'pending')
-    const overdue = settlementsTyped.filter(s => s.status === 'overdue')
-    const paid = settlementsTyped.filter(s => s.status === 'paid')
+    const pending = settlementsTyped.filter(s => s.status === 'pending' || s.status === 'processing')
+    const completed = settlementsTyped.filter(s => s.status === 'completed')
+    const failed = settlementsTyped.filter(s => s.status === 'failed')
 
     setStats({
-      totalPending: pending.reduce((sum, s) => sum + (s.net_amount_due - s.amount_paid), 0),
-      totalOverdue: overdue.reduce((sum, s) => sum + (s.net_amount_due - s.amount_paid), 0),
-      totalPaid: paid.reduce((sum, s) => sum + s.amount_paid, 0),
+      totalPending: pending.reduce((sum, s) => sum + (s.net_payout || 0), 0),
+      totalOverdue: failed.reduce((sum, s) => sum + (s.net_payout || 0), 0),
+      totalPaid: completed.reduce((sum, s) => sum + (s.net_payout || 0), 0),
       pendingCount: pending.length,
-      overdueCount: overdue.length,
-      paidCount: paid.length,
+      overdueCount: failed.length,
+      paidCount: completed.length,
     })
   }
 
@@ -319,12 +318,10 @@ export default function AdminSettlementsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-700'
+      case 'completed': return 'bg-green-100 text-green-700'
       case 'pending': return 'bg-yellow-100 text-yellow-700'
-      case 'partially_paid': return 'bg-blue-100 text-blue-700'
-      case 'overdue': return 'bg-red-100 text-red-700'
-      case 'disputed': return 'bg-orange-100 text-orange-700'
-      case 'waived': return 'bg-slate-100 text-slate-700'
+      case 'processing': return 'bg-blue-100 text-blue-700'
+      case 'failed': return 'bg-red-100 text-red-700'
       default: return 'bg-slate-100 text-slate-700'
     }
   }
@@ -332,23 +329,19 @@ export default function AdminSettlementsPage() {
   const getStatusLabel = (status: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
       pending: { ar: 'معلق', en: 'Pending' },
-      partially_paid: { ar: 'مدفوع جزئياً', en: 'Partially Paid' },
-      paid: { ar: 'مدفوع', en: 'Paid' },
-      overdue: { ar: 'متأخر', en: 'Overdue' },
-      disputed: { ar: 'متنازع عليه', en: 'Disputed' },
-      waived: { ar: 'معفي', en: 'Waived' },
+      processing: { ar: 'قيد المعالجة', en: 'Processing' },
+      completed: { ar: 'مكتمل', en: 'Completed' },
+      failed: { ar: 'فشل', en: 'Failed' },
     }
     return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'paid': return <CheckCircle2 className="w-3 h-3" />
+      case 'completed': return <CheckCircle2 className="w-3 h-3" />
       case 'pending': return <Clock className="w-3 h-3" />
-      case 'partially_paid': return <TrendingUp className="w-3 h-3" />
-      case 'overdue': return <AlertTriangle className="w-3 h-3" />
-      case 'disputed': return <AlertCircle className="w-3 h-3" />
-      case 'waived': return <XCircle className="w-3 h-3" />
+      case 'processing': return <TrendingUp className="w-3 h-3" />
+      case 'failed': return <AlertTriangle className="w-3 h-3" />
       default: return null
     }
   }
@@ -497,11 +490,9 @@ export default function AdminSettlementsPage() {
               >
                 <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
                 <option value="pending">{locale === 'ar' ? 'معلق' : 'Pending'}</option>
-                <option value="partially_paid">{locale === 'ar' ? 'مدفوع جزئياً' : 'Partially Paid'}</option>
-                <option value="paid">{locale === 'ar' ? 'مدفوع' : 'Paid'}</option>
-                <option value="overdue">{locale === 'ar' ? 'متأخر' : 'Overdue'}</option>
-                <option value="disputed">{locale === 'ar' ? 'متنازع عليه' : 'Disputed'}</option>
-                <option value="waived">{locale === 'ar' ? 'معفي' : 'Waived'}</option>
+                <option value="processing">{locale === 'ar' ? 'قيد المعالجة' : 'Processing'}</option>
+                <option value="completed">{locale === 'ar' ? 'مكتمل' : 'Completed'}</option>
+                <option value="failed">{locale === 'ar' ? 'فشل' : 'Failed'}</option>
               </select>
 
               {/* Geographic Filter */}
@@ -531,9 +522,8 @@ export default function AdminSettlementsPage() {
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'المزود' : 'Provider'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الفترة' : 'Period'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الطلبات' : 'Orders'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'المستحق' : 'Due'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'المدفوع' : 'Paid'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'تاريخ الاستحقاق' : 'Due Date'}</th>
+                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الإيرادات' : 'Revenue'}</th>
+                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'صافي المزود' : 'Net Payout'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
                     <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'إجراءات' : 'Actions'}</th>
                   </tr>
@@ -563,26 +553,14 @@ export default function AdminSettlementsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm">
-                            <p className="font-bold text-red-600">{formatCurrency(settlement.net_amount_due, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-                            <p className="text-xs text-slate-500">
-                              {locale === 'ar' ? 'عمولة' : 'Commission'}: {formatCurrency(settlement.platform_commission, locale)}
+                            <p className="font-bold text-slate-900">{formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                            <p className="text-xs text-red-500">
+                              -{locale === 'ar' ? 'عمولة' : 'Commission'}: {formatCurrency(settlement.platform_commission || 0, locale)}
                             </p>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-medium text-green-600">{formatCurrency(settlement.amount_paid, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm">
-                            <p className={`font-medium ${settlement.is_overdue ? 'text-red-600' : 'text-slate-900'}`}>
-                              {formatDate(settlement.due_date, locale)}
-                            </p>
-                            {settlement.is_overdue && (
-                              <p className="text-xs text-red-500">
-                                {settlement.overdue_days} {locale === 'ar' ? 'يوم تأخير' : 'days late'}
-                              </p>
-                            )}
-                          </div>
+                          <span className="font-bold text-green-600">{formatCurrency(settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${getStatusColor(settlement.status)}`}>
@@ -592,7 +570,7 @@ export default function AdminSettlementsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-2">
-                            {settlement.status !== 'paid' && settlement.status !== 'waived' && (
+                            {settlement.status === 'pending' && (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -600,7 +578,7 @@ export default function AdminSettlementsPage() {
                                 onClick={() => {
                                   setSelectedSettlement(settlement)
                                   setPaymentForm({
-                                    amount: (settlement.net_amount_due - settlement.amount_paid).toString(),
+                                    amount: (settlement.net_payout || 0).toString(),
                                     method: 'cash',
                                     reference: '',
                                   })
@@ -608,7 +586,7 @@ export default function AdminSettlementsPage() {
                                 }}
                               >
                                 <CreditCard className="w-4 h-4 mr-1" />
-                                {locale === 'ar' ? 'دفع' : 'Pay'}
+                                {locale === 'ar' ? 'تأكيد' : 'Confirm'}
                               </Button>
                             )}
                             <Link href={`/${locale}/admin/settlements/${settlement.id}`}>
@@ -726,8 +704,8 @@ export default function AdminSettlementsPage() {
                   </span>
                 </p>
                 <p className="text-sm text-slate-600">
-                  {locale === 'ar' ? 'المستحق:' : 'Due:'} <span className="font-bold text-red-600">
-                    {formatCurrency(selectedSettlement.net_amount_due - selectedSettlement.amount_paid, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                  {locale === 'ar' ? 'صافي المزود:' : 'Net Payout:'} <span className="font-bold text-green-600">
+                    {formatCurrency(selectedSettlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                   </span>
                 </p>
               </div>

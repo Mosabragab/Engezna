@@ -35,17 +35,15 @@ interface Settlement {
   total_orders: number
   gross_revenue: number
   platform_commission: number
-  delivery_fees_collected: number
-  net_amount_due: number
-  status: 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
-  amount_paid: number
-  payment_date: string | null
+  net_payout: number
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  paid_at: string | null
   payment_method: string | null
-  due_date: string
-  is_overdue: boolean
-  overdue_days: number
+  payment_reference: string | null
+  orders_included: string[] | null
   notes: string | null
   created_at: string
+  updated_at: string
 }
 
 export default function ProviderSettlementsPage() {
@@ -112,21 +110,20 @@ export default function ProviderSettlementsPage() {
     setSettlements(settlements)
 
     // Calculate stats
-    const pending = settlements.filter(s => s.status === 'pending' || s.status === 'partially_paid')
-    const overdue = settlements.filter(s => s.status === 'overdue')
-    const paid = settlements.filter(s => s.status === 'paid')
+    const pending = settlements.filter(s => s.status === 'pending' || s.status === 'processing')
+    const failed = settlements.filter(s => s.status === 'failed')
+    const completed = settlements.filter(s => s.status === 'completed')
 
-    const totalDue = pending.reduce((sum, s) => sum + (s.net_amount_due - s.amount_paid), 0) +
-                     overdue.reduce((sum, s) => sum + (s.net_amount_due - s.amount_paid), 0)
-    const totalPaid = settlements.reduce((sum, s) => sum + s.amount_paid, 0)
-    const totalOrders = settlements.reduce((sum, s) => sum + s.total_orders, 0)
-    const totalRevenue = settlements.reduce((sum, s) => sum + s.gross_revenue, 0)
+    const totalDue = pending.reduce((sum, s) => sum + (s.platform_commission || 0), 0)
+    const totalPaid = completed.reduce((sum, s) => sum + (s.net_payout || 0), 0)
+    const totalOrders = settlements.reduce((sum, s) => sum + (s.total_orders || 0), 0)
+    const totalRevenue = settlements.reduce((sum, s) => sum + (s.gross_revenue || 0), 0)
 
     setStats({
       totalDue,
       totalPaid,
       pendingCount: pending.length,
-      overdueCount: overdue.length,
+      overdueCount: failed.length,
       totalOrders,
       totalRevenue,
     })
@@ -141,12 +138,10 @@ export default function ProviderSettlementsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-700'
+      case 'completed': return 'bg-green-100 text-green-700'
       case 'pending': return 'bg-yellow-100 text-yellow-700'
-      case 'partially_paid': return 'bg-blue-100 text-blue-700'
-      case 'overdue': return 'bg-red-100 text-red-700'
-      case 'disputed': return 'bg-orange-100 text-orange-700'
-      case 'waived': return 'bg-slate-100 text-slate-700'
+      case 'processing': return 'bg-blue-100 text-blue-700'
+      case 'failed': return 'bg-red-100 text-red-700'
       default: return 'bg-slate-100 text-slate-700'
     }
   }
@@ -154,21 +149,19 @@ export default function ProviderSettlementsPage() {
   const getStatusLabel = (status: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
       pending: { ar: 'معلق', en: 'Pending' },
-      partially_paid: { ar: 'مدفوع جزئياً', en: 'Partially Paid' },
-      paid: { ar: 'مدفوع', en: 'Paid' },
-      overdue: { ar: 'متأخر', en: 'Overdue' },
-      disputed: { ar: 'متنازع عليه', en: 'Disputed' },
-      waived: { ar: 'معفي', en: 'Waived' },
+      processing: { ar: 'قيد المعالجة', en: 'Processing' },
+      completed: { ar: 'مكتمل', en: 'Completed' },
+      failed: { ar: 'فشل', en: 'Failed' },
     }
     return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'paid': return <CheckCircle2 className="w-4 h-4" />
+      case 'completed': return <CheckCircle2 className="w-4 h-4" />
       case 'pending': return <Clock className="w-4 h-4" />
-      case 'partially_paid': return <TrendingUp className="w-4 h-4" />
-      case 'overdue': return <AlertTriangle className="w-4 h-4" />
+      case 'processing': return <TrendingUp className="w-4 h-4" />
+      case 'failed': return <AlertTriangle className="w-4 h-4" />
       default: return <Clock className="w-4 h-4" />
     }
   }
@@ -353,11 +346,11 @@ export default function ProviderSettlementsPage() {
                         <div className="flex items-center gap-3">
                           <div className="text-end">
                             <p className={`font-bold ${
-                              settlement.status === 'paid' ? 'text-green-600' :
-                              settlement.status === 'overdue' ? 'text-red-600' :
+                              settlement.status === 'completed' ? 'text-green-600' :
+                              settlement.status === 'failed' ? 'text-red-600' :
                               'text-amber-600'
                             }`}>
-                              {formatCurrency(settlement.net_amount_due - settlement.amount_paid, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              {formatCurrency(settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                             </p>
                             <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${getStatusColor(settlement.status)}`}>
                               {getStatusLabel(settlement.status)}
@@ -377,42 +370,27 @@ export default function ProviderSettlementsPage() {
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <p className="text-slate-500">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Gross Revenue'}</p>
-                              <p className="font-medium text-slate-900">{formatCurrency(settlement.gross_revenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                              <p className="font-medium text-slate-900">{formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
                             </div>
                             <div>
                               <p className="text-slate-500">{locale === 'ar' ? 'عمولة المنصة (6%)' : 'Platform Commission (6%)'}</p>
-                              <p className="font-medium text-red-600">-{formatCurrency(settlement.platform_commission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                              <p className="font-medium text-red-600">-{formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
                             </div>
                             <div>
-                              <p className="text-slate-500">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</p>
-                              <p className="font-medium text-slate-900">{formatCurrency(settlement.delivery_fees_collected, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                              <p className="text-slate-500">{locale === 'ar' ? 'صافي المزود' : 'Net Payout'}</p>
+                              <p className="font-bold text-green-600">{formatCurrency(settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
                             </div>
                             <div>
-                              <p className="text-slate-500">{locale === 'ar' ? 'المبلغ المستحق' : 'Amount Due'}</p>
-                              <p className="font-bold text-red-600">{formatCurrency(settlement.net_amount_due, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-                            </div>
-                            <div>
-                              <p className="text-slate-500">{locale === 'ar' ? 'المدفوع' : 'Paid'}</p>
-                              <p className="font-medium text-green-600">{formatCurrency(settlement.amount_paid, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-                            </div>
-                            <div>
-                              <p className="text-slate-500">{locale === 'ar' ? 'تاريخ الاستحقاق' : 'Due Date'}</p>
-                              <p className={`font-medium ${settlement.is_overdue ? 'text-red-600' : 'text-slate-900'}`}>
-                                {formatDate(settlement.due_date, locale)}
-                                {settlement.is_overdue && (
-                                  <span className="text-xs text-red-500 block">
-                                    {settlement.overdue_days} {locale === 'ar' ? 'يوم تأخير' : 'days late'}
-                                  </span>
-                                )}
-                              </p>
+                              <p className="text-slate-500">{locale === 'ar' ? 'تاريخ الإنشاء' : 'Created At'}</p>
+                              <p className="font-medium text-slate-900">{formatDate(settlement.created_at, locale)}</p>
                             </div>
                           </div>
 
-                          {settlement.payment_date && (
+                          {settlement.paid_at && (
                             <div className="bg-green-50 p-3 rounded-lg">
                               <p className="text-sm text-green-700">
                                 <CheckCircle2 className="w-4 h-4 inline mr-1" />
-                                {locale === 'ar' ? 'تم الدفع بتاريخ' : 'Paid on'} {formatDate(settlement.payment_date, locale)}
+                                {locale === 'ar' ? 'تم الدفع بتاريخ' : 'Paid on'} {formatDate(settlement.paid_at, locale)}
                                 {settlement.payment_method && ` (${settlement.payment_method})`}
                               </p>
                             </div>
