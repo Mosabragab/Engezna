@@ -452,18 +452,18 @@ export default function SettlementDetailPage() {
                     <Button
                       onClick={handleMarkFailed}
                       variant="outline"
-                      className="border-red-300 text-red-600 hover:bg-red-50 flex items-center gap-2"
+                      className="border-red-300 bg-white hover:bg-red-50 flex items-center gap-2"
                     >
-                      <XCircle className="w-4 h-4" />
-                      <span>{locale === 'ar' ? 'فشل' : 'Mark Failed'}</span>
+                      <XCircle className="w-4 h-4 text-red-600" />
+                      <span className="text-red-600">{locale === 'ar' ? 'فشل' : 'Mark Failed'}</span>
                     </Button>
                     <Button
                       onClick={handleDeleteSettlement}
                       variant="outline"
-                      className="border-slate-300 text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+                      className="border-slate-300 bg-white hover:bg-slate-50 flex items-center gap-2"
                     >
-                      <Trash2 className="w-4 h-4" />
-                      <span>{locale === 'ar' ? 'حذف' : 'Delete'}</span>
+                      <Trash2 className="w-4 h-4 text-slate-600" />
+                      <span className="text-slate-600">{locale === 'ar' ? 'حذف' : 'Delete'}</span>
                     </Button>
                   </div>
                 )}
