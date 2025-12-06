@@ -152,10 +152,13 @@ export default function ProviderDashboard() {
     setUser(user)
 
     if (user) {
+      // Load provider owned by current user
+      // Order by created_at to always get the first registered provider
       const { data: providerData } = await supabase
         .from('providers')
         .select('*')
         .eq('owner_id', user.id)
+        .order('created_at', { ascending: true })
         .limit(1)
 
       if (providerData && providerData.length > 0) {

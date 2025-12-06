@@ -274,7 +274,33 @@ export default function OrderTrackingPage() {
     const supabase = createClient()
 
     try {
-      const { error } = await supabase
+      // First check current order status
+      const { data: currentOrder, error: fetchError } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('id', order.id)
+        .single()
+
+      if (fetchError) {
+        console.error('Error fetching order:', fetchError)
+        alert(locale === 'ar' ? 'حدث خطأ أثناء إلغاء الطلب' : 'Error cancelling order')
+        return
+      }
+
+      // Check if order can still be cancelled
+      if (currentOrder.status !== 'pending') {
+        alert(
+          locale === 'ar'
+            ? 'لا يمكن إلغاء هذا الطلب لأنه تم قبوله بالفعل من المتجر'
+            : 'This order cannot be cancelled because it has already been accepted by the store'
+        )
+        // Update local state to reflect actual status
+        setOrder({ ...order, status: currentOrder.status })
+        setShowCancelModal(false)
+        return
+      }
+
+      const { data: updatedOrder, error } = await supabase
         .from('orders')
         .update({
           status: 'cancelled',
@@ -284,12 +310,18 @@ export default function OrderTrackingPage() {
           cancelled_by: 'customer',
         })
         .eq('id', order.id)
-        .eq('status', 'pending') // Only allow cancellation if still pending
+        .eq('status', 'pending')
+        .select()
+        .single()
 
       if (error) {
         console.error('Error cancelling order:', error)
-        alert(locale === 'ar' ? 'حدث خطأ أثناء إلغاء الطلب' : 'Error cancelling order')
-      } else {
+        alert(
+          locale === 'ar'
+            ? `حدث خطأ أثناء إلغاء الطلب: ${error.message}`
+            : `Error cancelling order: ${error.message}`
+        )
+      } else if (updatedOrder) {
         // Update local state
         setOrder({ ...order, status: 'cancelled', cancelled_at: new Date().toISOString() })
         setShowCancelModal(false)
@@ -298,6 +330,7 @@ export default function OrderTrackingPage() {
       }
     } catch (err) {
       console.error('Error:', err)
+      alert(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     } finally {
       setCancelling(false)
     }
