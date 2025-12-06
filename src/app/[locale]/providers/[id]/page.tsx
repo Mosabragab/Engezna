@@ -16,8 +16,6 @@ import {
   Truck,
   MapPin,
   ShoppingCart,
-  ArrowLeft,
-  ArrowRight,
   Heart,
   Share2,
   Star,
@@ -291,6 +289,18 @@ export default function ProviderDetailPage() {
               <button className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
                 <Share2 className="w-5 h-5" />
               </button>
+              {/* Cart Icon - Hidden on mobile (bottom nav has cart) */}
+              {cartItemCount > 0 && (
+                <button
+                  onClick={() => router.push(`/${locale}/cart`)}
+                  className="hidden md:flex w-9 h-9 rounded-full bg-primary text-white items-center justify-center relative hover:bg-primary/90 transition-colors"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                    {cartItemCount}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -570,38 +580,6 @@ export default function ProviderDetailPage() {
           </>
         )}
       </div>
-
-      {/* Floating Cart Button */}
-      {cartItemCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-2xl z-50 safe-area-bottom">
-          <div className="px-4 py-3">
-            <button
-              onClick={() => router.push(`/${locale}/cart`)}
-              className="w-full bg-primary text-white rounded-xl py-3 px-4 flex items-center justify-between hover:bg-primary/90 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                  <ShoppingCart className="w-5 h-5" />
-                </div>
-                <div className="text-start">
-                  <div className="font-semibold">
-                    {cartItemCount} {locale === 'ar' ? 'عنصر' : 'items'}
-                  </div>
-                  <div className="text-sm text-white/80">
-                    {locale === 'ar' ? 'عرض السلة' : 'View Cart'}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-lg">
-                  {cartTotal.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                </span>
-                {locale === 'ar' ? <ArrowLeft className="w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Voice Order FAB - Show only when cart is empty */}
       {cartItemCount === 0 && <VoiceOrderFAB />}
