@@ -158,11 +158,16 @@ export default function AdminSettlementsPage() {
     setSettlements(settlementsTyped)
 
     // Load providers for the generate form
-    const { data: providersData } = await supabase
+    // Note: Database uses 'open' for active providers, 'temporarily_paused' for paused
+    const { data: providersData, error: providersError } = await supabase
       .from('providers')
       .select('id, name_ar, name_en, governorate_id, city_id')
-      .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
+      .in('status', ['open', 'temporarily_paused'])
       .order('name_ar')
+
+    if (providersError) {
+      console.error('Error loading providers:', providersError)
+    }
 
     setProviders((providersData || []) as Provider[])
 
@@ -229,11 +234,18 @@ export default function AdminSettlementsPage() {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - settlementPeriod)
 
-      // Get all active providers
-      const { data: activeProviders } = await supabase
+      // Get all active providers - include all valid statuses
+      // Note: Database uses 'open' for active providers, 'temporarily_paused' for paused
+      const { data: activeProviders, error: providersError } = await supabase
         .from('providers')
         .select('id')
-        .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
+        .in('status', ['open', 'temporarily_paused'])
+
+      if (providersError) {
+        console.error('Error fetching providers:', providersError)
+        alert(locale === 'ar' ? 'خطأ في جلب المزودين: ' + providersError.message : 'Error fetching providers: ' + providersError.message)
+        return
+      }
 
       if (!activeProviders || activeProviders.length === 0) {
         alert(locale === 'ar' ? 'لا يوجد مزودين نشطين' : 'No active providers found')
