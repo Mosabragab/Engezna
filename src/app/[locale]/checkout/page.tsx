@@ -1223,20 +1223,22 @@ export default function CheckoutPage() {
                   <Button
                     onClick={handlePlaceOrder}
                     disabled={isLoading}
-                    className="w-full"
+                    className="w-full text-white"
                     size="lg"
                   >
-                    {isLoading
-                      ? locale === 'ar'
-                        ? 'جاري تقديم الطلب...'
-                        : 'Placing Order...'
-                      : !isAuthenticated
-                      ? locale === 'ar'
-                        ? 'تسجيل الدخول لإكمال الطلب'
-                        : 'Login to Complete Order'
-                      : locale === 'ar'
-                      ? 'تأكيد الطلب'
-                      : 'Confirm Order'}
+                    <span className="text-white font-medium">
+                      {isLoading
+                        ? locale === 'ar'
+                          ? 'جاري تقديم الطلب...'
+                          : 'Placing Order...'
+                        : !isAuthenticated
+                        ? locale === 'ar'
+                          ? 'تسجيل الدخول لإكمال الطلب'
+                          : 'Login to Complete Order'
+                        : locale === 'ar'
+                        ? 'تأكيد الطلب'
+                        : 'Confirm Order'}
+                    </span>
                   </Button>
 
                   {provider && subtotal < provider.min_order_amount && (
