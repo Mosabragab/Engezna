@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { Bell, Package, Tag, Gift, Info, Check, Trash2, Loader2 } from 'lucide-react'
+import { Bell, Package, Tag, Gift, Info, Check, Trash2, Loader2, CreditCard } from 'lucide-react'
 import { CustomerLayout } from '@/components/customer/layout'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/customer'
@@ -59,6 +59,8 @@ export default function NotificationsPage() {
       case 'order_cancelled':
       case 'order_rejected':
         return <Package className="w-5 h-5 text-red-500" />
+      case 'payment_confirmed':
+        return <CreditCard className="w-5 h-5 text-green-500" />
       case 'promotion':
       case 'promo':
         return <Tag className="w-5 h-5 text-red-500" />
