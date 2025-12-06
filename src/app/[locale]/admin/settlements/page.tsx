@@ -88,6 +88,9 @@ export default function AdminSettlementsPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
+  // Settlement generation period: 1 = daily, 3 = every 3 days, 7 = weekly
+  const [settlementPeriod, setSettlementPeriod] = useState<1 | 3 | 7>(7)
+
   // Generate settlement form
   const [generateForm, setGenerateForm] = useState({
     providerId: '',
@@ -221,10 +224,10 @@ export default function AdminSettlementsPage() {
     try {
       const supabase = createClient()
 
-      // Get last week's date range
+      // Get date range based on selected period
       const endDate = new Date()
       const startDate = new Date()
-      startDate.setDate(startDate.getDate() - 7)
+      startDate.setDate(startDate.getDate() - settlementPeriod)
 
       // Get all active providers
       const { data: activeProviders } = await supabase
@@ -464,7 +467,18 @@ export default function AdminSettlementsPage() {
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Action Buttons */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 items-center">
+              {/* Period selector */}
+              <select
+                value={settlementPeriod}
+                onChange={(e) => setSettlementPeriod(Number(e.target.value) as 1 | 3 | 7)}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 bg-white"
+              >
+                <option value={1}>{locale === 'ar' ? 'يومي' : 'Daily'}</option>
+                <option value={3}>{locale === 'ar' ? 'كل 3 أيام' : 'Every 3 Days'}</option>
+                <option value={7}>{locale === 'ar' ? 'أسبوعي' : 'Weekly'}</option>
+              </select>
+
               <Button
                 onClick={handleGenerateWeeklySettlements}
                 disabled={isGenerating}
@@ -473,7 +487,7 @@ export default function AdminSettlementsPage() {
                 <PlayCircle className="w-4 h-4 mr-2" />
                 {isGenerating
                   ? (locale === 'ar' ? 'جاري الإنشاء...' : 'Generating...')
-                  : (locale === 'ar' ? 'إنشاء تسويات أسبوعية' : 'Generate Weekly Settlements')
+                  : (locale === 'ar' ? 'إنشاء التسويات' : 'Generate Settlements')
                 }
               </Button>
 
@@ -483,16 +497,7 @@ export default function AdminSettlementsPage() {
                 className="border-green-500 text-green-700 hover:bg-green-600 hover:text-white hover:border-green-600"
               >
                 <Calendar className="w-4 h-4 mr-2" />
-                {locale === 'ar' ? 'إنشاء تسوية مخصصة' : 'Custom Settlement'}
-              </Button>
-
-              <Button
-                onClick={handleUpdateOverdue}
-                variant="outline"
-                className="border-red-500 text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600"
-              >
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                {locale === 'ar' ? 'تحديث المتأخرات' : 'Update Overdue'}
+                {locale === 'ar' ? 'تسوية مخصصة' : 'Custom'}
               </Button>
 
               <Button
