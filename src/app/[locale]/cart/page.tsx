@@ -230,8 +230,8 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* Fixed Checkout Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-2xl safe-area-bottom z-50">
+      {/* Fixed Checkout Button - positioned above bottom nav */}
+      <div className="fixed bottom-20 left-0 right-0 bg-white border-t shadow-2xl safe-area-bottom z-40">
         <div className="px-4 py-3">
           {provider && provider.min_order_amount > subtotal && (
             <div className="bg-amber-50 text-amber-700 text-sm rounded-lg px-3 py-2 mb-3 text-center">
