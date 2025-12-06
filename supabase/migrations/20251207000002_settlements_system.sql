@@ -79,9 +79,9 @@ CREATE INDEX IF NOT EXISTS idx_settlement_items_order ON settlement_items(order_
 CREATE OR REPLACE VIEW settlement_summary AS
 SELECT
     p.id as provider_id,
-    p.store_name_ar,
-    p.store_name_en,
-    p.commission_rate,
+    p.name_ar,
+    p.name_en,
+    6.00 as commission_rate, -- Default 6% commission
 
     -- Total pending settlements
     COALESCE(SUM(CASE WHEN s.status = 'pending' THEN s.net_amount_due ELSE 0 END), 0) as pending_amount,
@@ -99,7 +99,7 @@ SELECT
 FROM providers p
 LEFT JOIN settlements s ON s.provider_id = p.id
 WHERE p.status IN ('active', 'open', 'closed', 'temporarily_paused')
-GROUP BY p.id, p.store_name_ar, p.store_name_en, p.commission_rate;
+GROUP BY p.id, p.name_ar, p.name_en;
 
 -- =====================================================
 -- STEP 4: Function to generate settlement for a provider
@@ -114,7 +114,7 @@ CREATE OR REPLACE FUNCTION generate_provider_settlement(
 RETURNS UUID AS $$
 DECLARE
     v_settlement_id UUID;
-    v_commission_rate DECIMAL(5,2);
+    v_commission_rate DECIMAL(5,2) := 6.00; -- Default 6%
     v_total_orders INTEGER;
     v_gross_revenue DECIMAL(10,2);
     v_platform_commission DECIMAL(10,2);
@@ -123,10 +123,6 @@ DECLARE
     v_due_date DATE;
     v_order RECORD;
 BEGIN
-    -- Get provider commission rate
-    SELECT COALESCE(commission_rate, 6.00) INTO v_commission_rate
-    FROM providers WHERE id = p_provider_id;
-
     -- Calculate totals from completed orders in the period
     SELECT
         COUNT(*),
@@ -330,6 +326,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ALTER TABLE settlements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settlement_items ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Admins can view all settlements" ON settlements;
+DROP POLICY IF EXISTS "Providers can view own settlements" ON settlements;
+DROP POLICY IF EXISTS "Admins can manage settlements" ON settlements;
+DROP POLICY IF EXISTS "View settlement items" ON settlement_items;
+
 -- Admin can see all
 CREATE POLICY "Admins can view all settlements"
 ON settlements FOR SELECT
@@ -348,7 +350,7 @@ ON settlements FOR SELECT
 TO authenticated
 USING (
     provider_id IN (
-        SELECT id FROM providers WHERE user_id = auth.uid()
+        SELECT id FROM providers WHERE owner_id = auth.uid()
     )
 );
 
@@ -372,7 +374,7 @@ USING (
     settlement_id IN (
         SELECT id FROM settlements
         WHERE provider_id IN (
-            SELECT id FROM providers WHERE user_id = auth.uid()
+            SELECT id FROM providers WHERE owner_id = auth.uid()
         )
     )
     OR
@@ -382,20 +384,6 @@ USING (
         AND profiles.role = 'admin'
     )
 );
-
--- =====================================================
--- STEP 9: Generate initial settlements for existing orders
--- =====================================================
-
--- This will generate settlements for last month's orders
-DO $$
-DECLARE
-    v_count INTEGER;
-BEGIN
-    -- Generate settlements for the current month
-    SELECT generate_weekly_settlements() INTO v_count;
-    RAISE NOTICE 'Generated % settlements', v_count;
-END $$;
 
 -- =====================================================
 -- COMMENTS

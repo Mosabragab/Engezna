@@ -14,6 +14,7 @@ import {
   Tag,
   X,
   Star,
+  Receipt,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
@@ -82,6 +83,11 @@ export function ProviderSidebar({
       icon: Wallet,
       label: { ar: 'المالية', en: 'Finance' },
       path: `/${locale}/provider/finance`,
+    },
+    {
+      icon: Receipt,
+      label: { ar: 'التسويات', en: 'Settlements' },
+      path: `/${locale}/provider/settlements`,
     },
     {
       icon: Clock,
