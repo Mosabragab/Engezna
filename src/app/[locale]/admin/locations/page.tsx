@@ -29,6 +29,16 @@ import {
   ChevronRight,
   ChevronDown,
   MoreHorizontal,
+  BarChart3,
+  Users,
+  Store,
+  ShoppingBag,
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Percent,
+  DollarSign,
+  Activity,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -64,6 +74,24 @@ interface District {
 
 type ViewLevel = 'governorates' | 'cities' | 'districts'
 type ModalType = 'add' | 'edit' | null
+type TabView = 'locations' | 'analytics'
+
+interface GovernorateAnalytics {
+  id: string
+  name_ar: string
+  name_en: string
+  is_active: boolean
+  providers_count: number
+  active_providers: number
+  customers_count: number
+  orders_count: number
+  revenue: number
+  avg_order_value: number
+  cities_count: number
+  districts_count: number
+  growth_rate: number // percentage
+  readiness_score: number // 0-100
+}
 
 export default function AdminLocationsPage() {
   const locale = useLocale()
@@ -78,6 +106,11 @@ export default function AdminLocationsPage() {
   const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [cities, setCities] = useState<City[]>([])
   const [districts, setDistricts] = useState<District[]>([])
+
+  // Analytics
+  const [activeTab, setActiveTab] = useState<TabView>('locations')
+  const [analyticsData, setAnalyticsData] = useState<GovernorateAnalytics[]>([])
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
   const [viewLevel, setViewLevel] = useState<ViewLevel>('governorates')
   const [selectedGovernorate, setSelectedGovernorate] = useState<string | null>(null)
@@ -199,6 +232,127 @@ export default function AdminLocationsPage() {
       totalDistricts: districts.length,
       activeDistricts: districts.filter(d => d.is_active).length,
     })
+  }
+
+  async function loadAnalytics() {
+    setAnalyticsLoading(true)
+    const supabase = createClient()
+
+    try {
+      // Fetch all governorates
+      const { data: govData } = await supabase
+        .from('governorates')
+        .select('*')
+        .order('name_ar')
+
+      // Fetch providers with their governorate
+      const { data: providersData } = await supabase
+        .from('providers')
+        .select('id, governorate_id, is_active, status')
+
+      // Fetch customers (profiles with role=customer and governorate)
+      const { data: customersData } = await supabase
+        .from('profiles')
+        .select('id, governorate_id, role')
+        .eq('role', 'customer')
+
+      // Fetch orders with provider info
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('id, provider_id, total_amount, status, created_at')
+
+      // Fetch cities
+      const { data: citiesData } = await supabase
+        .from('cities')
+        .select('id, governorate_id')
+
+      // Fetch districts
+      const { data: districtsData } = await supabase
+        .from('districts')
+        .select('id, governorate_id')
+
+      const govs = govData || []
+      const providers = providersData || []
+      const customers = customersData || []
+      const orders = ordersData || []
+      const citiesList = citiesData || []
+      const districtsList = districtsData || []
+
+      // Create provider-to-governorate mapping
+      const providerToGov: Record<string, string> = {}
+      providers.forEach(p => {
+        if (p.governorate_id) {
+          providerToGov[p.id] = p.governorate_id
+        }
+      })
+
+      // Calculate analytics for each governorate
+      const analytics: GovernorateAnalytics[] = govs.map(gov => {
+        const govProviders = providers.filter(p => p.governorate_id === gov.id)
+        const activeProviders = govProviders.filter(p => p.is_active && p.status === 'active')
+        const govCustomers = customers.filter(c => c.governorate_id === gov.id)
+
+        // Get orders for this governorate's providers
+        const govOrders = orders.filter(o => {
+          const provGov = providerToGov[o.provider_id]
+          return provGov === gov.id
+        })
+
+        const completedOrders = govOrders.filter(o => o.status === 'completed' || o.status === 'delivered')
+        const revenue = completedOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+        const avgOrderValue = completedOrders.length > 0 ? revenue / completedOrders.length : 0
+
+        // Calculate growth rate (orders in last 30 days vs previous 30 days)
+        const now = new Date()
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
+
+        const recentOrders = govOrders.filter(o => new Date(o.created_at) >= thirtyDaysAgo).length
+        const previousOrders = govOrders.filter(o => {
+          const date = new Date(o.created_at)
+          return date >= sixtyDaysAgo && date < thirtyDaysAgo
+        }).length
+
+        const growthRate = previousOrders > 0
+          ? ((recentOrders - previousOrders) / previousOrders) * 100
+          : recentOrders > 0 ? 100 : 0
+
+        // Calculate readiness score (0-100)
+        // Factors: active providers (40%), customers (30%), orders (20%), coverage (10%)
+        const providerScore = Math.min(activeProviders.length * 10, 40)
+        const customerScore = Math.min(govCustomers.length * 3, 30)
+        const orderScore = Math.min(completedOrders.length * 2, 20)
+        const citiesCount = citiesList.filter(c => c.governorate_id === gov.id).length
+        const districtsCount = districtsList.filter(d => d.governorate_id === gov.id).length
+        const coverageScore = Math.min((citiesCount + districtsCount) * 2, 10)
+        const readinessScore = Math.round(providerScore + customerScore + orderScore + coverageScore)
+
+        return {
+          id: gov.id,
+          name_ar: gov.name_ar,
+          name_en: gov.name_en,
+          is_active: gov.is_active,
+          providers_count: govProviders.length,
+          active_providers: activeProviders.length,
+          customers_count: govCustomers.length,
+          orders_count: completedOrders.length,
+          revenue,
+          avg_order_value: avgOrderValue,
+          cities_count: citiesCount,
+          districts_count: districtsCount,
+          growth_rate: Math.round(growthRate * 10) / 10,
+          readiness_score: readinessScore,
+        }
+      })
+
+      // Sort by readiness score descending
+      analytics.sort((a, b) => b.readiness_score - a.readiness_score)
+      setAnalyticsData(analytics)
+    } catch (error) {
+      console.error('Error loading analytics:', error)
+    }
+
+    setAnalyticsLoading(false)
   }
 
   function getFilteredItems() {
@@ -461,36 +615,72 @@ export default function AdminLocationsPage() {
         />
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-3 mb-2">
-                <Building className="w-5 h-5 text-blue-600" />
-                <span className="text-sm text-slate-600">{locale === 'ar' ? 'المحافظات' : 'Governorates'}</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900">
-                {formatNumber(stats.activeGovernorates, locale)} / {formatNumber(stats.totalGovernorates, locale)}
-              </p>
+          {/* Tabs - Super Admin Only */}
+          {isSuperAdmin && (
+            <div className="flex gap-2 mb-6 border-b border-slate-200">
+              <button
+                onClick={() => setActiveTab('locations')}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'locations'
+                    ? 'border-red-600 text-red-600'
+                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <MapPin className="w-4 h-4" />
+                {locale === 'ar' ? 'إدارة المواقع' : 'Location Management'}
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('analytics')
+                  if (analyticsData.length === 0) {
+                    loadAnalytics()
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'analytics'
+                    ? 'border-red-600 text-red-600'
+                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                {locale === 'ar' ? 'تحليلات التوسع' : 'Expansion Analytics'}
+              </button>
             </div>
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-3 mb-2">
-                <Map className="w-5 h-5 text-green-600" />
-                <span className="text-sm text-slate-600">{locale === 'ar' ? 'المدن' : 'Cities'}</span>
+          )}
+
+          {/* Location Management Tab */}
+          {activeTab === 'locations' && (
+            <>
+              {/* Stats */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Building className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm text-slate-600">{locale === 'ar' ? 'المحافظات' : 'Governorates'}</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {formatNumber(stats.activeGovernorates, locale)} / {formatNumber(stats.totalGovernorates, locale)}
+                  </p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Map className="w-5 h-5 text-green-600" />
+                    <span className="text-sm text-slate-600">{locale === 'ar' ? 'المدن' : 'Cities'}</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {formatNumber(stats.activeCities, locale)} / {formatNumber(stats.totalCities, locale)}
+                  </p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm col-span-2 lg:col-span-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Home className="w-5 h-5 text-purple-600" />
+                    <span className="text-sm text-slate-600">{locale === 'ar' ? 'الأحياء' : 'Districts'}</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {formatNumber(stats.activeDistricts, locale)} / {formatNumber(stats.totalDistricts, locale)}
+                  </p>
+                </div>
               </div>
-              <p className="text-2xl font-bold text-slate-900">
-                {formatNumber(stats.activeCities, locale)} / {formatNumber(stats.totalCities, locale)}
-              </p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm col-span-2 lg:col-span-1">
-              <div className="flex items-center gap-3 mb-2">
-                <Home className="w-5 h-5 text-purple-600" />
-                <span className="text-sm text-slate-600">{locale === 'ar' ? 'الأحياء' : 'Districts'}</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900">
-                {formatNumber(stats.activeDistricts, locale)} / {formatNumber(stats.totalDistricts, locale)}
-              </p>
-            </div>
-          </div>
 
           {/* Breadcrumb & View Level */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -717,6 +907,342 @@ export default function AdminLocationsPage() {
               </table>
             </div>
           </div>
+            </>
+          )}
+
+          {/* Analytics Tab - Super Admin Only */}
+          {activeTab === 'analytics' && isSuperAdmin && (
+            <div className="space-y-6">
+              {/* Analytics Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {locale === 'ar' ? 'تحليلات المحافظات' : 'Governorate Analytics'}
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {locale === 'ar'
+                      ? 'بيانات تساعدك على اتخاذ قرارات التوسع'
+                      : 'Data to help you make expansion decisions'
+                    }
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={loadAnalytics}
+                  disabled={analyticsLoading}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${analyticsLoading ? 'animate-spin' : ''}`} />
+                  {locale === 'ar' ? 'تحديث' : 'Refresh'}
+                </Button>
+              </div>
+
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-red-500 border-t-transparent"></div>
+                </div>
+              ) : (
+                <>
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Store className="w-5 h-5 text-blue-600" />
+                        <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي مقدمي الخدمات' : 'Total Providers'}</span>
+                      </div>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {formatNumber(analyticsData.reduce((sum, g) => sum + g.providers_count, 0), locale)}
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Users className="w-5 h-5 text-green-600" />
+                        <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</span>
+                      </div>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {formatNumber(analyticsData.reduce((sum, g) => sum + g.customers_count, 0), locale)}
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                      <div className="flex items-center gap-3 mb-2">
+                        <ShoppingBag className="w-5 h-5 text-purple-600" />
+                        <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</span>
+                      </div>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {formatNumber(analyticsData.reduce((sum, g) => sum + g.orders_count, 0), locale)}
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                      <div className="flex items-center gap-3 mb-2">
+                        <DollarSign className="w-5 h-5 text-amber-600" />
+                        <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</span>
+                      </div>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {formatNumber(analyticsData.reduce((sum, g) => sum + g.revenue, 0), locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Governorate Rankings */}
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="p-4 border-b border-slate-200 bg-slate-50">
+                      <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                        <Target className="w-5 h-5 text-red-600" />
+                        {locale === 'ar' ? 'ترتيب المحافظات حسب جاهزية التوسع' : 'Governorate Ranking by Expansion Readiness'}
+                      </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-slate-50 border-b border-slate-200">
+                          <tr>
+                            <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                              {locale === 'ar' ? 'المحافظة' : 'Governorate'}
+                            </th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">
+                              <div className="flex items-center justify-center gap-1">
+                                <Target className="w-4 h-4" />
+                                {locale === 'ar' ? 'الجاهزية' : 'Readiness'}
+                              </div>
+                            </th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">
+                              <div className="flex items-center justify-center gap-1">
+                                <Store className="w-4 h-4" />
+                                {locale === 'ar' ? 'مقدمي الخدمات' : 'Providers'}
+                              </div>
+                            </th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">
+                              <div className="flex items-center justify-center gap-1">
+                                <Users className="w-4 h-4" />
+                                {locale === 'ar' ? 'العملاء' : 'Customers'}
+                              </div>
+                            </th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">
+                              <div className="flex items-center justify-center gap-1">
+                                <ShoppingBag className="w-4 h-4" />
+                                {locale === 'ar' ? 'الطلبات' : 'Orders'}
+                              </div>
+                            </th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">
+                              <div className="flex items-center justify-center gap-1">
+                                <DollarSign className="w-4 h-4" />
+                                {locale === 'ar' ? 'الإيرادات' : 'Revenue'}
+                              </div>
+                            </th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">
+                              <div className="flex items-center justify-center gap-1">
+                                <Activity className="w-4 h-4" />
+                                {locale === 'ar' ? 'النمو' : 'Growth'}
+                              </div>
+                            </th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">
+                              {locale === 'ar' ? 'الحالة' : 'Status'}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {analyticsData.map((gov, index) => (
+                            <tr key={gov.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                    index < 3 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                                  }`}>
+                                    {index + 1}
+                                  </span>
+                                  <div>
+                                    <p className="font-medium text-slate-900">
+                                      {locale === 'ar' ? gov.name_ar : gov.name_en}
+                                    </p>
+                                    <p className="text-xs text-slate-500">
+                                      {formatNumber(gov.cities_count, locale)} {locale === 'ar' ? 'مدينة' : 'cities'} • {formatNumber(gov.districts_count, locale)} {locale === 'ar' ? 'حي' : 'districts'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-center">
+                                  <div className="w-16">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className={`text-xs font-bold ${
+                                        gov.readiness_score >= 70 ? 'text-green-600' :
+                                        gov.readiness_score >= 40 ? 'text-amber-600' : 'text-red-600'
+                                      }`}>
+                                        {gov.readiness_score}%
+                                      </span>
+                                    </div>
+                                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full transition-all ${
+                                          gov.readiness_score >= 70 ? 'bg-green-500' :
+                                          gov.readiness_score >= 40 ? 'bg-amber-500' : 'bg-red-500'
+                                        }`}
+                                        style={{ width: `${gov.readiness_score}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <div className="flex flex-col items-center">
+                                  <span className="font-medium text-slate-900">{formatNumber(gov.providers_count, locale)}</span>
+                                  <span className="text-xs text-green-600">
+                                    ({formatNumber(gov.active_providers, locale)} {locale === 'ar' ? 'نشط' : 'active'})
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className="font-medium text-slate-900">{formatNumber(gov.customers_count, locale)}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className="font-medium text-slate-900">{formatNumber(gov.orders_count, locale)}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <div className="flex flex-col items-center">
+                                  <span className="font-medium text-slate-900">{formatNumber(gov.revenue, locale)}</span>
+                                  <span className="text-xs text-slate-500">
+                                    {locale === 'ar' ? 'متوسط' : 'avg'}: {formatNumber(Math.round(gov.avg_order_value), locale)}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <div className={`inline-flex items-center gap-1 text-sm font-medium ${
+                                  gov.growth_rate > 0 ? 'text-green-600' :
+                                  gov.growth_rate < 0 ? 'text-red-600' : 'text-slate-500'
+                                }`}>
+                                  {gov.growth_rate > 0 ? (
+                                    <TrendingUp className="w-4 h-4" />
+                                  ) : gov.growth_rate < 0 ? (
+                                    <TrendingDown className="w-4 h-4" />
+                                  ) : null}
+                                  {gov.growth_rate > 0 ? '+' : ''}{gov.growth_rate}%
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {gov.is_active ? (
+                                  <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    {locale === 'ar' ? 'نشط' : 'Active'}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                                    <XCircle className="w-3 h-3" />
+                                    {locale === 'ar' ? 'غير نشط' : 'Inactive'}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Expansion Recommendations */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                    <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                      <Target className="w-5 h-5 text-blue-600" />
+                      {locale === 'ar' ? 'توصيات التوسع' : 'Expansion Recommendations'}
+                    </h3>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {/* High Potential */}
+                      {analyticsData.filter(g => !g.is_active && g.readiness_score >= 30).length > 0 && (
+                        <div className="bg-white rounded-lg p-4 shadow-sm">
+                          <h4 className="text-sm font-medium text-green-700 mb-2 flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4" />
+                            {locale === 'ar' ? 'محافظات واعدة للتفعيل' : 'Promising for Activation'}
+                          </h4>
+                          <ul className="space-y-1">
+                            {analyticsData
+                              .filter(g => !g.is_active && g.readiness_score >= 30)
+                              .slice(0, 3)
+                              .map(g => (
+                                <li key={g.id} className="text-sm text-slate-600 flex items-center justify-between">
+                                  <span>{locale === 'ar' ? g.name_ar : g.name_en}</span>
+                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                    {g.readiness_score}%
+                                  </span>
+                                </li>
+                              ))
+                            }
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Needs Development */}
+                      {analyticsData.filter(g => g.is_active && g.readiness_score < 40).length > 0 && (
+                        <div className="bg-white rounded-lg p-4 shadow-sm">
+                          <h4 className="text-sm font-medium text-amber-700 mb-2 flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
+                            {locale === 'ar' ? 'تحتاج تطوير' : 'Needs Development'}
+                          </h4>
+                          <ul className="space-y-1">
+                            {analyticsData
+                              .filter(g => g.is_active && g.readiness_score < 40)
+                              .slice(0, 3)
+                              .map(g => (
+                                <li key={g.id} className="text-sm text-slate-600 flex items-center justify-between">
+                                  <span>{locale === 'ar' ? g.name_ar : g.name_en}</span>
+                                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                                    {g.readiness_score}%
+                                  </span>
+                                </li>
+                              ))
+                            }
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Top Performers */}
+                      {analyticsData.filter(g => g.is_active && g.readiness_score >= 70).length > 0 && (
+                        <div className="bg-white rounded-lg p-4 shadow-sm">
+                          <h4 className="text-sm font-medium text-blue-700 mb-2 flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4" />
+                            {locale === 'ar' ? 'الأفضل أداءً' : 'Top Performers'}
+                          </h4>
+                          <ul className="space-y-1">
+                            {analyticsData
+                              .filter(g => g.is_active && g.readiness_score >= 70)
+                              .slice(0, 3)
+                              .map(g => (
+                                <li key={g.id} className="text-sm text-slate-600 flex items-center justify-between">
+                                  <span>{locale === 'ar' ? g.name_ar : g.name_en}</span>
+                                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                    {g.readiness_score}%
+                                  </span>
+                                </li>
+                              ))
+                            }
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Readiness Score Legend */}
+                    <div className="mt-4 pt-4 border-t border-blue-100">
+                      <p className="text-xs text-slate-500 mb-2">
+                        {locale === 'ar' ? 'معادلة الجاهزية: مقدمي خدمات (40%) + عملاء (30%) + طلبات (20%) + تغطية جغرافية (10%)'
+                          : 'Readiness Formula: Providers (40%) + Customers (30%) + Orders (20%) + Geographic Coverage (10%)'}
+                      </p>
+                      <div className="flex flex-wrap gap-4 text-xs">
+                        <span className="flex items-center gap-1">
+                          <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                          {locale === 'ar' ? '70%+ ممتاز' : '70%+ Excellent'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+                          {locale === 'ar' ? '40-69% متوسط' : '40-69% Moderate'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                          {locale === 'ar' ? 'أقل من 40% يحتاج تطوير' : 'Below 40% Needs Work'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </main>
       </div>
 

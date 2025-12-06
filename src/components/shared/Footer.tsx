@@ -1,8 +1,10 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
+import { createClient } from '@/lib/supabase/client'
 import {
   Phone,
   MessageCircle,
@@ -16,13 +18,49 @@ import {
   ShoppingBag,
   Heart,
   User,
-  Mail
+  Mail,
+  Loader2
 } from 'lucide-react'
+
+interface Governorate {
+  id: string
+  name_ar: string
+  name_en: string
+  is_active: boolean
+}
 
 export function Footer() {
   const locale = useLocale()
   const t = useTranslations('footer')
   const isRTL = locale === 'ar'
+  const [governorates, setGovernorates] = useState<Governorate[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch active governorates from database
+  useEffect(() => {
+    async function fetchGovernorates() {
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from('governorates')
+          .select('id, name_ar, name_en, is_active')
+          .eq('is_active', true)
+          .order('name_ar')
+
+        if (error) {
+          console.error('Error fetching governorates:', error)
+        } else {
+          setGovernorates(data || [])
+        }
+      } catch (err) {
+        console.error('Error fetching governorates:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchGovernorates()
+  }, [])
 
   const customerLinks = [
     { href: `/${locale}`, label: t('home'), icon: Home },
@@ -36,14 +74,6 @@ export function Footer() {
     { href: `/${locale}/provider/login`, label: t('partnerLogin'), icon: LogIn },
     { href: `/${locale}/partner#features`, label: t('features'), icon: Sparkles },
     { href: `/${locale}/partner#faq`, label: t('faq'), icon: HelpCircle },
-  ]
-
-  const cities = [
-    locale === 'ar' ? 'بني سويف' : 'Beni Suef',
-    locale === 'ar' ? 'المنيا' : 'Minya',
-    locale === 'ar' ? 'أسيوط' : 'Assiut',
-    locale === 'ar' ? 'سوهاج' : 'Sohag',
-    locale === 'ar' ? 'قنا' : 'Qena',
   ]
 
   return (
@@ -182,20 +212,28 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Available Cities */}
+      {/* Available Governorates - Dynamic from database */}
       <div className="border-t border-[#E2E8F0] bg-white/50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
             <MapPin className="w-4 h-4 text-[#009DE0]" strokeWidth={1.8} />
-            <span className="text-[#475569] font-medium">{t('availableCities')}:</span>
-            {cities.map((city, index) => (
-              <span key={city} className="text-[#0F172A]">
-                {city}
-                {index < cities.length - 1 && (
-                  <span className="text-[#94A3B8] mx-1">•</span>
-                )}
+            <span className="text-[#475569] font-medium">{t('availableGovernorates')}:</span>
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-[#009DE0]" />
+            ) : governorates.length > 0 ? (
+              governorates.map((gov, index) => (
+                <span key={gov.id} className="text-[#0F172A]">
+                  {locale === 'ar' ? gov.name_ar : gov.name_en}
+                  {index < governorates.length - 1 && (
+                    <span className="text-[#94A3B8] mx-1">•</span>
+                  )}
+                </span>
+              ))
+            ) : (
+              <span className="text-[#94A3B8]">
+                {locale === 'ar' ? 'قريباً' : 'Coming soon'}
               </span>
-            ))}
+            )}
           </div>
         </div>
       </div>

@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 5.1 (Week 5 - Complete Feature Set)
+**Version:** 5.2 (Week 5 - Complete Feature Set)
 **Date:** November 27, 2025
-**Last Updated:** December 6, 2025 (Session 14)
+**Last Updated:** December 7, 2025 (Session 15)
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -25,7 +25,31 @@
 **Status:** Week 5 - Complete Feature Set ✅
 **Target Launch:** February 2026 (12 weeks development)
 **Overall Progress:** ~90% of MVP Complete
-**Last Session:** December 6, 2025 (Session 14)
+**Last Session:** December 7, 2025 (Session 15)
+
+### Session 15 Updates (December 7, 2025)
+
+**Part 2: Dynamic Footer & Governorate Analytics:**
+- ✅ Footer now dynamically fetches active governorates from database
+- ✅ When admin adds/removes a governorate, it automatically appears/disappears in Footer
+- ✅ Updated translations: "المدن المتاحة" → "المحافظات المتاحة"
+- ✅ Added "Expansion Analytics" tab to Admin Locations page (Super Admin only)
+- ✅ Summary stats: Total providers, customers, orders, revenue across all governorates
+- ✅ Governorate ranking table with expansion readiness score (0-100%)
+- ✅ Readiness formula: Providers (40%) + Customers (30%) + Orders (20%) + Coverage (10%)
+- ✅ Growth rate indicator (last 30 days vs previous 30 days)
+- ✅ Smart expansion recommendations:
+  - Promising governorates for activation
+  - Governorates needing development
+  - Top performing governorates
+
+**Part 1: Voice to Chat Transition:**
+- ✅ Fixed notification badge rapid flashing (removed animate-pulse)
+- ✅ Converted voice ordering to text chat ("دردش واطلب" / "Chat & Order")
+- ✅ ChatFAB replaces VoiceOrderFAB (message icon instead of microphone)
+- ✅ TextChat component replaces VoiceOrderChat (text input only)
+- ✅ Removed Deepgram (transcription API), kept OpenAI for smart order processing
+- ✅ Removed microphone button from HeroSection and SearchBar
 
 ### Session 14 Updates (December 6, 2025)
 
