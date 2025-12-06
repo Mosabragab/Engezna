@@ -289,15 +289,15 @@ export default function ProviderDetailPage() {
               <button className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
                 <Share2 className="w-5 h-5" />
               </button>
-              {/* Cart Icon - Hidden on mobile (bottom nav has cart) */}
+              {/* Cart Icon - Hidden on mobile (bottom nav has cart), consistent styling with CustomerHeader */}
               {cartItemCount > 0 && (
                 <button
                   onClick={() => router.push(`/${locale}/cart`)}
-                  className="hidden md:flex w-9 h-9 rounded-full bg-primary text-white items-center justify-center relative hover:bg-primary/90 transition-colors"
+                  className="hidden md:flex w-9 h-9 rounded-full bg-slate-100 items-center justify-center text-slate-600 relative hover:bg-slate-200 transition-colors"
                 >
                   <ShoppingCart className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                    {cartItemCount}
+                  <span className="absolute top-0 right-0 min-w-[16px] h-4 flex items-center justify-center bg-primary text-white text-[10px] font-bold rounded-full px-1">
+                    {cartItemCount > 9 ? '9+' : cartItemCount}
                   </span>
                 </button>
               )}

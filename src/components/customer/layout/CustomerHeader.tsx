@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { MapPin, Bell, User, ChevronDown } from 'lucide-react'
+import { MapPin, Bell, User, ChevronDown, ShoppingCart } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { useNotifications } from '@/hooks/customer'
+import { useCart } from '@/lib/store/cart'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface CustomerHeaderProps {
@@ -28,6 +29,10 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
 
   // Use real-time notifications hook
   const { unreadCount } = useNotifications()
+
+  // Get cart item count
+  const { getItemCount } = useCart()
+  const cartItemCount = getItemCount()
 
   useEffect(() => {
     checkAuth()
@@ -111,6 +116,18 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
           <div className="flex items-center gap-1">
             {/* Custom Action (e.g., refresh button) */}
             {rightAction && rightAction}
+
+            {/* Cart - Hidden on mobile (bottom nav has cart) */}
+            <Link href={`/${locale}/cart`} className="hidden md:block">
+              <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+                <ShoppingCart className="h-5 w-5 text-slate-600" />
+                {cartItemCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-primary text-white text-[10px] font-bold rounded-full px-1">
+                    {cartItemCount > 9 ? '9+' : cartItemCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
 
             {/* Notifications - Real-time updates */}
             <Link href={`/${locale}/notifications`}>
