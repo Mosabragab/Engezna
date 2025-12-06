@@ -1,7 +1,7 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 5, 2025
-**Status:** Week 5 - Complete Feature Set (Session 13) ✅
+**Last Updated:** December 6, 2025
+**Status:** Week 5 - Complete Feature Set (Session 14) ✅
 **Branch:** `claude/project-progress-review-019c9eWZ1GRxLZtNz6Bp9DD4`
 
 ---
@@ -383,8 +383,9 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 
 ## 📦 Tech Stack
 
-- **Framework:** Next.js 16.0.3 (Turbopack)
-- **Language:** TypeScript 5.x
+- **Framework:** Next.js 16.0.7 (Turbopack) - Security patched
+- **React:** 19.2.1 (Security patched for CVE-2025-55182)
+- **Language:** TypeScript 5.9.3
 - **Styling:** Tailwind CSS v3.4.17 (stable)
 - **UI:** Shadcn/ui (13 components)
 - **Database:** Supabase (PostgreSQL 15)
@@ -1279,17 +1280,25 @@ The Supabase Storage bucket is now configured:
 
 ---
 
-**Version:** 29.0 (Complete Feature Set - Session 12)
-**Last Updated:** December 5, 2025 (Session 12)
-**Next Review:** December 6, 2025
+**Version:** 30.0 (Session 14 - Financial UX & Security)
+**Last Updated:** December 6, 2025 (Session 14)
+**Next Review:** December 7, 2025
 
-**🎉 Week 5: Session 12 Complete!**
+**🎉 Session 14: Financial UX & Security Updates!**
+- ✅ Security Update: Patched CVE-2025-55182 & CVE-2025-66478 (RCE vulnerabilities)
+- ✅ Finance Page: Fixed color consistency with brand identity
+- ✅ Orders Page: Added filter counts + payment confirmation button
+- ✅ Payment Flow: Direct "Payment Received" button on order cards
+
+**🎉 Week 5: Session 12-13 Complete!**
 - ✅ Order Cancellation: Customers can cancel pending/confirmed/accepted orders
 - ✅ Reviews & Ratings: Complete system for customers to rate and review providers
 - ✅ Provider Reviews Page: Dashboard for providers to view and respond to reviews
 - ✅ Favorites Feature: Customers can favorite providers
 - ✅ Real-time Notifications: Supabase Realtime for live updates
 - ✅ Promo Codes: Full promo system with validation and checkout integration
+- ✅ Customer Notifications: Automatic notifications on order status changes
+- ✅ Admin Notifications: Alerts for cancellations, new providers, support tickets
 
 **🎉 Week 5: Analytics Geographic Filtering Fixed!**
 - Fixed admin analytics showing zeros when filtering by governorate
@@ -1394,6 +1403,82 @@ src/
 ### تحسينات الصفحات الموجودة
 - **`/providers`**: أضيف SearchBar، FilterChip للفلترة والترتيب، EmptyState
 - **`/providers/[id]`**: أضيف ProductCard، RatingStars، StatusBadge، sticky category navigation
+
+---
+
+## 📋 Session 14: Financial UX & Security Updates (December 6, 2025)
+
+### ✅ المهام المكتملة
+
+#### 1. إصلاح تناسق الألوان في صفحة المالية
+- **الحالة:** ✅ مكتمل
+- **المشكلة:** استخدام ألوان amber من Tailwind بدلاً من ألوان الهوية التجارية
+- **الحل:**
+  - استبدال `bg-amber-50`, `text-amber-600` بمتغيرات CSS للهوية
+  - استخدام `--warning`, `--premium`, `--deal`, `--info` من globals.css
+  - إصلاح لون نص المعاملات المعلقة ليكون أسهل في القراءة (`text-amber-600`)
+- **الملفات:** `src/app/[locale]/provider/finance/page.tsx`
+
+#### 2. تحديث أمني عاجل (CVE-2025-55182 & CVE-2025-66478)
+- **الحالة:** ✅ مكتمل
+- **الخطورة:** 10.0 CVSS (أقصى خطورة) - تنفيذ أكواد خبيثة عن بُعد (RCE)
+- **التحديثات:**
+  - Next.js: `^16.0.7` → `16.0.7` (ثابت)
+  - React: `^19.2.0` → `19.2.1` (مُصحح)
+  - React-DOM: `^19.2.0` → `19.2.1` (مُصحح)
+- **الملفات:** `package.json`
+
+#### 3. تحسين UX صفحة الطلبات للمزودين
+- **الحالة:** ✅ مكتمل
+- **التحسينات:**
+  - إضافة أرقام العد لفلاتر "جاهز"، "مكتمل"، "ملغي"
+  - إضافة زر "تم استلام المبلغ" مباشرة على كارت الطلب
+  - إضافة شارة حالة الدفع (تم الدفع / معلق) للطلبات المكتملة
+  - استعلام `payment_status` من قاعدة البيانات
+  - دالة `handleConfirmPayment` لتحديث حالة الدفع
+- **الملفات:** `src/app/[locale]/provider/orders/page.tsx`
+
+### 📁 الملفات المُعدّلة في هذه الجلسة
+
+| الملف | الوصف |
+|-------|-------|
+| `src/app/[locale]/provider/finance/page.tsx` | إصلاح تناسق الألوان مع الهوية التجارية |
+| `src/app/[locale]/provider/orders/page.tsx` | إضافة أرقام الفلاتر + زر تأكيد الدفع |
+| `package.json` | تحديث أمني لـ Next.js و React |
+
+### 📊 الـ Commits
+
+```
+780c74e feat: Improve orders page UX with counts and payment button
+9ce7b07 security: Update React and Next.js to patched versions for CVE-2025-55182
+1c36ba1 fix: Use darker amber color for pending transaction text for better readability
+525af44 fix: Align finance page colors with brand identity
+```
+
+### 🔧 الخطوات المقترحة للجلسة القادمة
+
+1. **تحسينات الإشعارات:**
+   - إضافة إشعار للعميل عند تأكيد استلام المبلغ
+   - التحقق من عمل Hover dropdown للإشعارات في جميع الواجهات
+
+2. **تحسينات صفحة التقارير:**
+   - إضافة فلترة حسب حالة الدفع (مؤكد/معلق)
+   - إضافة تصدير التقارير (Excel/PDF)
+
+3. **تحسينات صفحة المالية:**
+   - إضافة رسم بياني لتطور الإيرادات
+   - إضافة مقارنة بين الفترات
+
+4. **اختبارات:**
+   - اختبار تدفق تأكيد الدفع كامل على الإنتاج
+   - التحقق من التحديث الأمني على Vercel
+   - اختبار إشعارات المزود (الطلبات + التقييمات)
+
+### ✅ مهام تم إكمالها في جلسات سابقة (للمرجعية):
+- ✅ إصلاح Reviews RLS infinite recursion (Session 13)
+- ✅ دمج عدد الإشعارات (طلبات + تقييمات) في badge واحد (Session 13)
+- ✅ Hover dropdown للإشعارات (Session 13)
+- ✅ زر تأكيد استلام المبلغ على order detail (Session 13) + orders list (Session 14)
 
 ---
 

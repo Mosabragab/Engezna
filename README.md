@@ -8,8 +8,9 @@
 
 منصة توصيل طعام حديثة لمدينة بني سويف، صعيد مصر
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.0.3-black)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.0.7-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2.1-61dafb)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.17-38bdf8)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
 
@@ -63,8 +64,9 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 ### 🛠️ Tech Stack
 
 #### **Frontend**
-- **Framework:** Next.js 16.0.3 (App Router)
-- **Language:** TypeScript 5.x
+- **Framework:** Next.js 16.0.7 (App Router) - Security patched
+- **React:** 19.2.1 (Security patched for CVE-2025-55182)
+- **Language:** TypeScript 5.9.3
 - **Styling:** Tailwind CSS 3.4.17 with custom design tokens
 - **UI Components:** shadcn/ui (Radix UI primitives)
 - **Internationalization:** next-intl 4.5.5

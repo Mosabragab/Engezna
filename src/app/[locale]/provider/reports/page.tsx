@@ -117,7 +117,7 @@ export default function ReportsPage() {
     const [ordersResult, orderItemsResult] = await Promise.all([
       supabase
         .from('orders')
-        .select('id, status, total, created_at, customer_id')
+        .select('id, status, total, created_at, customer_id, payment_status')
         .eq('provider_id', provId),
       supabase
         .from('order_items')
@@ -144,18 +144,18 @@ export default function ReportsPage() {
       const pending = orders.filter(o => !['delivered', 'cancelled', 'rejected'].includes(o.status)).length
       setOrderStats({ total: orders.length, completed, cancelled, pending })
 
-      // Revenue stats
-      const deliveredOrders = orders.filter(o => o.status === 'delivered')
-      const todayRevenue = deliveredOrders
+      // Revenue stats - Only count confirmed payments (payment_status = 'completed')
+      const confirmedOrders = orders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
+      const todayRevenue = confirmedOrders
         .filter(o => new Date(o.created_at) >= todayStart)
         .reduce((sum, o) => sum + (o.total || 0), 0)
-      const weekRevenue = deliveredOrders
+      const weekRevenue = confirmedOrders
         .filter(o => new Date(o.created_at) >= weekStart)
         .reduce((sum, o) => sum + (o.total || 0), 0)
-      const monthRevenue = deliveredOrders
+      const monthRevenue = confirmedOrders
         .filter(o => new Date(o.created_at) >= monthStart)
         .reduce((sum, o) => sum + (o.total || 0), 0)
-      const lastMonthRevenue = deliveredOrders
+      const lastMonthRevenue = confirmedOrders
         .filter(o => {
           const d = new Date(o.created_at)
           return d >= lastMonthStart && d <= lastMonthEnd
@@ -164,17 +164,17 @@ export default function ReportsPage() {
 
       setRevenueStats({ today: todayRevenue, thisWeek: weekRevenue, thisMonth: monthRevenue, lastMonth: lastMonthRevenue })
 
-      // Average order value
-      if (deliveredOrders.length > 0) {
-        const totalRevenue = deliveredOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-        setAvgOrderValue(totalRevenue / deliveredOrders.length)
+      // Average order value - based on confirmed orders only
+      if (confirmedOrders.length > 0) {
+        const totalRevenue = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+        setAvgOrderValue(totalRevenue / confirmedOrders.length)
       }
 
       // Unique customers
       const uniqueCustomers = new Set(orders.map(o => o.customer_id))
       setTotalCustomers(uniqueCustomers.size)
 
-      // Daily revenue for chart (last 30 days)
+      // Daily revenue for chart (last 30 days) - confirmed payments only
       const daily: { [key: string]: { revenue: number; orders: number } } = {}
       for (let i = 29; i >= 0; i--) {
         const d = new Date(todayStart)
@@ -182,7 +182,7 @@ export default function ReportsPage() {
         const key = d.toISOString().split('T')[0]
         daily[key] = { revenue: 0, orders: 0 }
       }
-      deliveredOrders.forEach(o => {
+      confirmedOrders.forEach(o => {
         const key = new Date(o.created_at).toISOString().split('T')[0]
         if (daily[key]) {
           daily[key].revenue += o.total || 0

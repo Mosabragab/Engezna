@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 5.0 (Week 5 - Complete Feature Set)
+**Version:** 5.1 (Week 5 - Complete Feature Set)
 **Date:** November 27, 2025
-**Last Updated:** December 5, 2025 (Session 12)
+**Last Updated:** December 6, 2025 (Session 14)
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -24,8 +24,42 @@
 **Phase:** Week 5 - Admin Backend Integration
 **Status:** Week 5 - Complete Feature Set ✅
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~88% of MVP Complete
-**Last Session:** December 5, 2025 (Session 12)
+**Overall Progress:** ~90% of MVP Complete
+**Last Session:** December 6, 2025 (Session 14)
+
+### Session 14 Updates (December 6, 2025)
+
+**Security Update (CRITICAL):**
+- ✅ Patched CVE-2025-55182 & CVE-2025-66478 (CVSS 10.0 - RCE vulnerabilities)
+- ✅ Updated Next.js to 16.0.7 (security patched)
+- ✅ Updated React/React-DOM to 19.2.1 (security patched)
+
+**Finance Page Improvements:**
+- ✅ Fixed color consistency with brand identity (replaced Tailwind amber with CSS variables)
+- ✅ Using brand colors: `--warning`, `--premium`, `--deal`, `--info`
+
+**Orders Page UX Improvements:**
+- ✅ Added order counts to filter tabs (Ready, Completed, Cancelled)
+- ✅ Added "Payment Received" button directly on order cards
+- ✅ Added payment status badge (Paid/Pending) for delivered orders
+- ✅ Query now includes `payment_status` field
+
+### Session 13 Updates (December 5, 2025)
+
+**Reviews RLS Infinite Recursion Fix:**
+- ✅ Fixed circular dependency between providers and provider_staff tables
+- ✅ Created SECURITY DEFINER helper functions to bypass RLS
+
+**Provider Notifications:**
+- ✅ Combined notifications badge (orders + reviews)
+- ✅ Hover dropdown for notifications
+
+**Customer Notifications:**
+- ✅ Created `customer_notifications` table
+- ✅ Automatic notifications on order status changes
+
+**Admin Notifications:**
+- ✅ Notifications for order cancellations, new providers, support tickets
 
 ### Session 12 Updates (December 5, 2025)
 
@@ -93,7 +127,7 @@
 ### What's Built ✅
 
 **Infrastructure & Design:**
-- ✅ Complete technical infrastructure (Next.js 16.0.3, TypeScript, Tailwind CSS v3.4.17)
+- ✅ Complete technical infrastructure (Next.js 16.0.7, React 19.2.1, TypeScript, Tailwind CSS v3.4.17)
 - ✅ Full database schema design and **DEPLOYED to Supabase** (1,431 lines SQL with all tables, RLS policies, triggers)
 - ✅ Brand identity and design system (Engezna Blue #009DE0, logos, typography)
 - ✅ Bilingual interface (Arabic/English with full RTL support)
