@@ -259,6 +259,13 @@ export function Footer() {
               >
                 {t('terms')}
               </Link>
+              <span className="text-slate-600">|</span>
+              <Link
+                href={`/${locale}/admin/login`}
+                className="text-slate-500 hover:text-white transition-colors text-xs"
+              >
+                {locale === 'ar' ? 'المشرفين' : 'Admin'}
+              </Link>
             </div>
           </div>
         </div>
