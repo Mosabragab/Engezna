@@ -36,7 +36,7 @@ interface Settlement {
   gross_revenue: number
   platform_commission: number
   net_payout: number
-  status: 'pending' | 'processing' | 'completed' | 'failed'
+  status: 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
   paid_at: string | null
   payment_method: string | null
   payment_reference: string | null
@@ -110,9 +110,9 @@ export default function ProviderSettlementsPage() {
     setSettlements(settlements)
 
     // Calculate stats
-    const pending = settlements.filter(s => s.status === 'pending' || s.status === 'processing')
-    const failed = settlements.filter(s => s.status === 'failed')
-    const completed = settlements.filter(s => s.status === 'completed')
+    const pending = settlements.filter(s => s.status === 'pending' || s.status === 'partially_paid')
+    const overdue = settlements.filter(s => s.status === 'overdue' || s.status === 'disputed')
+    const completed = settlements.filter(s => s.status === 'paid' || s.status === 'waived')
 
     const totalDue = pending.reduce((sum, s) => sum + (s.platform_commission || 0), 0)
     const totalPaid = completed.reduce((sum, s) => sum + (s.net_payout || 0), 0)
@@ -123,7 +123,7 @@ export default function ProviderSettlementsPage() {
       totalDue,
       totalPaid,
       pendingCount: pending.length,
-      overdueCount: failed.length,
+      overdueCount: overdue.length,
       totalOrders,
       totalRevenue,
     })
@@ -138,10 +138,12 @@ export default function ProviderSettlementsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-700'
+      case 'paid': return 'bg-green-100 text-green-700'
+      case 'waived': return 'bg-green-100 text-green-700'
       case 'pending': return 'bg-yellow-100 text-yellow-700'
-      case 'processing': return 'bg-blue-100 text-blue-700'
-      case 'failed': return 'bg-red-100 text-red-700'
+      case 'partially_paid': return 'bg-blue-100 text-blue-700'
+      case 'overdue': return 'bg-red-100 text-red-700'
+      case 'disputed': return 'bg-red-100 text-red-700'
       default: return 'bg-slate-100 text-slate-700'
     }
   }
@@ -149,19 +151,23 @@ export default function ProviderSettlementsPage() {
   const getStatusLabel = (status: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
       pending: { ar: 'معلق', en: 'Pending' },
-      processing: { ar: 'قيد المعالجة', en: 'Processing' },
-      completed: { ar: 'مكتمل', en: 'Completed' },
-      failed: { ar: 'فشل', en: 'Failed' },
+      partially_paid: { ar: 'مدفوع جزئياً', en: 'Partially Paid' },
+      paid: { ar: 'مدفوع', en: 'Paid' },
+      overdue: { ar: 'متأخر', en: 'Overdue' },
+      disputed: { ar: 'نزاع', en: 'Disputed' },
+      waived: { ar: 'معفى', en: 'Waived' },
     }
     return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': return <CheckCircle2 className="w-4 h-4" />
+      case 'paid': return <CheckCircle2 className="w-4 h-4" />
+      case 'waived': return <CheckCircle2 className="w-4 h-4" />
       case 'pending': return <Clock className="w-4 h-4" />
-      case 'processing': return <TrendingUp className="w-4 h-4" />
-      case 'failed': return <AlertTriangle className="w-4 h-4" />
+      case 'partially_paid': return <TrendingUp className="w-4 h-4" />
+      case 'overdue': return <AlertTriangle className="w-4 h-4" />
+      case 'disputed': return <AlertTriangle className="w-4 h-4" />
       default: return <Clock className="w-4 h-4" />
     }
   }
@@ -346,8 +352,8 @@ export default function ProviderSettlementsPage() {
                         <div className="flex items-center gap-3">
                           <div className="text-end">
                             <p className={`font-bold ${
-                              settlement.status === 'completed' ? 'text-green-600' :
-                              settlement.status === 'failed' ? 'text-red-600' :
+                              settlement.status === 'paid' || settlement.status === 'waived' ? 'text-green-600' :
+                              settlement.status === 'disputed' || settlement.status === 'overdue' ? 'text-red-600' :
                               'text-amber-600'
                             }`}>
                               {formatCurrency(settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}

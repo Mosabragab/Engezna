@@ -398,15 +398,12 @@ export default function AdminSettlementsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid':
-      case 'completed': return 'bg-green-100 text-green-700'
+      case 'paid': return 'bg-green-100 text-green-700'
+      case 'waived': return 'bg-green-100 text-green-700'
       case 'pending': return 'bg-yellow-100 text-yellow-700'
-      case 'partially_paid':
-      case 'processing': return 'bg-blue-100 text-blue-700'
-      case 'overdue':
-      case 'disputed':
-      case 'failed': return 'bg-red-100 text-red-700'
-      case 'waived': return 'bg-slate-100 text-slate-700'
+      case 'partially_paid': return 'bg-blue-100 text-blue-700'
+      case 'overdue': return 'bg-red-100 text-red-700'
+      case 'disputed': return 'bg-red-100 text-red-700'
       default: return 'bg-slate-100 text-slate-700'
     }
   }
@@ -419,24 +416,18 @@ export default function AdminSettlementsPage() {
       overdue: { ar: 'متأخر', en: 'Overdue' },
       disputed: { ar: 'متنازع عليه', en: 'Disputed' },
       waived: { ar: 'معفى', en: 'Waived' },
-      // Keep backward compatibility
-      processing: { ar: 'قيد المعالجة', en: 'Processing' },
-      completed: { ar: 'مكتمل', en: 'Completed' },
-      failed: { ar: 'فشل', en: 'Failed' },
     }
     return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'paid':
-      case 'completed': return <CheckCircle2 className="w-3 h-3" />
+      case 'paid': return <CheckCircle2 className="w-3 h-3" />
+      case 'waived': return <CheckCircle2 className="w-3 h-3" />
       case 'pending': return <Clock className="w-3 h-3" />
-      case 'partially_paid':
-      case 'processing': return <TrendingUp className="w-3 h-3" />
-      case 'overdue':
-      case 'disputed':
-      case 'failed': return <AlertTriangle className="w-3 h-3" />
+      case 'partially_paid': return <TrendingUp className="w-3 h-3" />
+      case 'overdue': return <AlertTriangle className="w-3 h-3" />
+      case 'disputed': return <AlertTriangle className="w-3 h-3" />
       default: return null
     }
   }

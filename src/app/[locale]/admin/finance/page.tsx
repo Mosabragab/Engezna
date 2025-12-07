@@ -54,7 +54,7 @@ interface OrderFinance {
 }
 
 type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'all'
-type FilterSettlementStatus = 'all' | 'pending' | 'processing' | 'completed' | 'failed'
+type FilterSettlementStatus = 'all' | 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
 
 export default function AdminFinancePage() {
   const locale = useLocale()
@@ -227,8 +227,8 @@ export default function AdminFinancePage() {
     const settlementsTyped = (settlementsData || []) as unknown as SettlementRecord[]
     setSettlements(settlementsTyped)
 
-    const pendingSettlements = settlementsTyped.filter(s => s.status === 'pending').reduce((sum, s) => sum + (s.net_amount || 0), 0)
-    const completedSettlements = settlementsTyped.filter(s => s.status === 'completed').reduce((sum, s) => sum + (s.net_amount || 0), 0)
+    const pendingSettlements = settlementsTyped.filter(s => s.status === 'pending' || s.status === 'partially_paid').reduce((sum, s) => sum + (s.net_amount || 0), 0)
+    const completedSettlements = settlementsTyped.filter(s => s.status === 'paid' || s.status === 'waived').reduce((sum, s) => sum + (s.net_amount || 0), 0)
 
     setStats({
       totalRevenue,
@@ -288,10 +288,12 @@ export default function AdminFinancePage() {
 
   const getSettlementStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-700'
+      case 'paid': return 'bg-green-100 text-green-700'
+      case 'waived': return 'bg-green-100 text-green-700'
       case 'pending': return 'bg-yellow-100 text-yellow-700'
-      case 'processing': return 'bg-blue-100 text-blue-700'
-      case 'failed': return 'bg-red-100 text-red-700'
+      case 'partially_paid': return 'bg-blue-100 text-blue-700'
+      case 'overdue': return 'bg-red-100 text-red-700'
+      case 'disputed': return 'bg-red-100 text-red-700'
       default: return 'bg-slate-100 text-slate-700'
     }
   }
@@ -299,9 +301,11 @@ export default function AdminFinancePage() {
   const getSettlementStatusLabel = (status: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
       pending: { ar: 'معلق', en: 'Pending' },
-      processing: { ar: 'قيد المعالجة', en: 'Processing' },
-      completed: { ar: 'مكتمل', en: 'Completed' },
-      failed: { ar: 'فشل', en: 'Failed' },
+      partially_paid: { ar: 'مدفوع جزئياً', en: 'Partially Paid' },
+      paid: { ar: 'مدفوع', en: 'Paid' },
+      overdue: { ar: 'متأخر', en: 'Overdue' },
+      disputed: { ar: 'نزاع', en: 'Disputed' },
+      waived: { ar: 'معفى', en: 'Waived' },
     }
     return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
   }
@@ -601,10 +605,11 @@ export default function AdminFinancePage() {
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${getSettlementStatusColor(settlement.status)}`}>
-                            {settlement.status === 'completed' && <CheckCircle2 className="w-3 h-3" />}
+                            {settlement.status === 'paid' && <CheckCircle2 className="w-3 h-3" />}
                             {settlement.status === 'pending' && <Clock className="w-3 h-3" />}
-                            {settlement.status === 'processing' && <RefreshCw className="w-3 h-3" />}
-                            {settlement.status === 'failed' && <XCircle className="w-3 h-3" />}
+                            {settlement.status === 'partially_paid' && <RefreshCw className="w-3 h-3" />}
+                            {settlement.status === 'disputed' && <XCircle className="w-3 h-3" />}
+                            {settlement.status === 'overdue' && <XCircle className="w-3 h-3" />}
                             {getSettlementStatusLabel(settlement.status)}
                           </span>
                         </td>

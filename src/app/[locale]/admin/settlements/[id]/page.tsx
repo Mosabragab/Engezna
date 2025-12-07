@@ -488,14 +488,14 @@ export default function SettlementDetailPage() {
               </div>
             </div>
 
-            {/* Rejection Reason */}
-            {settlement.rejection_reason && settlement.status === 'failed' && (
+            {/* Dispute/Rejection Reason */}
+            {settlement.rejection_reason && settlement.status === 'disputed' && (
               <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium text-red-700">
-                      {locale === 'ar' ? 'سبب الفشل:' : 'Failure Reason:'}
+                      {locale === 'ar' ? 'سبب النزاع:' : 'Dispute Reason:'}
                     </p>
                     <p className="text-sm text-red-600">{settlement.rejection_reason}</p>
                   </div>
@@ -639,8 +639,8 @@ export default function SettlementDetailPage() {
             )
           })()}
 
-          {/* Payment Details (if completed) */}
-          {settlement.status === 'completed' && settlement.paid_at && (
+          {/* Payment Details (if paid) */}
+          {settlement.status === 'paid' && settlement.paid_at && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
               <h3 className="text-lg font-bold text-green-800 mb-4 flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5" />
