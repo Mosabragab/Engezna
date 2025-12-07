@@ -180,10 +180,15 @@ export function OrderChat({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex-1 bg-white border border-primary text-primary py-3 rounded-xl font-semibold hover:bg-primary/5 transition-colors flex items-center justify-center gap-2 relative"
+        className="flex-1 bg-white border border-primary text-primary py-3 rounded-xl font-semibold hover:bg-primary/5 transition-colors flex flex-col items-center justify-center gap-0.5 relative"
       >
-        <MessageCircle className="w-5 h-5" />
-        {locale === 'ar' ? 'محادثة المتجر' : 'Chat with Store'}
+        <div className="flex items-center gap-2">
+          <MessageCircle className="w-5 h-5" />
+          <span>{locale === 'ar' ? 'محادثة' : 'Chat'}</span>
+        </div>
+        {otherPartyName && (
+          <span className="text-xs text-primary/70">{otherPartyName}</span>
+        )}
         {unreadCount > 0 && (
           <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
             {unreadCount}
@@ -210,12 +215,15 @@ export function OrderChat({
         </button>
       )}
 
-      {/* Chat Modal */}
+      {/* Chat Modal - Full screen on mobile */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex flex-col">
-          <div className="flex-1 flex flex-col bg-white mt-auto sm:m-auto sm:max-w-md sm:max-h-[80vh] sm:rounded-2xl rounded-t-2xl overflow-hidden" style={{ maxHeight: 'calc(100vh - 70px)' }}>
+        <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col">
+          {/* Spacer for top safe area on mobile */}
+          <div className="h-0 sm:flex-1" />
+
+          <div className="flex flex-col bg-white w-full sm:max-w-md sm:mx-auto sm:my-auto sm:rounded-2xl sm:max-h-[80vh] h-full sm:h-auto overflow-hidden">
             {/* Header */}
-            <div className="bg-primary text-white p-4 flex items-center justify-between flex-shrink-0">
+            <div className="bg-primary text-white p-4 flex items-center justify-between flex-shrink-0 safe-area-top">
               <div>
                 <h3 className="font-bold">
                   {locale === 'ar' ? 'محادثة الطلب' : 'Order Chat'}
@@ -226,9 +234,9 @@ export function OrderChat({
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30"
+                className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
@@ -284,8 +292,8 @@ export function OrderChat({
             </div>
 
             {/* Input - Fixed at bottom with safe area padding */}
-            <div className="p-3 pb-4 border-t border-slate-200 bg-white flex-shrink-0 safe-area-bottom">
-              <div className="flex gap-2">
+            <div className="p-4 border-t border-slate-200 bg-white flex-shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+              <div className="flex gap-3">
                 <input
                   ref={inputRef}
                   type="text"
@@ -300,13 +308,13 @@ export function OrderChat({
                   placeholder={
                     locale === 'ar' ? 'اكتب رسالتك...' : 'Type a message...'
                   }
-                  className="flex-1 px-4 py-3 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base"
+                  className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base bg-slate-50"
                   disabled={sending}
                 />
                 <button
                   onClick={handleSend}
                   disabled={!newMessage.trim() || sending}
-                  className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-md"
                 >
                   {sending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

@@ -890,9 +890,10 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
-        {/* Chat with Store Button - Inline for delivered orders */}
-        {order && user && !isCancelled && (
-          <div className="mb-4">
+        {/* Actions - Chat replaces Home on mobile */}
+        <div className="flex gap-3 pb-4">
+          {/* Chat with Store Button - Shows store name */}
+          {order && user && !isCancelled && (
             <OrderChat
               orderId={order.id}
               userType="customer"
@@ -901,18 +902,7 @@ export default function OrderTrackingPage() {
               providerName={locale === 'ar' ? provider?.name_ar : provider?.name_en}
               isInline={true}
             />
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-3 pb-4">
-          <button
-            onClick={() => router.push(`/${locale}`)}
-            className="flex-1 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
-          >
-            <Home className="w-5 h-5" />
-            {locale === 'ar' ? 'الرئيسية' : 'Home'}
-          </button>
+          )}
           <button
             onClick={() => router.push(`/${locale}/orders`)}
             className="flex-1 bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
