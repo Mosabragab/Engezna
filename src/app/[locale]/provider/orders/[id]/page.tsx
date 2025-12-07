@@ -34,6 +34,16 @@ import {
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
+// Cancellation reasons mapping for translation
+const CANCELLATION_REASONS: Record<string, { ar: string; en: string }> = {
+  changed_mind: { ar: 'غيرت رأيي', en: 'Changed my mind' },
+  wrong_order: { ar: 'طلب خاطئ', en: 'Wrong order' },
+  duplicate_order: { ar: 'طلب مكرر', en: 'Duplicate order' },
+  long_wait: { ar: 'وقت انتظار طويل', en: 'Long wait time' },
+  found_alternative: { ar: 'وجدت بديل آخر', en: 'Found an alternative' },
+  other: { ar: 'سبب آخر', en: 'Other reason' },
+}
+
 type OrderItem = {
   id: string
   item_name_ar: string
@@ -406,7 +416,10 @@ export default function ProviderOrderDetailPage() {
                   </p>
                   {order.cancellation_reason && (
                     <p className="text-sm text-slate-500 mt-2">
-                      {locale === 'ar' ? 'السبب:' : 'Reason:'} {order.cancellation_reason}
+                      {locale === 'ar' ? 'السبب:' : 'Reason:'}{' '}
+                      {CANCELLATION_REASONS[order.cancellation_reason]
+                        ? (locale === 'ar' ? CANCELLATION_REASONS[order.cancellation_reason].ar : CANCELLATION_REASONS[order.cancellation_reason].en)
+                        : order.cancellation_reason}
                     </p>
                   )}
                   {order.cancelled_at && (
