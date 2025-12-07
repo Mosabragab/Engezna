@@ -186,81 +186,72 @@ export default function FinancePage() {
     const { startDate, endDate, lastPeriodStart, lastPeriodEnd } = getDateRange()
 
     // Get all delivered orders with payment status and platform_commission
-    const { data: orders } = await supabase
+    const { data: allOrders } = await supabase
       .from('orders')
       .select('id, order_number, total, subtotal, discount, platform_commission, status, payment_status, payment_method, created_at')
       .eq('provider_id', provId)
       .eq('status', 'delivered')
       .order('created_at', { ascending: false })
 
-    if (orders) {
+    if (allOrders) {
       // Helper to get commission (use stored value or calculate as fallback)
-      const getCommission = (order: typeof orders[0]) => {
+      const getCommission = (order: typeof allOrders[0]) => {
         if (order.platform_commission != null) return order.platform_commission
         // Fallback: calculate on (subtotal - discount)
         const revenue = (order.subtotal || order.total || 0) - (order.discount || 0)
         return revenue * COMMISSION_RATE
       }
 
-      // Separate by payment status
+      // FILTER ALL ORDERS BY DATE RANGE FIRST
+      const orders = allOrders.filter(o => {
+        const d = new Date(o.created_at)
+        return d >= startDate && d <= endDate
+      })
+
+      // Separate by payment status (filtered by date)
       const confirmedOrders = orders.filter(o => o.payment_status === 'completed')
       const pendingPaymentOrders = orders.filter(o => o.payment_status === 'pending')
 
-      // Calculate confirmed totals (only completed payments)
+      // Calculate confirmed totals (only completed payments in the period)
       const confirmedRevenue = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
       const confirmedCommission = confirmedOrders.reduce((sum, o) => sum + getCommission(o), 0)
       const confirmedEarnings = confirmedRevenue - confirmedCommission
 
-      // Calculate pending collection (delivered but payment pending - mostly cash)
+      // Calculate pending collection (delivered but payment pending in the period)
       const pendingRevenue = pendingPaymentOrders.reduce((sum, o) => sum + (o.total || 0), 0)
       const pendingCommission = pendingPaymentOrders.reduce((sum, o) => sum + getCommission(o), 0)
       const pendingCollection = pendingRevenue - pendingCommission
 
-      // Total commission from all delivered orders
+      // Total commission from orders in the period
       const totalCommission = orders.reduce((sum, o) => sum + getCommission(o), 0)
 
-      // Period earnings (confirmed only within date range)
-      const periodConfirmedOrders = confirmedOrders.filter(o => {
-        const d = new Date(o.created_at)
-        return d >= startDate && d <= endDate
-      })
-      const periodRevenue = periodConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const periodCommission = periodConfirmedOrders.reduce((sum, o) => sum + getCommission(o), 0)
-      const periodEarnings = periodRevenue - periodCommission
+      // Period earnings = confirmed earnings in this period
+      const periodEarnings = confirmedEarnings
 
       // Last period earnings for comparison
-      const lastPeriodConfirmedOrders = confirmedOrders.filter(o => {
+      const lastPeriodOrders = allOrders.filter(o => {
         const d = new Date(o.created_at)
         return d >= lastPeriodStart && d <= lastPeriodEnd
       })
+      const lastPeriodConfirmedOrders = lastPeriodOrders.filter(o => o.payment_status === 'completed')
       const lastPeriodRevenue = lastPeriodConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
       const lastPeriodCommission = lastPeriodConfirmedOrders.reduce((sum, o) => sum + getCommission(o), 0)
       const lastPeriodEarnings = lastPeriodRevenue - lastPeriodCommission
 
-      // Pending payout calculation for this week
+      // Pending payout calculation (for filtered period)
       // For Online orders: Platform owes provider (revenue - commission)
-      // For COD orders: Provider already has the cash, NO pending payout from platform
-      const weekStart = new Date()
-      weekStart.setDate(weekStart.getDate() - 7)
-      const weekConfirmedOrders = confirmedOrders.filter(o => new Date(o.created_at) >= weekStart)
-      // Only online orders generate pending payout from platform to provider
-      const weekOnlineOrders = weekConfirmedOrders.filter(o => o.payment_method !== 'cash')
-      const weekOnlineRevenue = weekOnlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const weekOnlineCommission = weekOnlineOrders.reduce((sum, o) => sum + getCommission(o), 0)
-      const pendingPayout = weekOnlineRevenue - weekOnlineCommission
+      const periodOnlineConfirmed = confirmedOrders.filter(o => o.payment_method !== 'cash')
+      const periodOnlineRevenue = periodOnlineConfirmed.reduce((sum, o) => sum + (o.total || 0), 0)
+      const periodOnlineCommission = periodOnlineConfirmed.reduce((sum, o) => sum + getCommission(o), 0)
+      const pendingPayout = periodOnlineRevenue - periodOnlineCommission
 
-      // COD commission owed - what provider owes platform from COD orders this week
-      const weekCodOrders = weekConfirmedOrders.filter(o => o.payment_method === 'cash')
-      const codCommissionOwed = weekCodOrders.reduce((sum, o) => sum + getCommission(o), 0)
+      // COD commission owed - what provider owes platform from COD orders in period
+      const periodCodConfirmed = confirmedOrders.filter(o => o.payment_method === 'cash')
+      const codCommissionOwed = periodCodConfirmed.reduce((sum, o) => sum + getCommission(o), 0)
 
-      // COD vs Online breakdown (within date range)
-      const periodOrders = orders.filter(o => {
-        const d = new Date(o.created_at)
-        return d >= startDate && d <= endDate
-      })
-
-      const codOrders = periodOrders.filter(o => o.payment_method === 'cash')
-      const onlineOrders = periodOrders.filter(o => o.payment_method !== 'cash')
+      // COD vs Online breakdown (within date range - already filtered)
+      const codOrders = orders.filter(o => o.payment_method === 'cash')
+      const onlineOrders = orders.filter(o => o.payment_method !== 'cash')
 
       const codOrdersCount = codOrders.length
       const codRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
@@ -291,7 +282,7 @@ export default function FinancePage() {
         onlineConfirmed,
       })
 
-      // Build transaction list from ALL orders (not filtered by date) - latest 30
+      // Build transaction list from filtered orders
       const txns: Transaction[] = orders.slice(0, 30).map(order => ({
         id: order.id,
         type: 'order' as const,
@@ -429,7 +420,7 @@ export default function FinancePage() {
           </CardContent>
         </Card>
 
-        {/* Main Stats */}
+        {/* Main Stats - All filtered by selected period */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Confirmed Earnings */}
           <Card className="bg-[hsl(var(--deal)/0.1)] border-[hsl(var(--deal)/0.3)]">
@@ -438,7 +429,16 @@ export default function FinancePage() {
                 <CheckCircle2 className="w-8 h-8 text-deal" />
               </div>
               <p className="text-2xl font-bold text-deal">{formatCurrency(stats.confirmedEarnings)}</p>
-              <p className="text-xs text-slate-500">{locale === 'ar' ? 'أرباح مؤكدة' : 'Confirmed Earnings'}</p>
+              <p className="text-xs text-slate-500">
+                {locale === 'ar' ? 'أرباح مؤكدة' : 'Confirmed Earnings'}
+                {' '}
+                <span className="text-primary font-medium">
+                  ({dateFilter === 'today' ? (locale === 'ar' ? 'اليوم' : 'Today') :
+                    dateFilter === 'week' ? (locale === 'ar' ? 'الأسبوع' : 'Week') :
+                    dateFilter === 'month' ? (locale === 'ar' ? 'الشهر' : 'Month') :
+                    (locale === 'ar' ? 'مخصص' : 'Custom')})
+                </span>
+              </p>
             </CardContent>
           </Card>
 
@@ -449,11 +449,13 @@ export default function FinancePage() {
                 <AlertCircle className="w-8 h-8 text-premium" />
               </div>
               <p className="text-2xl font-bold text-premium">{formatCurrency(stats.pendingCollection)}</p>
-              <p className="text-xs text-slate-500">{locale === 'ar' ? 'في انتظار التحصيل' : 'Pending Collection'}</p>
+              <p className="text-xs text-slate-500">
+                {locale === 'ar' ? 'في انتظار التحصيل' : 'Pending Collection'}
+              </p>
             </CardContent>
           </Card>
 
-          {/* Period Earnings */}
+          {/* Period Earnings with growth */}
           <Card className="bg-[hsl(var(--primary)/0.1)] border-[hsl(var(--primary)/0.3)]">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
