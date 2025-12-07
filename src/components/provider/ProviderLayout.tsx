@@ -31,48 +31,104 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [provider, setProvider] = useState<Provider | null>(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const [pendingOrders, setPendingOrders] = useState(0)
-  const [unrespondedReviews, setUnrespondedReviews] = useState(0)
-  const [unreadMessages, setUnreadMessages] = useState(0)
 
-  // Refresh notification counts
-  const refreshCounts = useCallback(async (providerId: string) => {
+  // Load unread notifications count from provider_notifications table
+  const loadUnreadCount = useCallback(async (providerId: string) => {
     const supabase = createClient()
-    const [pendingResult, reviewsResult, messagesResult] = await Promise.all([
-      supabase
-        .from('orders')
-        .select('id')
-        .eq('provider_id', providerId)
-        .eq('status', 'pending'),
-      supabase
-        .from('reviews')
-        .select('id')
-        .eq('provider_id', providerId)
-        .is('provider_response', null),
-      supabase
-        .from('order_messages')
-        .select('id, orders!inner(provider_id)')
-        .eq('sender_type', 'customer')
-        .eq('is_read', false)
-    ])
-    setPendingOrders(pendingResult.data?.length || 0)
-    setUnrespondedReviews(reviewsResult.data?.length || 0)
-    const providerMessages = (messagesResult.data || []).filter((m: any) => m.orders?.provider_id === providerId)
-    setUnreadMessages(providerMessages.length)
+
+    // Get unread notifications count
+    const { count } = await supabase
+      .from('provider_notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', providerId)
+      .eq('is_read', false)
+
+    setUnreadCount(count || 0)
+
+    // Also get pending orders for sidebar badge
+    const { count: pendingCount } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', providerId)
+      .eq('status', 'pending')
+
+    setPendingOrders(pendingCount || 0)
   }, [])
 
   useEffect(() => {
     checkAuth()
   }, [])
 
-  // Realtime subscriptions for notification updates
+  // Realtime subscription for provider_notifications
   useEffect(() => {
     if (!provider?.id) return
 
     const supabase = createClient()
     const providerId = provider.id
 
-    // Subscribe to order changes (new orders, status updates)
+    // Subscribe to provider_notifications changes
+    const notificationsChannel = supabase
+      .channel(`provider-notifications-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'provider_notifications',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        () => {
+          setUnreadCount(prev => prev + 1)
+          // Play notification sound
+          try {
+            const audio = new Audio('/sounds/notification.mp3')
+            audio.volume = 0.5
+            audio.play().catch(() => {})
+          } catch {}
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'provider_notifications',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const oldNotif = payload.old as { is_read: boolean }
+          const newNotif = payload.new as { is_read: boolean }
+          // Decrement if was unread and now read
+          if (!oldNotif.is_read && newNotif.is_read) {
+            setUnreadCount(prev => Math.max(0, prev - 1))
+          }
+          // Increment if was read and now unread (unlikely but handle it)
+          if (oldNotif.is_read && !newNotif.is_read) {
+            setUnreadCount(prev => prev + 1)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'provider_notifications',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const deleted = payload.old as { is_read: boolean }
+          // Decrement if deleted notification was unread
+          if (!deleted.is_read) {
+            setUnreadCount(prev => Math.max(0, prev - 1))
+          }
+        }
+      )
+      .subscribe()
+
+    // Also subscribe to orders for pending count (sidebar badge)
     const ordersChannel = supabase
       .channel(`layout-orders-${providerId}`)
       .on(
@@ -87,12 +143,6 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           const newOrder = payload.new as { status: string }
           if (newOrder.status === 'pending') {
             setPendingOrders(prev => prev + 1)
-            // Play notification sound
-            try {
-              const audio = new Audio('/sounds/new-order.mp3')
-              audio.volume = 0.7
-              audio.play().catch(() => {})
-            } catch {}
           }
         }
       )
@@ -107,11 +157,9 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         (payload) => {
           const oldOrder = payload.old as { status: string }
           const newOrder = payload.new as { status: string }
-          // Decrement if was pending and now something else
           if (oldOrder.status === 'pending' && newOrder.status !== 'pending') {
             setPendingOrders(prev => Math.max(0, prev - 1))
           }
-          // Increment if became pending (unlikely but handle it)
           if (oldOrder.status !== 'pending' && newOrder.status === 'pending') {
             setPendingOrders(prev => prev + 1)
           }
@@ -119,103 +167,9 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       )
       .subscribe()
 
-    // Subscribe to message changes (new messages, read status)
-    const messagesChannel = supabase
-      .channel(`layout-messages-${providerId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'order_messages',
-          filter: `sender_type=eq.customer`,
-        },
-        async (payload) => {
-          // Check if message is for this provider's order
-          const newMessage = payload.new as { order_id: string }
-          const { data: orderData } = await supabase
-            .from('orders')
-            .select('provider_id')
-            .eq('id', newMessage.order_id)
-            .single()
-
-          if (orderData?.provider_id === providerId) {
-            setUnreadMessages(prev => prev + 1)
-            // Play notification sound
-            try {
-              const audio = new Audio('/sounds/notification.mp3')
-              audio.volume = 0.5
-              audio.play().catch(() => {})
-            } catch {}
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'order_messages',
-        },
-        async (payload) => {
-          const oldMsg = payload.old as { is_read: boolean; sender_type: string }
-          const newMsg = payload.new as { is_read: boolean; sender_type: string; order_id: string }
-
-          // Only care about customer messages being marked as read
-          if (newMsg.sender_type === 'customer' && !oldMsg.is_read && newMsg.is_read) {
-            // Check if message is for this provider's order
-            const { data: orderData } = await supabase
-              .from('orders')
-              .select('provider_id')
-              .eq('id', newMsg.order_id)
-              .single()
-
-            if (orderData?.provider_id === providerId) {
-              setUnreadMessages(prev => Math.max(0, prev - 1))
-            }
-          }
-        }
-      )
-      .subscribe()
-
-    // Subscribe to review changes
-    const reviewsChannel = supabase
-      .channel(`layout-reviews-${providerId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'reviews',
-          filter: `provider_id=eq.${providerId}`,
-        },
-        () => {
-          setUnrespondedReviews(prev => prev + 1)
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'reviews',
-          filter: `provider_id=eq.${providerId}`,
-        },
-        (payload) => {
-          const oldReview = payload.old as { provider_response: string | null }
-          const newReview = payload.new as { provider_response: string | null }
-          // Decrement if response was added
-          if (!oldReview.provider_response && newReview.provider_response) {
-            setUnrespondedReviews(prev => Math.max(0, prev - 1))
-          }
-        }
-      )
-      .subscribe()
-
     return () => {
+      supabase.removeChannel(notificationsChannel)
       supabase.removeChannel(ordersChannel)
-      supabase.removeChannel(messagesChannel)
-      supabase.removeChannel(reviewsChannel)
     }
   }, [provider?.id])
 
@@ -233,7 +187,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
 
       if (providerData && providerData.length > 0) {
         setProvider(providerData[0])
-        await refreshCounts(providerData[0].id)
+        await loadUnreadCount(providerData[0].id)
       }
     }
 
@@ -297,7 +251,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           onMenuClick={() => setSidebarOpen(true)}
           onSignOut={handleSignOut}
           pendingOrders={pendingOrders}
-          totalNotifications={pendingOrders + unrespondedReviews + unreadMessages}
+          totalNotifications={unreadCount}
           providerId={provider?.id}
           pageTitle={pageTitle}
           pageSubtitle={pageSubtitle}
