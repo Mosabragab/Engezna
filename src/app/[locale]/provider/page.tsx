@@ -59,6 +59,11 @@ interface DashboardStats {
   totalOrders: number
   totalCustomers: number
   unrespondedReviews: number
+  // Today's payment breakdown
+  todayCodOrders: number
+  todayCodRevenue: number
+  todayOnlineOrders: number
+  todayOnlineRevenue: number
 }
 
 export default function ProviderDashboard() {
@@ -82,6 +87,10 @@ export default function ProviderDashboard() {
     totalOrders: 0,
     totalCustomers: 0,
     unrespondedReviews: 0,
+    todayCodOrders: 0,
+    todayCodRevenue: 0,
+    todayOnlineOrders: 0,
+    todayOnlineRevenue: 0,
   })
 
   // Real-time order notifications
@@ -184,7 +193,7 @@ export default function ProviderDashboard() {
     ] = await Promise.all([
       supabase
         .from('orders')
-        .select('id, total, status, payment_status')
+        .select('id, total, status, payment_status, payment_method')
         .eq('provider_id', providerId)
         .gte('created_at', today.toISOString()),
       supabase
@@ -212,6 +221,12 @@ export default function ProviderDashboard() {
     // Only count confirmed payments for today's revenue
     const confirmedOrders = todayOrdersData?.filter(o => o.status === 'delivered' && o.payment_status === 'completed') || []
 
+    // COD vs Online breakdown for today
+    const todayCodOrders = todayOrdersData?.filter(o => o.payment_method === 'cash') || []
+    const todayOnlineOrders = todayOrdersData?.filter(o => o.payment_method !== 'cash') || []
+    const todayCodConfirmed = todayCodOrders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
+    const todayOnlineConfirmed = todayOnlineOrders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
+
     setStats({
       todayOrders: todayOrdersData?.length || 0,
       todayRevenue: confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0),
@@ -220,6 +235,10 @@ export default function ProviderDashboard() {
       totalOrders: allOrdersData?.length || 0,
       totalCustomers: uniqueCustomers.size,
       unrespondedReviews: unrespondedReviewsData?.length || 0,
+      todayCodOrders: todayCodOrders.length,
+      todayCodRevenue: todayCodConfirmed.reduce((sum, o) => sum + (o.total || 0), 0),
+      todayOnlineOrders: todayOnlineOrders.length,
+      todayOnlineRevenue: todayOnlineConfirmed.reduce((sum, o) => sum + (o.total || 0), 0),
     })
   }
 
@@ -787,6 +806,44 @@ export default function ProviderDashboard() {
                   <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
                 </div>
               </div>
+
+              {/* Today's Payment Breakdown */}
+              {stats.todayOrders > 0 && (
+                <div className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm mb-6">
+                  <h3 className="text-sm font-semibold text-[hsl(var(--text-primary))] mb-3 flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-primary" />
+                    {locale === 'ar' ? 'طلبات اليوم حسب طريقة الدفع' : "Today's Orders by Payment Method"}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* COD */}
+                    <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                          <Wallet className="w-4 h-4 text-amber-600" />
+                        </div>
+                        <span className="text-xs font-medium text-amber-700">
+                          {locale === 'ar' ? 'كاش' : 'COD'}
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold text-slate-900">{stats.todayCodOrders} {locale === 'ar' ? 'طلب' : 'orders'}</p>
+                      <p className="text-xs text-slate-500">{stats.todayCodRevenue} EGP {locale === 'ar' ? 'مؤكد' : 'confirmed'}</p>
+                    </div>
+                    {/* Online */}
+                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <DollarSign className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <span className="text-xs font-medium text-blue-700">
+                          {locale === 'ar' ? 'إلكتروني' : 'Online'}
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold text-slate-900">{stats.todayOnlineOrders} {locale === 'ar' ? 'طلب' : 'orders'}</p>
+                      <p className="text-xs text-slate-500">{stats.todayOnlineRevenue} EGP {locale === 'ar' ? 'مؤكد' : 'confirmed'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Performance Indicators - Using text hierarchy */}
               <div className="bg-white rounded-xl p-6 border border-[hsl(var(--border))] shadow-sm mb-6">

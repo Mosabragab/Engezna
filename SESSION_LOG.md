@@ -1,5 +1,39 @@
 # Session Log
 
+## Session: 2025-12-08
+
+### Summary
+Added COD vs Online payment breakdown across Finance, Dashboard, and Reports pages.
+
+### Completed Tasks
+
+#### 1. COD vs Online Breakdown - Finance Page
+- Added comprehensive payment method breakdown section
+- Shows order count, total revenue, collected/confirmed, and pending amounts
+- Visual progress bars showing collection percentage
+- Summary showing COD vs Online percentage split
+- **File**: `src/app/[locale]/provider/finance/page.tsx`
+
+#### 2. COD vs Online Breakdown - Provider Dashboard
+- Added today's payment breakdown section on main dashboard
+- Shows COD and Online order counts and confirmed revenue
+- Only displays when there are orders today
+- **File**: `src/app/[locale]/provider/page.tsx`
+
+#### 3. COD vs Online Breakdown - Reports Page
+- Added PaymentMethodStats type for tracking payment methods
+- Calculate COD and Online stats for current month
+- Display breakdown with collection/confirmation progress bars
+- Show percentage split between COD and Online payments
+- **File**: `src/app/[locale]/provider/reports/page.tsx`
+
+### Files Modified
+- `src/app/[locale]/provider/finance/page.tsx`
+- `src/app/[locale]/provider/page.tsx`
+- `src/app/[locale]/provider/reports/page.tsx`
+
+---
+
 ## Session: 2025-12-07
 
 ### Summary

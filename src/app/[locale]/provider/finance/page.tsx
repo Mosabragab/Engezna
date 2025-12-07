@@ -49,6 +49,15 @@ type FinanceStats = {
   periodEarnings: number
   lastPeriodEarnings: number
   pendingPayout: number
+  // COD vs Online breakdown
+  codOrdersCount: number
+  codRevenue: number
+  codPending: number
+  codConfirmed: number
+  onlineOrdersCount: number
+  onlineRevenue: number
+  onlinePending: number
+  onlineConfirmed: number
 }
 
 type DateFilter = 'today' | 'week' | 'month' | 'custom'
@@ -68,6 +77,15 @@ export default function FinancePage() {
     periodEarnings: 0,
     lastPeriodEarnings: 0,
     pendingPayout: 0,
+    // COD vs Online
+    codOrdersCount: 0,
+    codRevenue: 0,
+    codPending: 0,
+    codConfirmed: 0,
+    onlineOrdersCount: 0,
+    onlineRevenue: 0,
+    onlinePending: 0,
+    onlineConfirmed: 0,
   })
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [filterType, setFilterType] = useState<'all' | 'order' | 'payout' | 'commission'>('all')
@@ -213,6 +231,25 @@ export default function FinancePage() {
       const weekRevenue = weekConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
       const pendingPayout = weekRevenue - (weekRevenue * COMMISSION_RATE)
 
+      // COD vs Online breakdown (within date range)
+      const periodOrders = orders.filter(o => {
+        const d = new Date(o.created_at)
+        return d >= startDate && d <= endDate
+      })
+
+      const codOrders = periodOrders.filter(o => o.payment_method === 'cash')
+      const onlineOrders = periodOrders.filter(o => o.payment_method !== 'cash')
+
+      const codOrdersCount = codOrders.length
+      const codRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const codPending = codOrders.filter(o => o.payment_status === 'pending').reduce((sum, o) => sum + (o.total || 0), 0)
+      const codConfirmed = codOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0)
+
+      const onlineOrdersCount = onlineOrders.length
+      const onlineRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const onlinePending = onlineOrders.filter(o => o.payment_status === 'pending').reduce((sum, o) => sum + (o.total || 0), 0)
+      const onlineConfirmed = onlineOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0)
+
       setStats({
         confirmedEarnings,
         pendingCollection,
@@ -220,14 +257,18 @@ export default function FinancePage() {
         periodEarnings,
         lastPeriodEarnings,
         pendingPayout,
+        // COD vs Online
+        codOrdersCount,
+        codRevenue,
+        codPending,
+        codConfirmed,
+        onlineOrdersCount,
+        onlineRevenue,
+        onlinePending,
+        onlineConfirmed,
       })
 
-      // Build transaction list from orders within date range
-      const periodOrders = orders.filter(o => {
-        const d = new Date(o.created_at)
-        return d >= startDate && d <= endDate
-      })
-
+      // Build transaction list from periodOrders (already filtered above)
       const txns: Transaction[] = periodOrders.slice(0, 30).map(order => ({
         id: order.id,
         type: 'order' as const,
@@ -423,6 +464,130 @@ export default function FinancePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* COD vs Online Payment Breakdown */}
+        <Card className="bg-white border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-slate-900 flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              {locale === 'ar' ? 'تفصيل طرق الدفع' : 'Payment Methods Breakdown'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Cash on Delivery */}
+              <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                    <Banknote className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900">
+                      {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {stats.codOrdersCount} {locale === 'ar' ? 'طلب' : 'orders'}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
+                    <span className="font-semibold text-slate-900">{formatCurrency(stats.codRevenue)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">{locale === 'ar' ? 'تم التحصيل' : 'Collected'}</span>
+                    <span className="font-semibold text-green-600">{formatCurrency(stats.codConfirmed)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">{locale === 'ar' ? 'بانتظار التحصيل' : 'Pending'}</span>
+                    <span className="font-semibold text-amber-600">{formatCurrency(stats.codPending)}</span>
+                  </div>
+                </div>
+                {stats.codRevenue > 0 && (
+                  <div className="mt-3 pt-3 border-t border-amber-200">
+                    <div className="w-full bg-amber-200 rounded-full h-2">
+                      <div
+                        className="bg-green-500 h-2 rounded-full"
+                        style={{ width: `${(stats.codConfirmed / stats.codRevenue) * 100}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {((stats.codConfirmed / stats.codRevenue) * 100).toFixed(0)}% {locale === 'ar' ? 'تم تحصيله' : 'collected'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Online Payment */}
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900">
+                      {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {stats.onlineOrdersCount} {locale === 'ar' ? 'طلب' : 'orders'}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
+                    <span className="font-semibold text-slate-900">{formatCurrency(stats.onlineRevenue)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">{locale === 'ar' ? 'مؤكد' : 'Confirmed'}</span>
+                    <span className="font-semibold text-green-600">{formatCurrency(stats.onlineConfirmed)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">{locale === 'ar' ? 'قيد المعالجة' : 'Processing'}</span>
+                    <span className="font-semibold text-blue-600">{formatCurrency(stats.onlinePending)}</span>
+                  </div>
+                </div>
+                {stats.onlineRevenue > 0 && (
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div
+                        className="bg-green-500 h-2 rounded-full"
+                        style={{ width: `${(stats.onlineConfirmed / stats.onlineRevenue) * 100}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {((stats.onlineConfirmed / stats.onlineRevenue) * 100).toFixed(0)}% {locale === 'ar' ? 'مؤكد' : 'confirmed'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Summary */}
+            {(stats.codOrdersCount + stats.onlineOrdersCount) > 0 && (
+              <div className="mt-4 p-3 bg-slate-50 rounded-lg">
+                <p className="text-sm text-center text-slate-600">
+                  {locale === 'ar' ? (
+                    <>
+                      <span className="font-semibold text-amber-600">{((stats.codOrdersCount / (stats.codOrdersCount + stats.onlineOrdersCount)) * 100).toFixed(0)}%</span>
+                      {' '}كاش |{' '}
+                      <span className="font-semibold text-blue-600">{((stats.onlineOrdersCount / (stats.codOrdersCount + stats.onlineOrdersCount)) * 100).toFixed(0)}%</span>
+                      {' '}إلكتروني
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-amber-600">{((stats.codOrdersCount / (stats.codOrdersCount + stats.onlineOrdersCount)) * 100).toFixed(0)}%</span>
+                      {' '}COD |{' '}
+                      <span className="font-semibold text-blue-600">{((stats.onlineOrdersCount / (stats.codOrdersCount + stats.onlineOrdersCount)) * 100).toFixed(0)}%</span>
+                      {' '}Online
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Commission Info */}
         <Card className="bg-white border-slate-200">
