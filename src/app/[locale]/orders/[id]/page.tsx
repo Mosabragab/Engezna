@@ -205,10 +205,11 @@ export default function OrderTrackingPage() {
     if (!orderId || !user) return
 
     const supabase = createClient()
+    let isSubscribed = true
 
-    // Subscribe to order changes
+    // Subscribe to order changes with status callback
     const channel = supabase
-      .channel(`order-${orderId}`)
+      .channel(`order-tracking-${orderId}`)
       .on(
         'postgres_changes',
         {
@@ -218,15 +219,45 @@ export default function OrderTrackingPage() {
           filter: `id=eq.${orderId}`,
         },
         (payload) => {
-          console.log('Order updated:', payload.new)
-          // Update order state with new data
-          setOrder(payload.new as Order)
+          if (isSubscribed) {
+            console.log('Order updated via realtime:', payload.new)
+            // Update order state with new data
+            setOrder(payload.new as Order)
+          }
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status)
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to order updates')
+        }
+      })
+
+    // Also poll every 10 seconds as fallback for mobile
+    const pollInterval = setInterval(async () => {
+      if (!isSubscribed) return
+      const { data } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single()
+
+      if (data && isSubscribed) {
+        setOrder(prev => {
+          // Only update if status actually changed
+          if (prev?.status !== data.status) {
+            console.log('Order status changed via polling:', prev?.status, '->', data.status)
+            return data
+          }
+          return prev
+        })
+      }
+    }, 10000)
 
     // Cleanup subscription on unmount
     return () => {
+      isSubscribed = false
+      clearInterval(pollInterval)
       supabase.removeChannel(channel)
     }
   }, [orderId, user])
@@ -859,6 +890,20 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
+        {/* Chat with Store Button - Inline for delivered orders */}
+        {order && user && !isCancelled && (
+          <div className="mb-4">
+            <OrderChat
+              orderId={order.id}
+              userType="customer"
+              userId={user.id}
+              locale={locale}
+              providerName={locale === 'ar' ? provider?.name_ar : provider?.name_en}
+              isInline={true}
+            />
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex gap-3 pb-4">
           <button
@@ -876,17 +921,6 @@ export default function OrderTrackingPage() {
           </button>
         </div>
       </div>
-
-      {/* Order Chat */}
-      {order && user && !isCancelled && (
-        <OrderChat
-          orderId={order.id}
-          userType="customer"
-          userId={user.id}
-          locale={locale}
-          providerName={locale === 'ar' ? provider?.name_ar : provider?.name_en}
-        />
-      )}
 
       {/* Cancel Order Modal */}
       {showCancelModal && (

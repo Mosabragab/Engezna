@@ -169,63 +169,80 @@ export default function NotificationsPage() {
 
         {/* Notifications List */}
         <div className="space-y-3">
-          {notifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`bg-white rounded-xl border p-4 transition-all ${
-                notification.is_read
-                  ? 'border-slate-100'
-                  : 'border-primary/30 bg-primary/5'
-              }`}
-            >
-              <div className="flex gap-3">
-                {/* Icon */}
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  notification.is_read ? 'bg-slate-100' : 'bg-primary/10'
-                }`}>
-                  {getNotificationIcon(notification.type)}
-                </div>
+          {notifications.map((notification) => {
+            // Check if notification is order-related for navigation
+            const isOrderNotification = notification.type.startsWith('order_') && notification.related_order_id
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <h3 className={`font-semibold text-slate-900 ${!notification.is_read && 'text-primary'}`}>
-                    {locale === 'ar' ? notification.title_ar : notification.title_en}
-                  </h3>
-                  <p className="text-sm text-slate-600 mt-1">
-                    {locale === 'ar' ? notification.body_ar : notification.body_en}
-                  </p>
-                  <span className="text-xs text-slate-400 mt-2 block">
-                    {formatDate(notification.created_at)}
-                  </span>
-                </div>
+            const handleNotificationClick = () => {
+              if (isOrderNotification && notification.related_order_id) {
+                // Mark as read if not already
+                if (!notification.is_read) {
+                  handleMarkAsRead(notification.id)
+                }
+                // Navigate to order tracking page
+                router.push(`/${locale}/orders/${notification.related_order_id}`)
+              }
+            }
 
-                {/* Actions */}
-                <div className="flex items-start gap-1">
-                  {!notification.is_read && (
+            return (
+              <div
+                key={notification.id}
+                onClick={handleNotificationClick}
+                className={`bg-white rounded-xl border p-4 transition-all ${
+                  notification.is_read
+                    ? 'border-slate-100'
+                    : 'border-primary/30 bg-primary/5'
+                } ${isOrderNotification ? 'cursor-pointer hover:shadow-md' : ''}`}
+              >
+                <div className="flex gap-3">
+                  {/* Icon */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    notification.is_read ? 'bg-slate-100' : 'bg-primary/10'
+                  }`}>
+                    {getNotificationIcon(notification.type)}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`font-semibold text-slate-900 ${!notification.is_read && 'text-primary'}`}>
+                      {locale === 'ar' ? notification.title_ar : notification.title_en}
+                    </h3>
+                    <p className="text-sm text-slate-600 mt-1">
+                      {locale === 'ar' ? notification.body_ar : notification.body_en}
+                    </p>
+                    <span className="text-xs text-slate-400 mt-2 block">
+                      {formatDate(notification.created_at)}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-start gap-1" onClick={(e) => e.stopPropagation()}>
+                    {!notification.is_read && (
+                      <button
+                        onClick={() => handleMarkAsRead(notification.id)}
+                        disabled={markingRead === notification.id}
+                        className="p-2 text-slate-400 hover:text-primary rounded-full hover:bg-slate-100"
+                        title={locale === 'ar' ? 'تحديد كمقروء' : 'Mark as read'}
+                      >
+                        {markingRead === notification.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Check className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleMarkAsRead(notification.id)}
-                      disabled={markingRead === notification.id}
-                      className="p-2 text-slate-400 hover:text-primary rounded-full hover:bg-slate-100"
-                      title={locale === 'ar' ? 'تحديد كمقروء' : 'Mark as read'}
+                      onClick={() => handleDeleteNotification(notification.id)}
+                      className="p-2 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50"
+                      title={locale === 'ar' ? 'حذف' : 'Delete'}
                     >
-                      {markingRead === notification.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Check className="w-4 h-4" />
-                      )}
+                      <Trash2 className="w-4 h-4" />
                     </button>
-                  )}
-                  <button
-                    onClick={() => handleDeleteNotification(notification.id)}
-                    className="p-2 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50"
-                    title={locale === 'ar' ? 'حذف' : 'Delete'}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </CustomerLayout>

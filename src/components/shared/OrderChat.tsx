@@ -21,6 +21,7 @@ interface OrderChatProps {
   locale: string
   providerName?: string
   customerName?: string
+  isInline?: boolean // New prop for inline mode
 }
 
 export function OrderChat({
@@ -30,6 +31,7 @@ export function OrderChat({
   locale,
   providerName,
   customerName,
+  isInline = false,
 }: OrderChatProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -173,27 +175,47 @@ export function OrderChat({
 
   const otherPartyName = userType === 'customer' ? providerName : customerName
 
-  return (
-    <>
-      {/* Chat Button */}
+  // Inline button for placing next to other buttons
+  if (isInline && !isOpen) {
+    return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 left-4 z-40 w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-all flex items-center justify-center"
+        className="flex-1 bg-white border border-primary text-primary py-3 rounded-xl font-semibold hover:bg-primary/5 transition-colors flex items-center justify-center gap-2 relative"
       >
-        <MessageCircle className="w-6 h-6" />
+        <MessageCircle className="w-5 h-5" />
+        {locale === 'ar' ? 'محادثة المتجر' : 'Chat with Store'}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+          <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
             {unreadCount}
           </span>
         )}
       </button>
+    )
+  }
+
+  return (
+    <>
+      {/* Floating Chat Button - Only show when not inline */}
+      {!isInline && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-24 left-4 z-40 w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-all flex items-center justify-center"
+        >
+          <MessageCircle className="w-6 h-6" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+              {unreadCount}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* Chat Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl h-[80vh] sm:h-[70vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-black/50 z-50 flex flex-col">
+          <div className="flex-1 flex flex-col bg-white mt-auto sm:m-auto sm:max-w-md sm:max-h-[80vh] sm:rounded-2xl rounded-t-2xl overflow-hidden" style={{ maxHeight: 'calc(100vh - 70px)' }}>
             {/* Header */}
-            <div className="bg-primary text-white p-4 flex items-center justify-between">
+            <div className="bg-primary text-white p-4 flex items-center justify-between flex-shrink-0">
               <div>
                 <h3 className="font-bold">
                   {locale === 'ar' ? 'محادثة الطلب' : 'Order Chat'}
@@ -261,8 +283,8 @@ export function OrderChat({
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="p-3 border-t border-slate-200 bg-white">
+            {/* Input - Fixed at bottom with safe area padding */}
+            <div className="p-3 pb-4 border-t border-slate-200 bg-white flex-shrink-0 safe-area-bottom">
               <div className="flex gap-2">
                 <input
                   ref={inputRef}
@@ -278,13 +300,13 @@ export function OrderChat({
                   placeholder={
                     locale === 'ar' ? 'اكتب رسالتك...' : 'Type a message...'
                   }
-                  className="flex-1 px-4 py-2 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="flex-1 px-4 py-3 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base"
                   disabled={sending}
                 />
                 <button
                   onClick={handleSend}
                   disabled={!newMessage.trim() || sending}
-                  className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   {sending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

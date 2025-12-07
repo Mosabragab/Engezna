@@ -107,7 +107,7 @@ export default function FinancePage() {
     if (providerId) {
       loadFinanceData(providerId)
     }
-  }, [dateFilter, customStartDate, customEndDate])
+  }, [providerId, dateFilter, customStartDate, customEndDate])
 
   const getDateRange = () => {
     const now = new Date()
