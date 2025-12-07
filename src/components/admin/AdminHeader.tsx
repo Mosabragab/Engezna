@@ -20,6 +20,11 @@ import {
   MessageSquare,
   CheckCheck,
   X,
+  ShoppingBag,
+  Wallet,
+  Store,
+  Star,
+  AlertCircle,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
@@ -144,13 +149,43 @@ export function AdminHeader({
     return locale === 'ar' ? `منذ ${minutes} دقيقة` : `${minutes}m ago`
   }
 
+  function getNotificationIcon(type: string) {
+    switch (type) {
+      case 'message':
+        return { icon: MessageSquare, bgColor: 'bg-blue-100', iconColor: 'text-blue-600' }
+      case 'order':
+      case 'new_order':
+      case 'order_status':
+        return { icon: ShoppingBag, bgColor: 'bg-amber-100', iconColor: 'text-amber-600' }
+      case 'settlement':
+      case 'payment':
+        return { icon: Wallet, bgColor: 'bg-green-100', iconColor: 'text-green-600' }
+      case 'provider':
+      case 'new_provider':
+        return { icon: Store, bgColor: 'bg-purple-100', iconColor: 'text-purple-600' }
+      case 'review':
+        return { icon: Star, bgColor: 'bg-yellow-100', iconColor: 'text-yellow-600' }
+      default:
+        return { icon: AlertCircle, bgColor: 'bg-slate-100', iconColor: 'text-slate-600' }
+    }
+  }
+
   function handleNotificationClick(notification: Notification) {
     markAsRead(notification.id)
 
     // Navigate based on notification type
     if (notification.type === 'message' && notification.related_message_id) {
       router.push(`/${locale}/admin/messages`)
+    } else if (notification.type === 'order' || notification.type === 'new_order' || notification.type === 'order_status') {
+      router.push(`/${locale}/admin/orders`)
+    } else if (notification.type === 'settlement' || notification.type === 'payment') {
+      router.push(`/${locale}/admin/settlements`)
+    } else if (notification.type === 'provider' || notification.type === 'new_provider') {
+      router.push(`/${locale}/admin/providers`)
+    } else if (notification.type === 'review') {
+      router.push(`/${locale}/admin/approvals`)
     }
+    // For other types, just close the dropdown without navigation
     setNotificationsOpen(false)
   }
 
@@ -267,15 +302,17 @@ export function AdminHeader({
                   {/* Notifications List */}
                   <div className="max-h-80 overflow-y-auto">
                     {notifications.length > 0 ? (
-                      notifications.map((notification) => (
+                      notifications.map((notification) => {
+                        const { icon: NotifIcon, bgColor, iconColor } = getNotificationIcon(notification.type)
+                        return (
                         <button
                           key={notification.id}
                           onClick={() => handleNotificationClick(notification)}
                           className={`w-full text-start px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors ${!notification.is_read ? 'bg-blue-50/50' : ''}`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${notification.type === 'message' ? 'bg-blue-100' : 'bg-slate-100'}`}>
-                              <MessageSquare className={`w-4 h-4 ${notification.type === 'message' ? 'text-blue-600' : 'text-slate-600'}`} />
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${bgColor}`}>
+                              <NotifIcon className={`w-4 h-4 ${iconColor}`} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className={`text-sm ${!notification.is_read ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>
@@ -295,7 +332,7 @@ export function AdminHeader({
                             )}
                           </div>
                         </button>
-                      ))
+                      )})
                     ) : (
                       <div className="py-8 text-center">
                         <Bell className="w-12 h-12 mx-auto mb-2 text-slate-300" />
@@ -308,12 +345,20 @@ export function AdminHeader({
 
                   {/* Footer */}
                   {notifications.length > 0 && (
-                    <div className="px-4 py-2 border-t border-slate-100">
+                    <div className="px-4 py-2 border-t border-slate-100 flex justify-between items-center">
+                      <button
+                        onClick={() => {
+                          setNotificationsOpen(false)
+                        }}
+                        className="text-xs text-slate-500 hover:text-slate-700"
+                      >
+                        {locale === 'ar' ? 'إغلاق' : 'Close'}
+                      </button>
                       <Link
-                        href={`/${locale}/admin/messages`}
+                        href={`/${locale}/admin/orders`}
                         className="text-xs text-red-600 hover:text-red-700"
                       >
-                        {locale === 'ar' ? 'عرض جميع الرسائل' : 'View all messages'}
+                        {locale === 'ar' ? 'عرض الطلبات' : 'View Orders'}
                       </Link>
                     </div>
                   )}
