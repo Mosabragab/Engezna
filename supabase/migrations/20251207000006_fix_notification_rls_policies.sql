@@ -200,7 +200,38 @@ CREATE POLICY "System can insert notifications"
   WITH CHECK (true);
 
 -- ============================================================================
--- 5. GRANT PERMISSIONS
+-- 5. ENABLE REALTIME FOR NOTIFICATIONS TABLES
+-- This is critical for real-time notification delivery
+-- ============================================================================
+
+-- Enable realtime for customer_notifications
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+    AND schemaname = 'public'
+    AND tablename = 'customer_notifications'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE customer_notifications;
+  END IF;
+END $$;
+
+-- Enable realtime for provider_notifications
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+    AND schemaname = 'public'
+    AND tablename = 'provider_notifications'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE provider_notifications;
+  END IF;
+END $$;
+
+-- ============================================================================
+-- 6. GRANT PERMISSIONS
 -- ============================================================================
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON order_messages TO authenticated;
@@ -209,7 +240,7 @@ GRANT INSERT ON customer_notifications TO authenticated;
 GRANT INSERT ON customer_notifications TO service_role;
 
 -- ============================================================================
--- 6. UPDATE notify_provider_new_message TO INCLUDE STORE NAME
+-- 7. UPDATE notify_provider_new_message TO INCLUDE STORE NAME
 -- Fix the notification title to show actual store name instead of generic text
 -- ============================================================================
 
