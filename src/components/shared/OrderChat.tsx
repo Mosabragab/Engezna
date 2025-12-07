@@ -310,16 +310,26 @@ export function OrderChat({
               ) : (
                 messages.map((msg) => {
                   const isOwn = msg.sender_type === userType
+                  const isRTL = locale === 'ar'
+                  // In RTL: own messages on RIGHT (justify-start), others on LEFT (justify-end)
+                  // In LTR: own messages on RIGHT (justify-end), others on LEFT (justify-start)
+                  const justifyClass = isRTL
+                    ? (isOwn ? 'justify-start' : 'justify-end')
+                    : (isOwn ? 'justify-end' : 'justify-start')
+                  // Bubble corner: smaller corner on the side where the bubble connects to bottom
+                  const bubbleCorner = isRTL
+                    ? (isOwn ? 'rounded-bl-sm' : 'rounded-br-sm')
+                    : (isOwn ? 'rounded-br-sm' : 'rounded-bl-sm')
                   return (
                     <div
                       key={msg.id}
-                      className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${justifyClass}`}
                     >
                       <div
                         className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                           isOwn
-                            ? 'bg-primary text-white rounded-br-sm'
-                            : 'bg-white text-slate-900 border border-slate-200 rounded-bl-sm'
+                            ? `bg-primary text-white ${bubbleCorner}`
+                            : `bg-white text-slate-900 border border-slate-200 ${bubbleCorner}`
                         }`}
                       >
                         <p className="text-sm whitespace-pre-wrap">{msg.message}</p>

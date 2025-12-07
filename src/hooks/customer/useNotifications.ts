@@ -135,6 +135,9 @@ export function useNotifications() {
 
   // Initialize
   useEffect(() => {
+    let pollingInterval: NodeJS.Timeout | null = null
+    let currentUserId: string | null = null
+
     const init = async () => {
       setIsLoading(true)
       const supabase = createClient()
@@ -142,8 +145,16 @@ export function useNotifications() {
 
       if (user) {
         setUser(user)
+        currentUserId = user.id
         await loadNotifications(user.id)
         subscribeToNotifications(user.id)
+
+        // Add polling fallback every 10 seconds for realtime reliability
+        pollingInterval = setInterval(() => {
+          if (currentUserId) {
+            loadNotifications(currentUserId)
+          }
+        }, 10000)
       }
 
       setIsLoading(false)
@@ -156,6 +167,9 @@ export function useNotifications() {
       if (channel) {
         const supabase = createClient()
         supabase.removeChannel(channel)
+      }
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
       }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
