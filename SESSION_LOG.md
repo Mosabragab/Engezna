@@ -1,5 +1,45 @@
 # Session Log
 
+## Session: 2025-12-09
+
+### Summary
+Fixed critical settlements payment recording functionality in admin panel.
+
+### Completed Tasks
+
+#### 1. Settlements Payment Recording Fix
+- **Issue**: Recording payment from admin interface showed error "حدث خطأ أثناء تسجيل الدفع"
+- **Root Cause**: `processed_by` column has foreign key to `admin_users(id)`, but code passed `user?.id` which is `profiles.id` (auth user UUID)
+- **Investigation**:
+  - Verified database columns: `paid_at` exists, `payment_date` does NOT exist
+  - `amount_paid` column does NOT exist in current schema
+  - Discovered FK constraint: `settlements_processed_by_fkey FOREIGN KEY (processed_by) REFERENCES admin_users(id)`
+- **Fix**: Removed `processed_by` from update queries since mapping from auth user to admin_users.id would require extra lookup
+- **Files**:
+  - `src/app/[locale]/admin/settlements/page.tsx`
+  - `src/app/[locale]/admin/settlements/[id]/page.tsx`
+
+#### 2. Column Name Corrections
+- Changed `payment_date` to `paid_at` (correct column name)
+- Removed `amount_paid` references (column doesn't exist)
+- Removed `admin_notes` from handleMarkFailed (field doesn't exist)
+
+### Database Schema Notes
+Settlements table actual columns:
+- `id`, `provider_id`, `period_start`, `period_end`, `total_orders`, `gross_revenue`
+- `platform_commission`, `net_payout`, `status`, `paid_at`, `payment_method`, `payment_reference`
+- `orders_included`, `notes`, `created_at`, `updated_at`, `processed_by`
+- `approved_at`, `rejected_at`, `rejection_reason`
+- COD/Online breakdown: `cod_orders_count`, `cod_gross_revenue`, `cod_commission_owed`
+- Online: `online_orders_count`, `online_gross_revenue`, `online_platform_commission`, `online_payout_owed`
+- `net_balance`, `settlement_direction`
+
+### Files Modified
+- `src/app/[locale]/admin/settlements/page.tsx`
+- `src/app/[locale]/admin/settlements/[id]/page.tsx`
+
+---
+
 ## Session: 2025-12-08
 
 ### Summary
