@@ -103,6 +103,31 @@ export function OrderChat({
       setMessages((prev) => [...prev, data])
       setNewMessage('')
       setTimeout(scrollToBottom, 100)
+
+      // If provider is sending, create notification for customer
+      if (userType === 'provider') {
+        // Get order details to find customer_id and order_number
+        const { data: orderData } = await supabase
+          .from('orders')
+          .select('customer_id, order_number')
+          .eq('id', orderId)
+          .single()
+
+        if (orderData?.customer_id) {
+          // Create customer notification
+          await supabase
+            .from('customer_notifications')
+            .insert({
+              customer_id: orderData.customer_id,
+              type: 'order_message',
+              title_ar: 'رسالة جديدة من المتجر',
+              title_en: 'New Message from Store',
+              body_ar: `${providerName || 'المتجر'}: ${data.message.length > 50 ? data.message.slice(0, 50) + '...' : data.message}`,
+              body_en: `${providerName || 'Store'}: ${data.message.length > 50 ? data.message.slice(0, 50) + '...' : data.message}`,
+              related_order_id: orderId,
+            })
+        }
+      }
     }
     setSending(false)
   }
