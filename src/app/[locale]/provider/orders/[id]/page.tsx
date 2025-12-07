@@ -90,6 +90,12 @@ type Customer = {
   email: string | null
 }
 
+type ProviderInfo = {
+  id: string
+  name_ar: string
+  name_en: string
+}
+
 const ORDER_STATUSES = [
   { key: 'pending', icon: Clock, label_ar: 'في الانتظار', label_en: 'Pending' },
   { key: 'accepted', icon: CheckCircle2, label_ar: 'تم القبول', label_en: 'Accepted' },
@@ -117,7 +123,7 @@ export default function ProviderOrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [customer, setCustomer] = useState<Customer | null>(null)
-  const [providerId, setProviderId] = useState<string | null>(null)
+  const [providerInfo, setProviderInfo] = useState<ProviderInfo | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
@@ -138,10 +144,10 @@ export default function ProviderOrderDetailPage() {
     }
     setUserId(user.id)
 
-    // Get provider ID
+    // Get provider info including name
     const { data: providerData } = await supabase
       .from('providers')
-      .select('id')
+      .select('id, name_ar, name_en')
       .eq('owner_id', user.id)
       .limit(1)
 
@@ -151,7 +157,7 @@ export default function ProviderOrderDetailPage() {
       return
     }
 
-    setProviderId(provider.id)
+    setProviderInfo(provider)
 
     // Fetch order
     const { data: orderData, error: orderError } = await supabase
@@ -743,6 +749,7 @@ export default function ProviderOrderDetailPage() {
           userId={userId}
           locale={locale}
           customerName={customer?.full_name}
+          providerName={locale === 'ar' ? providerInfo?.name_ar : providerInfo?.name_en}
         />
       )}
     </div>
