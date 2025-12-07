@@ -615,9 +615,12 @@ export default function CheckoutPage() {
     try {
       const supabase = createClient()
 
-      // Calculate platform commission
+      // Calculate final total with discount
+      const finalTotal = subtotal + (provider.delivery_fee || 0) - discountAmount
+
+      // Calculate platform commission on actual revenue (subtotal minus discount, excluding delivery fee)
       const commissionRate = provider.commission_rate || 6.0
-      const platformCommission = (subtotal * commissionRate) / 100
+      const platformCommission = ((subtotal - discountAmount) * commissionRate) / 100
 
       // Build delivery address JSONB with full geographic data
       const deliveryAddressJson = buildDeliveryAddressJson()
@@ -626,9 +629,6 @@ export default function CheckoutPage() {
       const estimatedDeliveryTime = new Date(
         Date.now() + (provider.estimated_delivery_time_min || 30) * 60 * 1000
       ).toISOString()
-
-      // Calculate final total with discount
-      const finalTotal = subtotal + (provider.delivery_fee || 0) - discountAmount
 
       // Create order
       const { data: order, error: orderError } = await supabase

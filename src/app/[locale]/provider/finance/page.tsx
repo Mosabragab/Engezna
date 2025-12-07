@@ -185,31 +185,39 @@ export default function FinancePage() {
     const supabase = createClient()
     const { startDate, endDate, lastPeriodStart, lastPeriodEnd } = getDateRange()
 
-    // Get all delivered orders with payment status
+    // Get all delivered orders with payment status and platform_commission
     const { data: orders } = await supabase
       .from('orders')
-      .select('id, order_number, total, status, payment_status, payment_method, created_at')
+      .select('id, order_number, total, subtotal, discount, platform_commission, status, payment_status, payment_method, created_at')
       .eq('provider_id', provId)
       .eq('status', 'delivered')
       .order('created_at', { ascending: false })
 
     if (orders) {
+      // Helper to get commission (use stored value or calculate as fallback)
+      const getCommission = (order: typeof orders[0]) => {
+        if (order.platform_commission != null) return order.platform_commission
+        // Fallback: calculate on (subtotal - discount)
+        const revenue = (order.subtotal || order.total || 0) - (order.discount || 0)
+        return revenue * COMMISSION_RATE
+      }
+
       // Separate by payment status
       const confirmedOrders = orders.filter(o => o.payment_status === 'completed')
       const pendingPaymentOrders = orders.filter(o => o.payment_status === 'pending')
 
       // Calculate confirmed totals (only completed payments)
       const confirmedRevenue = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const confirmedCommission = confirmedRevenue * COMMISSION_RATE
+      const confirmedCommission = confirmedOrders.reduce((sum, o) => sum + getCommission(o), 0)
       const confirmedEarnings = confirmedRevenue - confirmedCommission
 
       // Calculate pending collection (delivered but payment pending - mostly cash)
       const pendingRevenue = pendingPaymentOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const pendingCollection = pendingRevenue - (pendingRevenue * COMMISSION_RATE)
+      const pendingCommission = pendingPaymentOrders.reduce((sum, o) => sum + getCommission(o), 0)
+      const pendingCollection = pendingRevenue - pendingCommission
 
       // Total commission from all delivered orders
-      const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const totalCommission = totalRevenue * COMMISSION_RATE
+      const totalCommission = orders.reduce((sum, o) => sum + getCommission(o), 0)
 
       // Period earnings (confirmed only within date range)
       const periodConfirmedOrders = confirmedOrders.filter(o => {
@@ -217,7 +225,8 @@ export default function FinancePage() {
         return d >= startDate && d <= endDate
       })
       const periodRevenue = periodConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const periodEarnings = periodRevenue - (periodRevenue * COMMISSION_RATE)
+      const periodCommission = periodConfirmedOrders.reduce((sum, o) => sum + getCommission(o), 0)
+      const periodEarnings = periodRevenue - periodCommission
 
       // Last period earnings for comparison
       const lastPeriodConfirmedOrders = confirmedOrders.filter(o => {
@@ -225,7 +234,8 @@ export default function FinancePage() {
         return d >= lastPeriodStart && d <= lastPeriodEnd
       })
       const lastPeriodRevenue = lastPeriodConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const lastPeriodEarnings = lastPeriodRevenue - (lastPeriodRevenue * COMMISSION_RATE)
+      const lastPeriodCommission = lastPeriodConfirmedOrders.reduce((sum, o) => sum + getCommission(o), 0)
+      const lastPeriodEarnings = lastPeriodRevenue - lastPeriodCommission
 
       // Pending payout calculation for this week
       // For Online orders: Platform owes provider (revenue - commission)
@@ -236,12 +246,12 @@ export default function FinancePage() {
       // Only online orders generate pending payout from platform to provider
       const weekOnlineOrders = weekConfirmedOrders.filter(o => o.payment_method !== 'cash')
       const weekOnlineRevenue = weekOnlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const pendingPayout = weekOnlineRevenue - (weekOnlineRevenue * COMMISSION_RATE)
+      const weekOnlineCommission = weekOnlineOrders.reduce((sum, o) => sum + getCommission(o), 0)
+      const pendingPayout = weekOnlineRevenue - weekOnlineCommission
 
       // COD commission owed - what provider owes platform from COD orders this week
       const weekCodOrders = weekConfirmedOrders.filter(o => o.payment_method === 'cash')
-      const weekCodRevenue = weekCodOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const codCommissionOwed = weekCodRevenue * COMMISSION_RATE
+      const codCommissionOwed = weekCodOrders.reduce((sum, o) => sum + getCommission(o), 0)
 
       // COD vs Online breakdown (within date range)
       const periodOrders = orders.filter(o => {
@@ -281,15 +291,15 @@ export default function FinancePage() {
         onlineConfirmed,
       })
 
-      // Build transaction list from periodOrders (already filtered above)
-      const txns: Transaction[] = periodOrders.slice(0, 30).map(order => ({
+      // Build transaction list from ALL orders (not filtered by date) - latest 30
+      const txns: Transaction[] = orders.slice(0, 30).map(order => ({
         id: order.id,
         type: 'order' as const,
-        amount: (order.total || 0) - ((order.total || 0) * COMMISSION_RATE),
+        amount: (order.total || 0) - getCommission(order),
         status: order.payment_status === 'completed' ? 'completed' as const : 'pending' as const,
         paymentStatus: order.payment_status || 'pending',
         paymentMethod: order.payment_method || 'cash',
-        description: locale === 'ar' ? `طلب #${order.order_number || order.id.slice(0, 8).toUpperCase()}` : `Order #${order.order_number || order.id.slice(0, 8).toUpperCase()}`,
+        description: locale === 'ar' ? `#${order.order_number || order.id.slice(0, 8).toUpperCase()}` : `#${order.order_number || order.id.slice(0, 8).toUpperCase()}`,
         created_at: order.created_at,
         order_id: order.id,
       }))
