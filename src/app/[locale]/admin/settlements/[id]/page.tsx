@@ -64,7 +64,7 @@ interface Settlement {
   // Net calculation
   net_balance: number
   settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
-  status: 'pending' | 'processing' | 'completed' | 'failed'
+  status: 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
   paid_at: string | null
   payment_method: string | null
   payment_reference: string | null
@@ -204,11 +204,13 @@ export default function SettlementDetailPage() {
       const { error } = await supabase
         .from('settlements')
         .update({
-          status: 'completed',
+          status: 'paid', // Use 'paid' to match database CHECK constraint
           paid_at: new Date().toISOString(),
+          payment_date: new Date().toISOString(),
           payment_method: paymentForm.method,
           payment_reference: paymentForm.reference || null,
           processed_by: user?.id,
+          amount_paid: parseFloat(paymentForm.amount),
         })
         .eq('id', settlement.id)
 
@@ -235,15 +237,16 @@ export default function SettlementDetailPage() {
     const { error } = await supabase
       .from('settlements')
       .update({
-        status: 'failed',
-        rejection_reason: reason,
-        rejected_at: new Date().toISOString(),
+        status: 'disputed', // Use 'disputed' to match database CHECK constraint (closest to 'failed')
+        notes: reason,
+        admin_notes: reason,
         processed_by: user?.id,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', settlement.id)
 
     if (error) {
-      console.error('Error marking as failed:', error)
+      console.error('Error marking as disputed:', error)
       alert(locale === 'ar' ? 'حدث خطأ' : 'Error occurred')
     } else {
       await loadSettlement(supabase)
@@ -277,10 +280,15 @@ export default function SettlementDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'paid':
       case 'completed': return 'bg-green-100 text-green-700'
       case 'pending': return 'bg-yellow-100 text-yellow-700'
+      case 'partially_paid':
       case 'processing': return 'bg-blue-100 text-blue-700'
+      case 'overdue':
+      case 'disputed':
       case 'failed': return 'bg-red-100 text-red-700'
+      case 'waived': return 'bg-slate-100 text-slate-700'
       default: return 'bg-slate-100 text-slate-700'
     }
   }
@@ -288,6 +296,12 @@ export default function SettlementDetailPage() {
   const getStatusLabel = (status: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
       pending: { ar: 'معلق', en: 'Pending' },
+      partially_paid: { ar: 'مدفوع جزئياً', en: 'Partially Paid' },
+      paid: { ar: 'مدفوع', en: 'Paid' },
+      overdue: { ar: 'متأخر', en: 'Overdue' },
+      disputed: { ar: 'متنازع عليه', en: 'Disputed' },
+      waived: { ar: 'معفى', en: 'Waived' },
+      // Keep backward compatibility
       processing: { ar: 'قيد المعالجة', en: 'Processing' },
       completed: { ar: 'مكتمل', en: 'Completed' },
       failed: { ar: 'فشل', en: 'Failed' },
@@ -297,9 +311,13 @@ export default function SettlementDetailPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'paid':
       case 'completed': return <CheckCircle2 className="w-5 h-5" />
       case 'pending': return <Clock className="w-5 h-5" />
+      case 'partially_paid':
       case 'processing': return <TrendingUp className="w-5 h-5" />
+      case 'overdue':
+      case 'disputed':
       case 'failed': return <AlertTriangle className="w-5 h-5" />
       default: return null
     }

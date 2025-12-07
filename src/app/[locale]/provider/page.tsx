@@ -33,6 +33,7 @@ import {
   Bell,
   User as UserIcon,
   ChevronDown,
+  Receipt,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
@@ -285,6 +286,11 @@ export default function ProviderDashboard() {
       icon: Wallet,
       label: locale === 'ar' ? 'المالية' : 'Finance',
       path: `/${locale}/provider/finance`
+    },
+    {
+      icon: Receipt,
+      label: locale === 'ar' ? 'التسويات' : 'Settlements',
+      path: `/${locale}/provider/settlements`
     },
     {
       icon: Clock,

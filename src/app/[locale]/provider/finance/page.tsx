@@ -48,7 +48,8 @@ type FinanceStats = {
   totalCommission: number
   periodEarnings: number
   lastPeriodEarnings: number
-  pendingPayout: number
+  pendingPayout: number // Online only - what platform owes provider
+  codCommissionOwed: number // What provider owes platform from COD orders
   // COD vs Online breakdown
   codOrdersCount: number
   codRevenue: number
@@ -77,6 +78,7 @@ export default function FinancePage() {
     periodEarnings: 0,
     lastPeriodEarnings: 0,
     pendingPayout: 0,
+    codCommissionOwed: 0,
     // COD vs Online
     codOrdersCount: 0,
     codRevenue: 0,
@@ -224,12 +226,21 @@ export default function FinancePage() {
       const lastPeriodRevenue = lastPeriodConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
       const lastPeriodEarnings = lastPeriodRevenue - (lastPeriodRevenue * COMMISSION_RATE)
 
-      // Pending payout (confirmed earnings from this week)
+      // Pending payout calculation for this week
+      // For Online orders: Platform owes provider (revenue - commission)
+      // For COD orders: Provider already has the cash, NO pending payout from platform
       const weekStart = new Date()
       weekStart.setDate(weekStart.getDate() - 7)
       const weekConfirmedOrders = confirmedOrders.filter(o => new Date(o.created_at) >= weekStart)
-      const weekRevenue = weekConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const pendingPayout = weekRevenue - (weekRevenue * COMMISSION_RATE)
+      // Only online orders generate pending payout from platform to provider
+      const weekOnlineOrders = weekConfirmedOrders.filter(o => o.payment_method !== 'cash')
+      const weekOnlineRevenue = weekOnlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const pendingPayout = weekOnlineRevenue - (weekOnlineRevenue * COMMISSION_RATE)
+
+      // COD commission owed - what provider owes platform from COD orders this week
+      const weekCodOrders = weekConfirmedOrders.filter(o => o.payment_method === 'cash')
+      const weekCodRevenue = weekCodOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const codCommissionOwed = weekCodRevenue * COMMISSION_RATE
 
       // COD vs Online breakdown (within date range)
       const periodOrders = orders.filter(o => {
@@ -257,6 +268,7 @@ export default function FinancePage() {
         periodEarnings,
         lastPeriodEarnings,
         pendingPayout,
+        codCommissionOwed,
         // COD vs Online
         codOrdersCount,
         codRevenue,
@@ -669,15 +681,44 @@ export default function FinancePage() {
                 </p>
               </div>
             </div>
-            <div className="mt-4 p-4 bg-primary/5 rounded-lg">
-              <p className="text-sm text-slate-700">
-                <span className="font-medium">{locale === 'ar' ? 'قيد التحويل القادم:' : 'Next Payout:'}</span>{' '}
-                <span className="text-primary font-bold">{formatCurrency(stats.pendingPayout)}</span>
-                <span className="text-slate-500 text-xs mx-2">
-                  ({locale === 'ar' ? 'أرباح الأسبوع المؤكدة' : 'Confirmed weekly earnings'})
-                </span>
-              </p>
-            </div>
+            {/* Show Online payout (platform pays provider) */}
+            {stats.pendingPayout > 0 && (
+              <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-sm text-slate-700">
+                  <span className="font-medium text-green-700">
+                    {locale === 'ar' ? 'مستحق لك من المدفوعات الإلكترونية:' : 'Due to you (Online Payments):'}
+                  </span>{' '}
+                  <span className="text-green-600 font-bold">{formatCurrency(stats.pendingPayout)}</span>
+                  <span className="text-slate-500 text-xs mx-2">
+                    ({locale === 'ar' ? 'سيتم تحويله لحسابك' : 'Will be transferred to your account'})
+                  </span>
+                </p>
+              </div>
+            )}
+
+            {/* Show COD commission owed (provider pays platform) */}
+            {stats.codCommissionOwed > 0 && (
+              <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <p className="text-sm text-slate-700">
+                  <span className="font-medium text-amber-700">
+                    {locale === 'ar' ? 'عمولة مستحقة للمنصة (الدفع عند الاستلام):' : 'Commission due to platform (COD):'}
+                  </span>{' '}
+                  <span className="text-amber-600 font-bold">{formatCurrency(stats.codCommissionOwed)}</span>
+                  <span className="text-slate-500 text-xs mx-2">
+                    ({locale === 'ar' ? 'من طلبات الكاش هذا الأسبوع' : 'From COD orders this week'})
+                  </span>
+                </p>
+              </div>
+            )}
+
+            {/* Show message when no pending payouts */}
+            {stats.pendingPayout === 0 && stats.codCommissionOwed === 0 && (
+              <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+                <p className="text-sm text-slate-500 text-center">
+                  {locale === 'ar' ? 'لا توجد مستحقات هذا الأسبوع' : 'No pending settlements this week'}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
