@@ -383,7 +383,6 @@ export default function AdminSettlementsPage() {
         .from('settlements')
         .update({
           status: 'paid',
-          paid_at: new Date().toISOString(),
           payment_date: new Date().toISOString(),
           payment_method: paymentForm.method,
           payment_reference: paymentForm.reference || null,

@@ -205,7 +205,6 @@ export default function SettlementDetailPage() {
         .from('settlements')
         .update({
           status: 'paid', // Use 'paid' to match database CHECK constraint
-          paid_at: new Date().toISOString(),
           payment_date: new Date().toISOString(),
           payment_method: paymentForm.method,
           payment_reference: paymentForm.reference || null,
