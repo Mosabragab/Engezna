@@ -29,6 +29,24 @@
 
 ### Session 15 Updates (December 7, 2025)
 
+**Evening Session: In-App Chat & Messaging System:**
+- ✅ **Provider Notifications System**:
+  - Created `provider_notifications` table with triggers
+  - RLS policies for notifications persistence (DELETE, UPDATE)
+  - Enabled realtime publication for both notification tables
+- ✅ **Customer Notifications Enhancement**:
+  - Store name display in customer notifications
+  - Polling fallback (10-second interval) for realtime reliability
+  - Notification badge stabilization (removed animate-pulse)
+- ✅ **Chat Message System**:
+  - RTL alignment fix (own messages on RIGHT, received on LEFT)
+  - Message read status indicators (✓ sent, ✓✓ read)
+  - Proper message alignment based on locale (AR/EN)
+- ✅ **Files Modified**:
+  - `supabase/migrations/20251207000006_fix_notification_rls_policies.sql`
+  - `src/components/shared/OrderChat.tsx` - RTL message alignment
+  - `src/hooks/customer/useNotifications.ts` - Polling fallback
+
 **Part 4: Smart Settlements (COD vs Online):**
 - ✅ **Payment-aware settlement logic**:
   - COD orders: Provider collects cash → Owes 6% commission to Engezna
@@ -153,6 +171,14 @@
 - ✅ Live unread count in customer header
 - ✅ Real-time order notifications for providers
 - ✅ Notifications page refactored to use hooks
+- ✅ Polling fallback for reliability (10-second interval)
+- ✅ Store name display in customer notifications
+
+**In-App Chat System (NEW! - Session 15 Evening):**
+- ✅ Order-based messaging between customer and provider
+- ✅ Message read status indicators (✓ sent, ✓✓ read)
+- ✅ RTL-aware message alignment (own messages on RIGHT)
+- ✅ Real-time message delivery
 
 **Promo Codes System:**
 - ✅ Promo code validation (validity, limits, restrictions)
@@ -354,7 +380,7 @@
 **Other Missing:**
 - ⚠️ **Google Maps integration** - No map display or geocoding
 - ⚠️ **Full-text search** - No search across providers
-- ⚠️ **Customer support chat** - No in-app support
+- ✅ **In-app chat** - Order-based messaging between customer and provider (Session 15 Evening)
 
 ### Next Priority Steps (Week 5+)
 

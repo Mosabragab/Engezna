@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, useState, useEffect } from 'react'
+import { ReactNode, useState, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -31,12 +31,147 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [provider, setProvider] = useState<Provider | null>(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const [pendingOrders, setPendingOrders] = useState(0)
-  const [unrespondedReviews, setUnrespondedReviews] = useState(0)
+
+  // Load unread notifications count from provider_notifications table
+  const loadUnreadCount = useCallback(async (providerId: string) => {
+    const supabase = createClient()
+
+    // Get unread notifications count
+    const { count } = await supabase
+      .from('provider_notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', providerId)
+      .eq('is_read', false)
+
+    setUnreadCount(count || 0)
+
+    // Also get pending orders for sidebar badge
+    const { count: pendingCount } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', providerId)
+      .eq('status', 'pending')
+
+    setPendingOrders(pendingCount || 0)
+  }, [])
 
   useEffect(() => {
     checkAuth()
   }, [])
+
+  // Realtime subscription for provider_notifications
+  useEffect(() => {
+    if (!provider?.id) return
+
+    const supabase = createClient()
+    const providerId = provider.id
+
+    // Subscribe to provider_notifications changes
+    const notificationsChannel = supabase
+      .channel(`provider-notifications-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'provider_notifications',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        () => {
+          setUnreadCount(prev => prev + 1)
+          // Play notification sound
+          try {
+            const audio = new Audio('/sounds/notification.mp3')
+            audio.volume = 0.5
+            audio.play().catch(() => {})
+          } catch {}
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'provider_notifications',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const oldNotif = payload.old as { is_read: boolean }
+          const newNotif = payload.new as { is_read: boolean }
+          // Decrement if was unread and now read
+          if (!oldNotif.is_read && newNotif.is_read) {
+            setUnreadCount(prev => Math.max(0, prev - 1))
+          }
+          // Increment if was read and now unread (unlikely but handle it)
+          if (oldNotif.is_read && !newNotif.is_read) {
+            setUnreadCount(prev => prev + 1)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'provider_notifications',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const deleted = payload.old as { is_read: boolean }
+          // Decrement if deleted notification was unread
+          if (!deleted.is_read) {
+            setUnreadCount(prev => Math.max(0, prev - 1))
+          }
+        }
+      )
+      .subscribe()
+
+    // Also subscribe to orders for pending count (sidebar badge)
+    const ordersChannel = supabase
+      .channel(`layout-orders-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const newOrder = payload.new as { status: string }
+          if (newOrder.status === 'pending') {
+            setPendingOrders(prev => prev + 1)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const oldOrder = payload.old as { status: string }
+          const newOrder = payload.new as { status: string }
+          if (oldOrder.status === 'pending' && newOrder.status !== 'pending') {
+            setPendingOrders(prev => Math.max(0, prev - 1))
+          }
+          if (oldOrder.status !== 'pending' && newOrder.status === 'pending') {
+            setPendingOrders(prev => prev + 1)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(notificationsChannel)
+      supabase.removeChannel(ordersChannel)
+    }
+  }, [provider?.id])
 
   async function checkAuth() {
     const supabase = createClient()
@@ -52,21 +187,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
 
       if (providerData && providerData.length > 0) {
         setProvider(providerData[0])
-        // Load pending orders count and unresponded reviews count in parallel
-        const [pendingResult, reviewsResult] = await Promise.all([
-          supabase
-            .from('orders')
-            .select('id')
-            .eq('provider_id', providerData[0].id)
-            .eq('status', 'pending'),
-          supabase
-            .from('reviews')
-            .select('id')
-            .eq('provider_id', providerData[0].id)
-            .is('provider_response', null)
-        ])
-        setPendingOrders(pendingResult.data?.length || 0)
-        setUnrespondedReviews(reviewsResult.data?.length || 0)
+        await loadUnreadCount(providerData[0].id)
       }
     }
 
@@ -130,7 +251,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           onMenuClick={() => setSidebarOpen(true)}
           onSignOut={handleSignOut}
           pendingOrders={pendingOrders}
-          totalNotifications={pendingOrders + unrespondedReviews}
+          totalNotifications={unreadCount}
           providerId={provider?.id}
           pageTitle={pageTitle}
           pageSubtitle={pageSubtitle}

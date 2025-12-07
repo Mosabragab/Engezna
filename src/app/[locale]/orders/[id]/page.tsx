@@ -27,6 +27,7 @@ import {
   Star,
   MessageSquare,
 } from 'lucide-react'
+import { OrderChat } from '@/components/shared/OrderChat'
 
 // Cancellation reasons
 const CANCELLATION_REASONS = [
@@ -198,6 +199,68 @@ export default function OrderTrackingPage() {
       loadOrderDetails()
     }
   }, [orderId, user, authLoading])
+
+  // Realtime subscription for order status updates
+  useEffect(() => {
+    if (!orderId || !user) return
+
+    const supabase = createClient()
+    let isSubscribed = true
+
+    // Subscribe to order changes with status callback
+    const channel = supabase
+      .channel(`order-tracking-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          if (isSubscribed) {
+            console.log('Order updated via realtime:', payload.new)
+            // Update order state with new data
+            setOrder(payload.new as Order)
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status)
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to order updates')
+        }
+      })
+
+    // Also poll every 10 seconds as fallback for mobile
+    const pollInterval = setInterval(async () => {
+      if (!isSubscribed) return
+      const { data } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single()
+
+      if (data && isSubscribed) {
+        setOrder(prev => {
+          // Only update if status actually changed
+          if (prev?.status !== data.status) {
+            console.log('Order status changed via polling:', prev?.status, '->', data.status)
+            return data
+          }
+          return prev
+        })
+      }
+    }, 10000)
+
+    // Cleanup subscription on unmount
+    return () => {
+      isSubscribed = false
+      clearInterval(pollInterval)
+      supabase.removeChannel(channel)
+    }
+  }, [orderId, user])
 
   const loadOrderDetails = async () => {
     setLoading(true)
@@ -438,7 +501,7 @@ export default function OrderTrackingPage() {
 
   if (loading || authLoading) {
     return (
-      <CustomerLayout showBottomNav={false}>
+      <CustomerLayout showBottomNav={true}>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
@@ -453,7 +516,7 @@ export default function OrderTrackingPage() {
 
   if (!order) {
     return (
-      <CustomerLayout showBottomNav={false}>
+      <CustomerLayout showBottomNav={true}>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
           <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-4">
             <XCircle className="w-12 h-12 text-red-300" />
@@ -477,7 +540,7 @@ export default function OrderTrackingPage() {
   const isDelivered = order.status === 'delivered'
 
   return (
-    <CustomerLayout showBottomNav={false}>
+    <CustomerLayout showBottomNav={true}>
       <div className="px-4 py-4">
         {/* Order Header */}
         <div className="flex items-center justify-between mb-4">
@@ -827,15 +890,19 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
-        {/* Actions */}
+        {/* Actions - Chat replaces Home on mobile */}
         <div className="flex gap-3 pb-4">
-          <button
-            onClick={() => router.push(`/${locale}`)}
-            className="flex-1 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
-          >
-            <Home className="w-5 h-5" />
-            {locale === 'ar' ? 'الرئيسية' : 'Home'}
-          </button>
+          {/* Chat with Store Button - Shows store name */}
+          {order && user && !isCancelled && (
+            <OrderChat
+              orderId={order.id}
+              userType="customer"
+              userId={user.id}
+              locale={locale}
+              providerName={locale === 'ar' ? provider?.name_ar : provider?.name_en}
+              isInline={true}
+            />
+          )}
           <button
             onClick={() => router.push(`/${locale}/orders`)}
             className="flex-1 bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"

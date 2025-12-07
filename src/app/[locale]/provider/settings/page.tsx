@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ProviderLayout } from '@/components/provider'
+import { ACTIVE_PROVIDER_STATUSES } from '@/types/database'
 import {
   Settings,
   Store,
@@ -112,7 +113,7 @@ export default function ProviderSettingsPage() {
       .limit(1)
 
     const providerData = providersData?.[0]
-    if (!providerData || !['approved', 'open', 'closed', 'temporarily_paused'].includes(providerData.status)) {
+    if (!providerData || !ACTIVE_PROVIDER_STATUSES.includes(providerData.status)) {
       router.push(`/${locale}/provider`)
       return
     }

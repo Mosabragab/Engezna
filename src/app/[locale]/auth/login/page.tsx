@@ -71,27 +71,31 @@ export default function LoginPage() {
           .eq('id', authData.user.id)
           .single()
 
-        // Don't fail login if profile fetch fails - just redirect to homepage
-        let redirectPath = `/${locale}`
-        
-        if (profile?.role) {
-          switch (profile.role) {
-            case 'admin':
-              redirectPath = `/${locale}/admin`
-              break
-            case 'provider_owner':
-              redirectPath = `/${locale}/provider`
-              break
-            case 'customer':
-            default:
-              redirectPath = `/${locale}` // Redirect customers to home page
-              break
+        // Check if user is a customer - this login page is for customers only
+        if (profile?.role && profile.role !== 'customer') {
+          // Sign out non-customer users
+          await supabase.auth.signOut()
+
+          // Show appropriate message based on role
+          if (profile.role === 'admin') {
+            setError(
+              locale === 'ar'
+                ? 'هذه الصفحة للعملاء فقط. يرجى استخدام صفحة تسجيل دخول المشرفين'
+                : 'This page is for customers only. Please use the admin login page'
+            )
+          } else if (profile.role === 'provider_owner' || profile.role === 'provider_staff') {
+            setError(
+              locale === 'ar'
+                ? 'هذه الصفحة للعملاء فقط. يرجى استخدام صفحة تسجيل دخول مقدمي الخدمة'
+                : 'This page is for customers only. Please use the provider login page'
+            )
           }
+          return
         }
 
-        // Use window.location for more reliable redirect
+        // Customer - redirect to home page
         setTimeout(() => {
-          window.location.href = redirectPath
+          window.location.href = `/${locale}`
         }, 500)
       }
     } catch (err) {
@@ -190,6 +194,28 @@ export default function LoginPage() {
             >
               {t('signupLink')}
             </Link>
+          </div>
+
+          {/* Links for providers and admins */}
+          <div className="w-full pt-4 border-t border-border">
+            <p className="text-xs text-center text-muted-foreground mb-2">
+              {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
+            </p>
+            <div className="flex justify-center gap-4 text-xs">
+              <Link
+                href={`/${locale}/provider/login`}
+                className="text-[#009DE0] hover:underline"
+              >
+                {locale === 'ar' ? 'دخول مقدمي الخدمة' : 'Provider Login'}
+              </Link>
+              <span className="text-muted-foreground">|</span>
+              <Link
+                href={`/${locale}/admin/login`}
+                className="text-slate-500 hover:underline"
+              >
+                {locale === 'ar' ? 'دخول المشرفين' : 'Admin Login'}
+              </Link>
+            </div>
           </div>
         </CardFooter>
       </Card>

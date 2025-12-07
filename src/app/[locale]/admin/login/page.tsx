@@ -18,6 +18,7 @@ import {
   LogIn,
   ArrowRight,
   ArrowLeft,
+  Timer,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -34,9 +35,91 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
 
+  // Brute force protection
+  const [isLocked, setIsLocked] = useState(false)
+  const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0)
+  const MAX_ATTEMPTS = 5
+  const LOCKOUT_DURATION = 15 * 60 * 1000 // 15 minutes in milliseconds
+
   useEffect(() => {
     checkExistingAuth()
+    checkLockoutStatus()
   }, [])
+
+  // Countdown timer for lockout
+  useEffect(() => {
+    if (!isLocked || lockoutTimeLeft <= 0) return
+
+    const timer = setInterval(() => {
+      setLockoutTimeLeft(prev => {
+        if (prev <= 1000) {
+          setIsLocked(false)
+          clearLockout()
+          return 0
+        }
+        return prev - 1000
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [isLocked, lockoutTimeLeft])
+
+  function checkLockoutStatus() {
+    const lockoutData = localStorage.getItem('admin_login_lockout')
+    if (lockoutData) {
+      const { lockoutUntil } = JSON.parse(lockoutData)
+      const now = Date.now()
+      if (lockoutUntil > now) {
+        setIsLocked(true)
+        setLockoutTimeLeft(lockoutUntil - now)
+      } else {
+        clearLockout()
+      }
+    }
+  }
+
+  function getFailedAttempts(): number {
+    const data = localStorage.getItem('admin_login_attempts')
+    if (data) {
+      const { count, timestamp } = JSON.parse(data)
+      // Reset if older than 1 hour
+      if (Date.now() - timestamp > 60 * 60 * 1000) {
+        localStorage.removeItem('admin_login_attempts')
+        return 0
+      }
+      return count
+    }
+    return 0
+  }
+
+  function incrementFailedAttempts() {
+    const current = getFailedAttempts()
+    const newCount = current + 1
+    localStorage.setItem('admin_login_attempts', JSON.stringify({
+      count: newCount,
+      timestamp: Date.now()
+    }))
+
+    if (newCount >= MAX_ATTEMPTS) {
+      const lockoutUntil = Date.now() + LOCKOUT_DURATION
+      localStorage.setItem('admin_login_lockout', JSON.stringify({ lockoutUntil }))
+      setIsLocked(true)
+      setLockoutTimeLeft(LOCKOUT_DURATION)
+    }
+
+    return newCount
+  }
+
+  function clearLockout() {
+    localStorage.removeItem('admin_login_lockout')
+    localStorage.removeItem('admin_login_attempts')
+    setIsLocked(false)
+    setLockoutTimeLeft(0)
+  }
+
+  function clearAttempts() {
+    localStorage.removeItem('admin_login_attempts')
+  }
 
   async function checkExistingAuth() {
     const supabase = createClient()
@@ -71,6 +154,17 @@ export default function AdminLoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
 
+    // Check if locked out
+    if (isLocked) {
+      const minutes = Math.ceil(lockoutTimeLeft / 60000)
+      setError(
+        locale === 'ar'
+          ? `تم قفل الحساب مؤقتاً. حاول مرة أخرى بعد ${minutes} دقيقة.`
+          : `Account temporarily locked. Try again in ${minutes} minute(s).`
+      )
+      return
+    }
+
     if (!email || !password) {
       setError(locale === 'ar' ? 'البريد الإلكتروني وكلمة المرور مطلوبان' : 'Email and password are required')
       return
@@ -89,8 +183,24 @@ export default function AdminLoginPage() {
       })
 
       if (signInError) {
+        // Increment failed attempts on authentication failure
+        const attempts = incrementFailedAttempts()
+        const remaining = MAX_ATTEMPTS - attempts
+
         if (signInError.message.includes('Invalid login credentials')) {
-          setError(locale === 'ar' ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة' : 'Invalid email or password')
+          if (remaining > 0) {
+            setError(
+              locale === 'ar'
+                ? `البريد الإلكتروني أو كلمة المرور غير صحيحة. ${remaining} محاولات متبقية.`
+                : `Invalid email or password. ${remaining} attempt(s) remaining.`
+            )
+          } else {
+            setError(
+              locale === 'ar'
+                ? 'تم قفل الحساب لمدة 15 دقيقة بسبب كثرة المحاولات الفاشلة.'
+                : 'Account locked for 15 minutes due to too many failed attempts.'
+            )
+          }
         } else {
           setError(signInError.message)
         }
@@ -145,6 +255,9 @@ export default function AdminLoginPage() {
         .update({ last_active_at: new Date().toISOString() })
         .eq('user_id', authData.user.id)
 
+      // Clear failed login attempts on successful login
+      clearAttempts()
+
       // Redirect to admin dashboard
       router.push(`/${locale}/admin`)
 
@@ -197,7 +310,25 @@ export default function AdminLoginPage() {
 
           {/* Form */}
           <form onSubmit={handleLogin} className="p-6 space-y-5">
-            {error && (
+            {/* Lockout Warning */}
+            {isLocked && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2 text-amber-700 mb-2">
+                  <Timer className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-medium">
+                    {locale === 'ar' ? 'الحساب مقفل مؤقتاً' : 'Account Temporarily Locked'}
+                  </span>
+                </div>
+                <p className="text-sm text-amber-600">
+                  {locale === 'ar'
+                    ? `يمكنك المحاولة مرة أخرى بعد: ${Math.floor(lockoutTimeLeft / 60000)}:${String(Math.floor((lockoutTimeLeft % 60000) / 1000)).padStart(2, '0')}`
+                    : `You can try again in: ${Math.floor(lockoutTimeLeft / 60000)}:${String(Math.floor((lockoutTimeLeft % 60000) / 1000)).padStart(2, '0')}`
+                  }
+                </p>
+              </div>
+            )}
+
+            {error && !isLocked && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm">{error}</span>
@@ -216,9 +347,10 @@ export default function AdminLoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={locale === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#009DE0] focus:border-transparent`}
+                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#009DE0] focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed`}
                   dir="ltr"
                   required
+                  disabled={isLocked}
                 />
               </div>
             </div>
@@ -235,8 +367,9 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={locale === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password'}
-                  className={`w-full ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#009DE0] focus:border-transparent`}
+                  className={`w-full ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#009DE0] focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed`}
                   required
+                  disabled={isLocked}
                 />
                 <button
                   type="button"
@@ -260,11 +393,16 @@ export default function AdminLoginPage() {
 
             <Button
               type="submit"
-              disabled={loading}
-              className="w-full bg-[#009DE0] hover:bg-[#0080b8] py-3"
+              disabled={loading || isLocked}
+              className="w-full bg-[#009DE0] hover:bg-[#0080b8] py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
+              ) : isLocked ? (
+                <>
+                  <Timer className="w-5 h-5 me-2" />
+                  {locale === 'ar' ? 'الحساب مقفل' : 'Account Locked'}
+                </>
               ) : (
                 <>
                   <LogIn className="w-5 h-5 me-2" />

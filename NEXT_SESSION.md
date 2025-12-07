@@ -1,6 +1,21 @@
 # Next Session Plan
 
-## Date: 2025-12-09
+## Date: 2025-12-08
+
+## Completed (2025-12-07 Evening) - Notifications & Chat
+- [x] Provider notifications system (new table + triggers)
+- [x] RLS policies for notifications persistence (DELETE, UPDATE)
+- [x] Realtime subscription for notifications
+- [x] Polling fallback for customer notifications
+- [x] Chat message alignment fix in RTL
+- [x] Message read status indicators (✓ sent, ✓✓ read)
+- [x] Store name in customer notifications
+- [x] Notification badge stabilization
+
+## Completed (2025-12-09)
+- [x] Settlements payment recording fix (foreign key constraint issue)
+- [x] Column name corrections (`paid_at`, removed `amount_paid`, `admin_notes`)
+- [x] Admin settlements page fully functional
 
 ## Completed (2025-12-08)
 - [x] COD vs Online payment breakdown - Finance page
@@ -10,21 +25,25 @@
 
 ## Priority Tasks
 
-### 1. Testing & QA
-- [ ] Test complete order flow (customer → provider → delivery)
-- [ ] Test all status transitions
+### 1. Testing & QA - Continue Workflow Testing
+- [x] Test notification system (provider → customer messaging)
+- [x] Test message read status indicators
+- [ ] Complete end-to-end order workflow testing
+- [ ] Test all status transitions with notifications
 - [ ] Test payment confirmation flow
-- [ ] Test COD vs Online breakdown with real orders
 
 ### 2. Customer Experience
-- [ ] Push notifications for order updates
+- [x] Real-time notifications (with polling fallback)
+- [ ] Push notifications for order updates (native)
 - [ ] Rating and review system improvements
 - [ ] Reorder functionality
 
 ### 3. Settlements Enhancement
+- [x] Settlement payment recording (FIXED)
 - [ ] Settlement history with payment method breakdown
 - [ ] Payment reconciliation features
 - [ ] Auto-generate weekly settlements
+- [ ] Fix `processed_by` to properly lookup admin_users.id from auth user
 
 ---
 

@@ -1,8 +1,8 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 7, 2025
-**Status:** Week 5 - Complete Feature Set (Session 15 Part 4) ✅
-**Branch:** `claude/project-progress-review-019c9eWZ1GRxLZtNz6Bp9DD4`
+**Last Updated:** December 7, 2025 (Evening Session)
+**Status:** Week 5 - Complete Feature Set (Session 15 Evening) ✅
+**Branch:** `claude/review-workflow-testing-01VcBCSp8urPVFLexCRkcn2T`
 
 ---
 
@@ -72,6 +72,8 @@
 15. ✅ **Address Management** - Full CRUD with cascading location dropdowns
 16. ✅ **Language Selection** - Switch between Arabic/English
 17. ✅ **Location Settings** - Select governorate and city
+18. ✅ **In-App Chat** - Message providers about orders
+19. ✅ **Real-time Notifications** - With polling fallback for reliability
 
 ### Partner Registration Flow (✅)
 1. ✅ Visit `/ar/partner/register` or `/en/partner/register`
@@ -95,6 +97,8 @@
 8. ✅ Status timeline with timestamps
 9. ✅ Customer info with call button
 10. ✅ Net earnings display (after commission)
+11. ✅ **In-App Chat** - Message customers about orders
+12. ✅ **Real-time Notifications** - Order updates, new messages
 
 ### Menu Management System (✅)
 1. ✅ Visit `/ar/provider/products` or `/en/provider/products`
@@ -416,7 +420,7 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ### Other Missing Features
 - ❌ Google Maps integration - No map display or geocoding
 - ❌ Search functionality - No full-text search across providers
-- ❌ Customer support chat - No in-app support
+- ✅ **In-App Chat** - Order-based messaging between customer and provider (Session 15 Evening)
 
 ---
 
@@ -469,6 +473,30 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Dec 7, 2025 (Session 15 Evening) - In-App Chat & Messaging ✅
+
+#### Provider Notifications System
+- ✅ Created `provider_notifications` table with triggers for order events
+- ✅ Added RLS policies for notifications persistence (DELETE, UPDATE)
+- ✅ Enabled realtime publication for `customer_notifications` and `provider_notifications` tables
+
+#### Customer Notifications Enhancement
+- ✅ Store name display in customer notifications
+- ✅ Polling fallback (10-second interval) for realtime reliability
+- ✅ Notification badge stabilization (removed animate-pulse flashing)
+
+#### Chat Message System
+- ✅ **RTL alignment fix**: Own messages appear on RIGHT, received messages on LEFT
+- ✅ **Message read status indicators**: ✓ (sent), ✓✓ (read)
+- ✅ **Locale-aware alignment**: Different justify classes for AR vs EN
+
+#### Files Modified:
+- `supabase/migrations/20251207000006_fix_notification_rls_policies.sql` - Realtime publication
+- `src/components/shared/OrderChat.tsx` - RTL message alignment fix
+- `src/hooks/customer/useNotifications.ts` - Polling fallback
+
+---
 
 ### Work Session Dec 7, 2025 (Session 15 Part 4) - Smart Settlements (COD vs Online) ✅
 

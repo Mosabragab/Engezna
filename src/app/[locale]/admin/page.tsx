@@ -148,8 +148,8 @@ export default function AdminDashboard() {
         const apiStats = statsResult.data
         setStats({
           ordersToday: apiStats.orders?.todayCount || 0,
-          ordersWeek: apiStats.orders?.thisMonthCount || 0,
-          ordersChange: apiStats.orders?.changePercent || 0,
+          ordersWeek: apiStats.orders?.thisWeekCount || 0,
+          ordersChange: apiStats.orders?.weekChangePercent || apiStats.orders?.changePercent || 0,
           gmvMonth: apiStats.finance?.thisMonthRevenue || 0,
           gmvChange: apiStats.finance?.changePercent || 0,
           activeProviders: apiStats.providers?.approved || 0,

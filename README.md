@@ -128,7 +128,9 @@ This project is in **active development** (Week 5 - Complete Feature Set ✅). W
 - ✅ **Order cancellation** (cancel pending/confirmed/accepted orders)
 - ✅ **Reviews & Ratings** (rate providers after delivery)
 - ✅ **Favorites** (save favorite providers)
-- ✅ **Real-time notifications** (Supabase Realtime subscription)
+- ✅ **Real-time notifications** (Supabase Realtime subscription with polling fallback)
+- ✅ **In-app chat** with providers (order-based messaging)
+- ✅ **Message read status** indicators (✓ sent, ✓✓ read)
 - ✅ **Promo codes** (apply discount codes at checkout)
 
 **Works (Provider Features):**
@@ -147,6 +149,8 @@ This project is in **active development** (Week 5 - Complete Feature Set ✅). W
 - ✅ **Provider Profile** (password change, language, sign out)
 - ✅ **Auto-refresh Orders** (every 60 seconds)
 - ✅ **Real-time Order Notifications** (Supabase Realtime)
+- ✅ **In-app chat** with customers (order-based messaging)
+- ✅ **Notification management** (mark read, delete)
 - ✅ **Reviews Management** (`/provider/reviews` - view and respond)
 - ✅ **Settlements Page** (`/provider/settlements` - view dues and payment history)
 
@@ -373,7 +377,15 @@ npm run type-check   # TypeScript type checking
 **Overall Progress:** ~88% of MVP Complete
 **Last Updated:** December 7, 2025 (Session 15)
 
-**Session 15 Features (NEW!):**
+**Session 15 Features (NEW!) - December 7, 2025:**
+- ✅ **In-App Chat & Messaging System (Evening Session)**:
+  - Provider notifications system with new table + triggers
+  - Customer notifications with store name display
+  - Real-time notifications with polling fallback (10-second interval)
+  - Chat message alignment fix for RTL (own messages on RIGHT)
+  - Message read status indicators (✓ sent, ✓✓ read)
+  - Notification badge stabilization (removed flashing)
+  - Notification management (mark read, delete)
 - ✅ **Smart Settlements System (Complete - Part 4)**
   - **COD vs Online Payment Logic**:
     - COD orders: Provider collects → Owes 6% commission to Engezna

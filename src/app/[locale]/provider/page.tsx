@@ -34,6 +34,7 @@ import {
   User as UserIcon,
   ChevronDown,
   Receipt,
+  MessageCircle,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
@@ -60,6 +61,7 @@ interface DashboardStats {
   totalOrders: number
   totalCustomers: number
   unrespondedReviews: number
+  unreadMessages: number
   // Today's payment breakdown
   todayCodOrders: number
   todayCodRevenue: number
@@ -79,6 +81,7 @@ export default function ProviderDashboard() {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [pendingOrdersList, setPendingOrdersList] = useState<Array<{id: string, order_number: string, total: number, created_at: string}>>([])
   const [unrespondedReviewsList, setUnrespondedReviewsList] = useState<Array<{id: string, rating: number, comment: string | null, created_at: string}>>([])
+  const [unreadMessagesList, setUnreadMessagesList] = useState<Array<{id: string, order_id: string, order_number: string, message: string, created_at: string}>>([])
   const [loadingNotifications, setLoadingNotifications] = useState(false)
   const [stats, setStats] = useState<DashboardStats>({
     todayOrders: 0,
@@ -88,6 +91,7 @@ export default function ProviderDashboard() {
     totalOrders: 0,
     totalCustomers: 0,
     unrespondedReviews: 0,
+    unreadMessages: 0,
     todayCodOrders: 0,
     todayCodRevenue: 0,
     todayOnlineOrders: 0,
@@ -103,6 +107,55 @@ export default function ProviderDashboard() {
       setStats(prev => ({ ...prev, pendingOrders: newOrderCount }))
     }
   }, [newOrderCount, provider, stats.pendingOrders])
+
+  // Realtime subscription for new chat messages
+  useEffect(() => {
+    if (!provider) return
+
+    const supabase = createClient()
+
+    const channel = supabase
+      .channel(`provider-messages-${provider.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'order_messages',
+          filter: `sender_type=eq.customer`,
+        },
+        async (payload) => {
+          // Check if message is for this provider's order
+          const newMessage = payload.new as { order_id: string; message: string }
+          const { data: orderData } = await supabase
+            .from('orders')
+            .select('provider_id, order_number')
+            .eq('id', newMessage.order_id)
+            .single()
+
+          if (orderData?.provider_id === provider.id) {
+            console.log('New message from customer:', newMessage)
+            // Increment unread messages count
+            setStats(prev => ({ ...prev, unreadMessages: prev.unreadMessages + 1 }))
+            // Play notification sound
+            try {
+              const audio = new Audio('/sounds/notification.mp3')
+              audio.volume = 0.5
+              audio.play().catch(() => {})
+            } catch {
+              // Sound not available
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Provider messages subscription status:', status)
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [provider])
 
   useEffect(() => {
     checkAuth()
@@ -120,7 +173,7 @@ export default function ProviderDashboard() {
     setLoadingNotifications(true)
     const supabase = createClient()
 
-    const [ordersResult, reviewsResult] = await Promise.all([
+    const [ordersResult, reviewsResult, messagesResult] = await Promise.all([
       supabase
         .from('orders')
         .select('id, order_number, total, created_at')
@@ -134,11 +187,32 @@ export default function ProviderDashboard() {
         .eq('provider_id', provider.id)
         .is('provider_response', null)
         .order('created_at', { ascending: false })
+        .limit(5),
+      // Get unread messages from customers
+      supabase
+        .from('order_messages')
+        .select('id, order_id, message, created_at, orders!inner(order_number, provider_id)')
+        .eq('sender_type', 'customer')
+        .eq('is_read', false)
+        .order('created_at', { ascending: false })
         .limit(5)
     ])
 
     setPendingOrdersList(ordersResult.data || [])
     setUnrespondedReviewsList(reviewsResult.data || [])
+
+    // Filter messages for this provider and format
+    const providerMessages = (messagesResult.data || [])
+      .filter((m: any) => m.orders?.provider_id === provider.id)
+      .map((m: any) => ({
+        id: m.id,
+        order_id: m.order_id,
+        order_number: m.orders?.order_number || '',
+        message: m.message,
+        created_at: m.created_at
+      }))
+    setUnreadMessagesList(providerMessages)
+
     setLoadingNotifications(false)
   }
 
@@ -190,7 +264,8 @@ export default function ProviderDashboard() {
       { data: pendingData },
       { data: productsData },
       { data: allOrdersData },
-      { data: unrespondedReviewsData }
+      { data: unrespondedReviewsData },
+      { data: unreadMessagesData }
     ] = await Promise.all([
       supabase
         .from('orders')
@@ -215,7 +290,13 @@ export default function ProviderDashboard() {
         .from('reviews')
         .select('id')
         .eq('provider_id', providerId)
-        .is('provider_response', null)
+        .is('provider_response', null),
+      // Count unread messages from customers
+      supabase
+        .from('order_messages')
+        .select('id, orders!inner(provider_id)')
+        .eq('sender_type', 'customer')
+        .eq('is_read', false)
     ])
 
     const uniqueCustomers = new Set(allOrdersData?.map(o => o.customer_id) || [])
@@ -228,6 +309,9 @@ export default function ProviderDashboard() {
     const todayCodConfirmed = todayCodOrders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
     const todayOnlineConfirmed = todayOnlineOrders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
 
+    // Filter unread messages for this provider
+    const providerUnreadMessages = (unreadMessagesData || []).filter((m: any) => m.orders?.provider_id === providerId)
+
     setStats({
       todayOrders: todayOrdersData?.length || 0,
       todayRevenue: confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0),
@@ -236,6 +320,7 @@ export default function ProviderDashboard() {
       totalOrders: allOrdersData?.length || 0,
       totalCustomers: uniqueCustomers.size,
       unrespondedReviews: unrespondedReviewsData?.length || 0,
+      unreadMessages: providerUnreadMessages.length,
       todayCodOrders: todayCodOrders.length,
       todayCodRevenue: todayCodConfirmed.reduce((sum, o) => sum + (o.total || 0), 0),
       todayOnlineOrders: todayOnlineOrders.length,
@@ -464,12 +549,12 @@ export default function ProviderDashboard() {
                 onMouseLeave={() => setNotificationsOpen(false)}
               >
                 <button
-                  className={`relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors ${hasNewOrder ? 'animate-pulse' : ''}`}
+                  className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   <Bell className="w-5 h-5" />
-                  {(stats.pendingOrders + stats.unrespondedReviews) > 0 && (
-                    <span className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ${hasNewOrder ? 'animate-bounce' : ''}`}>
-                      {(stats.pendingOrders + stats.unrespondedReviews) > 9 ? '9+' : (stats.pendingOrders + stats.unrespondedReviews)}
+                  {(stats.pendingOrders + stats.unrespondedReviews + stats.unreadMessages) > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {(stats.pendingOrders + stats.unrespondedReviews + stats.unreadMessages) > 9 ? '9+' : (stats.pendingOrders + stats.unrespondedReviews + stats.unreadMessages)}
                     </span>
                   )}
                 </button>
@@ -491,7 +576,7 @@ export default function ProviderDashboard() {
                           <div className="flex items-center justify-center py-8">
                             <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
                           </div>
-                        ) : pendingOrdersList.length === 0 && unrespondedReviewsList.length === 0 ? (
+                        ) : pendingOrdersList.length === 0 && unrespondedReviewsList.length === 0 && unreadMessagesList.length === 0 ? (
                           <div className="text-center py-8">
                             <Bell className="w-12 h-12 text-slate-200 mx-auto mb-2" />
                             <p className="text-slate-500">
@@ -561,6 +646,38 @@ export default function ProviderDashboard() {
                                       </div>
                                       <p className="text-xs text-slate-500 truncate">
                                         {review.comment || (locale === 'ar' ? 'بدون تعليق' : 'No comment')}
+                                      </p>
+                                    </div>
+                                    <ChevronLeft className={`w-4 h-4 text-slate-400 ${isRTL ? '' : 'rotate-180'}`} />
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Unread Messages */}
+                            {unreadMessagesList.length > 0 && (
+                              <div>
+                                <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+                                  <p className="text-xs font-medium text-blue-700 flex items-center gap-1">
+                                    <MessageCircle className="w-3 h-3" />
+                                    {locale === 'ar' ? 'رسائل جديدة من العملاء' : 'New Messages from Customers'}
+                                  </p>
+                                </div>
+                                {unreadMessagesList.map((msg) => (
+                                  <Link
+                                    key={msg.id}
+                                    href={`/${locale}/provider/orders/${msg.order_id}`}
+                                    className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 border-b border-slate-100 transition-colors"
+                                  >
+                                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                      <MessageCircle className="w-5 h-5 text-blue-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-slate-900">
+                                        {locale === 'ar' ? 'رسالة جديدة' : 'New Message'} #{msg.order_number || msg.order_id.slice(0, 8)}
+                                      </p>
+                                      <p className="text-xs text-slate-500 truncate">
+                                        {msg.message.length > 50 ? msg.message.slice(0, 50) + '...' : msg.message}
                                       </p>
                                     </div>
                                     <ChevronLeft className={`w-4 h-4 text-slate-400 ${isRTL ? '' : 'rotate-180'}`} />

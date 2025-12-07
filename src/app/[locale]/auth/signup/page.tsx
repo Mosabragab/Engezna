@@ -119,6 +119,16 @@ export default function SignupPage() {
 
         if (profileError) {
           console.error('Profile creation error:', profileError)
+          // Profile creation failed - show error to user
+          setError(
+            locale === 'ar'
+              ? 'فشل في إنشاء الملف الشخصي. يرجى المحاولة مرة أخرى.'
+              : 'Failed to create profile. Please try again.'
+          )
+          // Delete the auth user since profile creation failed
+          // This prevents orphaned auth users without profiles
+          await supabase.auth.signOut()
+          return
         }
 
         setSuccess(true)

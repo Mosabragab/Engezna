@@ -14,8 +14,9 @@ import {
   User as UserIcon,
   ShoppingBag,
   Star,
-  Clock,
-  X,
+  MessageCircle,
+  Check,
+  Trash2,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User } from '@supabase/supabase-js'
@@ -31,20 +32,21 @@ interface ProviderHeaderProps {
   pageSubtitle?: { ar: string; en: string }
 }
 
-type PendingOrder = {
+type ProviderNotification = {
   id: string
-  order_number: string
-  total: number
+  provider_id: string
+  type: string
+  title_ar: string
+  title_en: string
+  body_ar: string | null
+  body_en: string | null
+  related_order_id: string | null
+  related_customer_id: string | null
+  related_review_id: string | null
+  related_message_id: string | null
+  is_read: boolean
+  read_at: string | null
   created_at: string
-  status: string
-}
-
-type UnrespondedReview = {
-  id: string
-  rating: number
-  comment: string | null
-  created_at: string
-  profiles: { full_name: string | null } | { full_name: string | null }[] | null
 }
 
 export function ProviderHeader({
@@ -61,8 +63,7 @@ export function ProviderHeader({
   const isRTL = locale === 'ar'
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [pendingOrdersList, setPendingOrdersList] = useState<PendingOrder[]>([])
-  const [unrespondedReviews, setUnrespondedReviews] = useState<UnrespondedReview[]>([])
+  const [notifications, setNotifications] = useState<ProviderNotification[]>([])
   const [loadingNotifications, setLoadingNotifications] = useState(false)
 
   // Load notifications when dropdown opens
@@ -77,39 +78,101 @@ export function ProviderHeader({
     setLoadingNotifications(true)
     const supabase = createClient()
 
-    // Load pending orders
-    const { data: ordersData } = await supabase
-      .from('orders')
-      .select('id, order_number, total, created_at, status')
+    const { data, error } = await supabase
+      .from('provider_notifications')
+      .select('*')
       .eq('provider_id', providerId)
-      .eq('status', 'pending')
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(20)
 
-    if (ordersData) {
-      setPendingOrdersList(ordersData)
-    }
-
-    // Load unresponded reviews
-    const { data: reviewsData } = await supabase
-      .from('reviews')
-      .select(`
-        id,
-        rating,
-        comment,
-        created_at,
-        profiles:customer_id (full_name)
-      `)
-      .eq('provider_id', providerId)
-      .is('provider_response', null)
-      .order('created_at', { ascending: false })
-      .limit(5)
-
-    if (reviewsData) {
-      setUnrespondedReviews(reviewsData as UnrespondedReview[])
+    if (!error && data) {
+      setNotifications(data)
     }
 
     setLoadingNotifications(false)
+  }
+
+  async function markAsRead(notificationId: string) {
+    const supabase = createClient()
+
+    await supabase
+      .from('provider_notifications')
+      .update({ is_read: true, read_at: new Date().toISOString() })
+      .eq('id', notificationId)
+
+    // Update local state
+    setNotifications(prev =>
+      prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+    )
+  }
+
+  async function markAllAsRead() {
+    if (!providerId) return
+    const supabase = createClient()
+
+    await supabase
+      .from('provider_notifications')
+      .update({ is_read: true, read_at: new Date().toISOString() })
+      .eq('provider_id', providerId)
+      .eq('is_read', false)
+
+    // Update local state
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+  }
+
+  async function deleteNotification(notificationId: string, e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const supabase = createClient()
+
+    await supabase
+      .from('provider_notifications')
+      .delete()
+      .eq('id', notificationId)
+
+    // Update local state
+    setNotifications(prev => prev.filter(n => n.id !== notificationId))
+  }
+
+  function getNotificationIcon(type: string) {
+    switch (type) {
+      case 'new_order':
+        return <ShoppingBag className="w-5 h-5 text-yellow-600" />
+      case 'new_message':
+        return <MessageCircle className="w-5 h-5 text-blue-600" />
+      case 'new_review':
+        return <Star className="w-5 h-5 text-primary" />
+      default:
+        return <Bell className="w-5 h-5 text-slate-500" />
+    }
+  }
+
+  function getNotificationBgColor(type: string) {
+    switch (type) {
+      case 'new_order':
+        return 'bg-yellow-100'
+      case 'new_message':
+        return 'bg-blue-100'
+      case 'new_review':
+        return 'bg-primary/10'
+      default:
+        return 'bg-slate-100'
+    }
+  }
+
+  function getNotificationLink(notification: ProviderNotification) {
+    switch (notification.type) {
+      case 'new_order':
+      case 'new_message':
+        return notification.related_order_id
+          ? `/${locale}/provider/orders/${notification.related_order_id}`
+          : `/${locale}/provider/orders`
+      case 'new_review':
+        return `/${locale}/provider/reviews`
+      default:
+        return `/${locale}/provider`
+    }
   }
 
   const formatTimeAgo = (dateString: string) => {
@@ -125,6 +188,8 @@ export function ProviderHeader({
     if (diffHours < 24) return locale === 'ar' ? `منذ ${diffHours} ساعة` : `${diffHours}h ago`
     return locale === 'ar' ? `منذ ${diffDays} يوم` : `${diffDays}d ago`
   }
+
+  const unreadNotifications = notifications.filter(n => !n.is_read)
 
   return (
     <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm sticky top-0 z-40">
@@ -173,7 +238,7 @@ export function ProviderHeader({
             >
               <Bell className="w-5 h-5" />
               {(totalNotifications ?? pendingOrders) > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                   {(totalNotifications ?? pendingOrders) > 9 ? '9+' : (totalNotifications ?? pendingOrders)}
                 </span>
               )}
@@ -185,9 +250,30 @@ export function ProviderHeader({
                 <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
-                    <h3 className="font-semibold text-slate-900">
-                      {locale === 'ar' ? 'الإشعارات' : 'Notifications'}
-                    </h3>
+                    <div>
+                      <h3 className="font-semibold text-slate-900">
+                        {locale === 'ar' ? 'الإشعارات' : 'Notifications'}
+                      </h3>
+                      {unreadNotifications.length > 0 && (
+                        <p className="text-xs text-slate-500">
+                          {locale === 'ar'
+                            ? `${unreadNotifications.length} إشعار غير مقروء`
+                            : `${unreadNotifications.length} unread`}
+                        </p>
+                      )}
+                    </div>
+                    {unreadNotifications.length > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          markAllAsRead()
+                        }}
+                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <Check className="w-3 h-3" />
+                        {locale === 'ar' ? 'تحديد الكل كمقروء' : 'Mark all read'}
+                      </button>
+                    )}
                   </div>
 
                   {/* Content */}
@@ -196,86 +282,70 @@ export function ProviderHeader({
                       <div className="flex items-center justify-center py-8">
                         <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
                       </div>
-                    ) : pendingOrdersList.length === 0 && unrespondedReviews.length === 0 ? (
+                    ) : notifications.length === 0 ? (
                       <div className="text-center py-8">
                         <Bell className="w-12 h-12 text-slate-200 mx-auto mb-2" />
                         <p className="text-slate-500">
-                          {locale === 'ar' ? 'لا توجد إشعارات جديدة' : 'No new notifications'}
+                          {locale === 'ar' ? 'لا توجد إشعارات' : 'No notifications'}
                         </p>
                       </div>
                     ) : (
-                      <>
-                        {/* Pending Orders Section */}
-                        {pendingOrdersList.length > 0 && (
-                          <div>
-                            <div className="px-4 py-2 bg-yellow-50 border-b border-yellow-100">
-                              <p className="text-xs font-medium text-yellow-700 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {locale === 'ar' ? 'طلبات بانتظار القبول' : 'Orders Pending Acceptance'}
+                      <div>
+                        {notifications.map((notification) => (
+                          <Link
+                            key={notification.id}
+                            href={getNotificationLink(notification)}
+                            onClick={() => {
+                              if (!notification.is_read) {
+                                markAsRead(notification.id)
+                              }
+                              setNotificationsOpen(false)
+                            }}
+                            className={`flex items-start gap-3 px-4 py-3 hover:bg-slate-50 border-b border-slate-100 transition-colors ${
+                              !notification.is_read ? 'bg-primary/5' : ''
+                            }`}
+                          >
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${getNotificationBgColor(notification.type)}`}>
+                              {getNotificationIcon(notification.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium ${!notification.is_read ? 'text-primary' : 'text-slate-900'}`}>
+                                {locale === 'ar' ? notification.title_ar : notification.title_en}
+                              </p>
+                              {(notification.body_ar || notification.body_en) && (
+                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                                  {locale === 'ar' ? notification.body_ar : notification.body_en}
+                                </p>
+                              )}
+                              <p className="text-xs text-slate-400 mt-1">
+                                {formatTimeAgo(notification.created_at)}
                               </p>
                             </div>
-                            {pendingOrdersList.map((order) => (
-                              <Link
-                                key={order.id}
-                                href={`/${locale}/provider/orders/${order.id}`}
-                                onClick={() => setNotificationsOpen(false)}
-                                className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 border-b border-slate-100 transition-colors"
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              {!notification.is_read && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    markAsRead(notification.id)
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-primary rounded-full hover:bg-slate-100"
+                                  title={locale === 'ar' ? 'تحديد كمقروء' : 'Mark as read'}
+                                >
+                                  <Check className="w-4 h-4" />
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => deleteNotification(notification.id, e)}
+                                className="p-1.5 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50"
+                                title={locale === 'ar' ? 'حذف' : 'Delete'}
                               >
-                                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                  <ShoppingBag className="w-5 h-5 text-yellow-600" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-slate-900">
-                                    {locale === 'ar' ? 'طلب جديد' : 'New Order'} #{order.order_number || order.id.slice(0, 8)}
-                                  </p>
-                                  <p className="text-xs text-slate-500">
-                                    {order.total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'} • {formatTimeAgo(order.created_at)}
-                                  </p>
-                                </div>
-                                <ChevronLeft className={`w-4 h-4 text-slate-400 ${isRTL ? '' : 'rotate-180'}`} />
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Unresponded Reviews Section */}
-                        {unrespondedReviews.length > 0 && (
-                          <div>
-                            <div className="px-4 py-2 bg-primary/5 border-b border-primary/10">
-                              <p className="text-xs font-medium text-primary flex items-center gap-1">
-                                <Star className="w-3 h-3" />
-                                {locale === 'ar' ? 'تقييمات بانتظار الرد' : 'Reviews Awaiting Response'}
-                              </p>
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
-                            {unrespondedReviews.map((review) => (
-                              <Link
-                                key={review.id}
-                                href={`/${locale}/provider/reviews`}
-                                onClick={() => setNotificationsOpen(false)}
-                                className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 border-b border-slate-100 transition-colors"
-                              >
-                                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                  <Star className="w-5 h-5 text-primary" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1 mb-0.5">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                      <Star
-                                        key={star}
-                                        className={`w-3 h-3 ${star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-200'}`}
-                                      />
-                                    ))}
-                                  </div>
-                                  <p className="text-xs text-slate-500 truncate">
-                                    {review.comment || (locale === 'ar' ? 'بدون تعليق' : 'No comment')}
-                                  </p>
-                                </div>
-                                <ChevronLeft className={`w-4 h-4 text-slate-400 ${isRTL ? '' : 'rotate-180'}`} />
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </>
+                          </Link>
+                        ))}
+                      </div>
                     )}
                   </div>
 

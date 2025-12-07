@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ProviderLayout } from '@/components/provider'
+import { ACTIVE_PROVIDER_STATUSES } from '@/types/database'
 import {
   Clock,
   ShoppingBag,
@@ -128,7 +129,7 @@ export default function ProviderOrdersPage() {
     checkAuthAndLoadOrders()
   }, [])
 
-  // Auto-refresh every 60 seconds
+  // Auto-refresh every 60 seconds as fallback
   useEffect(() => {
     if (!providerId) return
 
@@ -138,6 +139,61 @@ export default function ProviderOrdersPage() {
     }, 60000) // 60 seconds
 
     return () => clearInterval(interval)
+  }, [providerId])
+
+  // Realtime subscription for new orders and updates
+  useEffect(() => {
+    if (!providerId) return
+
+    const supabase = createClient()
+
+    const channel = supabase
+      .channel(`provider-orders-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        async () => {
+          // Reload orders when new order comes in
+          console.log('New order received - reloading orders')
+          await loadOrders(providerId)
+          setLastRefresh(new Date())
+          // Play notification sound
+          try {
+            const audio = new Audio('/sounds/new-order.mp3')
+            audio.volume = 0.7
+            audio.play().catch(() => {})
+          } catch {
+            // Sound not available
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        async () => {
+          // Reload orders when any order is updated
+          console.log('Order updated - reloading orders')
+          await loadOrders(providerId)
+          setLastRefresh(new Date())
+        }
+      )
+      .subscribe((status) => {
+        console.log('Provider orders subscription status:', status)
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [providerId])
 
   const checkAuthAndLoadOrders = async () => {
@@ -159,7 +215,7 @@ export default function ProviderOrdersPage() {
       .limit(1)
 
     const provider = providerData?.[0]
-    if (!provider || !['approved', 'open', 'closed', 'temporarily_paused'].includes(provider.status)) {
+    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
       router.push(`/${locale}/provider`)
       return
     }

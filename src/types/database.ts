@@ -14,25 +14,45 @@ export type UserRole = 'customer' | 'provider_owner' | 'provider_staff' | 'admin
 
 export type ProviderCategory = 'restaurant' | 'coffee_shop' | 'grocery' | 'vegetables_fruits';
 
-export type ProviderStatus = 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval';
+// Updated: Added 'active', 'approved', 'rejected', 'incomplete' for consistency across the app
+export type ProviderStatus =
+  | 'incomplete'
+  | 'pending_approval'
+  | 'approved'
+  | 'active'
+  | 'open'
+  | 'closed'
+  | 'temporarily_paused'
+  | 'on_vacation'
+  | 'rejected';
 
+// Updated: Added 'completed' and 'confirmed' for settlement calculations
 export type OrderStatus =
   | 'pending'
+  | 'confirmed'
   | 'accepted'
   | 'preparing'
   | 'ready'
   | 'out_for_delivery'
   | 'delivered'
+  | 'completed'
   | 'cancelled'
   | 'rejected';
 
-export type PaymentMethod = 'cash' | 'fawry' | 'vodafone_cash' | 'credit_card';
+// Updated: Added 'card' for compatibility with existing code
+export type PaymentMethod = 'cash' | 'card' | 'fawry' | 'vodafone_cash' | 'credit_card';
 
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
 export type MessageType = 'text' | 'image' | 'system';
 
 export type NotificationType = 'order_update' | 'promo' | 'system' | 'chat';
+
+// NEW: Settlement status enum for consistency
+export type SettlementStatus = 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived';
+
+// NEW: Settlement direction for COD/Online breakdown
+export type SettlementDirection = 'platform_pays_provider' | 'provider_pays_platform' | 'balanced';
 
 // ============================================================================
 // DATABASE TYPES
@@ -979,43 +999,90 @@ export interface Database {
 
       // --------------------------------------------------------------------
       // Settlements
+      // Updated: Added all fields from migrations 20251207000002 and 20251207000003
       // --------------------------------------------------------------------
       settlements: {
         Row: {
           id: string;
           provider_id: string;
+          // Period information
           period_start: string;
           period_end: string;
+          // Financial breakdown
           total_orders: number;
           gross_revenue: number;
           platform_commission: number;
-          net_payout: number;
-          status: string;
-          paid_at: string | null;
+          delivery_fees_collected: number;
+          net_amount_due: number; // Amount provider owes platform (replaces net_payout)
+          // Status
+          status: SettlementStatus;
+          // Payment tracking
+          amount_paid: number;
+          payment_date: string | null; // Replaces paid_at
           payment_method: string | null;
           payment_reference: string | null;
-          orders_included: string[] | null;
+          // Due date and overdue tracking
+          due_date: string;
+          is_overdue: boolean;
+          overdue_days: number;
+          // Notes
           notes: string | null;
+          admin_notes: string | null;
+          // COD breakdown
+          cod_orders_count: number;
+          cod_gross_revenue: number;
+          cod_commission_owed: number;
+          // Online breakdown
+          online_orders_count: number;
+          online_gross_revenue: number;
+          online_platform_commission: number;
+          online_payout_owed: number;
+          // Net balance and direction
+          net_balance: number;
+          settlement_direction: SettlementDirection | null;
+          // Audit
           created_at: string;
           updated_at: string;
+          created_by: string | null;
+          processed_by: string | null;
+          // Legacy fields for backward compatibility
+          net_payout?: number; // Deprecated: use net_amount_due
+          paid_at?: string | null; // Deprecated: use payment_date
+          orders_included?: string[] | null; // Deprecated: use settlement_items table
         };
         Insert: {
           id?: string;
           provider_id: string;
           period_start: string;
           period_end: string;
-          total_orders: number;
-          gross_revenue: number;
-          platform_commission: number;
-          net_payout: number;
-          status?: string;
-          paid_at?: string | null;
+          total_orders?: number;
+          gross_revenue?: number;
+          platform_commission?: number;
+          delivery_fees_collected?: number;
+          net_amount_due?: number;
+          status?: SettlementStatus;
+          amount_paid?: number;
+          payment_date?: string | null;
           payment_method?: string | null;
           payment_reference?: string | null;
-          orders_included?: string[] | null;
+          due_date: string;
+          is_overdue?: boolean;
+          overdue_days?: number;
           notes?: string | null;
+          admin_notes?: string | null;
+          cod_orders_count?: number;
+          cod_gross_revenue?: number;
+          cod_commission_owed?: number;
+          online_orders_count?: number;
+          online_gross_revenue?: number;
+          online_platform_commission?: number;
+          online_payout_owed?: number;
+          net_balance?: number;
+          settlement_direction?: SettlementDirection | null;
           created_at?: string;
           updated_at?: string;
+          created_by?: string | null;
+          processed_by?: string | null;
         };
         Update: {
           id?: string;
@@ -1025,15 +1092,70 @@ export interface Database {
           total_orders?: number;
           gross_revenue?: number;
           platform_commission?: number;
-          net_payout?: number;
-          status?: string;
-          paid_at?: string | null;
+          delivery_fees_collected?: number;
+          net_amount_due?: number;
+          status?: SettlementStatus;
+          amount_paid?: number;
+          payment_date?: string | null;
           payment_method?: string | null;
           payment_reference?: string | null;
-          orders_included?: string[] | null;
+          due_date?: string;
+          is_overdue?: boolean;
+          overdue_days?: number;
           notes?: string | null;
+          admin_notes?: string | null;
+          cod_orders_count?: number;
+          cod_gross_revenue?: number;
+          cod_commission_owed?: number;
+          online_orders_count?: number;
+          online_gross_revenue?: number;
+          online_platform_commission?: number;
+          online_payout_owed?: number;
+          net_balance?: number;
+          settlement_direction?: SettlementDirection | null;
           created_at?: string;
           updated_at?: string;
+          created_by?: string | null;
+          processed_by?: string | null;
+        };
+      };
+
+      // --------------------------------------------------------------------
+      // Settlement Items - Individual orders in each settlement
+      // --------------------------------------------------------------------
+      settlement_items: {
+        Row: {
+          id: string;
+          settlement_id: string;
+          order_id: string;
+          order_total: number;
+          commission_rate: number;
+          commission_amount: number;
+          delivery_fee: number;
+          payment_method: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          settlement_id: string;
+          order_id: string;
+          order_total: number;
+          commission_rate?: number;
+          commission_amount: number;
+          delivery_fee?: number;
+          payment_method?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          settlement_id?: string;
+          order_id?: string;
+          order_total?: number;
+          commission_rate?: number;
+          commission_amount?: number;
+          delivery_fee?: number;
+          payment_method?: string | null;
+          created_at?: string;
         };
       };
 
@@ -1151,6 +1273,37 @@ export interface Database {
       payment_status: PaymentStatus;
       message_type: MessageType;
       notification_type: NotificationType;
+      settlement_status: SettlementStatus;
+      settlement_direction: SettlementDirection;
     };
   };
 }
+
+// ============================================================================
+// HELPER TYPES - For consistent use across the app
+// ============================================================================
+
+// Valid provider statuses for active operations
+export const ACTIVE_PROVIDER_STATUSES: ProviderStatus[] = [
+  'approved',
+  'active',
+  'open',
+  'closed',
+  'temporarily_paused'
+];
+
+// Valid order statuses for in-progress orders
+export const IN_PROGRESS_ORDER_STATUSES: OrderStatus[] = [
+  'pending',
+  'confirmed',
+  'accepted',
+  'preparing',
+  'ready',
+  'out_for_delivery'
+];
+
+// Valid order statuses for completed orders (used in settlements)
+export const COMPLETED_ORDER_STATUSES: OrderStatus[] = [
+  'delivered',
+  'completed'
+];
