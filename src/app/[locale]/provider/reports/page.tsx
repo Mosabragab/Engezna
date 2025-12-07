@@ -45,6 +45,17 @@ type RevenueStats = {
   lastMonth: number
 }
 
+type PaymentMethodStats = {
+  codOrders: number
+  codRevenue: number
+  codConfirmed: number
+  codPending: number
+  onlineOrders: number
+  onlineRevenue: number
+  onlineConfirmed: number
+  onlinePending: number
+}
+
 type TopProduct = {
   id: string
   name_ar: string
@@ -74,6 +85,10 @@ export default function ReportsPage() {
   // Stats
   const [orderStats, setOrderStats] = useState<OrderStats>({ total: 0, completed: 0, cancelled: 0, pending: 0 })
   const [revenueStats, setRevenueStats] = useState<RevenueStats>({ today: 0, thisWeek: 0, thisMonth: 0, lastMonth: 0 })
+  const [paymentMethodStats, setPaymentMethodStats] = useState<PaymentMethodStats>({
+    codOrders: 0, codRevenue: 0, codConfirmed: 0, codPending: 0,
+    onlineOrders: 0, onlineRevenue: 0, onlineConfirmed: 0, onlinePending: 0
+  })
   const [topProducts, setTopProducts] = useState<TopProduct[]>([])
   const [dailyRevenue, setDailyRevenue] = useState<DailyRevenue[]>([])
   const [avgOrderValue, setAvgOrderValue] = useState(0)
@@ -125,7 +140,7 @@ export default function ReportsPage() {
     const [ordersResult, orderItemsResult] = await Promise.all([
       supabase
         .from('orders')
-        .select('id, status, total, created_at, customer_id, payment_status')
+        .select('id, status, total, created_at, customer_id, payment_status, payment_method')
         .eq('provider_id', provId),
       supabase
         .from('order_items')
@@ -174,6 +189,25 @@ export default function ReportsPage() {
         .reduce((sum, o) => sum + (o.total || 0), 0)
 
       setRevenueStats({ today: todayRevenue, thisWeek: weekRevenue, thisMonth: monthRevenue, lastMonth: lastMonthRevenue })
+
+      // COD vs Online breakdown (this month)
+      const monthOrders = orders.filter(o => {
+        const d = new Date(o.created_at)
+        return d >= monthStart && o.status === 'delivered'
+      })
+      const codOrders = monthOrders.filter(o => o.payment_method === 'cash')
+      const onlineOrders = monthOrders.filter(o => o.payment_method !== 'cash')
+
+      setPaymentMethodStats({
+        codOrders: codOrders.length,
+        codRevenue: codOrders.reduce((sum, o) => sum + (o.total || 0), 0),
+        codConfirmed: codOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0),
+        codPending: codOrders.filter(o => o.payment_status === 'pending').reduce((sum, o) => sum + (o.total || 0), 0),
+        onlineOrders: onlineOrders.length,
+        onlineRevenue: onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0),
+        onlineConfirmed: onlineOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0),
+        onlinePending: onlineOrders.filter(o => o.payment_status === 'pending').reduce((sum, o) => sum + (o.total || 0), 0),
+      })
 
       // Average order value - based on confirmed orders only
       if (confirmedOrders.length > 0) {
@@ -535,6 +569,138 @@ Payment Filter: ${paymentFilter === 'all' ? 'All' : paymentFilter === 'completed
               </CardContent>
             </Card>
           </div>
+
+          {/* COD vs Online Breakdown */}
+          <Card className="bg-white border-slate-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-slate-900 flex items-center gap-2 text-lg font-semibold">
+                <DollarSign className="w-5 h-5 text-primary" />
+                {locale === 'ar' ? 'تفصيل طرق الدفع (هذا الشهر)' : 'Payment Methods (This Month)'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* COD */}
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">
+                        {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {paymentMethodStats.codOrders} {locale === 'ar' ? 'طلب' : 'orders'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
+                      <span className="font-semibold text-slate-900">{formatCurrency(paymentMethodStats.codRevenue)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">{locale === 'ar' ? 'تم التحصيل' : 'Collected'}</span>
+                      <span className="font-semibold text-green-600">{formatCurrency(paymentMethodStats.codConfirmed)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">{locale === 'ar' ? 'بانتظار التحصيل' : 'Pending'}</span>
+                      <span className="font-semibold text-amber-600">{formatCurrency(paymentMethodStats.codPending)}</span>
+                    </div>
+                  </div>
+                  {paymentMethodStats.codRevenue > 0 && (
+                    <div className="mt-3 pt-3 border-t border-amber-200">
+                      <div className="w-full bg-amber-200 rounded-full h-2">
+                        <div
+                          className="bg-green-500 h-2 rounded-full"
+                          style={{ width: `${(paymentMethodStats.codConfirmed / paymentMethodStats.codRevenue) * 100}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {((paymentMethodStats.codConfirmed / paymentMethodStats.codRevenue) * 100).toFixed(0)}% {locale === 'ar' ? 'تم تحصيله' : 'collected'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Online */}
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">
+                        {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {paymentMethodStats.onlineOrders} {locale === 'ar' ? 'طلب' : 'orders'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
+                      <span className="font-semibold text-slate-900">{formatCurrency(paymentMethodStats.onlineRevenue)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">{locale === 'ar' ? 'مؤكد' : 'Confirmed'}</span>
+                      <span className="font-semibold text-green-600">{formatCurrency(paymentMethodStats.onlineConfirmed)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">{locale === 'ar' ? 'قيد المعالجة' : 'Processing'}</span>
+                      <span className="font-semibold text-blue-600">{formatCurrency(paymentMethodStats.onlinePending)}</span>
+                    </div>
+                  </div>
+                  {paymentMethodStats.onlineRevenue > 0 && (
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <div className="w-full bg-blue-200 rounded-full h-2">
+                        <div
+                          className="bg-green-500 h-2 rounded-full"
+                          style={{ width: `${(paymentMethodStats.onlineConfirmed / paymentMethodStats.onlineRevenue) * 100}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {((paymentMethodStats.onlineConfirmed / paymentMethodStats.onlineRevenue) * 100).toFixed(0)}% {locale === 'ar' ? 'مؤكد' : 'confirmed'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Summary */}
+              {(paymentMethodStats.codOrders + paymentMethodStats.onlineOrders) > 0 && (
+                <div className="mt-4 p-3 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-center text-slate-600">
+                    {locale === 'ar' ? (
+                      <>
+                        <span className="font-semibold text-amber-600">
+                          {((paymentMethodStats.codOrders / (paymentMethodStats.codOrders + paymentMethodStats.onlineOrders)) * 100).toFixed(0)}%
+                        </span>
+                        {' '}كاش |{' '}
+                        <span className="font-semibold text-blue-600">
+                          {((paymentMethodStats.onlineOrders / (paymentMethodStats.codOrders + paymentMethodStats.onlineOrders)) * 100).toFixed(0)}%
+                        </span>
+                        {' '}إلكتروني
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-semibold text-amber-600">
+                          {((paymentMethodStats.codOrders / (paymentMethodStats.codOrders + paymentMethodStats.onlineOrders)) * 100).toFixed(0)}%
+                        </span>
+                        {' '}COD |{' '}
+                        <span className="font-semibold text-blue-600">
+                          {((paymentMethodStats.onlineOrders / (paymentMethodStats.codOrders + paymentMethodStats.onlineOrders)) * 100).toFixed(0)}%
+                        </span>
+                        {' '}Online
+                      </>
+                    )}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Revenue Chart - Improved Design */}
           <Card className="bg-white border-slate-200">
