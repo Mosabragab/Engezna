@@ -574,7 +574,7 @@ export default function ProviderOrdersPage() {
                           </div>
                         </div>
                         <div className="text-sm text-slate-500">
-                          {getTimeSince(order.created_at)}
+                          {formatTime(order.created_at)}
                         </div>
                       </div>
 
