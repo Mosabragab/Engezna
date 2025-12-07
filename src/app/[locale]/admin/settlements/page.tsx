@@ -383,11 +383,10 @@ export default function AdminSettlementsPage() {
         .from('settlements')
         .update({
           status: 'paid',
-          payment_date: new Date().toISOString(),
+          paid_at: new Date().toISOString(),
           payment_method: paymentForm.method,
           payment_reference: paymentForm.reference || null,
           processed_by: user?.id,
-          amount_paid: parseFloat(paymentForm.amount),
         })
         .eq('id', selectedSettlement.id)
 
