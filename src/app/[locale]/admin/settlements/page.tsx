@@ -42,6 +42,16 @@ interface Settlement {
   gross_revenue: number
   platform_commission: number
   net_payout: number
+  // New fields from updated schema
+  cod_orders_count: number | null
+  cod_revenue: number | null
+  cod_provider_owes: number | null
+  online_orders_count: number | null
+  online_revenue: number | null
+  online_platform_owes: number | null
+  net_amount_due: number | null
+  settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
+  amount_paid: number | null
   status: 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
   paid_at: string | null
   payment_method: string | null
@@ -166,15 +176,23 @@ export default function AdminSettlementsPage() {
 
     setProviders((providersData || []) as Provider[])
 
-    // Calculate stats
+    // Calculate stats - use net_amount_due if available, otherwise fall back to platform_commission
     const pending = settlementsTyped.filter(s => s.status === 'pending' || s.status === 'partially_paid')
     const paid = settlementsTyped.filter(s => s.status === 'paid')
     const overdue = settlementsTyped.filter(s => s.status === 'overdue' || s.status === 'disputed')
 
+    // Helper to get the amount due from a settlement
+    const getAmountDue = (s: Settlement) => {
+      // Use new field if available, otherwise fall back to platform_commission
+      const due = s.net_amount_due ?? s.platform_commission ?? 0
+      const paid = s.amount_paid ?? 0
+      return Math.max(0, due - paid)
+    }
+
     setStats({
-      totalPending: pending.reduce((sum, s) => sum + (s.net_payout || 0), 0),
-      totalOverdue: overdue.reduce((sum, s) => sum + (s.net_payout || 0), 0),
-      totalPaid: paid.reduce((sum, s) => sum + (s.net_payout || 0), 0),
+      totalPending: pending.reduce((sum, s) => sum + getAmountDue(s), 0),
+      totalOverdue: overdue.reduce((sum, s) => sum + getAmountDue(s), 0),
+      totalPaid: paid.reduce((sum, s) => sum + (s.amount_paid ?? s.platform_commission ?? 0), 0),
       pendingCount: pending.length,
       overdueCount: overdue.length,
       paidCount: paid.length,
@@ -650,9 +668,9 @@ export default function AdminSettlementsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div>
-                            <span className="font-bold text-amber-600">{formatCurrency(settlement.platform_commission || settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                            <span className="font-bold text-amber-600">{formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                             <p className="text-xs text-slate-500">
-                              {locale === 'ar' ? 'مستحقة للمنصة' : 'Due to platform'}
+                              {locale === 'ar' ? 'عمولة المنصة' : 'Platform commission'}
                             </p>
                           </div>
                         </td>
@@ -672,7 +690,7 @@ export default function AdminSettlementsPage() {
                                 onClick={() => {
                                   setSelectedSettlement(settlement)
                                   setPaymentForm({
-                                    amount: (settlement.net_payout || 0).toString(),
+                                    amount: (settlement.net_amount_due ?? settlement.platform_commission ?? 0).toString(),
                                     method: 'cash',
                                     reference: '',
                                   })
@@ -795,6 +813,11 @@ export default function AdminSettlementsPage() {
                 <p className="text-sm text-slate-600">
                   {locale === 'ar' ? 'المزود:' : 'Provider:'} <span className="font-medium text-slate-900">
                     {locale === 'ar' ? selectedSettlement.provider?.name_ar : selectedSettlement.provider?.name_en}
+                  </span>
+                </p>
+                <p className="text-sm text-slate-600">
+                  {locale === 'ar' ? 'المبلغ المستحق:' : 'Amount Due:'} <span className="font-bold text-amber-600">
+                    {formatCurrency(selectedSettlement.net_amount_due ?? selectedSettlement.platform_commission ?? 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                   </span>
                 </p>
                 <p className="text-sm text-slate-600">

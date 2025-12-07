@@ -207,6 +207,38 @@ export default function AdminCustomerDetailsPage() {
     setActionLoading(true)
     const supabase = createClient()
 
+    // If banning, first cancel all active orders
+    if (ban) {
+      // Get all in-progress orders for this customer
+      const activeStatuses = ['pending', 'confirmed', 'accepted', 'preparing', 'ready', 'out_for_delivery']
+
+      const { data: activeOrders } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('customer_id', customer.id)
+        .in('status', activeStatuses)
+
+      if (activeOrders && activeOrders.length > 0) {
+        // Cancel all active orders
+        const { error: cancelError } = await supabase
+          .from('orders')
+          .update({
+            status: 'cancelled',
+            cancellation_reason: locale === 'ar'
+              ? 'تم إلغاء الطلب بسبب حظر حساب العميل'
+              : 'Order cancelled due to customer account ban',
+            cancelled_at: new Date().toISOString(),
+          })
+          .eq('customer_id', customer.id)
+          .in('status', activeStatuses)
+
+        if (cancelError) {
+          console.error('Error cancelling orders:', cancelError)
+        }
+      }
+    }
+
+    // Update customer ban status
     const { error } = await supabase
       .from('profiles')
       .update({ is_banned: ban })
@@ -214,6 +246,8 @@ export default function AdminCustomerDetailsPage() {
 
     if (!error) {
       setCustomer({ ...customer, is_banned: ban })
+      // Reload customer data to update the orders list
+      await loadCustomer(supabase)
     }
 
     setActionLoading(false)

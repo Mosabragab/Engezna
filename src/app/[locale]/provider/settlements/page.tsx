@@ -28,6 +28,8 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+import { ACTIVE_PROVIDER_STATUSES, SettlementStatus } from '@/types/database'
+
 interface Settlement {
   id: string
   period_start: string
@@ -35,13 +37,20 @@ interface Settlement {
   total_orders: number
   gross_revenue: number
   platform_commission: number
-  net_payout: number
-  status: 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
-  paid_at: string | null
+  delivery_fees_collected: number
+  net_amount_due: number // Amount provider owes platform
+  net_payout?: number // Legacy field
+  amount_paid: number
+  status: SettlementStatus
+  payment_date: string | null
+  paid_at?: string | null // Legacy field
   payment_method: string | null
   payment_reference: string | null
-  orders_included: string[] | null
+  due_date: string
+  is_overdue: boolean
+  overdue_days: number
   notes: string | null
+  admin_notes: string | null
   created_at: string
   updated_at: string
 }
@@ -87,7 +96,7 @@ export default function ProviderSettlementsPage() {
       .limit(1)
 
     const provider = providerData?.[0]
-    if (!provider || !['approved', 'active', 'open', 'closed', 'temporarily_paused'].includes(provider.status)) {
+    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
       router.push(`/${locale}/provider`)
       return
     }
@@ -114,8 +123,20 @@ export default function ProviderSettlementsPage() {
     const overdue = settlements.filter(s => s.status === 'overdue' || s.status === 'disputed')
     const completed = settlements.filter(s => s.status === 'paid' || s.status === 'waived')
 
-    const totalDue = pending.reduce((sum, s) => sum + (s.platform_commission || 0), 0)
-    const totalPaid = completed.reduce((sum, s) => sum + (s.net_payout || 0), 0)
+    // Total due = sum of net_amount_due for pending settlements (what provider owes platform)
+    // For partially paid, subtract amount_paid
+    const totalDue = pending.reduce((sum, s) => {
+      const due = s.net_amount_due || s.platform_commission || 0
+      const paid = s.amount_paid || 0
+      return sum + (due - paid)
+    }, 0) + overdue.reduce((sum, s) => {
+      const due = s.net_amount_due || s.platform_commission || 0
+      const paid = s.amount_paid || 0
+      return sum + (due - paid)
+    }, 0)
+
+    // Total paid = sum of amount_paid for completed settlements
+    const totalPaid = completed.reduce((sum, s) => sum + (s.amount_paid || s.net_amount_due || 0), 0)
     const totalOrders = settlements.reduce((sum, s) => sum + (s.total_orders || 0), 0)
     const totalRevenue = settlements.reduce((sum, s) => sum + (s.gross_revenue || 0), 0)
 

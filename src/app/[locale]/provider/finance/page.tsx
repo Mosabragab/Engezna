@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { ProviderLayout } from '@/components/provider'
+import { ACTIVE_PROVIDER_STATUSES } from '@/types/database'
 import {
   Wallet,
   DollarSign,
@@ -170,7 +171,7 @@ export default function FinancePage() {
       .limit(1)
 
     const provider = providerData?.[0]
-    if (!provider || !['approved', 'open', 'closed', 'temporarily_paused'].includes(provider.status)) {
+    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
       router.push(`/${locale}/provider`)
       return
     }

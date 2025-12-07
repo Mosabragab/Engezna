@@ -52,6 +52,26 @@ function getStartOfToday(): string {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 }
 
+/**
+ * الحصول على بداية الأسبوع (آخر 7 أيام)
+ * Get start of week (last 7 days)
+ */
+function getStartOfWeek(): string {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  return weekAgo.toISOString();
+}
+
+/**
+ * الحصول على بداية الأسبوع السابق
+ * Get start of previous week
+ */
+function getStartOfPreviousWeek(): string {
+  const now = new Date();
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  return twoWeeksAgo.toISOString();
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // إحصائيات لوحة التحكم الرئيسية
 // Dashboard Main Statistics
@@ -72,6 +92,8 @@ export async function getDashboardStats(
     const startOfMonth = getStartOfMonth();
     const startOfPreviousMonth = getStartOfPreviousMonth();
     const startOfToday = getStartOfToday();
+    const startOfWeek = getStartOfWeek();
+    const startOfPreviousWeek = getStartOfPreviousWeek();
 
     // ───────────────────────────────────────────────────────────────────
     // إحصائيات مقدمي الخدمة - Provider Statistics
@@ -176,6 +198,14 @@ export async function getDashboardStats(
     const ordersToday = orders.filter(
       (o) => new Date(o.created_at) >= new Date(startOfToday)
     );
+    const ordersThisWeek = orders.filter(
+      (o) => new Date(o.created_at) >= new Date(startOfWeek)
+    );
+    const ordersLastWeek = orders.filter(
+      (o) =>
+        new Date(o.created_at) >= new Date(startOfPreviousWeek) &&
+        new Date(o.created_at) < new Date(startOfWeek)
+    );
     const ordersThisMonth = orders.filter(
       (o) => new Date(o.created_at) >= new Date(startOfMonth)
     );
@@ -191,7 +221,9 @@ export async function getDashboardStats(
       completed: orders.filter((o) => completedStatuses.includes(o.status)).length,
       cancelled: orders.filter((o) => cancelledStatuses.includes(o.status)).length,
       todayCount: ordersToday.length,
+      thisWeekCount: ordersThisWeek.length,
       thisMonthCount: ordersThisMonth.length,
+      weekChangePercent: calculateChangePercent(ordersThisWeek.length, ordersLastWeek.length),
       changePercent: calculateChangePercent(ordersThisMonth.length, ordersLastMonth.length),
     };
 

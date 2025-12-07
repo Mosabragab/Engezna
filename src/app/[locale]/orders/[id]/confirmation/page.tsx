@@ -190,12 +190,28 @@ export default function OrderConfirmationPage() {
     if (!order?.delivery_address) return ''
     const addr = order.delivery_address
     const parts = []
+    const isArabic = locale === 'ar'
+
+    // Address line
     if (addr.address_line1) parts.push(addr.address_line1)
     else if (addr.address) parts.push(addr.address)
-    if (addr.district_ar) parts.push(addr.district_ar)
-    if (addr.city_ar) parts.push(addr.city_ar)
-    if (addr.governorate_ar) parts.push(addr.governorate_ar)
-    return parts.join('، ')
+
+    // District - use correct language
+    if (isArabic && addr.district_ar) parts.push(addr.district_ar)
+    else if (!isArabic && addr.district_en) parts.push(addr.district_en)
+    else if (addr.district_ar) parts.push(addr.district_ar) // Fallback to Arabic
+
+    // City - use correct language
+    if (isArabic && addr.city_ar) parts.push(addr.city_ar)
+    else if (!isArabic && addr.city_en) parts.push(addr.city_en)
+    else if (addr.city_ar) parts.push(addr.city_ar) // Fallback to Arabic
+
+    // Governorate - use correct language
+    if (isArabic && addr.governorate_ar) parts.push(addr.governorate_ar)
+    else if (!isArabic && addr.governorate_en) parts.push(addr.governorate_en)
+    else if (addr.governorate_ar) parts.push(addr.governorate_ar) // Fallback to Arabic
+
+    return parts.join(isArabic ? '، ' : ', ')
   }
 
   if (loading) {
