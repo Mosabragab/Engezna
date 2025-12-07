@@ -6,8 +6,6 @@ import Link from 'next/link'
 import { Plus, Minus, ShoppingBag, Store } from 'lucide-react'
 import { useCart } from '@/lib/store/cart'
 import { CustomerLayout } from '@/components/customer/layout'
-import { Button } from '@/components/ui/button'
-import { useState } from 'react'
 
 export default function CartPage() {
   const locale = useLocale()
@@ -25,24 +23,9 @@ export default function CartPage() {
     getItemCount,
   } = useCart()
 
-  const [promoCode, setPromoCode] = useState('')
-  const [discount, setDiscount] = useState(0)
-  const [promoError, setPromoError] = useState('')
-
   const subtotal = getSubtotal()
   const deliveryFee = provider?.delivery_fee || 0
-  const total = getTotal() - discount
-
-  const handleApplyPromo = () => {
-    // Placeholder for promo code logic
-    if (promoCode.trim().toUpperCase() === 'WELCOME10') {
-      setDiscount(subtotal * 0.1)
-      setPromoError('')
-    } else if (promoCode.trim()) {
-      setPromoError(locale === 'ar' ? 'كود غير صالح' : 'Invalid code')
-      setDiscount(0)
-    }
-  }
+  const total = getTotal()
 
   const handleCheckout = () => {
     router.push(`/${locale}/checkout`)
@@ -170,31 +153,6 @@ export default function CartPage() {
           </Link>
         )}
 
-        {/* Promo Code */}
-        <div className="bg-white rounded-xl border border-slate-100 p-4 mb-6">
-          <h4 className="font-semibold text-slate-900 mb-3">{t('promoCode')}</h4>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              placeholder={t('promoPlaceholder')}
-              className="flex-1 h-10 px-4 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <Button onClick={handleApplyPromo} variant="outline">
-              {t('apply')}
-            </Button>
-          </div>
-          {promoError && (
-            <p className="text-red-500 text-sm mt-2">{promoError}</p>
-          )}
-          {discount > 0 && (
-            <p className="text-green-600 text-sm mt-2">
-              {locale === 'ar' ? 'تم تطبيق الخصم!' : 'Discount applied!'}
-            </p>
-          )}
-        </div>
-
         {/* Order Summary */}
         <div className="bg-white rounded-xl border border-slate-100 p-4">
           <h4 className="font-semibold text-slate-900 mb-4">{t('summary')}</h4>
@@ -214,13 +172,6 @@ export default function CartPage() {
                 }
               </span>
             </div>
-
-            {discount > 0 && (
-              <div className="flex justify-between text-green-600">
-                <span>{t('discount')}</span>
-                <span>- {discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
-              </div>
-            )}
 
             <div className="border-t border-slate-100 pt-3 flex justify-between font-bold text-lg">
               <span>{t('total')}</span>

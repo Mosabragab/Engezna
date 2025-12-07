@@ -199,6 +199,37 @@ export default function OrderTrackingPage() {
     }
   }, [orderId, user, authLoading])
 
+  // Realtime subscription for order status updates
+  useEffect(() => {
+    if (!orderId || !user) return
+
+    const supabase = createClient()
+
+    // Subscribe to order changes
+    const channel = supabase
+      .channel(`order-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          console.log('Order updated:', payload.new)
+          // Update order state with new data
+          setOrder(payload.new as Order)
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [orderId, user])
+
   const loadOrderDetails = async () => {
     setLoading(true)
     const supabase = createClient()
@@ -438,7 +469,7 @@ export default function OrderTrackingPage() {
 
   if (loading || authLoading) {
     return (
-      <CustomerLayout showBottomNav={false}>
+      <CustomerLayout showBottomNav={true}>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
@@ -453,7 +484,7 @@ export default function OrderTrackingPage() {
 
   if (!order) {
     return (
-      <CustomerLayout showBottomNav={false}>
+      <CustomerLayout showBottomNav={true}>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
           <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-4">
             <XCircle className="w-12 h-12 text-red-300" />
@@ -477,7 +508,7 @@ export default function OrderTrackingPage() {
   const isDelivered = order.status === 'delivered'
 
   return (
-    <CustomerLayout showBottomNav={false}>
+    <CustomerLayout showBottomNav={true}>
       <div className="px-4 py-4">
         {/* Order Header */}
         <div className="flex items-center justify-between mb-4">
