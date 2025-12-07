@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, useState, useEffect } from 'react'
+import { ReactNode, useState, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -35,9 +35,189 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [unrespondedReviews, setUnrespondedReviews] = useState(0)
   const [unreadMessages, setUnreadMessages] = useState(0)
 
+  // Refresh notification counts
+  const refreshCounts = useCallback(async (providerId: string) => {
+    const supabase = createClient()
+    const [pendingResult, reviewsResult, messagesResult] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id')
+        .eq('provider_id', providerId)
+        .eq('status', 'pending'),
+      supabase
+        .from('reviews')
+        .select('id')
+        .eq('provider_id', providerId)
+        .is('provider_response', null),
+      supabase
+        .from('order_messages')
+        .select('id, orders!inner(provider_id)')
+        .eq('sender_type', 'customer')
+        .eq('is_read', false)
+    ])
+    setPendingOrders(pendingResult.data?.length || 0)
+    setUnrespondedReviews(reviewsResult.data?.length || 0)
+    const providerMessages = (messagesResult.data || []).filter((m: any) => m.orders?.provider_id === providerId)
+    setUnreadMessages(providerMessages.length)
+  }, [])
+
   useEffect(() => {
     checkAuth()
   }, [])
+
+  // Realtime subscriptions for notification updates
+  useEffect(() => {
+    if (!provider?.id) return
+
+    const supabase = createClient()
+    const providerId = provider.id
+
+    // Subscribe to order changes (new orders, status updates)
+    const ordersChannel = supabase
+      .channel(`layout-orders-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const newOrder = payload.new as { status: string }
+          if (newOrder.status === 'pending') {
+            setPendingOrders(prev => prev + 1)
+            // Play notification sound
+            try {
+              const audio = new Audio('/sounds/new-order.mp3')
+              audio.volume = 0.7
+              audio.play().catch(() => {})
+            } catch {}
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const oldOrder = payload.old as { status: string }
+          const newOrder = payload.new as { status: string }
+          // Decrement if was pending and now something else
+          if (oldOrder.status === 'pending' && newOrder.status !== 'pending') {
+            setPendingOrders(prev => Math.max(0, prev - 1))
+          }
+          // Increment if became pending (unlikely but handle it)
+          if (oldOrder.status !== 'pending' && newOrder.status === 'pending') {
+            setPendingOrders(prev => prev + 1)
+          }
+        }
+      )
+      .subscribe()
+
+    // Subscribe to message changes (new messages, read status)
+    const messagesChannel = supabase
+      .channel(`layout-messages-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'order_messages',
+          filter: `sender_type=eq.customer`,
+        },
+        async (payload) => {
+          // Check if message is for this provider's order
+          const newMessage = payload.new as { order_id: string }
+          const { data: orderData } = await supabase
+            .from('orders')
+            .select('provider_id')
+            .eq('id', newMessage.order_id)
+            .single()
+
+          if (orderData?.provider_id === providerId) {
+            setUnreadMessages(prev => prev + 1)
+            // Play notification sound
+            try {
+              const audio = new Audio('/sounds/notification.mp3')
+              audio.volume = 0.5
+              audio.play().catch(() => {})
+            } catch {}
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'order_messages',
+        },
+        async (payload) => {
+          const oldMsg = payload.old as { is_read: boolean; sender_type: string }
+          const newMsg = payload.new as { is_read: boolean; sender_type: string; order_id: string }
+
+          // Only care about customer messages being marked as read
+          if (newMsg.sender_type === 'customer' && !oldMsg.is_read && newMsg.is_read) {
+            // Check if message is for this provider's order
+            const { data: orderData } = await supabase
+              .from('orders')
+              .select('provider_id')
+              .eq('id', newMsg.order_id)
+              .single()
+
+            if (orderData?.provider_id === providerId) {
+              setUnreadMessages(prev => Math.max(0, prev - 1))
+            }
+          }
+        }
+      )
+      .subscribe()
+
+    // Subscribe to review changes
+    const reviewsChannel = supabase
+      .channel(`layout-reviews-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'reviews',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        () => {
+          setUnrespondedReviews(prev => prev + 1)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'reviews',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const oldReview = payload.old as { provider_response: string | null }
+          const newReview = payload.new as { provider_response: string | null }
+          // Decrement if response was added
+          if (!oldReview.provider_response && newReview.provider_response) {
+            setUnrespondedReviews(prev => Math.max(0, prev - 1))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(ordersChannel)
+      supabase.removeChannel(messagesChannel)
+      supabase.removeChannel(reviewsChannel)
+    }
+  }, [provider?.id])
 
   async function checkAuth() {
     const supabase = createClient()
@@ -53,29 +233,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
 
       if (providerData && providerData.length > 0) {
         setProvider(providerData[0])
-        // Load pending orders, unresponded reviews, and unread messages in parallel
-        const [pendingResult, reviewsResult, messagesResult] = await Promise.all([
-          supabase
-            .from('orders')
-            .select('id')
-            .eq('provider_id', providerData[0].id)
-            .eq('status', 'pending'),
-          supabase
-            .from('reviews')
-            .select('id')
-            .eq('provider_id', providerData[0].id)
-            .is('provider_response', null),
-          supabase
-            .from('order_messages')
-            .select('id, orders!inner(provider_id)')
-            .eq('sender_type', 'customer')
-            .eq('is_read', false)
-        ])
-        setPendingOrders(pendingResult.data?.length || 0)
-        setUnrespondedReviews(reviewsResult.data?.length || 0)
-        // Filter messages for this provider
-        const providerMessages = (messagesResult.data || []).filter((m: any) => m.orders?.provider_id === providerData[0].id)
-        setUnreadMessages(providerMessages.length)
+        await refreshCounts(providerData[0].id)
       }
     }
 
