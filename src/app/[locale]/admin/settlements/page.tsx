@@ -386,7 +386,6 @@ export default function AdminSettlementsPage() {
           paid_at: new Date().toISOString(),
           payment_method: paymentForm.method,
           payment_reference: paymentForm.reference || null,
-          processed_by: user?.id,
         })
         .eq('id', selectedSettlement.id)
 

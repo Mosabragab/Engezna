@@ -208,7 +208,6 @@ export default function SettlementDetailPage() {
           paid_at: new Date().toISOString(),
           payment_method: paymentForm.method,
           payment_reference: paymentForm.reference || null,
-          processed_by: user?.id,
         })
         .eq('id', settlement.id)
 
@@ -237,8 +236,6 @@ export default function SettlementDetailPage() {
       .update({
         status: 'disputed', // Use 'disputed' to match database CHECK constraint (closest to 'failed')
         notes: reason,
-        admin_notes: reason,
-        processed_by: user?.id,
         updated_at: new Date().toISOString(),
       })
       .eq('id', settlement.id)
