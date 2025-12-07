@@ -61,6 +61,13 @@ CREATE POLICY "orders_update_customer_cancel"
 - **Fix**: Changed to exact time display (e.g., "١٠:٣٠ ص")
 - **File**: `src/app/[locale]/provider/orders/page.tsx`
 
+#### 9. Cancellation Reason Translation
+- **Issue**: Provider/admin saw raw IDs like "changed_mind" instead of Arabic translation
+- **Fix**: Added CANCELLATION_REASONS mapping and translated display
+- **Files**:
+  - `src/app/[locale]/provider/orders/[id]/page.tsx`
+  - `src/app/[locale]/admin/orders/[id]/page.tsx`
+
 ### Files Modified
 - `src/components/customer/layout/CustomerHeader.tsx`
 - `src/app/[locale]/checkout/page.tsx`
@@ -69,6 +76,8 @@ CREATE POLICY "orders_update_customer_cancel"
 - `src/app/[locale]/provider/page.tsx`
 - `src/app/[locale]/providers/[id]/page.tsx`
 - `src/app/[locale]/provider/orders/page.tsx`
+- `src/app/[locale]/provider/orders/[id]/page.tsx`
+- `src/app/[locale]/admin/orders/[id]/page.tsx`
 
 ### Database Changes
 - Added RLS policy: `orders_update_customer_cancel`
