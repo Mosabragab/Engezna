@@ -1,6 +1,6 @@
 # Engezna Project Status
 
-## Last Updated: 2025-12-09
+## Last Updated: 2025-12-07
 
 ## Project Overview
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
@@ -29,6 +29,9 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - [x] Order cancellation (pending orders only)
 - [x] Favorites system
 - [x] Customer header with cart icon
+- [x] Real-time notifications (with polling fallback)
+- [x] In-app chat with provider
+- [x] Message read status indicators (✓/✓✓)
 
 #### Provider Side
 - [x] Provider registration & approval flow
@@ -39,6 +42,9 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - [x] Provider settings
 - [x] Finance page with COD/Online breakdown
 - [x] Reports with payment method analytics
+- [x] Real-time notifications system
+- [x] In-app chat with customers
+- [x] Notification management (mark read, delete)
 
 #### Admin Side
 - [x] Admin dashboard
@@ -75,6 +81,9 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - `settlements` - Provider settlements with COD/Online breakdown
 - `settlement_items` - Individual orders in settlements
 - `admin_users` - Admin user records
+- `customer_notifications` - Customer notification system
+- `provider_notifications` - Provider notification system
+- `order_messages` - Chat messages between customer and provider
 
 ---
 

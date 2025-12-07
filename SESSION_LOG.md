@@ -1,5 +1,81 @@
 # Session Log
 
+## Session: 2025-12-07 (Evening) - Notifications & Chat System
+
+### Summary
+Complete overhaul of the notification and messaging system between customers and providers.
+
+### Completed Tasks
+
+#### 1. Provider Notifications System
+- **Created**: New `provider_notifications` table matching `customer_notifications` structure
+- **Features**:
+  - Auto-notifications for new orders, messages, and reviews
+  - Mark as read, delete functionality
+  - Realtime subscription support
+- **Migration**: `20251207000005_provider_notifications.sql`
+
+#### 2. RLS Policies Fix for Notifications Persistence
+- **Issue**: Mark as read and delete operations only worked locally, reverted after page refresh
+- **Root Cause**: Missing UPDATE and DELETE RLS policies
+- **Fixes**:
+  - Added DELETE policy for `customer_notifications`
+  - Added UPDATE/DELETE policies for `order_messages`
+  - Added proper WITH CHECK clauses for `provider_notifications`
+- **Migration**: `20251207000006_fix_notification_rls_policies.sql`
+
+#### 3. Realtime Notifications
+- **Issue**: Customers didn't receive instant notifications when providers sent messages
+- **Root Cause**: `customer_notifications` and `provider_notifications` not added to Supabase realtime publication
+- **Fix**: Added both tables to `supabase_realtime` publication
+- **Fallback**: Added 10-second polling for customer notifications as reliability backup
+
+#### 4. Chat Message Alignment in RTL
+- **Issue**: In Arabic (RTL), own messages appeared on LEFT instead of RIGHT
+- **Fix**: Adjusted flexbox justify classes for RTL:
+  - Own messages: `justify-start` in RTL (RIGHT side)
+  - Other's messages: `justify-end` in RTL (LEFT side)
+- **File**: `src/components/shared/OrderChat.tsx`
+
+#### 5. Message Read Status Indicators
+- Added checkmarks for sent/read messages:
+  - ✓ = Message sent
+  - ✓✓ = Message read (blue color)
+- Realtime UPDATE subscription for read status changes
+- **File**: `src/components/shared/OrderChat.tsx`
+
+#### 6. Store Name in Notifications
+- **Issue**: Customer notifications showed "المتجر" instead of actual store name
+- **Fix**:
+  - Provider order detail page now fetches `name_ar` and `name_en`
+  - Passes `providerName` to `OrderChat` component
+  - Notifications display actual store name
+- **File**: `src/app/[locale]/provider/orders/[id]/page.tsx`
+
+#### 7. Notification Badge Stabilization
+- Removed shaking/bounce animation from notification badge
+- Badge now shows on all provider pages (via ProviderLayout)
+- **Files**: `src/components/provider/ProviderLayout.tsx`, `src/components/provider/ProviderHeader.tsx`
+
+### Files Created
+- `supabase/migrations/20251207000005_provider_notifications.sql`
+- `supabase/migrations/20251207000006_fix_notification_rls_policies.sql`
+
+### Files Modified
+- `src/components/shared/OrderChat.tsx`
+- `src/components/provider/ProviderLayout.tsx`
+- `src/components/provider/ProviderHeader.tsx`
+- `src/hooks/customer/useNotifications.ts`
+- `src/app/[locale]/provider/orders/[id]/page.tsx`
+
+### Database Changes
+- New table: `provider_notifications`
+- New triggers: `notify_provider_new_order`, `notify_provider_new_message`, `notify_provider_new_review`
+- RLS policies for `customer_notifications`, `provider_notifications`, `order_messages`
+- Realtime publication for notification tables
+
+---
+
 ## Session: 2025-12-09
 
 ### Summary
