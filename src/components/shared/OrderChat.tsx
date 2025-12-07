@@ -114,16 +114,20 @@ export function OrderChat({
           .single()
 
         if (orderData?.customer_id) {
-          // Create customer notification
+          // Create customer notification with actual store name
+          const storeName = providerName || 'المتجر'
+          const storeNameEn = providerName || 'Store'
+          const messagePreview = data.message.length > 50 ? data.message.slice(0, 50) + '...' : data.message
+
           await supabase
             .from('customer_notifications')
             .insert({
               customer_id: orderData.customer_id,
               type: 'order_message',
-              title_ar: 'رسالة جديدة من المتجر',
-              title_en: 'New Message from Store',
-              body_ar: `${providerName || 'المتجر'}: ${data.message.length > 50 ? data.message.slice(0, 50) + '...' : data.message}`,
-              body_en: `${providerName || 'Store'}: ${data.message.length > 50 ? data.message.slice(0, 50) + '...' : data.message}`,
+              title_ar: `رسالة جديدة من ${storeName}`,
+              title_en: `New Message from ${storeNameEn}`,
+              body_ar: `${storeName}: ${messagePreview}`,
+              body_en: `${storeNameEn}: ${messagePreview}`,
               related_order_id: orderId,
             })
         }
@@ -165,6 +169,24 @@ export function OrderChat({
             }
           }
           setTimeout(scrollToBottom, 100)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'order_messages',
+          filter: `order_id=eq.${orderId}`,
+        },
+        (payload) => {
+          // Update message read status when other party opens chat
+          const updatedMsg = payload.new as Message
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === updatedMsg.id ? { ...m, is_read: updatedMsg.is_read } : m
+            )
+          )
         }
       )
       .subscribe()
@@ -301,13 +323,25 @@ export function OrderChat({
                         }`}
                       >
                         <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                        <p
-                          className={`text-xs mt-1 ${
-                            isOwn ? 'text-white/70' : 'text-slate-400'
+                        <div
+                          className={`flex items-center gap-1 mt-1 ${
+                            isOwn ? 'justify-end' : ''
                           }`}
                         >
-                          {formatTime(msg.created_at)}
-                        </p>
+                          <span
+                            className={`text-xs ${
+                              isOwn ? 'text-white/70' : 'text-slate-400'
+                            }`}
+                          >
+                            {formatTime(msg.created_at)}
+                          </span>
+                          {/* Show checkmarks for own messages: ✓ sent, ✓✓ read */}
+                          {isOwn && (
+                            <span className={`text-xs ${msg.is_read ? 'text-blue-300' : 'text-white/70'}`}>
+                              {msg.is_read ? '✓✓' : '✓'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )
