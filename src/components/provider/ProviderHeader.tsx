@@ -15,7 +15,7 @@ import {
   ShoppingBag,
   Star,
   Clock,
-  X,
+  MessageCircle,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User } from '@supabase/supabase-js'
@@ -47,6 +47,14 @@ type UnrespondedReview = {
   profiles: { full_name: string | null } | { full_name: string | null }[] | null
 }
 
+type UnreadMessage = {
+  id: string
+  order_id: string
+  order_number: string
+  message: string
+  created_at: string
+}
+
 export function ProviderHeader({
   user,
   onMenuClick,
@@ -63,6 +71,7 @@ export function ProviderHeader({
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [pendingOrdersList, setPendingOrdersList] = useState<PendingOrder[]>([])
   const [unrespondedReviews, setUnrespondedReviews] = useState<UnrespondedReview[]>([])
+  const [unreadMessages, setUnreadMessages] = useState<UnreadMessage[]>([])
   const [loadingNotifications, setLoadingNotifications] = useState(false)
 
   // Load notifications when dropdown opens
@@ -77,37 +86,56 @@ export function ProviderHeader({
     setLoadingNotifications(true)
     const supabase = createClient()
 
-    // Load pending orders
-    const { data: ordersData } = await supabase
-      .from('orders')
-      .select('id, order_number, total, created_at, status')
-      .eq('provider_id', providerId)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(5)
+    // Load pending orders, unresponded reviews, and unread messages in parallel
+    const [ordersResult, reviewsResult, messagesResult] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id, order_number, total, created_at, status')
+        .eq('provider_id', providerId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('reviews')
+        .select(`
+          id,
+          rating,
+          comment,
+          created_at,
+          profiles:customer_id (full_name)
+        `)
+        .eq('provider_id', providerId)
+        .is('provider_response', null)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('order_messages')
+        .select('id, order_id, message, created_at, orders!inner(order_number, provider_id)')
+        .eq('sender_type', 'customer')
+        .eq('is_read', false)
+        .order('created_at', { ascending: false })
+        .limit(5)
+    ])
 
-    if (ordersData) {
-      setPendingOrdersList(ordersData)
+    if (ordersResult.data) {
+      setPendingOrdersList(ordersResult.data)
     }
 
-    // Load unresponded reviews
-    const { data: reviewsData } = await supabase
-      .from('reviews')
-      .select(`
-        id,
-        rating,
-        comment,
-        created_at,
-        profiles:customer_id (full_name)
-      `)
-      .eq('provider_id', providerId)
-      .is('provider_response', null)
-      .order('created_at', { ascending: false })
-      .limit(5)
-
-    if (reviewsData) {
-      setUnrespondedReviews(reviewsData as UnrespondedReview[])
+    if (reviewsResult.data) {
+      setUnrespondedReviews(reviewsResult.data as UnrespondedReview[])
     }
+
+    // Filter messages for this provider and format
+    const providerMessages = (messagesResult.data || [])
+      .filter((m: any) => m.orders?.provider_id === providerId)
+      .map((m: any) => ({
+        id: m.id,
+        order_id: m.order_id,
+        order_number: m.orders?.order_number || '',
+        message: m.message,
+        created_at: m.created_at
+      }))
+    setUnreadMessages(providerMessages)
 
     setLoadingNotifications(false)
   }
@@ -173,7 +201,7 @@ export function ProviderHeader({
             >
               <Bell className="w-5 h-5" />
               {(totalNotifications ?? pendingOrders) > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                   {(totalNotifications ?? pendingOrders) > 9 ? '9+' : (totalNotifications ?? pendingOrders)}
                 </span>
               )}
@@ -196,7 +224,7 @@ export function ProviderHeader({
                       <div className="flex items-center justify-center py-8">
                         <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
                       </div>
-                    ) : pendingOrdersList.length === 0 && unrespondedReviews.length === 0 ? (
+                    ) : pendingOrdersList.length === 0 && unrespondedReviews.length === 0 && unreadMessages.length === 0 ? (
                       <div className="text-center py-8">
                         <Bell className="w-12 h-12 text-slate-200 mx-auto mb-2" />
                         <p className="text-slate-500">
@@ -268,6 +296,39 @@ export function ProviderHeader({
                                   </div>
                                   <p className="text-xs text-slate-500 truncate">
                                     {review.comment || (locale === 'ar' ? 'بدون تعليق' : 'No comment')}
+                                  </p>
+                                </div>
+                                <ChevronLeft className={`w-4 h-4 text-slate-400 ${isRTL ? '' : 'rotate-180'}`} />
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Unread Messages Section */}
+                        {unreadMessages.length > 0 && (
+                          <div>
+                            <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+                              <p className="text-xs font-medium text-blue-700 flex items-center gap-1">
+                                <MessageCircle className="w-3 h-3" />
+                                {locale === 'ar' ? 'رسائل جديدة من العملاء' : 'New Messages from Customers'}
+                              </p>
+                            </div>
+                            {unreadMessages.map((msg) => (
+                              <Link
+                                key={msg.id}
+                                href={`/${locale}/provider/orders/${msg.order_id}`}
+                                onClick={() => setNotificationsOpen(false)}
+                                className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 border-b border-slate-100 transition-colors"
+                              >
+                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <MessageCircle className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-slate-900">
+                                    {locale === 'ar' ? 'رسالة جديدة' : 'New Message'} #{msg.order_number || msg.order_id.slice(0, 8)}
+                                  </p>
+                                  <p className="text-xs text-slate-500 truncate">
+                                    {msg.message.length > 50 ? msg.message.slice(0, 50) + '...' : msg.message}
                                   </p>
                                 </div>
                                 <ChevronLeft className={`w-4 h-4 text-slate-400 ${isRTL ? '' : 'rotate-180'}`} />

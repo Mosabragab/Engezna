@@ -549,11 +549,11 @@ export default function ProviderDashboard() {
                 onMouseLeave={() => setNotificationsOpen(false)}
               >
                 <button
-                  className={`relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors ${hasNewOrder ? 'animate-pulse' : ''}`}
+                  className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   <Bell className="w-5 h-5" />
                   {(stats.pendingOrders + stats.unrespondedReviews + stats.unreadMessages) > 0 && (
-                    <span className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ${hasNewOrder || stats.unreadMessages > 0 ? 'animate-bounce' : ''}`}>
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                       {(stats.pendingOrders + stats.unrespondedReviews + stats.unreadMessages) > 9 ? '9+' : (stats.pendingOrders + stats.unrespondedReviews + stats.unreadMessages)}
                     </span>
                   )}

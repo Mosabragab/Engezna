@@ -33,6 +33,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pendingOrders, setPendingOrders] = useState(0)
   const [unrespondedReviews, setUnrespondedReviews] = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
 
   useEffect(() => {
     checkAuth()
@@ -52,8 +53,8 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
 
       if (providerData && providerData.length > 0) {
         setProvider(providerData[0])
-        // Load pending orders count and unresponded reviews count in parallel
-        const [pendingResult, reviewsResult] = await Promise.all([
+        // Load pending orders, unresponded reviews, and unread messages in parallel
+        const [pendingResult, reviewsResult, messagesResult] = await Promise.all([
           supabase
             .from('orders')
             .select('id')
@@ -63,10 +64,18 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
             .from('reviews')
             .select('id')
             .eq('provider_id', providerData[0].id)
-            .is('provider_response', null)
+            .is('provider_response', null),
+          supabase
+            .from('order_messages')
+            .select('id, orders!inner(provider_id)')
+            .eq('sender_type', 'customer')
+            .eq('is_read', false)
         ])
         setPendingOrders(pendingResult.data?.length || 0)
         setUnrespondedReviews(reviewsResult.data?.length || 0)
+        // Filter messages for this provider
+        const providerMessages = (messagesResult.data || []).filter((m: any) => m.orders?.provider_id === providerData[0].id)
+        setUnreadMessages(providerMessages.length)
       }
     }
 
@@ -130,7 +139,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           onMenuClick={() => setSidebarOpen(true)}
           onSignOut={handleSignOut}
           pendingOrders={pendingOrders}
-          totalNotifications={pendingOrders + unrespondedReviews}
+          totalNotifications={pendingOrders + unrespondedReviews + unreadMessages}
           providerId={provider?.id}
           pageTitle={pageTitle}
           pageSubtitle={pageSubtitle}
