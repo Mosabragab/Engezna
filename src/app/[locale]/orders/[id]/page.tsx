@@ -27,6 +27,7 @@ import {
   Star,
   MessageSquare,
 } from 'lucide-react'
+import { OrderChat } from '@/components/shared/OrderChat'
 
 // Cancellation reasons
 const CANCELLATION_REASONS = [
@@ -875,6 +876,17 @@ export default function OrderTrackingPage() {
           </button>
         </div>
       </div>
+
+      {/* Order Chat */}
+      {order && user && !isCancelled && (
+        <OrderChat
+          orderId={order.id}
+          userType="customer"
+          userId={user.id}
+          locale={locale}
+          providerName={locale === 'ar' ? provider?.name_ar : provider?.name_en}
+        />
+      )}
 
       {/* Cancel Order Modal */}
       {showCancelModal && (

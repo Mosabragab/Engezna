@@ -30,6 +30,7 @@ import {
   MessageSquare,
   Calendar,
 } from 'lucide-react'
+import { OrderChat } from '@/components/shared/OrderChat'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -117,6 +118,7 @@ export default function ProviderOrderDetailPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [providerId, setProviderId] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
 
@@ -134,6 +136,7 @@ export default function ProviderOrderDetailPage() {
       router.push(`/${locale}/auth/login?redirect=/provider/orders/${orderId}`)
       return
     }
+    setUserId(user.id)
 
     // Get provider ID
     const { data: providerData } = await supabase
@@ -731,6 +734,17 @@ export default function ProviderOrderDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Order Chat */}
+      {order && userId && order.status !== 'cancelled' && order.status !== 'rejected' && (
+        <OrderChat
+          orderId={order.id}
+          userType="provider"
+          userId={userId}
+          locale={locale}
+          customerName={customer?.full_name}
+        />
+      )}
     </div>
   )
 }
