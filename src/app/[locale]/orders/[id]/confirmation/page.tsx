@@ -36,8 +36,11 @@ type Order = {
     address?: string
     address_line1?: string
     city_ar?: string
+    city_en?: string
     district_ar?: string
+    district_en?: string
     governorate_ar?: string
+    governorate_en?: string
     phone?: string
     full_name?: string
     notes?: string
