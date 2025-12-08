@@ -566,7 +566,7 @@ export default function AdminAnalyticsPage() {
                     <span className="text-sm text-slate-500 w-20">{formatDate(day.date, locale)}</span>
                     <div className="flex-1 h-8 bg-slate-100 rounded-lg overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-lg flex items-center justify-end px-2"
+                        className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-lg flex items-center justify-end px-2"
                         style={{ width: `${(day.revenue / maxRevenue) * 100}%`, minWidth: day.revenue > 0 ? '60px' : '0' }}
                       >
                         {day.revenue > 0 && (
@@ -641,7 +641,7 @@ export default function AdminAnalyticsPage() {
               {categoryStats.length > 0 ? (
                 <div className="space-y-4">
                   {categoryStats.map((cat, index) => {
-                    const colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-cyan-500']
+                    const colors = ['bg-primary', 'bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-amber-500', 'bg-cyan-500']
                     const totalRevenue = categoryStats.reduce((sum, c) => sum + c.revenue, 0)
                     const percentage = totalRevenue > 0 ? (cat.revenue / totalRevenue) * 100 : 0
                     return (
