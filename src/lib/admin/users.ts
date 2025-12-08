@@ -162,9 +162,10 @@ export async function banUser(
     }
 
     const supabase = createAdminClient();
+    const timestamp = new Date().toISOString();
 
     // Step 1: Fetch current user from profiles table
-    console.log('[BAN USER] Step 1: Fetching user profile...');
+    console.log('[BAN USER v2] Step 1: Fetching user profile for userId:', userId);
     const { data: current, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
@@ -172,56 +173,19 @@ export async function banUser(
       .single();
 
     if (fetchError || !current) {
-      console.error('[BAN USER] User not found:', fetchError);
+      console.error('[BAN USER v2] User not found:', fetchError);
       return { success: false, error: 'User not found', errorCode: 'NOT_FOUND' };
     }
-    console.log('[BAN USER] User found:', current.full_name);
+    console.log('[BAN USER v2] User found:', current.full_name, 'role:', current.role);
 
     // Cannot ban admins
     if (current.role === 'admin') {
       return { success: false, error: 'Cannot ban admin users', errorCode: 'FORBIDDEN' };
     }
 
-    // Step 2: Update user in profiles table
-    console.log('[BAN USER] Step 2: Updating user is_active to false...');
-    const { data: updated, error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        is_active: false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId)
-      .select('*')
-      .single();
-
-    if (updateError) {
-      console.error('[BAN USER] Failed to update user:', updateError);
-      return { success: false, error: updateError.message, errorCode: 'DATABASE_ERROR' };
-    }
-    console.log('[BAN USER] User banned successfully');
-
-    // Step 3: Send notification to the banned customer FIRST
-    console.log('[BAN USER] Step 3: Sending notification to customer...');
-    const { data: notifResult, error: customerNotifError } = await supabase
-      .from('customer_notifications')
-      .insert({
-        customer_id: userId,
-        type: 'account_banned',
-        title_ar: 'تم تعليق حسابك',
-        title_en: 'Account Suspended',
-        body_ar: `تم تعليق حسابك في إنجزنا. السبب: ${reason.trim()}. للاستفسار، يرجى التواصل مع إدارة إنجزنا.`,
-        body_en: `Your Engezna account has been suspended. Reason: ${reason.trim()}. For inquiries, please contact Engezna support.`,
-      })
-      .select();
-
-    if (customerNotifError) {
-      console.error('[BAN USER] Failed to send customer notification:', customerNotifError);
-    } else {
-      console.log('[BAN USER] Customer notification sent:', notifResult);
-    }
-
-    // Step 4: Get active orders for this customer
-    console.log('[BAN USER] Step 4: Fetching active orders...');
+    // Step 2: FIRST - Get and cancel active orders BEFORE banning user
+    // This ensures RLS policies don't block the operation
+    console.log('[BAN USER v2] Step 2: Fetching active orders BEFORE banning...');
     const activeStatuses = ['pending', 'confirmed', 'accepted', 'preparing', 'ready'];
     const { data: ordersToCancel, error: ordersError } = await supabase
       .from('orders')
@@ -229,33 +193,37 @@ export async function banUser(
       .eq('customer_id', userId)
       .in('status', activeStatuses);
 
-    if (ordersError) {
-      console.error('[BAN USER] Failed to fetch orders:', ordersError);
-    } else {
-      console.log('[BAN USER] Found orders to cancel:', ordersToCancel?.length || 0);
-    }
+    console.log('[BAN USER v2] Orders query result:', {
+      found: ordersToCancel?.length || 0,
+      orders: ordersToCancel,
+      error: ordersError?.message || null
+    });
 
-    // Step 5: Cancel each order and notify provider
+    // Step 3: Cancel each order and notify provider
     if (ordersToCancel && ordersToCancel.length > 0) {
-      console.log('[BAN USER] Step 5: Cancelling orders...');
+      console.log('[BAN USER v2] Step 3: Cancelling', ordersToCancel.length, 'orders...');
 
       for (const order of ordersToCancel) {
+        console.log('[BAN USER v2] Cancelling order:', order.order_number, 'id:', order.id);
+
         // Cancel the order
-        const { error: cancelError } = await supabase
+        const { data: cancelData, error: cancelError } = await supabase
           .from('orders')
           .update({
             status: 'cancelled',
-            cancelled_at: new Date().toISOString(),
+            cancelled_at: timestamp,
             cancellation_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`,
-            updated_at: new Date().toISOString(),
+            updated_at: timestamp,
           })
-          .eq('id', order.id);
+          .eq('id', order.id)
+          .select('id, status');
 
-        if (cancelError) {
-          console.error(`[BAN USER] Failed to cancel order ${order.order_number}:`, cancelError);
-        } else {
-          console.log(`[BAN USER] Order ${order.order_number} cancelled`);
-        }
+        console.log('[BAN USER v2] Order cancel result:', {
+          orderId: order.id,
+          success: !cancelError,
+          newData: cancelData,
+          error: cancelError?.message || null
+        });
 
         // Send notification to provider
         const { error: providerNotifError } = await supabase
@@ -272,37 +240,56 @@ export async function banUser(
           });
 
         if (providerNotifError) {
-          console.error(`[BAN USER] Failed to notify provider for order ${order.order_number}:`, providerNotifError);
+          console.error('[BAN USER v2] Failed to notify provider:', providerNotifError.message);
         } else {
-          console.log(`[BAN USER] Provider notified for order ${order.order_number}`);
+          console.log('[BAN USER v2] Provider notified for order:', order.order_number);
         }
       }
+    } else {
+      console.log('[BAN USER v2] No active orders to cancel');
     }
 
-    // Step 6: Log audit action
-    console.log('[BAN USER] Step 6: Logging audit...');
-    await logAuditAction(adminId, {
-      action: 'ban',
-      resourceType: 'user',
-      resourceId: userId,
-      resourceName: current.full_name || current.email,
-      oldData: { is_active: current.is_active },
-      newData: { is_active: false },
-      reason: reason.trim(),
-    });
+    // Step 4: Now update user to banned
+    console.log('[BAN USER v2] Step 4: Updating user is_active to false...');
+    const { data: updated, error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        is_active: false,
+        updated_at: timestamp,
+      })
+      .eq('id', userId)
+      .select('*')
+      .single();
 
-    // Log activity
-    await logActivity(
-      adminId,
-      'user_banned',
-      `تم حظر المستخدم: ${current.full_name || current.email} - السبب: ${reason}`,
-      { userId, userName: current.full_name, reason }
-    );
+    if (updateError) {
+      console.error('[BAN USER v2] Failed to update user:', updateError);
+      return { success: false, error: updateError.message, errorCode: 'DATABASE_ERROR' };
+    }
+    console.log('[BAN USER v2] User banned successfully');
 
-    console.log('[BAN USER] Complete! User banned successfully.');
+    // Step 5: Send notification to the banned customer
+    console.log('[BAN USER v2] Step 5: Sending notification to customer...');
+    const { error: customerNotifError } = await supabase
+      .from('customer_notifications')
+      .insert({
+        customer_id: userId,
+        type: 'account_banned',
+        title_ar: 'تم تعليق حسابك',
+        title_en: 'Account Suspended',
+        body_ar: `تم تعليق حسابك في إنجزنا. السبب: ${reason.trim()}. للاستفسار، يرجى التواصل مع إدارة إنجزنا.`,
+        body_en: `Your Engezna account has been suspended. Reason: ${reason.trim()}. For inquiries, please contact Engezna support.`,
+      });
+
+    if (customerNotifError) {
+      console.error('[BAN USER v2] Failed to send customer notification:', customerNotifError.message);
+    } else {
+      console.log('[BAN USER v2] Customer notification sent');
+    }
+
+    console.log('[BAN USER v2] Complete! All operations finished.');
     return { success: true, data: updated as AdminUser };
   } catch (err) {
-    console.error('[BAN USER] Unexpected error:', err);
+    console.error('[BAN USER v2] Unexpected error:', err);
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',
