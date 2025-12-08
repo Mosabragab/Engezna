@@ -102,11 +102,11 @@ export default function SettlementGroupsPage() {
       console.error('Error loading settlement groups:', groupsError)
     }
 
-    // Fetch all providers (approved ones) for assignment
+    // Fetch all active providers for assignment
     const { data: providersData, error: providersError } = await supabase
       .from('providers')
       .select('id, name_ar, name_en, logo_url, settlement_group_id')
-      .eq('is_approved', true)
+      .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
       .order('name_ar')
 
     if (providersError) {

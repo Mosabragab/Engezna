@@ -168,11 +168,11 @@ export default function AdminSettlementsPage() {
     const settlementsTyped = (settlementsData || []) as unknown as Settlement[]
     setSettlements(settlementsTyped)
 
-    // Load providers for the generate form (approved providers)
+    // Load providers for the generate form (active providers)
     const { data: providersData } = await supabase
       .from('providers')
       .select('id, name_ar, name_en, governorate_id, city_id')
-      .eq('is_approved', true)
+      .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
       .order('name_ar')
 
     setProviders((providersData || []) as Provider[])
@@ -248,11 +248,11 @@ export default function AdminSettlementsPage() {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - settlementPeriod)
 
-      // Get all approved providers
+      // Get all active providers
       const { data: activeProviders } = await supabase
         .from('providers')
         .select('id')
-        .eq('is_approved', true)
+        .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
 
       if (!activeProviders || activeProviders.length === 0) {
         alert(locale === 'ar' ? 'لا يوجد مزودين نشطين' : 'No active providers found')
