@@ -14,6 +14,7 @@ import {
 } from '@/components/customer/home'
 import { ChatFAB } from '@/components/customer/voice'
 import { createClient } from '@/lib/supabase/client'
+import { useCart } from '@/lib/store/cart'
 
 // Demo offers data - Unified blue gradient colors per brand guidelines
 const demoOffers = [
@@ -48,33 +49,92 @@ const demoOffers = [
   },
 ]
 
-// Demo last order
-const demoLastOrder = {
-  id: 'order-123',
-  providerName: 'Sultan Pizza',
-  providerNameAr: 'سلطان بيتزا',
-  providerLogo: undefined,
-  items: ['2 Chicken Shawarma', '1 Large Pizza'],
-  itemsAr: ['٢ شاورما فراخ', '١ بيتزا كبيرة'],
-  total: 140,
-  createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+// Type for last order display
+interface LastOrderDisplay {
+  id: string
+  providerName: string
+  providerNameAr: string
+  providerLogo?: string
+  providerId: string
+  items: string[]
+  itemsAr: string[]
+  total: number
+  createdAt: Date
 }
 
 export default function HomePage() {
   const locale = useLocale()
   const router = useRouter()
+  const { addItem, clearCart } = useCart()
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const [lastOrder, setLastOrder] = useState<typeof demoLastOrder | null>(null)
+  const [lastOrder, setLastOrder] = useState<LastOrderDisplay | null>(null)
   const [nearbyProviders, setNearbyProviders] = useState<any[]>([])
   const [topRatedProviders, setTopRatedProviders] = useState<any[]>([])
   const [userCityId, setUserCityId] = useState<string | null>(null)
+  const [isReordering, setIsReordering] = useState(false)
 
   // Load user's city and providers
   useEffect(() => {
     loadUserCityAndProviders()
-    // For demo, show the last order
-    setLastOrder(demoLastOrder)
+    loadLastOrder()
   }, [])
+
+  // Load last completed order for reorder section
+  async function loadLastOrder() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      setLastOrder(null)
+      return
+    }
+
+    // Fetch last delivered order with provider and items
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        total,
+        created_at,
+        provider_id,
+        providers:provider_id (
+          id,
+          name_ar,
+          name_en,
+          logo_url
+        ),
+        order_items (
+          quantity,
+          item_name_ar,
+          item_name_en
+        )
+      `)
+      .eq('customer_id', user.id)
+      .eq('status', 'delivered')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error || !order) {
+      setLastOrder(null)
+      return
+    }
+
+    const provider = order.providers as any
+    const items = order.order_items as any[]
+
+    setLastOrder({
+      id: order.id,
+      providerId: order.provider_id,
+      providerName: provider?.name_en || 'Provider',
+      providerNameAr: provider?.name_ar || 'المتجر',
+      providerLogo: provider?.logo_url || undefined,
+      items: items.map(i => `${i.quantity} ${i.item_name_en}`),
+      itemsAr: items.map(i => `${i.quantity} ${i.item_name_ar}`),
+      total: order.total,
+      createdAt: new Date(order.created_at),
+    })
+  }
 
   async function loadUserCityAndProviders() {
     const supabase = createClient()
@@ -198,9 +258,80 @@ export default function HomePage() {
     router.push(`/${locale}/providers?sort=distance`)
   }
 
-  const handleReorder = (orderId: string) => {
-    // Would add items to cart and navigate
-    router.push(`/${locale}/cart`)
+  const handleReorder = async (orderId: string) => {
+    if (isReordering || !lastOrder) return
+    setIsReordering(true)
+
+    try {
+      const supabase = createClient()
+
+      // Fetch order items with their menu_item_id
+      const { data: orderItems, error: itemsError } = await supabase
+        .from('order_items')
+        .select('menu_item_id, quantity')
+        .eq('order_id', orderId)
+
+      if (itemsError || !orderItems || orderItems.length === 0) {
+        console.error('Failed to fetch order items:', itemsError)
+        router.push(`/${locale}/orders/${orderId}`)
+        return
+      }
+
+      // Fetch the provider info
+      const { data: provider, error: providerError } = await supabase
+        .from('providers')
+        .select('id, name_ar, name_en, delivery_fee, min_order_amount, estimated_delivery_time_min, commission_rate, category')
+        .eq('id', lastOrder.providerId)
+        .single()
+
+      if (providerError || !provider) {
+        console.error('Failed to fetch provider:', providerError)
+        router.push(`/${locale}/orders/${orderId}`)
+        return
+      }
+
+      // Fetch menu items that are still available
+      const menuItemIds = orderItems.map(item => item.menu_item_id).filter(Boolean)
+
+      if (menuItemIds.length === 0) {
+        router.push(`/${locale}/providers/${lastOrder.providerId}`)
+        return
+      }
+
+      const { data: menuItems, error: menuError } = await supabase
+        .from('menu_items')
+        .select('*')
+        .in('id', menuItemIds)
+        .eq('is_available', true)
+
+      if (menuError || !menuItems || menuItems.length === 0) {
+        // No items available, redirect to provider page
+        router.push(`/${locale}/providers/${lastOrder.providerId}`)
+        return
+      }
+
+      // Clear existing cart and add items
+      clearCart()
+
+      // Add each available item to cart
+      for (const orderItem of orderItems) {
+        const menuItem = menuItems.find(m => m.id === orderItem.menu_item_id)
+        if (menuItem) {
+          // Add item with quantity
+          for (let i = 0; i < orderItem.quantity; i++) {
+            addItem(menuItem, provider)
+          }
+        }
+      }
+
+      // Navigate to checkout
+      router.push(`/${locale}/checkout`)
+    } catch (error) {
+      console.error('Reorder error:', error)
+      router.push(`/${locale}/orders/${orderId}`)
+    } finally {
+      setIsReordering(false)
+    }
   }
 
   const handleViewOrderDetails = (orderId: string) => {

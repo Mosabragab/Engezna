@@ -1,6 +1,6 @@
 # Engezna Project Status
 
-## Last Updated: 2025-12-07
+## Last Updated: 2025-12-08
 
 ## Project Overview
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
@@ -32,6 +32,7 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - [x] Real-time notifications (with polling fallback)
 - [x] In-app chat with provider
 - [x] Message read status indicators (✓/✓✓)
+- [x] Reorder functionality ("اطلب تاني")
 
 #### Provider Side
 - [x] Provider registration & approval flow
@@ -49,11 +50,15 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 #### Admin Side
 - [x] Admin dashboard
 - [x] Provider approval system
-- [x] Basic analytics
+- [x] Basic analytics (with platform colors)
 - [x] Settlements management (COD/Online breakdown)
 - [x] Settlement payment recording
-- [x] Customer management
+- [x] Settlement groups for auto-settlements
+- [x] Customer management (ban/unban with notifications)
 - [x] Order management
+- [x] Customer ban system (cancels orders, notifies providers)
+- [x] Customer unban notification
+- [x] Sidebar state persistence across pages
 
 ---
 
@@ -72,7 +77,7 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 
 ## Database Schema Highlights
 - `profiles` - User profiles with roles (customer, provider_owner, provider_staff, admin)
-- `providers` - Store/provider information
+- `providers` - Store/provider information (status enum: open, closed, temporarily_paused, on_vacation, incomplete)
 - `products` - Product catalog
 - `orders` - Order records with payment_method (cash/online)
 - `order_items` - Order line items
@@ -80,6 +85,7 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - `favorites` - Customer favorites
 - `settlements` - Provider settlements with COD/Online breakdown
 - `settlement_items` - Individual orders in settlements
+- `settlement_groups` - Groups for auto-settlements (daily, 3_days, weekly)
 - `admin_users` - Admin user records
 - `customer_notifications` - Customer notification system
 - `provider_notifications` - Provider notification system
@@ -88,10 +94,33 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 ---
 
 ## RLS Policies Summary
-- Customers can view all approved providers
-- Customers can create orders and cancel their own pending orders
+- Customers can view all approved providers (status in open, closed, temporarily_paused, on_vacation)
+- Customers can create orders only if is_active = true (not banned)
+- Customers can cancel their own pending orders (if not banned)
 - Providers can manage their own orders and products
-- Admins have full access
+- Admins can update/delete all orders
+- Banned customers cannot create new orders (RLS enforced)
+
+---
+
+## Important Database Notes
+
+### Provider Status Field
+The `providers` table uses a `status` enum, NOT a boolean `is_approved`:
+- `open` - Store is open
+- `closed` - Store is closed
+- `temporarily_paused` - Temporarily unavailable
+- `on_vacation` - On vacation
+- `incomplete` - Registration incomplete
+
+### Order Status Enum
+Valid values: `pending`, `accepted`, `preparing`, `ready`, `out_for_delivery`, `delivered`, `cancelled`, `rejected`
+- **NO** `confirmed` status exists!
+
+### Debugging Tips
+1. Check column existence: `SELECT column_name FROM information_schema.columns WHERE table_name = 'your_table'`
+2. Check RLS policies: `SELECT * FROM pg_policies WHERE tablename = 'your_table'`
+3. Add error logging to catch silent query failures
 
 ---
 

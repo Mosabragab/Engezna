@@ -1,6 +1,7 @@
 export { AdminHeader } from './AdminHeader'
 export { AdminSidebar } from './AdminSidebar'
 export { AdminLayout } from './AdminLayout'
+export { AdminSidebarProvider, useAdminSidebar } from './AdminSidebarContext'
 export { GeoFilter, useGeoFilter } from './GeoFilter'
 export type { GeoFilterValue } from './GeoFilter'
 export { SearchableSelect } from './SearchableSelect'

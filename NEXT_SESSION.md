@@ -1,49 +1,97 @@
 # Next Session Plan
 
-## Date: 2025-12-08
+## Date: 2025-12-08 (Session Completed)
 
-## Completed (2025-12-07 Evening) - Notifications & Chat
-- [x] Provider notifications system (new table + triggers)
-- [x] RLS policies for notifications persistence (DELETE, UPDATE)
-- [x] Realtime subscription for notifications
-- [x] Polling fallback for customer notifications
-- [x] Chat message alignment fix in RTL
-- [x] Message read status indicators (✓ sent, ✓✓ read)
-- [x] Store name in customer notifications
-- [x] Notification badge stabilization
+## Completed This Session
 
-## Completed (2025-12-09)
-- [x] Settlements payment recording fix (foreign key constraint issue)
-- [x] Column name corrections (`paid_at`, removed `amount_paid`, `admin_notes`)
-- [x] Admin settlements page fully functional
+### Settlement Groups System
+- [x] Created `settlement_groups` table with frequencies (daily, 3_days, weekly)
+- [x] Added `settlement_group_id` to providers table
+- [x] Admin page for managing groups (`/admin/settlements/groups`)
+- [x] Assign/remove providers from groups
+- [x] Default group (3 days) auto-assigned to new providers
 
-## Completed (2025-12-08)
-- [x] COD vs Online payment breakdown - Finance page
-- [x] COD vs Online payment breakdown - Dashboard
-- [x] COD vs Online payment breakdown - Reports page
-- [x] Revenue statistics by payment method
+### Reorder Functionality
+- [x] Fixed "اطلب تاني" button - now properly adds items to cart
 
-## Priority Tasks
+### Provider Queries Fix
+- [x] Fixed "لا يوجد مزودين نشطين" error
+- [x] Discovered `is_approved` column doesn't exist
+- [x] Updated all queries to not filter by non-existent column
 
-### 1. Testing & QA - Continue Workflow Testing
-- [x] Test notification system (provider → customer messaging)
-- [x] Test message read status indicators
-- [ ] Complete end-to-end order workflow testing
-- [ ] Test all status transitions with notifications
-- [ ] Test payment confirmation flow
+### UI Improvements
+- [x] Settlements page colors (emerald/red/amber)
+- [x] Analytics page colors (platform primary)
+- [x] Added "مجموعات التسوية" button
+- [x] Fixed admin sidebar state persistence
 
-### 2. Customer Experience
-- [x] Real-time notifications (with polling fallback)
+---
+
+## Priority Tasks for Next Session
+
+### 1. Testing Required
+- [ ] Test sidebar persistence across all admin pages
+- [ ] Test settlement groups functionality (assign providers, create settlements)
+- [ ] Test reorder functionality end-to-end
+- [ ] Test auto-settlement generation (if cron job configured)
+
+### 2. Settlements Automation
+- [ ] Configure cron job to call `generate_auto_settlements()` daily
+- [ ] Test settlement generation for each frequency
+- [ ] Add settlement notifications to providers
+
+### 3. Customer Experience
 - [ ] Push notifications for order updates (native)
 - [ ] Rating and review system improvements
-- [ ] Reorder functionality
 
-### 3. Settlements Enhancement
-- [x] Settlement payment recording (FIXED)
-- [ ] Settlement history with payment method breakdown
-- [ ] Payment reconciliation features
-- [ ] Auto-generate weekly settlements
-- [ ] Fix `processed_by` to properly lookup admin_users.id from auth user
+### 4. Provider Experience
+- [ ] Bulk order actions (accept/reject multiple)
+- [ ] Order preparation time estimates
+
+---
+
+## Lessons Learned (IMPORTANT!)
+
+### 1. Always Verify Column Names Before Using
+**We wasted significant time because:**
+- Code used `is_approved` column which DOESN'T EXIST
+- Providers table uses `status` enum, not boolean approval
+
+**Always run this before writing queries:**
+```sql
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'providers';
+```
+
+### 2. Provider Status Values
+The `providers.status` enum has these values:
+- `open` - Store is open
+- `closed` - Store is closed
+- `temporarily_paused` - Temporarily unavailable
+- `on_vacation` - On vacation
+- `incomplete` - Registration incomplete
+
+There is **NO** `is_approved` boolean column!
+
+### 3. Order Status Values
+Valid `order_status` enum values:
+- `pending`, `accepted`, `preparing`, `ready`, `out_for_delivery`, `delivered`, `cancelled`, `rejected`
+
+There is **NO** `confirmed` status!
+
+### 4. RLS Policy Debugging
+When queries return empty but data exists:
+1. Check RLS policies: `SELECT * FROM pg_policies WHERE tablename = 'your_table'`
+2. Check column names actually exist
+3. Check filter values match actual data in database
+4. Add error logging to catch silent failures
+
+### 5. React Context for Shared State
+When multiple pages need to share state (like sidebar open/close):
+- Create a React Context
+- Wrap in layout component
+- Each page uses the context hook instead of local useState
 
 ---
 
@@ -72,14 +120,7 @@
 - Add E2E tests
 - Performance optimization
 - Error tracking/monitoring setup
-
----
-
-## Notes
-- COD vs Online breakdown now available in Finance, Dashboard, and Reports
-- All provider test accounts are separated and working
-- RLS policies are properly configured for order cancellation
-- Order flow from customer to provider is functional
+- Remove debug console.log statements after testing
 
 ---
 
@@ -93,12 +134,27 @@
 | provider3@test.com | Test123! | لافندر كافيه |
 | provider4@test.com | Test123! | مطعم الصفا |
 | customer@test.com | Test123! | - |
+| admin@test.com | Test123! | - |
 
-### Key URLs
-- Preview: https://engezna-rjt1rdc1e-engeznas-projects.vercel.app
-- Supabase Dashboard: (check project settings)
+### Key Admin URLs
+- Settlements: `/admin/settlements`
+- Settlement Groups: `/admin/settlements/groups`
+- Analytics: `/admin/analytics`
+- Customers: `/admin/customers`
 
-### COD vs Online Features
-- **Finance Page**: `/provider/finance` - Detailed breakdown with progress bars
-- **Dashboard**: `/provider` - Today's summary by payment method
-- **Reports Page**: `/provider/reports` - Monthly breakdown with analytics
+### Database Debugging Queries
+```sql
+-- Check column names
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'providers';
+
+-- Check RLS policies
+SELECT * FROM pg_policies WHERE tablename = 'providers';
+
+-- Check provider statuses
+SELECT name_ar, status FROM providers;
+
+-- Check settlement groups
+SELECT * FROM settlement_groups;
+```

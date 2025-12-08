@@ -241,6 +241,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         onClose={() => setSidebarOpen(false)}
         provider={provider}
         pendingOrders={pendingOrders}
+        unreadNotifications={unreadCount}
       />
 
       {/* Main Content */}

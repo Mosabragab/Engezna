@@ -45,15 +45,8 @@ export async function getUsers(
     const offset = (page - 1) * actualLimit;
 
     let query = supabase
-      .from('users')
-      .select(
-        `
-        *,
-        governorate:governorates(id, name_ar, name_en),
-        city:cities(id, name_ar, name_en)
-      `,
-        { count: 'exact' }
-      );
+      .from('profiles')
+      .select('*', { count: 'exact' });
 
     // Apply filters
     if (role) {
@@ -128,14 +121,8 @@ export async function getUserById(
     const supabase = createAdminClient();
 
     const { data, error } = await supabase
-      .from('users')
-      .select(
-        `
-        *,
-        governorate:governorates(id, name_ar, name_en),
-        city:cities(id, name_ar, name_en)
-      `
-      )
+      .from('profiles')
+      .select('*')
       .eq('id', userId)
       .single();
 
@@ -175,65 +162,143 @@ export async function banUser(
     }
 
     const supabase = createAdminClient();
+    const timestamp = new Date().toISOString();
 
-    // Fetch current user
+    // Step 1: Fetch current user from profiles table
+    console.log('[BAN USER v2] Step 1: Fetching user profile for userId:', userId);
     const { data: current, error: fetchError } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
 
     if (fetchError || !current) {
+      console.error('[BAN USER v2] User not found:', fetchError);
       return { success: false, error: 'User not found', errorCode: 'NOT_FOUND' };
     }
+    console.log('[BAN USER v2] User found:', current.full_name, 'role:', current.role);
 
     // Cannot ban admins
     if (current.role === 'admin') {
       return { success: false, error: 'Cannot ban admin users', errorCode: 'FORBIDDEN' };
     }
 
-    // Update user
+    // Step 2: Call the database function to cancel orders
+    // This uses SECURITY DEFINER to bypass RLS policies
+    console.log('[BAN USER v2] Step 2: Calling cancel_orders_for_banned_customer RPC...');
+    const { data: cancelResult, error: cancelError } = await supabase
+      .rpc('cancel_orders_for_banned_customer', {
+        p_customer_id: userId,
+        p_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`
+      });
+
+    console.log('[BAN USER v2] Cancel orders RPC result:', {
+      result: cancelResult,
+      error: cancelError?.message || null
+    });
+
+    if (cancelError) {
+      console.error('[BAN USER v2] RPC Error:', cancelError);
+      // If RPC fails, try direct approach as fallback
+      console.log('[BAN USER v2] Trying direct approach as fallback...');
+
+      const activeStatuses = ['pending', 'accepted', 'preparing', 'ready', 'out_for_delivery'];
+      const { data: ordersToCancel, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, order_number, provider_id, total, status')
+        .eq('customer_id', userId)
+        .in('status', activeStatuses);
+
+      console.log('[BAN USER v2] Orders query result:', {
+        found: ordersToCancel?.length || 0,
+        orders: ordersToCancel,
+        error: ordersError?.message || null
+      });
+
+      if (ordersToCancel && ordersToCancel.length > 0) {
+        for (const order of ordersToCancel) {
+          console.log('[BAN USER v2] Cancelling order:', order.order_number);
+
+          const { data: cancelData, error: updateError } = await supabase
+            .from('orders')
+            .update({
+              status: 'cancelled',
+              cancelled_at: timestamp,
+              cancellation_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`,
+              updated_at: timestamp,
+            })
+            .eq('id', order.id)
+            .select('id, status');
+
+          console.log('[BAN USER v2] Order cancel result:', {
+            orderId: order.id,
+            success: !updateError,
+            newData: cancelData,
+            error: updateError?.message || null
+          });
+
+          // Send notification to provider
+          const { error: providerNotifError } = await supabase
+            .from('provider_notifications')
+            .insert({
+              provider_id: order.provider_id,
+              type: 'order_cancelled',
+              title_ar: 'تم إلغاء طلب بسبب حظر العميل',
+              title_en: 'Order Cancelled - Customer Banned',
+              body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع خدمة عملاء إنجزنا.`,
+              body_en: `Order #${order.order_number} (${order.total} EGP) has been cancelled due to customer ban.`,
+              related_order_id: order.id,
+              related_customer_id: userId,
+            });
+
+          if (providerNotifError) {
+            console.error('[BAN USER v2] Failed to notify provider:', providerNotifError.message);
+          }
+        }
+      }
+    }
+
+    // Step 3: Now update user to banned
+    console.log('[BAN USER v2] Step 3: Updating user is_active to false...');
     const { data: updated, error: updateError } = await supabase
-      .from('users')
+      .from('profiles')
       .update({
         is_active: false,
-        updated_at: new Date().toISOString(),
+        updated_at: timestamp,
       })
       .eq('id', userId)
-      .select(
-        `
-        *,
-        governorate:governorates(id, name_ar, name_en),
-        city:cities(id, name_ar, name_en)
-      `
-      )
+      .select('*')
       .single();
 
     if (updateError) {
+      console.error('[BAN USER v2] Failed to update user:', updateError);
       return { success: false, error: updateError.message, errorCode: 'DATABASE_ERROR' };
     }
+    console.log('[BAN USER v2] User banned successfully');
 
-    // Log audit action
-    await logAuditAction(adminId, {
-      action: 'ban',
-      resourceType: 'user',
-      resourceId: userId,
-      resourceName: current.full_name || current.email,
-      oldData: { is_active: current.is_active },
-      newData: { is_active: false },
-      reason: reason.trim(),
-    });
+    // Step 4: Send notification to the banned customer (if RPC didn't send it)
+    console.log('[BAN USER v2] Step 4: Sending notification to customer...');
+    const { error: customerNotifError } = await supabase
+      .from('customer_notifications')
+      .insert({
+        customer_id: userId,
+        type: 'account_banned',
+        title_ar: 'تم تعليق حسابك',
+        title_en: 'Account Suspended',
+        body_ar: `تم تعليق حسابك في إنجزنا. السبب: ${reason.trim()}. للاستفسار، يرجى التواصل مع خدمة عملاء إنجزنا.`,
+        body_en: `Your Engezna account has been suspended. Reason: ${reason.trim()}. For inquiries, please contact Engezna support.`,
+      });
 
-    // Log activity
-    await logActivity(
-      adminId,
-      'user_banned',
-      `تم حظر المستخدم: ${current.full_name || current.email} - السبب: ${reason}`,
-      { userId, userName: current.full_name, reason }
-    );
+    if (customerNotifError) {
+      console.error('[BAN USER v2] Failed to send customer notification:', customerNotifError.message);
+    } else {
+      console.log('[BAN USER v2] Customer notification sent');
+    }
 
+    console.log('[BAN USER v2] Complete! All operations finished.');
     return { success: true, data: updated as AdminUser };
   } catch (err) {
+    console.error('[BAN USER v2] Unexpected error:', err);
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',
@@ -253,9 +318,9 @@ export async function unbanUser(
   try {
     const supabase = createAdminClient();
 
-    // Fetch current user
+    // Fetch current user from profiles table
     const { data: current, error: fetchError } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
@@ -264,21 +329,15 @@ export async function unbanUser(
       return { success: false, error: 'User not found', errorCode: 'NOT_FOUND' };
     }
 
-    // Update user
+    // Update user in profiles table
     const { data: updated, error: updateError } = await supabase
-      .from('users')
+      .from('profiles')
       .update({
         is_active: true,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select(
-        `
-        *,
-        governorate:governorates(id, name_ar, name_en),
-        city:cities(id, name_ar, name_en)
-      `
-      )
+      .select('*')
       .single();
 
     if (updateError) {
@@ -303,6 +362,22 @@ export async function unbanUser(
       { userId, userName: current.full_name }
     );
 
+    // Send notification to the customer that their account has been reactivated
+    const { error: notifError } = await supabase
+      .from('customer_notifications')
+      .insert({
+        customer_id: userId,
+        type: 'account_reactivated',
+        title_ar: 'تم تفعيل حسابك',
+        title_en: 'Account Reactivated',
+        body_ar: 'تم إلغاء تعليق حسابك في إنجزنا. يمكنك الآن استخدام التطبيق بشكل طبيعي. شكراً لتفهمك.',
+        body_en: 'Your Engezna account has been reactivated. You can now use the app normally. Thank you for your understanding.',
+      });
+
+    if (notifError) {
+      console.error('[UNBAN USER] Failed to send notification:', notifError.message);
+    }
+
     return { success: true, data: updated as AdminUser };
   } catch (err) {
     return {
@@ -326,9 +401,9 @@ export async function changeUserRole(
   try {
     const supabase = createAdminClient();
 
-    // Fetch current user
+    // Fetch current user from profiles table
     const { data: current, error: fetchError } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
@@ -342,21 +417,15 @@ export async function changeUserRole(
       return { success: false, error: 'Cannot change your own role', errorCode: 'FORBIDDEN' };
     }
 
-    // Update user
+    // Update user in profiles table
     const { data: updated, error: updateError } = await supabase
-      .from('users')
+      .from('profiles')
       .update({
         role: newRole,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select(
-        `
-        *,
-        governorate:governorates(id, name_ar, name_en),
-        city:cities(id, name_ar, name_en)
-      `
-      )
+      .select('*')
       .single();
 
     if (updateError) {
@@ -412,7 +481,7 @@ export async function getUserStats(): Promise<
     const supabase = createAdminClient();
 
     const { data: users, error } = await supabase
-      .from('users')
+      .from('profiles')
       .select('role, is_active');
 
     if (error) {

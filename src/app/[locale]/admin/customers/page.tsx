@@ -36,7 +36,7 @@ interface Customer {
   avatar_url: string | null
   role: string
   is_verified: boolean
-  is_banned: boolean
+  is_active: boolean
   created_at: string
   orders_count: number
   total_spent: number
@@ -139,7 +139,7 @@ export default function AdminCustomersPage() {
 
         return {
           ...customer,
-          is_banned: customer.is_banned || false,
+          is_active: customer.is_active !== false, // Default to true if undefined
           orders_count,
           total_spent,
           last_order_at,
@@ -167,9 +167,9 @@ export default function AdminCustomersPage() {
 
     if (statusFilter !== 'all') {
       if (statusFilter === 'banned') {
-        filtered = filtered.filter(c => c.is_banned)
+        filtered = filtered.filter(c => !c.is_active)
       } else if (statusFilter === 'active') {
-        filtered = filtered.filter(c => !c.is_banned)
+        filtered = filtered.filter(c => c.is_active)
       } else if (statusFilter === 'new') {
         const today = new Date()
         today.setHours(0, 0, 0, 0)
@@ -200,8 +200,8 @@ export default function AdminCustomersPage() {
     today.setHours(0, 0, 0, 0)
 
     const newToday = filtered.filter(c => new Date(c.created_at) >= today).length
-    const banned = filtered.filter(c => c.is_banned).length
-    const active = filtered.filter(c => !c.is_banned).length
+    const banned = filtered.filter(c => !c.is_active).length
+    const active = filtered.filter(c => c.is_active).length
     const totalOrders = filtered.reduce((sum, c) => sum + c.orders_count, 0)
     const totalRevenue = filtered.reduce((sum, c) => sum + c.total_spent, 0)
 
@@ -231,14 +231,17 @@ export default function AdminCustomersPage() {
       const result = await response.json();
 
       if (result.success) {
+        // Update local state: is_active = !ban
         setCustomers(prev => prev.map(c =>
-          c.id === customerId ? { ...c, is_banned: ban } : c
+          c.id === customerId ? { ...c, is_active: !ban } : c
         ))
       } else {
         console.error('Ban/unban failed:', result.error)
+        alert(locale === 'ar' ? `فشل: ${result.error}` : `Failed: ${result.error}`)
       }
     } catch (error) {
       console.error('Error banning/unbanning user:', error)
+      alert(locale === 'ar' ? 'حدث خطأ أثناء العملية' : 'An error occurred')
     }
 
     setActionLoading(null)
@@ -442,7 +445,7 @@ export default function AdminCustomersPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          {customer.is_banned ? (
+                          {!customer.is_active ? (
                             <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
                               <Ban className="w-3 h-3" />
                               {locale === 'ar' ? 'محظور' : 'Banned'}
@@ -481,13 +484,14 @@ export default function AdminCustomersPage() {
                                 <Eye className="w-4 h-4 text-slate-500" />
                               </Button>
                             </Link>
-                            {customer.is_banned ? (
+                            {!customer.is_active ? (
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                                 onClick={() => handleBanCustomer(customer.id, false)}
                                 disabled={actionLoading === customer.id}
+                                title={locale === 'ar' ? 'إلغاء الحظر' : 'Unban'}
                               >
                                 {actionLoading === customer.id ? (
                                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -502,6 +506,7 @@ export default function AdminCustomersPage() {
                                 className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                 onClick={() => handleBanCustomer(customer.id, true)}
                                 disabled={actionLoading === customer.id}
+                                title={locale === 'ar' ? 'حظر العميل' : 'Ban customer'}
                               >
                                 {actionLoading === customer.id ? (
                                   <RefreshCw className="w-4 h-4 animate-spin" />
