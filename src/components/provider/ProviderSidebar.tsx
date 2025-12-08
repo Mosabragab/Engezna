@@ -35,6 +35,7 @@ interface ProviderSidebarProps {
     status: string
   } | null
   pendingOrders?: number
+  unreadNotifications?: number
 }
 
 export function ProviderSidebar({
@@ -42,6 +43,7 @@ export function ProviderSidebar({
   onClose,
   provider,
   pendingOrders = 0,
+  unreadNotifications = 0,
 }: ProviderSidebarProps) {
   const locale = useLocale()
   const pathname = usePathname()
@@ -57,7 +59,7 @@ export function ProviderSidebar({
       icon: ShoppingBag,
       label: { ar: 'الطلبات', en: 'Orders' },
       path: `/${locale}/provider/orders`,
-      badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
+      badge: (pendingOrders + unreadNotifications) > 0 ? (pendingOrders + unreadNotifications).toString() : undefined,
     },
     {
       icon: Package,
