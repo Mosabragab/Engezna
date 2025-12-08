@@ -168,12 +168,16 @@ export default function AdminSettlementsPage() {
     const settlementsTyped = (settlementsData || []) as unknown as Settlement[]
     setSettlements(settlementsTyped)
 
-    // Load providers for the generate form (active providers)
-    const { data: providersData } = await supabase
+    // Load providers for the generate form (all providers)
+    const { data: providersData, error: providersError } = await supabase
       .from('providers')
       .select('id, name_ar, name_en, governorate_id, city_id')
-      .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
       .order('name_ar')
+
+    if (providersError) {
+      console.error('Error loading providers:', providersError)
+    }
+    console.log('Loaded providers:', providersData?.length || 0)
 
     setProviders((providersData || []) as Provider[])
 
@@ -248,11 +252,15 @@ export default function AdminSettlementsPage() {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - settlementPeriod)
 
-      // Get all active providers
-      const { data: activeProviders } = await supabase
+      // Get all providers
+      const { data: activeProviders, error: provError } = await supabase
         .from('providers')
         .select('id')
-        .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
+
+      if (provError) {
+        console.error('Error loading providers for settlements:', provError)
+      }
+      console.log('Found providers for settlements:', activeProviders?.length || 0)
 
       if (!activeProviders || activeProviders.length === 0) {
         alert(locale === 'ar' ? 'لا يوجد مزودين نشطين' : 'No active providers found')
