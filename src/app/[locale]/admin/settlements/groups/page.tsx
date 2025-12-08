@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { AdminLayout } from '@/components/admin/AdminLayout'
+import { AdminHeader, AdminSidebar } from '@/components/admin'
 import { Button } from '@/components/ui/button'
+import type { User } from '@supabase/supabase-js'
 import {
   Calendar,
   Clock,
@@ -15,7 +17,7 @@ import {
   CheckCircle,
   XCircle,
   Users,
-  RefreshCw,
+  Shield,
 } from 'lucide-react'
 
 interface SettlementGroup {
@@ -43,6 +45,9 @@ export default function SettlementGroupsPage() {
   const locale = useLocale()
   const isRTL = locale === 'ar'
 
+  const [user, setUser] = useState<User | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [groups, setGroups] = useState<SettlementGroup[]>([])
   const [providers, setProviders] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,14 +65,34 @@ export default function SettlementGroupsPage() {
   const [formIsDefault, setFormIsDefault] = useState(false)
 
   useEffect(() => {
-    loadData()
+    checkAuth()
   }, [])
 
+  async function checkAuth() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+        await loadData()
+      }
+    }
+
+    setLoading(false)
+  }
+
   async function loadData() {
-    setLoading(true)
     const supabase = createClient()
 
-    // Fetch groups with provider count
+    // Fetch groups
     const { data: groupsData } = await supabase
       .from('settlement_groups')
       .select('*')
@@ -81,7 +106,6 @@ export default function SettlementGroupsPage() {
       .order('name_ar')
 
     if (groupsData) {
-      // Count providers per group
       const groupsWithCount = groupsData.map(group => ({
         ...group,
         provider_count: providersData?.filter(p => p.settlement_group_id === group.id).length || 0,
@@ -92,15 +116,12 @@ export default function SettlementGroupsPage() {
     if (providersData) {
       setProviders(providersData)
     }
-
-    setLoading(false)
   }
 
   async function handleSaveGroup() {
     const supabase = createClient()
 
     if (editingGroup) {
-      // Update existing group
       const { error } = await supabase
         .from('settlement_groups')
         .update({
@@ -115,7 +136,6 @@ export default function SettlementGroupsPage() {
         .eq('id', editingGroup.id)
 
       if (!error) {
-        // If setting as default, unset other defaults
         if (formIsDefault) {
           await supabase
             .from('settlement_groups')
@@ -126,7 +146,6 @@ export default function SettlementGroupsPage() {
         resetForm()
       }
     } else {
-      // Create new group
       const { error } = await supabase
         .from('settlement_groups')
         .insert({
@@ -229,143 +248,168 @@ export default function SettlementGroupsPage() {
 
   if (loading) {
     return (
-      <AdminLayout
-        pageTitle={{ ar: 'مجموعات التسوية', en: 'Settlement Groups' }}
-        pageSubtitle={{ ar: 'إدارة مجموعات التسوية التلقائية', en: 'Manage auto-settlement groups' }}
-      >
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
+      </div>
+    )
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
+          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2 text-slate-900">
+            {isRTL ? 'غير مصرح' : 'Unauthorized'}
+          </h1>
+          <Link href={`/${locale}/auth/login`}>
+            <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              {isRTL ? 'تسجيل الدخول' : 'Login'}
+            </Button>
+          </Link>
         </div>
-      </AdminLayout>
+      </div>
     )
   }
 
   return (
-    <AdminLayout
-      pageTitle={{ ar: 'مجموعات التسوية', en: 'Settlement Groups' }}
-      pageSubtitle={{ ar: 'إدارة مجموعات التسوية التلقائية', en: 'Manage auto-settlement groups' }}
-    >
-      <div className="space-y-6">
-        {/* Header Actions */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" />
-            <span className="text-sm text-slate-600">
-              {isRTL ? `${groups.length} مجموعات` : `${groups.length} groups`}
-            </span>
-          </div>
-          <Button onClick={() => setShowAddModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            {isRTL ? 'إضافة مجموعة' : 'Add Group'}
-          </Button>
-        </div>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-        {/* Groups Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {groups.map((group) => (
-            <div
-              key={group.id}
-              className={`bg-white rounded-xl border p-4 ${
-                !group.is_active ? 'opacity-60' : ''
-              }`}
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-slate-900">
-                    {isRTL ? group.name_ar : group.name_en}
-                  </h3>
-                  <p className="text-sm text-slate-500">
-                    {isRTL ? group.description_ar : group.description_en}
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => openEditModal(group)}
-                    className="p-1.5 hover:bg-slate-100 rounded-lg"
-                  >
-                    <Edit2 className="w-4 h-4 text-slate-500" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteGroup(group.id)}
-                    className="p-1.5 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
-                </div>
-              </div>
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <AdminHeader
+          user={user}
+          title={isRTL ? 'مجموعات التسوية' : 'Settlement Groups'}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
 
-              {/* Badges */}
-              <div className="flex flex-wrap gap-2 mb-3">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getFrequencyColor(group.frequency)}`}>
-                  <Clock className="w-3 h-3 inline mr-1" />
-                  {getFrequencyLabel(group.frequency)}
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          <div className="space-y-6">
+            {/* Header Actions */}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                <span className="text-sm text-slate-600">
+                  {isRTL ? `${groups.length} مجموعات` : `${groups.length} groups`}
                 </span>
-                {group.is_default && (
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                    {isRTL ? 'افتراضي' : 'Default'}
-                  </span>
-                )}
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer ${
-                    group.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              </div>
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                {isRTL ? 'إضافة مجموعة' : 'Add Group'}
+              </Button>
+            </div>
+
+            {/* Groups Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {groups.map((group) => (
+                <div
+                  key={group.id}
+                  className={`bg-white rounded-xl border p-4 ${
+                    !group.is_active ? 'opacity-60' : ''
                   }`}
-                  onClick={() => handleToggleActive(group)}
                 >
-                  {group.is_active ? (
-                    <><CheckCircle className="w-3 h-3 inline mr-1" />{isRTL ? 'نشط' : 'Active'}</>
-                  ) : (
-                    <><XCircle className="w-3 h-3 inline mr-1" />{isRTL ? 'معطل' : 'Inactive'}</>
-                  )}
-                </span>
-              </div>
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-slate-900">
+                        {isRTL ? group.name_ar : group.name_en}
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        {isRTL ? group.description_ar : group.description_en}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => openEditModal(group)}
+                        className="p-1.5 hover:bg-slate-100 rounded-lg"
+                      >
+                        <Edit2 className="w-4 h-4 text-slate-500" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteGroup(group.id)}
+                        className="p-1.5 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Provider Count */}
-              <div className="flex items-center justify-between pt-3 border-t">
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <Store className="w-4 h-4" />
-                  <span>{group.provider_count} {isRTL ? 'متجر' : 'providers'}</span>
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getFrequencyColor(group.frequency)}`}>
+                      <Clock className="w-3 h-3 inline mr-1" />
+                      {getFrequencyLabel(group.frequency)}
+                    </span>
+                    {group.is_default && (
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                        {isRTL ? 'افتراضي' : 'Default'}
+                      </span>
+                    )}
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer ${
+                        group.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}
+                      onClick={() => handleToggleActive(group)}
+                    >
+                      {group.is_active ? (
+                        <><CheckCircle className="w-3 h-3 inline mr-1" />{isRTL ? 'نشط' : 'Active'}</>
+                      ) : (
+                        <><XCircle className="w-3 h-3 inline mr-1" />{isRTL ? 'معطل' : 'Inactive'}</>
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Provider Count */}
+                  <div className="flex items-center justify-between pt-3 border-t">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Store className="w-4 h-4" />
+                      <span>{group.provider_count} {isRTL ? 'متجر' : 'providers'}</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedGroup(group)
+                        setShowAssignModal(true)
+                      }}
+                    >
+                      <Users className="w-4 h-4 mr-1" />
+                      {isRTL ? 'إدارة' : 'Manage'}
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedGroup(group)
-                    setShowAssignModal(true)
-                  }}
-                >
-                  <Users className="w-4 h-4 mr-1" />
-                  {isRTL ? 'إدارة' : 'Manage'}
-                </Button>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Unassigned Providers */}
-        {providers.filter(p => !p.settlement_group_id).length > 0 && (
-          <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
-            <h3 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
-              <Store className="w-5 h-5" />
-              {isRTL ? 'متاجر بدون مجموعة' : 'Unassigned Providers'}
-              <span className="bg-amber-200 px-2 py-0.5 rounded-full text-xs">
-                {providers.filter(p => !p.settlement_group_id).length}
-              </span>
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {providers
-                .filter(p => !p.settlement_group_id)
-                .map(provider => (
-                  <span
-                    key={provider.id}
-                    className="bg-white px-3 py-1.5 rounded-lg text-sm border border-amber-200"
-                  >
-                    {isRTL ? provider.name_ar : provider.name_en}
+            {/* Unassigned Providers */}
+            {providers.filter(p => !p.settlement_group_id).length > 0 && (
+              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
+                <h3 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                  <Store className="w-5 h-5" />
+                  {isRTL ? 'متاجر بدون مجموعة' : 'Unassigned Providers'}
+                  <span className="bg-amber-200 px-2 py-0.5 rounded-full text-xs">
+                    {providers.filter(p => !p.settlement_group_id).length}
                   </span>
-                ))}
-            </div>
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {providers
+                    .filter(p => !p.settlement_group_id)
+                    .map(provider => (
+                      <span
+                        key={provider.id}
+                        className="bg-white px-3 py-1.5 rounded-lg text-sm border border-amber-200"
+                      >
+                        {isRTL ? provider.name_ar : provider.name_en}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </main>
       </div>
 
       {/* Add/Edit Modal */}
@@ -411,7 +455,7 @@ export default function SettlementGroupsPage() {
                 </label>
                 <select
                   value={formFrequency}
-                  onChange={(e) => setFormFrequency(e.target.value as any)}
+                  onChange={(e) => setFormFrequency(e.target.value as 'daily' | '3_days' | 'weekly')}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="daily">{isRTL ? 'يومياً' : 'Daily'}</option>
@@ -492,6 +536,6 @@ export default function SettlementGroupsPage() {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </div>
   )
 }
