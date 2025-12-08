@@ -777,6 +777,11 @@ export default function ProviderOrdersPage() {
                       <div className="flex items-center gap-2">
                         {order.status === 'pending' && (
                           <>
+                            <Link href={`/${locale}/provider/orders/${order.id}`}>
+                              <Button variant="outline" size="sm" className="border-slate-300">
+                                {locale === 'ar' ? 'تفاصيل' : 'Details'}
+                              </Button>
+                            </Link>
                             <Button
                               variant="outline"
                               size="sm"
@@ -804,24 +809,31 @@ export default function ProviderOrdersPage() {
                         )}
 
                         {['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(order.status) && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleUpdateStatus(order.id, order.status)}
-                            disabled={isLoading}
-                          >
-                            {isLoading ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                {getNextStatusLabel(order.status)}
-                                {isRTL ? (
-                                  <ChevronLeft className="w-4 h-4 mr-1" />
-                                ) : (
-                                  <ChevronRight className="w-4 h-4 ml-1" />
-                                )}
-                              </>
-                            )}
-                          </Button>
+                          <>
+                            <Link href={`/${locale}/provider/orders/${order.id}`}>
+                              <Button variant="outline" size="sm" className="border-slate-300">
+                                {locale === 'ar' ? 'تفاصيل' : 'Details'}
+                              </Button>
+                            </Link>
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdateStatus(order.id, order.status)}
+                              disabled={isLoading}
+                            >
+                              {isLoading ? (
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  {getNextStatusLabel(order.status)}
+                                  {isRTL ? (
+                                    <ChevronLeft className="w-4 h-4 mr-1" />
+                                  ) : (
+                                    <ChevronRight className="w-4 h-4 ml-1" />
+                                  )}
+                                </>
+                              )}
+                            </Button>
+                          </>
                         )}
 
                         {order.status === 'delivered' && order.payment_status === 'pending' && (
