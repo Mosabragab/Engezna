@@ -194,8 +194,21 @@ export async function banUser(
       return { success: false, error: updateError.message, errorCode: 'DATABASE_ERROR' };
     }
 
-    // Cancel all pending/active orders for the banned customer
+    // Cancel all pending/active orders for the banned customer and get the cancelled orders
     const activeStatuses = ['pending', 'confirmed', 'accepted', 'preparing', 'ready'];
+
+    // First, get the orders that will be cancelled (to notify providers)
+    const { data: ordersToCancel, error: ordersError } = await supabase
+      .from('orders')
+      .select('id, order_number, provider_id, total')
+      .eq('customer_id', userId)
+      .in('status', activeStatuses);
+
+    if (ordersError) {
+      console.error('Error fetching orders to cancel:', ordersError);
+    }
+
+    // Cancel the orders
     const { error: cancelError } = await supabase
       .from('orders')
       .update({
@@ -211,6 +224,44 @@ export async function banUser(
     if (cancelError) {
       console.error('Error cancelling orders for banned user:', cancelError);
       // Continue even if order cancellation fails
+    }
+
+    // Send notification to the banned customer
+    const { error: customerNotifError } = await supabase
+      .from('customer_notifications')
+      .insert({
+        customer_id: userId,
+        type: 'account_banned',
+        title_ar: 'تم تعليق حسابك',
+        title_en: 'Account Suspended',
+        body_ar: 'تم تعليق حسابك في إنجزنا. للاستفسار، يرجى التواصل مع إدارة إنجزنا.',
+        body_en: 'Your Engezna account has been suspended. For inquiries, please contact Engezna support.',
+      });
+
+    if (customerNotifError) {
+      console.error('Error sending ban notification to customer:', customerNotifError);
+    }
+
+    // Send notifications to providers for their cancelled orders
+    if (ordersToCancel && ordersToCancel.length > 0) {
+      const providerNotifications = ordersToCancel.map((order: { id: string; order_number: string; provider_id: string; total: number }) => ({
+        provider_id: order.provider_id,
+        type: 'order_cancelled',
+        title_ar: 'تم إلغاء طلب بسبب حظر العميل',
+        title_en: 'Order Cancelled - Customer Banned',
+        body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع إدارة إنجزنا.`,
+        body_en: `Order #${order.order_number} (${order.total} EGP) has been cancelled due to customer ban. For inquiries, contact Engezna support.`,
+        related_order_id: order.id,
+        related_customer_id: userId,
+      }));
+
+      const { error: providerNotifError } = await supabase
+        .from('provider_notifications')
+        .insert(providerNotifications);
+
+      if (providerNotifError) {
+        console.error('Error sending ban notifications to providers:', providerNotifError);
+      }
     }
 
     // Log audit action
