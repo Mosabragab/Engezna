@@ -45,15 +45,8 @@ export async function getUsers(
     const offset = (page - 1) * actualLimit;
 
     let query = supabase
-      .from('users')
-      .select(
-        `
-        *,
-        governorate:governorates(id, name_ar, name_en),
-        city:cities(id, name_ar, name_en)
-      `,
-        { count: 'exact' }
-      );
+      .from('profiles')
+      .select('*', { count: 'exact' });
 
     // Apply filters
     if (role) {
@@ -128,14 +121,8 @@ export async function getUserById(
     const supabase = createAdminClient();
 
     const { data, error } = await supabase
-      .from('users')
-      .select(
-        `
-        *,
-        governorate:governorates(id, name_ar, name_en),
-        city:cities(id, name_ar, name_en)
-      `
-      )
+      .from('profiles')
+      .select('*')
       .eq('id', userId)
       .single();
 
@@ -176,9 +163,9 @@ export async function banUser(
 
     const supabase = createAdminClient();
 
-    // Fetch current user
+    // Fetch current user from profiles table
     const { data: current, error: fetchError } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
@@ -192,25 +179,38 @@ export async function banUser(
       return { success: false, error: 'Cannot ban admin users', errorCode: 'FORBIDDEN' };
     }
 
-    // Update user
+    // Update user in profiles table
     const { data: updated, error: updateError } = await supabase
-      .from('users')
+      .from('profiles')
       .update({
         is_active: false,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select(
-        `
-        *,
-        governorate:governorates(id, name_ar, name_en),
-        city:cities(id, name_ar, name_en)
-      `
-      )
+      .select('*')
       .single();
 
     if (updateError) {
       return { success: false, error: updateError.message, errorCode: 'DATABASE_ERROR' };
+    }
+
+    // Cancel all pending/active orders for the banned customer
+    const activeStatuses = ['pending', 'confirmed', 'accepted', 'preparing', 'ready'];
+    const { error: cancelError } = await supabase
+      .from('orders')
+      .update({
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+        cancellation_reason: 'customer_banned',
+        cancelled_by: 'admin',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('customer_id', userId)
+      .in('status', activeStatuses);
+
+    if (cancelError) {
+      console.error('Error cancelling orders for banned user:', cancelError);
+      // Continue even if order cancellation fails
     }
 
     // Log audit action
@@ -253,9 +253,9 @@ export async function unbanUser(
   try {
     const supabase = createAdminClient();
 
-    // Fetch current user
+    // Fetch current user from profiles table
     const { data: current, error: fetchError } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
@@ -264,21 +264,15 @@ export async function unbanUser(
       return { success: false, error: 'User not found', errorCode: 'NOT_FOUND' };
     }
 
-    // Update user
+    // Update user in profiles table
     const { data: updated, error: updateError } = await supabase
-      .from('users')
+      .from('profiles')
       .update({
         is_active: true,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select(
-        `
-        *,
-        governorate:governorates(id, name_ar, name_en),
-        city:cities(id, name_ar, name_en)
-      `
-      )
+      .select('*')
       .single();
 
     if (updateError) {
@@ -326,9 +320,9 @@ export async function changeUserRole(
   try {
     const supabase = createAdminClient();
 
-    // Fetch current user
+    // Fetch current user from profiles table
     const { data: current, error: fetchError } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
@@ -342,21 +336,15 @@ export async function changeUserRole(
       return { success: false, error: 'Cannot change your own role', errorCode: 'FORBIDDEN' };
     }
 
-    // Update user
+    // Update user in profiles table
     const { data: updated, error: updateError } = await supabase
-      .from('users')
+      .from('profiles')
       .update({
         role: newRole,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select(
-        `
-        *,
-        governorate:governorates(id, name_ar, name_en),
-        city:cities(id, name_ar, name_en)
-      `
-      )
+      .select('*')
       .single();
 
     if (updateError) {
@@ -412,7 +400,7 @@ export async function getUserStats(): Promise<
     const supabase = createAdminClient();
 
     const { data: users, error } = await supabase
-      .from('users')
+      .from('profiles')
       .select('role, is_active');
 
     if (error) {
