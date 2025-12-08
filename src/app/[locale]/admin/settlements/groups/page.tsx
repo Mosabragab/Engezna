@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, AdminSidebar, useAdminSidebar } from '@/components/admin'
 import { Button } from '@/components/ui/button'
 import type { User } from '@supabase/supabase-js'
 import {
@@ -47,7 +47,7 @@ export default function SettlementGroupsPage() {
 
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { isOpen: sidebarOpen, setIsOpen: setSidebarOpen, close: closeSidebar } = useAdminSidebar()
   const [groups, setGroups] = useState<SettlementGroup[]>([])
   const [providers, setProviders] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
@@ -284,7 +284,7 @@ export default function SettlementGroupsPage() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">
       <AdminSidebar
         isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        onClose={closeSidebar}
       />
 
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">

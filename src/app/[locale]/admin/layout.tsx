@@ -1,6 +1,7 @@
 'use client'
 
 import { PermissionsProvider } from '@/lib/permissions/use-permissions'
+import { AdminSidebarProvider } from '@/components/admin/AdminSidebarContext'
 
 export default function AdminLayout({
   children,
@@ -9,7 +10,9 @@ export default function AdminLayout({
 }) {
   return (
     <PermissionsProvider>
-      {children}
+      <AdminSidebarProvider>
+        {children}
+      </AdminSidebarProvider>
     </PermissionsProvider>
   )
 }

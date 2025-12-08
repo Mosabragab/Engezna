@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
+import { AdminHeader, AdminSidebar, GeoFilter, useGeoFilter, useAdminSidebar } from '@/components/admin'
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -84,7 +84,7 @@ export default function AdminSettlementsPage() {
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { isOpen: sidebarOpen, setIsOpen: setSidebarOpen, close: closeSidebar } = useAdminSidebar()
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [filteredSettlements, setFilteredSettlements] = useState<Settlement[]>([])
   const [providers, setProviders] = useState<Provider[]>([])
@@ -486,7 +486,7 @@ export default function AdminSettlementsPage() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">
       <AdminSidebar
         isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        onClose={closeSidebar}
       />
 
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
