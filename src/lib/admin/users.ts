@@ -200,29 +200,46 @@ export async function banUser(
     // First, get the orders that will be cancelled (to notify providers)
     const { data: ordersToCancel, error: ordersError } = await supabase
       .from('orders')
-      .select('id, order_number, provider_id, total')
+      .select('id, order_number, provider_id, total, status')
       .eq('customer_id', userId)
       .in('status', activeStatuses);
+
+    console.log('[BAN USER] Found orders to cancel:', {
+      userId,
+      ordersCount: ordersToCancel?.length || 0,
+      orders: ordersToCancel?.map(o => ({ id: o.id, order_number: o.order_number, status: o.status })),
+      error: ordersError?.message
+    });
 
     if (ordersError) {
       console.error('Error fetching orders to cancel:', ordersError);
     }
 
-    // Cancel the orders
-    const { error: cancelError } = await supabase
-      .from('orders')
-      .update({
-        status: 'cancelled',
-        cancelled_at: new Date().toISOString(),
-        cancellation_reason: 'تم إلغاء الطلب بسبب حظر العميل - Admin',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('customer_id', userId)
-      .in('status', activeStatuses);
+    // Cancel the orders one by one for better error tracking
+    if (ordersToCancel && ordersToCancel.length > 0) {
+      for (const order of ordersToCancel) {
+        const { data: updateResult, error: cancelError } = await supabase
+          .from('orders')
+          .update({
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString(),
+            cancellation_reason: 'تم إلغاء الطلب بسبب حظر العميل - Admin',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', order.id)
+          .select('id, status');
 
-    if (cancelError) {
-      console.error('Error cancelling orders for banned user:', cancelError);
-      // Continue even if order cancellation fails
+        console.log('[BAN USER] Order cancellation result:', {
+          orderId: order.id,
+          orderNumber: order.order_number,
+          updateResult,
+          error: cancelError?.message
+        });
+
+        if (cancelError) {
+          console.error(`Error cancelling order ${order.order_number}:`, cancelError);
+        }
+      }
     }
 
     // Send notification to the banned customer
@@ -243,7 +260,7 @@ export async function banUser(
 
     // Send notifications to providers for their cancelled orders
     if (ordersToCancel && ordersToCancel.length > 0) {
-      const providerNotifications = ordersToCancel.map((order: { id: string; order_number: string; provider_id: string; total: number }) => ({
+      const providerNotifications = ordersToCancel.map((order: { id: string; order_number: string; provider_id: string; total: number; status: string }) => ({
         provider_id: order.provider_id,
         type: 'order_cancelled',
         title_ar: 'تم إلغاء طلب بسبب حظر العميل',
