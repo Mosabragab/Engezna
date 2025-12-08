@@ -183,74 +183,83 @@ export async function banUser(
       return { success: false, error: 'Cannot ban admin users', errorCode: 'FORBIDDEN' };
     }
 
-    // Step 2: FIRST - Get and cancel active orders BEFORE banning user
-    // This ensures RLS policies don't block the operation
-    console.log('[BAN USER v2] Step 2: Fetching active orders BEFORE banning...');
-    const activeStatuses = ['pending', 'confirmed', 'accepted', 'preparing', 'ready'];
-    const { data: ordersToCancel, error: ordersError } = await supabase
-      .from('orders')
-      .select('id, order_number, provider_id, total, status')
-      .eq('customer_id', userId)
-      .in('status', activeStatuses);
+    // Step 2: Call the database function to cancel orders
+    // This uses SECURITY DEFINER to bypass RLS policies
+    console.log('[BAN USER v2] Step 2: Calling cancel_orders_for_banned_customer RPC...');
+    const { data: cancelResult, error: cancelError } = await supabase
+      .rpc('cancel_orders_for_banned_customer', {
+        p_customer_id: userId,
+        p_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`
+      });
 
-    console.log('[BAN USER v2] Orders query result:', {
-      found: ordersToCancel?.length || 0,
-      orders: ordersToCancel,
-      error: ordersError?.message || null
+    console.log('[BAN USER v2] Cancel orders RPC result:', {
+      result: cancelResult,
+      error: cancelError?.message || null
     });
 
-    // Step 3: Cancel each order and notify provider
-    if (ordersToCancel && ordersToCancel.length > 0) {
-      console.log('[BAN USER v2] Step 3: Cancelling', ordersToCancel.length, 'orders...');
+    if (cancelError) {
+      console.error('[BAN USER v2] RPC Error:', cancelError);
+      // If RPC fails, try direct approach as fallback
+      console.log('[BAN USER v2] Trying direct approach as fallback...');
 
-      for (const order of ordersToCancel) {
-        console.log('[BAN USER v2] Cancelling order:', order.order_number, 'id:', order.id);
+      const activeStatuses = ['pending', 'confirmed', 'accepted', 'preparing', 'ready'];
+      const { data: ordersToCancel, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, order_number, provider_id, total, status')
+        .eq('customer_id', userId)
+        .in('status', activeStatuses);
 
-        // Cancel the order
-        const { data: cancelData, error: cancelError } = await supabase
-          .from('orders')
-          .update({
-            status: 'cancelled',
-            cancelled_at: timestamp,
-            cancellation_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`,
-            updated_at: timestamp,
-          })
-          .eq('id', order.id)
-          .select('id, status');
+      console.log('[BAN USER v2] Orders query result:', {
+        found: ordersToCancel?.length || 0,
+        orders: ordersToCancel,
+        error: ordersError?.message || null
+      });
 
-        console.log('[BAN USER v2] Order cancel result:', {
-          orderId: order.id,
-          success: !cancelError,
-          newData: cancelData,
-          error: cancelError?.message || null
-        });
+      if (ordersToCancel && ordersToCancel.length > 0) {
+        for (const order of ordersToCancel) {
+          console.log('[BAN USER v2] Cancelling order:', order.order_number);
 
-        // Send notification to provider
-        const { error: providerNotifError } = await supabase
-          .from('provider_notifications')
-          .insert({
-            provider_id: order.provider_id,
-            type: 'order_cancelled',
-            title_ar: 'تم إلغاء طلب بسبب حظر العميل',
-            title_en: 'Order Cancelled - Customer Banned',
-            body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع إدارة إنجزنا.`,
-            body_en: `Order #${order.order_number} (${order.total} EGP) has been cancelled due to customer ban.`,
-            related_order_id: order.id,
-            related_customer_id: userId,
+          const { data: cancelData, error: updateError } = await supabase
+            .from('orders')
+            .update({
+              status: 'cancelled',
+              cancelled_at: timestamp,
+              cancellation_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`,
+              updated_at: timestamp,
+            })
+            .eq('id', order.id)
+            .select('id, status');
+
+          console.log('[BAN USER v2] Order cancel result:', {
+            orderId: order.id,
+            success: !updateError,
+            newData: cancelData,
+            error: updateError?.message || null
           });
 
-        if (providerNotifError) {
-          console.error('[BAN USER v2] Failed to notify provider:', providerNotifError.message);
-        } else {
-          console.log('[BAN USER v2] Provider notified for order:', order.order_number);
+          // Send notification to provider
+          const { error: providerNotifError } = await supabase
+            .from('provider_notifications')
+            .insert({
+              provider_id: order.provider_id,
+              type: 'order_cancelled',
+              title_ar: 'تم إلغاء طلب بسبب حظر العميل',
+              title_en: 'Order Cancelled - Customer Banned',
+              body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع إدارة إنجزنا.`,
+              body_en: `Order #${order.order_number} (${order.total} EGP) has been cancelled due to customer ban.`,
+              related_order_id: order.id,
+              related_customer_id: userId,
+            });
+
+          if (providerNotifError) {
+            console.error('[BAN USER v2] Failed to notify provider:', providerNotifError.message);
+          }
         }
       }
-    } else {
-      console.log('[BAN USER v2] No active orders to cancel');
     }
 
-    // Step 4: Now update user to banned
-    console.log('[BAN USER v2] Step 4: Updating user is_active to false...');
+    // Step 3: Now update user to banned
+    console.log('[BAN USER v2] Step 3: Updating user is_active to false...');
     const { data: updated, error: updateError } = await supabase
       .from('profiles')
       .update({
@@ -267,8 +276,8 @@ export async function banUser(
     }
     console.log('[BAN USER v2] User banned successfully');
 
-    // Step 5: Send notification to the banned customer
-    console.log('[BAN USER v2] Step 5: Sending notification to customer...');
+    // Step 4: Send notification to the banned customer (if RPC didn't send it)
+    console.log('[BAN USER v2] Step 4: Sending notification to customer...');
     const { error: customerNotifError } = await supabase
       .from('customer_notifications')
       .insert({
