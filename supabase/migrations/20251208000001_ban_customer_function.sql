@@ -8,24 +8,41 @@
 --   providers when a customer is banned. This bypasses RLS policies.
 -- ============================================================================
 
+-- Drop existing function if exists
+DROP FUNCTION IF EXISTS public.cancel_orders_for_banned_customer(UUID, TEXT);
+
 -- Function to cancel all active orders for a banned customer
 CREATE OR REPLACE FUNCTION public.cancel_orders_for_banned_customer(
   p_customer_id UUID,
   p_reason TEXT DEFAULT 'تم إلغاء الطلب بسبب حظر العميل - Admin'
 )
-RETURNS TABLE (
-  cancelled_order_id UUID,
-  cancelled_order_number TEXT,
-  provider_id UUID,
-  order_total NUMERIC
-)
+RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
   v_order RECORD;
+  v_cancelled_count INTEGER := 0;
+  v_cancelled_orders JSON;
 BEGIN
+  -- First, always send notification to the banned customer
+  INSERT INTO customer_notifications (
+    customer_id,
+    type,
+    title_ar,
+    title_en,
+    body_ar,
+    body_en
+  ) VALUES (
+    p_customer_id,
+    'account_banned',
+    'تم تعليق حسابك',
+    'Account Suspended',
+    'تم تعليق حسابك في إنجزنا. للاستفسار، يرجى التواصل مع إدارة إنجزنا.',
+    'Your Engezna account has been suspended. For inquiries, please contact Engezna support.'
+  );
+
   -- Loop through all active orders for this customer and cancel them
   FOR v_order IN
     SELECT id, order_number, provider_id, total
@@ -63,39 +80,22 @@ BEGIN
       p_customer_id
     );
 
-    -- Return the cancelled order info
-    cancelled_order_id := v_order.id;
-    cancelled_order_number := v_order.order_number;
-    provider_id := v_order.provider_id;
-    order_total := v_order.total;
-    RETURN NEXT;
+    v_cancelled_count := v_cancelled_count + 1;
   END LOOP;
 
-  -- Create notification for the banned customer
-  INSERT INTO customer_notifications (
-    customer_id,
-    type,
-    title_ar,
-    title_en,
-    body_ar,
-    body_en
-  ) VALUES (
-    p_customer_id,
-    'account_banned',
-    'تم تعليق حسابك',
-    'Account Suspended',
-    'تم تعليق حسابك في إنجزنا. للاستفسار، يرجى التواصل مع إدارة إنجزنا.',
-    'Your Engezna account has been suspended. For inquiries, please contact Engezna support.'
+  -- Return result as JSON
+  RETURN json_build_object(
+    'success', true,
+    'cancelled_count', v_cancelled_count,
+    'customer_notified', true
   );
-
-  RETURN;
 END;
 $$;
 
--- Grant execute permission to authenticated users (admin will call this)
+-- Grant execute permission
 GRANT EXECUTE ON FUNCTION public.cancel_orders_for_banned_customer(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cancel_orders_for_banned_customer(UUID, TEXT) TO service_role;
 
 -- Add comment for documentation
 COMMENT ON FUNCTION public.cancel_orders_for_banned_customer IS
-  'Cancels all active orders for a banned customer and sends notifications to the customer and affected providers. Uses SECURITY DEFINER to bypass RLS.';
+  'Cancels all active orders for a banned customer and sends notifications. Uses SECURITY DEFINER to bypass RLS.';
