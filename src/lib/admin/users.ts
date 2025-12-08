@@ -214,8 +214,7 @@ export async function banUser(
       .update({
         status: 'cancelled',
         cancelled_at: new Date().toISOString(),
-        cancellation_reason: 'customer_banned',
-        cancelled_by: 'admin',
+        cancellation_reason: 'تم إلغاء الطلب بسبب حظر العميل - Admin',
         updated_at: new Date().toISOString(),
       })
       .eq('customer_id', userId)
