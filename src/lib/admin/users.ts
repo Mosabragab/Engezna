@@ -362,6 +362,22 @@ export async function unbanUser(
       { userId, userName: current.full_name }
     );
 
+    // Send notification to the customer that their account has been reactivated
+    const { error: notifError } = await supabase
+      .from('customer_notifications')
+      .insert({
+        customer_id: userId,
+        type: 'account_reactivated',
+        title_ar: 'تم تفعيل حسابك',
+        title_en: 'Account Reactivated',
+        body_ar: 'تم إلغاء تعليق حسابك في إنجزنا. يمكنك الآن استخدام التطبيق بشكل طبيعي. شكراً لتفهمك.',
+        body_en: 'Your Engezna account has been reactivated. You can now use the app normally. Thank you for your understanding.',
+      });
+
+    if (notifError) {
+      console.error('[UNBAN USER] Failed to send notification:', notifError.message);
+    }
+
     return { success: true, data: updated as AdminUser };
   } catch (err) {
     return {
