@@ -1,5 +1,80 @@
 # Session Log
 
+## Session: 2025-12-08 (Evening) - Customer Ban System & Order Workflow
+
+### Summary
+Comprehensive implementation of customer ban functionality with proper order cancellation, notifications, and RLS policies.
+
+### Completed Tasks
+
+#### 1. Customer Ban - Order Cancellation Fix
+- **Issue**: When admin bans a customer, their active orders were NOT being cancelled
+- **Root Cause 1**: No admin UPDATE policy on orders table
+- **Root Cause 2**: Used invalid `order_status` enum value 'confirmed' (doesn't exist)
+- **Valid Enum Values**: pending, accepted, preparing, ready, out_for_delivery, delivered, cancelled, rejected
+- **Fixes**:
+  - Added RLS policy: "Admins can update all orders"
+  - Updated cancel function to use correct status values
+  - Granted service_role full access to orders table
+- **Migration**: `20251208000003_fix_order_cancellation_admin.sql`
+
+#### 2. Block Banned Customers from Creating Orders
+- **Issue**: Banned customers (is_active = false) could still create new orders
+- **Fix**: Updated RLS INSERT policy to check `is_active = true`
+- **User Experience**: Shows clear error message explaining account is banned
+- **Migration**: `20251208000004_block_banned_customers_orders.sql`
+- **File**: `src/app/[locale]/checkout/page.tsx`
+
+#### 3. Improved Ban Messages
+- **Change**: Updated all messages from "إدارة إنجزنا" to "خدمة عملاء إنجزنا"
+- **Customer Message**: "عذراً، حسابك محظور ولا يمكنك إنشاء طلبات جديدة. يرجى التواصل مع خدمة عملاء إنجزنا للمساعدة."
+- **Provider Message**: "تم إلغاء الطلب #XXX بسبب حظر العميل. للاستفسار، تواصل مع خدمة عملاء إنجزنا."
+- **Files**: `src/lib/admin/users.ts`, SQL migrations
+
+#### 4. Unban Notification
+- **Feature**: When customer is unbanned, they receive notification
+- **Message**: "تم تفعيل حسابك - يمكنك الآن استخدام التطبيق بشكل طبيعي. شكراً لتفهمك."
+- **File**: `src/lib/admin/users.ts`
+
+#### 5. Provider Sidebar Notification Badge
+- **Issue**: Notification badge next to "الطلبات" only showed pending orders
+- **Fix**: Badge now shows: pendingOrders + unreadNotifications
+- **Files**: `src/components/provider/ProviderSidebar.tsx`, `src/components/provider/ProviderLayout.tsx`
+
+#### 6. Order Details Button for Providers
+- **Feature**: Added "تفاصيل" button for providers to view full order details
+- **Location**: Pending orders section and active orders section
+- **File**: `src/app/[locale]/provider/orders/page.tsx`
+
+### Files Created
+- `supabase/migrations/20251208000001_ban_customer_function.sql`
+- `supabase/migrations/20251208000002_debug_and_fix_order_cancellation.sql`
+- `supabase/migrations/20251208000003_fix_order_cancellation_admin.sql`
+- `supabase/migrations/20251208000004_block_banned_customers_orders.sql`
+
+### Files Modified
+- `src/lib/admin/users.ts` - Ban/unban functions with notifications
+- `src/app/[locale]/checkout/page.tsx` - Detect RLS error for banned customers
+- `src/app/[locale]/provider/orders/page.tsx` - Details button
+- `src/components/provider/ProviderSidebar.tsx` - Notification badge
+- `src/components/provider/ProviderLayout.tsx` - Pass unreadNotifications
+
+### Database Changes
+- New RLS policy: "Admins can update all orders" (UPDATE)
+- New RLS policy: "Admins can delete orders" (DELETE)
+- Updated RLS policy: "Customers can create orders" - now checks is_active
+- New function: `cancel_orders_for_banned_customer(UUID, TEXT)` with SECURITY DEFINER
+- Granted service_role ALL on orders, provider_notifications, customer_notifications
+
+### Ban System Summary
+| Event | Customer Notification | Provider Notification |
+|-------|----------------------|----------------------|
+| Customer Banned | ✅ "تم تعليق حسابك" | ✅ "تم إلغاء طلب بسبب حظر العميل" |
+| Customer Unbanned | ✅ "تم تفعيل حسابك" | - |
+| Banned Customer Creates Order | ✅ Clear error message | - |
+
+---
+
 ## Session: 2025-12-07 (Evening) - Notifications & Chat System
 
 ### Summary

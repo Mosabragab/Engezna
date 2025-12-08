@@ -1,6 +1,16 @@
 # Next Session Plan
 
-## Date: 2025-12-08
+## Date: 2025-12-09
+
+## Completed (2025-12-08 Evening) - Customer Ban System
+- [x] Customer ban - order cancellation (with SECURITY DEFINER function)
+- [x] Block banned customers from creating new orders (RLS policy)
+- [x] Ban notification to customer with clear message
+- [x] Ban notification to providers for cancelled orders
+- [x] Unban notification to customer
+- [x] Provider sidebar - notifications badge on "الطلبات"
+- [x] Order details button for providers ("تفاصيل")
+- [x] Messages updated to "خدمة عملاء" instead of "إدارة"
 
 ## Completed (2025-12-07 Evening) - Notifications & Chat
 - [x] Provider notifications system (new table + triggers)
@@ -28,12 +38,14 @@
 ### 1. Testing & QA - Continue Workflow Testing
 - [x] Test notification system (provider → customer messaging)
 - [x] Test message read status indicators
+- [x] Test customer ban workflow (order cancellation, notifications)
 - [ ] Complete end-to-end order workflow testing
 - [ ] Test all status transitions with notifications
 - [ ] Test payment confirmation flow
 
 ### 2. Customer Experience
 - [x] Real-time notifications (with polling fallback)
+- [x] Clear error messages for banned customers
 - [ ] Push notifications for order updates (native)
 - [ ] Rating and review system improvements
 - [ ] Reorder functionality
@@ -44,6 +56,12 @@
 - [ ] Payment reconciliation features
 - [ ] Auto-generate weekly settlements
 - [ ] Fix `processed_by` to properly lookup admin_users.id from auth user
+
+### 4. Provider Experience
+- [x] Order details button ("تفاصيل") for quick view
+- [x] Notification badge on sidebar
+- [ ] Bulk order actions (accept/reject multiple)
+- [ ] Order preparation time estimates
 
 ---
 

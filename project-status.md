@@ -1,6 +1,6 @@
 # Engezna Project Status
 
-## Last Updated: 2025-12-07
+## Last Updated: 2025-12-08
 
 ## Project Overview
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
@@ -52,8 +52,10 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - [x] Basic analytics
 - [x] Settlements management (COD/Online breakdown)
 - [x] Settlement payment recording
-- [x] Customer management
+- [x] Customer management (ban/unban with notifications)
 - [x] Order management
+- [x] Customer ban system (cancels orders, notifies providers)
+- [x] Customer unban notification
 
 ---
 
@@ -89,9 +91,11 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 
 ## RLS Policies Summary
 - Customers can view all approved providers
-- Customers can create orders and cancel their own pending orders
+- Customers can create orders only if is_active = true (not banned)
+- Customers can cancel their own pending orders (if not banned)
 - Providers can manage their own orders and products
-- Admins have full access
+- Admins can update/delete all orders
+- Banned customers cannot create new orders (RLS enforced)
 
 ---
 
