@@ -202,7 +202,7 @@ export async function banUser(
       // If RPC fails, try direct approach as fallback
       console.log('[BAN USER v2] Trying direct approach as fallback...');
 
-      const activeStatuses = ['pending', 'confirmed', 'accepted', 'preparing', 'ready'];
+      const activeStatuses = ['pending', 'accepted', 'preparing', 'ready', 'out_for_delivery'];
       const { data: ordersToCancel, error: ordersError } = await supabase
         .from('orders')
         .select('id, order_number, provider_id, total, status')

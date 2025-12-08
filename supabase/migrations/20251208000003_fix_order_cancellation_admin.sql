@@ -5,10 +5,10 @@
 -- Date: 2025-12-08
 -- Problem: Orders are not being cancelled when customer is banned
 -- Root cause: No admin UPDATE policy exists for orders table
+-- Fixed: Using correct order_status enum values (no 'confirmed' value)
 -- ============================================================================
 
 -- Step 1: Add admin UPDATE policy for orders
--- This allows admin users to update any order
 DROP POLICY IF EXISTS "Admins can update all orders" ON public.orders;
 
 CREATE POLICY "Admins can update all orders"
@@ -32,15 +32,14 @@ CREATE POLICY "Admins can delete orders"
     )
   );
 
--- Step 3: Grant service_role full access to orders (bypasses RLS)
--- This ensures the admin client with service_role key can update orders
+-- Step 3: Grant service_role full access
 GRANT ALL ON public.orders TO service_role;
 GRANT ALL ON public.order_items TO service_role;
 GRANT ALL ON public.provider_notifications TO service_role;
 GRANT ALL ON public.customer_notifications TO service_role;
 
 -- Step 4: Create improved cancel function with SECURITY DEFINER
--- This function runs with elevated privileges to bypass RLS
+-- Using correct order_status enum values: pending, accepted, preparing, ready, out_for_delivery, delivered, cancelled, rejected
 DROP FUNCTION IF EXISTS public.cancel_orders_for_banned_customer(UUID, TEXT);
 
 CREATE OR REPLACE FUNCTION public.cancel_orders_for_banned_customer(
@@ -57,7 +56,6 @@ DECLARE
   v_cancelled_count INTEGER := 0;
   v_total_orders INTEGER := 0;
   v_active_orders INTEGER := 0;
-  v_cancelled_ids UUID[] := '{}';
 BEGIN
   -- Count total orders for this customer
   SELECT COUNT(*) INTO v_total_orders
@@ -65,10 +63,11 @@ BEGIN
   WHERE customer_id = p_customer_id;
 
   -- Count active orders that will be cancelled
+  -- Note: Using correct enum values (no 'confirmed' in this enum)
   SELECT COUNT(*) INTO v_active_orders
   FROM orders
   WHERE customer_id = p_customer_id
-  AND status IN ('pending', 'confirmed', 'accepted', 'preparing', 'ready');
+  AND status IN ('pending', 'accepted', 'preparing', 'ready', 'out_for_delivery');
 
   -- If no active orders, return early with info
   IF v_active_orders = 0 THEN
@@ -78,8 +77,7 @@ BEGIN
       'customer_id', p_customer_id,
       'total_orders_found', v_total_orders,
       'active_orders_found', 0,
-      'cancelled_count', 0,
-      'cancelled_order_ids', '[]'::json
+      'cancelled_count', 0
     );
   END IF;
 
@@ -88,7 +86,7 @@ BEGIN
     SELECT id, order_number, provider_id, total, status
     FROM orders
     WHERE customer_id = p_customer_id
-    AND status IN ('pending', 'confirmed', 'accepted', 'preparing', 'ready')
+    AND status IN ('pending', 'accepted', 'preparing', 'ready', 'out_for_delivery')
   LOOP
     -- Cancel the order
     UPDATE orders
@@ -98,9 +96,6 @@ BEGIN
       cancellation_reason = p_reason,
       updated_at = NOW()
     WHERE id = v_order.id;
-
-    -- Track cancelled order
-    v_cancelled_ids := array_append(v_cancelled_ids, v_order.id);
 
     -- Create notification for provider
     INSERT INTO provider_notifications (
@@ -133,8 +128,7 @@ BEGIN
     'customer_id', p_customer_id,
     'total_orders_found', v_total_orders,
     'active_orders_found', v_active_orders,
-    'cancelled_count', v_cancelled_count,
-    'cancelled_order_ids', to_json(v_cancelled_ids)
+    'cancelled_count', v_cancelled_count
   );
 
 EXCEPTION WHEN OTHERS THEN
@@ -155,17 +149,3 @@ GRANT EXECUTE ON FUNCTION public.cancel_orders_for_banned_customer(UUID, TEXT) T
 -- Add comment for documentation
 COMMENT ON FUNCTION public.cancel_orders_for_banned_customer IS
   'Cancels all active orders for a banned customer and notifies providers. Uses SECURITY DEFINER to bypass RLS.';
-
--- ============================================================================
--- Verification queries (run these manually to test)
--- ============================================================================
---
--- To test the function:
--- SELECT cancel_orders_for_banned_customer('customer-uuid-here', 'Test cancellation');
---
--- To check orders for a customer:
--- SELECT id, order_number, status, customer_id FROM orders WHERE customer_id = 'customer-uuid-here';
---
--- To check if policy exists:
--- SELECT * FROM pg_policies WHERE tablename = 'orders';
--- ============================================================================
