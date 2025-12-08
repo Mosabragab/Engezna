@@ -28,6 +28,7 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  Users,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -167,11 +168,11 @@ export default function AdminSettlementsPage() {
     const settlementsTyped = (settlementsData || []) as unknown as Settlement[]
     setSettlements(settlementsTyped)
 
-    // Load providers for the generate form
+    // Load providers for the generate form (approved providers)
     const { data: providersData } = await supabase
       .from('providers')
       .select('id, name_ar, name_en, governorate_id, city_id')
-      .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
+      .eq('is_approved', true)
       .order('name_ar')
 
     setProviders((providersData || []) as Provider[])
@@ -247,11 +248,11 @@ export default function AdminSettlementsPage() {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - settlementPeriod)
 
-      // Get all active providers
+      // Get all approved providers
       const { data: activeProviders } = await supabase
         .from('providers')
         .select('id')
-        .in('status', ['active', 'open', 'closed', 'temporarily_paused'])
+        .eq('is_approved', true)
 
       if (!activeProviders || activeProviders.length === 0) {
         alert(locale === 'ar' ? 'لا يوجد مزودين نشطين' : 'No active providers found')
@@ -526,28 +527,37 @@ export default function AdminSettlementsPage() {
               <Button
                 variant="outline"
                 onClick={handleRefresh}
-                className="ml-auto"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 {locale === 'ar' ? 'تحديث' : 'Refresh'}
               </Button>
+
+              {/* Link to Settlement Groups */}
+              <Link href={`/${locale}/admin/settlements/groups`} className="ml-auto">
+                <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
+                  <Users className="w-4 h-4 mr-2" />
+                  {locale === 'ar' ? 'مجموعات التسوية' : 'Settlement Groups'}
+                </Button>
+              </Link>
             </div>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-5 text-white shadow-lg">
+            {/* Paid - Green card */}
+            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6" />
+                  <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <span className="text-yellow-100 text-sm">{stats.pendingCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
+                <span className="text-emerald-100 text-sm">{stats.paidCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
               </div>
-              <p className="text-yellow-100 text-sm mb-1">{locale === 'ar' ? 'مستحقات معلقة' : 'Pending Dues'}</p>
-              <p className="text-2xl font-bold">{formatCurrency(stats.totalPending, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+              <p className="text-emerald-100 text-sm mb-1">{locale === 'ar' ? 'إجمالي المدفوع' : 'Total Paid'}</p>
+              <p className="text-2xl font-bold">{formatCurrency(stats.totalPaid, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
 
-            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-5 text-white shadow-lg">
+            {/* Overdue - Red/Coral card (matching platform) */}
+            <div className="bg-gradient-to-br from-red-400 to-red-500 rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <AlertTriangle className="w-6 h-6" />
@@ -558,15 +568,16 @@ export default function AdminSettlementsPage() {
               <p className="text-2xl font-bold">{formatCurrency(stats.totalOverdue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 text-white shadow-lg">
+            {/* Pending - Amber/Yellow card */}
+            <div className="bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6" />
+                  <Clock className="w-6 h-6" />
                 </div>
-                <span className="text-green-100 text-sm">{stats.paidCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
+                <span className="text-amber-100 text-sm">{stats.pendingCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
               </div>
-              <p className="text-green-100 text-sm mb-1">{locale === 'ar' ? 'إجمالي المدفوع' : 'Total Paid'}</p>
-              <p className="text-2xl font-bold">{formatCurrency(stats.totalPaid, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+              <p className="text-amber-100 text-sm mb-1">{locale === 'ar' ? 'مستحقات معلقة' : 'Pending Dues'}</p>
+              <p className="text-2xl font-bold">{formatCurrency(stats.totalPending, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
           </div>
 

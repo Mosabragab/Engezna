@@ -93,17 +93,25 @@ export default function SettlementGroupsPage() {
     const supabase = createClient()
 
     // Fetch groups
-    const { data: groupsData } = await supabase
+    const { data: groupsData, error: groupsError } = await supabase
       .from('settlement_groups')
       .select('*')
       .order('created_at', { ascending: true })
 
-    // Fetch providers
-    const { data: providersData } = await supabase
+    if (groupsError) {
+      console.error('Error loading settlement groups:', groupsError)
+    }
+
+    // Fetch all providers (approved ones) for assignment
+    const { data: providersData, error: providersError } = await supabase
       .from('providers')
       .select('id, name_ar, name_en, logo_url, settlement_group_id')
       .eq('is_approved', true)
       .order('name_ar')
+
+    if (providersError) {
+      console.error('Error loading providers:', providersError)
+    }
 
     if (groupsData) {
       const groupsWithCount = groupsData.map(group => ({
@@ -498,35 +506,81 @@ export default function SettlementGroupsPage() {
               {isRTL ? `إدارة متاجر "${selectedGroup.name_ar}"` : `Manage "${selectedGroup.name_en}" Providers`}
             </h2>
 
-            <div className="space-y-2">
-              {providers.map(provider => {
-                const isInGroup = provider.settlement_group_id === selectedGroup.id
-                return (
-                  <div
-                    key={provider.id}
-                    className={`flex items-center justify-between p-3 rounded-lg border ${
-                      isInGroup ? 'bg-primary/5 border-primary/20' : 'bg-slate-50'
-                    }`}
-                  >
-                    <span className="font-medium">
-                      {isRTL ? provider.name_ar : provider.name_en}
-                    </span>
-                    <Button
-                      variant={isInGroup ? 'destructive' : 'default'}
-                      size="sm"
-                      onClick={() => handleAssignProvider(
-                        provider.id,
-                        isInGroup ? null : selectedGroup.id
-                      )}
-                    >
-                      {isInGroup
-                        ? (isRTL ? 'إزالة' : 'Remove')
-                        : (isRTL ? 'إضافة' : 'Add')}
-                    </Button>
+            {providers.length === 0 ? (
+              <div className="text-center py-8">
+                <Store className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                <p className="text-slate-500">
+                  {isRTL ? 'لا توجد متاجر معتمدة بعد' : 'No approved providers yet'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {/* Providers in this group */}
+                {providers.filter(p => p.settlement_group_id === selectedGroup.id).length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-slate-600 mb-2">
+                      {isRTL ? 'المتاجر في هذه المجموعة:' : 'Providers in this group:'}
+                    </p>
+                    {providers
+                      .filter(p => p.settlement_group_id === selectedGroup.id)
+                      .map(provider => (
+                        <div
+                          key={provider.id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-emerald-50 border-emerald-200 mb-2"
+                        >
+                          <span className="font-medium text-emerald-800">
+                            {isRTL ? provider.name_ar : provider.name_en}
+                          </span>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleAssignProvider(provider.id, null)}
+                          >
+                            {isRTL ? 'إزالة' : 'Remove'}
+                          </Button>
+                        </div>
+                      ))}
                   </div>
-                )
-              })}
-            </div>
+                )}
+
+                {/* Providers not in this group */}
+                {providers.filter(p => p.settlement_group_id !== selectedGroup.id).length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 mb-2">
+                      {isRTL ? 'متاجر أخرى:' : 'Other providers:'}
+                    </p>
+                    {providers
+                      .filter(p => p.settlement_group_id !== selectedGroup.id)
+                      .map(provider => {
+                        const currentGroupName = groups.find(g => g.id === provider.settlement_group_id)
+                        return (
+                          <div
+                            key={provider.id}
+                            className="flex items-center justify-between p-3 rounded-lg border bg-slate-50 mb-2"
+                          >
+                            <div>
+                              <span className="font-medium">
+                                {isRTL ? provider.name_ar : provider.name_en}
+                              </span>
+                              {currentGroupName && (
+                                <span className="text-xs text-slate-500 block">
+                                  {isRTL ? `حالياً في: ${currentGroupName.name_ar}` : `Currently in: ${currentGroupName.name_en}`}
+                                </span>
+                              )}
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => handleAssignProvider(provider.id, selectedGroup.id)}
+                            >
+                              {isRTL ? 'إضافة' : 'Add'}
+                            </Button>
+                          </div>
+                        )
+                      })}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="mt-6">
               <Button variant="outline" onClick={() => setShowAssignModal(false)} className="w-full">
