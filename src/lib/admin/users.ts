@@ -245,7 +245,7 @@ export async function banUser(
               type: 'order_cancelled',
               title_ar: 'تم إلغاء طلب بسبب حظر العميل',
               title_en: 'Order Cancelled - Customer Banned',
-              body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع إدارة إنجزنا.`,
+              body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع خدمة عملاء إنجزنا.`,
               body_en: `Order #${order.order_number} (${order.total} EGP) has been cancelled due to customer ban.`,
               related_order_id: order.id,
               related_customer_id: userId,
@@ -285,7 +285,7 @@ export async function banUser(
         type: 'account_banned',
         title_ar: 'تم تعليق حسابك',
         title_en: 'Account Suspended',
-        body_ar: `تم تعليق حسابك في إنجزنا. السبب: ${reason.trim()}. للاستفسار، يرجى التواصل مع إدارة إنجزنا.`,
+        body_ar: `تم تعليق حسابك في إنجزنا. السبب: ${reason.trim()}. للاستفسار، يرجى التواصل مع خدمة عملاء إنجزنا.`,
         body_en: `Your Engezna account has been suspended. Reason: ${reason.trim()}. For inquiries, please contact Engezna support.`,
       });
 

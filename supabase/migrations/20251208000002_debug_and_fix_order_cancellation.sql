@@ -83,7 +83,7 @@ BEGIN
       'order_cancelled',
       'تم إلغاء طلب بسبب حظر العميل',
       'Order Cancelled - Customer Banned',
-      'تم إلغاء الطلب #' || v_order.order_number || ' بقيمة ' || v_order.total || ' ج.م بسبب حظر العميل. للاستفسار، تواصل مع إدارة إنجزنا.',
+      'تم إلغاء الطلب #' || v_order.order_number || ' بقيمة ' || v_order.total || ' ج.م بسبب حظر العميل. للاستفسار، تواصل مع خدمة عملاء إنجزنا.',
       'Order #' || v_order.order_number || ' (' || v_order.total || ' EGP) cancelled due to customer ban.',
       v_order.id,
       p_customer_id

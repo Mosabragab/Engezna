@@ -702,11 +702,26 @@ export default function CheckoutPage() {
       router.push(`/${locale}/orders/${order.id}/confirmation`)
     } catch (err) {
       console.error('Order placement error:', err)
-      setError(
-        locale === 'ar'
-          ? 'حدث خطأ أثناء تقديم الطلب. يرجى المحاولة مرة أخرى.'
-          : 'An error occurred while placing your order. Please try again.'
-      )
+
+      // Check if error is due to RLS policy (banned customer)
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      const isRLSError = errorMessage.includes('row-level security') ||
+                         errorMessage.includes('violates row-level security policy') ||
+                         (err as { code?: string })?.code === '42501'
+
+      if (isRLSError) {
+        setError(
+          locale === 'ar'
+            ? 'عذراً، حسابك محظور ولا يمكنك إنشاء طلبات جديدة. يرجى التواصل مع خدمة عملاء إنجزنا للمساعدة.'
+            : 'Sorry, your account is suspended and you cannot create new orders. Please contact Engezna customer service for assistance.'
+        )
+      } else {
+        setError(
+          locale === 'ar'
+            ? 'حدث خطأ أثناء تقديم الطلب. يرجى المحاولة مرة أخرى.'
+            : 'An error occurred while placing your order. Please try again.'
+        )
+      }
     } finally {
       setIsLoading(false)
     }

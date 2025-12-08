@@ -39,7 +39,7 @@ BEGIN
     'account_banned',
     'تم تعليق حسابك',
     'Account Suspended',
-    'تم تعليق حسابك في إنجزنا. للاستفسار، يرجى التواصل مع إدارة إنجزنا.',
+    'تم تعليق حسابك في إنجزنا. للاستفسار، يرجى التواصل مع خدمة عملاء إنجزنا.',
     'Your Engezna account has been suspended. For inquiries, please contact Engezna support.'
   );
 
@@ -74,7 +74,7 @@ BEGIN
       'order_cancelled',
       'تم إلغاء طلب بسبب حظر العميل',
       'Order Cancelled - Customer Banned',
-      'تم إلغاء الطلب #' || v_order.order_number || ' بقيمة ' || v_order.total || ' ج.م بسبب حظر العميل. للاستفسار، تواصل مع إدارة إنجزنا.',
+      'تم إلغاء الطلب #' || v_order.order_number || ' بقيمة ' || v_order.total || ' ج.م بسبب حظر العميل. للاستفسار، تواصل مع خدمة عملاء إنجزنا.',
       'Order #' || v_order.order_number || ' (' || v_order.total || ' EGP) has been cancelled due to customer ban. For inquiries, contact Engezna support.',
       v_order.id,
       p_customer_id
