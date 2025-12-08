@@ -194,90 +194,24 @@ export async function banUser(
       return { success: false, error: updateError.message, errorCode: 'DATABASE_ERROR' };
     }
 
-    // Cancel all pending/active orders for the banned customer and get the cancelled orders
-    const activeStatuses = ['pending', 'confirmed', 'accepted', 'preparing', 'ready'];
-
-    // First, get the orders that will be cancelled (to notify providers)
-    const { data: ordersToCancel, error: ordersError } = await supabase
-      .from('orders')
-      .select('id, order_number, provider_id, total, status')
-      .eq('customer_id', userId)
-      .in('status', activeStatuses);
-
-    console.log('[BAN USER] Found orders to cancel:', {
-      userId,
-      ordersCount: ordersToCancel?.length || 0,
-      orders: ordersToCancel?.map(o => ({ id: o.id, order_number: o.order_number, status: o.status })),
-      error: ordersError?.message
-    });
-
-    if (ordersError) {
-      console.error('Error fetching orders to cancel:', ordersError);
-    }
-
-    // Cancel the orders one by one for better error tracking
-    if (ordersToCancel && ordersToCancel.length > 0) {
-      for (const order of ordersToCancel) {
-        const { data: updateResult, error: cancelError } = await supabase
-          .from('orders')
-          .update({
-            status: 'cancelled',
-            cancelled_at: new Date().toISOString(),
-            cancellation_reason: 'تم إلغاء الطلب بسبب حظر العميل - Admin',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', order.id)
-          .select('id, status');
-
-        console.log('[BAN USER] Order cancellation result:', {
-          orderId: order.id,
-          orderNumber: order.order_number,
-          updateResult,
-          error: cancelError?.message
-        });
-
-        if (cancelError) {
-          console.error(`Error cancelling order ${order.order_number}:`, cancelError);
-        }
-      }
-    }
-
-    // Send notification to the banned customer
-    const { error: customerNotifError } = await supabase
-      .from('customer_notifications')
-      .insert({
-        customer_id: userId,
-        type: 'account_banned',
-        title_ar: 'تم تعليق حسابك',
-        title_en: 'Account Suspended',
-        body_ar: 'تم تعليق حسابك في إنجزنا. للاستفسار، يرجى التواصل مع إدارة إنجزنا.',
-        body_en: 'Your Engezna account has been suspended. For inquiries, please contact Engezna support.',
+    // Cancel all pending/active orders and send notifications using the database function
+    // This function uses SECURITY DEFINER to bypass RLS policies
+    const { data: cancelledOrders, error: cancelError } = await supabase
+      .rpc('cancel_orders_for_banned_customer', {
+        p_customer_id: userId,
+        p_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`
       });
 
-    if (customerNotifError) {
-      console.error('Error sending ban notification to customer:', customerNotifError);
-    }
+    console.log('[BAN USER] Cancel orders result:', {
+      userId,
+      cancelledOrdersCount: cancelledOrders?.length || 0,
+      cancelledOrders,
+      error: cancelError?.message
+    });
 
-    // Send notifications to providers for their cancelled orders
-    if (ordersToCancel && ordersToCancel.length > 0) {
-      const providerNotifications = ordersToCancel.map((order: { id: string; order_number: string; provider_id: string; total: number; status: string }) => ({
-        provider_id: order.provider_id,
-        type: 'order_cancelled',
-        title_ar: 'تم إلغاء طلب بسبب حظر العميل',
-        title_en: 'Order Cancelled - Customer Banned',
-        body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع إدارة إنجزنا.`,
-        body_en: `Order #${order.order_number} (${order.total} EGP) has been cancelled due to customer ban. For inquiries, contact Engezna support.`,
-        related_order_id: order.id,
-        related_customer_id: userId,
-      }));
-
-      const { error: providerNotifError } = await supabase
-        .from('provider_notifications')
-        .insert(providerNotifications);
-
-      if (providerNotifError) {
-        console.error('Error sending ban notifications to providers:', providerNotifError);
-      }
+    if (cancelError) {
+      console.error('Error cancelling orders for banned user:', cancelError);
+      // Continue even if order cancellation fails - user is still banned
     }
 
     // Log audit action
