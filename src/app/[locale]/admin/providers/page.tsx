@@ -333,12 +333,16 @@ export default function AdminProvidersPage() {
     return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
   }
 
+  // Updated December 2025 - New categories
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
+      restaurant_cafe: { ar: 'مطاعم وكافيهات', en: 'Restaurants & Cafes' },
+      coffee_patisserie: { ar: 'البن والحلويات', en: 'Coffee & Patisserie' },
+      grocery: { ar: 'سوبر ماركت', en: 'Supermarket' },
+      vegetables_fruits: { ar: 'خضروات وفواكه', en: 'Fruits & Vegetables' },
+      // Legacy support
       restaurant: { ar: 'مطعم', en: 'Restaurant' },
       coffee_shop: { ar: 'كافيه', en: 'Coffee Shop' },
-      grocery: { ar: 'بقالة', en: 'Grocery' },
-      vegetables_fruits: { ar: 'خضار وفواكه', en: 'Vegetables & Fruits' },
     }
     return labels[category]?.[locale === 'ar' ? 'ar' : 'en'] || category
   }
@@ -451,17 +455,17 @@ export default function AdminProvidersPage() {
                 <option value="temporarily_paused">{locale === 'ar' ? 'متوقف مؤقتاً' : 'Paused'}</option>
               </select>
 
-              {/* Category Filter */}
+              {/* Category Filter - Updated December 2025 */}
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
               >
                 <option value="all">{locale === 'ar' ? 'كل الفئات' : 'All Categories'}</option>
-                <option value="restaurant">{locale === 'ar' ? 'مطاعم' : 'Restaurants'}</option>
-                <option value="coffee_shop">{locale === 'ar' ? 'كافيهات' : 'Coffee Shops'}</option>
-                <option value="grocery">{locale === 'ar' ? 'بقالة' : 'Grocery'}</option>
-                <option value="vegetables_fruits">{locale === 'ar' ? 'خضار وفواكه' : 'Vegetables & Fruits'}</option>
+                <option value="restaurant_cafe">{locale === 'ar' ? 'مطاعم وكافيهات' : 'Restaurants & Cafes'}</option>
+                <option value="coffee_patisserie">{locale === 'ar' ? 'البن والحلويات' : 'Coffee & Patisserie'}</option>
+                <option value="grocery">{locale === 'ar' ? 'سوبر ماركت' : 'Supermarket'}</option>
+                <option value="vegetables_fruits">{locale === 'ar' ? 'خضروات وفواكه' : 'Fruits & Vegetables'}</option>
               </select>
 
               {/* Geographic Filter */}

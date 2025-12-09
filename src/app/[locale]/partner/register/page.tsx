@@ -17,7 +17,6 @@ import {
   Coffee,
   ShoppingCart,
   Apple,
-  Pill,
   UtensilsCrossed,
   User,
   Briefcase,
@@ -44,13 +43,12 @@ interface Governorate {
 }
 
 // Business category options with icons
+// Updated December 2025 - New categories: restaurant_cafe, coffee_patisserie, grocery, vegetables_fruits
 const businessCategories = [
-  { value: 'restaurant', icon: UtensilsCrossed, labelAr: 'مطعم', labelEn: 'Restaurant' },
-  { value: 'coffee_shop', icon: Coffee, labelAr: 'كافيه', labelEn: 'Cafe' },
+  { value: 'restaurant_cafe', icon: UtensilsCrossed, labelAr: 'مطاعم وكافيهات', labelEn: 'Restaurants & Cafes' },
+  { value: 'coffee_patisserie', icon: Coffee, labelAr: 'البن والحلويات', labelEn: 'Coffee & Patisserie' },
   { value: 'grocery', icon: ShoppingCart, labelAr: 'سوبر ماركت', labelEn: 'Supermarket' },
-  { value: 'juice_shop', icon: Apple, labelAr: 'عصائر', labelEn: 'Juice Shop' },
-  { value: 'pharmacy', icon: Pill, labelAr: 'صيدلية', labelEn: 'Pharmacy' },
-  { value: 'vegetables_fruits', icon: Apple, labelAr: 'خضروات وفواكه', labelEn: 'Vegetables & Fruits' },
+  { value: 'vegetables_fruits', icon: Apple, labelAr: 'خضروات وفواكه', labelEn: 'Fruits & Vegetables' },
 ]
 
 // Partner role options

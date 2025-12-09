@@ -20,35 +20,36 @@ interface Category {
 }
 
 // Categories with unified brand colors (primary blue)
+// Updated December 2025 - New categories: restaurant_cafe, coffee_patisserie, grocery, vegetables_fruits
 const defaultCategories: Category[] = [
   {
-    id: 'restaurant',
-    name_ar: 'مطاعم',
-    name_en: 'Restaurants',
+    id: 'restaurant_cafe',
+    name_ar: 'مطاعم وكافيهات',
+    name_en: 'Restaurants & Cafes',
     icon: <UtensilsCrossed className="w-6 h-6" />,
     color: 'text-primary',
     bgColor: 'bg-primary/10',
   },
   {
-    id: 'cafe',
-    name_ar: 'مقاهي',
-    name_en: 'Cafes',
+    id: 'coffee_patisserie',
+    name_ar: 'البن والحلويات',
+    name_en: 'Coffee & Patisserie',
     icon: <Coffee className="w-6 h-6" />,
     color: 'text-primary',
     bgColor: 'bg-primary/10',
   },
   {
-    id: 'supermarket',
-    name_ar: 'بقالة',
-    name_en: 'Groceries',
+    id: 'grocery',
+    name_ar: 'سوبر ماركت',
+    name_en: 'Supermarket',
     icon: <ShoppingBasket className="w-6 h-6" />,
     color: 'text-primary',
     bgColor: 'bg-primary/10',
   },
   {
     id: 'vegetables_fruits',
-    name_ar: 'خضار',
-    name_en: 'Veggies',
+    name_ar: 'خضروات وفواكه',
+    name_en: 'Fruits & Vegetables',
     icon: <Apple className="w-6 h-6" />,
     color: 'text-primary',
     bgColor: 'bg-primary/10',
