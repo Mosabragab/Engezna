@@ -174,8 +174,8 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
         </h2>
         <p className="text-slate-600">
           {locale === 'ar'
-            ? 'ارفع ملف Excel وسيتم التعرف على البيانات تلقائياً من جميع الشيتات'
-            : 'Upload Excel file and data will be detected automatically from all sheets'}
+            ? 'ارفع ملف Excel وسيتم التعرف على البيانات تلقائياً'
+            : 'Upload Excel file and data will be detected automatically'}
         </p>
       </div>
 
@@ -238,7 +238,7 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
               <FileSpreadsheet className="w-5 h-5 text-green-600" />
               <span className="font-medium text-green-800">{fileName}</span>
               <span className="text-sm text-green-600">
-                ({result.sheets.length} {locale === 'ar' ? 'شيت' : 'sheets'})
+                ({result.sheets.length} {locale === 'ar' ? 'صفحة' : 'sheets'})
               </span>
             </div>
             <button
@@ -272,7 +272,7 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
           {/* Sheets Preview */}
           <div className="border border-slate-200 rounded-xl overflow-hidden mb-4">
             <div className="bg-slate-50 px-4 py-2 font-medium text-slate-700 border-b border-slate-200">
-              {locale === 'ar' ? 'الشيتات المستخرجة' : 'Extracted Sheets'}
+              {locale === 'ar' ? 'البيانات المستخرجة' : 'Extracted Data'}
             </div>
 
             {result.sheets.map((sheet) => (

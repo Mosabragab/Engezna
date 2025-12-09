@@ -254,7 +254,7 @@ export default function ProviderProductsPage() {
             <Link href={`/${locale}/provider/menu-import`}>
               <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10">
                 <Sparkles className="w-5 h-5 me-2" />
-                {locale === 'ar' ? 'استيراد بالذكاء الاصطناعي' : 'AI Import'}
+                {locale === 'ar' ? 'استيراد المنتجات' : 'Import Products'}
               </Button>
             </Link>
             <Link href={`/${locale}/provider/products/new`}>

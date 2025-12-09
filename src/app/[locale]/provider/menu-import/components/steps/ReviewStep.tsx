@@ -834,16 +834,25 @@ function ProductRow({
             <p className="text-sm text-slate-500 truncate">{product.description_ar}</p>
           )}
 
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             {product.pricing_type === 'single' ? (
               <span className="text-sm font-semibold text-primary">
                 {formatPrice(product.price)}
               </span>
             ) : (
-              <span className="text-sm text-slate-600">
-                {product.variants?.length || 0}{' '}
-                {locale === 'ar' ? 'خيارات' : 'options'}
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {product.variants?.slice(0, 3).map((variant, idx) => (
+                  <span key={idx} className="text-xs bg-slate-100 px-2 py-1 rounded">
+                    <span className="text-slate-600">{variant.name_ar}:</span>{' '}
+                    <span className="font-semibold text-primary">{formatPrice(variant.price)}</span>
+                  </span>
+                ))}
+                {(product.variants?.length || 0) > 3 && (
+                  <span className="text-xs text-slate-500">
+                    +{(product.variants?.length || 0) - 3} {locale === 'ar' ? 'أخرى' : 'more'}
+                  </span>
+                )}
+              </div>
             )}
 
             <span
