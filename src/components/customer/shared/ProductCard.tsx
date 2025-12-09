@@ -1,7 +1,20 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import { Plus, Minus, Flame, Leaf } from 'lucide-react'
+import { Plus, Minus, Flame, Leaf, ChevronDown } from 'lucide-react'
+import type { PricingType } from '@/types/menu-import'
+
+interface ProductVariant {
+  id: string
+  variant_type: 'size' | 'weight' | 'option'
+  name_ar: string
+  name_en: string | null
+  price: number
+  original_price: number | null
+  is_default: boolean
+  display_order: number
+  is_available: boolean
+}
 
 interface MenuItem {
   id: string
@@ -16,6 +29,10 @@ interface MenuItem {
   is_vegetarian: boolean
   is_spicy: boolean
   preparation_time_min: number
+  // Variant support
+  has_variants?: boolean
+  pricing_type?: PricingType
+  variants?: ProductVariant[]
 }
 
 interface ProductCardProps {
@@ -23,6 +40,7 @@ interface ProductCardProps {
   quantity?: number
   onQuantityChange?: (quantity: number) => void
   onCustomize?: () => void
+  onSelectVariant?: () => void
   variant?: 'default' | 'compact' | 'horizontal'
   showAddButton?: boolean
   className?: string
@@ -33,6 +51,7 @@ export function ProductCard({
   quantity = 0,
   onQuantityChange,
   onCustomize,
+  onSelectVariant,
   variant = 'default',
   showAddButton = true,
   className = '',
@@ -49,7 +68,31 @@ export function ProductCard({
     ? Math.round(((product.original_price! - product.price) / product.original_price!) * 100)
     : 0
 
+  // Check if product has variants
+  const hasVariants = product.has_variants && product.variants && product.variants.length > 0
+
+  // Get price range for products with variants
+  const getPriceDisplay = () => {
+    if (hasVariants && product.variants) {
+      const prices = product.variants.map(v => v.price).sort((a, b) => a - b)
+      const minPrice = prices[0]
+      const maxPrice = prices[prices.length - 1]
+      if (minPrice === maxPrice) {
+        return { price: minPrice, hasRange: false }
+      }
+      return { minPrice, maxPrice, hasRange: true }
+    }
+    return { price: product.price, hasRange: false }
+  }
+
+  const priceDisplay = getPriceDisplay()
+
   const handleIncrease = () => {
+    // If product has variants, open variant selection
+    if (hasVariants && onSelectVariant) {
+      onSelectVariant()
+      return
+    }
     if (onQuantityChange) {
       onQuantityChange(quantity + 1)
     }
@@ -59,6 +102,20 @@ export function ProductCard({
     if (onQuantityChange && quantity > 0) {
       onQuantityChange(quantity - 1)
     }
+  }
+
+  // Get variant type label
+  const getVariantLabel = () => {
+    if (!hasVariants || !product.variants) return null
+    const variantType = product.variants[0]?.variant_type
+    const count = product.variants.length
+    if (variantType === 'size') {
+      return locale === 'ar' ? `${count} أحجام` : `${count} sizes`
+    }
+    if (variantType === 'weight') {
+      return locale === 'ar' ? `${count} أوزان` : `${count} weights`
+    }
+    return locale === 'ar' ? `${count} خيارات` : `${count} options`
   }
 
   if (variant === 'compact') {

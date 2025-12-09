@@ -23,6 +23,8 @@ import {
   Clock,
   Eye,
   EyeOff,
+  FileUp,
+  Sparkles,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -236,7 +238,7 @@ export default function ProviderProductsPage() {
           </div>
         </div>
 
-        {/* Search and Add Button */}
+        {/* Search and Add Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute top-1/2 -translate-y-1/2 left-3 w-5 h-5 text-slate-500" />
@@ -248,12 +250,20 @@ export default function ProviderProductsPage() {
               className="w-full bg-white border border-slate-200 rounded-xl py-3 px-10 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          <Link href={`/${locale}/provider/products/new`}>
-            <Button size="lg" className="w-full sm:w-auto">
-              <Plus className="w-5 h-5 mr-2" />
-              {locale === 'ar' ? 'إضافة منتج' : 'Add Product'}
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href={`/${locale}/provider/menu-import`}>
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10">
+                <Sparkles className="w-5 h-5 me-2" />
+                {locale === 'ar' ? 'استيراد بالذكاء الاصطناعي' : 'AI Import'}
+              </Button>
+            </Link>
+            <Link href={`/${locale}/provider/products/new`}>
+              <Button size="lg" className="w-full sm:w-auto">
+                <Plus className="w-5 h-5 me-2" />
+                {locale === 'ar' ? 'إضافة منتج' : 'Add Product'}
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Filter Tabs */}
