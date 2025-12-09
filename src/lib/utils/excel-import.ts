@@ -45,22 +45,26 @@ export const COLUMN_PATTERNS: Record<string, string[]> = {
   // Unit column
   unit: ['الوحدة', 'unit', 'وحدة'],
 
-  // Size variants (S/M/L)
-  size_small: ['صغير', 'small', 's', 'ص', 'سمول'],
-  size_medium: ['وسط', 'medium', 'm', 'و', 'متوسط', 'ميديم'],
-  size_large: ['كبير', 'large', 'l', 'ك', 'لارج'],
-  size_xlarge: ['كبير جداً', 'xlarge', 'xl', 'اكس لارج', 'سوبر', 'عائلي', 'family'],
+  // Size variants (S/M/L) - removed single-char patterns to avoid false matches
+  size_small: ['صغير', 'small', 'سمول'],
+  size_medium: ['وسط', 'medium', 'متوسط', 'ميديم'],
+  size_large: ['كبير', 'large', 'لارج'],
+  size_xlarge: ['كبير جداً', 'xlarge', 'اكس لارج', 'سوبر', 'عائلي', 'family'],
+
+  // Regular/Super variants (sandwiches)
+  size_regular: ['عادي', 'regular', 'عادى', 'نورمال'],
+  size_super: ['سوبر', 'super', 'اكسترا', 'extra'],
 
   // Weight variants (restaurants - ربع/نص/كيلو)
-  weight_quarter: ['ربع', 'ربع كيلو', '¼', 'quarter', '250جم', '250g'],
-  weight_half: ['نص', 'نص كيلو', 'نصف', '½', 'half', '500جم', '500g'],
+  weight_quarter: ['ربع كيلو', 'ربع', 'quarter', '¼'],
+  weight_half: ['نص كيلو', 'نصف كيلو', 'نص', 'نصف', 'half', '½'],
   weight_3quarters: ['ثلاثة أرباع', '¾', '3/4', '750جم', '750g'],
-  weight_kilo: ['كيلو', 'كامل', '1 كيلو', 'kilo', 'kg', '1000جم'],
+  weight_kilo: ['كيلو', 'kilo', 'kg', '1 كيلو', 'كامل'],
 
-  // Weight variants (coffee - grams)
-  weight_100g: ['100جم', '100g', '100 جم', '100 جرام'],
-  weight_250g: ['250جم', '250g', '250 جم', '250 جرام'],
-  weight_500g: ['500جم', '500g', '500 جم', '500 جرام'],
+  // Weight variants (coffee/spices - grams)
+  weight_100g: ['100 جم', '100جم', '100g', '100 جرام', '100جرام'],
+  weight_250g: ['250 جم', '250جم', '250g', '250 جرام', '250جرام'],
+  weight_500g: ['500 جم', '500جم', '500g', '500 جرام', '500جرام'],
 
   // Description
   description: ['الوصف', 'description', 'وصف', 'المكونات', 'تفاصيل', 'details'],
@@ -74,6 +78,16 @@ export const COLUMN_PATTERNS: Record<string, string[]> = {
 // ═══════════════════════════════════════════════════════════════
 
 export const VARIANT_GROUPS = {
+  // Regular/Super (sandwiches, shawarma)
+  sizes_regular_super: {
+    variantType: 'size' as VariantType,
+    columns: ['size_regular', 'size_super'],
+    labels: {
+      size_regular: { ar: 'عادي', en: 'Regular' },
+      size_super: { ar: 'سوبر', en: 'Super' },
+    },
+  },
+  // Small/Medium/Large (pizza, etc.)
   sizes: {
     variantType: 'size' as VariantType,
     columns: ['size_small', 'size_medium', 'size_large', 'size_xlarge'],
@@ -84,6 +98,7 @@ export const VARIANT_GROUPS = {
       size_xlarge: { ar: 'كبير جداً', en: 'X-Large' },
     },
   },
+  // Restaurant weights (quarter/half/kilo)
   weights_restaurant: {
     variantType: 'weight' as VariantType,
     columns: ['weight_quarter', 'weight_half', 'weight_3quarters', 'weight_kilo'],
@@ -94,6 +109,7 @@ export const VARIANT_GROUPS = {
       weight_kilo: { ar: 'كيلو', en: 'Kilo', multiplier: 1 },
     },
   },
+  // Coffee/spices weights (100g/250g/500g/kg)
   weights_coffee: {
     variantType: 'coffee_weight' as VariantType,
     columns: ['weight_100g', 'weight_250g', 'weight_500g', 'weight_kilo'],
@@ -389,15 +405,30 @@ export function detectColumns(
     h.toLowerCase().trim().replace(/\s+/g, ' ')
   )
 
-  // Helper to find column
+  // Helper to find column with strict matching
   const findColumn = (patternKey: string): number => {
     const patterns = COLUMN_PATTERNS[patternKey]
     if (!patterns) return -1
 
     for (let i = 0; i < normalizedHeaders.length; i++) {
       const header = normalizedHeaders[i]
+      if (!header || header.length === 0) continue
+
       for (const pattern of patterns) {
-        if (header.includes(pattern.toLowerCase()) || pattern.toLowerCase().includes(header)) {
+        const normalizedPattern = pattern.toLowerCase()
+
+        // Exact match (highest priority)
+        if (header === normalizedPattern) {
+          return i
+        }
+
+        // Header contains pattern (pattern must be 2+ chars to avoid false positives)
+        if (normalizedPattern.length >= 2 && header.includes(normalizedPattern)) {
+          return i
+        }
+
+        // Pattern contains header (header must be 2+ chars to avoid false positives)
+        if (header.length >= 2 && normalizedPattern.includes(header)) {
           return i
         }
       }
@@ -442,7 +473,13 @@ export function detectColumns(
   let detectedVariantGroup: keyof typeof VARIANT_GROUPS | null = null
   let detectedVariantType: VariantType | null = null
 
-  // Check each variant group
+  // Check each variant group and find the BEST match (most columns matched)
+  let bestGroupMatch: {
+    groupKey: keyof typeof VARIANT_GROUPS
+    variants: ColumnMapping['variants']
+    variantType: VariantType
+  } | null = null
+
   for (const [groupKey, group] of Object.entries(VARIANT_GROUPS)) {
     const foundVariants: ColumnMapping['variants'] = []
 
@@ -451,11 +488,13 @@ export function detectColumns(
       if (colIndex !== -1) {
         const labelInfo = (group.labels as Record<string, { ar: string; en: string; multiplier?: number }>)[colKey]
         if (labelInfo) {
+          // Use ACTUAL column header for display, but keep multiplier from config
+          const actualHeader = headers[colIndex] || labelInfo.ar
           foundVariants.push({
             column: colIndex,
             key: colKey,
-            name_ar: labelInfo.ar,
-            name_en: labelInfo.en,
+            name_ar: actualHeader, // Use actual header name!
+            name_en: actualHeader, // Use actual header name!
             variantType: group.variantType,
             multiplier: labelInfo.multiplier,
           })
@@ -463,13 +502,24 @@ export function detectColumns(
       }
     }
 
+    // Keep track of best match (most columns matched)
     if (foundVariants.length >= 2) {
-      mapping.variants = foundVariants
-      detectedVariantGroup = groupKey as keyof typeof VARIANT_GROUPS
-      detectedVariantType = group.variantType
-      matchedCount += foundVariants.length
-      break
+      if (!bestGroupMatch || foundVariants.length > bestGroupMatch.variants.length) {
+        bestGroupMatch = {
+          groupKey: groupKey as keyof typeof VARIANT_GROUPS,
+          variants: foundVariants,
+          variantType: group.variantType,
+        }
+      }
     }
+  }
+
+  // Use the best matching group
+  if (bestGroupMatch) {
+    mapping.variants = bestGroupMatch.variants
+    detectedVariantGroup = bestGroupMatch.groupKey
+    detectedVariantType = bestGroupMatch.variantType
+    matchedCount += bestGroupMatch.variants.length
   }
 
   // If no variants found, check for numeric columns
@@ -803,13 +853,18 @@ export function getColumnTypeOptions(): { value: string; label_ar: string; label
     { value: 'name_en', label_ar: 'الاسم بالإنجليزي', label_en: 'English Name' },
     { value: 'price', label_ar: 'السعر', label_en: 'Price' },
     { value: 'unit', label_ar: 'الوحدة', label_en: 'Unit' },
+    // Size variants
     { value: 'size_small', label_ar: 'صغير', label_en: 'Small' },
     { value: 'size_medium', label_ar: 'وسط', label_en: 'Medium' },
     { value: 'size_large', label_ar: 'كبير', label_en: 'Large' },
     { value: 'size_xlarge', label_ar: 'كبير جداً', label_en: 'X-Large' },
+    { value: 'size_regular', label_ar: 'عادي', label_en: 'Regular' },
+    { value: 'size_super', label_ar: 'سوبر', label_en: 'Super' },
+    // Weight variants (restaurant)
     { value: 'weight_quarter', label_ar: 'ربع كيلو', label_en: 'Quarter' },
     { value: 'weight_half', label_ar: 'نص كيلو', label_en: 'Half' },
     { value: 'weight_kilo', label_ar: 'كيلو', label_en: 'Kilo' },
+    // Weight variants (coffee/spices)
     { value: 'weight_100g', label_ar: '100 جرام', label_en: '100g' },
     { value: 'weight_250g', label_ar: '250 جرام', label_en: '250g' },
     { value: 'weight_500g', label_ar: '500 جرام', label_en: '500g' },
