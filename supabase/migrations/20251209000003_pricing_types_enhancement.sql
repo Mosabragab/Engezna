@@ -3,6 +3,14 @@
 -- Also adds unit types for per_unit pricing (kg, piece, plate, etc.)
 
 -- ============================================
+-- 0. DROP OLD CHECK CONSTRAINT
+-- Must be done BEFORE migrating data to new values
+-- ============================================
+
+-- Drop the old CHECK constraint that only allows old values
+ALTER TABLE public.menu_items DROP CONSTRAINT IF EXISTS menu_items_pricing_type_check;
+
+-- ============================================
 -- 1. UPDATE MENU_ITEMS TABLE
 -- Add new pricing columns
 -- ============================================
@@ -73,7 +81,16 @@ SET pricing_type = 'variants', variant_type = 'option'
 WHERE pricing_type = 'options';
 
 -- ============================================
--- 4. CREATE INDEXES
+-- 4. ADD NEW CHECK CONSTRAINT
+-- Now that data is migrated, add constraint with new valid values
+-- ============================================
+
+ALTER TABLE public.menu_items
+  ADD CONSTRAINT menu_items_pricing_type_check
+  CHECK (pricing_type IN ('fixed', 'per_unit', 'variants'));
+
+-- ============================================
+-- 5. CREATE INDEXES
 -- ============================================
 
 CREATE INDEX IF NOT EXISTS idx_menu_items_pricing_type ON menu_items(pricing_type);
@@ -81,7 +98,7 @@ CREATE INDEX IF NOT EXISTS idx_menu_items_variant_type ON menu_items(variant_typ
 CREATE INDEX IF NOT EXISTS idx_menu_items_unit_type ON menu_items(unit_type);
 
 -- ============================================
--- 5. UPDATE HELPER FUNCTION
+-- 6. UPDATE HELPER FUNCTION
 -- Get menu items with full pricing info
 -- ============================================
 
@@ -156,7 +173,7 @@ GRANT EXECUTE ON FUNCTION get_menu_items_with_pricing(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_menu_items_with_pricing(UUID) TO anon;
 
 -- ============================================
--- 6. CREATE FUNCTION FOR PRICE CALCULATION
+-- 7. CREATE FUNCTION FOR PRICE CALCULATION
 -- Calculate total price based on pricing type
 -- ============================================
 
@@ -218,7 +235,7 @@ GRANT EXECUTE ON FUNCTION calculate_item_price(UUID, UUID, DECIMAL) TO authentic
 GRANT EXECUTE ON FUNCTION calculate_item_price(UUID, UUID, DECIMAL) TO anon;
 
 -- ============================================
--- 7. ADD COMMENTS
+-- 8. ADD COMMENTS
 -- ============================================
 
 COMMENT ON COLUMN menu_items.pricing_type IS 'Pricing strategy: fixed (single price), per_unit (price per kg/piece), variants (multiple options)';
