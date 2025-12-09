@@ -97,11 +97,17 @@ export function ProcessingStep({
       })
 
       if (error) {
+        console.error('Edge function invocation error:', error)
         throw new Error(error.message || 'Edge function error')
       }
 
+      console.log('Edge function response:', data)
+
       if (!data || !data.success) {
-        throw new Error(data?.error || 'Analysis failed')
+        const errorMsg = data?.error || 'Analysis failed'
+        const errorDetails = data?.errorDetails || ''
+        console.error('Edge function returned error:', errorMsg, errorDetails)
+        throw new Error(errorMsg)
       }
 
       // Update import status in database

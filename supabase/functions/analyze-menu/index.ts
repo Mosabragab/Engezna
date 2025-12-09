@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { encode as base64Encode } from 'https://deno.land/std@0.168.0/encoding/base64.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -83,37 +84,46 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrls, businessType, importId } = await req.json()
-
-    if (!imageUrls || imageUrls.length === 0) {
-      throw new Error('No images provided')
-    }
-
+    // Validate environment first
     const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')
     if (!CLAUDE_API_KEY) {
-      throw new Error('CLAUDE_API_KEY not configured')
+      console.error('CLAUDE_API_KEY secret is not configured')
+      throw new Error('Server configuration error: CLAUDE_API_KEY not set. Please add it in Supabase Dashboard > Project Settings > Edge Functions > Secrets')
+    }
+    console.log('CLAUDE_API_KEY is configured (length:', CLAUDE_API_KEY.length, ')')
+
+    // Parse request body
+    let body
+    try {
+      body = await req.json()
+    } catch (parseError) {
+      throw new Error('Invalid request body: ' + (parseError as Error).message)
     }
 
-    console.log(`Processing ${imageUrls.length} images for ${businessType}`)
+    const { imageUrls, businessType, importId } = body
+
+    if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+      throw new Error('No images provided or invalid imageUrls format')
+    }
+
+    console.log(`Processing ${imageUrls.length} images for ${businessType}, importId: ${importId}`)
 
     // Fetch images and convert to base64
-    const imageBlocks = await Promise.all(
-      imageUrls.map(async (url: string) => {
+    const imageBlocks = []
+    for (const url of imageUrls) {
+      try {
         console.log(`Fetching image: ${url}`)
         const response = await fetch(url)
         if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${url}`)
+          console.error(`Failed to fetch image ${url}: ${response.status}`)
+          continue // Skip failed images instead of throwing
         }
 
         const arrayBuffer = await response.arrayBuffer()
         const uint8Array = new Uint8Array(arrayBuffer)
 
-        // Convert to base64
-        let binary = ''
-        for (let i = 0; i < uint8Array.length; i++) {
-          binary += String.fromCharCode(uint8Array[i])
-        }
-        const base64 = btoa(binary)
+        // Use Deno standard library for base64 encoding
+        const base64 = base64Encode(uint8Array)
 
         const contentType = response.headers.get('content-type') || 'image/jpeg'
         let mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' = 'image/jpeg'
@@ -121,21 +131,49 @@ serve(async (req) => {
         else if (contentType.includes('webp')) mediaType = 'image/webp'
         else if (contentType.includes('gif')) mediaType = 'image/gif'
 
-        return {
+        imageBlocks.push({
           type: 'image',
           source: {
             type: 'base64',
             media_type: mediaType,
             data: base64,
           },
-        }
-      })
-    )
+        })
+        console.log(`Successfully processed image: ${url} (${(uint8Array.length / 1024).toFixed(1)} KB)`)
+      } catch (imgError) {
+        console.error(`Error processing image ${url}:`, imgError)
+        // Continue with other images
+      }
+    }
+
+    if (imageBlocks.length === 0) {
+      throw new Error('No images could be processed')
+    }
 
     const businessTypeAr = BUSINESS_TYPE_NAMES[businessType] || businessType
 
-    console.log('Calling Claude API...')
+    console.log(`Calling Claude API with ${imageBlocks.length} images...`)
     const startTime = Date.now()
+
+    const requestBody = {
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 8000,
+      system: MENU_ANALYSIS_SYSTEM_PROMPT,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            ...imageBlocks,
+            {
+              type: 'text',
+              text: `حلل صورة/صور المنيو المرفقة بدقة.\n\nنوع المتجر: ${businessTypeAr}\nالعملة: جنيه مصري\n\nأعد JSON فقط.`,
+            },
+          ],
+        },
+      ],
+    }
+
+    console.log('Request body prepared, sending to Claude...')
 
     // Call Claude API
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
@@ -145,23 +183,7 @@ serve(async (req) => {
         'x-api-key': CLAUDE_API_KEY,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 8000,
-        system: MENU_ANALYSIS_SYSTEM_PROMPT,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              ...imageBlocks,
-              {
-                type: 'text',
-                text: `حلل صورة/صور المنيو المرفقة بدقة.\n\nنوع المتجر: ${businessTypeAr}\nالعملة: جنيه مصري\n\nأعد JSON فقط.`,
-              },
-            ],
-          },
-        ],
-      }),
+      body: JSON.stringify(requestBody),
     })
 
     const processingTimeMs = Date.now() - startTime
@@ -169,8 +191,19 @@ serve(async (req) => {
 
     if (!claudeResponse.ok) {
       const errorText = await claudeResponse.text()
-      console.error('Claude API error:', errorText)
-      throw new Error(`Claude API error: ${claudeResponse.status} - ${errorText}`)
+      console.error('Claude API error status:', claudeResponse.status)
+      console.error('Claude API error body:', errorText)
+
+      // Parse error for better messaging
+      let errorDetail = errorText
+      try {
+        const errorJson = JSON.parse(errorText)
+        errorDetail = errorJson.error?.message || errorJson.message || errorText
+      } catch {
+        // Use raw text
+      }
+
+      throw new Error(`Claude API error (${claudeResponse.status}): ${errorDetail}`)
     }
 
     const claudeData = await claudeResponse.json()
@@ -240,12 +273,17 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error:', error)
+    const errorMessage = (error as Error).message || 'Unknown error occurred'
+    const errorStack = (error as Error).stack || ''
+    console.error('Error:', errorMessage)
+    console.error('Stack:', errorStack)
 
+    // Return 200 with success: false to avoid Supabase Edge Function error handling issues
     return new Response(
       JSON.stringify({
         success: false,
-        error: (error as Error).message || 'Unknown error occurred',
+        error: errorMessage,
+        errorDetails: errorStack.substring(0, 500),
         categories: [],
         addons: [],
         warnings: [],
@@ -258,7 +296,7 @@ serve(async (req) => {
         }
       }),
       {
-        status: 500,
+        status: 200, // Return 200 so Supabase doesn't mask the error
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json'
