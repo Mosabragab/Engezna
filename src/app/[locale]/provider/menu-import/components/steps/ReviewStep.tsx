@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import {
   Check,
@@ -14,7 +14,13 @@ import {
   ArrowRight,
   Package,
   Layers,
+  FileSpreadsheet,
+  FileText,
+  Download,
 } from 'lucide-react'
+import * as XLSX from 'xlsx'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import type {
   ExtractedCategory,
   ExtractedProduct,
@@ -74,6 +80,43 @@ export function ReviewStep({
 
     return { total, confirmed, percentage: total > 0 ? Math.round((confirmed / total) * 100) : 0 }
   }, [categories])
+
+  // Calculate local statistics (fix for NaN issues)
+  const localStatistics = useMemo(() => {
+    let totalCategories = 0
+    let totalProducts = 0
+    let productsWithVariants = 0
+    let totalConfidence = 0
+    let productCount = 0
+
+    categories.forEach(cat => {
+      if (!cat.isDeleted) {
+        totalCategories++
+        cat.products.forEach(prod => {
+          if (!prod.isDeleted) {
+            totalProducts++
+            if (prod.variants && prod.variants.length > 0) {
+              productsWithVariants++
+            }
+            if (typeof prod.confidence === 'number' && !isNaN(prod.confidence)) {
+              totalConfidence += prod.confidence
+              productCount++
+            }
+          }
+        })
+      }
+    })
+
+    const avgConfidence = productCount > 0 ? totalConfidence / productCount : 0.9
+
+    return {
+      total_categories: totalCategories,
+      total_products: totalProducts,
+      products_with_variants: productsWithVariants,
+      products_need_review: statistics?.products_need_review || 0,
+      average_confidence: avgConfidence,
+    }
+  }, [categories, statistics])
 
   const toggleCategory = (index: number) => {
     const key = `cat-${index}`
@@ -166,51 +209,252 @@ export function ReviewStep({
     return 'text-red-600 bg-red-50'
   }
 
+  // Export to Excel
+  const exportToExcel = useCallback(() => {
+    const workbook = XLSX.utils.book_new()
+
+    // Prepare products data for Excel
+    const productsData: Record<string, unknown>[] = []
+
+    categories.forEach((category) => {
+      if (!category.isDeleted) {
+        category.products.forEach((product) => {
+          if (!product.isDeleted) {
+            productsData.push({
+              'القسم': category.name_ar,
+              'Category': category.name_en || '',
+              'اسم المنتج': product.name_ar,
+              'Product Name': product.name_en || '',
+              'الوصف': product.description_ar || '',
+              'نوع التسعير': product.pricing_type === 'single' ? 'سعر واحد' :
+                product.pricing_type === 'sizes' ? 'أحجام' :
+                product.pricing_type === 'weights' ? 'أوزان' : 'خيارات',
+              'السعر': product.price || '',
+              'السعر الأصلي': product.original_price || '',
+              'الخيارات': product.variants?.map(v => `${v.name_ar}: ${v.price}`).join(' | ') || '',
+              'الدقة': `${Math.round(product.confidence * 100)}%`,
+              'شائع': product.is_popular ? 'نعم' : 'لا',
+              'حار': product.is_spicy ? 'نعم' : 'لا',
+              'نباتي': product.is_vegetarian ? 'نعم' : 'لا',
+            })
+          }
+        })
+      }
+    })
+
+    // Create products sheet
+    const productsSheet = XLSX.utils.json_to_sheet(productsData)
+    XLSX.utils.book_append_sheet(workbook, productsSheet, 'المنتجات')
+
+    // Create categories summary sheet
+    const categoriesData = categories
+      .filter(c => !c.isDeleted)
+      .map((category, index) => ({
+        '#': index + 1,
+        'اسم القسم': category.name_ar,
+        'Category Name': category.name_en || '',
+        'الأيقونة': category.icon || '',
+        'عدد المنتجات': category.products.filter(p => !p.isDeleted).length,
+      }))
+
+    const categoriesSheet = XLSX.utils.json_to_sheet(categoriesData)
+    XLSX.utils.book_append_sheet(workbook, categoriesSheet, 'الأقسام')
+
+    // Create addons sheet if any
+    if (addons.length > 0) {
+      const addonsData = addons.map((addon, index) => ({
+        '#': index + 1,
+        'اسم الإضافة': addon.name_ar,
+        'Addon Name': addon.name_en || '',
+        'السعر': addon.price,
+      }))
+      const addonsSheet = XLSX.utils.json_to_sheet(addonsData)
+      XLSX.utils.book_append_sheet(workbook, addonsSheet, 'الإضافات')
+    }
+
+    // Download file
+    const fileName = `menu-export-${new Date().toISOString().split('T')[0]}.xlsx`
+    XLSX.writeFile(workbook, fileName)
+  }, [categories, addons])
+
+  // Export to PDF
+  const exportToPDF = useCallback(() => {
+    // Create PDF with Arabic font support
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4',
+    })
+
+    // Set font
+    doc.setFont('helvetica')
+
+    // Title
+    doc.setFontSize(18)
+    doc.text('Menu Export - تصدير المنيو', 148, 15, { align: 'center' })
+
+    // Statistics
+    doc.setFontSize(12)
+    const statsText = `Categories: ${localStatistics.total_categories} | Products: ${localStatistics.total_products} | With Variants: ${localStatistics.products_with_variants}`
+    doc.text(statsText, 148, 25, { align: 'center' })
+
+    // Prepare table data
+    const tableData: (string | number)[][] = []
+
+    categories.forEach((category) => {
+      if (!category.isDeleted) {
+        category.products.forEach((product) => {
+          if (!product.isDeleted) {
+            tableData.push([
+              category.name_ar,
+              product.name_ar,
+              product.description_ar || '-',
+              product.pricing_type === 'single' ? String(product.price || '-') :
+                product.variants?.map(v => `${v.name_ar}: ${v.price}`).join(', ') || '-',
+              `${Math.round(product.confidence * 100)}%`,
+            ])
+          }
+        })
+      }
+    })
+
+    // Create table
+    autoTable(doc, {
+      startY: 35,
+      head: [['Category / القسم', 'Product / المنتج', 'Description / الوصف', 'Price / السعر', 'Confidence / الدقة']],
+      body: tableData,
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: [59, 130, 246],
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 250],
+      },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 50 },
+        2: { cellWidth: 80 },
+        3: { cellWidth: 50 },
+        4: { cellWidth: 25 },
+      },
+    })
+
+    // Download file
+    const fileName = `menu-export-${new Date().toISOString().split('T')[0]}.pdf`
+    doc.save(fileName)
+  }, [categories, localStatistics])
+
+  const [showExportMenu, setShowExportMenu] = useState(false)
+
   return (
     <div className="p-6">
       {/* Header with Stats */}
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-slate-900 mb-2">
-          {locale === 'ar' ? 'مراجعة البيانات المستخرجة' : 'Review Extracted Data'}
-        </h2>
-        <p className="text-slate-600 text-sm">
-          {locale === 'ar'
-            ? 'راجع البيانات وقم بتعديلها إذا لزم الأمر، ثم قم بتأكيدها'
-            : 'Review the data and edit if necessary, then confirm'}
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">
+              {locale === 'ar' ? 'مراجعة البيانات المستخرجة' : 'Review Extracted Data'}
+            </h2>
+            <p className="text-slate-600 text-sm">
+              {locale === 'ar'
+                ? 'راجع البيانات وقم بتعديلها إذا لزم الأمر، ثم قم بتأكيدها'
+                : 'Review the data and edit if necessary, then confirm'}
+            </p>
+          </div>
+
+          {/* Export Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {locale === 'ar' ? 'تصدير' : 'Export'}
+              </span>
+              <ChevronDown className="w-4 h-4" />
+            </button>
+
+            {showExportMenu && (
+              <>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowExportMenu(false)}
+                />
+                {/* Menu */}
+                <div className="absolute end-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 z-20 overflow-hidden">
+                  <button
+                    onClick={() => {
+                      exportToExcel()
+                      setShowExportMenu(false)
+                    }}
+                    className="w-full px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                  >
+                    <FileSpreadsheet className="w-5 h-5 text-green-600" />
+                    <div className="text-start">
+                      <div className="font-medium">
+                        {locale === 'ar' ? 'تصدير Excel' : 'Export Excel'}
+                      </div>
+                      <div className="text-xs text-slate-500">.xlsx</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      exportToPDF()
+                      setShowExportMenu(false)
+                    }}
+                    className="w-full px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors border-t border-slate-100"
+                  >
+                    <FileText className="w-5 h-5 text-red-600" />
+                    <div className="text-start">
+                      <div className="font-medium">
+                        {locale === 'ar' ? 'تصدير PDF' : 'Export PDF'}
+                      </div>
+                      <div className="text-xs text-slate-500">.pdf</div>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Statistics Cards */}
-      {statistics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-blue-50 rounded-xl p-4">
-            <div className="text-2xl font-bold text-blue-700">{statistics.total_categories}</div>
-            <div className="text-sm text-blue-600">
-              {locale === 'ar' ? 'أقسام' : 'Categories'}
-            </div>
-          </div>
-          <div className="bg-green-50 rounded-xl p-4">
-            <div className="text-2xl font-bold text-green-700">{statistics.total_products}</div>
-            <div className="text-sm text-green-600">
-              {locale === 'ar' ? 'منتجات' : 'Products'}
-            </div>
-          </div>
-          <div className="bg-purple-50 rounded-xl p-4">
-            <div className="text-2xl font-bold text-purple-700">{statistics.products_with_variants}</div>
-            <div className="text-sm text-purple-600">
-              {locale === 'ar' ? 'بأحجام متعددة' : 'With Variants'}
-            </div>
-          </div>
-          <div className="bg-orange-50 rounded-xl p-4">
-            <div className="text-2xl font-bold text-orange-700">
-              {Math.round(statistics.average_confidence * 100)}%
-            </div>
-            <div className="text-sm text-orange-600">
-              {locale === 'ar' ? 'متوسط الدقة' : 'Avg. Confidence'}
-            </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="bg-blue-50 rounded-xl p-4">
+          <div className="text-2xl font-bold text-blue-700">{localStatistics.total_categories}</div>
+          <div className="text-sm text-blue-600">
+            {locale === 'ar' ? 'أقسام' : 'Categories'}
           </div>
         </div>
-      )}
+        <div className="bg-green-50 rounded-xl p-4">
+          <div className="text-2xl font-bold text-green-700">{localStatistics.total_products}</div>
+          <div className="text-sm text-green-600">
+            {locale === 'ar' ? 'منتجات' : 'Products'}
+          </div>
+        </div>
+        <div className="bg-purple-50 rounded-xl p-4">
+          <div className="text-2xl font-bold text-purple-700">{localStatistics.products_with_variants}</div>
+          <div className="text-sm text-purple-600">
+            {locale === 'ar' ? 'بأحجام متعددة' : 'With Variants'}
+          </div>
+        </div>
+        <div className="bg-orange-50 rounded-xl p-4">
+          <div className="text-2xl font-bold text-orange-700">
+            {Math.round(localStatistics.average_confidence * 100)}%
+          </div>
+          <div className="text-sm text-orange-600">
+            {locale === 'ar' ? 'متوسط الدقة' : 'Avg. Confidence'}
+          </div>
+        </div>
+      </div>
 
       {/* Warnings */}
       {warnings.length > 0 && (
