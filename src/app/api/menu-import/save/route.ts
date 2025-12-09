@@ -2,7 +2,7 @@
  * API Route: Menu Import - Save to Database
  * POST /api/menu-import/save
  *
- * Saves the reviewed menu data to provider_categories and products tables
+ * Saves the reviewed menu data to provider_categories and menu_items tables
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -112,9 +112,9 @@ export async function POST(request: NextRequest) {
           basePrice = defaultVariant.price
         }
 
-        // Create product
+        // Create menu item
         const { data: createdProduct, error: productError } = await supabase
-          .from('products')
+          .from('menu_items')
           .insert({
             provider_id: providerId,
             category_id: createdCategory.id,
