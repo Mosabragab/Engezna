@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useLocale } from 'next-intl'
+import { createClient } from '@/lib/supabase/client'
 import { Cpu, Loader2, AlertCircle, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react'
 import type { BusinessCategoryCode } from '@/lib/constants/categories'
 import type {
@@ -84,25 +85,50 @@ export function ProcessingStep({
       setHasError(false)
       setErrorMessage(null)
 
-      const response = await fetch('/api/menu-import/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          importId,
+      const supabase = createClient()
+
+      // Call Supabase Edge Function (no timeout limit)
+      const { data, error } = await supabase.functions.invoke('analyze-menu', {
+        body: {
           imageUrls,
           businessType,
-        }),
+          importId,
+        },
       })
 
-      const result = await response.json()
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Analysis failed')
+      if (error) {
+        throw new Error(error.message || 'Edge function error')
       }
 
-      onComplete(result.data)
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Analysis failed')
+      }
+
+      // Update import status in database
+      await supabase
+        .from('menu_imports')
+        .update({
+          status: 'review',
+          extracted_data: data,
+          total_items: data.statistics?.total_products || 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', importId)
+
+      onComplete({
+        categories: data.categories || [],
+        addons: data.addons || [],
+        warnings: data.warnings || [],
+        statistics: data.statistics || {
+          total_categories: 0,
+          total_products: 0,
+          products_single_price: 0,
+          products_with_variants: 0,
+          products_need_review: 0,
+          average_confidence: 0,
+          addons_found: 0,
+        },
+      })
     } catch (err) {
       console.error('Analysis error:', err)
       setHasError(true)
