@@ -10,25 +10,31 @@ import {
   AlertCircle,
   Loader2,
   Camera,
+  FileSpreadsheet,
 } from 'lucide-react'
 import type { BusinessCategoryCode } from '@/lib/constants/categories'
-import type { UploadedImage } from '@/types/menu-import'
+import type { UploadedImage, ExtractedCategory, ExtractedAddon } from '@/types/menu-import'
+import { ExcelImportWizard } from '../ExcelImportWizard'
 
 interface UploadStepProps {
   providerId: string
   businessType: BusinessCategoryCode
   onComplete: (images: UploadedImage[], importId: string) => void
+  onExcelComplete?: (categories: ExtractedCategory[], addons: ExtractedAddon[], importId: string) => void
 }
+
+type ImportMode = 'images' | 'excel'
 
 const MAX_FILES = 10
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
-export function UploadStep({ providerId, businessType, onComplete }: UploadStepProps) {
+export function UploadStep({ providerId, businessType, onComplete, onExcelComplete }: UploadStepProps) {
   const locale = useLocale()
   const isRTL = locale === 'ar'
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [importMode, setImportMode] = useState<ImportMode>('images')
   const [files, setFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
@@ -208,19 +214,128 @@ export function UploadStep({ providerId, businessType, onComplete }: UploadStepP
     }
   }, [files, previews, providerId, locale, onComplete])
 
+  // Handle Excel import completion
+  const handleExcelComplete = useCallback(async (categories: ExtractedCategory[], addons: ExtractedAddon[]) => {
+    try {
+      setUploading(true)
+      const supabase = createClient()
+
+      // Create import session for Excel
+      const { data: importData, error: importError } = await supabase
+        .from('menu_imports')
+        .insert({
+          provider_id: providerId,
+          status: 'review', // Skip processing step for Excel
+          uploaded_images: [],
+          extracted_data: {
+            categories,
+            addons,
+            warnings: [],
+            statistics: {
+              total_categories: categories.length,
+              total_products: categories.reduce((sum, cat) => sum + cat.products.length, 0),
+              products_single_price: categories.reduce(
+                (sum, cat) => sum + cat.products.filter(p => p.pricing_type === 'single').length,
+                0
+              ),
+              products_with_variants: categories.reduce(
+                (sum, cat) => sum + cat.products.filter(p => p.variants && p.variants.length > 0).length,
+                0
+              ),
+              products_need_review: categories.reduce(
+                (sum, cat) => sum + cat.products.filter(p => p.needs_review).length,
+                0
+              ),
+              average_confidence: 1.0,
+              addons_found: addons.length,
+            },
+          },
+          total_items: categories.reduce((sum, cat) => sum + cat.products.length, 0),
+          reviewed_items: 0,
+          products_created: 0,
+          products_with_variants: 0,
+          retry_count: 0,
+        })
+        .select()
+        .single()
+
+      if (importError || !importData) {
+        throw new Error(importError?.message || 'Failed to create import session')
+      }
+
+      // Call the Excel complete callback
+      if (onExcelComplete) {
+        onExcelComplete(categories, addons, importData.id)
+      }
+    } catch (err) {
+      console.error('Excel import error:', err)
+      setError(
+        err instanceof Error
+          ? err.message
+          : locale === 'ar' ? 'فشل في استيراد البيانات' : 'Failed to import data'
+      )
+    } finally {
+      setUploading(false)
+    }
+  }, [providerId, locale, onExcelComplete])
+
   return (
     <div className="p-6">
       {/* Header */}
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-slate-900 mb-2">
-          {locale === 'ar' ? 'رفع صور المنيو' : 'Upload Menu Images'}
+          {locale === 'ar' ? 'استيراد المنيو' : 'Import Menu'}
         </h2>
         <p className="text-slate-600">
           {locale === 'ar'
-            ? 'ارفع صور المنيو وسيقوم الذكاء الاصطناعي باستخراج المنتجات والأسعار'
-            : 'Upload menu images and AI will extract products and prices'}
+            ? 'اختر طريقة استيراد المنيو - صور أو ملف Excel'
+            : 'Choose how to import your menu - images or Excel file'}
         </p>
       </div>
+
+      {/* Import Mode Tabs */}
+      <div className="flex justify-center gap-2 mb-6">
+        <button
+          onClick={() => setImportMode('images')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all ${
+            importMode === 'images'
+              ? 'bg-primary text-white shadow-md'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <Camera className="w-5 h-5" />
+          {locale === 'ar' ? 'صور المنيو' : 'Menu Images'}
+        </button>
+        <button
+          onClick={() => setImportMode('excel')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all ${
+            importMode === 'excel'
+              ? 'bg-green-600 text-white shadow-md'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <FileSpreadsheet className="w-5 h-5" />
+          {locale === 'ar' ? 'ملف Excel' : 'Excel File'}
+        </button>
+      </div>
+
+      {/* Excel Import Mode */}
+      {importMode === 'excel' && (
+        <ExcelImportWizard
+          onComplete={handleExcelComplete}
+          onCancel={() => setImportMode('images')}
+        />
+      )}
+
+      {/* Image Import Mode */}
+      {importMode === 'images' && (
+        <>
+          {/* Subtitle for images */}
+          <p className="text-center text-sm text-slate-500 mb-4">
+            {locale === 'ar'
+              ? 'ارفع صور المنيو وسيقوم الذكاء الاصطناعي باستخراج المنتجات والأسعار'
+              : 'Upload menu images and AI will extract products and prices'}
+          </p>
 
       {/* Drop Zone */}
       <div
@@ -343,6 +458,8 @@ export function UploadStep({ providerId, businessType, onComplete }: UploadStepP
           )}
         </button>
       </div>
+        </>
+      )}
     </div>
   )
 }

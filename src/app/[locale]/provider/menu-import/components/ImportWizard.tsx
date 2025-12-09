@@ -108,6 +108,47 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
     }))
   }, [])
 
+  // Handle Excel import completion (skip processing step)
+  const handleExcelComplete = useCallback((
+    categories: ExtractedCategory[],
+    addons: ExtractedAddon[],
+    importId: string
+  ) => {
+    const totalProducts = categories.reduce((sum, cat) => sum + cat.products.length, 0)
+    const productsWithVariants = categories.reduce(
+      (sum, cat) => sum + cat.products.filter(p => p.variants && p.variants.length > 0).length,
+      0
+    )
+
+    setState(prev => ({
+      ...prev,
+      importId,
+      uploadedImages: [],
+      analysisResult: {
+        categories,
+        addons,
+        warnings: [],
+        statistics: {
+          total_categories: categories.length,
+          total_products: totalProducts,
+          products_single_price: totalProducts - productsWithVariants,
+          products_with_variants: productsWithVariants,
+          products_need_review: categories.reduce(
+            (sum, cat) => sum + cat.products.filter(p => p.needs_review).length,
+            0
+          ),
+          average_confidence: 1.0,
+          addons_found: addons.length,
+        },
+      },
+      editedCategories: categories,
+      editedAddons: addons,
+      step: 3, // Skip to review step
+      isProcessing: false,
+      error: null,
+    }))
+  }, [])
+
   // Handle analysis completion
   const handleAnalysisComplete = useCallback((result: {
     categories: ExtractedCategory[]
@@ -262,6 +303,7 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
             providerId={providerId}
             businessType={businessType}
             onComplete={handleUploadComplete}
+            onExcelComplete={handleExcelComplete}
           />
         )}
 
