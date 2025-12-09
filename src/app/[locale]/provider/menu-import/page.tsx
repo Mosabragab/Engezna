@@ -135,7 +135,7 @@ export default function MenuImportPage() {
               </div>
               <div>
                 <h1 className="font-bold text-slate-900">
-                  {locale === 'ar' ? 'استيراد المنيو' : 'Import Menu'}
+                  {locale === 'ar' ? 'استيراد المنتجات' : 'Import Products'}
                 </h1>
                 <p className="text-sm text-slate-500">
                   {locale === 'ar' ? provider.name_ar : provider.name_en}

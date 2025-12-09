@@ -291,7 +291,7 @@ export function ReviewStep({
 
     // Title
     doc.setFontSize(18)
-    doc.text('Menu Export - تصدير المنيو', 148, 15, { align: 'center' })
+    doc.text('Products Export - تصدير المنتجات', 148, 15, { align: 'center' })
 
     // Statistics
     doc.setFontSize(12)

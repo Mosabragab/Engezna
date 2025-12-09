@@ -175,7 +175,7 @@ export function ConfirmStep({
           </div>
 
           <h2 className="text-xl font-bold text-slate-900 mb-2">
-            {locale === 'ar' ? 'جاري حفظ المنيو' : 'Saving Menu'}
+            {locale === 'ar' ? 'جاري حفظ المنتجات' : 'Saving Products'}
           </h2>
 
           <p className="text-slate-600 h-6 transition-opacity duration-300">
@@ -215,8 +215,8 @@ export function ConfirmStep({
 
           <p className="text-slate-600 mb-6">
             {locale === 'ar'
-              ? 'تم إضافة المنيو الخاص بك بنجاح'
-              : 'Your menu has been added successfully'}
+              ? 'تم إضافة المنتجات بنجاح'
+              : 'Products have been added successfully'}
           </p>
 
           {/* Results Summary */}

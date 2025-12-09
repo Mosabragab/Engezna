@@ -127,12 +127,29 @@ export interface ParsedExcelData {
   warnings: string[]
 }
 
+export interface MultiSheetResult {
+  sheets: Array<{
+    name: string
+    detection: DetectionResult
+    data: ParsedExcelData
+  }>
+  combined: ParsedExcelData
+}
+
 /**
- * Read Excel file and return raw data
+ * Sheet data structure
  */
-export async function readExcelFile(file: File): Promise<{
+export interface SheetData {
+  name: string
   headers: string[]
   rows: (string | number | null)[][]
+}
+
+/**
+ * Read Excel file and return data from ALL sheets
+ */
+export async function readExcelFile(file: File): Promise<{
+  sheets: SheetData[]
   sheetNames: string[]
 }> {
   return new Promise((resolve, reject) => {
@@ -143,30 +160,44 @@ export async function readExcelFile(file: File): Promise<{
         const data = new Uint8Array(e.target?.result as ArrayBuffer)
         const workbook = XLSX.read(data, { type: 'array' })
 
-        // Get first sheet
-        const sheetName = workbook.SheetNames[0]
-        const worksheet = workbook.Sheets[sheetName]
+        const sheets: SheetData[] = []
 
-        // Convert to JSON
-        const jsonData = XLSX.utils.sheet_to_json<(string | number | null)[]>(worksheet, {
-          header: 1,
-          defval: null,
-        })
+        // Read ALL sheets
+        for (const sheetName of workbook.SheetNames) {
+          const worksheet = workbook.Sheets[sheetName]
 
-        if (jsonData.length < 2) {
+          // Convert to JSON
+          const jsonData = XLSX.utils.sheet_to_json<(string | number | null)[]>(worksheet, {
+            header: 1,
+            defval: null,
+          })
+
+          if (jsonData.length < 2) {
+            continue // Skip empty sheets
+          }
+
+          // First row is headers
+          const headers = (jsonData[0] || []).map((h) => String(h || '').trim())
+          const rows = jsonData.slice(1).filter((row) =>
+            row.some((cell) => cell !== null && cell !== '')
+          )
+
+          if (rows.length > 0) {
+            sheets.push({
+              name: sheetName,
+              headers,
+              rows,
+            })
+          }
+        }
+
+        if (sheets.length === 0) {
           reject(new Error('الملف فارغ أو لا يحتوي على بيانات كافية'))
           return
         }
 
-        // First row is headers
-        const headers = (jsonData[0] || []).map((h) => String(h || '').trim())
-        const rows = jsonData.slice(1).filter((row) =>
-          row.some((cell) => cell !== null && cell !== '')
-        )
-
         resolve({
-          headers,
-          rows,
+          sheets,
           sheetNames: workbook.SheetNames,
         })
       } catch (error) {
@@ -180,9 +211,48 @@ export async function readExcelFile(file: File): Promise<{
 }
 
 /**
+ * Check if a column contains mostly numeric values (prices)
+ */
+function isNumericColumn(rows: (string | number | null)[][], columnIndex: number): boolean {
+  let numericCount = 0
+  let totalCount = 0
+
+  for (const row of rows.slice(0, 10)) { // Check first 10 rows
+    const value = row[columnIndex]
+    if (value !== null && value !== undefined && value !== '') {
+      totalCount++
+      if (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.-]/g, ''))))) {
+        numericCount++
+      }
+    }
+  }
+
+  return totalCount > 0 && (numericCount / totalCount) >= 0.8 // 80% numeric = price column
+}
+
+/**
+ * Detect pricing type from sheet name
+ */
+function detectPricingTypeFromSheetName(sheetName: string): { type: PricingType; variantGroup: keyof typeof VARIANT_GROUPS | null } {
+  const name = sheetName.toLowerCase()
+
+  if (name.includes('أحجام') || name.includes('احجام') || name.includes('sizes')) {
+    return { type: 'sizes', variantGroup: 'sizes' }
+  }
+  if (name.includes('أوزان') || name.includes('اوزان') || name.includes('weights') || name.includes('كيلو')) {
+    return { type: 'weights', variantGroup: 'weights_restaurant' }
+  }
+  if (name.includes('جرامات') || name.includes('قهوة') || name.includes('coffee') || name.includes('grams')) {
+    return { type: 'weights', variantGroup: 'weights_coffee' }
+  }
+
+  return { type: 'single', variantGroup: null }
+}
+
+/**
  * Detect column mapping from headers
  */
-export function detectColumns(headers: string[]): DetectionResult {
+export function detectColumns(headers: string[], rows?: (string | number | null)[][]): DetectionResult {
   const mapping: ColumnMapping = {
     product: -1,
     variants: [],
@@ -282,6 +352,59 @@ export function detectColumns(headers: string[]): DetectionResult {
   if (mapping.variants.length === 0 && priceCol !== -1) {
     mapping.price = priceCol
     matchedCount++
+  }
+
+  // If still no price columns found, detect numeric columns as prices
+  if (mapping.variants.length === 0 && mapping.price === undefined && rows) {
+    const numericColumns: number[] = []
+    for (let i = 0; i < headers.length; i++) {
+      if (i !== mapping.product && i !== mapping.category && i !== mapping.description) {
+        if (isNumericColumn(rows, i)) {
+          numericColumns.push(i)
+        }
+      }
+    }
+
+    if (numericColumns.length === 1) {
+      // Single price column
+      mapping.price = numericColumns[0]
+      matchedCount++
+    } else if (numericColumns.length >= 2) {
+      // Multiple price columns = variants
+      // Try to determine variant type from headers
+      const variantLabels = numericColumns.map(col => ({
+        column: col,
+        header: headers[col],
+      }))
+
+      // Check if these look like sizes
+      const looksLikeSizes = variantLabels.some(v =>
+        /صغير|وسط|كبير|small|medium|large/i.test(v.header)
+      )
+      const looksLikeWeights = variantLabels.some(v =>
+        /ربع|نص|كيلو|quarter|half|kilo|جرام|gram/i.test(v.header)
+      )
+
+      for (let idx = 0; idx < numericColumns.length; idx++) {
+        const col = numericColumns[idx]
+        mapping.variants.push({
+          column: col,
+          key: `variant_${idx}`,
+          name_ar: headers[col] || `خيار ${idx + 1}`,
+          name_en: headers[col] || `Option ${idx + 1}`,
+          type: looksLikeWeights ? 'weight' : looksLikeSizes ? 'size' : 'option',
+        })
+      }
+
+      if (looksLikeWeights) {
+        detectedVariantGroup = 'weights_restaurant'
+      } else if (looksLikeSizes) {
+        detectedVariantGroup = 'sizes'
+      } else {
+        detectedVariantGroup = 'options'
+      }
+      matchedCount += numericColumns.length
+    }
   }
 
   // Calculate confidence
@@ -464,6 +587,80 @@ function parsePrice(value: string | number | null | undefined): number | null {
 
   const parsed = parseFloat(cleanedValue)
   return !isNaN(parsed) && parsed > 0 ? parsed : null
+}
+
+/**
+ * Process all sheets from Excel file
+ */
+export function processAllSheets(sheets: SheetData[]): MultiSheetResult {
+  const results: MultiSheetResult = {
+    sheets: [],
+    combined: {
+      categories: [],
+      totalProducts: 0,
+      warnings: [],
+    },
+  }
+
+  for (const sheet of sheets) {
+    // Detect columns for this sheet
+    const detection = detectColumns(sheet.headers, sheet.rows)
+
+    // Get pricing type hint from sheet name
+    const sheetHint = detectPricingTypeFromSheetName(sheet.name)
+    if (sheetHint.variantGroup && detection.variantGroup === null) {
+      detection.pricingType = sheetHint.type
+      detection.variantGroup = sheetHint.variantGroup
+    }
+
+    // Transform data
+    const data = transformExcelData(sheet.rows, detection.mapping, detection.pricingType)
+
+    // Use sheet name as category prefix if no category column
+    if (detection.mapping.category === undefined || detection.mapping.category < 0) {
+      // Extract category hint from sheet name (before the dash)
+      const sheetCategory = sheet.name.split('-')[0].trim()
+      if (sheetCategory) {
+        data.categories.forEach(cat => {
+          if (cat.name_ar === 'عام') {
+            cat.name_ar = sheetCategory
+          }
+        })
+      }
+    }
+
+    results.sheets.push({
+      name: sheet.name,
+      detection,
+      data,
+    })
+  }
+
+  // Combine all categories
+  const categoryMap = new Map<string, ExtractedCategory>()
+
+  for (const sheet of results.sheets) {
+    for (const category of sheet.data.categories) {
+      const existingCategory = categoryMap.get(category.name_ar)
+      if (existingCategory) {
+        // Merge products into existing category
+        existingCategory.products.push(...category.products)
+      } else {
+        categoryMap.set(category.name_ar, { ...category })
+      }
+    }
+
+    results.combined.totalProducts += sheet.data.totalProducts
+    results.combined.warnings.push(...sheet.data.warnings)
+  }
+
+  // Convert map to array and assign display order
+  results.combined.categories = Array.from(categoryMap.values()).map((cat, index) => ({
+    ...cat,
+    display_order: index + 1,
+  }))
+
+  return results
 }
 
 /**

@@ -60,7 +60,7 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
 
   const [state, setState] = useState<WizardState>(initialState)
 
-  // Step definitions (removed AI processing step)
+  // Step definitions
   const steps = [
     {
       number: 1,
@@ -288,8 +288,8 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
 
             <p className="text-slate-600 mb-6">
               {locale === 'ar'
-                ? 'تم استيراد المنيو بنجاح'
-                : 'Menu has been imported successfully'}
+                ? 'تم استيراد المنتجات بنجاح'
+                : 'Products have been imported successfully'}
             </p>
 
             {/* Results Summary */}
@@ -328,7 +328,7 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
                 onClick={handleReset}
                 className="px-6 py-3 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
               >
-                {locale === 'ar' ? 'استيراد منيو آخر' : 'Import Another Menu'}
+                {locale === 'ar' ? 'استيراد ملف آخر' : 'Import Another File'}
               </button>
               <button
                 onClick={handleFinish}
