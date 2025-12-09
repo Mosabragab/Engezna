@@ -3,14 +3,12 @@
 import { useState, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { Upload, Cpu, CheckSquare, Save, CheckCircle2 } from 'lucide-react'
+import { Upload, CheckSquare, Save, CheckCircle2 } from 'lucide-react'
 import { UploadStep } from './steps/UploadStep'
-import { ProcessingStep } from './steps/ProcessingStep'
 import { ReviewStep } from './steps/ReviewStep'
 import { ConfirmStep } from './steps/ConfirmStep'
 import type { BusinessCategoryCode } from '@/lib/constants/categories'
 import type {
-  UploadedImage,
   ExtractedCategory,
   ExtractedAddon,
   AnalysisWarning,
@@ -23,12 +21,11 @@ interface ImportWizardProps {
   providerName: string
 }
 
-type WizardStep = 1 | 2 | 3 | 4 | 5
+type WizardStep = 1 | 2 | 3 | 4
 
 interface WizardState {
   step: WizardStep
   importId: string | null
-  uploadedImages: UploadedImage[]
   analysisResult: {
     categories: ExtractedCategory[]
     addons: ExtractedAddon[]
@@ -37,7 +34,6 @@ interface WizardState {
   } | null
   editedCategories: ExtractedCategory[]
   editedAddons: ExtractedAddon[]
-  isProcessing: boolean
   isSaving: boolean
   error: string | null
   saveResults: {
@@ -50,11 +46,9 @@ interface WizardState {
 const initialState: WizardState = {
   step: 1,
   importId: null,
-  uploadedImages: [],
   analysisResult: null,
   editedCategories: [],
   editedAddons: [],
-  isProcessing: false,
   isSaving: false,
   error: null,
   saveResults: null,
@@ -63,53 +57,35 @@ const initialState: WizardState = {
 export function ImportWizard({ providerId, businessType, providerName }: ImportWizardProps) {
   const locale = useLocale()
   const router = useRouter()
-  const isRTL = locale === 'ar'
 
   const [state, setState] = useState<WizardState>(initialState)
 
-  // Step definitions
+  // Step definitions (removed AI processing step)
   const steps = [
     {
       number: 1,
-      title: locale === 'ar' ? 'رفع الصور' : 'Upload Images',
+      title: locale === 'ar' ? 'رفع الملف' : 'Upload File',
       icon: Upload,
     },
     {
       number: 2,
-      title: locale === 'ar' ? 'تحليل AI' : 'AI Analysis',
-      icon: Cpu,
-    },
-    {
-      number: 3,
       title: locale === 'ar' ? 'مراجعة' : 'Review',
       icon: CheckSquare,
     },
     {
-      number: 4,
+      number: 3,
       title: locale === 'ar' ? 'حفظ' : 'Save',
       icon: Save,
     },
     {
-      number: 5,
+      number: 4,
       title: locale === 'ar' ? 'تم!' : 'Done!',
       icon: CheckCircle2,
     },
   ]
 
-  // Handle image upload completion
-  const handleUploadComplete = useCallback((images: UploadedImage[], importId: string) => {
-    setState(prev => ({
-      ...prev,
-      uploadedImages: images,
-      importId,
-      step: 2,
-      isProcessing: true,
-      error: null,
-    }))
-  }, [])
-
-  // Handle Excel import completion (skip processing step)
-  const handleExcelComplete = useCallback((
+  // Handle Excel upload completion - goes directly to review
+  const handleUploadComplete = useCallback((
     categories: ExtractedCategory[],
     addons: ExtractedAddon[],
     importId: string
@@ -123,7 +99,6 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
     setState(prev => ({
       ...prev,
       importId,
-      uploadedImages: [],
       analysisResult: {
         categories,
         addons,
@@ -143,36 +118,8 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
       },
       editedCategories: categories,
       editedAddons: addons,
-      step: 3, // Skip to review step
-      isProcessing: false,
+      step: 2,
       error: null,
-    }))
-  }, [])
-
-  // Handle analysis completion
-  const handleAnalysisComplete = useCallback((result: {
-    categories: ExtractedCategory[]
-    addons: ExtractedAddon[]
-    warnings: AnalysisWarning[]
-    statistics: AnalysisStatistics
-  }) => {
-    setState(prev => ({
-      ...prev,
-      analysisResult: result,
-      editedCategories: result.categories,
-      editedAddons: result.addons,
-      step: 3,
-      isProcessing: false,
-      error: null,
-    }))
-  }, [])
-
-  // Handle analysis error
-  const handleAnalysisError = useCallback((error: string) => {
-    setState(prev => ({
-      ...prev,
-      isProcessing: false,
-      error,
     }))
   }, [])
 
@@ -185,7 +132,7 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
       ...prev,
       editedCategories: categories,
       editedAddons: addons,
-      step: 4,
+      step: 3,
       error: null,
     }))
   }, [])
@@ -199,7 +146,7 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
     setState(prev => ({
       ...prev,
       saveResults: results,
-      step: 5,
+      step: 4,
       isSaving: false,
       error: null,
     }))
@@ -303,22 +250,10 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
             providerId={providerId}
             businessType={businessType}
             onComplete={handleUploadComplete}
-            onExcelComplete={handleExcelComplete}
           />
         )}
 
         {state.step === 2 && (
-          <ProcessingStep
-            importId={state.importId!}
-            imageUrls={state.uploadedImages.map(img => img.publicUrl)}
-            businessType={businessType}
-            onComplete={handleAnalysisComplete}
-            onError={handleAnalysisError}
-            onBack={handleBack}
-          />
-        )}
-
-        {state.step === 3 && (
           <ReviewStep
             categories={state.editedCategories}
             addons={state.editedAddons}
@@ -329,7 +264,7 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
           />
         )}
 
-        {state.step === 4 && (
+        {state.step === 3 && (
           <ConfirmStep
             providerId={providerId}
             importId={state.importId!}
@@ -341,7 +276,7 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
           />
         )}
 
-        {state.step === 5 && state.saveResults && (
+        {state.step === 4 && state.saveResults && (
           <div className="p-8 text-center">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-10 h-10 text-green-600" />
