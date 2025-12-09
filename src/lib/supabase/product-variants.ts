@@ -7,16 +7,14 @@ import { createClient } from './client'
 import type { DBProductVariant, ExtractedVariant, VariantType, PricingType } from '@/types/menu-import'
 
 // Determine variant type from pricing type
-export function getVariantTypeFromPricingType(pricingType: PricingType): VariantType {
-  switch (pricingType) {
-    case 'sizes':
-      return 'size'
-    case 'weights':
-      return 'weight'
-    case 'options':
-    default:
-      return 'option'
+// Note: Now pricing_type is 'fixed', 'per_unit', or 'variants'
+// The actual variant_type is stored separately on the product
+export function getVariantTypeFromPricingType(pricingType: PricingType, variantType?: VariantType | null): VariantType {
+  if (variantType) {
+    return variantType
   }
+  // Default to 'option' if no variant type specified
+  return 'option'
 }
 
 // Create a single variant

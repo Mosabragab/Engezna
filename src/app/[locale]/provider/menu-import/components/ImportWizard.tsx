@@ -106,7 +106,8 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
         statistics: {
           total_categories: categories.length,
           total_products: totalProducts,
-          products_single_price: totalProducts - productsWithVariants,
+          products_fixed_price: totalProducts - productsWithVariants,
+          products_per_unit: 0,
           products_with_variants: productsWithVariants,
           products_need_review: categories.reduce(
             (sum, cat) => sum + cat.products.filter(p => p.needs_review).length,

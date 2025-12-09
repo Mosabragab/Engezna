@@ -1,7 +1,11 @@
 /**
- * Excel Import Utility for Menu Import System
- * Supports intelligent column detection for Arabic/English menus
- * Handles various pricing types: single, sizes, weights, options
+ * Excel Import Utility for Product Import System
+ * Supports intelligent column detection for Arabic/English product lists
+ *
+ * Pricing Types:
+ * - fixed: Single fixed price (sandwiches, drinks)
+ * - per_unit: Price per unit with quantity (vegetables by kg)
+ * - variants: Multiple options with different prices (pizza sizes, kebab weights)
  */
 
 import * as XLSX from 'xlsx'
@@ -9,11 +13,25 @@ import type {
   ExtractedCategory,
   ExtractedProduct,
   ExtractedVariant,
-  PricingType,
-  VariantType,
 } from '@/types/menu-import'
+import {
+  PRICING_TYPES,
+  VARIANT_TYPES,
+  detectPricingTypeFromSheetName,
+  detectVariantTypeFromHeaders,
+  type PricingType,
+  type VariantType,
+} from '@/lib/constants/pricing-types'
+import {
+  UNIT_TYPES,
+  getSuggestedUnit,
+  type UnitType,
+} from '@/lib/constants/unit-types'
 
-// Column detection patterns
+// ═══════════════════════════════════════════════════════════════
+// COLUMN DETECTION PATTERNS
+// ═══════════════════════════════════════════════════════════════
+
 export const COLUMN_PATTERNS: Record<string, string[]> = {
   // Category
   category: ['القسم', 'الفئة', 'الصنف', 'التصنيف', 'category', 'section', 'type', 'نوع'],
@@ -24,25 +42,25 @@ export const COLUMN_PATTERNS: Record<string, string[]> = {
   // Single price
   price: ['السعر', 'price', 'سعر', 'الثمن', 'cost', 'التكلفة'],
 
+  // Unit column
+  unit: ['الوحدة', 'unit', 'وحدة'],
+
   // Size variants (S/M/L)
   size_small: ['صغير', 'small', 's', 'ص', 'سمول'],
   size_medium: ['وسط', 'medium', 'm', 'و', 'متوسط', 'ميديم'],
   size_large: ['كبير', 'large', 'l', 'ك', 'لارج'],
-  size_xlarge: ['كبير جداً', 'xlarge', 'xl', 'اكس لارج', 'سوبر'],
+  size_xlarge: ['كبير جداً', 'xlarge', 'xl', 'اكس لارج', 'سوبر', 'عائلي', 'family'],
 
   // Weight variants (restaurants - ربع/نص/كيلو)
   weight_quarter: ['ربع', 'ربع كيلو', '¼', 'quarter', '250جم', '250g'],
   weight_half: ['نص', 'نص كيلو', 'نصف', '½', 'half', '500جم', '500g'],
+  weight_3quarters: ['ثلاثة أرباع', '¾', '3/4', '750جم', '750g'],
   weight_kilo: ['كيلو', 'كامل', '1 كيلو', 'kilo', 'kg', '1000جم'],
 
   // Weight variants (coffee - grams)
   weight_100g: ['100جم', '100g', '100 جم', '100 جرام'],
   weight_250g: ['250جم', '250g', '250 جم', '250 جرام'],
   weight_500g: ['500جم', '500g', '500 جم', '500 جرام'],
-
-  // Options
-  option_regular: ['عادي', 'regular', 'سينجل', 'single', 'عادى'],
-  option_large: ['كبير', 'large', 'دابل', 'double', 'سوبر', 'مميز'],
 
   // Description
   description: ['الوصف', 'description', 'وصف', 'المكونات', 'تفاصيل', 'details'],
@@ -51,11 +69,13 @@ export const COLUMN_PATTERNS: Record<string, string[]> = {
   name_en: ['الاسم بالانجليزي', 'english name', 'name en', 'الاسم الانجليزي'],
 }
 
-// Variant group configurations
+// ═══════════════════════════════════════════════════════════════
+// VARIANT GROUP CONFIGURATIONS
+// ═══════════════════════════════════════════════════════════════
+
 export const VARIANT_GROUPS = {
   sizes: {
-    type: 'size' as VariantType,
-    pricingType: 'sizes' as PricingType,
+    variantType: 'size' as VariantType,
     columns: ['size_small', 'size_medium', 'size_large', 'size_xlarge'],
     labels: {
       size_small: { ar: 'صغير', en: 'Small' },
@@ -65,36 +85,30 @@ export const VARIANT_GROUPS = {
     },
   },
   weights_restaurant: {
-    type: 'weight' as VariantType,
-    pricingType: 'weights' as PricingType,
-    columns: ['weight_quarter', 'weight_half', 'weight_kilo'],
+    variantType: 'weight' as VariantType,
+    columns: ['weight_quarter', 'weight_half', 'weight_3quarters', 'weight_kilo'],
     labels: {
-      weight_quarter: { ar: 'ربع كيلو', en: 'Quarter' },
-      weight_half: { ar: 'نص كيلو', en: 'Half' },
-      weight_kilo: { ar: 'كيلو', en: 'Kilo' },
+      weight_quarter: { ar: 'ربع كيلو', en: 'Quarter', multiplier: 0.25 },
+      weight_half: { ar: 'نص كيلو', en: 'Half', multiplier: 0.5 },
+      weight_3quarters: { ar: 'ثلاثة أرباع', en: '3/4', multiplier: 0.75 },
+      weight_kilo: { ar: 'كيلو', en: 'Kilo', multiplier: 1 },
     },
   },
   weights_coffee: {
-    type: 'weight' as VariantType,
-    pricingType: 'weights' as PricingType,
+    variantType: 'coffee_weight' as VariantType,
     columns: ['weight_100g', 'weight_250g', 'weight_500g', 'weight_kilo'],
     labels: {
-      weight_100g: { ar: '100 جرام', en: '100g' },
-      weight_250g: { ar: '250 جرام', en: '250g' },
-      weight_500g: { ar: '500 جرام', en: '500g' },
-      weight_kilo: { ar: 'كيلو', en: '1kg' },
-    },
-  },
-  options: {
-    type: 'option' as VariantType,
-    pricingType: 'options' as PricingType,
-    columns: ['option_regular', 'option_large'],
-    labels: {
-      option_regular: { ar: 'عادي', en: 'Regular' },
-      option_large: { ar: 'كبير', en: 'Large' },
+      weight_100g: { ar: '100 جرام', en: '100g', multiplier: 0.1 },
+      weight_250g: { ar: '250 جرام', en: '250g', multiplier: 0.25 },
+      weight_500g: { ar: '500 جرام', en: '500g', multiplier: 0.5 },
+      weight_kilo: { ar: 'كيلو', en: '1kg', multiplier: 1 },
     },
   },
 }
+
+// ═══════════════════════════════════════════════════════════════
+// INTERFACES
+// ═══════════════════════════════════════════════════════════════
 
 export interface ColumnMapping {
   category?: number
@@ -102,12 +116,14 @@ export interface ColumnMapping {
   price?: number
   description?: number
   name_en?: number
+  unit?: number
   variants: Array<{
     column: number
     key: string
     name_ar: string
     name_en: string
-    type: VariantType
+    variantType: VariantType
+    multiplier?: number
   }>
 }
 
@@ -115,6 +131,8 @@ export interface DetectionResult {
   mapping: ColumnMapping
   confidence: number
   pricingType: PricingType
+  variantType: VariantType | null
+  unitType: UnitType | null
   variantGroup: keyof typeof VARIANT_GROUPS | null
   suggestions: string[]
   headers: string[]
@@ -125,6 +143,9 @@ export interface ParsedExcelData {
   categories: ExtractedCategory[]
   totalProducts: number
   warnings: string[]
+  pricingType: PricingType
+  variantType: VariantType | null
+  unitType: UnitType | null
 }
 
 export interface MultiSheetResult {
@@ -136,14 +157,15 @@ export interface MultiSheetResult {
   combined: ParsedExcelData
 }
 
-/**
- * Sheet data structure
- */
 export interface SheetData {
   name: string
   headers: string[]
   rows: (string | number | null)[][]
 }
+
+// ═══════════════════════════════════════════════════════════════
+// EXCEL FILE READING
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * Read Excel file and return data from ALL sheets
@@ -210,6 +232,10 @@ export async function readExcelFile(file: File): Promise<{
   })
 }
 
+// ═══════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
 /**
  * Check if a column contains mostly numeric values (prices)
  */
@@ -217,7 +243,7 @@ function isNumericColumn(rows: (string | number | null)[][], columnIndex: number
   let numericCount = 0
   let totalCount = 0
 
-  for (const row of rows.slice(0, 10)) { // Check first 10 rows
+  for (const row of rows.slice(0, 10)) {
     const value = row[columnIndex]
     if (value !== null && value !== undefined && value !== '') {
       totalCount++
@@ -227,32 +253,120 @@ function isNumericColumn(rows: (string | number | null)[][], columnIndex: number
     }
   }
 
-  return totalCount > 0 && (numericCount / totalCount) >= 0.8 // 80% numeric = price column
+  return totalCount > 0 && (numericCount / totalCount) >= 0.8
 }
 
 /**
- * Detect pricing type from sheet name
+ * Parse price from cell value
  */
-function detectPricingTypeFromSheetName(sheetName: string): { type: PricingType; variantGroup: keyof typeof VARIANT_GROUPS | null } {
+function parsePrice(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+
+  if (typeof value === 'number') {
+    return value > 0 ? value : null
+  }
+
+  const cleanedValue = String(value)
+    .replace(/[^\d.,-]/g, '')
+    .replace(',', '.')
+    .trim()
+
+  const parsed = parseFloat(cleanedValue)
+  return !isNaN(parsed) && parsed > 0 ? parsed : null
+}
+
+/**
+ * Detect pricing type and unit from sheet name
+ */
+function detectFromSheetName(sheetName: string): {
+  pricingType: PricingType
+  variantType: VariantType | null
+  unitType: UnitType | null
+  variantGroup: keyof typeof VARIANT_GROUPS | null
+} {
   const name = sheetName.toLowerCase()
 
-  if (name.includes('أحجام') || name.includes('احجام') || name.includes('sizes')) {
-    return { type: 'sizes', variantGroup: 'sizes' }
-  }
-  if (name.includes('أوزان') || name.includes('اوزان') || name.includes('weights') || name.includes('كيلو')) {
-    return { type: 'weights', variantGroup: 'weights_restaurant' }
-  }
-  if (name.includes('جرامات') || name.includes('قهوة') || name.includes('coffee') || name.includes('grams')) {
-    return { type: 'weights', variantGroup: 'weights_coffee' }
+  // Check for per_unit patterns (vegetables, fruits, grocery)
+  if (name.includes('خضار') || name.includes('فاكهة') || name.includes('فواكه')) {
+    return {
+      pricingType: 'per_unit',
+      variantType: null,
+      unitType: 'kg',
+      variantGroup: null,
+    }
   }
 
-  return { type: 'single', variantGroup: null }
+  if (name.includes('سوبر') || name.includes('بقالة') || name.includes('grocery')) {
+    return {
+      pricingType: 'fixed',
+      variantType: null,
+      unitType: 'piece',
+      variantGroup: null,
+    }
+  }
+
+  // Check for variants patterns
+  if (name.includes('أحجام') || name.includes('احجام') || name.includes('sizes')) {
+    return {
+      pricingType: 'variants',
+      variantType: 'size',
+      unitType: null,
+      variantGroup: 'sizes',
+    }
+  }
+
+  if (name.includes('مشويات') || name.includes('كباب') || name.includes('لحوم') ||
+      name.includes('أوزان') || name.includes('اوزان')) {
+    return {
+      pricingType: 'variants',
+      variantType: 'weight',
+      unitType: null,
+      variantGroup: 'weights_restaurant',
+    }
+  }
+
+  if (name.includes('قهوة') || name.includes('coffee') || name.includes('جرامات')) {
+    return {
+      pricingType: 'variants',
+      variantType: 'coffee_weight',
+      unitType: null,
+      variantGroup: 'weights_coffee',
+    }
+  }
+
+  // Check for restaurant patterns (fixed or variants)
+  if (name.includes('مطعم') || name.includes('restaurant') || name.includes('وجبات')) {
+    return {
+      pricingType: 'fixed',
+      variantType: null,
+      unitType: 'piece',
+      variantGroup: null,
+    }
+  }
+
+  // Default
+  return {
+    pricingType: 'fixed',
+    variantType: null,
+    unitType: null,
+    variantGroup: null,
+  }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// COLUMN DETECTION
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * Detect column mapping from headers
  */
-export function detectColumns(headers: string[], rows?: (string | number | null)[][]): DetectionResult {
+export function detectColumns(
+  headers: string[],
+  rows?: (string | number | null)[][],
+  sheetName?: string
+): DetectionResult {
   const mapping: ColumnMapping = {
     product: -1,
     variants: [],
@@ -262,12 +376,20 @@ export function detectColumns(headers: string[], rows?: (string | number | null)
   let confidence = 0
   let matchedCount = 0
 
-  // Normalize headers for matching
+  // Get hints from sheet name
+  const sheetHints = sheetName ? detectFromSheetName(sheetName) : {
+    pricingType: 'fixed' as PricingType,
+    variantType: null,
+    unitType: null,
+    variantGroup: null,
+  }
+
+  // Normalize headers
   const normalizedHeaders = headers.map((h) =>
     h.toLowerCase().trim().replace(/\s+/g, ' ')
   )
 
-  // Helper function to find column
+  // Helper to find column
   const findColumn = (patternKey: string): number => {
     const patterns = COLUMN_PATTERNS[patternKey]
     if (!patterns) return -1
@@ -286,10 +408,9 @@ export function detectColumns(headers: string[], rows?: (string | number | null)
   // Detect product column (required)
   mapping.product = findColumn('product')
   if (mapping.product === -1) {
-    // Try to find any column that might be product name
+    // First non-numeric column might be product
     for (let i = 0; i < headers.length; i++) {
       if (!normalizedHeaders[i].match(/\d/) && normalizedHeaders[i].length > 0) {
-        // First non-numeric column might be product
         if (mapping.category === undefined || mapping.category !== i) {
           mapping.product = i
           suggestions.push(`تم تخمين عمود المنتج: "${headers[i]}"`)
@@ -301,23 +422,25 @@ export function detectColumns(headers: string[], rows?: (string | number | null)
     matchedCount++
   }
 
-  // Detect category column
+  // Detect other basic columns
   mapping.category = findColumn('category')
   if (mapping.category !== -1) matchedCount++
 
-  // Detect description column
   mapping.description = findColumn('description')
   if (mapping.description !== -1) matchedCount++
 
-  // Detect english name column
   mapping.name_en = findColumn('name_en')
   if (mapping.name_en !== -1) matchedCount++
 
-  // Detect single price column
+  mapping.unit = findColumn('unit')
+  if (mapping.unit !== -1) matchedCount++
+
+  // Detect price column
   const priceCol = findColumn('price')
 
   // Detect variant columns
   let detectedVariantGroup: keyof typeof VARIANT_GROUPS | null = null
+  let detectedVariantType: VariantType | null = null
 
   // Check each variant group
   for (const [groupKey, group] of Object.entries(VARIANT_GROUPS)) {
@@ -326,39 +449,40 @@ export function detectColumns(headers: string[], rows?: (string | number | null)
     for (const colKey of group.columns) {
       const colIndex = findColumn(colKey)
       if (colIndex !== -1) {
-        const labels = (group.labels as Record<string, { ar: string; en: string }>)[colKey]
-        if (labels) {
+        const labelInfo = (group.labels as Record<string, { ar: string; en: string; multiplier?: number }>)[colKey]
+        if (labelInfo) {
           foundVariants.push({
             column: colIndex,
             key: colKey,
-            name_ar: labels.ar,
-            name_en: labels.en,
-            type: group.type,
+            name_ar: labelInfo.ar,
+            name_en: labelInfo.en,
+            variantType: group.variantType,
+            multiplier: labelInfo.multiplier,
           })
         }
       }
     }
 
-    // If we found at least 2 variants in this group, use it
     if (foundVariants.length >= 2) {
       mapping.variants = foundVariants
       detectedVariantGroup = groupKey as keyof typeof VARIANT_GROUPS
+      detectedVariantType = group.variantType
       matchedCount += foundVariants.length
       break
     }
   }
 
-  // If no variants found, use single price
+  // If no variants found, check for numeric columns
   if (mapping.variants.length === 0 && priceCol !== -1) {
     mapping.price = priceCol
     matchedCount++
   }
 
-  // If still no price columns found, detect numeric columns as prices
+  // Auto-detect numeric columns as price columns
   if (mapping.variants.length === 0 && mapping.price === undefined && rows) {
     const numericColumns: number[] = []
     for (let i = 0; i < headers.length; i++) {
-      if (i !== mapping.product && i !== mapping.category && i !== mapping.description) {
+      if (i !== mapping.product && i !== mapping.category && i !== mapping.description && i !== mapping.unit) {
         if (isNumericColumn(rows, i)) {
           numericColumns.push(i)
         }
@@ -366,79 +490,93 @@ export function detectColumns(headers: string[], rows?: (string | number | null)
     }
 
     if (numericColumns.length === 1) {
-      // Single price column
       mapping.price = numericColumns[0]
       matchedCount++
     } else if (numericColumns.length >= 2) {
       // Multiple price columns = variants
-      // Try to determine variant type from headers
-      const variantLabels = numericColumns.map(col => ({
-        column: col,
-        header: headers[col],
-      }))
-
-      // Check if these look like sizes
-      const looksLikeSizes = variantLabels.some(v =>
-        /صغير|وسط|كبير|small|medium|large/i.test(v.header)
+      const looksLikeSizes = numericColumns.some(col =>
+        /صغير|وسط|كبير|small|medium|large/i.test(headers[col])
       )
-      const looksLikeWeights = variantLabels.some(v =>
-        /ربع|نص|كيلو|quarter|half|kilo|جرام|gram/i.test(v.header)
+      const looksLikeWeights = numericColumns.some(col =>
+        /ربع|نص|كيلو|quarter|half|kilo|جرام|gram/i.test(headers[col])
       )
 
       for (let idx = 0; idx < numericColumns.length; idx++) {
         const col = numericColumns[idx]
+        const varType = looksLikeWeights ? 'weight' : looksLikeSizes ? 'size' : 'option'
         mapping.variants.push({
           column: col,
           key: `variant_${idx}`,
           name_ar: headers[col] || `خيار ${idx + 1}`,
           name_en: headers[col] || `Option ${idx + 1}`,
-          type: looksLikeWeights ? 'weight' : looksLikeSizes ? 'size' : 'option',
+          variantType: varType,
         })
       }
 
       if (looksLikeWeights) {
         detectedVariantGroup = 'weights_restaurant'
+        detectedVariantType = 'weight'
       } else if (looksLikeSizes) {
         detectedVariantGroup = 'sizes'
+        detectedVariantType = 'size'
       } else {
-        detectedVariantGroup = 'options'
+        detectedVariantGroup = null
+        detectedVariantType = 'option'
       }
       matchedCount += numericColumns.length
     }
   }
 
   // Calculate confidence
-  const totalPossible = 4 + (mapping.variants.length || 1) // category, product, description, name_en + price/variants
+  const totalPossible = 4 + (mapping.variants.length || 1)
   confidence = Math.min(1, matchedCount / totalPossible)
 
-  // Determine pricing type
-  let pricingType: PricingType = 'single'
-  if (detectedVariantGroup) {
-    pricingType = VARIANT_GROUPS[detectedVariantGroup].pricingType
+  // Determine final pricing type
+  let pricingType: PricingType = 'fixed'
+  let variantType: VariantType | null = null
+  let unitType: UnitType | null = null
+
+  if (mapping.variants.length > 0) {
+    pricingType = 'variants'
+    variantType = detectedVariantType || sheetHints.variantType
+  } else if (sheetHints.pricingType === 'per_unit') {
+    pricingType = 'per_unit'
+    unitType = sheetHints.unitType || 'kg'
+  } else {
+    pricingType = 'fixed'
   }
 
-  // Add suggestions if confidence is low
+  // Use sheet hints if no variants detected
+  if (!detectedVariantGroup && sheetHints.variantGroup) {
+    detectedVariantGroup = sheetHints.variantGroup
+    variantType = sheetHints.variantType
+    pricingType = 'variants'
+  }
+
+  // Suggestions
   if (confidence < 0.5) {
     suggestions.push('لم يتم التعرف على بعض الأعمدة، يرجى التحقق من التعيين')
   }
-
   if (mapping.product === -1) {
     suggestions.push('لم يتم العثور على عمود اسم المنتج')
   }
-
-  // Get sample data (first 5 rows)
-  const sampleData: string[][] = []
 
   return {
     mapping,
     confidence,
     pricingType,
+    variantType,
+    unitType,
     variantGroup: detectedVariantGroup,
     suggestions,
     headers,
-    sampleData,
+    sampleData: [],
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// DATA TRANSFORMATION
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * Transform Excel rows to ExtractedCategory[] format
@@ -446,7 +584,9 @@ export function detectColumns(headers: string[], rows?: (string | number | null)
 export function transformExcelData(
   rows: (string | number | null)[][],
   mapping: ColumnMapping,
-  pricingType: PricingType
+  pricingType: PricingType,
+  variantType: VariantType | null = null,
+  unitType: UnitType | null = null
 ): ParsedExcelData {
   const categoriesMap = new Map<string, ExtractedCategory>()
   const warnings: string[] = []
@@ -457,17 +597,13 @@ export function transformExcelData(
 
     // Get product name
     const productName = mapping.product >= 0 ? String(row[mapping.product] || '').trim() : ''
-    if (!productName) {
-      continue // Skip empty rows
-    }
+    if (!productName) continue
 
     // Get category
     let categoryName = 'عام'
     if (mapping.category !== undefined && mapping.category >= 0) {
       const catValue = row[mapping.category]
-      if (catValue) {
-        categoryName = String(catValue).trim()
-      }
+      if (catValue) categoryName = String(catValue).trim()
     }
 
     // Get or create category
@@ -478,22 +614,21 @@ export function transformExcelData(
         icon: null,
         display_order: categoriesMap.size + 1,
         products: [],
+        default_pricing_type: pricingType,
+        default_unit_type: unitType || undefined,
+        default_variant_type: variantType || undefined,
       })
     }
 
     const category = categoriesMap.get(categoryName)!
 
-    // Get description
-    const description =
-      mapping.description !== undefined && mapping.description >= 0
-        ? String(row[mapping.description] || '').trim() || null
-        : null
-
-    // Get english name
-    const nameEn =
-      mapping.name_en !== undefined && mapping.name_en >= 0
-        ? String(row[mapping.name_en] || '').trim() || null
-        : null
+    // Get description and english name
+    const description = mapping.description !== undefined && mapping.description >= 0
+      ? String(row[mapping.description] || '').trim() || null
+      : null
+    const nameEn = mapping.name_en !== undefined && mapping.name_en >= 0
+      ? String(row[mapping.name_en] || '').trim() || null
+      : null
 
     // Build product
     const product: ExtractedProduct = {
@@ -501,28 +636,34 @@ export function transformExcelData(
       name_en: nameEn,
       description_ar: description,
       pricing_type: pricingType,
+      variant_type: variantType,
       price: null,
       original_price: null,
+      unit_type: unitType,
+      min_quantity: unitType && UNIT_TYPES[unitType] ? UNIT_TYPES[unitType].min : 1,
+      quantity_step: unitType && UNIT_TYPES[unitType] ? UNIT_TYPES[unitType].step : 1,
       variants: null,
       combo_contents_ar: null,
       serves_count: null,
       is_popular: false,
       is_spicy: false,
       is_vegetarian: false,
-      confidence: 1.0, // Excel import has high confidence
+      confidence: 1.0,
       needs_review: false,
       source_note: 'Excel Import',
     }
 
-    // Handle pricing
-    if (pricingType === 'single' && mapping.price !== undefined && mapping.price >= 0) {
-      const priceValue = row[mapping.price]
-      product.price = parsePrice(priceValue)
-      if (product.price === null) {
-        product.needs_review = true
-        warnings.push(`صف ${rowIndex + 2}: لا يوجد سعر للمنتج "${productName}"`)
+    // Handle pricing based on type
+    if (pricingType === 'fixed' || pricingType === 'per_unit') {
+      if (mapping.price !== undefined && mapping.price >= 0) {
+        const priceValue = row[mapping.price]
+        product.price = parsePrice(priceValue)
+        if (product.price === null) {
+          product.needs_review = true
+          warnings.push(`صف ${rowIndex + 2}: لا يوجد سعر للمنتج "${productName}"`)
+        }
       }
-    } else if (mapping.variants.length > 0) {
+    } else if (pricingType === 'variants' && mapping.variants.length > 0) {
       // Build variants
       const variants: ExtractedVariant[] = []
       let isFirst = true
@@ -538,6 +679,7 @@ export function transformExcelData(
             price,
             is_default: isFirst,
             display_order: variants.length + 1,
+            multiplier: variantMapping.multiplier,
           })
           isFirst = false
         }
@@ -545,10 +687,11 @@ export function transformExcelData(
 
       if (variants.length > 0) {
         product.variants = variants
-        product.price = variants[0].price // Set base price
+        product.price = variants[0].price
+        product.variant_type = variantType
       } else {
         product.needs_review = true
-        product.pricing_type = 'single'
+        product.pricing_type = 'fixed'
         warnings.push(`صف ${rowIndex + 2}: لا توجد أسعار للمنتج "${productName}"`)
       }
     }
@@ -557,37 +700,19 @@ export function transformExcelData(
     totalProducts++
   }
 
-  // Convert map to array
-  const categories = Array.from(categoriesMap.values())
-
   return {
-    categories,
+    categories: Array.from(categoriesMap.values()),
     totalProducts,
     warnings,
+    pricingType,
+    variantType,
+    unitType,
   }
 }
 
-/**
- * Parse price from cell value
- */
-function parsePrice(value: string | number | null | undefined): number | null {
-  if (value === null || value === undefined || value === '') {
-    return null
-  }
-
-  if (typeof value === 'number') {
-    return value > 0 ? value : null
-  }
-
-  // Parse string
-  const cleanedValue = String(value)
-    .replace(/[^\d.,-]/g, '') // Remove non-numeric except . , -
-    .replace(',', '.') // Replace comma with dot
-    .trim()
-
-  const parsed = parseFloat(cleanedValue)
-  return !isNaN(parsed) && parsed > 0 ? parsed : null
-}
+// ═══════════════════════════════════════════════════════════════
+// MULTI-SHEET PROCESSING
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * Process all sheets from Excel file
@@ -599,26 +724,27 @@ export function processAllSheets(sheets: SheetData[]): MultiSheetResult {
       categories: [],
       totalProducts: 0,
       warnings: [],
+      pricingType: 'fixed',
+      variantType: null,
+      unitType: null,
     },
   }
 
   for (const sheet of sheets) {
-    // Detect columns for this sheet
-    const detection = detectColumns(sheet.headers, sheet.rows)
-
-    // Get pricing type hint from sheet name
-    const sheetHint = detectPricingTypeFromSheetName(sheet.name)
-    if (sheetHint.variantGroup && detection.variantGroup === null) {
-      detection.pricingType = sheetHint.type
-      detection.variantGroup = sheetHint.variantGroup
-    }
+    // Detect columns with sheet name context
+    const detection = detectColumns(sheet.headers, sheet.rows, sheet.name)
 
     // Transform data
-    const data = transformExcelData(sheet.rows, detection.mapping, detection.pricingType)
+    const data = transformExcelData(
+      sheet.rows,
+      detection.mapping,
+      detection.pricingType,
+      detection.variantType,
+      detection.unitType
+    )
 
-    // Use sheet name as category prefix if no category column
+    // Use sheet name as category if no category column
     if (detection.mapping.category === undefined || detection.mapping.category < 0) {
-      // Extract category hint from sheet name (before the dash)
       const sheetCategory = sheet.name.split('-')[0].trim()
       if (sheetCategory) {
         data.categories.forEach(cat => {
@@ -643,7 +769,6 @@ export function processAllSheets(sheets: SheetData[]): MultiSheetResult {
     for (const category of sheet.data.categories) {
       const existingCategory = categoryMap.get(category.name_ar)
       if (existingCategory) {
-        // Merge products into existing category
         existingCategory.products.push(...category.products)
       } else {
         categoryMap.set(category.name_ar, { ...category })
@@ -654,7 +779,6 @@ export function processAllSheets(sheets: SheetData[]): MultiSheetResult {
     results.combined.warnings.push(...sheet.data.warnings)
   }
 
-  // Convert map to array and assign display order
   results.combined.categories = Array.from(categoryMap.values()).map((cat, index) => ({
     ...cat,
     display_order: index + 1,
@@ -662,6 +786,10 @@ export function processAllSheets(sheets: SheetData[]): MultiSheetResult {
 
   return results
 }
+
+// ═══════════════════════════════════════════════════════════════
+// MANUAL MAPPING
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * Get column type options for manual mapping
@@ -674,18 +802,56 @@ export function getColumnTypeOptions(): { value: string; label_ar: string; label
     { value: 'description', label_ar: 'الوصف', label_en: 'Description' },
     { value: 'name_en', label_ar: 'الاسم بالإنجليزي', label_en: 'English Name' },
     { value: 'price', label_ar: 'السعر', label_en: 'Price' },
+    { value: 'unit', label_ar: 'الوحدة', label_en: 'Unit' },
     { value: 'size_small', label_ar: 'صغير', label_en: 'Small' },
     { value: 'size_medium', label_ar: 'وسط', label_en: 'Medium' },
     { value: 'size_large', label_ar: 'كبير', label_en: 'Large' },
+    { value: 'size_xlarge', label_ar: 'كبير جداً', label_en: 'X-Large' },
     { value: 'weight_quarter', label_ar: 'ربع كيلو', label_en: 'Quarter' },
     { value: 'weight_half', label_ar: 'نص كيلو', label_en: 'Half' },
     { value: 'weight_kilo', label_ar: 'كيلو', label_en: 'Kilo' },
     { value: 'weight_100g', label_ar: '100 جرام', label_en: '100g' },
     { value: 'weight_250g', label_ar: '250 جرام', label_en: '250g' },
     { value: 'weight_500g', label_ar: '500 جرام', label_en: '500g' },
-    { value: 'option_regular', label_ar: 'عادي', label_en: 'Regular' },
-    { value: 'option_large', label_ar: 'كبير/دابل', label_en: 'Large/Double' },
   ]
+}
+
+/**
+ * Get pricing type options for selection
+ */
+export function getPricingTypeOptions(): { value: PricingType; label_ar: string; label_en: string; description_ar: string }[] {
+  return [
+    {
+      value: 'fixed',
+      label_ar: 'سعر ثابت',
+      label_en: 'Fixed Price',
+      description_ar: 'سعر واحد ثابت للمنتج (ساندوتش، مشروب)',
+    },
+    {
+      value: 'per_unit',
+      label_ar: 'بالوحدة',
+      label_en: 'Per Unit',
+      description_ar: 'السعر × الكمية (خضار بالكيلو، فاكهة)',
+    },
+    {
+      value: 'variants',
+      label_ar: 'خيارات متعددة',
+      label_en: 'Variants',
+      description_ar: 'أحجام أو أوزان مختلفة (بيتزا ص/م/ك، كباب ربع/نص/كيلو)',
+    },
+  ]
+}
+
+/**
+ * Get unit type options for selection
+ */
+export function getUnitTypeOptions(): { value: UnitType; label_ar: string; label_en: string; category: string }[] {
+  return Object.entries(UNIT_TYPES).map(([key, unit]) => ({
+    value: key as UnitType,
+    label_ar: unit.name_ar,
+    label_en: unit.name_en,
+    category: unit.category,
+  }))
 }
 
 /**
@@ -693,7 +859,10 @@ export function getColumnTypeOptions(): { value: string; label_ar: string; label
  */
 export function applyManualMapping(
   headers: string[],
-  columnAssignments: Record<number, string>
+  columnAssignments: Record<number, string>,
+  pricingType: PricingType,
+  variantType?: VariantType,
+  unitType?: UnitType
 ): DetectionResult {
   const mapping: ColumnMapping = {
     product: -1,
@@ -721,39 +890,27 @@ export function applyManualMapping(
       case 'price':
         mapping.price = colIndex
         break
+      case 'unit':
+        mapping.unit = colIndex
+        break
       default:
         // Check if it's a variant
         for (const [, group] of Object.entries(VARIANT_GROUPS)) {
           if (group.columns.includes(assignment)) {
-            const labels = (group.labels as Record<string, { ar: string; en: string }>)[assignment]
-            if (labels) {
+            const labelInfo = (group.labels as Record<string, { ar: string; en: string; multiplier?: number }>)[assignment]
+            if (labelInfo) {
               mapping.variants.push({
                 column: colIndex,
                 key: assignment,
-                name_ar: labels.ar,
-                name_en: labels.en,
-                type: group.type,
+                name_ar: labelInfo.ar,
+                name_en: labelInfo.en,
+                variantType: group.variantType,
+                multiplier: labelInfo.multiplier,
               })
             }
             break
           }
         }
-    }
-  }
-
-  // Determine pricing type
-  let pricingType: PricingType = 'single'
-  let variantGroup: keyof typeof VARIANT_GROUPS | null = null
-
-  if (mapping.variants.length > 0) {
-    // Determine group based on first variant type
-    const firstVariant = mapping.variants[0]
-    for (const [groupKey, group] of Object.entries(VARIANT_GROUPS)) {
-      if (group.columns.includes(firstVariant.key)) {
-        pricingType = group.pricingType
-        variantGroup = groupKey as keyof typeof VARIANT_GROUPS
-        break
-      }
     }
   }
 
@@ -764,7 +921,9 @@ export function applyManualMapping(
     mapping,
     confidence,
     pricingType,
-    variantGroup,
+    variantType: variantType || null,
+    unitType: unitType || null,
+    variantGroup: null,
     suggestions: mapping.product < 0 ? ['يجب تحديد عمود اسم المنتج'] : [],
     headers,
     sampleData: [],

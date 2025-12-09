@@ -226,9 +226,8 @@ export function ReviewStep({
               'اسم المنتج': product.name_ar,
               'Product Name': product.name_en || '',
               'الوصف': product.description_ar || '',
-              'نوع التسعير': product.pricing_type === 'single' ? 'سعر واحد' :
-                product.pricing_type === 'sizes' ? 'أحجام' :
-                product.pricing_type === 'weights' ? 'أوزان' : 'خيارات',
+              'نوع التسعير': product.pricing_type === 'fixed' ? 'سعر ثابت' :
+                product.pricing_type === 'per_unit' ? 'بالوحدة' : 'خيارات متعددة',
               'السعر': product.price || '',
               'السعر الأصلي': product.original_price || '',
               'الخيارات': product.variants?.map(v => `${v.name_ar}: ${v.price}`).join(' | ') || '',
@@ -309,8 +308,9 @@ export function ReviewStep({
               category.name_ar,
               product.name_ar,
               product.description_ar || '-',
-              product.pricing_type === 'single' ? String(product.price || '-') :
-                product.variants?.map(v => `${v.name_ar}: ${v.price}`).join(', ') || '-',
+              product.pricing_type === 'fixed' || product.pricing_type === 'per_unit'
+                ? String(product.price || '-')
+                : product.variants?.map(v => `${v.name_ar}: ${v.price}`).join(', ') || '-',
               `${Math.round(product.confidence * 100)}%`,
             ])
           }
@@ -753,7 +753,7 @@ function ProductRow({
             </div>
           </div>
 
-          {product.pricing_type === 'single' && (
+          {(product.pricing_type === 'fixed' || product.pricing_type === 'per_unit') && (
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-slate-600 mb-1 block">
@@ -835,9 +835,12 @@ function ProductRow({
           )}
 
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            {product.pricing_type === 'single' ? (
+            {product.pricing_type === 'fixed' || product.pricing_type === 'per_unit' ? (
               <span className="text-sm font-semibold text-primary">
                 {formatPrice(product.price)}
+                {product.pricing_type === 'per_unit' && product.unit_type && (
+                  <span className="text-slate-500 font-normal">/{product.unit_type}</span>
+                )}
               </span>
             ) : (
               <div className="flex items-center gap-2 flex-wrap">

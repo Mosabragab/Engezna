@@ -98,8 +98,12 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
             statistics: {
               total_categories: result.combined.categories.length,
               total_products: result.combined.totalProducts,
-              products_single_price: result.combined.categories.reduce(
-                (sum, cat) => sum + cat.products.filter(p => p.pricing_type === 'single').length,
+              products_fixed_price: result.combined.categories.reduce(
+                (sum, cat) => sum + cat.products.filter(p => p.pricing_type === 'fixed').length,
+                0
+              ),
+              products_per_unit: result.combined.categories.reduce(
+                (sum, cat) => sum + cat.products.filter(p => p.pricing_type === 'per_unit').length,
                 0
               ),
               products_with_variants: result.combined.categories.reduce(
@@ -317,8 +321,8 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
                                 <span className="truncate text-slate-700">{product.name_ar}</span>
                               </div>
                               <div className="text-primary font-medium mt-1">
-                                {product.pricing_type === 'single'
-                                  ? `${product.price} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
+                                {product.pricing_type === 'fixed' || product.pricing_type === 'per_unit'
+                                  ? `${product.price} ${locale === 'ar' ? 'ج.م' : 'EGP'}${product.pricing_type === 'per_unit' && product.unit_type ? `/${product.unit_type}` : ''}`
                                   : `${product.variants?.length || 0} ${locale === 'ar' ? 'خيارات' : 'options'}`}
                               </div>
                             </div>

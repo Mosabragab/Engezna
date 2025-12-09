@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         const product = category.products[prodIndex]
 
         // Determine has_variants
-        const hasVariants = product.pricing_type !== 'single' && product.variants && product.variants.length > 0
+        const hasVariants = product.pricing_type === 'variants' && product.variants && product.variants.length > 0
 
         // Get base price
         let basePrice = product.price
@@ -148,12 +148,7 @@ export async function POST(request: NextRequest) {
 
         // Create variants if product has multiple pricing options
         if (hasVariants && product.variants && product.variants.length > 0) {
-          const variantType =
-            product.pricing_type === 'sizes'
-              ? 'size'
-              : product.pricing_type === 'weights'
-              ? 'weight'
-              : 'option'
+          const variantType = product.variant_type || 'option'
 
           const variantInserts = product.variants.map((variant: ExtractedVariant, varIndex: number) => ({
             product_id: createdProduct.id,
