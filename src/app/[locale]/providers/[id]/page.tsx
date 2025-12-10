@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
 import { useFavorites } from '@/hooks/customer'
 import { Button } from '@/components/ui/button'
-import { ProductCard, RatingStars, StatusBadge, EmptyState, VariantSelectionModal } from '@/components/customer/shared'
+import { ProductCard, RatingStars, StatusBadge, EmptyState, ProductDetailModal } from '@/components/customer/shared'
 import { VoiceOrderFAB } from '@/components/customer/voice'
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout'
 import {
@@ -111,7 +111,7 @@ export default function ProviderDetailPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [showAllReviews, setShowAllReviews] = useState(false)
-  const [selectedProductForVariant, setSelectedProductForVariant] = useState<MenuItem | null>(null)
+  const [selectedProductForDetail, setSelectedProductForDetail] = useState<MenuItem | null>(null)
   const categoriesRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -227,32 +227,48 @@ export default function ProviderDetailPage() {
     }
   }
 
-  const handleAddVariantToCart = (product: MenuItem, variant: ProductVariant, quantity: number) => {
+  const handleAddFromDetail = (product: MenuItem, variant?: ProductVariant, quantity: number = 1) => {
     if (provider) {
-      // Add item with selected variant price
-      for (let i = 0; i < quantity; i++) {
-        addItem({
-          ...product,
-          price: variant.price,
-          // Store variant info in the item name for display
-          name_ar: `${product.name_ar} (${variant.name_ar})`,
-          name_en: `${product.name_en} (${variant.name_en || variant.name_ar})`,
-        }, {
-          id: provider.id,
-          name_ar: provider.name_ar,
-          name_en: provider.name_en,
-          delivery_fee: provider.delivery_fee,
-          min_order_amount: provider.min_order_amount,
-          estimated_delivery_time_min: provider.estimated_delivery_time_min,
-          commission_rate: provider.commission_rate,
-          category: provider.category,
-        })
+      if (variant) {
+        // Add item with selected variant price
+        for (let i = 0; i < quantity; i++) {
+          addItem({
+            ...product,
+            price: variant.price,
+            // Store variant info in the item name for display
+            name_ar: `${product.name_ar} (${variant.name_ar})`,
+            name_en: `${product.name_en} (${variant.name_en || variant.name_ar})`,
+          }, {
+            id: provider.id,
+            name_ar: provider.name_ar,
+            name_en: provider.name_en,
+            delivery_fee: provider.delivery_fee,
+            min_order_amount: provider.min_order_amount,
+            estimated_delivery_time_min: provider.estimated_delivery_time_min,
+            commission_rate: provider.commission_rate,
+            category: provider.category,
+          })
+        }
+      } else {
+        // Add item without variant
+        for (let i = 0; i < quantity; i++) {
+          addItem(product, {
+            id: provider.id,
+            name_ar: provider.name_ar,
+            name_en: provider.name_en,
+            delivery_fee: provider.delivery_fee,
+            min_order_amount: provider.min_order_amount,
+            estimated_delivery_time_min: provider.estimated_delivery_time_min,
+            commission_rate: provider.commission_rate,
+            category: provider.category,
+          })
+        }
       }
     }
   }
 
-  const handleSelectVariant = (item: MenuItem) => {
-    setSelectedProductForVariant(item)
+  const handleProductClick = (item: MenuItem) => {
+    setSelectedProductForDetail(item)
   }
 
   const cartTotal = getTotal()
@@ -593,14 +609,15 @@ export default function ProviderDetailPage() {
             {/* Available Items */}
             <div className="space-y-3">
               {availableItems.map((item) => (
-                <ProductCard
-                  key={item.id}
-                  product={item}
-                  quantity={getItemQuantity(item.id)}
-                  onQuantityChange={(qty) => handleQuantityChange(item, qty)}
-                  onSelectVariant={item.has_variants ? () => handleSelectVariant(item) : undefined}
-                  variant="horizontal"
-                />
+                <div key={item.id} onClick={() => handleProductClick(item)} className="cursor-pointer">
+                  <ProductCard
+                    product={item}
+                    quantity={getItemQuantity(item.id)}
+                    onQuantityChange={(qty) => handleQuantityChange(item, qty)}
+                    onSelectVariant={item.has_variants ? () => handleProductClick(item) : undefined}
+                    variant="horizontal"
+                  />
+                </div>
               ))}
             </div>
 
@@ -612,12 +629,13 @@ export default function ProviderDetailPage() {
                 </h3>
                 <div className="space-y-3 opacity-50">
                   {unavailableItems.map((item) => (
-                    <ProductCard
-                      key={item.id}
-                      product={item}
-                      variant="horizontal"
-                      showAddButton={false}
-                    />
+                    <div key={item.id} onClick={() => handleProductClick(item)} className="cursor-pointer">
+                      <ProductCard
+                        product={item}
+                        variant="horizontal"
+                        showAddButton={false}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -629,13 +647,14 @@ export default function ProviderDetailPage() {
       {/* Voice Order FAB - Show only when cart is empty */}
       {cartItemCount === 0 && <VoiceOrderFAB />}
 
-      {/* Variant Selection Modal */}
-      {selectedProductForVariant && (
-        <VariantSelectionModal
-          product={selectedProductForVariant}
-          isOpen={!!selectedProductForVariant}
-          onClose={() => setSelectedProductForVariant(null)}
-          onAddToCart={handleAddVariantToCart}
+      {/* Product Detail Modal */}
+      {selectedProductForDetail && (
+        <ProductDetailModal
+          product={selectedProductForDetail}
+          isOpen={!!selectedProductForDetail}
+          onClose={() => setSelectedProductForDetail(null)}
+          onAddToCart={handleAddFromDetail}
+          currentQuantity={getItemQuantity(selectedProductForDetail.id)}
         />
       )}
 

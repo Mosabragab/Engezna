@@ -191,7 +191,7 @@ export function VariantSelectionModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4">
+        <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4 pb-8">
           <Button
             onClick={handleAddToCart}
             disabled={!selectedVariant}

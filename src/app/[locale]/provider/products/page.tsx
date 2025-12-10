@@ -44,6 +44,12 @@ type MenuItem = {
   preparation_time_min: number
   display_order: number
   created_at: string
+  category_id: string | null
+  category?: {
+    id: string
+    name_ar: string
+    name_en: string
+  } | null
 }
 
 type FilterType = 'all' | 'available' | 'unavailable'
@@ -100,7 +106,14 @@ export default function ProviderProductsPage() {
 
     const { data, error } = await supabase
       .from('menu_items')
-      .select('*')
+      .select(`
+        *,
+        category:provider_categories!category_id (
+          id,
+          name_ar,
+          name_en
+        )
+      `)
       .eq('provider_id', provId)
       .order('display_order', { ascending: true })
       .order('created_at', { ascending: false })
@@ -374,6 +387,12 @@ export default function ProviderProductsPage() {
 
                     {/* Product Info */}
                     <div className="p-4">
+                      {/* Category Badge */}
+                      {product.category && (
+                        <span className="inline-block px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full mb-2">
+                          {locale === 'ar' ? product.category.name_ar : product.category.name_en}
+                        </span>
+                      )}
                       <h3 className="font-bold text-lg mb-1 line-clamp-1">
                         {locale === 'ar' ? product.name_ar : product.name_en}
                       </h3>
