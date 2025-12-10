@@ -87,8 +87,8 @@ export function VariantSelectionModal({
   const totalPrice = selectedVariant ? selectedVariant.price * quantity : 0
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-auto">
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-auto relative" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between">
           <h3 className="font-bold text-lg text-slate-900">{name}</h3>
@@ -190,8 +190,8 @@ export function VariantSelectionModal({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4 pb-8">
+        {/* Footer - Extra padding for mobile */}
+        <div className="bg-white border-t border-slate-100 p-4 pb-6">
           <Button
             onClick={handleAddToCart}
             disabled={!selectedVariant}

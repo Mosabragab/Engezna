@@ -102,18 +102,17 @@ export function ProductDetailModal({
   const hasDiscount = product.original_price && product.original_price > product.price
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-auto">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/90 shadow flex items-center justify-center text-slate-500 hover:bg-white"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-auto relative" onClick={(e) => e.stopPropagation()}>
         {/* Product Image */}
         <div className="relative w-full h-56 bg-slate-100">
+          {/* Close Button - Inside relative container */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/90 shadow flex items-center justify-center text-slate-500 hover:bg-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
           {product.image_url ? (
             <img
               src={product.image_url}
@@ -241,9 +240,9 @@ export function ProductDetailModal({
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - Extra padding for mobile to avoid bottom navigation */}
         {product.is_available ? (
-          <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4 pb-8">
+          <div className="bg-white border-t border-slate-100 p-4 pb-6">
             <Button
               onClick={handleAddToCart}
               disabled={hasVariants && !selectedVariant}
@@ -255,7 +254,7 @@ export function ProductDetailModal({
             </Button>
           </div>
         ) : (
-          <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4 pb-8">
+          <div className="bg-white border-t border-slate-100 p-4 pb-6">
             <div className="w-full h-12 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 font-medium">
               {locale === 'ar' ? 'غير متاح حالياً' : 'Currently Unavailable'}
             </div>
