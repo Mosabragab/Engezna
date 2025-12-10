@@ -427,12 +427,12 @@ export default function AdminSettlementsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-700'
-      case 'waived': return 'bg-green-100 text-green-700'
-      case 'pending': return 'bg-yellow-100 text-yellow-700'
-      case 'partially_paid': return 'bg-blue-100 text-blue-700'
-      case 'overdue': return 'bg-red-100 text-red-700'
-      case 'disputed': return 'bg-red-100 text-red-700'
+      case 'paid': return 'status-success'
+      case 'waived': return 'status-success'
+      case 'pending': return 'status-warning'
+      case 'partially_paid': return 'status-in-progress'
+      case 'overdue': return 'status-error'
+      case 'disputed': return 'status-error'
       default: return 'bg-slate-100 text-slate-700'
     }
   }
@@ -530,7 +530,7 @@ export default function AdminSettlementsPage() {
               <Button
                 onClick={handleGenerateWeeklySettlements}
                 disabled={isGenerating}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-primary hover:bg-[#0080b8] text-white"
               >
                 <PlayCircle className="w-4 h-4 mr-2" />
                 {isGenerating
@@ -542,7 +542,7 @@ export default function AdminSettlementsPage() {
               <Button
                 onClick={() => setShowGenerateModal(true)}
                 variant="outline"
-                className="border-green-500 text-green-700 hover:bg-green-600 hover:text-white hover:border-green-600"
+                className="border-primary text-primary hover:bg-primary hover:text-white"
               >
                 <Calendar className="w-4 h-4 mr-2" />
                 {locale === 'ar' ? 'تسوية مخصصة' : 'Custom'}
@@ -718,7 +718,7 @@ export default function AdminSettlementsPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                className="h-8 px-2 text-success hover:text-success/80 hover:bg-card-bg-success"
                                 onClick={() => {
                                   setSelectedSettlement(settlement)
                                   setPaymentForm({
@@ -818,7 +818,7 @@ export default function AdminSettlementsPage() {
               <Button
                 onClick={handleGenerateSettlement}
                 disabled={isGenerating}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-primary hover:bg-[#0080b8] text-white"
               >
                 {isGenerating ? (locale === 'ar' ? 'جاري الإنشاء...' : 'Generating...') : (locale === 'ar' ? 'إنشاء' : 'Generate')}
               </Button>
@@ -905,7 +905,7 @@ export default function AdminSettlementsPage() {
               <Button
                 onClick={handleRecordPayment}
                 disabled={isProcessingPayment}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-success hover:bg-success/90 text-white"
               >
                 {isProcessingPayment ? (locale === 'ar' ? 'جاري التسجيل...' : 'Recording...') : (locale === 'ar' ? 'تسجيل الدفع' : 'Record Payment')}
               </Button>
