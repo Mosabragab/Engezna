@@ -276,9 +276,9 @@ export async function POST(request: NextRequest) {
             provider_id: providerId,
             category_id: categoryId,
             name_ar: product.name_ar.trim(),
-            name_en: product.name_en || null,
+            name_en: product.name_en || product.name_ar.trim(), // Use Arabic name as fallback if no English name
             description_ar: product.description_ar || null,
-            description_en: null,
+            description_en: product.description_ar || '', // Use Arabic description as fallback
             price: basePrice || 0,
             original_price: product.original_price || null,
             has_variants: hasVariants,
