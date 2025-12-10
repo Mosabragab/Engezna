@@ -1,47 +1,48 @@
 # Next Session Plan
 
-## Date: 2025-12-11 (Upcoming)
+## Date: 2025-12-11 (Completed)
+
+## ✅ Completed Tasks (2025-12-11)
+
+### 1. Product Images Import from Excel ✅
+**Status**: Implemented
+
+#### What was done:
+- Added `image_url` column pattern detection in `excel-import.ts`
+- Added `image_url` to `ColumnMapping` interface
+- Detect and extract image URLs from Excel during import
+- Validate URLs (must start with http:// or https://)
+- Added `image_url` to manual column mapping options
+- Save `image_url` when creating/updating products in database
+
+### 2. Testing Results ✅
+- [x] Verify categories display correctly on customer page
+- [x] Test product detail modal opening (Fixed stopPropagation issue)
+- [x] Test variant selection and add to cart
+- [x] Test all 156 products display correctly
+
+### 3. Documentation ✅
+- [x] Updated Excel import guide with `image_url` column
+- [x] Updated sample Excel table with image_url examples
+- [x] Updated tips section about images
+
+### 4. Bug Fixes ✅
+- Fixed promotion badge showing duplicate % symbol
+- Fixed product detail modal not opening (added stopPropagation to buttons)
+- Fixed sorting to include both promotions AND original_price discounts
+
+---
 
 ## Priority Tasks for Next Session
 
-### 1. Product Images Import from Excel
-**Goal**: Allow providers to include product image URLs/paths in Excel for bulk import
+### 1. Image Preview in Import UI (Optional Enhancement)
+- Show image preview in parsed products table
+- Handle missing/invalid images gracefully
 
-#### Implementation Steps:
-1. **Add Image Column to Excel Template**
-   - New column: `image_url` or `image`
-   - Accepts: URL (https://...) or Supabase storage path
-
-2. **Update Menu Import API**
-   - File: `src/app/api/menu-import/save/route.ts`
-   - Parse image_url column from Excel
-   - Validate URL format
-   - Save to `menu_items.image_url`
-
-3. **Update Menu Import UI**
-   - File: `src/app/[locale]/provider/menu-import/page.tsx`
-   - Show image preview in parsed products table
-   - Handle missing/invalid images gracefully
-
-4. **Image Upload Option** (Optional Enhancement)
-   - Allow providers to upload images to Supabase storage
-   - Generate public URLs automatically
-   - Reference images by filename in Excel
-
-#### Alternative: Image Matching by Name
-- Provider uploads images to a folder
-- Image filename matches product name_ar or name_en
-- System auto-matches during import
-
-### 2. Remaining Testing
-- [ ] Verify categories display correctly on customer page
-- [ ] Test product detail modal opening
-- [ ] Test variant selection and add to cart
-- [ ] Test all 156 products display correctly
-
-### 3. Documentation
-- [ ] Complete Excel import guide for customers
-- [ ] Update PRD.md with pricing types section
+### 2. Additional Features to Consider
+- [ ] Image upload to Supabase storage from import UI
+- [ ] Image matching by product name
+- [ ] Bulk image upload
 
 ---
 

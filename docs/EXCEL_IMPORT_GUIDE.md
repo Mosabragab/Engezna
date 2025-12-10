@@ -22,6 +22,7 @@ You can easily import all your products from an Excel file. This guide explains 
 | `description_ar` | ❌ لا | الوصف بالعربية | ريش ضاني طازجة |
 | `description_en` | ❌ لا | الوصف بالإنجليزية | Fresh lamb chops |
 | `original_price` | ❌ لا | السعر قبل الخصم | 300 |
+| `image_url` | ❌ لا | رابط صورة المنتج | https://example.com/image.jpg |
 | `is_available` | ❌ لا | متاح للبيع (TRUE/FALSE) | TRUE |
 | `preparation_time` | ❌ لا | وقت التحضير بالدقائق | 15 |
 | `is_spicy` | ❌ لا | حار (TRUE/FALSE) | FALSE |
@@ -115,13 +116,13 @@ You can easily import all your products from an Excel file. This guide explains 
 ## نموذج ملف Excel | Sample Excel File
 
 ```
-| name_ar      | name_en        | price | category    | pricing_type    | variants                          | description_ar          |
-|--------------|----------------|-------|-------------|-----------------|-----------------------------------|-------------------------|
-| ريش ضاني     | Lamb Chops     | 250   | لحوم        | weight_variants | ربع كيلو:250|نصف كيلو:480|كيلو:900 | ريش ضاني طازجة ممتازة   |
-| كفتة مشوية   | Grilled Kofta  | 120   | لحوم        | weight_variants | ربع كيلو:120|نصف كيلو:220        | كفتة مشوية على الفحم    |
-| كابتشينو     | Cappuccino     | 45    | مشروبات     | fixed           |                                   | كابتشينو إيطالي         |
-| بيتزا مارجريتا| Margherita    | 80    | بيتزا       | variants        | صغير:80|وسط:120|كبير:160         | بيتزا بالجبنة الموزاريلا |
-| سلطة خضراء   | Green Salad    | 35    | سلطات       | fixed           |                                   | سلطة خضراء طازجة        |
+| name_ar      | name_en        | price | category    | pricing_type    | variants                          | image_url                              | description_ar          |
+|--------------|----------------|-------|-------------|-----------------|-----------------------------------|----------------------------------------|-------------------------|
+| ريش ضاني     | Lamb Chops     | 250   | لحوم        | weight_variants | ربع كيلو:250|نصف كيلو:480|كيلو:900 | https://example.com/lamb.jpg           | ريش ضاني طازجة ممتازة   |
+| كفتة مشوية   | Grilled Kofta  | 120   | لحوم        | weight_variants | ربع كيلو:120|نصف كيلو:220        | https://example.com/kofta.jpg          | كفتة مشوية على الفحم    |
+| كابتشينو     | Cappuccino     | 45    | مشروبات     | fixed           |                                   | https://example.com/cappuccino.jpg     | كابتشينو إيطالي         |
+| بيتزا مارجريتا| Margherita    | 80    | بيتزا       | variants        | صغير:80|وسط:120|كبير:160         | https://example.com/pizza.jpg          | بيتزا بالجبنة الموزاريلا |
+| سلطة خضراء   | Green Salad    | 35    | سلطات       | fixed           |                                   |                                        | سلطة خضراء طازجة        |
 ```
 
 ---
@@ -177,7 +178,7 @@ You can easily import all your products from an Excel file. This guide explains 
 
 3. **تحقق من الأسعار:** راجع جميع الأسعار قبل الحفظ
 
-4. **الصور:** حالياً لا يدعم النظام استيراد الصور من Excel (قريباً)
+4. **الصور:** يمكنك إضافة روابط الصور في عمود `image_url` - يجب أن تبدأ بـ `http://` أو `https://`
 
 5. **التحديث:** يمكنك تعديل المنتجات فردياً بعد الاستيراد
 
@@ -191,4 +192,4 @@ You can easily import all your products from an Excel file. This guide explains 
 
 ---
 
-*آخر تحديث: 2025-12-10*
+*آخر تحديث: 2025-12-11*
