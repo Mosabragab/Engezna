@@ -268,16 +268,22 @@ export default function SettlementGroupsPage() {
   if (!user || !isAdmin) {
     return (
       <>
-        <AdminHeader user={user} title={isRTL ? 'غير مصرح' : 'Unauthorized'} onMenuClick={toggleSidebar} />
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <h1 className="text-lg font-semibold text-slate-900">
+              {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
+            </h1>
+          </div>
+        </header>
         <div className="flex-1 flex items-center justify-center bg-slate-50">
           <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
             <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-2 text-slate-900">
-              {isRTL ? 'غير مصرح' : 'Unauthorized'}
+              {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
               <Button size="lg" className="bg-red-600 hover:bg-red-700">
-                {isRTL ? 'تسجيل الدخول' : 'Login'}
+                {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
           </div>

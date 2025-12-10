@@ -424,11 +424,13 @@ export default function AdminAnnouncementsPage() {
   if (!user || !isAdmin) {
     return (
       <>
-        <AdminHeader
-          user={user}
-          title={locale === 'ar' ? 'الإعلانات والتعميمات' : 'Announcements'}
-          onMenuClick={toggleSidebar}
-        />
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <h1 className="text-lg font-semibold text-slate-900">
+              {locale === 'ar' ? 'الإعلانات والتعميمات' : 'Announcements'}
+            </h1>
+          </div>
+        </header>
         <div className="flex-1 flex items-center justify-center bg-slate-50">
           <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
             <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />

@@ -354,7 +354,11 @@ export default function SettlementDetailPage() {
   if (loading) {
     return (
       <>
-        <AdminHeader user={null} title="" onMenuClick={toggleSidebar} loading />
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <div className="w-32 h-5 bg-slate-200 rounded animate-pulse" />
+          </div>
+        </header>
         <div className="flex-1 flex items-center justify-center bg-slate-50">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
         </div>
@@ -365,7 +369,13 @@ export default function SettlementDetailPage() {
   if (!user || !isAdmin) {
     return (
       <>
-        <AdminHeader user={user} title="" onMenuClick={toggleSidebar} />
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <h1 className="text-lg font-semibold text-slate-900">
+              {locale === 'ar' ? 'تفاصيل التسوية' : 'Settlement Details'}
+            </h1>
+          </div>
+        </header>
         <div className="flex-1 flex items-center justify-center bg-slate-50">
           <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
             <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />

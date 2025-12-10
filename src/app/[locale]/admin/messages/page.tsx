@@ -453,11 +453,13 @@ export default function AdminMessagesPage() {
   if (loading) {
     return (
       <>
-        <AdminHeader
-          user={null}
-          title={locale === 'ar' ? 'المراسلات الداخلية' : 'Internal Messages'}
-          onMenuClick={toggleSidebar}
-        />
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <h1 className="text-lg font-semibold text-slate-900">
+              {locale === 'ar' ? 'المراسلات الداخلية' : 'Internal Messages'}
+            </h1>
+          </div>
+        </header>
         <main className="flex-1 p-4 lg:p-6 flex items-center justify-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
         </main>
@@ -468,11 +470,13 @@ export default function AdminMessagesPage() {
   if (!user || !isAdmin) {
     return (
       <>
-        <AdminHeader
-          user={null}
-          title={locale === 'ar' ? 'المراسلات الداخلية' : 'Internal Messages'}
-          onMenuClick={toggleSidebar}
-        />
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <h1 className="text-lg font-semibold text-slate-900">
+              {locale === 'ar' ? 'المراسلات الداخلية' : 'Internal Messages'}
+            </h1>
+          </div>
+        </header>
         <main className="flex-1 p-4 lg:p-6 flex items-center justify-center">
           <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
             <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />

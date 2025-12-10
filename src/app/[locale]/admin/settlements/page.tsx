@@ -475,11 +475,13 @@ export default function AdminSettlementsPage() {
   if (!user || !isAdmin) {
     return (
       <>
-        <AdminHeader
-          user={user}
-          title={locale === 'ar' ? 'إدارة التسويات' : 'Settlements Management'}
-          onMenuClick={toggleSidebar}
-        />
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <h1 className="text-lg font-semibold text-slate-900">
+              {locale === 'ar' ? 'إدارة التسويات' : 'Settlements Management'}
+            </h1>
+          </div>
+        </header>
         <main className="flex-1 flex items-center justify-center p-4">
           <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
             <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
