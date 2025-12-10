@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import { Plus, Minus, Flame, Leaf, ChevronDown } from 'lucide-react'
+import { Plus, Minus, Flame, Leaf, ChevronDown, Percent, Tag, Gift } from 'lucide-react'
 import type { PricingType } from '@/types/menu-import'
 
 interface ProductVariant {
@@ -35,6 +35,13 @@ interface MenuItem {
   variants?: ProductVariant[]
 }
 
+interface PromotionInfo {
+  type: 'percentage' | 'fixed' | 'buy_x_get_y'
+  discount_value: number
+  name_ar?: string
+  name_en?: string
+}
+
 interface ProductCardProps {
   product: MenuItem
   quantity?: number
@@ -44,6 +51,7 @@ interface ProductCardProps {
   variant?: 'default' | 'compact' | 'horizontal'
   showAddButton?: boolean
   className?: string
+  promotion?: PromotionInfo | null
 }
 
 export function ProductCard({
@@ -55,6 +63,7 @@ export function ProductCard({
   variant = 'default',
   showAddButton = true,
   className = '',
+  promotion = null,
 }: ProductCardProps) {
   const locale = useLocale()
   const t = useTranslations('providerDetail')
@@ -162,7 +171,7 @@ export function ProductCard({
 
   if (variant === 'horizontal') {
     return (
-      <div className={`bg-white rounded-xl border border-slate-100 p-4 ${!product.is_available ? 'opacity-60' : ''} ${className}`}>
+      <div className={`bg-white rounded-xl border border-slate-100 p-4 ${!product.is_available ? 'opacity-60' : ''} ${promotion ? 'ring-2 ring-primary/30' : ''} ${className}`}>
         <div className="flex gap-4">
           {/* Image */}
           <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
@@ -175,7 +184,27 @@ export function ProductCard({
             ) : (
               <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
             )}
-            {hasDiscount && (
+            {/* Promotion Badge - Shows first if there's a promotion */}
+            {promotion ? (
+              <div className="absolute top-1 start-1 bg-gradient-to-r from-primary to-primary/80 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
+                {promotion.type === 'percentage' ? (
+                  <>
+                    <Percent className="w-3 h-3" />
+                    <span>{promotion.discount_value}%</span>
+                  </>
+                ) : promotion.type === 'fixed' ? (
+                  <>
+                    <Tag className="w-3 h-3" />
+                    <span>{promotion.discount_value}</span>
+                  </>
+                ) : (
+                  <>
+                    <Gift className="w-3 h-3" />
+                    <span>{locale === 'ar' ? 'عرض' : 'Offer'}</span>
+                  </>
+                )}
+              </div>
+            ) : hasDiscount && (
               <div className="absolute top-1 start-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
                 -{discountPercentage}%
               </div>
@@ -266,7 +295,7 @@ export function ProductCard({
 
   // Default variant
   return (
-    <div className={`bg-white rounded-xl border border-slate-100 overflow-hidden ${!product.is_available ? 'opacity-60' : ''} ${className}`}>
+    <div className={`bg-white rounded-xl border border-slate-100 overflow-hidden ${!product.is_available ? 'opacity-60' : ''} ${promotion ? 'ring-2 ring-primary/30' : ''} ${className}`}>
       {/* Image */}
       <div className="relative aspect-square bg-slate-100">
         {product.image_url ? (
@@ -278,7 +307,27 @@ export function ProductCard({
         ) : (
           <div className="w-full h-full flex items-center justify-center text-5xl">🍽️</div>
         )}
-        {hasDiscount && (
+        {/* Promotion Badge */}
+        {promotion ? (
+          <div className="absolute top-2 start-2 bg-gradient-to-r from-primary to-primary/80 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-md">
+            {promotion.type === 'percentage' ? (
+              <>
+                <Percent className="w-3.5 h-3.5" />
+                <span>{promotion.discount_value}%</span>
+              </>
+            ) : promotion.type === 'fixed' ? (
+              <>
+                <Tag className="w-3.5 h-3.5" />
+                <span>{promotion.discount_value} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+              </>
+            ) : (
+              <>
+                <Gift className="w-3.5 h-3.5" />
+                <span>{locale === 'ar' ? 'عرض' : 'Offer'}</span>
+              </>
+            )}
+          </div>
+        ) : hasDiscount && (
           <div className="absolute top-2 start-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
             -{discountPercentage}%
           </div>

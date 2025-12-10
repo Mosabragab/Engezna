@@ -25,6 +25,11 @@ import {
   EyeOff,
   FileUp,
   Sparkles,
+  FolderPlus,
+  X,
+  Percent,
+  Tag,
+  Gift,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -54,19 +59,43 @@ type MenuItem = {
 
 type FilterType = 'all' | 'available' | 'unavailable'
 
+type Category = {
+  id: string
+  name_ar: string
+  name_en: string
+}
+
+type Promotion = {
+  id: string
+  type: 'percentage' | 'fixed' | 'buy_x_get_y'
+  discount_value: number
+  name_ar: string
+  name_en: string
+  applies_to: 'all' | 'specific'
+  product_ids?: string[]
+}
+
 export default function ProviderProductsPage() {
   const locale = useLocale()
   const router = useRouter()
   const isRTL = locale === 'ar'
 
   const [products, setProducts] = useState<MenuItem[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [promotions, setPromotions] = useState<Promotion[]>([])
   const [providerId, setProviderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter] = useState<FilterType>('all')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  // Category modal state
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [newCategoryNameAr, setNewCategoryNameAr] = useState('')
+  const [newCategoryNameEn, setNewCategoryNameEn] = useState('')
+  const [categoryLoading, setCategoryLoading] = useState(false)
 
   useEffect(() => {
     checkAuthAndLoadProducts()
@@ -122,6 +151,10 @@ export default function ProviderProductsPage() {
       .from('provider_categories')
       .select('id, name_ar, name_en')
       .eq('provider_id', provId)
+      .order('display_order', { ascending: true })
+
+    // Store categories for filter tabs
+    setCategories(categoriesData || [])
 
     // Map categories to products
     const categoryMap = new Map(categoriesData?.map(c => [c.id, c]) || [])
@@ -131,6 +164,20 @@ export default function ProviderProductsPage() {
     }))
 
     setProducts(productsWithCategories)
+
+    // Fetch active promotions for this provider
+    const now = new Date().toISOString()
+    const { data: promotionsData } = await supabase
+      .from('promotions')
+      .select('id, type, discount_value, name_ar, name_en, applies_to, product_ids')
+      .eq('provider_id', provId)
+      .eq('is_active', true)
+      .lte('start_date', now)
+      .gte('end_date', now)
+
+    if (promotionsData) {
+      setPromotions(promotionsData)
+    }
   }
 
   const handleRefresh = async () => {
@@ -174,8 +221,58 @@ export default function ProviderProductsPage() {
     setDeleteConfirm(null)
   }
 
+  // Smart Arabic text normalization for search
+  const normalizeArabicText = (text: string): string => {
+    return text
+      .toLowerCase()
+      // Normalize Taa Marbuta and Haa (ة ↔ ه)
+      .replace(/[ةه]/g, 'ه')
+      // Normalize Alef variants (أ إ آ ا)
+      .replace(/[أإآا]/g, 'ا')
+      // Normalize Yaa variants (ي ى)
+      .replace(/[يى]/g, 'ي')
+      // Remove Tashkeel (diacritics)
+      .replace(/[\u064B-\u065F]/g, '')
+      // Normalize spaces
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+
+  // Handle adding new category
+  const handleAddCategory = async () => {
+    if (!newCategoryNameAr.trim() || !providerId) return
+
+    setCategoryLoading(true)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('provider_categories')
+      .insert({
+        provider_id: providerId,
+        name_ar: newCategoryNameAr.trim(),
+        name_en: newCategoryNameEn.trim() || newCategoryNameAr.trim(),
+        display_order: categories.length,
+        is_active: true
+      })
+
+    if (!error) {
+      await loadProducts(providerId)
+      setShowCategoryModal(false)
+      setNewCategoryNameAr('')
+      setNewCategoryNameEn('')
+    }
+    setCategoryLoading(false)
+  }
+
   const filterProducts = (products: MenuItem[]) => {
     let filtered = products
+
+    // Filter by category
+    if (selectedCategory === 'uncategorized') {
+      filtered = filtered.filter(p => !p.category_id)
+    } else if (selectedCategory) {
+      filtered = filtered.filter(p => p.category_id === selectedCategory)
+    }
 
     // Filter by availability
     if (filter === 'available') {
@@ -184,21 +281,61 @@ export default function ProviderProductsPage() {
       filtered = filtered.filter(p => !p.is_available)
     }
 
-    // Filter by search query
+    // Filter by search query with smart Arabic normalization
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(p =>
-        p.name_ar.toLowerCase().includes(query) ||
-        p.name_en.toLowerCase().includes(query) ||
-        p.description_ar?.toLowerCase().includes(query) ||
-        p.description_en?.toLowerCase().includes(query)
-      )
+      const normalizedQuery = normalizeArabicText(searchQuery)
+      filtered = filtered.filter(p => {
+        const nameAr = normalizeArabicText(p.name_ar || '')
+        const nameEn = (p.name_en || '').toLowerCase()
+        const descAr = normalizeArabicText(p.description_ar || '')
+        const descEn = (p.description_en || '').toLowerCase()
+
+        return nameAr.includes(normalizedQuery) ||
+               nameEn.includes(normalizedQuery) ||
+               descAr.includes(normalizedQuery) ||
+               descEn.includes(normalizedQuery)
+      })
     }
 
     return filtered
   }
 
-  const filteredProducts = filterProducts(products)
+  // Get product count per category
+  const getCategoryProductCount = (categoryId: string) => {
+    return products.filter(p => p.category_id === categoryId).length
+  }
+
+  // Get uncategorized products count
+  const uncategorizedCount = products.filter(p => !p.category_id).length
+
+  // Get promotion for a specific product
+  const getProductPromotion = (productId: string): Promotion | null => {
+    for (const promo of promotions) {
+      if (promo.applies_to === 'all') {
+        return promo
+      }
+      if (promo.applies_to === 'specific' && promo.product_ids?.includes(productId)) {
+        return promo
+      }
+    }
+    return null
+  }
+
+  // Check if product has promotion or discount
+  const hasPromotionOrDiscount = (product: MenuItem): boolean => {
+    const hasPromo = getProductPromotion(product.id) !== null
+    const hasDiscount = product.original_price !== null && product.original_price > product.price
+    return hasPromo || hasDiscount
+  }
+
+  // Sort products: promotions/discounts first
+  const filteredProducts = filterProducts(products).sort((a, b) => {
+    const aHasPromo = hasPromotionOrDiscount(a)
+    const bHasPromo = hasPromotionOrDiscount(b)
+    if (aHasPromo && !bHasPromo) return -1
+    if (!aHasPromo && bHasPromo) return 1
+    return 0
+  })
   const availableCount = products.filter(p => p.is_available).length
   const unavailableCount = products.filter(p => !p.is_available).length
 
@@ -260,7 +397,7 @@ export default function ProviderProductsPage() {
 
         {/* Search and Add Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
+          <div className="relative flex-1 max-w-md">
             <Search className="absolute top-1/2 -translate-y-1/2 left-3 w-5 h-5 text-slate-500" />
             <input
               type="text"
@@ -270,15 +407,24 @@ export default function ProviderProductsPage() {
               className="w-full bg-white border border-slate-200 rounded-xl py-3 px-10 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              onClick={() => setShowCategoryModal(true)}
+            >
+              <FolderPlus className="w-5 h-5 me-2" />
+              {locale === 'ar' ? 'إضافة تصنيف' : 'Add Category'}
+            </Button>
             <Link href={`/${locale}/provider/menu-import`}>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10">
+              <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary">
                 <Sparkles className="w-5 h-5 me-2" />
                 {locale === 'ar' ? 'استيراد المنتجات' : 'Import Products'}
               </Button>
             </Link>
             <Link href={`/${locale}/provider/products/new`}>
-              <Button size="lg" className="w-full sm:w-auto">
+              <Button size="lg">
                 <Plus className="w-5 h-5 me-2" />
                 {locale === 'ar' ? 'إضافة منتج' : 'Add Product'}
               </Button>
@@ -287,7 +433,7 @@ export default function ProviderProductsPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
           <Button
             variant={filter === 'all' ? 'default' : 'outline'}
             size="sm"
@@ -316,6 +462,49 @@ export default function ProviderProductsPage() {
             <span className="mx-1 text-xs opacity-70">({unavailableCount})</span>
           </Button>
         </div>
+
+        {/* Category Filter Tabs */}
+        {categories.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-slate-500 mb-2">
+              {locale === 'ar' ? 'التصنيفات' : 'Categories'}
+            </h4>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              <Button
+                variant={selectedCategory === null ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory(null)}
+                className={selectedCategory !== null ? 'border-slate-300 text-slate-600' : ''}
+              >
+                {locale === 'ar' ? 'جميع التصنيفات' : 'All Categories'}
+                <span className="mx-1 text-xs opacity-70">({products.length})</span>
+              </Button>
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={selectedCategory !== category.id ? 'border-slate-300 text-slate-600' : ''}
+                >
+                  {locale === 'ar' ? category.name_ar : category.name_en}
+                  <span className="mx-1 text-xs opacity-70">({getCategoryProductCount(category.id)})</span>
+                </Button>
+              ))}
+              {uncategorizedCount > 0 && (
+                <Button
+                  variant={selectedCategory === 'uncategorized' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory('uncategorized')}
+                  className={selectedCategory !== 'uncategorized' ? 'border-slate-300 text-slate-600' : ''}
+                >
+                  {locale === 'ar' ? 'بدون تصنيف' : 'Uncategorized'}
+                  <span className="mx-1 text-xs opacity-70">({uncategorizedCount})</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Products Grid */}
         {filteredProducts.length === 0 ? (
@@ -351,9 +540,10 @@ export default function ProviderProductsPage() {
             {filteredProducts.map((product) => {
               const isLoading = actionLoading === product.id
               const showDeleteConfirm = deleteConfirm === product.id
+              const promo = getProductPromotion(product.id)
 
               return (
-                <Card key={product.id} className="bg-white border-slate-200 overflow-hidden">
+                <Card key={product.id} className={`bg-white border-slate-200 overflow-hidden ${promo ? 'ring-2 ring-primary/30' : ''}`}>
                   <CardContent className="p-0">
                     {/* Product Image */}
                     <div className="relative h-40 bg-slate-100">
@@ -382,14 +572,35 @@ export default function ProviderProductsPage() {
                         </span>
                       </div>
 
-                      {/* Discount Badge */}
-                      {product.original_price && product.original_price > product.price && (
+                      {/* Promotion Badge */}
+                      {promo ? (
                         <div className={`absolute top-2 ${isRTL ? 'right-2' : 'left-2'}`}>
-                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary text-white">
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-primary to-primary/80 text-white flex items-center gap-1">
+                            {promo.type === 'percentage' ? (
+                              <>
+                                <Percent className="w-3 h-3" />
+                                {promo.discount_value}%
+                              </>
+                            ) : promo.type === 'fixed' ? (
+                              <>
+                                <Tag className="w-3 h-3" />
+                                {promo.discount_value} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              </>
+                            ) : (
+                              <>
+                                <Gift className="w-3 h-3" />
+                                {locale === 'ar' ? 'عرض' : 'Offer'}
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      ) : product.original_price && product.original_price > product.price ? (
+                        <div className={`absolute top-2 ${isRTL ? 'right-2' : 'left-2'}`}>
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-500 text-white">
                             {Math.round((1 - product.price / product.original_price) * 100)}% {locale === 'ar' ? 'خصم' : 'OFF'}
                           </span>
                         </div>
-                      )}
+                      ) : null}
                     </div>
 
                     {/* Product Info */}
@@ -506,6 +717,78 @@ export default function ProviderProductsPage() {
           </div>
         )}
       </div>
+
+      {/* Add Category Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onClick={() => setShowCategoryModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="font-bold text-lg text-slate-900">
+                {locale === 'ar' ? 'إضافة تصنيف جديد' : 'Add New Category'}
+              </h3>
+              <button
+                onClick={() => setShowCategoryModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {locale === 'ar' ? 'اسم التصنيف (عربي) *' : 'Category Name (Arabic) *'}
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryNameAr}
+                  onChange={(e) => setNewCategoryNameAr(e.target.value)}
+                  placeholder={locale === 'ar' ? 'مثال: بيتزا' : 'e.g., Pizza'}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                  dir="rtl"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {locale === 'ar' ? 'اسم التصنيف (إنجليزي)' : 'Category Name (English)'}
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryNameEn}
+                  onChange={(e) => setNewCategoryNameEn(e.target.value)}
+                  placeholder={locale === 'ar' ? 'اختياري' : 'Optional'}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                  dir="ltr"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-4 border-t border-slate-100">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowCategoryModal(false)}
+              >
+                {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleAddCategory}
+                disabled={!newCategoryNameAr.trim() || categoryLoading}
+              >
+                {categoryLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  locale === 'ar' ? 'إضافة' : 'Add'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </ProviderLayout>
   )
 }

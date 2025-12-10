@@ -1,11 +1,27 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Minus, ShoppingBag, Store } from 'lucide-react'
-import { useCart } from '@/lib/store/cart'
+import { Plus, Minus, ShoppingBag, Store, Percent, Tag, Gift } from 'lucide-react'
+import { useCart, CartItem } from '@/lib/store/cart'
 import { CustomerLayout } from '@/components/customer/layout'
+import { createClient } from '@/lib/supabase/client'
+
+type Promotion = {
+  id: string
+  type: 'percentage' | 'fixed' | 'buy_x_get_y'
+  discount_value: number
+  buy_quantity?: number
+  get_quantity?: number
+  name_ar: string
+  name_en: string
+  applies_to: 'all' | 'specific'
+  product_ids?: string[]
+  min_order_amount?: number
+  max_discount?: number
+}
 
 export default function CartPage() {
   const locale = useLocale()
@@ -23,9 +39,105 @@ export default function CartPage() {
     getItemCount,
   } = useCart()
 
+  const [promotions, setPromotions] = useState<Promotion[]>([])
+  const [loadingPromotions, setLoadingPromotions] = useState(false)
+
+  // Fetch active promotions for the provider
+  useEffect(() => {
+    async function fetchPromotions() {
+      if (!provider?.id) {
+        setPromotions([])
+        return
+      }
+
+      setLoadingPromotions(true)
+      const supabase = createClient()
+      const now = new Date().toISOString()
+
+      const { data } = await supabase
+        .from('promotions')
+        .select('*')
+        .eq('provider_id', provider.id)
+        .eq('is_active', true)
+        .lte('start_date', now)
+        .gte('end_date', now)
+
+      if (data) {
+        setPromotions(data)
+      }
+      setLoadingPromotions(false)
+    }
+
+    fetchPromotions()
+  }, [provider?.id])
+
+  // Get applicable promotion for a product
+  const getProductPromotion = (productId: string): Promotion | null => {
+    for (const promo of promotions) {
+      if (promo.applies_to === 'all') {
+        return promo
+      }
+      if (promo.applies_to === 'specific' && promo.product_ids?.includes(productId)) {
+        return promo
+      }
+    }
+    return null
+  }
+
+  // Calculate discount for a single item
+  const calculateItemDiscount = (item: CartItem): number => {
+    const promo = getProductPromotion(item.menuItem.id)
+    if (!promo) return 0
+
+    const price = item.selectedVariant?.price ?? item.menuItem.price
+    const itemTotal = price * item.quantity
+
+    if (promo.type === 'percentage') {
+      let discount = (itemTotal * promo.discount_value) / 100
+      // Apply max discount if set
+      if (promo.max_discount && discount > promo.max_discount) {
+        discount = promo.max_discount
+      }
+      return discount
+    }
+
+    if (promo.type === 'fixed') {
+      // Fixed discount per item
+      return Math.min(promo.discount_value * item.quantity, itemTotal)
+    }
+
+    if (promo.type === 'buy_x_get_y' && promo.buy_quantity && promo.get_quantity) {
+      // Calculate free items
+      const totalItems = item.quantity
+      const setSize = promo.buy_quantity + promo.get_quantity
+      const completeSets = Math.floor(totalItems / setSize)
+      const freeItems = completeSets * promo.get_quantity
+      return freeItems * price
+    }
+
+    return 0
+  }
+
+  // Calculate total discount
+  const calculateTotalDiscount = (): number => {
+    let totalDiscount = items.reduce((sum, item) => sum + calculateItemDiscount(item), 0)
+
+    // Check min_order_amount for any promotion
+    const subtotal = getSubtotal()
+    for (const promo of promotions) {
+      if (promo.min_order_amount && subtotal < promo.min_order_amount) {
+        // Promotion not applicable due to minimum order
+        return 0
+      }
+    }
+
+    return totalDiscount
+  }
+
   const subtotal = getSubtotal()
+  const discount = calculateTotalDiscount()
   const deliveryFee = provider?.delivery_fee || 0
-  const total = getTotal()
+  const total = subtotal - discount + deliveryFee
 
   const handleCheckout = () => {
     router.push(`/${locale}/checkout`)
@@ -83,64 +195,117 @@ export default function CartPage() {
 
         {/* Cart Items */}
         <div className="space-y-3 mb-6">
-          {items.map((item) => (
-            <div
-              key={item.menuItem.id}
-              className="bg-white rounded-xl border border-slate-100 p-4"
-            >
-              <div className="flex gap-3">
-                {/* Image */}
-                <div className="w-20 h-20 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
-                  {item.menuItem.image_url ? (
-                    <img
-                      src={item.menuItem.image_url}
-                      alt={getName(item.menuItem)}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-2xl">
-                      🍽️
-                    </div>
-                  )}
-                </div>
+          {items.map((item) => {
+            const promo = getProductPromotion(item.menuItem.id)
+            const itemDiscount = calculateItemDiscount(item)
+            const price = item.selectedVariant?.price ?? item.menuItem.price
+            const itemTotal = price * item.quantity
 
-                {/* Details */}
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-slate-900 truncate">
-                    {getName(item.menuItem)}
-                  </h4>
-                  <p className="text-primary font-bold mt-1">
-                    {item.menuItem.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                  </p>
+            return (
+              <div
+                key={`${item.menuItem.id}-${item.selectedVariant?.id || ''}`}
+                className={`bg-white rounded-xl border p-4 ${promo ? 'border-primary/30 ring-1 ring-primary/20' : 'border-slate-100'}`}
+              >
+                <div className="flex gap-3">
+                  {/* Image */}
+                  <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                    {item.menuItem.image_url ? (
+                      <img
+                        src={item.menuItem.image_url}
+                        alt={getName(item.menuItem)}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl">
+                        🍽️
+                      </div>
+                    )}
+                    {/* Promotion Badge on Image */}
+                    {promo && (
+                      <div className="absolute top-1 start-1 bg-gradient-to-r from-primary to-primary/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        {promo.type === 'percentage' ? (
+                          <>
+                            <Percent className="w-2.5 h-2.5" />
+                            <span>{promo.discount_value}%</span>
+                          </>
+                        ) : promo.type === 'fixed' ? (
+                          <>
+                            <Tag className="w-2.5 h-2.5" />
+                            <span>{promo.discount_value}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Gift className="w-2.5 h-2.5" />
+                            <span>{locale === 'ar' ? 'عرض' : 'Offer'}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-                  {/* Quantity Controls */}
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => removeItem(item.menuItem.id)}
-                        className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-red-300 hover:text-red-500 transition-colors"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-8 text-center font-semibold">
-                        {item.quantity}
+                  {/* Details */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-slate-900 truncate">
+                      {getName(item.menuItem)}
+                    </h4>
+                    {item.selectedVariant && (
+                      <p className="text-xs text-slate-500">
+                        {locale === 'ar' ? item.selectedVariant.name_ar : (item.selectedVariant.name_en || item.selectedVariant.name_ar)}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-primary font-bold">
+                        {price} {locale === 'ar' ? 'ج.م' : 'EGP'}
                       </span>
-                      <button
-                        onClick={() => updateQuantity(item.menuItem.id, item.quantity + 1)}
-                        className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                      {itemDiscount > 0 && (
+                        <span className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                          -{itemDiscount.toFixed(0)} {locale === 'ar' ? 'خصم' : 'off'}
+                        </span>
+                      )}
                     </div>
 
-                    <span className="font-bold text-slate-900">
-                      {(item.menuItem.price * item.quantity).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                    </span>
+                    {/* Quantity Controls */}
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => removeItem(item.menuItem.id, item.selectedVariant?.id)}
+                          className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-red-300 hover:text-red-500 transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-8 text-center font-semibold">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.menuItem.id, item.quantity + 1, item.selectedVariant?.id)}
+                          className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="text-end">
+                        {itemDiscount > 0 ? (
+                          <>
+                            <span className="text-slate-400 line-through text-sm">
+                              {itemTotal.toFixed(2)}
+                            </span>
+                            <span className="font-bold text-green-600 ms-2">
+                              {(itemTotal - itemDiscount).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="font-bold text-slate-900">
+                            {itemTotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Add More Items */}
@@ -162,6 +327,17 @@ export default function CartPage() {
               <span>{t('subtotal')}</span>
               <span>{subtotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
             </div>
+
+            {/* Discount Row */}
+            {discount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span className="flex items-center gap-1.5">
+                  <Percent className="w-4 h-4" />
+                  {locale === 'ar' ? 'خصم العرض' : 'Promotion Discount'}
+                </span>
+                <span>-{discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+              </div>
+            )}
 
             <div className="flex justify-between text-slate-600">
               <span>{t('deliveryFee')}</span>
