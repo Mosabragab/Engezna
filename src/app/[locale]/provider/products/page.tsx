@@ -27,7 +27,6 @@ import {
   Sparkles,
   FolderPlus,
   X,
-  Percent,
   Tag,
   Gift,
 } from 'lucide-react'
@@ -578,8 +577,7 @@ export default function ProviderProductsPage() {
                           <span className="px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-primary to-primary/80 text-white flex items-center gap-1">
                             {promo.type === 'percentage' ? (
                               <>
-                                <Percent className="w-3 h-3" />
-                                {promo.discount_value}%
+                                {locale === 'ar' ? 'خصم' : 'Off'} {promo.discount_value}%
                               </>
                             ) : promo.type === 'fixed' ? (
                               <>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import { Plus, Minus, Flame, Leaf, ChevronDown, Percent, Tag, Gift } from 'lucide-react'
+import { Plus, Minus, Flame, Leaf, ChevronDown, Tag, Gift } from 'lucide-react'
 import type { PricingType } from '@/types/menu-import'
 
 interface ProductVariant {
@@ -189,7 +189,7 @@ export function ProductCard({
               <div className="absolute top-1 start-1 bg-gradient-to-r from-primary to-primary/80 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
                 {promotion.type === 'percentage' ? (
                   <>
-                    <Percent className="w-3 h-3" />
+                    <span>{locale === 'ar' ? 'خصم' : 'Off'}</span>
                     <span>{promotion.discount_value}%</span>
                   </>
                 ) : promotion.type === 'fixed' ? (
@@ -312,7 +312,7 @@ export function ProductCard({
           <div className="absolute top-2 start-2 bg-gradient-to-r from-primary to-primary/80 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-md">
             {promotion.type === 'percentage' ? (
               <>
-                <Percent className="w-3.5 h-3.5" />
+                <span>{locale === 'ar' ? 'خصم' : 'Off'}</span>
                 <span>{promotion.discount_value}%</span>
               </>
             ) : promotion.type === 'fixed' ? (
