@@ -23,6 +23,8 @@ import {
   Clock,
   Eye,
   EyeOff,
+  FileUp,
+  Sparkles,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -42,6 +44,12 @@ type MenuItem = {
   preparation_time_min: number
   display_order: number
   created_at: string
+  category_id: string | null
+  category?: {
+    id: string
+    name_ar: string
+    name_en: string
+  } | null
 }
 
 type FilterType = 'all' | 'available' | 'unavailable'
@@ -96,6 +104,7 @@ export default function ProviderProductsPage() {
   const loadProducts = async (provId: string) => {
     const supabase = createClient()
 
+    // First get all products
     const { data, error } = await supabase
       .from('menu_items')
       .select('*')
@@ -108,7 +117,20 @@ export default function ProviderProductsPage() {
       return
     }
 
-    setProducts(data || [])
+    // Then get categories for this provider
+    const { data: categoriesData } = await supabase
+      .from('provider_categories')
+      .select('id, name_ar, name_en')
+      .eq('provider_id', provId)
+
+    // Map categories to products
+    const categoryMap = new Map(categoriesData?.map(c => [c.id, c]) || [])
+    const productsWithCategories = (data || []).map(product => ({
+      ...product,
+      category: product.category_id ? categoryMap.get(product.category_id) || null : null
+    }))
+
+    setProducts(productsWithCategories)
   }
 
   const handleRefresh = async () => {
@@ -236,7 +258,7 @@ export default function ProviderProductsPage() {
           </div>
         </div>
 
-        {/* Search and Add Button */}
+        {/* Search and Add Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute top-1/2 -translate-y-1/2 left-3 w-5 h-5 text-slate-500" />
@@ -248,12 +270,20 @@ export default function ProviderProductsPage() {
               className="w-full bg-white border border-slate-200 rounded-xl py-3 px-10 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          <Link href={`/${locale}/provider/products/new`}>
-            <Button size="lg" className="w-full sm:w-auto">
-              <Plus className="w-5 h-5 mr-2" />
-              {locale === 'ar' ? 'إضافة منتج' : 'Add Product'}
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href={`/${locale}/provider/menu-import`}>
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10">
+                <Sparkles className="w-5 h-5 me-2" />
+                {locale === 'ar' ? 'استيراد المنتجات' : 'Import Products'}
+              </Button>
+            </Link>
+            <Link href={`/${locale}/provider/products/new`}>
+              <Button size="lg" className="w-full sm:w-auto">
+                <Plus className="w-5 h-5 me-2" />
+                {locale === 'ar' ? 'إضافة منتج' : 'Add Product'}
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Filter Tabs */}
@@ -364,6 +394,12 @@ export default function ProviderProductsPage() {
 
                     {/* Product Info */}
                     <div className="p-4">
+                      {/* Category Badge */}
+                      {product.category && (
+                        <span className="inline-block px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full mb-2">
+                          {locale === 'ar' ? product.category.name_ar : product.category.name_en}
+                        </span>
+                      )}
                       <h3 className="font-bold text-lg mb-1 line-clamp-1">
                         {locale === 'ar' ? product.name_ar : product.name_en}
                       </h3>

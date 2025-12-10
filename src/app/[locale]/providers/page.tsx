@@ -15,7 +15,8 @@ type Provider = {
   name_en: string
   description_ar: string | null
   description_en: string | null
-  category: 'restaurant' | 'coffee_shop' | 'grocery' | 'vegetables_fruits'
+  // Updated December 2025 - New categories
+  category: 'restaurant_cafe' | 'coffee_patisserie' | 'grocery' | 'vegetables_fruits'
   logo_url: string | null
   cover_image_url: string | null
   rating: number
@@ -184,12 +185,13 @@ export default function ProvidersPage() {
     }
   }
 
+  // Updated December 2025 - New categories
   const categories = [
     { id: 'all', name_ar: 'الكل', name_en: 'All' },
-    { id: 'restaurant', name_ar: 'المطاعم', name_en: 'Restaurants' },
-    { id: 'coffee_shop', name_ar: 'الكافيهات', name_en: 'Coffee Shops' },
-    { id: 'grocery', name_ar: 'البقالة', name_en: 'Groceries' },
-    { id: 'vegetables_fruits', name_ar: 'الخضار والفواكه', name_en: 'Vegetables & Fruits' },
+    { id: 'restaurant_cafe', name_ar: 'مطاعم وكافيهات', name_en: 'Restaurants & Cafes' },
+    { id: 'coffee_patisserie', name_ar: 'البن والحلويات', name_en: 'Coffee & Patisserie' },
+    { id: 'grocery', name_ar: 'سوبر ماركت', name_en: 'Supermarket' },
+    { id: 'vegetables_fruits', name_ar: 'خضروات وفواكه', name_en: 'Fruits & Vegetables' },
   ]
 
   const handleSortToggle = (option: SortOption) => {

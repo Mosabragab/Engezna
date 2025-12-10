@@ -1,5 +1,18 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import type { PricingType, VariantType } from '@/types/menu-import'
+
+export type ProductVariant = {
+  id: string
+  variant_type: VariantType
+  name_ar: string
+  name_en: string | null
+  price: number
+  original_price: number | null
+  is_default: boolean
+  display_order: number
+  is_available: boolean
+}
 
 export type MenuItem = {
   id: string
@@ -9,11 +22,16 @@ export type MenuItem = {
   description_ar: string | null
   description_en: string | null
   price: number
+  original_price?: number | null
   image_url: string | null
   is_available: boolean
   is_vegetarian: boolean
   is_spicy: boolean
   preparation_time_min: number
+  // Variant support
+  has_variants?: boolean
+  pricing_type?: PricingType
+  variants?: ProductVariant[]
 }
 
 export type Provider = {
@@ -30,6 +48,13 @@ export type Provider = {
 export type CartItem = {
   menuItem: MenuItem
   quantity: number
+  // Selected variant (for products with variants)
+  selectedVariant?: ProductVariant
+}
+
+// Helper to create unique cart item key (product + variant combination)
+const getCartItemKey = (menuItemId: string, variantId?: string) => {
+  return variantId ? `${menuItemId}-${variantId}` : menuItemId
 }
 
 type CartState = {
@@ -37,11 +62,11 @@ type CartState = {
   provider: Provider | null
   _hasHydrated: boolean
   setHasHydrated: (state: boolean) => void
-  addItem: (menuItem: MenuItem, provider: Provider) => void
-  removeItem: (menuItemId: string) => void
-  updateQuantity: (menuItemId: string, quantity: number) => void
+  addItem: (menuItem: MenuItem, provider: Provider, variant?: ProductVariant) => void
+  removeItem: (menuItemId: string, variantId?: string) => void
+  updateQuantity: (menuItemId: string, quantity: number, variantId?: string) => void
   clearCart: () => void
-  getItemQuantity: (menuItemId: string) => number
+  getItemQuantity: (menuItemId: string, variantId?: string) => number
   getSubtotal: () => number
   getTotal: () => number
   getItemCount: () => number
@@ -57,13 +82,14 @@ export const useCart = create<CartState>()(
         set({ _hasHydrated: state })
       },
 
-      addItem: (menuItem, provider) => {
+      addItem: (menuItem, provider, variant) => {
         const currentProvider = get().provider
+        const itemKey = getCartItemKey(menuItem.id, variant?.id)
 
         // If adding from a different provider, clear cart
         if (currentProvider && currentProvider.id !== provider.id) {
           set({
-            cart: [{ menuItem, quantity: 1 }],
+            cart: [{ menuItem, quantity: 1, selectedVariant: variant }],
             provider,
           })
           return
@@ -71,13 +97,13 @@ export const useCart = create<CartState>()(
 
         set((state) => {
           const existingItem = state.cart.find(
-            (item) => item.menuItem.id === menuItem.id
+            (item) => getCartItemKey(item.menuItem.id, item.selectedVariant?.id) === itemKey
           )
 
           if (existingItem) {
             return {
               cart: state.cart.map((item) =>
-                item.menuItem.id === menuItem.id
+                getCartItemKey(item.menuItem.id, item.selectedVariant?.id) === itemKey
                   ? { ...item, quantity: item.quantity + 1 }
                   : item
               ),
@@ -86,22 +112,23 @@ export const useCart = create<CartState>()(
           }
 
           return {
-            cart: [...state.cart, { menuItem, quantity: 1 }],
+            cart: [...state.cart, { menuItem, quantity: 1, selectedVariant: variant }],
             provider,
           }
         })
       },
 
-      removeItem: (menuItemId) => {
+      removeItem: (menuItemId, variantId) => {
+        const itemKey = getCartItemKey(menuItemId, variantId)
         set((state) => {
           const existingItem = state.cart.find(
-            (item) => item.menuItem.id === menuItemId
+            (item) => getCartItemKey(item.menuItem.id, item.selectedVariant?.id) === itemKey
           )
 
           if (existingItem && existingItem.quantity > 1) {
             return {
               cart: state.cart.map((item) =>
-                item.menuItem.id === menuItemId
+                getCartItemKey(item.menuItem.id, item.selectedVariant?.id) === itemKey
                   ? { ...item, quantity: item.quantity - 1 }
                   : item
               ),
@@ -109,7 +136,7 @@ export const useCart = create<CartState>()(
           }
 
           const newCart = state.cart.filter(
-            (item) => item.menuItem.id !== menuItemId
+            (item) => getCartItemKey(item.menuItem.id, item.selectedVariant?.id) !== itemKey
           )
 
           return {
@@ -119,15 +146,18 @@ export const useCart = create<CartState>()(
         })
       },
 
-      updateQuantity: (menuItemId, quantity) => {
+      updateQuantity: (menuItemId, quantity, variantId) => {
         if (quantity <= 0) {
-          get().removeItem(menuItemId)
+          get().removeItem(menuItemId, variantId)
           return
         }
 
+        const itemKey = getCartItemKey(menuItemId, variantId)
         set((state) => ({
           cart: state.cart.map((item) =>
-            item.menuItem.id === menuItemId ? { ...item, quantity } : item
+            getCartItemKey(item.menuItem.id, item.selectedVariant?.id) === itemKey
+              ? { ...item, quantity }
+              : item
           ),
         }))
       },
@@ -136,16 +166,20 @@ export const useCart = create<CartState>()(
         set({ cart: [], provider: null })
       },
 
-      getItemQuantity: (menuItemId) => {
-        const item = get().cart.find((item) => item.menuItem.id === menuItemId)
+      getItemQuantity: (menuItemId, variantId) => {
+        const itemKey = getCartItemKey(menuItemId, variantId)
+        const item = get().cart.find(
+          (item) => getCartItemKey(item.menuItem.id, item.selectedVariant?.id) === itemKey
+        )
         return item ? item.quantity : 0
       },
 
       getSubtotal: () => {
-        return get().cart.reduce(
-          (sum, item) => sum + item.menuItem.price * item.quantity,
-          0
-        )
+        return get().cart.reduce((sum, item) => {
+          // Use variant price if available, otherwise use base product price
+          const price = item.selectedVariant?.price ?? item.menuItem.price
+          return sum + price * item.quantity
+        }, 0)
       },
 
       getTotal: () => {

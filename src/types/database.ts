@@ -12,7 +12,10 @@ export type Json =
 
 export type UserRole = 'customer' | 'provider_owner' | 'provider_staff' | 'admin';
 
-export type ProviderCategory = 'restaurant' | 'coffee_shop' | 'grocery' | 'vegetables_fruits';
+// Business Categories - Updated December 2025
+// OLD VALUES (DEPRECATED): 'restaurant', 'coffee_shop', 'juice_shop', 'pharmacy'
+// NEW VALUES: 'restaurant_cafe', 'coffee_patisserie', 'grocery', 'vegetables_fruits'
+export type ProviderCategory = 'restaurant_cafe' | 'coffee_patisserie' | 'grocery' | 'vegetables_fruits';
 
 // Updated: Added 'active', 'approved', 'rejected', 'incomplete' for consistency across the app
 export type ProviderStatus =

@@ -1,8 +1,8 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 7, 2025 (Evening Session)
-**Status:** Week 5 - Complete Feature Set (Session 15 Evening) ✅
-**Branch:** `claude/review-workflow-testing-01VcBCSp8urPVFLexCRkcn2T`
+**Last Updated:** December 10, 2025 (Session 16)
+**Status:** Week 5 - Complete Feature Set (Session 16) ✅
+**Branch:** `claude/review-project-setup-0137bi5Fkgyc3DRC9QHe33fV`
 
 ---
 
@@ -113,6 +113,23 @@
 10. ✅ Product form: name (AR/EN), description, price, original price (for discount)
 11. ✅ Product attributes: vegetarian, spicy, prep time, calories
 12. ✅ Image upload to Supabase Storage
+
+### Excel Menu Import (NEW! ✅)
+1. ✅ Visit `/ar/provider/menu-import` or `/en/provider/menu-import`
+2. ✅ Upload Excel file (.xlsx, .xls)
+3. ✅ Preview parsed products before import
+4. ✅ **4 Pricing Types**: fixed, per_unit, variants, weight_variants
+5. ✅ **Variants Format**: `نصف كيلو:480|ربع كيلو:250`
+6. ✅ Auto-create categories from Excel
+7. ✅ Product variants (sizes/weights) auto-created
+8. ✅ Guide: `/docs/EXCEL_IMPORT_GUIDE.md`
+
+### Product Variants System (NEW! ✅)
+1. ✅ **VariantSelectionModal** - Customer selects size/weight
+2. ✅ **ProductDetailModal** - Full product view with variants
+3. ✅ **Database Table**: `product_variants`
+4. ✅ **Variant Types**: size, weight, option
+5. ✅ Customers can select variant and quantity before adding to cart
 
 ### Store Hours Management (✅)
 1. ✅ Visit `/ar/provider/store-hours` or `/en/provider/store-hours`
@@ -473,6 +490,44 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
 ---
 
 ## 🐛 Recent Fixes
+
+### Work Session Dec 10, 2025 (Session 16) - Excel Import & Product Variants ✅
+
+#### Excel Menu Import System
+- ✅ **Import Page**: `/provider/menu-import` - Bulk import products from Excel
+- ✅ **4 Pricing Types**: fixed, per_unit, variants, weight_variants
+- ✅ **Variants Format**: `نصف كيلو:480|ربع كيلو:250` (name:price|name:price)
+- ✅ **Auto-create categories** from Excel category column
+- ✅ Successfully imported: 30 categories, 156 products, 203 variants
+
+#### Product Variants System
+- ✅ **Database Table**: `product_variants` with variant_type, name, price, is_default
+- ✅ **VariantSelectionModal**: For selecting sizes/weights
+- ✅ **ProductDetailModal**: Full product view with variants
+
+#### Provider Categories
+- ✅ **Database Table**: `provider_categories` per provider
+- ✅ Categories display on provider products page
+- ✅ Category filter tabs on customer provider page
+
+#### UI Fixes
+- ✅ **Modal z-index**: Increased from z-50 to z-[60] to appear above navigation
+- ✅ **Add to Cart button**: Fixed visibility on mobile (was behind bottom nav)
+- ✅ **Click-outside-to-close**: Added to modals
+- ✅ **Products disappearing fix**: Changed from JOIN query to separate queries
+
+#### Key Lesson Learned
+**AVOID Supabase `!foreign_key` syntax for nullable relations!**
+```typescript
+// BAD - Creates INNER JOIN, excludes NULL category_id
+.select(`*, category:provider_categories!category_id (...)`)
+
+// GOOD - Separate queries, manual mapping
+const products = await supabase.from('menu_items').select('*')
+const categories = await supabase.from('provider_categories').select('*')
+```
+
+---
 
 ### Work Session Dec 7, 2025 (Session 15 Evening) - In-App Chat & Messaging ✅
 

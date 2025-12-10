@@ -1,5 +1,97 @@
 # Session Log
 
+## Session: 2025-12-10 - Excel Import System & Product Variants
+
+### Summary
+Comprehensive implementation of product import from Excel with 4 pricing types, variant system, and customer UI improvements.
+
+### Completed Tasks
+
+#### 1. Pricing Types System
+- **4 Pricing Types**:
+  - `fixed` - Fixed price product
+  - `per_unit` - Price per unit (like per kg)
+  - `variants` - Multiple variants (sizes/options)
+  - `weight_variants` - Weight-based variants (quarter/half/full kilo)
+- **Database**: Added `pricing_type` column to `menu_items` table
+- **Types**: Updated TypeScript types across components
+
+#### 2. Product Variants System
+- **Database Table**: `product_variants` with columns:
+  - `variant_type`: size, weight, option
+  - `name_ar`, `name_en`, `price`, `original_price`
+  - `is_default`, `display_order`, `is_available`
+- **UI Components**:
+  - `VariantSelectionModal` - For selecting variants
+  - `ProductDetailModal` - Full product view with variants
+
+#### 3. Provider Categories System
+- **Database Table**: `provider_categories` with:
+  - `provider_id`, `name_ar`, `name_en`
+  - `display_order`, `is_active`, `description_ar/en`
+- **Fix**: Changed from wrong table names (`product_categories`, `menu_categories`) to `provider_categories`
+- **Import**: Categories imported from Excel automatically
+
+#### 4. Excel Menu Import Feature
+- **Import Page**: `/provider/menu-import`
+- **Excel Columns**: name_ar, name_en, description_ar, description_en, price, original_price, category, is_available, preparation_time, is_spicy, is_vegetarian, pricing_type, variants
+- **Variants Format**: `نصف كيلو:480|ربع كيلو:250`
+- **Results**: Successfully imported 30 categories, 156 products, 203 variants
+
+#### 5. Customer UI Fixes
+- **Modal z-index**: Increased from z-50 to z-[60] to appear above bottom navigation
+- **Add to Cart button**: Fixed visibility on mobile (was hidden behind navigation)
+- **Click-to-close**: Added onClick on backdrop to close modals
+- **Product Detail Modal**: Now opens when clicking on products
+
+#### 6. Provider Products Page Fix - CRITICAL
+- **Issue**: All products disappeared after adding category JOIN
+- **Root Cause**: Supabase `!category_id` syntax creates INNER JOIN
+- **Fix**: Changed to two separate queries and manual mapping (simulates LEFT JOIN)
+- **Lesson**: Avoid Supabase foreign key join syntax for nullable relations
+
+### Files Created
+- `supabase/migrations/20251210000001_product_variants.sql`
+- `supabase/migrations/20251210000002_provider_categories.sql`
+- `src/app/[locale]/provider/menu-import/page.tsx`
+- `src/app/api/menu-import/save/route.ts`
+- `src/components/customer/shared/VariantSelectionModal.tsx`
+- `src/components/customer/shared/ProductDetailModal.tsx`
+
+### Files Modified
+- `src/app/[locale]/provider/products/page.tsx` - Category display, separate queries fix
+- `src/app/[locale]/provider/products/[id]/page.tsx` - Light mode, correct table name
+- `src/app/[locale]/providers/[id]/page.tsx` - Variants loading, ProductDetailModal
+- `src/components/customer/shared/index.ts` - Export new components
+
+### Database Changes
+- New table: `product_variants`
+- New table: `provider_categories`
+- New column: `menu_items.pricing_type` enum
+- New column: `menu_items.has_variants` boolean
+
+### Key Lessons Learned
+
+#### 1. Supabase JOIN Syntax
+**AVOID using `!foreign_key` for nullable foreign keys!**
+```typescript
+// BAD - Creates INNER JOIN, excludes NULL category_id
+.select(`*, category:provider_categories!category_id (...)`)
+
+// GOOD - Separate queries, manual mapping (LEFT JOIN behavior)
+const products = await supabase.from('menu_items').select('*')
+const categories = await supabase.from('provider_categories').select('*')
+const mapped = products.map(p => ({
+  ...p,
+  category: categoryMap.get(p.category_id) || null
+}))
+```
+
+#### 2. Modal z-index
+Bottom navigation uses z-50, modals must use z-[60] or higher to appear on top.
+
+---
+
 ## Session: 2025-12-08 (Continued) - Settlement Groups & UI Fixes
 
 ### Summary

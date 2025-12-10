@@ -1,160 +1,137 @@
 # Next Session Plan
 
-## Date: 2025-12-08 (Session Completed)
-
-## Completed This Session
-
-### Settlement Groups System
-- [x] Created `settlement_groups` table with frequencies (daily, 3_days, weekly)
-- [x] Added `settlement_group_id` to providers table
-- [x] Admin page for managing groups (`/admin/settlements/groups`)
-- [x] Assign/remove providers from groups
-- [x] Default group (3 days) auto-assigned to new providers
-
-### Reorder Functionality
-- [x] Fixed "اطلب تاني" button - now properly adds items to cart
-
-### Provider Queries Fix
-- [x] Fixed "لا يوجد مزودين نشطين" error
-- [x] Discovered `is_approved` column doesn't exist
-- [x] Updated all queries to not filter by non-existent column
-
-### UI Improvements
-- [x] Settlements page colors (emerald/red/amber)
-- [x] Analytics page colors (platform primary)
-- [x] Added "مجموعات التسوية" button
-- [x] Fixed admin sidebar state persistence
-
----
+## Date: 2025-12-11 (Upcoming)
 
 ## Priority Tasks for Next Session
 
-### 1. Testing Required
-- [ ] Test sidebar persistence across all admin pages
-- [ ] Test settlement groups functionality (assign providers, create settlements)
-- [ ] Test reorder functionality end-to-end
-- [ ] Test auto-settlement generation (if cron job configured)
+### 1. Product Images Import from Excel
+**Goal**: Allow providers to include product image URLs/paths in Excel for bulk import
 
-### 2. Settlements Automation
-- [ ] Configure cron job to call `generate_auto_settlements()` daily
-- [ ] Test settlement generation for each frequency
-- [ ] Add settlement notifications to providers
+#### Implementation Steps:
+1. **Add Image Column to Excel Template**
+   - New column: `image_url` or `image`
+   - Accepts: URL (https://...) or Supabase storage path
 
-### 3. Customer Experience
-- [ ] Push notifications for order updates (native)
-- [ ] Rating and review system improvements
+2. **Update Menu Import API**
+   - File: `src/app/api/menu-import/save/route.ts`
+   - Parse image_url column from Excel
+   - Validate URL format
+   - Save to `menu_items.image_url`
 
-### 4. Provider Experience
-- [ ] Bulk order actions (accept/reject multiple)
-- [ ] Order preparation time estimates
+3. **Update Menu Import UI**
+   - File: `src/app/[locale]/provider/menu-import/page.tsx`
+   - Show image preview in parsed products table
+   - Handle missing/invalid images gracefully
+
+4. **Image Upload Option** (Optional Enhancement)
+   - Allow providers to upload images to Supabase storage
+   - Generate public URLs automatically
+   - Reference images by filename in Excel
+
+#### Alternative: Image Matching by Name
+- Provider uploads images to a folder
+- Image filename matches product name_ar or name_en
+- System auto-matches during import
+
+### 2. Remaining Testing
+- [ ] Verify categories display correctly on customer page
+- [ ] Test product detail modal opening
+- [ ] Test variant selection and add to cart
+- [ ] Test all 156 products display correctly
+
+### 3. Documentation
+- [ ] Complete Excel import guide for customers
+- [ ] Update PRD.md with pricing types section
 
 ---
 
-## Lessons Learned (IMPORTANT!)
+## Completed in Previous Session (2025-12-10)
 
-### 1. Always Verify Column Names Before Using
-**We wasted significant time because:**
-- Code used `is_approved` column which DOESN'T EXIST
-- Providers table uses `status` enum, not boolean approval
+### Excel Import System
+- [x] 4 pricing types: fixed, per_unit, variants, weight_variants
+- [x] Product variants table and system
+- [x] Provider categories table
+- [x] Excel import page with preview
+- [x] Import API endpoint
+- [x] Successfully imported 30 categories, 156 products, 203 variants
 
-**Always run this before writing queries:**
-```sql
-SELECT column_name, data_type
-FROM information_schema.columns
-WHERE table_name = 'providers';
+### UI Fixes
+- [x] Modal z-index fix (z-[60] vs z-50)
+- [x] Add to Cart button visibility
+- [x] Product detail modal component
+- [x] Variant selection modal component
+- [x] Provider products page - category display with LEFT JOIN fix
+
+---
+
+## Key Technical Notes
+
+### Supabase JOIN Gotcha
+**NEVER use `!foreign_key` syntax for nullable relations!**
+```typescript
+// This creates INNER JOIN - products without category disappear!
+.select(`*, category:provider_categories!category_id (...)`)
+
+// Use separate queries instead
+const products = await supabase.from('menu_items').select('*')
+const categories = await supabase.from('provider_categories').select('*')
 ```
 
-### 2. Provider Status Values
-The `providers.status` enum has these values:
-- `open` - Store is open
-- `closed` - Store is closed
-- `temporarily_paused` - Temporarily unavailable
-- `on_vacation` - On vacation
-- `incomplete` - Registration incomplete
+### Pricing Types Reference
+| Type | Description | Example |
+|------|-------------|---------|
+| `fixed` | Single fixed price | Coffee - 25 EGP |
+| `per_unit` | Price per unit/kg | Meat - 250 EGP/kg |
+| `variants` | Size/option variants | Pizza: Small/Medium/Large |
+| `weight_variants` | Weight variants | Lamb: 250g/500g/1kg |
 
-There is **NO** `is_approved` boolean column!
-
-### 3. Order Status Values
-Valid `order_status` enum values:
-- `pending`, `accepted`, `preparing`, `ready`, `out_for_delivery`, `delivered`, `cancelled`, `rejected`
-
-There is **NO** `confirmed` status!
-
-### 4. RLS Policy Debugging
-When queries return empty but data exists:
-1. Check RLS policies: `SELECT * FROM pg_policies WHERE tablename = 'your_table'`
-2. Check column names actually exist
-3. Check filter values match actual data in database
-4. Add error logging to catch silent failures
-
-### 5. React Context for Shared State
-When multiple pages need to share state (like sidebar open/close):
-- Create a React Context
-- Wrap in layout component
-- Each page uses the context hook instead of local useState
+### Variants Format in Excel
+```
+نصف كيلو:480|ربع كيلو:250|كيلو:900
+```
+Format: `name:price|name:price|...`
 
 ---
 
-## Backlog Items
+## Database Tables Reference
 
-### Provider Features
-- Multiple staff accounts per provider
-- Inventory management
-- Promotional offers/discounts
-- Delivery zone configuration
+### product_variants
+```sql
+CREATE TABLE product_variants (
+  id UUID PRIMARY KEY,
+  menu_item_id UUID REFERENCES menu_items(id),
+  variant_type VARCHAR(50), -- size, weight, option
+  name_ar VARCHAR(255),
+  name_en VARCHAR(255),
+  price DECIMAL(10,2),
+  original_price DECIMAL(10,2),
+  is_default BOOLEAN,
+  display_order INTEGER,
+  is_available BOOLEAN
+);
+```
 
-### Customer Features
-- Search with filters
-- Order scheduling
-- Multiple payment methods
-- Loyalty/rewards program
-
-### Admin Features
-- Comprehensive analytics dashboard
-- Provider performance metrics
-- Customer support tools
-- System configuration
-
-### Technical Debt
-- Add unit tests
-- Add E2E tests
-- Performance optimization
-- Error tracking/monitoring setup
-- Remove debug console.log statements after testing
+### provider_categories
+```sql
+CREATE TABLE provider_categories (
+  id UUID PRIMARY KEY,
+  provider_id UUID REFERENCES providers(id),
+  name_ar VARCHAR(255),
+  name_en VARCHAR(255),
+  description_ar TEXT,
+  description_en TEXT,
+  display_order INTEGER,
+  is_active BOOLEAN
+);
+```
 
 ---
 
-## Quick Reference
+## Test Accounts
 
-### Test Accounts
-| Email | Password | Provider |
-|-------|----------|----------|
+| Email | Password | Role |
+|-------|----------|------|
 | provider@test.com | Test123! | سوبر ماركت النجاح |
 | provider2@test.com | Test123! | سلطان بيتزا |
-| provider3@test.com | Test123! | لافندر كافيه |
-| provider4@test.com | Test123! | مطعم الصفا |
-| customer@test.com | Test123! | - |
-| admin@test.com | Test123! | - |
-
-### Key Admin URLs
-- Settlements: `/admin/settlements`
-- Settlement Groups: `/admin/settlements/groups`
-- Analytics: `/admin/analytics`
-- Customers: `/admin/customers`
-
-### Database Debugging Queries
-```sql
--- Check column names
-SELECT column_name, data_type
-FROM information_schema.columns
-WHERE table_name = 'providers';
-
--- Check RLS policies
-SELECT * FROM pg_policies WHERE tablename = 'providers';
-
--- Check provider statuses
-SELECT name_ar, status FROM providers;
-
--- Check settlement groups
-SELECT * FROM settlement_groups;
-```
+| customer@test.com | Test123! | Customer |
+| admin@test.com | Test123! | Admin |

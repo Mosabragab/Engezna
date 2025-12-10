@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 5.2 (Week 5 - Complete Feature Set)
+**Version:** 5.3 (Week 5 - Complete Feature Set)
 **Date:** November 27, 2025
-**Last Updated:** December 7, 2025 (Session 15 Part 3)
+**Last Updated:** December 10, 2025 (Session 16)
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -25,7 +25,32 @@
 **Status:** Week 5 - Complete Feature Set ✅
 **Target Launch:** February 2026 (12 weeks development)
 **Overall Progress:** ~90% of MVP Complete
-**Last Session:** December 7, 2025 (Session 15)
+**Last Session:** December 10, 2025 (Session 16)
+
+### Session 16 Updates (December 10, 2025)
+
+**Excel Menu Import System:**
+- ✅ **Import Page**: `/provider/menu-import` - Bulk import from Excel files
+- ✅ **4 Pricing Types**: fixed, per_unit, variants, weight_variants
+- ✅ **Variants Format**: `نصف كيلو:480|ربع كيلو:250` (name:price|name:price)
+- ✅ **Auto-create categories** from Excel category column
+- ✅ **Database Tables**: `product_variants`, `provider_categories`
+- ✅ Successfully imported: 30 categories, 156 products, 203 variants
+
+**Product Variants System:**
+- ✅ **VariantSelectionModal** component for size/weight selection
+- ✅ **ProductDetailModal** component for full product view
+- ✅ Customer can select variants and quantity before adding to cart
+
+**UI Fixes:**
+- ✅ Modal z-index increased to z-[60] (above bottom navigation)
+- ✅ Add to Cart button visibility fixed on mobile
+- ✅ Click-outside-to-close for modals
+- ✅ Products disappearing bug fixed (was using INNER JOIN instead of LEFT JOIN)
+
+**Documentation:**
+- ✅ Created `/docs/EXCEL_IMPORT_GUIDE.md` for providers
+- ✅ Updated SESSION_LOG.md, NEXT_SESSION.md, project-status.md
 
 ### Session 15 Updates (December 7, 2025)
 

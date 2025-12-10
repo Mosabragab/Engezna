@@ -1,6 +1,6 @@
 # Engezna Project Status
 
-## Last Updated: 2025-12-08
+## Last Updated: 2025-12-10
 
 ## Project Overview
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
@@ -33,6 +33,9 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - [x] In-app chat with provider
 - [x] Message read status indicators (✓/✓✓)
 - [x] Reorder functionality ("اطلب تاني")
+- [x] **Product detail modal** - Full product view with description
+- [x] **Variant selection** - Size/weight/option variants
+- [x] **Category filtering** - Filter products by category on provider page
 
 #### Provider Side
 - [x] Provider registration & approval flow
@@ -46,6 +49,10 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - [x] Real-time notifications system
 - [x] In-app chat with customers
 - [x] Notification management (mark read, delete)
+- [x] **Excel menu import** - Bulk import products from Excel
+- [x] **4 Pricing types** - fixed, per_unit, variants, weight_variants
+- [x] **Provider categories** - Organize products by category
+- [x] **Product variants** - Size/weight options per product
 
 #### Admin Side
 - [x] Admin dashboard
@@ -78,7 +85,9 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 ## Database Schema Highlights
 - `profiles` - User profiles with roles (customer, provider_owner, provider_staff, admin)
 - `providers` - Store/provider information (status enum: open, closed, temporarily_paused, on_vacation, incomplete)
-- `products` - Product catalog
+- `menu_items` - Product catalog with pricing_type (fixed, per_unit, variants, weight_variants)
+- `product_variants` - Product variants (size/weight/option) with individual prices
+- `provider_categories` - Categories per provider for organizing products
 - `orders` - Order records with payment_method (cash/online)
 - `order_items` - Order line items
 - `addresses` - Customer delivery addresses
