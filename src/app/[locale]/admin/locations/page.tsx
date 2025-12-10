@@ -1249,7 +1249,6 @@ export default function AdminLocationsPage() {
             </div>
           )}
         </main>
-      </div>
 
       {/* Add/Edit Modal */}
       {modalType && (

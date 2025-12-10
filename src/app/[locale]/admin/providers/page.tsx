@@ -654,7 +654,6 @@ export default function AdminProvidersPage() {
             </div>
           </div>
         </main>
-      </div>
 
       {/* Confirmation Modal */}
       {showConfirmModal && confirmAction && (
