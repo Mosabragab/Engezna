@@ -769,6 +769,38 @@ export default function PromotionsPage() {
                       })
                     )}
                   </div>
+                  {/* Display selected products */}
+                  {formData.product_ids.length > 0 && (
+                    <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                      <p className="text-xs font-medium text-primary mb-2">
+                        {locale === 'ar' ? 'المنتجات المختارة:' : 'Selected Products:'}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.product_ids.map((productId) => {
+                          const product = products.find(p => p.id === productId)
+                          if (!product) return null
+                          return (
+                            <span
+                              key={productId}
+                              className="inline-flex items-center gap-1 bg-white text-xs px-2 py-1 rounded-full border border-primary/30 text-slate-700"
+                            >
+                              {locale === 'ar' ? product.name_ar : product.name_en}
+                              <button
+                                type="button"
+                                onClick={() => setFormData({
+                                  ...formData,
+                                  product_ids: formData.product_ids.filter(id => id !== productId)
+                                })}
+                                className="text-slate-400 hover:text-red-500 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                   {formData.applies_to === 'specific' && formData.product_ids.length === 0 && (
                     <p className="text-xs text-premium mt-2 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />

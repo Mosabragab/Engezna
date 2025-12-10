@@ -22,6 +22,8 @@ import {
   ChevronUp,
   MessageSquare,
   User,
+  Search,
+  X,
 } from 'lucide-react'
 
 type Provider = {
@@ -94,6 +96,19 @@ type Review = {
   } | { full_name: string | null }[] | null
 }
 
+type Promotion = {
+  id: string
+  type: 'percentage' | 'fixed' | 'buy_x_get_y'
+  discount_value: number
+  name_ar: string
+  name_en: string
+  applies_to: 'all' | 'specific'
+  product_ids?: string[]
+  start_date: string
+  end_date: string
+  is_active: boolean
+}
+
 export default function ProviderDetailPage() {
   const params = useParams()
   const providerId = params.id as string
@@ -108,11 +123,25 @@ export default function ProviderDetailPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
+  const [promotions, setPromotions] = useState<Promotion[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [showAllReviews, setShowAllReviews] = useState(false)
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<MenuItem | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const categoriesRef = useRef<HTMLDivElement>(null)
+
+  // Smart Arabic text normalization for search
+  const normalizeArabicText = (text: string): string => {
+    return text
+      .toLowerCase()
+      .replace(/[ةه]/g, 'ه')  // Taa Marbuta and Haa
+      .replace(/[أإآا]/g, 'ا')  // Alef variants
+      .replace(/[يى]/g, 'ي')  // Yaa variants
+      .replace(/[\u064B-\u065F]/g, '')  // Remove Tashkeel
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
 
   useEffect(() => {
     fetchProviderData()
@@ -200,16 +229,88 @@ export default function ProviderDetailPage() {
       setReviews(reviewsData as Review[])
     }
 
+    // Fetch active promotions for this provider
+    const now = new Date().toISOString()
+    const { data: promotionsData } = await supabase
+      .from('promotions')
+      .select('*')
+      .eq('provider_id', providerId)
+      .eq('is_active', true)
+      .lte('start_date', now)
+      .gte('end_date', now)
+
+    if (promotionsData) {
+      setPromotions(promotionsData)
+    }
+
     setLoading(false)
   }
 
-  // Filter menu items by category
-  const filteredMenuItems = selectedCategory
-    ? menuItems.filter((item) => item.category_id === selectedCategory)
-    : menuItems
+  // Get promotion for a specific product
+  const getProductPromotion = (productId: string) => {
+    for (const promo of promotions) {
+      if (promo.applies_to === 'all') {
+        return {
+          type: promo.type,
+          discount_value: promo.discount_value,
+          name_ar: promo.name_ar,
+          name_en: promo.name_en,
+        }
+      }
+      if (promo.applies_to === 'specific' && promo.product_ids?.includes(productId)) {
+        return {
+          type: promo.type,
+          discount_value: promo.discount_value,
+          name_ar: promo.name_ar,
+          name_en: promo.name_en,
+        }
+      }
+    }
+    return null
+  }
 
-  // Get available items
-  const availableItems = filteredMenuItems.filter((item) => item.is_available)
+  // Check if product has any active promotion
+  const hasActivePromotion = (productId: string) => {
+    return promotions.some(promo =>
+      promo.applies_to === 'all' ||
+      (promo.applies_to === 'specific' && promo.product_ids?.includes(productId))
+    )
+  }
+
+  // Filter menu items by category and search query
+  const filteredMenuItems = menuItems.filter((item) => {
+    // Category filter
+    if (selectedCategory && item.category_id !== selectedCategory) {
+      return false
+    }
+    // Search filter
+    if (searchQuery.trim()) {
+      const normalizedSearch = normalizeArabicText(searchQuery)
+      const normalizedNameAr = normalizeArabicText(item.name_ar)
+      const normalizedNameEn = normalizeArabicText(item.name_en || '')
+      const normalizedDescAr = normalizeArabicText(item.description_ar || '')
+      const normalizedDescEn = normalizeArabicText(item.description_en || '')
+
+      return (
+        normalizedNameAr.includes(normalizedSearch) ||
+        normalizedNameEn.includes(normalizedSearch) ||
+        normalizedDescAr.includes(normalizedSearch) ||
+        normalizedDescEn.includes(normalizedSearch)
+      )
+    }
+    return true
+  })
+
+  // Get available items and sort by promotions first
+  const availableItems = filteredMenuItems
+    .filter((item) => item.is_available)
+    .sort((a, b) => {
+      const aHasPromo = hasActivePromotion(a.id)
+      const bHasPromo = hasActivePromotion(b.id)
+      if (aHasPromo && !bHasPromo) return -1
+      if (!aHasPromo && bHasPromo) return 1
+      return 0
+    })
   const unavailableItems = filteredMenuItems.filter((item) => !item.is_available)
 
   const handleAddToCart = (menuItem: MenuItem) => {
@@ -577,6 +678,30 @@ export default function ProviderDetailPage() {
 
       {/* Menu */}
       <div className="px-4 py-4">
+        {/* Search Bar */}
+        <div className="mb-4">
+          <div className="relative">
+            <Search className={`absolute top-1/2 -translate-y-1/2 ${locale === 'ar' ? 'right-3' : 'left-3'} w-5 h-5 text-slate-400`} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={locale === 'ar' ? 'ابحث في القائمة...' : 'Search menu...'}
+              className={`w-full h-11 bg-slate-100 rounded-full border border-slate-200 outline-none focus:ring-2 focus:ring-primary focus:bg-white focus:border-primary transition-all ${
+                locale === 'ar' ? 'pr-10 pl-10 text-right' : 'pl-10 pr-10 text-left'
+              }`}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className={`absolute top-1/2 -translate-y-1/2 ${locale === 'ar' ? 'left-3' : 'right-3'} w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-slate-900">
             {locale === 'ar' ? 'القائمة' : 'Menu'}
@@ -599,9 +724,9 @@ export default function ProviderDetailPage() {
             icon="menu"
             title={locale === 'ar' ? 'لا توجد عناصر' : 'No items found'}
             description={
-              locale === 'ar'
-                ? 'لا توجد عناصر في هذا القسم حالياً'
-                : 'No menu items available in this category'
+              searchQuery
+                ? (locale === 'ar' ? `لا توجد نتائج للبحث عن "${searchQuery}"` : `No results found for "${searchQuery}"`)
+                : (locale === 'ar' ? 'لا توجد عناصر في هذا القسم حالياً' : 'No menu items available in this category')
             }
           />
         ) : (
@@ -616,6 +741,7 @@ export default function ProviderDetailPage() {
                     onQuantityChange={(qty) => handleQuantityChange(item, qty)}
                     onSelectVariant={item.has_variants ? () => handleProductClick(item) : undefined}
                     variant="horizontal"
+                    promotion={getProductPromotion(item.id)}
                   />
                 </div>
               ))}
