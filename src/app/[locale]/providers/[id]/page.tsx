@@ -269,12 +269,16 @@ export default function ProviderDetailPage() {
     return null
   }
 
-  // Check if product has any active promotion
-  const hasActivePromotion = (productId: string) => {
-    return promotions.some(promo =>
+  // Check if product has any active promotion or discount
+  const hasActivePromotionOrDiscount = (item: MenuItem) => {
+    // Check for promotion from promotions table
+    const hasPromotion = promotions.some(promo =>
       promo.applies_to === 'all' ||
-      (promo.applies_to === 'specific' && promo.product_ids?.includes(productId))
+      (promo.applies_to === 'specific' && promo.product_ids?.includes(item.id))
     )
+    // Check for discount via original_price
+    const hasDiscount = item.original_price != null && item.original_price > item.price
+    return hasPromotion || hasDiscount
   }
 
   // Filter menu items by category and search query
@@ -301,12 +305,12 @@ export default function ProviderDetailPage() {
     return true
   })
 
-  // Get available items and sort by promotions first
+  // Get available items and sort by promotions/discounts first
   const availableItems = filteredMenuItems
     .filter((item) => item.is_available)
     .sort((a, b) => {
-      const aHasPromo = hasActivePromotion(a.id)
-      const bHasPromo = hasActivePromotion(b.id)
+      const aHasPromo = hasActivePromotionOrDiscount(a)
+      const bHasPromo = hasActivePromotionOrDiscount(b)
       if (aHasPromo && !bHasPromo) return -1
       if (!aHasPromo && bHasPromo) return 1
       return 0

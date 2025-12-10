@@ -321,7 +321,21 @@ export default function ProviderProductsPage() {
     return null
   }
 
-  const filteredProducts = filterProducts(products)
+  // Check if product has promotion or discount
+  const hasPromotionOrDiscount = (product: MenuItem): boolean => {
+    const hasPromo = getProductPromotion(product.id) !== null
+    const hasDiscount = product.original_price !== null && product.original_price > product.price
+    return hasPromo || hasDiscount
+  }
+
+  // Sort products: promotions/discounts first
+  const filteredProducts = filterProducts(products).sort((a, b) => {
+    const aHasPromo = hasPromotionOrDiscount(a)
+    const bHasPromo = hasPromotionOrDiscount(b)
+    if (aHasPromo && !bHasPromo) return -1
+    if (!aHasPromo && bHasPromo) return 1
+    return 0
+  })
   const availableCount = products.filter(p => p.is_available).length
   const unavailableCount = products.filter(p => !p.is_available).length
 
