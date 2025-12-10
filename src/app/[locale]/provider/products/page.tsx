@@ -54,16 +54,24 @@ type MenuItem = {
 
 type FilterType = 'all' | 'available' | 'unavailable'
 
+type Category = {
+  id: string
+  name_ar: string
+  name_en: string
+}
+
 export default function ProviderProductsPage() {
   const locale = useLocale()
   const router = useRouter()
   const isRTL = locale === 'ar'
 
   const [products, setProducts] = useState<MenuItem[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [providerId, setProviderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter] = useState<FilterType>('all')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
@@ -122,6 +130,10 @@ export default function ProviderProductsPage() {
       .from('provider_categories')
       .select('id, name_ar, name_en')
       .eq('provider_id', provId)
+      .order('display_order', { ascending: true })
+
+    // Store categories for filter tabs
+    setCategories(categoriesData || [])
 
     // Map categories to products
     const categoryMap = new Map(categoriesData?.map(c => [c.id, c]) || [])
@@ -177,6 +189,13 @@ export default function ProviderProductsPage() {
   const filterProducts = (products: MenuItem[]) => {
     let filtered = products
 
+    // Filter by category
+    if (selectedCategory === 'uncategorized') {
+      filtered = filtered.filter(p => !p.category_id)
+    } else if (selectedCategory) {
+      filtered = filtered.filter(p => p.category_id === selectedCategory)
+    }
+
     // Filter by availability
     if (filter === 'available') {
       filtered = filtered.filter(p => p.is_available)
@@ -197,6 +216,14 @@ export default function ProviderProductsPage() {
 
     return filtered
   }
+
+  // Get product count per category
+  const getCategoryProductCount = (categoryId: string) => {
+    return products.filter(p => p.category_id === categoryId).length
+  }
+
+  // Get uncategorized products count
+  const uncategorizedCount = products.filter(p => !p.category_id).length
 
   const filteredProducts = filterProducts(products)
   const availableCount = products.filter(p => p.is_available).length
@@ -287,7 +314,7 @@ export default function ProviderProductsPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
           <Button
             variant={filter === 'all' ? 'default' : 'outline'}
             size="sm"
@@ -316,6 +343,49 @@ export default function ProviderProductsPage() {
             <span className="mx-1 text-xs opacity-70">({unavailableCount})</span>
           </Button>
         </div>
+
+        {/* Category Filter Tabs */}
+        {categories.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-slate-500 mb-2">
+              {locale === 'ar' ? 'التصنيفات' : 'Categories'}
+            </h4>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              <Button
+                variant={selectedCategory === null ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory(null)}
+                className={selectedCategory !== null ? 'border-slate-300 text-slate-600' : ''}
+              >
+                {locale === 'ar' ? 'جميع التصنيفات' : 'All Categories'}
+                <span className="mx-1 text-xs opacity-70">({products.length})</span>
+              </Button>
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={selectedCategory !== category.id ? 'border-slate-300 text-slate-600' : ''}
+                >
+                  {locale === 'ar' ? category.name_ar : category.name_en}
+                  <span className="mx-1 text-xs opacity-70">({getCategoryProductCount(category.id)})</span>
+                </Button>
+              ))}
+              {uncategorizedCount > 0 && (
+                <Button
+                  variant={selectedCategory === 'uncategorized' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory('uncategorized')}
+                  className={selectedCategory !== 'uncategorized' ? 'border-slate-300 text-slate-600' : ''}
+                >
+                  {locale === 'ar' ? 'بدون تصنيف' : 'Uncategorized'}
+                  <span className="mx-1 text-xs opacity-70">({uncategorizedCount})</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Products Grid */}
         {filteredProducts.length === 0 ? (

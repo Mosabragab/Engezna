@@ -190,8 +190,8 @@ export function VariantSelectionModal({
           </div>
         </div>
 
-        {/* Footer - Extra padding for mobile */}
-        <div className="bg-white border-t border-slate-100 p-4 pb-6">
+        {/* Footer - Extra padding for mobile to avoid bottom navigation */}
+        <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4 pb-24 sm:pb-6">
           <Button
             onClick={handleAddToCart}
             disabled={!selectedVariant}
