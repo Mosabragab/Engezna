@@ -25,6 +25,8 @@ import {
   EyeOff,
   FileUp,
   Sparkles,
+  FolderPlus,
+  X,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -75,6 +77,11 @@ export default function ProviderProductsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  // Category modal state
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [newCategoryNameAr, setNewCategoryNameAr] = useState('')
+  const [newCategoryNameEn, setNewCategoryNameEn] = useState('')
+  const [categoryLoading, setCategoryLoading] = useState(false)
 
   useEffect(() => {
     checkAuthAndLoadProducts()
@@ -186,6 +193,49 @@ export default function ProviderProductsPage() {
     setDeleteConfirm(null)
   }
 
+  // Smart Arabic text normalization for search
+  const normalizeArabicText = (text: string): string => {
+    return text
+      .toLowerCase()
+      // Normalize Taa Marbuta and Haa (ة ↔ ه)
+      .replace(/[ةه]/g, 'ه')
+      // Normalize Alef variants (أ إ آ ا)
+      .replace(/[أإآا]/g, 'ا')
+      // Normalize Yaa variants (ي ى)
+      .replace(/[يى]/g, 'ي')
+      // Remove Tashkeel (diacritics)
+      .replace(/[\u064B-\u065F]/g, '')
+      // Normalize spaces
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+
+  // Handle adding new category
+  const handleAddCategory = async () => {
+    if (!newCategoryNameAr.trim() || !providerId) return
+
+    setCategoryLoading(true)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('provider_categories')
+      .insert({
+        provider_id: providerId,
+        name_ar: newCategoryNameAr.trim(),
+        name_en: newCategoryNameEn.trim() || newCategoryNameAr.trim(),
+        display_order: categories.length,
+        is_active: true
+      })
+
+    if (!error) {
+      await loadProducts(providerId)
+      setShowCategoryModal(false)
+      setNewCategoryNameAr('')
+      setNewCategoryNameEn('')
+    }
+    setCategoryLoading(false)
+  }
+
   const filterProducts = (products: MenuItem[]) => {
     let filtered = products
 
@@ -203,15 +253,20 @@ export default function ProviderProductsPage() {
       filtered = filtered.filter(p => !p.is_available)
     }
 
-    // Filter by search query
+    // Filter by search query with smart Arabic normalization
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(p =>
-        p.name_ar.toLowerCase().includes(query) ||
-        p.name_en.toLowerCase().includes(query) ||
-        p.description_ar?.toLowerCase().includes(query) ||
-        p.description_en?.toLowerCase().includes(query)
-      )
+      const normalizedQuery = normalizeArabicText(searchQuery)
+      filtered = filtered.filter(p => {
+        const nameAr = normalizeArabicText(p.name_ar || '')
+        const nameEn = (p.name_en || '').toLowerCase()
+        const descAr = normalizeArabicText(p.description_ar || '')
+        const descEn = (p.description_en || '').toLowerCase()
+
+        return nameAr.includes(normalizedQuery) ||
+               nameEn.includes(normalizedQuery) ||
+               descAr.includes(normalizedQuery) ||
+               descEn.includes(normalizedQuery)
+      })
     }
 
     return filtered
@@ -287,7 +342,7 @@ export default function ProviderProductsPage() {
 
         {/* Search and Add Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
+          <div className="relative flex-1 max-w-md">
             <Search className="absolute top-1/2 -translate-y-1/2 left-3 w-5 h-5 text-slate-500" />
             <input
               type="text"
@@ -297,15 +352,24 @@ export default function ProviderProductsPage() {
               className="w-full bg-white border border-slate-200 rounded-xl py-3 px-10 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-slate-300 text-slate-600 hover:bg-slate-100"
+              onClick={() => setShowCategoryModal(true)}
+            >
+              <FolderPlus className="w-5 h-5 me-2" />
+              {locale === 'ar' ? 'إضافة تصنيف' : 'Add Category'}
+            </Button>
             <Link href={`/${locale}/provider/menu-import`}>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10">
+              <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10">
                 <Sparkles className="w-5 h-5 me-2" />
-                {locale === 'ar' ? 'استيراد المنتجات' : 'Import Products'}
+                {locale === 'ar' ? 'استيراد' : 'Import'}
               </Button>
             </Link>
             <Link href={`/${locale}/provider/products/new`}>
-              <Button size="lg" className="w-full sm:w-auto">
+              <Button size="lg">
                 <Plus className="w-5 h-5 me-2" />
                 {locale === 'ar' ? 'إضافة منتج' : 'Add Product'}
               </Button>
@@ -576,6 +640,78 @@ export default function ProviderProductsPage() {
           </div>
         )}
       </div>
+
+      {/* Add Category Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onClick={() => setShowCategoryModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="font-bold text-lg text-slate-900">
+                {locale === 'ar' ? 'إضافة تصنيف جديد' : 'Add New Category'}
+              </h3>
+              <button
+                onClick={() => setShowCategoryModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {locale === 'ar' ? 'اسم التصنيف (عربي) *' : 'Category Name (Arabic) *'}
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryNameAr}
+                  onChange={(e) => setNewCategoryNameAr(e.target.value)}
+                  placeholder={locale === 'ar' ? 'مثال: بيتزا' : 'e.g., Pizza'}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                  dir="rtl"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {locale === 'ar' ? 'اسم التصنيف (إنجليزي)' : 'Category Name (English)'}
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryNameEn}
+                  onChange={(e) => setNewCategoryNameEn(e.target.value)}
+                  placeholder={locale === 'ar' ? 'اختياري' : 'Optional'}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                  dir="ltr"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-4 border-t border-slate-100">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowCategoryModal(false)}
+              >
+                {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleAddCategory}
+                disabled={!newCategoryNameAr.trim() || categoryLoading}
+              >
+                {categoryLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  locale === 'ar' ? 'إضافة' : 'Add'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </ProviderLayout>
   )
 }
