@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, useAdminSidebar } from '@/components/admin'
 import { formatDate } from '@/lib/utils/formatters'
 import type { Role, Resource, Action, Permission, RolePermission, ResourceCode, ActionCode } from '@/types/permissions'
 import { RESOURCE_CONFIG, ACTION_CONFIG } from '@/types/permissions'
@@ -79,12 +79,13 @@ export default function AdminRolesPage() {
   const locale = useLocale()
   const isRTL = locale === 'ar'
 
+  const { toggle: toggleSidebar } = useAdminSidebar()
+
   const [user, setUser] = useState<User | null>(null)
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const [roles, setRoles] = useState<ExtendedRole[]>([])
   const [resources, setResources] = useState<Resource[]>([])
@@ -539,53 +540,53 @@ export default function AdminRolesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
-      </div>
+      <>
+        <div className="h-16 bg-white border-b border-slate-200 flex items-center px-4 lg:px-6">
+          <div className="h-8 w-48 bg-slate-200 animate-pulse rounded"></div>
+        </div>
+      </>
     )
   }
 
   if (!user || !isAdmin || !isSuperAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2 text-slate-900">
-            {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
-          </h1>
-          <p className="text-slate-600 mb-4">
-            {locale === 'ar'
-              ? 'هذه الصفحة متاحة فقط للمدير التنفيذي'
-              : 'This page is only available for super admins'}
-          </p>
-          <Link href={`/${locale}/admin`}>
-            <Button className="bg-red-600 hover:bg-red-700">
-              {locale === 'ar' ? 'العودة للوحة التحكم' : 'Back to Dashboard'}
-            </Button>
-          </Link>
+      <>
+        <AdminHeader
+          user={user}
+          title={locale === 'ar' ? 'إدارة الأدوار والصلاحيات' : 'Roles & Permissions Management'}
+          onMenuClick={toggleSidebar}
+        />
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
+            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-2 text-slate-900">
+              {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
+            </h1>
+            <p className="text-slate-600 mb-4">
+              {locale === 'ar'
+                ? 'هذه الصفحة متاحة فقط للمدير التنفيذي'
+                : 'This page is only available for super admins'}
+            </p>
+            <Link href={`/${locale}/admin`}>
+              <Button className="bg-red-600 hover:bg-red-700">
+                {locale === 'ar' ? 'العودة للوحة التحكم' : 'Back to Dashboard'}
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {/* Sidebar */}
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+    <>
+      <AdminHeader
+        user={user}
+        title={locale === 'ar' ? 'إدارة الأدوار والصلاحيات' : 'Roles & Permissions Management'}
+        onMenuClick={toggleSidebar}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        {/* Header */}
-        <AdminHeader
-          user={user}
-          title={locale === 'ar' ? 'إدارة الأدوار والصلاحيات' : 'Roles & Permissions Management'}
-          onMenuClick={() => setSidebarOpen(true)}
-        />
-
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+      <main className="p-4 lg:p-6">
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
@@ -764,7 +765,6 @@ export default function AdminRolesPage() {
             </div>
           )}
         </main>
-      </div>
 
       {/* Create/Edit Modal */}
       {showModal && (
@@ -1109,6 +1109,6 @@ export default function AdminRolesPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

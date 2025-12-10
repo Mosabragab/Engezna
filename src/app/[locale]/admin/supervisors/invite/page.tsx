@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar, GeoFilter, GeoFilterValue } from '@/components/admin'
+import { AdminHeader, GeoFilter, GeoFilterValue, useAdminSidebar } from '@/components/admin'
 import {
   Shield,
   ArrowLeft,
@@ -95,11 +95,11 @@ export default function InviteSupervisorPage() {
   const router = useRouter()
   const isRTL = locale === 'ar'
 
+  const { toggle: toggleSidebar } = useAdminSidebar()
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Roles from database
   const [dbRoles, setDbRoles] = useState<DbRole[]>([])
@@ -419,48 +419,59 @@ export default function InviteSupervisorPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#009DE0] border-t-transparent"></div>
-      </div>
+      <>
+        <AdminHeader
+          user={null}
+          title={locale === 'ar' ? 'دعوة مشرف جديد' : 'Invite New Supervisor'}
+          onMenuClick={toggleSidebar}
+        />
+        <main className="flex-1 p-4 lg:p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-slate-200 rounded w-1/4"></div>
+            <div className="h-64 bg-slate-200 rounded"></div>
+          </div>
+        </main>
+      </>
     )
   }
 
   if (!user || !isAdmin || !isSuperAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2 text-slate-900">
-            {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
-          </h1>
-          <p className="text-slate-600 mb-4">
-            {locale === 'ar' ? 'هذه الصفحة متاحة للمدير التنفيذي فقط' : 'This page is only available to Super Admins'}
-          </p>
-          <Link href={`/${locale}/admin/supervisors`}>
-            <Button size="lg" className="bg-[#009DE0] hover:bg-[#0080b8]">
-              {locale === 'ar' ? 'العودة' : 'Go Back'}
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <>
+        <AdminHeader
+          user={user}
+          title={locale === 'ar' ? 'دعوة مشرف جديد' : 'Invite New Supervisor'}
+          onMenuClick={toggleSidebar}
+        />
+        <main className="flex-1 p-4 lg:p-6 flex items-center justify-center">
+          <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
+            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-2 text-slate-900">
+              {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
+            </h1>
+            <p className="text-slate-600 mb-4">
+              {locale === 'ar' ? 'هذه الصفحة متاحة للمدير التنفيذي فقط' : 'This page is only available to Super Admins'}
+            </p>
+            <Link href={`/${locale}/admin/supervisors`}>
+              <Button size="lg" className="bg-[#009DE0] hover:bg-[#0080b8]">
+                {locale === 'ar' ? 'العودة' : 'Go Back'}
+              </Button>
+            </Link>
+          </div>
+        </main>
+      </>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+    <>
+      <AdminHeader
+        user={user}
+        title={locale === 'ar' ? 'دعوة مشرف جديد' : 'Invite New Supervisor'}
+        onMenuClick={toggleSidebar}
       />
 
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <AdminHeader
-          user={user}
-          title={locale === 'ar' ? 'دعوة مشرف جديد' : 'Invite New Supervisor'}
-          onMenuClick={() => setSidebarOpen(true)}
-        />
-
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+      <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Back Button */}
           <Link href={`/${locale}/admin/supervisors`} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6">
             {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
@@ -842,7 +853,6 @@ export default function InviteSupervisorPage() {
             )}
           </div>
         </main>
-      </div>
-    </div>
+    </>
   )
 }

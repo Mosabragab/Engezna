@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, useAdminSidebar } from '@/components/admin'
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -77,10 +77,10 @@ export default function AdminRegionalAnalyticsPage() {
   const locale = useLocale()
   const isRTL = locale === 'ar'
 
+  const { toggle: toggleSidebar } = useAdminSidebar()
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [cities, setCities] = useState<City[]>([])
@@ -439,46 +439,51 @@ export default function AdminRegionalAnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
-      </div>
+      <>
+        <div className="h-16 bg-white border-b border-slate-200 animate-pulse" />
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+        </div>
+      </>
     )
   }
 
   if (!user || !isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2 text-slate-900">
-            {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
-          </h1>
-          <Link href={`/${locale}/auth/login`}>
-            <Button size="lg" className="bg-red-600 hover:bg-red-700">
-              {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
-            </Button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
-
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <>
         <AdminHeader
           user={user}
           title={locale === 'ar' ? 'تحليلات المناطق الجغرافية' : 'Regional Analytics'}
           subtitle={locale === 'ar' ? 'تحليل الأداء حسب المواقع' : 'Performance analysis by location'}
-          onMenuClick={() => setSidebarOpen(true)}
+          onMenuClick={toggleSidebar}
         />
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
+            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-2 text-slate-900">
+              {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
+            </h1>
+            <Link href={`/${locale}/auth/login`}>
+              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+                {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </>
+    )
+  }
 
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+  return (
+    <>
+      <AdminHeader
+        user={user}
+        title={locale === 'ar' ? 'تحليلات المناطق الجغرافية' : 'Regional Analytics'}
+        subtitle={locale === 'ar' ? 'تحليل الأداء حسب المواقع' : 'Performance analysis by location'}
+        onMenuClick={toggleSidebar}
+      />
+
+      <main className="flex-1 p-4 lg:p-6 overflow-auto bg-slate-50">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-4 text-sm">
             <Link href={`/${locale}/admin/analytics`} className="text-slate-500 hover:text-slate-700">
@@ -799,8 +804,7 @@ export default function AdminRegionalAnalyticsPage() {
               </div>
             </div>
           )}
-        </main>
-      </div>
-    </div>
+      </main>
+    </>
   )
 }
