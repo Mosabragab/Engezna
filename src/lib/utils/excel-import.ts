@@ -72,6 +72,9 @@ export const COLUMN_PATTERNS: Record<string, string[]> = {
 
   // English name
   name_en: ['الاسم بالانجليزي', 'english name', 'name en', 'الاسم الانجليزي'],
+
+  // Image URL
+  image_url: ['الصورة', 'صورة', 'image', 'image_url', 'imageurl', 'رابط الصورة', 'url', 'photo', 'صوره'],
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -134,6 +137,7 @@ export interface ColumnMapping {
   description?: number
   name_en?: number
   unit?: number
+  image_url?: number
   variants: Array<{
     column: number
     key: string
@@ -472,6 +476,9 @@ export function detectColumns(
   mapping.unit = findColumn('unit')
   if (mapping.unit !== -1) matchedCount++
 
+  mapping.image_url = findColumn('image_url')
+  if (mapping.image_url !== -1) matchedCount++
+
   // Detect price column
   const priceCol = findColumn('price')
 
@@ -706,6 +713,16 @@ export function transformExcelData(
       ? String(row[mapping.name_en] || '').trim() || null
       : null
 
+    // Get image URL
+    let imageUrl: string | null = null
+    if (mapping.image_url !== undefined && mapping.image_url >= 0) {
+      const rawUrl = String(row[mapping.image_url] || '').trim()
+      // Validate that it's a URL
+      if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))) {
+        imageUrl = rawUrl
+      }
+    }
+
     // Build product
     const product: ExtractedProduct = {
       name_ar: productName,
@@ -724,6 +741,7 @@ export function transformExcelData(
       is_popular: false,
       is_spicy: false,
       is_vegetarian: false,
+      image_url: imageUrl,
       confidence: 1.0,
       needs_review: false,
       source_note: 'Excel Import',
@@ -879,6 +897,7 @@ export function getColumnTypeOptions(): { value: string; label_ar: string; label
     { value: 'name_en', label_ar: 'الاسم بالإنجليزي', label_en: 'English Name' },
     { value: 'price', label_ar: 'السعر', label_en: 'Price' },
     { value: 'unit', label_ar: 'الوحدة', label_en: 'Unit' },
+    { value: 'image_url', label_ar: 'رابط الصورة', label_en: 'Image URL' },
     // Size variants
     { value: 'size_small', label_ar: 'صغير', label_en: 'Small' },
     { value: 'size_medium', label_ar: 'وسط', label_en: 'Medium' },
@@ -973,6 +992,9 @@ export function applyManualMapping(
         break
       case 'unit':
         mapping.unit = colIndex
+        break
+      case 'image_url':
+        mapping.image_url = colIndex
         break
       default:
         // Check if it's a variant

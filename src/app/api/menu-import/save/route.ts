@@ -221,6 +221,7 @@ export async function POST(request: NextRequest) {
                 price: basePrice || 0,
                 original_price: product.original_price || null,
                 description_ar: product.description_ar || null,
+                image_url: product.image_url || null,
                 has_variants: hasVariants,
                 pricing_type: product.pricing_type,
                 updated_at: new Date().toISOString(),
@@ -281,6 +282,7 @@ export async function POST(request: NextRequest) {
             description_en: product.description_ar || '', // Use Arabic description as fallback
             price: basePrice || 0,
             original_price: product.original_price || null,
+            image_url: product.image_url || null,
             has_variants: hasVariants,
             pricing_type: product.pricing_type,
             combo_contents_ar: product.combo_contents_ar || null,

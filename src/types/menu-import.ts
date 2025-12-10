@@ -142,6 +142,9 @@ export interface ExtractedProduct {
   is_spicy: boolean
   is_vegetarian: boolean
 
+  // Product image
+  image_url?: string | null
+
   // Import metadata
   confidence: number
   needs_review: boolean

@@ -25,12 +25,26 @@ import {
   Trash2,
   FolderOpen,
   Plus,
+  Layers,
 } from 'lucide-react'
 
 type Category = {
   id: string
   name_ar: string
   name_en: string
+}
+
+type ProductVariant = {
+  id?: string
+  name_ar: string
+  name_en: string
+  price: number
+  original_price?: number | null
+  is_default: boolean
+  display_order: number
+  is_available: boolean
+  isNew?: boolean
+  isDeleted?: boolean
 }
 
 // Force dynamic rendering
@@ -58,6 +72,19 @@ export default function EditProductPage() {
   const [newCategoryAr, setNewCategoryAr] = useState('')
   const [newCategoryEn, setNewCategoryEn] = useState('')
   const [savingCategory, setSavingCategory] = useState(false)
+
+  // Variants state
+  const [hasVariants, setHasVariants] = useState(false)
+  const [variants, setVariants] = useState<ProductVariant[]>([])
+  const [showAddVariant, setShowAddVariant] = useState(false)
+  const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
+  const [variantForm, setVariantForm] = useState({
+    name_ar: '',
+    name_en: '',
+    price: '',
+    original_price: '',
+    is_default: false,
+  })
 
   // Form state
   const [formData, setFormData] = useState({
@@ -143,6 +170,29 @@ export default function EditProductPage() {
       setImagePreview(product.image_url)
     }
 
+    // Load variants if product has them
+    if (product.has_variants) {
+      setHasVariants(true)
+      const { data: variantsData } = await supabase
+        .from('product_variants')
+        .select('*')
+        .eq('product_id', productId)
+        .order('display_order', { ascending: true })
+
+      if (variantsData) {
+        setVariants(variantsData.map(v => ({
+          id: v.id,
+          name_ar: v.name_ar,
+          name_en: v.name_en || '',
+          price: v.price,
+          original_price: v.original_price,
+          is_default: v.is_default,
+          display_order: v.display_order,
+          is_available: v.is_available,
+        })))
+      }
+    }
+
     setLoading(false)
   }
 
@@ -160,6 +210,86 @@ export default function EditProductPage() {
       setCategories(data)
     }
     setLoadingCategories(false)
+  }
+
+  // Variant management functions
+  const handleAddVariant = () => {
+    if (!variantForm.name_ar.trim() || !variantForm.price) return
+
+    const newVariant: ProductVariant = {
+      name_ar: variantForm.name_ar.trim(),
+      name_en: variantForm.name_en.trim() || variantForm.name_ar.trim(),
+      price: parseFloat(variantForm.price),
+      original_price: variantForm.original_price ? parseFloat(variantForm.original_price) : null,
+      is_default: variants.length === 0 || variantForm.is_default,
+      display_order: variants.length + 1,
+      is_available: true,
+      isNew: true,
+    }
+
+    // If this is set as default, unset others
+    if (newVariant.is_default) {
+      setVariants(prev => prev.map(v => ({ ...v, is_default: false })))
+    }
+
+    setVariants(prev => [...prev, newVariant])
+    setVariantForm({ name_ar: '', name_en: '', price: '', original_price: '', is_default: false })
+    setShowAddVariant(false)
+  }
+
+  const handleEditVariant = (index: number) => {
+    const variant = variants[index]
+    setVariantForm({
+      name_ar: variant.name_ar,
+      name_en: variant.name_en,
+      price: variant.price.toString(),
+      original_price: variant.original_price?.toString() || '',
+      is_default: variant.is_default,
+    })
+    setEditingVariantIndex(index)
+  }
+
+  const handleUpdateVariant = () => {
+    if (editingVariantIndex === null || !variantForm.name_ar.trim() || !variantForm.price) return
+
+    setVariants(prev => prev.map((v, i) => {
+      if (i === editingVariantIndex) {
+        return {
+          ...v,
+          name_ar: variantForm.name_ar.trim(),
+          name_en: variantForm.name_en.trim() || variantForm.name_ar.trim(),
+          price: parseFloat(variantForm.price),
+          original_price: variantForm.original_price ? parseFloat(variantForm.original_price) : null,
+          is_default: variantForm.is_default,
+        }
+      }
+      // If the edited variant is now default, unset others
+      if (variantForm.is_default) {
+        return { ...v, is_default: false }
+      }
+      return v
+    }))
+
+    setVariantForm({ name_ar: '', name_en: '', price: '', original_price: '', is_default: false })
+    setEditingVariantIndex(null)
+  }
+
+  const handleDeleteVariant = (index: number) => {
+    const variant = variants[index]
+    if (variant.id) {
+      // Mark existing variant for deletion
+      setVariants(prev => prev.map((v, i) => i === index ? { ...v, isDeleted: true } : v))
+    } else {
+      // Remove new variant completely
+      setVariants(prev => prev.filter((_, i) => i !== index))
+    }
+  }
+
+  const handleSetDefaultVariant = (index: number) => {
+    setVariants(prev => prev.map((v, i) => ({
+      ...v,
+      is_default: i === index,
+    })))
   }
 
   const handleCreateCategory = async () => {
@@ -267,13 +397,18 @@ export default function EditProductPage() {
     setSaving(true)
     const supabase = createClient()
 
+    // Get active variants (not deleted)
+    const activeVariants = variants.filter(v => !v.isDeleted)
+
     // Build product data - only include category_id if it's set
     const productData: Record<string, any> = {
       name_ar: formData.name_ar.trim(),
       name_en: formData.name_en.trim(),
       description_ar: formData.description_ar.trim() || null,
       description_en: formData.description_en.trim() || null,
-      price: parseFloat(formData.price),
+      price: hasVariants && activeVariants.length > 0
+        ? (activeVariants.find(v => v.is_default)?.price || activeVariants[0].price)
+        : parseFloat(formData.price),
       original_price: formData.original_price ? parseFloat(formData.original_price) : null,
       image_url: formData.image_url || null,
       is_available: formData.is_available,
@@ -281,6 +416,7 @@ export default function EditProductPage() {
       is_spicy: formData.is_spicy,
       preparation_time_min: parseInt(formData.preparation_time_min) || 15,
       calories: formData.calories ? parseInt(formData.calories) : null,
+      has_variants: hasVariants && activeVariants.length > 0,
       updated_at: new Date().toISOString(),
     }
 
@@ -315,6 +451,60 @@ export default function EditProductPage() {
         setSaving(false)
         return
       }
+    }
+
+    // Handle variants
+    if (hasVariants) {
+      // Delete variants marked for deletion
+      const variantsToDelete = variants.filter(v => v.isDeleted && v.id)
+      for (const variant of variantsToDelete) {
+        await supabase
+          .from('product_variants')
+          .delete()
+          .eq('id', variant.id)
+      }
+
+      // Update existing variants
+      const variantsToUpdate = activeVariants.filter(v => v.id && !v.isNew)
+      for (const variant of variantsToUpdate) {
+        await supabase
+          .from('product_variants')
+          .update({
+            name_ar: variant.name_ar,
+            name_en: variant.name_en,
+            price: variant.price,
+            original_price: variant.original_price,
+            is_default: variant.is_default,
+            display_order: variant.display_order,
+            is_available: variant.is_available,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', variant.id)
+      }
+
+      // Insert new variants
+      const variantsToInsert = activeVariants.filter(v => v.isNew)
+      if (variantsToInsert.length > 0) {
+        await supabase
+          .from('product_variants')
+          .insert(variantsToInsert.map((v, index) => ({
+            product_id: productId,
+            name_ar: v.name_ar,
+            name_en: v.name_en,
+            price: v.price,
+            original_price: v.original_price,
+            is_default: v.is_default,
+            display_order: variants.length + index + 1,
+            is_available: v.is_available,
+            variant_type: 'option',
+          })))
+      }
+    } else {
+      // If has_variants is false, delete all variants
+      await supabase
+        .from('product_variants')
+        .delete()
+        .eq('product_id', productId)
     }
 
     router.push(`/${locale}/provider/products`)
@@ -709,6 +899,225 @@ export default function EditProductPage() {
                 </div>
               </div>
             </CardContent>
+          </Card>
+
+          {/* Product Variants */}
+          <Card className="bg-white border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-slate-900 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-5 h-5" />
+                  {locale === 'ar' ? 'خيارات المنتج (أحجام/أوزان)' : 'Product Variants (Sizes/Weights)'}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHasVariants(!hasVariants)}
+                  dir="ltr"
+                  className={`w-12 h-6 rounded-full transition-colors relative ${
+                    hasVariants ? 'bg-primary' : 'bg-slate-300'
+                  }`}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
+                    hasVariants ? 'left-[1.375rem]' : 'left-0.5'
+                  }`} />
+                </button>
+              </CardTitle>
+            </CardHeader>
+            {hasVariants && (
+              <CardContent className="space-y-4">
+                {/* Variants List */}
+                {variants.filter(v => !v.isDeleted).length > 0 ? (
+                  <div className="space-y-2">
+                    {variants.map((variant, index) => {
+                      if (variant.isDeleted) return null
+                      return (
+                        <div
+                          key={variant.id || `new-${index}`}
+                          className={`flex items-center justify-between p-3 rounded-lg border ${
+                            variant.is_default
+                              ? 'border-primary bg-primary/5'
+                              : 'border-slate-200 bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-slate-900">{variant.name_ar}</span>
+                              {variant.is_default && (
+                                <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">
+                                  {locale === 'ar' ? 'افتراضي' : 'Default'}
+                                </span>
+                              )}
+                              {variant.isNew && (
+                                <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">
+                                  {locale === 'ar' ? 'جديد' : 'New'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm text-slate-500">
+                              {variant.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              {variant.original_price && (
+                                <span className="line-through mx-2 text-slate-400">
+                                  {variant.original_price}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {!variant.is_default && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSetDefaultVariant(index)}
+                                className="text-slate-600 hover:text-primary hover:bg-primary/10"
+                              >
+                                {locale === 'ar' ? 'تعيين افتراضي' : 'Set Default'}
+                              </Button>
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditVariant(index)}
+                              className="text-slate-600 hover:text-primary hover:bg-primary/10"
+                            >
+                              {locale === 'ar' ? 'تعديل' : 'Edit'}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteVariant(index)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <Layers className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+                    <p>{locale === 'ar' ? 'لا توجد خيارات بعد' : 'No variants yet'}</p>
+                  </div>
+                )}
+
+                {/* Add/Edit Variant Form */}
+                {(showAddVariant || editingVariantIndex !== null) && (
+                  <div className="p-4 bg-slate-100 rounded-lg space-y-4">
+                    <h4 className="font-medium text-slate-900">
+                      {editingVariantIndex !== null
+                        ? (locale === 'ar' ? 'تعديل الخيار' : 'Edit Variant')
+                        : (locale === 'ar' ? 'إضافة خيار جديد' : 'Add New Variant')}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1">
+                          {locale === 'ar' ? 'الاسم (عربي)' : 'Name (Arabic)'} *
+                        </label>
+                        <input
+                          type="text"
+                          value={variantForm.name_ar}
+                          onChange={(e) => setVariantForm(prev => ({ ...prev, name_ar: e.target.value }))}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder={locale === 'ar' ? 'مثال: صغير' : 'e.g., صغير'}
+                          dir="rtl"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1">
+                          {locale === 'ar' ? 'الاسم (إنجليزي)' : 'Name (English)'}
+                        </label>
+                        <input
+                          type="text"
+                          value={variantForm.name_en}
+                          onChange={(e) => setVariantForm(prev => ({ ...prev, name_en: e.target.value }))}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="e.g., Small"
+                          dir="ltr"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1">
+                          {locale === 'ar' ? 'السعر (ج.م)' : 'Price (EGP)'} *
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={variantForm.price}
+                          onChange={(e) => setVariantForm(prev => ({ ...prev, price: e.target.value }))}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1">
+                          {locale === 'ar' ? 'السعر الأصلي' : 'Original Price'}
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={variantForm.original_price}
+                          onChange={(e) => setVariantForm(prev => ({ ...prev, original_price: e.target.value }))}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={variantForm.is_default}
+                        onChange={(e) => setVariantForm(prev => ({ ...prev, is_default: e.target.checked }))}
+                        className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm text-slate-600">
+                        {locale === 'ar' ? 'تعيين كخيار افتراضي' : 'Set as default option'}
+                      </span>
+                    </label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowAddVariant(false)
+                          setEditingVariantIndex(null)
+                          setVariantForm({ name_ar: '', name_en: '', price: '', original_price: '', is_default: false })
+                        }}
+                        className="flex-1 border-slate-300"
+                      >
+                        {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={editingVariantIndex !== null ? handleUpdateVariant : handleAddVariant}
+                        disabled={!variantForm.name_ar.trim() || !variantForm.price}
+                        className="flex-1"
+                      >
+                        {editingVariantIndex !== null
+                          ? (locale === 'ar' ? 'تحديث' : 'Update')
+                          : (locale === 'ar' ? 'إضافة' : 'Add')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Add Variant Button */}
+                {!showAddVariant && editingVariantIndex === null && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAddVariant(true)}
+                    className="w-full border-dashed border-slate-300 text-slate-600 hover:border-primary hover:text-primary"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {locale === 'ar' ? 'إضافة خيار جديد' : 'Add New Variant'}
+                  </Button>
+                )}
+              </CardContent>
+            )}
           </Card>
 
           {/* Additional Info */}
