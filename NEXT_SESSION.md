@@ -1,8 +1,8 @@
 # Next Session Plan
 
-## Date: 2025-12-11 (Completed)
+## Date: 2025-12-11 (Completed - Session 17)
 
-## ✅ Completed Tasks (2025-12-11)
+## ✅ Completed Tasks (2025-12-11 - Session 17)
 
 ### 1. Product Images Import from Excel ✅
 **Status**: Implemented
@@ -27,19 +27,81 @@
 - [x] Updated tips section about images
 
 ### 4. Bug Fixes ✅
-- Fixed promotion badge showing duplicate % symbol
-- Fixed product detail modal not opening (added stopPropagation to buttons)
+- Fixed promotion badge showing duplicate % symbol (replaced Percent icon with "خصم" text)
+- Fixed product detail modal not opening (added stopPropagation to buttons in ProductCard)
 - Fixed sorting to include both promotions AND original_price discounts
+
+### 5. Variants Management in Product Edit Page ✅
+**Status**: Implemented
+
+#### What was done:
+- Added full variants management UI to `/provider/products/[id]/page.tsx`
+- Provider can toggle variants on/off for any product
+- Add new variants with name (AR/EN), price, original price
+- Edit existing variants inline
+- Delete variants with confirmation
+- Set default variant for each product
+- Variants saved to database on product save (insert/update/delete)
+- Fixed hover effects on variant action buttons
+
+#### Files Modified:
+- `src/app/[locale]/provider/products/[id]/page.tsx` - Full variants CRUD UI
+- `src/components/customer/shared/ProductCard.tsx` - stopPropagation + badge fix
+- `src/app/[locale]/provider/products/page.tsx` - Promotion badge fix
+- `src/lib/utils/excel-import.ts` - Image URL import
+- `src/types/menu-import.ts` - Image URL type
+- `src/app/api/menu-import/save/route.ts` - Save image URL
+- `docs/EXCEL_IMPORT_GUIDE.md` - Documentation update
 
 ---
 
-## Priority Tasks for Next Session
+## 📊 MVP Progress: ~92% Complete
 
-### 1. Image Preview in Import UI (Optional Enhancement)
+### Remaining MVP Tasks (Technical)
+
+#### High Priority
+1. **Payment Integration (Fawry)** - Online payment gateway
+   - Fawry account setup and API credentials
+   - Integrate Fawry Egyptian payment gateway
+   - Online payment support for customers
+   - Payment status webhooks
+
+2. **Admin Promo Code UI** - Create promo codes in admin panel
+   - Promo code creation form
+   - Manage existing promo codes
+   - Track usage statistics
+
+3. **Refund Handling** - Customer refunds for cancelled orders
+   - Refund request workflow
+   - Admin approval process
+   - Balance/payment method refund
+
+#### Medium Priority
+4. **SMS Notifications** - Twilio or local provider
+   - Order status SMS notifications
+   - OTP verification via SMS
+
+5. **Advanced Analytics Backend**
+   - Time-series revenue/orders charts
+   - Performance metrics and trends
+
+### Non-Technical Tasks (Before Launch)
+- End-to-end testing
+- Performance optimization
+- Security audit
+- Restaurant onboarding (10 partners)
+- Marketing materials
+- Customer support training
+
+---
+
+## Optional Enhancements (Post-MVP)
+
+### Image Preview in Import UI
 - Show image preview in parsed products table
 - Handle missing/invalid images gracefully
 
-### 2. Additional Features to Consider
+### Additional Features
 - [ ] Image upload to Supabase storage from import UI
 - [ ] Image matching by product name
 - [ ] Bulk image upload

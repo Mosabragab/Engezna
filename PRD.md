@@ -21,11 +21,40 @@
 
 ## 📊 Current Development Status
 
-**Phase:** Week 5 - Admin Backend Integration
-**Status:** Week 5 - Complete Feature Set ✅
+**Phase:** Week 6 - Provider Features Enhancement
+**Status:** Week 6 - Provider Management Complete ✅
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~90% of MVP Complete
-**Last Session:** December 10, 2025 (Session 16)
+**Overall Progress:** ~92% of MVP Complete
+**Last Session:** December 11, 2025 (Session 17)
+
+### Session 17 Updates (December 11, 2025)
+
+**Provider Variants Management:**
+- ✅ **Full Variants CRUD UI** in product edit page (`/provider/products/[id]`)
+- ✅ Toggle variants on/off for any product
+- ✅ Add new variants with name (AR/EN), price, original price
+- ✅ Edit existing variants inline
+- ✅ Delete variants with confirmation
+- ✅ Set default variant per product
+- ✅ Variants saved to database on product save
+
+**Excel Import Enhancement:**
+- ✅ **Image URL Import** - Added `image_url` column support
+- ✅ URL validation (must start with http:// or https://)
+- ✅ Manual column mapping option for image_url
+- ✅ Documentation updated in EXCEL_IMPORT_GUIDE.md
+
+**Bug Fixes:**
+- ✅ Promotion badge showing duplicate % symbol (replaced icon with "خصم" text)
+- ✅ Product detail modal not opening (added stopPropagation to ProductCard buttons)
+- ✅ Hover effects on variant action buttons fixed
+
+**Files Modified:**
+- `src/app/[locale]/provider/products/[id]/page.tsx` - Variants management UI
+- `src/components/customer/shared/ProductCard.tsx` - stopPropagation + badge fix
+- `src/lib/utils/excel-import.ts` - Image URL import
+- `src/types/menu-import.ts` - Image URL type
+- `src/app/api/menu-import/save/route.ts` - Save image URL
 
 ### Session 16 Updates (December 10, 2025)
 
