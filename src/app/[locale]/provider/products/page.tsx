@@ -27,6 +27,9 @@ import {
   Sparkles,
   FolderPlus,
   X,
+  Percent,
+  Tag,
+  Gift,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -62,6 +65,16 @@ type Category = {
   name_en: string
 }
 
+type Promotion = {
+  id: string
+  type: 'percentage' | 'fixed' | 'buy_x_get_y'
+  discount_value: number
+  name_ar: string
+  name_en: string
+  applies_to: 'all' | 'specific'
+  product_ids?: string[]
+}
+
 export default function ProviderProductsPage() {
   const locale = useLocale()
   const router = useRouter()
@@ -69,6 +82,7 @@ export default function ProviderProductsPage() {
 
   const [products, setProducts] = useState<MenuItem[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [promotions, setPromotions] = useState<Promotion[]>([])
   const [providerId, setProviderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -150,6 +164,20 @@ export default function ProviderProductsPage() {
     }))
 
     setProducts(productsWithCategories)
+
+    // Fetch active promotions for this provider
+    const now = new Date().toISOString()
+    const { data: promotionsData } = await supabase
+      .from('promotions')
+      .select('id, type, discount_value, name_ar, name_en, applies_to, product_ids')
+      .eq('provider_id', provId)
+      .eq('is_active', true)
+      .lte('start_date', now)
+      .gte('end_date', now)
+
+    if (promotionsData) {
+      setPromotions(promotionsData)
+    }
   }
 
   const handleRefresh = async () => {
@@ -279,6 +307,19 @@ export default function ProviderProductsPage() {
 
   // Get uncategorized products count
   const uncategorizedCount = products.filter(p => !p.category_id).length
+
+  // Get promotion for a specific product
+  const getProductPromotion = (productId: string): Promotion | null => {
+    for (const promo of promotions) {
+      if (promo.applies_to === 'all') {
+        return promo
+      }
+      if (promo.applies_to === 'specific' && promo.product_ids?.includes(productId)) {
+        return promo
+      }
+    }
+    return null
+  }
 
   const filteredProducts = filterProducts(products)
   const availableCount = products.filter(p => p.is_available).length
@@ -485,9 +526,10 @@ export default function ProviderProductsPage() {
             {filteredProducts.map((product) => {
               const isLoading = actionLoading === product.id
               const showDeleteConfirm = deleteConfirm === product.id
+              const promo = getProductPromotion(product.id)
 
               return (
-                <Card key={product.id} className="bg-white border-slate-200 overflow-hidden">
+                <Card key={product.id} className={`bg-white border-slate-200 overflow-hidden ${promo ? 'ring-2 ring-primary/30' : ''}`}>
                   <CardContent className="p-0">
                     {/* Product Image */}
                     <div className="relative h-40 bg-slate-100">
@@ -516,14 +558,35 @@ export default function ProviderProductsPage() {
                         </span>
                       </div>
 
-                      {/* Discount Badge */}
-                      {product.original_price && product.original_price > product.price && (
+                      {/* Promotion Badge */}
+                      {promo ? (
                         <div className={`absolute top-2 ${isRTL ? 'right-2' : 'left-2'}`}>
-                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary text-white">
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-primary to-primary/80 text-white flex items-center gap-1">
+                            {promo.type === 'percentage' ? (
+                              <>
+                                <Percent className="w-3 h-3" />
+                                {promo.discount_value}%
+                              </>
+                            ) : promo.type === 'fixed' ? (
+                              <>
+                                <Tag className="w-3 h-3" />
+                                {promo.discount_value} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              </>
+                            ) : (
+                              <>
+                                <Gift className="w-3 h-3" />
+                                {locale === 'ar' ? 'عرض' : 'Offer'}
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      ) : product.original_price && product.original_price > product.price ? (
+                        <div className={`absolute top-2 ${isRTL ? 'right-2' : 'left-2'}`}>
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-500 text-white">
                             {Math.round((1 - product.price / product.original_price) * 100)}% {locale === 'ar' ? 'خصم' : 'OFF'}
                           </span>
                         </div>
-                      )}
+                      ) : null}
                     </div>
 
                     {/* Product Info */}
