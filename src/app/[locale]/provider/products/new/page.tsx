@@ -109,10 +109,10 @@ export default function AddProductPage() {
     const supabase = createClient()
 
     const { data, error } = await supabase
-      .from('product_categories')
-      .select('*')
+      .from('provider_categories')
+      .select('id, name_ar, name_en')
       .eq('provider_id', provId)
-      .order('name_ar', { ascending: true })
+      .order('display_order', { ascending: true })
 
     if (!error && data) {
       setCategories(data)
@@ -121,19 +121,21 @@ export default function AddProductPage() {
   }
 
   const handleCreateCategory = async () => {
-    if (!newCategoryAr.trim() || !newCategoryEn.trim() || !providerId) return
+    if (!newCategoryAr.trim() || !providerId) return
 
     setSavingCategory(true)
     const supabase = createClient()
 
     const { data, error } = await supabase
-      .from('product_categories')
+      .from('provider_categories')
       .insert({
         provider_id: providerId,
         name_ar: newCategoryAr.trim(),
-        name_en: newCategoryEn.trim(),
+        name_en: newCategoryEn.trim() || newCategoryAr.trim(),
+        display_order: categories.length,
+        is_active: true
       })
-      .select()
+      .select('id, name_ar, name_en')
       .single()
 
     if (!error && data) {
@@ -441,7 +443,8 @@ export default function AddProductPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-600 mb-2">
-                      {locale === 'ar' ? 'اسم التصنيف (إنجليزي)' : 'Category Name (English)'} *
+                      {locale === 'ar' ? 'اسم التصنيف (إنجليزي)' : 'Category Name (English)'}
+                      <span className="text-slate-400 text-xs mr-1">({locale === 'ar' ? 'اختياري' : 'Optional'})</span>
                     </label>
                     <input
                       type="text"
@@ -468,7 +471,7 @@ export default function AddProductPage() {
                     <Button
                       type="button"
                       onClick={handleCreateCategory}
-                      disabled={savingCategory || !newCategoryAr.trim() || !newCategoryEn.trim()}
+                      disabled={savingCategory || !newCategoryAr.trim()}
                       className="flex-1"
                     >
                       {savingCategory

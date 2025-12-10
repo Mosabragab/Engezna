@@ -356,16 +356,16 @@ export default function ProviderProductsPage() {
             <Button
               size="lg"
               variant="outline"
-              className="border-slate-300 text-slate-600 hover:bg-slate-100"
+              className="border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               onClick={() => setShowCategoryModal(true)}
             >
               <FolderPlus className="w-5 h-5 me-2" />
               {locale === 'ar' ? 'إضافة تصنيف' : 'Add Category'}
             </Button>
             <Link href={`/${locale}/provider/menu-import`}>
-              <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10">
+              <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:text-primary">
                 <Sparkles className="w-5 h-5 me-2" />
-                {locale === 'ar' ? 'استيراد' : 'Import'}
+                {locale === 'ar' ? 'استيراد المنتجات' : 'Import Products'}
               </Button>
             </Link>
             <Link href={`/${locale}/provider/products/new`}>
