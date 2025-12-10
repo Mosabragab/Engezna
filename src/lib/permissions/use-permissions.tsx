@@ -67,49 +67,36 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       }
       setUserId(user.id);
 
-      // جلب بيانات الملف الشخصي للتحقق من الدور
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+      // جلب بيانات الملف الشخصي و admin_user بالتوازي (أسرع)
+      const [profileResult, adminUserResult] = await Promise.all([
+        supabase.from('profiles').select('role').eq('id', user.id).single(),
+        supabase.from('admin_users').select('id, role').eq('user_id', user.id).single()
+      ]);
 
-      // جلب admin_id و الدور (للتوافقية)
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('id, role')
-        .eq('user_id', user.id)
-        .single();
+      const profile = profileResult.data;
+      const adminUser = adminUserResult.data;
 
       // إذا لم يوجد سجل admin_users ولكن المستخدم admin في profiles
       // نحتاج لإنشاء سجل admin_users له أولاً
       if (!adminUser) {
         if (profile?.role === 'admin') {
-          // المستخدم admin في profiles لكن لا يوجد سجل admin_users
-          // هذه حالة استثنائية - فقط المستخدم الأول (المؤسس) يعامل كـ super_admin
-          // يجب إنشاء سجل admin_users له
-          console.log('[Permissions] No admin_users record, but profile.role is admin - creating admin_users record');
-
-          // إنشاء سجل admin_users للمستخدم
+          // إنشاء سجل admin_users للمستخدم الأول (المؤسس)
           const { data: newAdminUser, error: createError } = await supabase
             .from('admin_users')
             .insert({
               user_id: user.id,
-              role: 'super_admin', // المستخدم الأول يكون super_admin
+              role: 'super_admin',
               is_active: true
             })
             .select('id, role')
             .single();
 
           if (createError) {
-            console.error('[Permissions] Failed to create admin_users record:', createError);
-            // كـ fallback مؤقت فقط للمستخدم الأول
             setLegacyRole('super_admin');
             setLoading(false);
             return;
           }
 
-          console.log('[Permissions] Created admin_users record:', newAdminUser);
           setAdminId(newAdminUser.id);
           setLegacyRole(newAdminUser.role);
           setLoading(false);
@@ -121,9 +108,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       setAdminId(adminUser.id);
 
       // استخدام الدور الفعلي من admin_users
-      // لا نغير الدور - نستخدم ما هو مخزن في قاعدة البيانات
       const effectiveRole = adminUser.role || null;
-      console.log('[Permissions] Admin user found:', { adminId: adminUser.id, role: adminUser.role, effectiveRole, profileRole: profile?.role });
       setLegacyRole(effectiveRole);
 
       const newCache: CachedPermissions = {
@@ -133,40 +118,33 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         geographicScope: { governorates: [], cities: [], districts: [] },
       };
 
-      // 1. جلب أدوار المشرف
-      const { data: adminRoles } = await supabase
-        .from('admin_roles')
-        .select(`
-          *,
-          role:roles (
-            id,
-            code,
-            name_ar,
-            name_en,
-            color,
-            icon,
-            is_system
-          )
-        `)
-        .eq('admin_id', adminUser.id)
-        .or('expires_at.is.null,expires_at.gt.now()');
+      // جلب أدوار المشرف والصلاحيات المخصصة بالتوازي (أسرع)
+      const [adminRolesResult, directPermsResult] = await Promise.all([
+        supabase
+          .from('admin_roles')
+          .select(`*, role:roles (id, code, name_ar, name_en, color, icon, is_system)`)
+          .eq('admin_id', adminUser.id)
+          .or('expires_at.is.null,expires_at.gt.now()'),
+        supabase
+          .from('admin_permissions')
+          .select(`*, permission:permissions (id, code)`)
+          .eq('admin_id', adminUser.id)
+          .or('expires_at.is.null,expires_at.gt.now()')
+      ]);
+
+      const adminRoles = adminRolesResult.data;
+      const directPerms = directPermsResult.data;
 
       if (adminRoles) {
         newCache.roles = adminRoles;
 
-        // 2. جلب صلاحيات الأدوار
+        // جلب صلاحيات الأدوار
         const roleIds = adminRoles.map((r: AdminRole) => r.role_id);
 
         if (roleIds.length > 0) {
           const { data: rolePermissions } = await supabase
             .from('role_permissions')
-            .select(`
-              *,
-              permission:permissions (
-                id,
-                code
-              )
-            `)
+            .select(`*, permission:permissions (id, code)`)
             .in('role_id', roleIds)
             .or('expires_at.is.null,expires_at.gt.now()');
 
@@ -196,19 +174,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 3. جلب الصلاحيات المخصصة
-      const { data: directPerms } = await supabase
-        .from('admin_permissions')
-        .select(`
-          *,
-          permission:permissions (
-            id,
-            code
-          )
-        `)
-        .eq('admin_id', adminUser.id)
-        .or('expires_at.is.null,expires_at.gt.now()');
-
+      // معالجة الصلاحيات المخصصة
       if (directPerms) {
         for (const dp of directPerms) {
           if (dp.permission) {
@@ -332,19 +298,6 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
   // هل super_admin؟ (تحقق من الأدوار الجديدة أو الدور القديم كـ fallback)
   const isSuperAdmin = cache.roles.some(r => r.role?.code === 'super_admin') || legacyRole === 'super_admin';
-
-  // Log للتشخيص
-  if (!loading && userId) {
-    console.log('[Permissions] State:', {
-      isSuperAdmin,
-      legacyRole,
-      rolesCount: cache.roles.length,
-      roles: cache.roles.map(r => r.role?.code),
-      permissionsCount: cache.permissions.size,
-      accessibleResources,
-      legacyResources: legacyRole ? (legacyRoleDefaultPermissions[legacyRole] || []) : []
-    });
-  }
 
   const value: PermissionsContextValue = {
     loading,

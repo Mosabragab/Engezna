@@ -76,15 +76,6 @@ export function AdminSidebar({
     return hasResource(resource)
   }
 
-  // Log للتشخيص
-  console.log('[AdminSidebar] Permissions state:', {
-    loading,
-    isSuperAdmin,
-    legacyRole,
-    rolesCount: roles.length,
-    primaryRole: primaryRole?.role?.code
-  })
-
   // Main navigation items
   const mainNavItems: NavItem[] = [
     {
@@ -221,13 +212,6 @@ export function AdminSidebar({
   const filteredMainNavItems = isSuperAdmin ? mainNavItems : mainNavItems.filter(item => canAccess(item.resource))
   const filteredTeamNavItems = isSuperAdmin ? teamNavItems : teamNavItems.filter(item => canAccess(item.resource))
   const filteredSystemNavItems = isSuperAdmin ? systemNavItems : systemNavItems.filter(item => canAccess(item.resource))
-
-  // Log للتشخيص
-  console.log('[AdminSidebar] Filtered items:', {
-    main: filteredMainNavItems.length,
-    team: filteredTeamNavItems.length,
-    system: filteredSystemNavItems.length
-  })
 
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname === item.path || pathname.startsWith(item.path + '/')
