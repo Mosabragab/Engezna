@@ -19,6 +19,7 @@ interface ProductVariant {
 
 interface MenuItem {
   id: string
+  provider_id: string
   name_ar: string
   name_en: string
   description_ar: string | null
@@ -27,8 +28,12 @@ interface MenuItem {
   original_price?: number | null
   image_url: string | null
   is_available: boolean
+  is_vegetarian: boolean
+  is_spicy: boolean
+  preparation_time_min: number
+  category_id?: string | null
   has_variants?: boolean
-  pricing_type?: string
+  pricing_type?: 'fixed' | 'per_unit' | 'variants'
   variants?: ProductVariant[]
 }
 
