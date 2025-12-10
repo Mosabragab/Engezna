@@ -85,20 +85,41 @@ export default function ProvidersPage() {
     }
   }
 
+  // Smart Arabic text normalization for search
+  const normalizeArabicText = (text: string): string => {
+    return text
+      .toLowerCase()
+      // Normalize Taa Marbuta and Haa (ة ↔ ه)
+      .replace(/[ةه]/g, 'ه')
+      // Normalize Alef variants (أ إ آ ا)
+      .replace(/[أإآا]/g, 'ا')
+      // Normalize Yaa variants (ي ى)
+      .replace(/[يى]/g, 'ي')
+      // Remove Tashkeel (diacritics)
+      .replace(/[\u064B-\u065F]/g, '')
+      // Normalize spaces
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+
   // Filter and sort providers client-side
   const filteredProviders = useMemo(() => {
     let result = [...providers]
 
-    // Search filter
+    // Search filter with smart Arabic normalization
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(
-        (p) =>
-          p.name_ar.toLowerCase().includes(query) ||
-          p.name_en.toLowerCase().includes(query) ||
-          (p.description_ar?.toLowerCase().includes(query)) ||
-          (p.description_en?.toLowerCase().includes(query))
-      )
+      const normalizedQuery = normalizeArabicText(searchQuery)
+      result = result.filter((p) => {
+        const nameAr = normalizeArabicText(p.name_ar || '')
+        const nameEn = (p.name_en || '').toLowerCase()
+        const descAr = normalizeArabicText(p.description_ar || '')
+        const descEn = (p.description_en || '').toLowerCase()
+
+        return nameAr.includes(normalizedQuery) ||
+               nameEn.includes(normalizedQuery) ||
+               descAr.includes(normalizedQuery) ||
+               descEn.includes(normalizedQuery)
+      })
     }
 
     // Open only filter
