@@ -104,16 +104,10 @@ export default function ProviderProductsPage() {
   const loadProducts = async (provId: string) => {
     const supabase = createClient()
 
+    // First get all products
     const { data, error } = await supabase
       .from('menu_items')
-      .select(`
-        *,
-        category:provider_categories!category_id (
-          id,
-          name_ar,
-          name_en
-        )
-      `)
+      .select('*')
       .eq('provider_id', provId)
       .order('display_order', { ascending: true })
       .order('created_at', { ascending: false })
@@ -123,7 +117,20 @@ export default function ProviderProductsPage() {
       return
     }
 
-    setProducts(data || [])
+    // Then get categories for this provider
+    const { data: categoriesData } = await supabase
+      .from('provider_categories')
+      .select('id, name_ar, name_en')
+      .eq('provider_id', provId)
+
+    // Map categories to products
+    const categoryMap = new Map(categoriesData?.map(c => [c.id, c]) || [])
+    const productsWithCategories = (data || []).map(product => ({
+      ...product,
+      category: product.category_id ? categoryMap.get(product.category_id) || null : null
+    }))
+
+    setProducts(productsWithCategories)
   }
 
   const handleRefresh = async () => {
