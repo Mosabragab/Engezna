@@ -962,14 +962,14 @@ export default function EditProductPage() {
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {!variant.is_default && (
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleSetDefaultVariant(index)}
-                                className="text-slate-500 hover:text-primary"
+                                className="text-slate-600 hover:text-primary hover:bg-primary/10"
                               >
                                 {locale === 'ar' ? 'تعيين افتراضي' : 'Set Default'}
                               </Button>
@@ -979,7 +979,7 @@ export default function EditProductPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditVariant(index)}
-                              className="text-slate-500 hover:text-primary"
+                              className="text-slate-600 hover:text-primary hover:bg-primary/10"
                             >
                               {locale === 'ar' ? 'تعديل' : 'Edit'}
                             </Button>
@@ -988,7 +988,7 @@ export default function EditProductPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteVariant(index)}
-                              className="text-red-500 hover:text-red-700"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
                             >
                               <X className="w-4 h-4" />
                             </Button>
