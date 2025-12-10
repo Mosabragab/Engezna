@@ -297,33 +297,33 @@ export default function AdminSupportPage() {
               </div>
               <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.total, locale)}</p>
             </div>
-            <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+            <div className="bg-card-bg-warning rounded-xl p-4 border border-warning/30">
               <div className="flex items-center gap-3 mb-2">
-                <AlertCircle className="w-5 h-5 text-yellow-600" />
-                <span className="text-sm text-yellow-700">{locale === 'ar' ? 'مفتوح' : 'Open'}</span>
+                <AlertCircle className="w-5 h-5 text-warning" />
+                <span className="text-sm text-warning">{locale === 'ar' ? 'مفتوح' : 'Open'}</span>
               </div>
-              <p className="text-2xl font-bold text-yellow-700">{formatNumber(stats.open, locale)}</p>
+              <p className="text-2xl font-bold text-warning">{formatNumber(stats.open, locale)}</p>
             </div>
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+            <div className="bg-card-bg-primary rounded-xl p-4 border border-primary/30">
               <div className="flex items-center gap-3 mb-2">
-                <Clock className="w-5 h-5 text-blue-600" />
-                <span className="text-sm text-blue-700">{locale === 'ar' ? 'قيد المعالجة' : 'In Progress'}</span>
+                <Clock className="w-5 h-5 text-primary" />
+                <span className="text-sm text-primary">{locale === 'ar' ? 'قيد المعالجة' : 'In Progress'}</span>
               </div>
-              <p className="text-2xl font-bold text-blue-700">{formatNumber(stats.inProgress, locale)}</p>
+              <p className="text-2xl font-bold text-primary">{formatNumber(stats.inProgress, locale)}</p>
             </div>
-            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+            <div className="bg-card-bg-success rounded-xl p-4 border border-success/30">
               <div className="flex items-center gap-3 mb-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <span className="text-sm text-green-700">{locale === 'ar' ? 'تم الحل' : 'Resolved'}</span>
+                <CheckCircle2 className="w-5 h-5 text-success" />
+                <span className="text-sm text-success">{locale === 'ar' ? 'تم الحل' : 'Resolved'}</span>
               </div>
-              <p className="text-2xl font-bold text-green-700">{formatNumber(stats.resolved, locale)}</p>
+              <p className="text-2xl font-bold text-success">{formatNumber(stats.resolved, locale)}</p>
             </div>
-            <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+            <div className="bg-card-bg-error rounded-xl p-4 border border-error/30">
               <div className="flex items-center gap-3 mb-2">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
-                <span className="text-sm text-red-700">{locale === 'ar' ? 'عاجل' : 'Urgent'}</span>
+                <AlertTriangle className="w-5 h-5 text-error" />
+                <span className="text-sm text-error">{locale === 'ar' ? 'عاجل' : 'Urgent'}</span>
               </div>
-              <p className="text-2xl font-bold text-red-700">{formatNumber(stats.urgent, locale)}</p>
+              <p className="text-2xl font-bold text-error">{formatNumber(stats.urgent, locale)}</p>
             </div>
           </div>
 

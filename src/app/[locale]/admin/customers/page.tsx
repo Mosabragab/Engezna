@@ -309,40 +309,40 @@ export default function AdminCustomersPage() {
               </div>
               <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.total, locale)}</p>
             </div>
-            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+            <div className="bg-card-bg-success rounded-xl p-4 border border-success/30">
               <div className="flex items-center gap-3 mb-2">
-                <UserCheck className="w-5 h-5 text-green-600" />
-                <span className="text-sm text-green-700">{locale === 'ar' ? 'نشط' : 'Active'}</span>
+                <UserCheck className="w-5 h-5 text-success" />
+                <span className="text-sm text-success">{locale === 'ar' ? 'نشط' : 'Active'}</span>
               </div>
-              <p className="text-2xl font-bold text-green-700">{formatNumber(stats.active, locale)}</p>
+              <p className="text-2xl font-bold text-success">{formatNumber(stats.active, locale)}</p>
             </div>
-            <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+            <div className="bg-card-bg-error rounded-xl p-4 border border-error/30">
               <div className="flex items-center gap-3 mb-2">
-                <Ban className="w-5 h-5 text-red-600" />
-                <span className="text-sm text-red-700">{locale === 'ar' ? 'محظور' : 'Banned'}</span>
+                <Ban className="w-5 h-5 text-error" />
+                <span className="text-sm text-error">{locale === 'ar' ? 'محظور' : 'Banned'}</span>
               </div>
-              <p className="text-2xl font-bold text-red-700">{formatNumber(stats.banned, locale)}</p>
+              <p className="text-2xl font-bold text-error">{formatNumber(stats.banned, locale)}</p>
             </div>
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+            <div className="bg-card-bg-primary rounded-xl p-4 border border-primary/30">
               <div className="flex items-center gap-3 mb-2">
-                <UserPlus className="w-5 h-5 text-blue-600" />
-                <span className="text-sm text-blue-700">{locale === 'ar' ? 'جدد اليوم' : 'New Today'}</span>
+                <UserPlus className="w-5 h-5 text-primary" />
+                <span className="text-sm text-primary">{locale === 'ar' ? 'جدد اليوم' : 'New Today'}</span>
               </div>
-              <p className="text-2xl font-bold text-blue-700">{formatNumber(stats.newToday, locale)}</p>
+              <p className="text-2xl font-bold text-primary">{formatNumber(stats.newToday, locale)}</p>
             </div>
-            <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+            <div className="bg-card-bg-purple rounded-xl p-4 border border-purple/30">
               <div className="flex items-center gap-3 mb-2">
-                <ShoppingCart className="w-5 h-5 text-purple-600" />
-                <span className="text-sm text-purple-700">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</span>
+                <ShoppingCart className="w-5 h-5 text-purple" />
+                <span className="text-sm text-purple">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</span>
               </div>
-              <p className="text-2xl font-bold text-purple-700">{formatNumber(stats.totalOrders, locale)}</p>
+              <p className="text-2xl font-bold text-purple">{formatNumber(stats.totalOrders, locale)}</p>
             </div>
-            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
+            <div className="bg-card-bg-emerald rounded-xl p-4 border border-emerald/30">
               <div className="flex items-center gap-3 mb-2">
-                <DollarSign className="w-5 h-5 text-emerald-600" />
-                <span className="text-sm text-emerald-700">{locale === 'ar' ? 'إجمالي الإنفاق' : 'Total Spent'}</span>
+                <DollarSign className="w-5 h-5 text-emerald" />
+                <span className="text-sm text-emerald">{locale === 'ar' ? 'إجمالي الإنفاق' : 'Total Spent'}</span>
               </div>
-              <p className="text-xl font-bold text-emerald-700">{formatCurrency(stats.totalRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+              <p className="text-xl font-bold text-emerald">{formatCurrency(stats.totalRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
           </div>
 

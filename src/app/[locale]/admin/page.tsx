@@ -185,10 +185,10 @@ export default function AdminDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'delivered': return 'bg-green-100 text-green-700'
-      case 'pending': return 'bg-yellow-100 text-yellow-700'
-      case 'preparing': return 'bg-blue-100 text-blue-700'
-      case 'cancelled': case 'rejected': return 'bg-red-100 text-red-700'
+      case 'delivered': return 'status-success'
+      case 'pending': return 'status-warning'
+      case 'preparing': return 'status-in-progress'
+      case 'cancelled': case 'rejected': return 'status-error'
       default: return 'bg-slate-100 text-slate-700'
     }
   }
@@ -285,8 +285,8 @@ export default function AdminDashboard() {
             {/* GMV */}
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-green-600" />
+                <div className="w-10 h-10 bg-card-bg-success rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-success" />
                 </div>
                 <span className={`text-xs flex items-center gap-1 ${stats.gmvChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {stats.gmvChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -300,8 +300,8 @@ export default function AdminDashboard() {
             {/* Orders Today */}
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-card-bg-primary rounded-lg flex items-center justify-center">
+                  <ShoppingBag className="w-5 h-5 text-primary" />
                 </div>
                 <span className={`text-xs flex items-center gap-1 ${stats.ordersChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {stats.ordersChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -315,8 +315,8 @@ export default function AdminDashboard() {
             {/* Active Providers */}
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Store className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 bg-card-bg-purple rounded-lg flex items-center justify-center">
+                  <Store className="w-5 h-5 text-purple" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.activeProviders, locale)}</p>
@@ -326,8 +326,8 @@ export default function AdminDashboard() {
             {/* New Customers */}
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
-                  <Users className="w-5 h-5 text-cyan-600" />
+                <div className="w-10 h-10 bg-card-bg-info rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-info" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-slate-900">+{formatNumber(stats.newCustomersToday, locale)}</p>
@@ -338,51 +338,51 @@ export default function AdminDashboard() {
           {/* Attention Required Cards - Row 2 */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* Pending Providers */}
-            <Link href={`/${locale}/admin/providers?status=pending`} className="bg-amber-50 rounded-xl p-4 border border-amber-200 hover:border-amber-300 transition-colors">
+            <Link href={`/${locale}/admin/providers?status=pending`} className="bg-card-bg-amber rounded-xl p-4 border border-amber/30 hover:border-amber/50 transition-colors">
               <div className="flex items-center gap-3 mb-2">
-                <Hourglass className="w-5 h-5 text-amber-600" />
-                <span className="text-sm font-medium text-amber-800">
+                <Hourglass className="w-5 h-5 text-amber" />
+                <span className="text-sm font-medium text-amber">
                   {locale === 'ar' ? 'متاجر جديدة' : 'New Providers'}
                 </span>
               </div>
-              <p className="text-3xl font-bold text-amber-700">{formatNumber(stats.pendingProviders, locale)}</p>
-              <p className="text-xs text-amber-600">{locale === 'ar' ? 'تنتظر الموافقة' : 'Awaiting Approval'}</p>
+              <p className="text-3xl font-bold text-amber">{formatNumber(stats.pendingProviders, locale)}</p>
+              <p className="text-xs text-amber/80">{locale === 'ar' ? 'تنتظر الموافقة' : 'Awaiting Approval'}</p>
             </Link>
 
             {/* Open Tickets */}
-            <Link href={`/${locale}/admin/support`} className="bg-blue-50 rounded-xl p-4 border border-blue-200 hover:border-blue-300 transition-colors">
+            <Link href={`/${locale}/admin/support`} className="bg-card-bg-primary rounded-xl p-4 border border-primary/30 hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-2">
-                <HeadphonesIcon className="w-5 h-5 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">
+                <HeadphonesIcon className="w-5 h-5 text-primary" />
+                <span className="text-sm font-medium text-primary">
                   {locale === 'ar' ? 'تذاكر الدعم' : 'Support Tickets'}
                 </span>
               </div>
-              <p className="text-3xl font-bold text-blue-700">{formatNumber(stats.openTickets, locale)}</p>
-              <p className="text-xs text-blue-600">{locale === 'ar' ? 'مفتوحة' : 'Open'}</p>
+              <p className="text-3xl font-bold text-primary">{formatNumber(stats.openTickets, locale)}</p>
+              <p className="text-xs text-primary/80">{locale === 'ar' ? 'مفتوحة' : 'Open'}</p>
             </Link>
 
             {/* Pending Settlements */}
-            <Link href={`/${locale}/admin/finance/settlements`} className="bg-purple-50 rounded-xl p-4 border border-purple-200 hover:border-purple-300 transition-colors">
+            <Link href={`/${locale}/admin/finance/settlements`} className="bg-card-bg-purple rounded-xl p-4 border border-purple/30 hover:border-purple/50 transition-colors">
               <div className="flex items-center gap-3 mb-2">
-                <Wallet className="w-5 h-5 text-purple-600" />
-                <span className="text-sm font-medium text-purple-800">
+                <Wallet className="w-5 h-5 text-purple" />
+                <span className="text-sm font-medium text-purple">
                   {locale === 'ar' ? 'تسويات معلقة' : 'Pending Settlements'}
                 </span>
               </div>
-              <p className="text-3xl font-bold text-purple-700">{formatNumber(stats.pendingSettlements, locale)}</p>
-              <p className="text-xs text-purple-600">{locale === 'ar' ? 'متجر' : 'Providers'}</p>
+              <p className="text-3xl font-bold text-purple">{formatNumber(stats.pendingSettlements, locale)}</p>
+              <p className="text-xs text-purple/80">{locale === 'ar' ? 'متجر' : 'Providers'}</p>
             </Link>
 
             {/* Commissions */}
-            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+            <div className="bg-card-bg-success rounded-xl p-4 border border-success/30">
               <div className="flex items-center gap-3 mb-2">
-                <DollarSign className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-medium text-green-800">
+                <DollarSign className="w-5 h-5 text-success" />
+                <span className="text-sm font-medium text-success">
                   {locale === 'ar' ? 'العمولات' : 'Commissions'}
                 </span>
               </div>
-              <p className="text-3xl font-bold text-green-700">{formatCurrency(stats.commissionsMonth, locale)}</p>
-              <p className="text-xs text-green-600">{locale === 'ar' ? 'هذا الشهر' : 'This Month'}</p>
+              <p className="text-3xl font-bold text-success">{formatCurrency(stats.commissionsMonth, locale)}</p>
+              <p className="text-xs text-success/80">{locale === 'ar' ? 'هذا الشهر' : 'This Month'}</p>
             </div>
           </div>
 

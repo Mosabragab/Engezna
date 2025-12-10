@@ -708,47 +708,47 @@ export default function AdminSupervisorsPage() {
               </div>
               <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.total, locale)}</p>
             </div>
-            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+            <div className="bg-card-bg-success rounded-xl p-4 border border-success/30">
               <div className="flex items-center gap-3 mb-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <span className="text-sm text-green-700">{locale === 'ar' ? 'نشط' : 'Active'}</span>
+                <CheckCircle2 className="w-5 h-5 text-success" />
+                <span className="text-sm text-success">{locale === 'ar' ? 'نشط' : 'Active'}</span>
               </div>
-              <p className="text-2xl font-bold text-green-700">{formatNumber(stats.active, locale)}</p>
+              <p className="text-2xl font-bold text-success">{formatNumber(stats.active, locale)}</p>
             </div>
-            <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+            <div className="bg-card-bg-error rounded-xl p-4 border border-error/30">
               <div className="flex items-center gap-3 mb-2">
-                <XCircle className="w-5 h-5 text-red-600" />
-                <span className="text-sm text-red-700">{locale === 'ar' ? 'غير نشط' : 'Inactive'}</span>
+                <XCircle className="w-5 h-5 text-error" />
+                <span className="text-sm text-error">{locale === 'ar' ? 'غير نشط' : 'Inactive'}</span>
               </div>
-              <p className="text-2xl font-bold text-red-700">{formatNumber(stats.inactive, locale)}</p>
+              <p className="text-2xl font-bold text-error">{formatNumber(stats.inactive, locale)}</p>
             </div>
-            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+            <div className="bg-card-bg-amber rounded-xl p-4 border border-amber/30">
               <div className="flex items-center gap-3 mb-2">
-                <Crown className="w-5 h-5 text-amber-600" />
-                <span className="text-sm text-amber-700">{locale === 'ar' ? 'مدراء' : 'Super Admins'}</span>
+                <Crown className="w-5 h-5 text-amber" />
+                <span className="text-sm text-amber">{locale === 'ar' ? 'مدراء' : 'Super Admins'}</span>
               </div>
-              <p className="text-2xl font-bold text-amber-700">{formatNumber(stats.superAdmins, locale)}</p>
+              <p className="text-2xl font-bold text-amber">{formatNumber(stats.superAdmins, locale)}</p>
             </div>
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+            <div className="bg-card-bg-primary rounded-xl p-4 border border-primary/30">
               <div className="flex items-center gap-3 mb-2">
-                <ShieldCheck className="w-5 h-5 text-blue-600" />
-                <span className="text-sm text-blue-700">{locale === 'ar' ? 'مشرفين' : 'Moderators'}</span>
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                <span className="text-sm text-primary">{locale === 'ar' ? 'مشرفين' : 'Moderators'}</span>
               </div>
-              <p className="text-2xl font-bold text-blue-700">{formatNumber(stats.moderators, locale)}</p>
+              <p className="text-2xl font-bold text-primary">{formatNumber(stats.moderators, locale)}</p>
             </div>
-            <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+            <div className="bg-card-bg-purple rounded-xl p-4 border border-purple/30">
               <div className="flex items-center gap-3 mb-2">
-                <Headphones className="w-5 h-5 text-purple-600" />
-                <span className="text-sm text-purple-700">{locale === 'ar' ? 'دعم' : 'Support'}</span>
+                <Headphones className="w-5 h-5 text-purple" />
+                <span className="text-sm text-purple">{locale === 'ar' ? 'دعم' : 'Support'}</span>
               </div>
-              <p className="text-2xl font-bold text-purple-700">{formatNumber(stats.support, locale)}</p>
+              <p className="text-2xl font-bold text-purple">{formatNumber(stats.support, locale)}</p>
             </div>
-            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
+            <div className="bg-card-bg-emerald rounded-xl p-4 border border-emerald/30">
               <div className="flex items-center gap-3 mb-2">
-                <Wallet className="w-5 h-5 text-emerald-600" />
-                <span className="text-sm text-emerald-700">{locale === 'ar' ? 'مالية' : 'Finance'}</span>
+                <Wallet className="w-5 h-5 text-emerald" />
+                <span className="text-sm text-emerald">{locale === 'ar' ? 'مالية' : 'Finance'}</span>
               </div>
-              <p className="text-2xl font-bold text-emerald-700">{formatNumber(stats.finance, locale)}</p>
+              <p className="text-2xl font-bold text-emerald">{formatNumber(stats.finance, locale)}</p>
             </div>
           </div>
 

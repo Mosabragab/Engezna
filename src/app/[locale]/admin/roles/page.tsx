@@ -598,26 +598,26 @@ export default function AdminRolesPage() {
               </div>
               <p className="text-2xl font-bold text-slate-900">{roles.length}</p>
             </div>
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+            <div className="bg-card-bg-primary rounded-xl p-4 border border-primary/30">
               <div className="flex items-center gap-3 mb-2">
-                <Shield className="w-5 h-5 text-blue-600" />
-                <span className="text-sm text-blue-700">{locale === 'ar' ? 'أدوار النظام' : 'System Roles'}</span>
+                <Shield className="w-5 h-5 text-primary" />
+                <span className="text-sm text-primary">{locale === 'ar' ? 'أدوار النظام' : 'System Roles'}</span>
               </div>
-              <p className="text-2xl font-bold text-blue-700">{roles.filter(r => r.is_system).length}</p>
+              <p className="text-2xl font-bold text-primary">{roles.filter(r => r.is_system).length}</p>
             </div>
-            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+            <div className="bg-card-bg-success rounded-xl p-4 border border-success/30">
               <div className="flex items-center gap-3 mb-2">
-                <Unlock className="w-5 h-5 text-green-600" />
-                <span className="text-sm text-green-700">{locale === 'ar' ? 'أدوار مخصصة' : 'Custom Roles'}</span>
+                <Unlock className="w-5 h-5 text-success" />
+                <span className="text-sm text-success">{locale === 'ar' ? 'أدوار مخصصة' : 'Custom Roles'}</span>
               </div>
-              <p className="text-2xl font-bold text-green-700">{roles.filter(r => !r.is_system).length}</p>
+              <p className="text-2xl font-bold text-success">{roles.filter(r => !r.is_system).length}</p>
             </div>
-            <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+            <div className="bg-card-bg-purple rounded-xl p-4 border border-purple/30">
               <div className="flex items-center gap-3 mb-2">
-                <Lock className="w-5 h-5 text-purple-600" />
-                <span className="text-sm text-purple-700">{locale === 'ar' ? 'إجمالي الصلاحيات' : 'Total Permissions'}</span>
+                <Lock className="w-5 h-5 text-purple" />
+                <span className="text-sm text-purple">{locale === 'ar' ? 'إجمالي الصلاحيات' : 'Total Permissions'}</span>
               </div>
-              <p className="text-2xl font-bold text-purple-700">{permissions.length}</p>
+              <p className="text-2xl font-bold text-purple">{permissions.length}</p>
             </div>
           </div>
 

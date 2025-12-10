@@ -55,6 +55,12 @@ const config: Config = {
         success: 'hsl(var(--success))',     // #22C55E Green for success
         warning: 'hsl(var(--warning))',     // #FACC15 Yellow for warnings
 
+        // Extended semantic colors - Additional dashboard states
+        amber: 'hsl(var(--amber))',         // #F59E0B Amber for pending/attention
+        purple: 'hsl(var(--purple))',       // #8B5CF6 Purple for premium/reports
+        emerald: 'hsl(var(--emerald))',     // #10B981 Emerald for high value
+        orange: 'hsl(var(--orange))',       // #F97316 Orange for high priority
+
         // Text hierarchy
         'text-primary': 'hsl(var(--text-primary))',     // #0F172A
         'text-secondary': 'hsl(var(--text-secondary))', // #475569
@@ -67,6 +73,10 @@ const config: Config = {
           info: 'hsl(var(--card-bg-info))',         // Cyan 10%
           warning: 'hsl(var(--card-bg-warning))',   // Yellow 10%
           error: 'hsl(var(--card-bg-error))',       // Red 10%
+          amber: 'hsl(var(--card-bg-amber))',       // Amber 10%
+          purple: 'hsl(var(--card-bg-purple))',     // Purple 10%
+          emerald: 'hsl(var(--card-bg-emerald))',   // Emerald 10%
+          orange: 'hsl(var(--card-bg-orange))',     // Orange 10%
         },
 
         border: 'hsl(var(--border))',

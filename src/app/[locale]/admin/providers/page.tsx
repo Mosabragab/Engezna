@@ -414,26 +414,26 @@ export default function AdminProvidersPage() {
               </div>
               <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.total, locale)}</p>
             </div>
-            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+            <div className="bg-card-bg-success rounded-xl p-4 border border-success/30">
               <div className="flex items-center gap-3 mb-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <span className="text-sm text-green-700">{locale === 'ar' ? 'نشط' : 'Active'}</span>
+                <CheckCircle2 className="w-5 h-5 text-success" />
+                <span className="text-sm text-success">{locale === 'ar' ? 'نشط' : 'Active'}</span>
               </div>
-              <p className="text-2xl font-bold text-green-700">{formatNumber(stats.active, locale)}</p>
+              <p className="text-2xl font-bold text-success">{formatNumber(stats.active, locale)}</p>
             </div>
-            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+            <div className="bg-card-bg-amber rounded-xl p-4 border border-amber/30">
               <div className="flex items-center gap-3 mb-2">
-                <Clock className="w-5 h-5 text-amber-600" />
-                <span className="text-sm text-amber-700">{locale === 'ar' ? 'قيد المراجعة' : 'Pending'}</span>
+                <Clock className="w-5 h-5 text-amber" />
+                <span className="text-sm text-amber">{locale === 'ar' ? 'قيد المراجعة' : 'Pending'}</span>
               </div>
-              <p className="text-2xl font-bold text-amber-700">{formatNumber(stats.pending, locale)}</p>
+              <p className="text-2xl font-bold text-amber">{formatNumber(stats.pending, locale)}</p>
             </div>
-            <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+            <div className="bg-card-bg-warning rounded-xl p-4 border border-warning/30">
               <div className="flex items-center gap-3 mb-2">
-                <PauseCircle className="w-5 h-5 text-yellow-600" />
-                <span className="text-sm text-yellow-700">{locale === 'ar' ? 'متوقف' : 'Paused'}</span>
+                <PauseCircle className="w-5 h-5 text-warning" />
+                <span className="text-sm text-warning">{locale === 'ar' ? 'متوقف' : 'Paused'}</span>
               </div>
-              <p className="text-2xl font-bold text-yellow-700">{formatNumber(stats.paused, locale)}</p>
+              <p className="text-2xl font-bold text-warning">{formatNumber(stats.paused, locale)}</p>
             </div>
           </div>
 
