@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
+import { AdminHeader, useAdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
 import type { GeoFilterValue } from '@/components/admin'
 import { formatNumber, formatCurrency, formatDateTime } from '@/lib/utils/formatters'
 import {
@@ -47,10 +47,11 @@ export default function AdminOrdersPage() {
   const locale = useLocale()
   const isRTL = locale === 'ar'
 
+  const { toggle: toggleSidebar } = useAdminSidebar()
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [dataLoading, setDataLoading] = useState(true)
 
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
@@ -89,7 +90,9 @@ export default function AdminOrdersPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
-        await loadOrders()
+        setLoading(false) // Show page immediately
+        loadOrders()      // Load data in background
+        return
       }
     }
 
@@ -97,6 +100,7 @@ export default function AdminOrdersPage() {
   }
 
   async function loadOrders() {
+    setDataLoading(true)
     try {
       console.log('[Admin Orders] Fetching orders...')
       const response = await fetch('/api/admin/orders', {
@@ -134,6 +138,8 @@ export default function AdminOrdersPage() {
       }
     } catch (error) {
       console.error('[Admin Orders] Fetch Error:', error)
+    } finally {
+      setDataLoading(false)
     }
   }
 
@@ -237,48 +243,60 @@ export default function AdminOrdersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
-      </div>
+      <>
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <div className="w-32 h-5 bg-slate-200 rounded animate-pulse" />
+          </div>
+        </header>
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
+          </div>
+        </main>
+      </>
     )
   }
 
   if (!user || !isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2 text-slate-900">
-            {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
-          </h1>
-          <Link href={`/${locale}/auth/login`}>
-            <Button size="lg" className="bg-red-600 hover:bg-red-700">
-              {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <>
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <h2 className="text-lg font-semibold text-slate-800">
+              {locale === 'ar' ? 'إدارة الطلبات' : 'Orders Management'}
+            </h2>
+          </div>
+        </header>
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
+              <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold mb-2 text-slate-900">
+                {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
+              </h1>
+              <Link href={`/${locale}/auth/login`}>
+                <Button size="lg" className="bg-red-600 hover:bg-red-700">
+                  {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </main>
+      </>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {/* Sidebar */}
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+    <>
+      {/* Header */}
+      <AdminHeader
+        user={user}
+        title={locale === 'ar' ? 'إدارة الطلبات' : 'Orders Management'}
+        onMenuClick={toggleSidebar}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        {/* Header */}
-        <AdminHeader
-          user={user}
-          title={locale === 'ar' ? 'إدارة الطلبات' : 'Orders Management'}
-          onMenuClick={() => setSidebarOpen(true)}
-        />
-
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+      <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
@@ -467,7 +485,6 @@ export default function AdminOrdersPage() {
             </div>
           </div>
         </main>
-      </div>
-    </div>
+    </>
   )
 }

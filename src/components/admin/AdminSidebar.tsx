@@ -76,15 +76,6 @@ export function AdminSidebar({
     return hasResource(resource)
   }
 
-  // Log للتشخيص
-  console.log('[AdminSidebar] Permissions state:', {
-    loading,
-    isSuperAdmin,
-    legacyRole,
-    rolesCount: roles.length,
-    primaryRole: primaryRole?.role?.code
-  })
-
   // Main navigation items
   const mainNavItems: NavItem[] = [
     {
@@ -222,13 +213,6 @@ export function AdminSidebar({
   const filteredTeamNavItems = isSuperAdmin ? teamNavItems : teamNavItems.filter(item => canAccess(item.resource))
   const filteredSystemNavItems = isSuperAdmin ? systemNavItems : systemNavItems.filter(item => canAccess(item.resource))
 
-  // Log للتشخيص
-  console.log('[AdminSidebar] Filtered items:', {
-    main: filteredMainNavItems.length,
-    team: filteredTeamNavItems.length,
-    system: filteredSystemNavItems.length
-  })
-
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname === item.path || pathname.startsWith(item.path + '/')
     return (
@@ -265,13 +249,16 @@ export function AdminSidebar({
       )}
 
       {/* Sidebar */}
-      <aside className={`
-        fixed lg:static inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-50
-        w-64 bg-white border-${isRTL ? 'l' : 'r'} border-slate-200 shadow-sm
-        transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0
-        flex flex-col overflow-hidden
-      `}>
+      <aside
+        className={`
+          fixed lg:static inset-y-0 z-50
+          w-64 bg-white shadow-sm
+          transform transition-transform duration-300 ease-in-out
+          flex flex-col overflow-hidden
+          ${isRTL ? 'right-0 border-l border-slate-200' : 'left-0 border-r border-slate-200'}
+          ${isOpen ? 'translate-x-0' : isRTL ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+      >
         {/* Logo */}
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center justify-between">

@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar } from '@/components/admin'
+import { AdminHeader, useAdminSidebar } from '@/components/admin'
 import { ConstraintsEditor } from '@/components/admin/ConstraintsEditor'
 import type {
   Role,
@@ -115,11 +115,11 @@ export default function SupervisorPermissionsPage({ params }: PageProps) {
   const router = useRouter()
   const isRTL = locale === 'ar'
 
+  const { toggle: toggleSidebar } = useAdminSidebar()
   const [user, setUser] = useState<User | null>(null)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Supervisor data
   const [supervisor, setSupervisor] = useState<SupervisorData | null>(null)
@@ -377,27 +377,39 @@ export default function SupervisorPermissionsPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
-      </div>
+      <>
+        <div className="h-16 bg-white border-b border-slate-200 animate-pulse" />
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+        </div>
+      </>
     )
   }
 
   if (!user || !isSuperAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2 text-slate-900">
-            {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
-          </h1>
-          <Link href={`/${locale}/admin`}>
-            <Button className="bg-red-600 hover:bg-red-700">
-              {locale === 'ar' ? 'العودة' : 'Go Back'}
-            </Button>
-          </Link>
+      <>
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <h1 className="text-lg font-semibold text-slate-900">
+              {locale === 'ar' ? 'إدارة صلاحيات المشرف' : 'Manage Supervisor Permissions'}
+            </h1>
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center bg-slate-50">
+          <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
+            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-2 text-slate-900">
+              {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
+            </h1>
+            <Link href={`/${locale}/admin`}>
+              <Button className="bg-red-600 hover:bg-red-700">
+                {locale === 'ar' ? 'العودة' : 'Go Back'}
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -420,17 +432,14 @@ export default function SupervisorPermissionsPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <>
+      <AdminHeader
+        user={user}
+        title={locale === 'ar' ? 'إدارة صلاحيات المشرف' : 'Manage Supervisor Permissions'}
+        onMenuClick={toggleSidebar}
+      />
 
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <AdminHeader
-          user={user}
-          title={locale === 'ar' ? 'إدارة صلاحيات المشرف' : 'Manage Supervisor Permissions'}
-          onMenuClick={() => setSidebarOpen(true)}
-        />
-
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+      <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Back Button */}
           <Link
             href={`/${locale}/admin/supervisors`}
@@ -757,7 +766,6 @@ export default function SupervisorPermissionsPage({ params }: PageProps) {
             </div>
           </div>
         </main>
-      </div>
 
       {/* Add Role Modal */}
       {showAddRoleModal && (
@@ -947,6 +955,6 @@ export default function SupervisorPermissionsPage({ params }: PageProps) {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
