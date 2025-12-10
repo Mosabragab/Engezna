@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
 import { useFavorites } from '@/hooks/customer'
 import { Button } from '@/components/ui/button'
-import { ProductCard, RatingStars, StatusBadge, EmptyState } from '@/components/customer/shared'
+import { ProductCard, RatingStars, StatusBadge, EmptyState, VariantSelectionModal } from '@/components/customer/shared'
 import { VoiceOrderFAB } from '@/components/customer/voice'
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout'
 import {
@@ -43,6 +43,18 @@ type Provider = {
   commission_rate: number
 }
 
+type ProductVariant = {
+  id: string
+  variant_type: 'size' | 'weight' | 'option'
+  name_ar: string
+  name_en: string | null
+  price: number
+  original_price: number | null
+  is_default: boolean
+  display_order: number
+  is_available: boolean
+}
+
 type MenuItem = {
   id: string
   provider_id: string
@@ -58,6 +70,9 @@ type MenuItem = {
   is_spicy: boolean
   preparation_time_min: number
   category_id?: string | null
+  has_variants?: boolean
+  pricing_type?: string
+  variants?: ProductVariant[]
 }
 
 type MenuCategory = {
@@ -96,6 +111,7 @@ export default function ProviderDetailPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [showAllReviews, setShowAllReviews] = useState(false)
+  const [selectedProductForVariant, setSelectedProductForVariant] = useState<MenuItem | null>(null)
   const categoriesRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -119,28 +135,47 @@ export default function ProviderDetailPage() {
       setProvider(providerData)
     }
 
-    // Fetch menu categories
+    // Fetch menu categories from provider_categories table
     const { data: categoriesData } = await supabase
-      .from('menu_categories')
+      .from('provider_categories')
       .select('*')
       .eq('provider_id', providerId)
+      .eq('is_active', true)
       .order('display_order')
 
     if (categoriesData && categoriesData.length > 0) {
       setCategories(categoriesData)
     }
 
-    // Fetch menu items
+    // Fetch menu items with variants
     const { data: menuData, error: menuError } = await supabase
       .from('menu_items')
-      .select('*')
+      .select(`
+        *,
+        product_variants (
+          id,
+          variant_type,
+          name_ar,
+          name_en,
+          price,
+          original_price,
+          is_default,
+          display_order,
+          is_available
+        )
+      `)
       .eq('provider_id', providerId)
       .order('display_order')
 
     if (menuError) {
       console.error('Error fetching menu items:', menuError)
     } else {
-      setMenuItems(menuData || [])
+      // Map product_variants to variants for each menu item
+      const itemsWithVariants = (menuData || []).map(item => ({
+        ...item,
+        variants: item.product_variants?.filter((v: ProductVariant) => v.is_available) || []
+      }))
+      setMenuItems(itemsWithVariants)
     }
 
     // Fetch reviews for this provider
@@ -190,6 +225,34 @@ export default function ProviderDetailPage() {
         category: provider.category,
       })
     }
+  }
+
+  const handleAddVariantToCart = (product: MenuItem, variant: ProductVariant, quantity: number) => {
+    if (provider) {
+      // Add item with selected variant price
+      for (let i = 0; i < quantity; i++) {
+        addItem({
+          ...product,
+          price: variant.price,
+          // Store variant info in the item name for display
+          name_ar: `${product.name_ar} (${variant.name_ar})`,
+          name_en: `${product.name_en} (${variant.name_en || variant.name_ar})`,
+        }, {
+          id: provider.id,
+          name_ar: provider.name_ar,
+          name_en: provider.name_en,
+          delivery_fee: provider.delivery_fee,
+          min_order_amount: provider.min_order_amount,
+          estimated_delivery_time_min: provider.estimated_delivery_time_min,
+          commission_rate: provider.commission_rate,
+          category: provider.category,
+        })
+      }
+    }
+  }
+
+  const handleSelectVariant = (item: MenuItem) => {
+    setSelectedProductForVariant(item)
   }
 
   const cartTotal = getTotal()
@@ -535,6 +598,7 @@ export default function ProviderDetailPage() {
                   product={item}
                   quantity={getItemQuantity(item.id)}
                   onQuantityChange={(qty) => handleQuantityChange(item, qty)}
+                  onSelectVariant={item.has_variants ? () => handleSelectVariant(item) : undefined}
                   variant="horizontal"
                 />
               ))}
@@ -564,6 +628,16 @@ export default function ProviderDetailPage() {
 
       {/* Voice Order FAB - Show only when cart is empty */}
       {cartItemCount === 0 && <VoiceOrderFAB />}
+
+      {/* Variant Selection Modal */}
+      {selectedProductForVariant && (
+        <VariantSelectionModal
+          product={selectedProductForVariant}
+          isOpen={!!selectedProductForVariant}
+          onClose={() => setSelectedProductForVariant(null)}
+          onAddToCart={handleAddVariantToCart}
+        />
+      )}
 
       {/* Bottom Navigation */}
       <BottomNavigation />

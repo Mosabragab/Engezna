@@ -205,12 +205,28 @@ export function ProductCard({
               )}
             </div>
 
+            {/* Variant Info */}
+            {hasVariants && (
+              <div className="flex items-center gap-1 mt-1">
+                <ChevronDown className="w-3 h-3 text-primary" />
+                <span className="text-xs text-primary font-medium">{getVariantLabel()}</span>
+              </div>
+            )}
+
             {/* Price & Quantity */}
             <div className="flex items-center justify-between mt-auto pt-2">
               <div className="flex items-center gap-2">
-                <span className="text-primary font-bold">{product.price} {currency}</span>
-                {hasDiscount && (
-                  <span className="text-slate-400 line-through text-sm">{product.original_price} {currency}</span>
+                {priceDisplay.hasRange ? (
+                  <span className="text-primary font-bold">
+                    {priceDisplay.minPrice} - {priceDisplay.maxPrice} {currency}
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-primary font-bold">{priceDisplay.price || product.price} {currency}</span>
+                    {hasDiscount && (
+                      <span className="text-slate-400 line-through text-sm">{product.original_price} {currency}</span>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -299,11 +315,27 @@ export function ProductCard({
           </div>
         )}
 
+        {/* Variant Info */}
+        {hasVariants && (
+          <div className="flex items-center gap-1 mt-2">
+            <ChevronDown className="w-3 h-3 text-primary" />
+            <span className="text-xs text-primary font-medium">{getVariantLabel()}</span>
+          </div>
+        )}
+
         {/* Price */}
         <div className="flex items-center gap-2 mt-3">
-          <span className="text-primary font-bold text-lg">{product.price} {currency}</span>
-          {hasDiscount && (
-            <span className="text-slate-400 line-through text-sm">{product.original_price} {currency}</span>
+          {priceDisplay.hasRange ? (
+            <span className="text-primary font-bold text-lg">
+              {priceDisplay.minPrice} - {priceDisplay.maxPrice} {currency}
+            </span>
+          ) : (
+            <>
+              <span className="text-primary font-bold text-lg">{priceDisplay.price || product.price} {currency}</span>
+              {hasDiscount && (
+                <span className="text-slate-400 line-through text-sm">{product.original_price} {currency}</span>
+              )}
+            </>
           )}
         </div>
 

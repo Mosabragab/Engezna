@@ -151,7 +151,7 @@ export default function EditProductPage() {
     const supabase = createClient()
 
     const { data, error } = await supabase
-      .from('product_categories')
+      .from('provider_categories')
       .select('*')
       .eq('provider_id', provId)
       .order('name_ar', { ascending: true })
@@ -169,7 +169,7 @@ export default function EditProductPage() {
     const supabase = createClient()
 
     const { data, error } = await supabase
-      .from('product_categories')
+      .from('provider_categories')
       .insert({
         provider_id: providerId,
         name_ar: newCategoryAr.trim(),
@@ -341,10 +341,10 @@ export default function EditProductPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
           </p>
         </div>
@@ -353,14 +353,14 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
               href={`/${locale}/provider/products`}
-              className="flex items-center gap-2 text-slate-400 hover:text-white"
+              className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
             >
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{locale === 'ar' ? 'المنتجات' : 'Products'}</span>
@@ -383,14 +383,14 @@ export default function EditProductPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Card className="bg-slate-800 border-slate-700 max-w-md w-full">
+          <Card className="bg-white border-slate-200 max-w-md w-full">
             <CardContent className="pt-6">
               <div className="text-center">
-                <Trash2 className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-2">
+                <Trash2 className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2 text-slate-900">
                   {locale === 'ar' ? 'حذف المنتج؟' : 'Delete Product?'}
                 </h3>
-                <p className="text-slate-400 mb-6">
+                <p className="text-slate-500 mb-6">
                   {locale === 'ar'
                     ? 'هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.'
                     : 'Are you sure you want to delete this product? This action cannot be undone.'}
@@ -398,7 +398,7 @@ export default function EditProductPage() {
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
-                    className="flex-1 border-slate-600"
+                    className="flex-1 border-slate-300"
                     onClick={() => setShowDeleteConfirm(false)}
                   >
                     {locale === 'ar' ? 'إلغاء' : 'Cancel'}
@@ -425,9 +425,9 @@ export default function EditProductPage() {
       <div className="container mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
           {/* Product Image */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
                 <ImagePlus className="w-5 h-5" />
                 {locale === 'ar' ? 'صورة المنتج' : 'Product Image'}
               </CardTitle>
@@ -451,7 +451,7 @@ export default function EditProductPage() {
                   </Button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-600 rounded-lg cursor-pointer hover:border-primary transition-colors">
+                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-primary transition-colors bg-slate-50">
                   <input
                     type="file"
                     accept="image/*"
@@ -460,14 +460,14 @@ export default function EditProductPage() {
                     disabled={uploading}
                   />
                   {uploading ? (
-                    <RefreshCw className="w-8 h-8 text-slate-500 animate-spin" />
+                    <RefreshCw className="w-8 h-8 text-slate-400 animate-spin" />
                   ) : (
                     <>
-                      <ImagePlus className="w-8 h-8 text-slate-500 mb-2" />
+                      <ImagePlus className="w-8 h-8 text-slate-400 mb-2" />
                       <span className="text-sm text-slate-500">
                         {locale === 'ar' ? 'اضغط لرفع صورة' : 'Click to upload image'}
                       </span>
-                      <span className="text-xs text-slate-600 mt-1">
+                      <span className="text-xs text-slate-400 mt-1">
                         {locale === 'ar' ? 'الحد الأقصى 2 ميجابايت' : 'Max 2MB'}
                       </span>
                     </>
@@ -481,9 +481,9 @@ export default function EditProductPage() {
           </Card>
 
           {/* Product Category */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
                 <FolderOpen className="w-5 h-5" />
                 {locale === 'ar' ? 'تصنيف المنتج' : 'Product Category'}
               </CardTitle>
@@ -492,14 +492,14 @@ export default function EditProductPage() {
               {!showNewCategory ? (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-slate-600 mb-2">
                       {locale === 'ar' ? 'اختر التصنيف' : 'Select Category'}
                     </label>
                     <div className="flex gap-2">
                       <select
                         value={formData.category_id}
                         onChange={(e) => setFormData(prev => ({ ...prev, category_id: e.target.value }))}
-                        className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                         disabled={loadingCategories}
                       >
                         <option value="">
@@ -517,7 +517,7 @@ export default function EditProductPage() {
                         type="button"
                         variant="outline"
                         onClick={() => setShowNewCategory(true)}
-                        className="border-slate-600 text-white hover:bg-slate-700"
+                        className="border-slate-300 text-slate-700 hover:bg-slate-100"
                       >
                         <Plus className="w-4 h-4" />
                       </Button>
@@ -532,32 +532,32 @@ export default function EditProductPage() {
                   </div>
                 </>
               ) : (
-                <div className="space-y-4 p-4 bg-slate-700/50 rounded-lg">
-                  <h4 className="text-sm font-medium text-white">
+                <div className="space-y-4 p-4 bg-slate-100 rounded-lg">
+                  <h4 className="text-sm font-medium text-slate-900">
                     {locale === 'ar' ? 'إضافة تصنيف جديد' : 'Add New Category'}
                   </h4>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-slate-600 mb-2">
                       {locale === 'ar' ? 'اسم التصنيف (عربي)' : 'Category Name (Arabic)'} *
                     </label>
                     <input
                       type="text"
                       value={newCategoryAr}
                       onChange={(e) => setNewCategoryAr(e.target.value)}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder={locale === 'ar' ? 'مثال: المشروبات' : 'e.g., المشروبات'}
                       dir="rtl"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-slate-600 mb-2">
                       {locale === 'ar' ? 'اسم التصنيف (إنجليزي)' : 'Category Name (English)'} *
                     </label>
                     <input
                       type="text"
                       value={newCategoryEn}
                       onChange={(e) => setNewCategoryEn(e.target.value)}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="e.g., Beverages"
                       dir="ltr"
                     />
@@ -571,7 +571,7 @@ export default function EditProductPage() {
                         setNewCategoryAr('')
                         setNewCategoryEn('')
                       }}
-                      className="flex-1 border-slate-600 text-white hover:bg-slate-700"
+                      className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-200"
                     >
                       {locale === 'ar' ? 'إلغاء' : 'Cancel'}
                     </Button>
@@ -592,9 +592,9 @@ export default function EditProductPage() {
           </Card>
 
           {/* Basic Info */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
                 <Package className="w-5 h-5" />
                 {locale === 'ar' ? 'معلومات المنتج' : 'Product Info'}
               </CardTitle>
@@ -602,14 +602,14 @@ export default function EditProductPage() {
             <CardContent className="space-y-4">
               {/* Arabic Name */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-600 mb-2">
                   {locale === 'ar' ? 'اسم المنتج (عربي)' : 'Product Name (Arabic)'} *
                 </label>
                 <input
                   type="text"
                   value={formData.name_ar}
                   onChange={(e) => setFormData(prev => ({ ...prev, name_ar: e.target.value }))}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   dir="rtl"
                 />
                 {errors.name_ar && (
@@ -619,14 +619,14 @@ export default function EditProductPage() {
 
               {/* English Name */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-600 mb-2">
                   {locale === 'ar' ? 'اسم المنتج (إنجليزي)' : 'Product Name (English)'} *
                 </label>
                 <input
                   type="text"
                   value={formData.name_en}
                   onChange={(e) => setFormData(prev => ({ ...prev, name_en: e.target.value }))}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   dir="ltr"
                 />
                 {errors.name_en && (
@@ -636,28 +636,28 @@ export default function EditProductPage() {
 
               {/* Arabic Description */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-600 mb-2">
                   {locale === 'ar' ? 'الوصف (عربي)' : 'Description (Arabic)'}
                 </label>
                 <textarea
                   value={formData.description_ar}
                   onChange={(e) => setFormData(prev => ({ ...prev, description_ar: e.target.value }))}
                   rows={3}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   dir="rtl"
                 />
               </div>
 
               {/* English Description */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-600 mb-2">
                   {locale === 'ar' ? 'الوصف (إنجليزي)' : 'Description (English)'}
                 </label>
                 <textarea
                   value={formData.description_en}
                   onChange={(e) => setFormData(prev => ({ ...prev, description_en: e.target.value }))}
                   rows={3}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   dir="ltr"
                 />
               </div>
@@ -665,9 +665,9 @@ export default function EditProductPage() {
           </Card>
 
           {/* Pricing */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
                 {locale === 'ar' ? 'التسعير' : 'Pricing'}
               </CardTitle>
@@ -675,7 +675,7 @@ export default function EditProductPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
                     {locale === 'ar' ? 'السعر (ج.م)' : 'Price (EGP)'} *
                   </label>
                   <input
@@ -684,7 +684,7 @@ export default function EditProductPage() {
                     min="0"
                     value={formData.price}
                     onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.price && (
                     <p className="text-red-400 text-sm mt-1">{errors.price}</p>
@@ -692,7 +692,7 @@ export default function EditProductPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
                     {locale === 'ar' ? 'السعر الأصلي' : 'Original Price'}
                   </label>
                   <input
@@ -701,7 +701,7 @@ export default function EditProductPage() {
                     min="0"
                     value={formData.original_price}
                     onChange={(e) => setFormData(prev => ({ ...prev, original_price: e.target.value }))}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.original_price && (
                     <p className="text-red-400 text-sm mt-1">{errors.original_price}</p>
@@ -712,9 +712,9 @@ export default function EditProductPage() {
           </Card>
 
           {/* Additional Info */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-white border-slate-200">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-slate-900 flex items-center gap-2">
                 <FileText className="w-5 h-5" />
                 {locale === 'ar' ? 'معلومات إضافية' : 'Additional Info'}
               </CardTitle>
@@ -722,7 +722,7 @@ export default function EditProductPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
                     <Clock className="w-4 h-4 inline mr-1" />
                     {locale === 'ar' ? 'وقت التحضير (دقيقة)' : 'Prep Time (min)'}
                   </label>
@@ -731,12 +731,12 @@ export default function EditProductPage() {
                     min="1"
                     value={formData.preparation_time_min}
                     onChange={(e) => setFormData(prev => ({ ...prev, preparation_time_min: e.target.value }))}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
                     {locale === 'ar' ? 'السعرات الحرارية' : 'Calories'}
                   </label>
                   <input
@@ -744,17 +744,17 @@ export default function EditProductPage() {
                     min="0"
                     value={formData.calories}
                     onChange={(e) => setFormData(prev => ({ ...prev, calories: e.target.value }))}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
 
               {/* Toggles */}
-              <div className="space-y-3 pt-4 border-t border-slate-700">
+              <div className="space-y-3 pt-4 border-t border-slate-200">
                 <label className="flex items-center justify-between cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <Leaf className="w-5 h-5 text-green-400" />
-                    <span className="text-slate-300">
+                    <Leaf className="w-5 h-5 text-green-500" />
+                    <span className="text-slate-700">
                       {locale === 'ar' ? 'نباتي' : 'Vegetarian'}
                     </span>
                   </div>
@@ -763,7 +763,7 @@ export default function EditProductPage() {
                     onClick={() => setFormData(prev => ({ ...prev, is_vegetarian: !prev.is_vegetarian }))}
                     dir="ltr"
                     className={`w-12 h-6 rounded-full transition-colors relative ${
-                      formData.is_vegetarian ? 'bg-green-500' : 'bg-slate-600'
+                      formData.is_vegetarian ? 'bg-green-500' : 'bg-slate-300'
                     }`}
                   >
                     <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
@@ -774,8 +774,8 @@ export default function EditProductPage() {
 
                 <label className="flex items-center justify-between cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <Flame className="w-5 h-5 text-red-400" />
-                    <span className="text-slate-300">
+                    <Flame className="w-5 h-5 text-red-500" />
+                    <span className="text-slate-700">
                       {locale === 'ar' ? 'حار' : 'Spicy'}
                     </span>
                   </div>
@@ -784,7 +784,7 @@ export default function EditProductPage() {
                     onClick={() => setFormData(prev => ({ ...prev, is_spicy: !prev.is_spicy }))}
                     dir="ltr"
                     className={`w-12 h-6 rounded-full transition-colors relative ${
-                      formData.is_spicy ? 'bg-red-500' : 'bg-slate-600'
+                      formData.is_spicy ? 'bg-red-500' : 'bg-slate-300'
                     }`}
                   >
                     <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
@@ -796,7 +796,7 @@ export default function EditProductPage() {
                 <label className="flex items-center justify-between cursor-pointer">
                   <div className="flex items-center gap-2">
                     <Package className="w-5 h-5 text-primary" />
-                    <span className="text-slate-300">
+                    <span className="text-slate-700">
                       {locale === 'ar' ? 'متاح للطلب' : 'Available for order'}
                     </span>
                   </div>
@@ -805,7 +805,7 @@ export default function EditProductPage() {
                     onClick={() => setFormData(prev => ({ ...prev, is_available: !prev.is_available }))}
                     dir="ltr"
                     className={`w-12 h-6 rounded-full transition-colors relative ${
-                      formData.is_available ? 'bg-primary' : 'bg-slate-600'
+                      formData.is_available ? 'bg-primary' : 'bg-slate-300'
                     }`}
                   >
                     <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
