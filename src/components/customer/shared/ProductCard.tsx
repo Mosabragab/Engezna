@@ -96,7 +96,8 @@ export function ProductCard({
 
   const priceDisplay = getPriceDisplay()
 
-  const handleIncrease = () => {
+  const handleIncrease = (e: React.MouseEvent) => {
+    e.stopPropagation()
     // If product has variants, open variant selection
     if (hasVariants && onSelectVariant) {
       onSelectVariant()
@@ -107,7 +108,8 @@ export function ProductCard({
     }
   }
 
-  const handleDecrease = () => {
+  const handleDecrease = (e: React.MouseEvent) => {
+    e.stopPropagation()
     if (onQuantityChange && quantity > 0) {
       onQuantityChange(quantity - 1)
     }
