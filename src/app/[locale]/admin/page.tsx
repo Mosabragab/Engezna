@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, AdminSidebar, AdminLayout } from '@/components/admin'
+import { AdminHeader, useAdminSidebar } from '@/components/admin'
 import { formatNumber, formatCurrency, formatTimeAgo } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -63,10 +63,10 @@ interface PendingProvider {
 export default function AdminDashboard() {
   const locale = useLocale()
   const isRTL = locale === 'ar'
+  const { toggle: toggleSidebar } = useAdminSidebar()
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [stats, setStats] = useState<DashboardStats>({
     ordersToday: 0,
     ordersWeek: 0,
@@ -207,59 +207,69 @@ export default function AdminDashboard() {
     return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
   }
 
+  // Loading and unauthorized states render inside the layout (sidebar stays visible)
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
-      </div>
+      <>
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <div className="w-32 h-5 bg-slate-200 rounded animate-pulse" />
+          </div>
+        </header>
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
+          </div>
+        </main>
+      </>
     )
   }
 
   if (!user || !isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2 text-slate-900">
-            {locale === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
-          </h1>
-          <p className="text-slate-600 mb-6">
-            {locale === 'ar' ? 'يجب تسجيل الدخول كمسؤول للوصول' : 'Admin access required'}
-          </p>
-          <Link href={`/${locale}/auth/login`}>
-            <Button size="lg" className="bg-red-600 hover:bg-red-700">
-              {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <>
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <h2 className="text-lg font-semibold text-slate-800">
+              {locale === 'ar' ? 'لوحة القيادة' : 'Dashboard'}
+            </h2>
+          </div>
+        </header>
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
+              <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold mb-2 text-slate-900">
+                {locale === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
+              </h1>
+              <p className="text-slate-600 mb-6">
+                {locale === 'ar' ? 'يجب تسجيل الدخول كمسؤول للوصول' : 'Admin access required'}
+              </p>
+              <Link href={`/${locale}/auth/login`}>
+                <Button size="lg" className="bg-red-600 hover:bg-red-700">
+                  {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </main>
+      </>
     )
   }
 
   return (
-    <AdminLayout>
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-        {/* Sidebar */}
-        <AdminSidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          pendingProviders={stats.pendingProviders}
-          openTickets={stats.openTickets}
-        />
+    <>
+      {/* Header */}
+      <AdminHeader
+        user={user}
+        title={locale === 'ar' ? 'لوحة القيادة' : 'Dashboard'}
+        subtitle={locale === 'ar' ? 'نظرة عامة على المنصة' : 'Platform Overview'}
+        onMenuClick={toggleSidebar}
+        notificationCount={stats.pendingProviders + stats.openTickets}
+      />
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-          {/* Header */}
-          <AdminHeader
-          user={user}
-          title={locale === 'ar' ? 'لوحة القيادة' : 'Dashboard'}
-          subtitle={locale === 'ar' ? 'نظرة عامة على المنصة' : 'Platform Overview'}
-          onMenuClick={() => setSidebarOpen(true)}
-          notificationCount={stats.pendingProviders + stats.openTickets}
-        />
-
-        {/* Dashboard Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+      {/* Dashboard Content */}
+      <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Welcome */}
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-slate-900">
@@ -484,8 +494,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         </main>
-        </div>
-      </div>
-    </AdminLayout>
+    </>
   )
 }
