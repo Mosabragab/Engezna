@@ -64,6 +64,7 @@ export default function AdminFinancePage() {
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(true)
   const [settlements, setSettlements] = useState<SettlementRecord[]>([])
   const [filteredSettlements, setFilteredSettlements] = useState<SettlementRecord[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -107,7 +108,9 @@ export default function AdminFinancePage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
-        await loadFinanceData(supabase)
+        setLoading(false) // Show page immediately
+        loadFinanceData(supabase) // Load in background
+        return
       }
     }
 
@@ -115,6 +118,8 @@ export default function AdminFinancePage() {
   }
 
   async function loadFinanceData(supabase: ReturnType<typeof createClient>) {
+    setDataLoading(true)
+
     const getDateRange = (period: FilterPeriod) => {
       const start = new Date()
       switch (period) {
@@ -243,6 +248,8 @@ export default function AdminFinancePage() {
       commissionChange,
       ordersCount: orders.length,
     })
+
+    setDataLoading(false)
   }
 
   function filterSettlements() {
@@ -280,10 +287,8 @@ export default function AdminFinancePage() {
   }
 
   async function handleRefresh() {
-    setLoading(true)
     const supabase = createClient()
     await loadFinanceData(supabase)
-    setLoading(false)
   }
 
   const getSettlementStatusColor = (status: string) => {

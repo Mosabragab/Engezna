@@ -51,6 +51,7 @@ export default function AdminOrdersPage() {
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(true)
 
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
@@ -89,7 +90,9 @@ export default function AdminOrdersPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
-        await loadOrders()
+        setLoading(false) // Show page immediately
+        loadOrders()      // Load data in background
+        return
       }
     }
 
@@ -97,6 +100,7 @@ export default function AdminOrdersPage() {
   }
 
   async function loadOrders() {
+    setDataLoading(true)
     try {
       console.log('[Admin Orders] Fetching orders...')
       const response = await fetch('/api/admin/orders', {
@@ -134,6 +138,8 @@ export default function AdminOrdersPage() {
       }
     } catch (error) {
       console.error('[Admin Orders] Fetch Error:', error)
+    } finally {
+      setDataLoading(false)
     }
   }
 

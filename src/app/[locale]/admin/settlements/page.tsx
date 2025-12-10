@@ -85,6 +85,7 @@ export default function AdminSettlementsPage() {
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(true)
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [filteredSettlements, setFilteredSettlements] = useState<Settlement[]>([])
   const [providers, setProviders] = useState<Provider[]>([])
@@ -147,7 +148,9 @@ export default function AdminSettlementsPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
-        await loadData(supabase)
+        setLoading(false)
+        loadData(supabase)
+        return
       }
     }
 
@@ -155,6 +158,7 @@ export default function AdminSettlementsPage() {
   }
 
   async function loadData(supabase: ReturnType<typeof createClient>) {
+    setDataLoading(true)
     // Load settlements
     const { data: settlementsData } = await supabase
       .from('settlements')
@@ -202,6 +206,7 @@ export default function AdminSettlementsPage() {
       overdueCount: overdue.length,
       paidCount: paid.length,
     })
+    setDataLoading(false)
   }
 
   function filterSettlements() {

@@ -56,6 +56,7 @@ export default function AdminCustomersPage() {
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(true)
 
   const [customers, setCustomers] = useState<Customer[]>([])
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([])
@@ -94,7 +95,9 @@ export default function AdminCustomersPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
-        await loadCustomers(supabase)
+        setLoading(false) // Show page immediately
+        loadCustomers(supabase) // Load in background
+        return
       }
     }
 
@@ -102,6 +105,7 @@ export default function AdminCustomersPage() {
   }
 
   async function loadCustomers(supabase: ReturnType<typeof createClient>) {
+    setDataLoading(true)
     const { data: customersData, error } = await supabase
       .from('profiles')
       .select('*')
@@ -110,6 +114,7 @@ export default function AdminCustomersPage() {
 
     if (error) {
       console.error('Error loading customers:', error)
+      setDataLoading(false)
       return
     }
 
@@ -151,6 +156,7 @@ export default function AdminCustomersPage() {
     )
 
     setCustomers(customersWithOrders)
+    setDataLoading(false)
   }
 
   function filterCustomers() {

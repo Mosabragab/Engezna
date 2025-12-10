@@ -55,6 +55,7 @@ export default function AdminAnalyticsPage() {
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(true)
   const { geoFilter, setGeoFilter } = useGeoFilter()
 
   const [periodFilter, setPeriodFilter] = useState<FilterPeriod>('month')
@@ -98,7 +99,9 @@ export default function AdminAnalyticsPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
-        await loadAnalytics(supabase)
+        setLoading(false) // Show page immediately
+        loadAnalytics(supabase) // Load data in background (don't await)
+        return
       }
     }
 
@@ -106,6 +109,7 @@ export default function AdminAnalyticsPage() {
   }
 
   async function loadAnalytics(supabase: ReturnType<typeof createClient>) {
+    setDataLoading(true)
     const getDateRange = (period: FilterPeriod) => {
       const start = new Date()
       switch (period) {
@@ -385,6 +389,7 @@ export default function AdminAnalyticsPage() {
       .sort((a, b) => b.revenue - a.revenue)
 
     setCategoryStats(categories)
+    setDataLoading(false)
   }
 
   const getPeriodLabel = (period: FilterPeriod) => {
@@ -414,9 +419,13 @@ export default function AdminAnalyticsPage() {
   if (loading) {
     return (
       <>
-        <div className="h-16 bg-white border-b border-slate-200 animate-pulse" />
-        <main className="flex-1 p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm">
+          <div className="flex items-center justify-center h-10">
+            <div className="w-40 h-5 bg-slate-200 rounded animate-pulse" />
+          </div>
+        </header>
+        <main className="flex-1 p-6 flex items-center justify-center bg-slate-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#009DE0] border-t-transparent"></div>
         </main>
       </>
     )
