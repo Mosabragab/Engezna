@@ -71,7 +71,7 @@ type MenuItem = {
   preparation_time_min: number
   category_id?: string | null
   has_variants?: boolean
-  pricing_type?: string
+  pricing_type?: 'fixed' | 'per_unit' | 'variants'
   variants?: ProductVariant[]
 }
 
