@@ -128,6 +128,22 @@ export async function POST(request: NextRequest) {
     const savedProductIds: string[] = []
     const errors: string[] = []
 
+    // Debug: Log what we're about to process
+    console.log('=== MENU IMPORT SAVE DEBUG ===')
+    console.log('Total categories received:', categories.length)
+    const totalProductsToSave = categories.reduce((sum, cat) => sum + (cat.products?.length || 0), 0)
+    console.log('Total products to save:', totalProductsToSave)
+
+    // Log first category for debugging
+    if (categories.length > 0) {
+      const firstCat = categories[0]
+      console.log('First category:', firstCat.name_ar)
+      console.log('First category products count:', firstCat.products?.length || 0)
+      if (firstCat.products && firstCat.products.length > 0) {
+        console.log('First product sample:', JSON.stringify(firstCat.products[0], null, 2))
+      }
+    }
+
     for (let catIndex = 0; catIndex < categories.length; catIndex++) {
       const category = categories[catIndex]
       const normalizedCatName = category.name_ar.trim().toLowerCase()

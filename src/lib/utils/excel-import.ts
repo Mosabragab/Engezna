@@ -33,11 +33,12 @@ import {
 // ═══════════════════════════════════════════════════════════════
 
 export const COLUMN_PATTERNS: Record<string, string[]> = {
-  // Category
-  category: ['القسم', 'الفئة', 'الصنف', 'التصنيف', 'category', 'section', 'type', 'نوع'],
+  // Category - IMPORTANT: 'الصنف' was removed because it conflicts with product detection
+  // In Arabic Excel files: 'التصنيف' = category, 'الصنف' = product item name
+  category: ['القسم', 'الفئة', 'التصنيف', 'category', 'section', 'type', 'نوع', 'الاقسام', 'قسم'],
 
-  // Product name
-  product: ['المنتج', 'الاسم', 'الصنف', 'البند', 'product', 'name', 'item', 'اسم المنتج', 'المنتجات', 'الأصناف'],
+  // Product name - 'الصنف' here means the item/product name
+  product: ['المنتج', 'الاسم', 'الصنف', 'البند', 'product', 'name', 'item', 'اسم المنتج', 'المنتجات', 'الأصناف', 'منتج', 'صنف'],
 
   // Single price
   price: ['السعر', 'price', 'سعر', 'الثمن', 'cost', 'التكلفة'],
@@ -392,6 +393,11 @@ export function detectColumns(
   let confidence = 0
   let matchedCount = 0
 
+  // Debug: Log input
+  console.log('=== DETECT COLUMNS DEBUG ===')
+  console.log('Sheet name:', sheetName)
+  console.log('Headers:', JSON.stringify(headers))
+
   // Get hints from sheet name
   const sheetHints = sheetName ? detectFromSheetName(sheetName) : {
     pricingType: 'fixed' as PricingType,
@@ -611,6 +617,14 @@ export function detectColumns(
     suggestions.push('لم يتم العثور على عمود اسم المنتج')
   }
 
+  // Debug: Log detection result
+  console.log('=== DETECT COLUMNS RESULT ===')
+  console.log('Product column:', mapping.product, '→', headers[mapping.product] || 'NOT FOUND')
+  console.log('Category column:', mapping.category, '→', mapping.category !== undefined ? headers[mapping.category] || 'NOT FOUND' : 'undefined')
+  console.log('Price column:', mapping.price, '→', mapping.price !== undefined ? headers[mapping.price] || 'NOT FOUND' : 'undefined')
+  console.log('Pricing type:', pricingType)
+  console.log('Confidence:', confidence)
+
   return {
     mapping,
     confidence,
@@ -641,6 +655,18 @@ export function transformExcelData(
   const categoriesMap = new Map<string, ExtractedCategory>()
   const warnings: string[] = []
   let totalProducts = 0
+
+  // Debug: Log column mapping
+  console.log('=== TRANSFORM EXCEL DATA DEBUG ===')
+  console.log('Column mapping:', JSON.stringify(mapping, null, 2))
+  console.log('Product column index:', mapping.product)
+  console.log('Category column index:', mapping.category)
+  console.log('Price column index:', mapping.price)
+  console.log('Pricing type:', pricingType)
+  console.log('Total rows to process:', rows.length)
+  if (rows.length > 0) {
+    console.log('First row sample:', JSON.stringify(rows[0]))
+  }
 
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
     const row = rows[rowIndex]
