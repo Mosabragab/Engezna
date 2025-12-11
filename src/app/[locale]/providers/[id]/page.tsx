@@ -116,7 +116,7 @@ export default function ProviderDetailPage() {
   const router = useRouter()
   const t = useTranslations()
 
-  const { addItem, removeItem, getItemQuantity, getTotal, getItemCount } = useCart()
+  const { addItem, removeItem, getItemQuantity, getTotal, getItemCount, confirmProviderSwitch, cancelProviderSwitch, pendingItem } = useCart()
   const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites()
 
   const [provider, setProvider] = useState<Provider | null>(null)
@@ -129,6 +129,7 @@ export default function ProviderDetailPage() {
   const [showAllReviews, setShowAllReviews] = useState(false)
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<MenuItem | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [providerSwitchInfo, setProviderSwitchInfo] = useState<{show: boolean; currentProvider: string; newProvider: string} | null>(null)
   const categoriesRef = useRef<HTMLDivElement>(null)
 
   // Smart Arabic text normalization for search
@@ -319,7 +320,7 @@ export default function ProviderDetailPage() {
 
   const handleAddToCart = (menuItem: MenuItem) => {
     if (provider) {
-      addItem(menuItem, {
+      const result = addItem(menuItem, {
         id: provider.id,
         name_ar: provider.name_ar,
         name_en: provider.name_en,
@@ -329,47 +330,73 @@ export default function ProviderDetailPage() {
         commission_rate: provider.commission_rate,
         category: provider.category,
       })
+
+      // Show confirmation dialog if switching providers
+      if (result.requiresConfirmation) {
+        setProviderSwitchInfo({
+          show: true,
+          currentProvider: result.currentProviderName || '',
+          newProvider: result.newProviderName || '',
+        })
+      }
     }
   }
 
   const handleAddFromDetail = (product: MenuItem, variant?: ProductVariant, quantity: number = 1) => {
     if (provider) {
+      const providerData = {
+        id: provider.id,
+        name_ar: provider.name_ar,
+        name_en: provider.name_en,
+        delivery_fee: provider.delivery_fee,
+        min_order_amount: provider.min_order_amount,
+        estimated_delivery_time_min: provider.estimated_delivery_time_min,
+        commission_rate: provider.commission_rate,
+        category: provider.category,
+      }
+
+      let result
       if (variant) {
         // Add item with selected variant price
         for (let i = 0; i < quantity; i++) {
-          addItem({
+          result = addItem({
             ...product,
             price: variant.price,
             // Store variant info in the item name for display
             name_ar: `${product.name_ar} (${variant.name_ar})`,
             name_en: `${product.name_en} (${variant.name_en || variant.name_ar})`,
-          }, {
-            id: provider.id,
-            name_ar: provider.name_ar,
-            name_en: provider.name_en,
-            delivery_fee: provider.delivery_fee,
-            min_order_amount: provider.min_order_amount,
-            estimated_delivery_time_min: provider.estimated_delivery_time_min,
-            commission_rate: provider.commission_rate,
-            category: provider.category,
-          })
+          }, providerData)
+          // Only show dialog on first item if there's a provider switch
+          if (result.requiresConfirmation) break
         }
       } else {
         // Add item without variant
         for (let i = 0; i < quantity; i++) {
-          addItem(product, {
-            id: provider.id,
-            name_ar: provider.name_ar,
-            name_en: provider.name_en,
-            delivery_fee: provider.delivery_fee,
-            min_order_amount: provider.min_order_amount,
-            estimated_delivery_time_min: provider.estimated_delivery_time_min,
-            commission_rate: provider.commission_rate,
-            category: provider.category,
-          })
+          result = addItem(product, providerData)
+          // Only show dialog on first item if there's a provider switch
+          if (result.requiresConfirmation) break
         }
       }
+
+      // Show confirmation dialog if switching providers
+      if (result?.requiresConfirmation) {
+        setProviderSwitchInfo({
+          show: true,
+          currentProvider: result.currentProviderName || '',
+          newProvider: result.newProviderName || '',
+        })
+      }
     }
+  }
+
+  const handleConfirmProviderSwitch = () => {
+    confirmProviderSwitch()
+    setProviderSwitchInfo(null)
+  }
+
+  const handleCancelProviderSwitch = () => {
+    cancelProviderSwitch()
+    setProviderSwitchInfo(null)
   }
 
   const handleProductClick = (item: MenuItem) => {
@@ -786,6 +813,58 @@ export default function ProviderDetailPage() {
           onAddToCart={handleAddFromDetail}
           currentQuantity={getItemQuantity(selectedProductForDetail.id)}
         />
+      )}
+
+      {/* Provider Switch Confirmation Modal */}
+      {providerSwitchInfo?.show && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-amber-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">
+                {locale === 'ar' ? 'تغيير المطعم؟' : 'Switch Restaurant?'}
+              </h3>
+              <p className="text-slate-600 text-sm">
+                {locale === 'ar'
+                  ? `سلتك تحتوي على منتجات من "${providerSwitchInfo.currentProvider}". هل تريد مسح السلة والطلب من "${providerSwitchInfo.newProvider}"؟`
+                  : `Your cart contains items from "${providerSwitchInfo.currentProvider}". Do you want to clear your cart and order from "${providerSwitchInfo.newProvider}"?`}
+              </p>
+              <p className="text-amber-600 text-xs mt-2">
+                {locale === 'ar'
+                  ? 'ملاحظة: لا يمكن الطلب من أكثر من مطعم في نفس الطلب'
+                  : 'Note: You cannot order from multiple restaurants in the same order'}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelProviderSwitch}
+                className="flex-1 py-3 px-4 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
+              >
+                {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button
+                onClick={handleConfirmProviderSwitch}
+                className="flex-1 py-3 px-4 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors"
+              >
+                {locale === 'ar' ? 'نعم، غيّر' : 'Yes, Switch'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Bottom Navigation */}

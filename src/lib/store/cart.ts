@@ -57,12 +57,27 @@ const getCartItemKey = (menuItemId: string, variantId?: string) => {
   return variantId ? `${menuItemId}-${variantId}` : menuItemId
 }
 
+// Result type for addItem operation
+export type AddItemResult = {
+  success: boolean
+  requiresConfirmation: boolean
+  currentProviderName?: string
+  newProviderName?: string
+}
+
 type CartState = {
   cart: CartItem[]
   provider: Provider | null
   _hasHydrated: boolean
+  // Pending item to add after confirmation
+  pendingItem: { menuItem: MenuItem; provider: Provider; variant?: ProductVariant } | null
   setHasHydrated: (state: boolean) => void
-  addItem: (menuItem: MenuItem, provider: Provider, variant?: ProductVariant) => void
+  // Returns result indicating if confirmation is needed
+  addItem: (menuItem: MenuItem, provider: Provider, variant?: ProductVariant) => AddItemResult
+  // Force add item (after user confirms provider switch)
+  confirmProviderSwitch: () => void
+  // Cancel pending item
+  cancelProviderSwitch: () => void
   removeItem: (menuItemId: string, variantId?: string) => void
   updateQuantity: (menuItemId: string, quantity: number, variantId?: string) => void
   clearCart: () => void
@@ -78,6 +93,7 @@ export const useCart = create<CartState>()(
       cart: [],
       provider: null,
       _hasHydrated: false,
+      pendingItem: null,
       setHasHydrated: (state: boolean) => {
         set({ _hasHydrated: state })
       },
@@ -86,15 +102,19 @@ export const useCart = create<CartState>()(
         const currentProvider = get().provider
         const itemKey = getCartItemKey(menuItem.id, variant?.id)
 
-        // If adding from a different provider, clear cart
-        if (currentProvider && currentProvider.id !== provider.id) {
-          set({
-            cart: [{ menuItem, quantity: 1, selectedVariant: variant }],
-            provider,
-          })
-          return
+        // If adding from a different provider and cart is not empty, request confirmation
+        if (currentProvider && currentProvider.id !== provider.id && get().cart.length > 0) {
+          // Store pending item and return result indicating confirmation is needed
+          set({ pendingItem: { menuItem, provider, variant } })
+          return {
+            success: false,
+            requiresConfirmation: true,
+            currentProviderName: currentProvider.name_ar || currentProvider.name_en,
+            newProviderName: provider.name_ar || provider.name_en,
+          }
         }
 
+        // Add item normally
         set((state) => {
           const existingItem = state.cart.find(
             (item) => getCartItemKey(item.menuItem.id, item.selectedVariant?.id) === itemKey
@@ -108,14 +128,34 @@ export const useCart = create<CartState>()(
                   : item
               ),
               provider,
+              pendingItem: null,
             }
           }
 
           return {
             cart: [...state.cart, { menuItem, quantity: 1, selectedVariant: variant }],
             provider,
+            pendingItem: null,
           }
         })
+
+        return { success: true, requiresConfirmation: false }
+      },
+
+      confirmProviderSwitch: () => {
+        const pending = get().pendingItem
+        if (!pending) return
+
+        // Clear cart and add the pending item
+        set({
+          cart: [{ menuItem: pending.menuItem, quantity: 1, selectedVariant: pending.variant }],
+          provider: pending.provider,
+          pendingItem: null,
+        })
+      },
+
+      cancelProviderSwitch: () => {
+        set({ pendingItem: null })
       },
 
       removeItem: (menuItemId, variantId) => {

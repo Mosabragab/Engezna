@@ -673,17 +673,30 @@ export default function CheckoutPage() {
           .eq('id', appliedPromoCode.id)
       }
 
-      // Create order items
-      const orderItems = cart.map((item) => ({
-        order_id: order.id,
-        menu_item_id: item.menuItem.id,
-        item_name_ar: item.menuItem.name_ar,
-        item_name_en: item.menuItem.name_en,
-        item_price: item.menuItem.price,
-        quantity: item.quantity,
-        unit_price: item.menuItem.price,
-        total_price: item.menuItem.price * item.quantity,
-      }))
+      // Create order items - use variant price if selected, otherwise base price
+      const orderItems = cart.map((item) => {
+        const itemPrice = item.selectedVariant?.price ?? item.menuItem.price
+        const variantName = item.selectedVariant
+          ? ` (${item.selectedVariant.name_ar})`
+          : ''
+        const variantNameEn = item.selectedVariant
+          ? ` (${item.selectedVariant.name_en || item.selectedVariant.name_ar})`
+          : ''
+
+        return {
+          order_id: order.id,
+          menu_item_id: item.menuItem.id,
+          item_name_ar: item.menuItem.name_ar + variantName,
+          item_name_en: item.menuItem.name_en + variantNameEn,
+          item_price: itemPrice,
+          quantity: item.quantity,
+          unit_price: itemPrice,
+          total_price: itemPrice * item.quantity,
+          variant_id: item.selectedVariant?.id || null,
+          variant_name_ar: item.selectedVariant?.name_ar || null,
+          variant_name_en: item.selectedVariant?.name_en || null,
+        }
+      })
 
       const { error: itemsError } = await supabase
         .from('order_items')

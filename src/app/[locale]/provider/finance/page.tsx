@@ -70,6 +70,7 @@ export default function FinancePage() {
   const isRTL = locale === 'ar'
 
   const [providerId, setProviderId] = useState<string | null>(null)
+  const [commissionRate, setCommissionRate] = useState<number>(0.06) // Default 6%, will be fetched from DB
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [stats, setStats] = useState<FinanceStats>({
@@ -96,18 +97,15 @@ export default function FinancePage() {
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
 
-  // Platform commission rate
-  const COMMISSION_RATE = 0.06 // 6%
-
   useEffect(() => {
     checkAuthAndLoadFinance()
   }, [])
 
   useEffect(() => {
-    if (providerId) {
-      loadFinanceData(providerId)
+    if (providerId && commissionRate) {
+      loadFinanceData(providerId, commissionRate)
     }
-  }, [providerId, dateFilter, customStartDate, customEndDate])
+  }, [providerId, commissionRate, dateFilter, customStartDate, customEndDate])
 
   const getDateRange = () => {
     const now = new Date()
@@ -166,7 +164,7 @@ export default function FinancePage() {
 
     const { data: providerData } = await supabase
       .from('providers')
-      .select('id, status')
+      .select('id, status, commission_rate')
       .eq('owner_id', user.id)
       .limit(1)
 
@@ -176,12 +174,18 @@ export default function FinancePage() {
       return
     }
 
+    // Set commission rate from database (default to 6% if not set)
+    const providerCommissionRate = provider.commission_rate != null
+      ? provider.commission_rate / 100  // Convert from percentage (e.g., 6) to decimal (0.06)
+      : 0.06
+
+    setCommissionRate(providerCommissionRate)
     setProviderId(provider.id)
-    await loadFinanceData(provider.id)
+    await loadFinanceData(provider.id, providerCommissionRate)
     setLoading(false)
   }
 
-  const loadFinanceData = async (provId: string) => {
+  const loadFinanceData = async (provId: string, currentCommissionRate: number = commissionRate) => {
     const supabase = createClient()
     const { startDate, endDate, lastPeriodStart, lastPeriodEnd } = getDateRange()
 
@@ -194,12 +198,12 @@ export default function FinancePage() {
       .order('created_at', { ascending: false })
 
     if (allOrders) {
-      // Helper to get commission (use stored value or calculate as fallback)
+      // Helper to get commission (use stored value or calculate as fallback using provider's rate)
       const getCommission = (order: typeof allOrders[0]) => {
         if (order.platform_commission != null) return order.platform_commission
-        // Fallback: calculate on (subtotal - discount)
+        // Fallback: calculate on (subtotal - discount) using provider's commission rate
         const revenue = (order.subtotal || order.total || 0) - (order.discount || 0)
-        return revenue * COMMISSION_RATE
+        return revenue * currentCommissionRate
       }
 
       // FILTER ALL ORDERS BY DATE RANGE FIRST
@@ -302,7 +306,7 @@ export default function FinancePage() {
   const handleRefresh = async () => {
     if (!providerId) return
     setRefreshing(true)
-    await loadFinanceData(providerId)
+    await loadFinanceData(providerId, commissionRate)
     setRefreshing(false)
   }
 
