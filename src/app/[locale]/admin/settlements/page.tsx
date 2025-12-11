@@ -276,21 +276,49 @@ export default function AdminSettlementsPage() {
       const COMMISSION_RATE = 0.06 // 6%
 
       for (const provider of activeProviders) {
-        // Get delivered orders for this provider in the period
+        // Get delivered orders for this provider in the period (including payment_method)
         const { data: orders } = await supabase
           .from('orders')
-          .select('id, total')
+          .select('id, total, payment_method, platform_commission')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString())
 
         if (orders && orders.length > 0) {
-          const grossRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
-          const platformCommission = grossRevenue * COMMISSION_RATE
-          const netPayout = grossRevenue - platformCommission
+          // Separate orders by payment method
+          const codOrders = orders.filter(o => o.payment_method === 'cash' || o.payment_method === 'cod')
+          const onlineOrders = orders.filter(o => o.payment_method !== 'cash' && o.payment_method !== 'cod')
 
-          // Create settlement
+          // Calculate COD breakdown (Provider collects cash → owes commission to platform)
+          const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+          const codCommissionOwed = codGrossRevenue * COMMISSION_RATE
+
+          // Calculate Online breakdown (Platform collects → owes revenue minus commission to provider)
+          const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+          const onlinePlatformCommission = onlineGrossRevenue * COMMISSION_RATE
+          const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
+
+          // Calculate totals
+          const grossRevenue = codGrossRevenue + onlineGrossRevenue
+          const platformCommission = codCommissionOwed + onlinePlatformCommission
+
+          // Net balance: What platform owes provider minus what provider owes platform
+          // Positive = Platform pays provider, Negative = Provider pays platform
+          const netBalance = onlinePayoutOwed - codCommissionOwed
+
+          // Determine settlement direction
+          let settlementDirection: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' = 'balanced'
+          if (netBalance > 0) {
+            settlementDirection = 'platform_pays_provider'
+          } else if (netBalance < 0) {
+            settlementDirection = 'provider_pays_platform'
+          }
+
+          // Net payout is the absolute value of net balance
+          const netPayout = Math.abs(netBalance)
+
+          // Create settlement with full breakdown
           const { error: insertError } = await supabase
             .from('settlements')
             .insert({
@@ -301,6 +329,18 @@ export default function AdminSettlementsPage() {
               gross_revenue: grossRevenue,
               platform_commission: platformCommission,
               net_payout: netPayout,
+              // COD breakdown
+              cod_orders_count: codOrders.length,
+              cod_gross_revenue: codGrossRevenue,
+              cod_commission_owed: codCommissionOwed,
+              // Online breakdown
+              online_orders_count: onlineOrders.length,
+              online_gross_revenue: onlineGrossRevenue,
+              online_platform_commission: onlinePlatformCommission,
+              online_payout_owed: onlinePayoutOwed,
+              // Net calculation
+              net_balance: netBalance,
+              settlement_direction: settlementDirection,
               status: 'pending',
               orders_included: orders.map(o => o.id),
             })
@@ -332,10 +372,10 @@ export default function AdminSettlementsPage() {
       const supabase = createClient()
       const COMMISSION_RATE = 0.06 // 6%
 
-      // Get delivered orders for this provider in the period
+      // Get delivered orders for this provider in the period (including payment_method)
       const { data: orders } = await supabase
         .from('orders')
-        .select('id, total')
+        .select('id, total, payment_method, platform_commission')
         .eq('provider_id', generateForm.providerId)
         .eq('status', 'delivered')
         .gte('created_at', generateForm.periodStart)
@@ -346,11 +386,37 @@ export default function AdminSettlementsPage() {
         return
       }
 
-      const grossRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const platformCommission = grossRevenue * COMMISSION_RATE
-      const netPayout = grossRevenue - platformCommission
+      // Separate orders by payment method
+      const codOrders = orders.filter(o => o.payment_method === 'cash' || o.payment_method === 'cod')
+      const onlineOrders = orders.filter(o => o.payment_method !== 'cash' && o.payment_method !== 'cod')
 
-      // Create settlement
+      // Calculate COD breakdown (Provider collects cash → owes commission to platform)
+      const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const codCommissionOwed = codGrossRevenue * COMMISSION_RATE
+
+      // Calculate Online breakdown (Platform collects → owes revenue minus commission to provider)
+      const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const onlinePlatformCommission = onlineGrossRevenue * COMMISSION_RATE
+      const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
+
+      // Calculate totals
+      const grossRevenue = codGrossRevenue + onlineGrossRevenue
+      const platformCommission = codCommissionOwed + onlinePlatformCommission
+
+      // Net balance: What platform owes provider minus what provider owes platform
+      const netBalance = onlinePayoutOwed - codCommissionOwed
+
+      // Determine settlement direction
+      let settlementDirection: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' = 'balanced'
+      if (netBalance > 0) {
+        settlementDirection = 'platform_pays_provider'
+      } else if (netBalance < 0) {
+        settlementDirection = 'provider_pays_platform'
+      }
+
+      const netPayout = Math.abs(netBalance)
+
+      // Create settlement with full breakdown
       const { error: insertError } = await supabase
         .from('settlements')
         .insert({
@@ -361,6 +427,18 @@ export default function AdminSettlementsPage() {
           gross_revenue: grossRevenue,
           platform_commission: platformCommission,
           net_payout: netPayout,
+          // COD breakdown
+          cod_orders_count: codOrders.length,
+          cod_gross_revenue: codGrossRevenue,
+          cod_commission_owed: codCommissionOwed,
+          // Online breakdown
+          online_orders_count: onlineOrders.length,
+          online_gross_revenue: onlineGrossRevenue,
+          online_platform_commission: onlinePlatformCommission,
+          online_payout_owed: onlinePayoutOwed,
+          // Net calculation
+          net_balance: netBalance,
+          settlement_direction: settlementDirection,
           status: 'pending',
           orders_included: orders.map(o => o.id),
         })
