@@ -24,23 +24,32 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   }, [])
 
   async function loadBadgeCounts() {
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    // Get pending providers count
-    const { count: providersCount } = await supabase
-      .from('providers')
-      .select('*', { count: 'exact', head: true })
-      .in('status', ['pending_approval', 'incomplete'])
+      // Get pending providers count
+      const { count: providersCount, error: providersError } = await supabase
+        .from('providers')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['pending_approval', 'incomplete'])
 
-    setPendingProviders(providersCount || 0)
+      if (!providersError) {
+        setPendingProviders(providersCount || 0)
+      }
 
-    // Get open tickets count (if support_tickets table exists)
-    const { count: ticketsCount } = await supabase
-      .from('support_tickets')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'open')
+      // Get open tickets count (if support_tickets table exists)
+      const { count: ticketsCount, error: ticketsError } = await supabase
+        .from('support_tickets')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'open')
 
-    setOpenTickets(ticketsCount || 0)
+      if (!ticketsError) {
+        setOpenTickets(ticketsCount || 0)
+      }
+    } catch (error) {
+      // Silently fail for badge counts - not critical
+      console.error('Error loading badge counts:', error)
+    }
   }
 
   return (
