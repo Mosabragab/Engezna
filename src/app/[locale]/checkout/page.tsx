@@ -566,9 +566,32 @@ export default function CheckoutPage() {
     }
   }
 
+  // Validate Egyptian phone number format
+  const validatePhoneNumber = (phoneNumber: string): boolean => {
+    // Egyptian phone numbers: 01XXXXXXXXX (11 digits starting with 01)
+    // Accepts formats: 01XXXXXXXXX, +201XXXXXXXXX, 00201XXXXXXXXX
+    const cleanPhone = phoneNumber.replace(/[\s\-\(\)]/g, '')
+    const egyptPhoneRegex = /^(\+20|0020|0)?1[0125]\d{8}$/
+    return egyptPhoneRegex.test(cleanPhone)
+  }
+
   const validateForm = (): boolean => {
-    if (!fullName || !phone) {
-      setError(locale === 'ar' ? 'يرجى ملء الاسم ورقم الهاتف' : 'Please fill name and phone')
+    if (!fullName.trim()) {
+      setError(locale === 'ar' ? 'يرجى إدخال الاسم الكامل' : 'Please enter your full name')
+      return false
+    }
+
+    if (!phone.trim()) {
+      setError(locale === 'ar' ? 'يرجى إدخال رقم الهاتف' : 'Please enter your phone number')
+      return false
+    }
+
+    if (!validatePhoneNumber(phone)) {
+      setError(
+        locale === 'ar'
+          ? 'يرجى إدخال رقم هاتف مصري صحيح (مثال: 01XXXXXXXXX)'
+          : 'Please enter a valid Egyptian phone number (e.g., 01XXXXXXXXX)'
+      )
       return false
     }
 

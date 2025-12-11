@@ -182,6 +182,7 @@ export default function OrderTrackingPage() {
   const [cancelReason, setCancelReason] = useState('')
   const [cancelNote, setCancelNote] = useState('')
   const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
 
   // Review state
   const [showReviewModal, setShowReviewModal] = useState(false)
@@ -206,6 +207,8 @@ export default function OrderTrackingPage() {
 
     const supabase = createClient()
     let isSubscribed = true
+    let retryCount = 0
+    const maxRetries = 3
 
     // Subscribe to order changes with status callback
     const channel = supabase
@@ -226,10 +229,26 @@ export default function OrderTrackingPage() {
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('Realtime subscription status:', status)
         if (status === 'SUBSCRIBED') {
           console.log('Successfully subscribed to order updates')
+          retryCount = 0 // Reset retry count on success
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('Subscription error:', err)
+          // Attempt to reconnect with exponential backoff
+          if (retryCount < maxRetries && isSubscribed) {
+            retryCount++
+            const delay = Math.pow(2, retryCount) * 1000 // 2s, 4s, 8s
+            console.log(`Retrying subscription in ${delay}ms (attempt ${retryCount}/${maxRetries})`)
+            setTimeout(() => {
+              if (isSubscribed) {
+                channel.subscribe()
+              }
+            }, delay)
+          }
+        } else if (status === 'CLOSED') {
+          console.log('Subscription closed')
         }
       })
 
@@ -334,6 +353,7 @@ export default function OrderTrackingPage() {
     if (!cancelReason || !order) return
 
     setCancelling(true)
+    setCancelError(null)
     const supabase = createClient()
 
     try {
@@ -346,20 +366,23 @@ export default function OrderTrackingPage() {
 
       if (fetchError) {
         console.error('Error fetching order:', fetchError)
-        alert(locale === 'ar' ? 'حدث خطأ أثناء إلغاء الطلب' : 'Error cancelling order')
+        setCancelError(
+          locale === 'ar'
+            ? 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.'
+            : 'Connection error. Please try again.'
+        )
         return
       }
 
       // Check if order can still be cancelled
       if (currentOrder.status !== 'pending') {
-        alert(
+        setCancelError(
           locale === 'ar'
             ? 'لا يمكن إلغاء هذا الطلب لأنه تم قبوله بالفعل من المتجر'
             : 'This order cannot be cancelled because it has already been accepted by the store'
         )
         // Update local state to reflect actual status
         setOrder({ ...order, status: currentOrder.status })
-        setShowCancelModal(false)
         return
       }
 
@@ -379,7 +402,7 @@ export default function OrderTrackingPage() {
 
       if (error) {
         console.error('Error cancelling order:', error)
-        alert(
+        setCancelError(
           locale === 'ar'
             ? `حدث خطأ أثناء إلغاء الطلب: ${error.message}`
             : `Error cancelling order: ${error.message}`
@@ -390,10 +413,15 @@ export default function OrderTrackingPage() {
         setShowCancelModal(false)
         setCancelReason('')
         setCancelNote('')
+        setCancelError(null)
       }
     } catch (err) {
       console.error('Error:', err)
-      alert(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
+      setCancelError(
+        locale === 'ar'
+          ? 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.'
+          : 'Connection error. Please try again.'
+      )
     } finally {
       setCancelling(false)
     }
@@ -985,10 +1013,31 @@ export default function OrderTrackingPage() {
               )}
             </div>
 
+            {/* Error Message */}
+            {cancelError && (
+              <div className="mx-4 mb-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-red-700">{cancelError}</p>
+                    <button
+                      onClick={() => setCancelError(null)}
+                      className="text-xs text-red-600 underline mt-1"
+                    >
+                      {locale === 'ar' ? 'إغلاق' : 'Dismiss'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Modal Footer */}
             <div className="flex gap-3 p-4 border-t">
               <button
-                onClick={() => setShowCancelModal(false)}
+                onClick={() => {
+                  setShowCancelModal(false)
+                  setCancelError(null)
+                }}
                 className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
               >
                 {locale === 'ar' ? 'تراجع' : 'Go Back'}
