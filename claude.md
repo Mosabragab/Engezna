@@ -1,8 +1,8 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 10, 2025 (Session 16)
-**Status:** Week 5 - Complete Feature Set (Session 16) ✅
-**Branch:** `claude/review-project-setup-0137bi5Fkgyc3DRC9QHe33fV`
+**Last Updated:** December 11, 2025 (Session 17)
+**Status:** Week 5 - Complete Feature Set (Session 17) ✅
+**Branch:** `claude/review-project-planning-014sifTa3MmUskjXMTF3M9FN`
 
 ---
 
@@ -37,6 +37,60 @@
 - Better performance (fewer CSS variables)
 
 **Official brand color is ENGEZNA BLUE #009DE0, NOT orange or green!**
+
+---
+
+## 🔐 Security & Performance Fixes (Session 17 - December 11, 2025)
+
+### Phase 1: Security Fixes
+| Fix | File | Description |
+|-----|------|-------------|
+| API Authentication | `src/app/api/voice-order/process/route.ts` | Added user authentication check |
+| Route Protection | `src/lib/supabase/middleware.ts` | Enabled protection for admin/provider/checkout |
+| Variant Price Fix | `src/app/[locale]/checkout/page.tsx` | Fixed variant price calculation in orders |
+| Dynamic Commission | `src/app/[locale]/provider/finance/page.tsx` | Commission rate from database per provider |
+| Cart Provider Switch | `src/lib/store/cart.ts` + `providers/[id]/page.tsx` | Confirmation dialog when switching |
+
+### Phase 2: Performance Optimization
+| Fix | File | Description |
+|-----|------|-------------|
+| Audio Memory Leaks | `src/hooks/customer/useNotifications.ts` | Shared audio instances at module level |
+| Channel Leaks | `src/app/[locale]/provider/page.tsx` | useRef for channel cleanup |
+| N+1 Queries | `src/app/[locale]/page.tsx` | Single query with client-side filtering |
+| Rate Limiting | `src/lib/auth/actions.ts` + `src/lib/utils/rate-limit.ts` | Protection for auth endpoints |
+
+### Rate Limiting Configuration
+```typescript
+// Login: 10 attempts / 15 minutes, block for 30 minutes
+LOGIN_LIMIT: { maxAttempts: 10, windowMs: 15*60*1000, blockDurationMs: 30*60*1000 }
+
+// OTP Send: 5 attempts / 10 minutes, block for 30 minutes
+OTP_SEND_LIMIT: { maxAttempts: 5, windowMs: 10*60*1000, blockDurationMs: 30*60*1000 }
+
+// OTP Verify: 5 attempts / 5 minutes, block for 15 minutes (prevent brute force)
+OTP_VERIFY_LIMIT: { maxAttempts: 5, windowMs: 5*60*1000, blockDurationMs: 15*60*1000 }
+
+// Password Reset: 3 attempts / hour, block for 1 hour
+PASSWORD_RESET_LIMIT: { maxAttempts: 3, windowMs: 60*60*1000, blockDurationMs: 60*60*1000 }
+```
+
+### Phase 3: Critical Bug Fixes
+| Fix | File | Description |
+|-----|------|-------------|
+| Phone Validation | `src/app/[locale]/checkout/page.tsx` | Egyptian format: `01XXXXXXXXX` |
+| Payment Confirmation | `src/app/[locale]/provider/orders/page.tsx` | Confirmation dialog with warning |
+| Error Handling | `src/app/[locale]/orders/[id]/page.tsx` | In-modal error display for cancellation |
+| Realtime Retry | `src/app/[locale]/orders/[id]/page.tsx` | Exponential backoff (2s, 4s, 8s) |
+
+### Testing Checklist
+```
+□ Phone Validation: /checkout - Try invalid phones (0501234567)
+□ Provider Switch: /providers/[id] - Add item, switch restaurant
+□ Rate Limiting: /auth/login - Try 11+ failed logins
+□ Payment Confirmation: /provider/orders - Mark payment received
+□ Order Cancellation: /orders/[id] - Cancel pending order
+□ Route Protection: Logout and access /checkout directly
+```
 
 ---
 

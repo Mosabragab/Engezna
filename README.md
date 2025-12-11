@@ -378,7 +378,36 @@ npm run type-check   # TypeScript type checking
 **Phase:** Week 5 - Admin Backend Integration + UI Polish
 **Status:** Week 5 - Complete Feature Set ✅
 **Overall Progress:** ~88% of MVP Complete
-**Last Updated:** December 10, 2025 (Session 16)
+**Last Updated:** December 11, 2025 (Session 17)
+
+---
+
+### 🔐 Security & Performance Fixes (Session 17 - December 11, 2025)
+
+**Phase 1: Security Fixes**
+- ✅ **API Authentication**: Added authentication to Voice/Chat Order API
+- ✅ **Route Protection**: Enabled middleware protection for admin/provider/checkout routes
+- ✅ **Variant Price Fix**: Fixed variant price calculation in order creation
+- ✅ **Dynamic Commission**: Commission rate now fetched from database per provider
+- ✅ **Cart Provider Switch**: Added confirmation dialog when switching restaurants
+
+**Phase 2: Performance Optimization**
+- ✅ **Memory Leak Fixes**: Fixed audio memory leaks in notifications (shared instances)
+- ✅ **Channel Subscription Leaks**: Fixed realtime channel cleanup using useRef
+- ✅ **N+1 Query Optimization**: Combined queries on home page with client-side filtering
+- ✅ **Rate Limiting**: Added rate limiting for login, OTP, and password reset endpoints
+  - Login: 10 attempts / 15 minutes
+  - OTP Send: 5 attempts / 10 minutes
+  - OTP Verify: 5 attempts / 5 minutes
+  - Password Reset: 3 attempts / hour
+
+**Phase 3: Critical Bug Fixes**
+- ✅ **Phone Validation**: Egyptian phone number format validation (01XXXXXXXXX)
+- ✅ **Payment Confirmation**: Added confirmation dialog for marking payments as received
+- ✅ **Error Handling**: Improved order cancellation with in-modal error display
+- ✅ **Realtime Retry Logic**: Added exponential backoff for subscription failures
+
+---
 
 **Session 16 Features (NEW!) - December 10, 2025:**
 - ✅ **Excel Menu Import System**:
