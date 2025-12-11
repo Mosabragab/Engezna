@@ -220,6 +220,8 @@ export default function CartPage() {
             const itemDiscount = calculateItemDiscount(item)
             const price = item.selectedVariant?.price ?? item.menuItem.price
             const itemTotal = price * item.quantity
+            // Check if promo exists but discount is 0 due to min_order_amount
+            const hasUnmetMinOrder = promo && promo.min_order_amount && subtotal < promo.min_order_amount
 
             return (
               <div
@@ -283,6 +285,14 @@ export default function CartPage() {
                         </span>
                       )}
                     </div>
+                    {/* Show message if promo exists but min order not met */}
+                    {hasUnmetMinOrder && (
+                      <p className="text-[10px] text-amber-600 mt-1">
+                        {locale === 'ar'
+                          ? `أضف ${(promo.min_order_amount! - subtotal).toFixed(0)} ج.م للحصول على الخصم`
+                          : `Add ${(promo.min_order_amount! - subtotal).toFixed(0)} EGP to get discount`}
+                      </p>
+                    )}
 
                     {/* Quantity Controls */}
                     <div className="flex items-center justify-between mt-3">
