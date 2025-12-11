@@ -272,18 +272,40 @@ export default function AdminSettlementsPage() {
         return
       }
 
+      // Get all order IDs already included in previous settlements
+      const { data: existingSettlements } = await supabase
+        .from('settlements')
+        .select('orders_included')
+        .not('orders_included', 'is', null)
+
+      // Collect all order IDs that are already in settlements
+      const settledOrderIds = new Set<string>()
+      if (existingSettlements) {
+        for (const settlement of existingSettlements) {
+          if (settlement.orders_included && Array.isArray(settlement.orders_included)) {
+            for (const orderId of settlement.orders_included) {
+              settledOrderIds.add(orderId)
+            }
+          }
+        }
+      }
+      console.log('Already settled orders count:', settledOrderIds.size)
+
       let createdCount = 0
       const COMMISSION_RATE = 0.06 // 6%
 
       for (const provider of activeProviders) {
         // Get delivered orders for this provider in the period (including payment_method)
-        const { data: orders } = await supabase
+        const { data: allOrders } = await supabase
           .from('orders')
           .select('id, total, payment_method, platform_commission')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString())
+
+        // Filter out orders that are already in previous settlements
+        const orders = allOrders?.filter(o => !settledOrderIds.has(o.id)) || []
 
         if (orders && orders.length > 0) {
           // Separate orders by payment method
@@ -372,8 +394,26 @@ export default function AdminSettlementsPage() {
       const supabase = createClient()
       const COMMISSION_RATE = 0.06 // 6%
 
+      // Get all order IDs already included in previous settlements
+      const { data: existingSettlements } = await supabase
+        .from('settlements')
+        .select('orders_included')
+        .not('orders_included', 'is', null)
+
+      // Collect all order IDs that are already in settlements
+      const settledOrderIds = new Set<string>()
+      if (existingSettlements) {
+        for (const settlement of existingSettlements) {
+          if (settlement.orders_included && Array.isArray(settlement.orders_included)) {
+            for (const orderId of settlement.orders_included) {
+              settledOrderIds.add(orderId)
+            }
+          }
+        }
+      }
+
       // Get delivered orders for this provider in the period (including payment_method)
-      const { data: orders } = await supabase
+      const { data: allOrders } = await supabase
         .from('orders')
         .select('id, total, payment_method, platform_commission')
         .eq('provider_id', generateForm.providerId)
@@ -381,8 +421,18 @@ export default function AdminSettlementsPage() {
         .gte('created_at', generateForm.periodStart)
         .lte('created_at', generateForm.periodEnd + 'T23:59:59')
 
+      // Filter out orders that are already in previous settlements
+      const orders = allOrders?.filter(o => !settledOrderIds.has(o.id)) || []
+
       if (!orders || orders.length === 0) {
-        alert(locale === 'ar' ? 'لا توجد طلبات في هذه الفترة' : 'No orders found in this period')
+        const hasOrdersButSettled = allOrders && allOrders.length > 0 && orders.length === 0
+        if (hasOrdersButSettled) {
+          alert(locale === 'ar'
+            ? 'جميع الطلبات في هذه الفترة مدرجة بالفعل في تسويات سابقة'
+            : 'All orders in this period are already included in previous settlements')
+        } else {
+          alert(locale === 'ar' ? 'لا توجد طلبات في هذه الفترة' : 'No orders found in this period')
+        }
         return
       }
 
