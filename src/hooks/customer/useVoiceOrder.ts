@@ -116,6 +116,21 @@ export function useVoiceOrder() {
         }),
       })
 
+      // Handle 401 Unauthorized - user needs to login
+      if (response.status === 401) {
+        removeMessage(loadingId)
+        const loginMessage = locale === 'ar'
+          ? 'يرجى تسجيل الدخول أولاً لاستخدام هذه الخدمة.'
+          : 'Please login first to use this feature.'
+        addMessage('assistant', loginMessage)
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: 'Unauthorized',
+        }))
+        return
+      }
+
       if (!response.ok) {
         throw new Error('Processing failed')
       }

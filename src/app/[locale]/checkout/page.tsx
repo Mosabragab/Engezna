@@ -566,9 +566,32 @@ export default function CheckoutPage() {
     }
   }
 
+  // Validate Egyptian phone number format
+  const validatePhoneNumber = (phoneNumber: string): boolean => {
+    // Egyptian phone numbers: 01XXXXXXXXX (11 digits starting with 01)
+    // Accepts formats: 01XXXXXXXXX, +201XXXXXXXXX, 00201XXXXXXXXX
+    const cleanPhone = phoneNumber.replace(/[\s\-\(\)]/g, '')
+    const egyptPhoneRegex = /^(\+20|0020|0)?1[0125]\d{8}$/
+    return egyptPhoneRegex.test(cleanPhone)
+  }
+
   const validateForm = (): boolean => {
-    if (!fullName || !phone) {
-      setError(locale === 'ar' ? 'يرجى ملء الاسم ورقم الهاتف' : 'Please fill name and phone')
+    if (!fullName.trim()) {
+      setError(locale === 'ar' ? 'يرجى إدخال الاسم الكامل' : 'Please enter your full name')
+      return false
+    }
+
+    if (!phone.trim()) {
+      setError(locale === 'ar' ? 'يرجى إدخال رقم الهاتف' : 'Please enter your phone number')
+      return false
+    }
+
+    if (!validatePhoneNumber(phone)) {
+      setError(
+        locale === 'ar'
+          ? 'يرجى إدخال رقم هاتف مصري صحيح (مثال: 01XXXXXXXXX)'
+          : 'Please enter a valid Egyptian phone number (e.g., 01XXXXXXXXX)'
+      )
       return false
     }
 
@@ -673,17 +696,30 @@ export default function CheckoutPage() {
           .eq('id', appliedPromoCode.id)
       }
 
-      // Create order items
-      const orderItems = cart.map((item) => ({
-        order_id: order.id,
-        menu_item_id: item.menuItem.id,
-        item_name_ar: item.menuItem.name_ar,
-        item_name_en: item.menuItem.name_en,
-        item_price: item.menuItem.price,
-        quantity: item.quantity,
-        unit_price: item.menuItem.price,
-        total_price: item.menuItem.price * item.quantity,
-      }))
+      // Create order items - use variant price if selected, otherwise base price
+      const orderItems = cart.map((item) => {
+        const itemPrice = item.selectedVariant?.price ?? item.menuItem.price
+        const variantName = item.selectedVariant
+          ? ` (${item.selectedVariant.name_ar})`
+          : ''
+        const variantNameEn = item.selectedVariant
+          ? ` (${item.selectedVariant.name_en || item.selectedVariant.name_ar})`
+          : ''
+
+        return {
+          order_id: order.id,
+          menu_item_id: item.menuItem.id,
+          item_name_ar: item.menuItem.name_ar + variantName,
+          item_name_en: item.menuItem.name_en + variantNameEn,
+          item_price: itemPrice,
+          quantity: item.quantity,
+          unit_price: itemPrice,
+          total_price: itemPrice * item.quantity,
+          variant_id: item.selectedVariant?.id || null,
+          variant_name_ar: item.selectedVariant?.name_ar || null,
+          variant_name_en: item.selectedVariant?.name_en || null,
+        }
+      })
 
       const { error: itemsError } = await supabase
         .from('order_items')

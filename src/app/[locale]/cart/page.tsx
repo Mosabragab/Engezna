@@ -84,13 +84,43 @@ export default function CartPage() {
     return null
   }
 
-  // Calculate discount for a single item
+  // Calculate variant-level discount (from original_price)
+  const calculateVariantDiscount = (item: CartItem): number => {
+    // Check if variant has original_price (meaning it's discounted)
+    if (item.selectedVariant?.original_price && item.selectedVariant.original_price > item.selectedVariant.price) {
+      const discountPerUnit = item.selectedVariant.original_price - item.selectedVariant.price
+      return discountPerUnit * item.quantity
+    }
+
+    // Check if menu item has original_price (meaning it's discounted)
+    if (item.menuItem.original_price && item.menuItem.original_price > item.menuItem.price) {
+      const discountPerUnit = item.menuItem.original_price - item.menuItem.price
+      return discountPerUnit * item.quantity
+    }
+
+    return 0
+  }
+
+  // Calculate discount for a single item (from promotions table)
   const calculateItemDiscount = (item: CartItem): number => {
+    // First check for variant-level discount (original_price)
+    const variantDiscount = calculateVariantDiscount(item)
+    if (variantDiscount > 0) {
+      return variantDiscount
+    }
+
+    // Then check for promotions-based discount
     const promo = getProductPromotion(item.menuItem.id)
     if (!promo) return 0
 
     const price = item.selectedVariant?.price ?? item.menuItem.price
     const itemTotal = price * item.quantity
+    const subtotal = getSubtotal()
+
+    // Check if this specific promotion meets min_order_amount requirement
+    if (promo.min_order_amount && subtotal < promo.min_order_amount) {
+      return 0 // This promotion doesn't apply due to minimum order
+    }
 
     if (promo.type === 'percentage') {
       let discount = (itemTotal * promo.discount_value) / 100
@@ -120,18 +150,8 @@ export default function CartPage() {
 
   // Calculate total discount
   const calculateTotalDiscount = (): number => {
-    let totalDiscount = items.reduce((sum, item) => sum + calculateItemDiscount(item), 0)
-
-    // Check min_order_amount for any promotion
-    const subtotal = getSubtotal()
-    for (const promo of promotions) {
-      if (promo.min_order_amount && subtotal < promo.min_order_amount) {
-        // Promotion not applicable due to minimum order
-        return 0
-      }
-    }
-
-    return totalDiscount
+    // Sum up discounts per item (min_order_amount is checked per-promotion in calculateItemDiscount)
+    return items.reduce((sum, item) => sum + calculateItemDiscount(item), 0)
   }
 
   const subtotal = getSubtotal()
@@ -200,6 +220,8 @@ export default function CartPage() {
             const itemDiscount = calculateItemDiscount(item)
             const price = item.selectedVariant?.price ?? item.menuItem.price
             const itemTotal = price * item.quantity
+            // Check if promo exists but discount is 0 due to min_order_amount
+            const hasUnmetMinOrder = promo && promo.min_order_amount && subtotal < promo.min_order_amount
 
             return (
               <div
@@ -263,6 +285,14 @@ export default function CartPage() {
                         </span>
                       )}
                     </div>
+                    {/* Show message if promo exists but min order not met */}
+                    {hasUnmetMinOrder && (
+                      <p className="text-[10px] text-amber-600 mt-1">
+                        {locale === 'ar'
+                          ? `أضف ${(promo.min_order_amount! - subtotal).toFixed(0)} ج.م للحصول على الخصم`
+                          : `Add ${(promo.min_order_amount! - subtotal).toFixed(0)} EGP to get discount`}
+                      </p>
+                    )}
 
                     {/* Quantity Controls */}
                     <div className="flex items-center justify-between mt-3">

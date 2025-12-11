@@ -221,6 +221,17 @@ async function processFunctionCall(
 
 export async function POST(request: NextRequest) {
   try {
+    // Authentication check - user must be logged in
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please login to use this feature' },
+        { status: 401 }
+      )
+    }
+
     const client = getOpenAIClient()
     if (!client) {
       console.error('OPENAI_API_KEY is not configured')
@@ -233,9 +244,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { transcript, locale, conversationHistory, currentProviderId } = body
 
-    if (!transcript) {
+    // Validate transcript
+    if (!transcript || typeof transcript !== 'string') {
       return NextResponse.json(
         { error: 'No transcript provided' },
+        { status: 400 }
+      )
+    }
+
+    // Limit transcript length to prevent abuse
+    if (transcript.length > 1000) {
+      return NextResponse.json(
+        { error: 'Transcript too long' },
         { status: 400 }
       )
     }

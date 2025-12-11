@@ -1,8 +1,34 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User, RealtimeChannel } from '@supabase/supabase-js'
+
+// Shared audio instance to prevent memory leaks
+let notificationAudio: HTMLAudioElement | null = null
+let newOrderAudio: HTMLAudioElement | null = null
+
+const playNotificationSound = (type: 'notification' | 'new-order' = 'notification') => {
+  try {
+    if (type === 'new-order') {
+      if (!newOrderAudio) {
+        newOrderAudio = new Audio('/sounds/new-order.mp3')
+        newOrderAudio.volume = 0.7
+      }
+      newOrderAudio.currentTime = 0
+      newOrderAudio.play().catch(() => {})
+    } else {
+      if (!notificationAudio) {
+        notificationAudio = new Audio('/sounds/notification.mp3')
+        notificationAudio.volume = 0.5
+      }
+      notificationAudio.currentTime = 0
+      notificationAudio.play().catch(() => {})
+    }
+  } catch {
+    // Sound not available
+  }
+}
 
 interface Notification {
   id: string
@@ -75,14 +101,8 @@ export function useNotifications() {
           setNotifications(prev => [newNotification, ...prev])
           setUnreadCount(prev => prev + 1)
 
-          // Play notification sound (optional)
-          try {
-            const audio = new Audio('/sounds/notification.mp3')
-            audio.volume = 0.5
-            audio.play().catch(() => {})
-          } catch {
-            // Sound not available
-          }
+          // Play notification sound
+          playNotificationSound('notification')
         }
       )
       .on(
@@ -264,7 +284,7 @@ export function useNotifications() {
 // Provider-specific hook for order notifications
 export function useProviderOrderNotifications(providerId: string | null) {
   const [newOrderCount, setNewOrderCount] = useState(0)
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null)
+  const channelRef = useRef<RealtimeChannel | null>(null)
   const [lastOrderId, setLastOrderId] = useState<string | null>(null)
 
   // Load initial pending orders count
@@ -288,16 +308,25 @@ export function useProviderOrderNotifications(providerId: string | null) {
 
   // Subscribe to real-time order updates
   useEffect(() => {
-    if (!providerId) return
+    if (!providerId) {
+      // Clean up if providerId becomes null
+      if (channelRef.current) {
+        const supabase = createClient()
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
+      return
+    }
 
     const supabase = createClient()
 
     // Load initial count
     loadPendingCount()
 
-    // Clean up existing subscription
-    if (channel) {
-      supabase.removeChannel(channel)
+    // Clean up existing subscription before creating new one
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
     }
 
     // Create new subscription for orders
@@ -318,13 +347,7 @@ export function useProviderOrderNotifications(providerId: string | null) {
             setLastOrderId(newOrder.id)
 
             // Play notification sound
-            try {
-              const audio = new Audio('/sounds/new-order.mp3')
-              audio.volume = 0.7
-              audio.play().catch(() => {})
-            } catch {
-              // Sound not available
-            }
+            playNotificationSound('new-order')
           }
         }
       )
@@ -352,12 +375,16 @@ export function useProviderOrderNotifications(providerId: string | null) {
       )
       .subscribe()
 
-    setChannel(newChannel)
+    channelRef.current = newChannel
 
+    // Cleanup function
     return () => {
-      supabase.removeChannel(newChannel)
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
     }
-  }, [providerId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [providerId, loadPendingCount])
 
   // Clear the new order indicator
   const clearNewOrderIndicator = () => {

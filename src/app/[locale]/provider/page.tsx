@@ -137,10 +137,19 @@ export default function ProviderDashboard() {
             console.log('New message from customer:', newMessage)
             // Increment unread messages count
             setStats(prev => ({ ...prev, unreadMessages: prev.unreadMessages + 1 }))
-            // Play notification sound
+            // Play notification sound using shared audio instance
             try {
-              const audio = new Audio('/sounds/notification.mp3')
-              audio.volume = 0.5
+              // Create shared audio element if it doesn't exist
+              const audioId = 'engezna-notification-audio'
+              let audio = document.getElementById(audioId) as HTMLAudioElement | null
+              if (!audio) {
+                audio = document.createElement('audio')
+                audio.id = audioId
+                audio.src = '/sounds/notification.mp3'
+                audio.volume = 0.5
+                document.body.appendChild(audio)
+              }
+              audio.currentTime = 0
               audio.play().catch(() => {})
             } catch {
               // Sound not available

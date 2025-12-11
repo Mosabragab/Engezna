@@ -162,38 +162,26 @@ export default function HomePage() {
   async function fetchNearbyProviders(cityId: string | null) {
     const supabase = createClient()
 
-    let query = supabase
+    // Optimized query: Fetch all providers in one query, prioritize user's city
+    const { data } = await supabase
       .from('providers')
       .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id')
       .in('status', ['open', 'closed'])
+      .limit(20) // Fetch more to allow filtering
 
-    // Filter by city if user has set one
-    if (cityId) {
-      query = query.eq('city_id', cityId)
-    }
-
-    const { data } = await query.limit(6)
-
-    // Fallback: If no providers found for user's city, show all providers
-    if (data?.length === 0 && cityId) {
-      const { data: allData } = await supabase
-        .from('providers')
-        .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id')
-        .in('status', ['open', 'closed'])
-        .limit(6)
-
-      if (allData) {
-        const withDistance = allData.map((p, i) => ({
-          ...p,
-          distance: 0.5 + i * 0.3,
-        }))
-        setNearbyProviders(withDistance)
+    if (data) {
+      // Prioritize providers from user's city, then show others
+      let sortedProviders = data
+      if (cityId) {
+        const inCity = data.filter(p => p.city_id === cityId)
+        const outOfCity = data.filter(p => p.city_id !== cityId)
+        sortedProviders = [...inCity, ...outOfCity]
       }
-    } else if (data) {
-      // Add mock distance for demo
-      const withDistance = data.map((p, i) => ({
+
+      // Take top 6 and add mock distance for demo
+      const withDistance = sortedProviders.slice(0, 6).map((p, i) => ({
         ...p,
-        distance: 0.5 + i * 0.3,
+        distance: p.city_id === cityId ? 0.5 + i * 0.2 : 2.0 + i * 0.5,
       }))
       setNearbyProviders(withDistance)
     }
@@ -202,35 +190,26 @@ export default function HomePage() {
   async function fetchTopRatedProviders(cityId: string | null) {
     const supabase = createClient()
 
-    let query = supabase
+    // Optimized query: Fetch top rated providers in one query, with specific columns
+    const { data } = await supabase
       .from('providers')
-      .select('*')
+      .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id, rating, is_featured, delivery_fee, estimated_delivery_time_min')
       .in('status', ['open', 'closed'])
       .order('is_featured', { ascending: false })
       .order('rating', { ascending: false })
+      .limit(20) // Fetch more to allow filtering
 
-    // Filter by city if user has set one
-    if (cityId) {
-      query = query.eq('city_id', cityId)
-    }
-
-    const { data } = await query.limit(6)
-
-    // Fallback: If no providers found for user's city, show all providers
-    if (data?.length === 0 && cityId) {
-      const { data: allData } = await supabase
-        .from('providers')
-        .select('*')
-        .in('status', ['open', 'closed'])
-        .order('is_featured', { ascending: false })
-        .order('rating', { ascending: false })
-        .limit(6)
-
-      if (allData) {
-        setTopRatedProviders(allData)
+    if (data) {
+      // Prioritize providers from user's city, then show others (maintaining rating order within groups)
+      let sortedProviders = data
+      if (cityId) {
+        const inCity = data.filter(p => p.city_id === cityId)
+        const outOfCity = data.filter(p => p.city_id !== cityId)
+        sortedProviders = [...inCity, ...outOfCity]
       }
-    } else if (data) {
-      setTopRatedProviders(data)
+
+      // Take top 6
+      setTopRatedProviders(sortedProviders.slice(0, 6))
     }
   }
 

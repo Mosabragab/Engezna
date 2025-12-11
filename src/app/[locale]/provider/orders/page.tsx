@@ -125,6 +125,14 @@ export default function ProviderOrdersPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
+  // Payment confirmation dialog state
+  const [paymentConfirmDialog, setPaymentConfirmDialog] = useState<{
+    show: boolean
+    orderId: string | null
+    orderNumber: string | null
+    orderTotal: number
+  }>({ show: false, orderId: null, orderNumber: null, orderTotal: 0 })
+
   useEffect(() => {
     checkAuthAndLoadOrders()
   }, [])
@@ -339,21 +347,80 @@ export default function ProviderOrdersPage() {
     setActionLoading(null)
   }
 
-  const handleConfirmPayment = async (orderId: string) => {
+  // Show payment confirmation dialog
+  const showPaymentConfirmation = (order: Order) => {
+    setPaymentConfirmDialog({
+      show: true,
+      orderId: order.id,
+      orderNumber: order.order_number || order.id.slice(0, 8).toUpperCase(),
+      orderTotal: order.total
+    })
+  }
+
+  // Cancel payment confirmation
+  const cancelPaymentConfirmation = () => {
+    setPaymentConfirmDialog({ show: false, orderId: null, orderNumber: null, orderTotal: 0 })
+  }
+
+  // Actually confirm payment after user confirms
+  const handleConfirmPayment = async () => {
+    const orderId = paymentConfirmDialog.orderId
+    if (!orderId) return
+
     setActionLoading(orderId)
+    cancelPaymentConfirmation()
+
     const supabase = createClient()
 
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        payment_status: 'completed',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', orderId)
+    try {
+      // First verify the order exists and belongs to this provider
+      const { data: existingOrder, error: fetchError } = await supabase
+        .from('orders')
+        .select('id, payment_status, provider_id')
+        .eq('id', orderId)
+        .single()
 
-    if (!error && providerId) {
-      await loadOrders(providerId)
+      if (fetchError || !existingOrder) {
+        console.error('Error fetching order:', fetchError)
+        alert(locale === 'ar' ? 'خطأ: لم يتم العثور على الطلب' : 'Error: Order not found')
+        setActionLoading(null)
+        return
+      }
+
+      // Verify provider ownership
+      if (existingOrder.provider_id !== providerId) {
+        console.error('Provider mismatch')
+        alert(locale === 'ar' ? 'خطأ: ليس لديك صلاحية تحديث هذا الطلب' : 'Error: You do not have permission to update this order')
+        setActionLoading(null)
+        return
+      }
+
+      // Perform the update
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          payment_status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .eq('provider_id', providerId) // Extra safety check
+
+      if (updateError) {
+        console.error('Error updating payment status:', updateError)
+        alert(locale === 'ar' ? 'خطأ في تحديث حالة الدفع: ' + updateError.message : 'Error updating payment status: ' + updateError.message)
+        setActionLoading(null)
+        return
+      }
+
+      // Success - reload orders to reflect changes
+      if (providerId) {
+        await loadOrders(providerId)
+      }
+    } catch (err) {
+      console.error('Unexpected error in handleConfirmPayment:', err)
+      alert(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     }
+
     setActionLoading(null)
   }
 
@@ -839,7 +906,7 @@ export default function ProviderOrdersPage() {
                         {order.status === 'delivered' && order.payment_status === 'pending' && (
                           <Button
                             size="sm"
-                            onClick={() => handleConfirmPayment(order.id)}
+                            onClick={() => showPaymentConfirmation(order)}
                             disabled={isLoading}
                             className="bg-deal hover:bg-deal/90"
                           >
@@ -869,6 +936,71 @@ export default function ProviderOrdersPage() {
           </div>
         )}
       </div>
+
+      {/* Payment Confirmation Dialog */}
+      {paymentConfirmDialog.show && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-8 h-8 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">
+                {locale === 'ar' ? 'تأكيد استلام الدفع' : 'Confirm Payment Receipt'}
+              </h3>
+              <p className="text-slate-600 text-sm">
+                {locale === 'ar'
+                  ? 'هل أنت متأكد من استلام المبلغ لهذا الطلب؟'
+                  : 'Are you sure you received payment for this order?'}
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-4 mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-slate-500 text-sm">
+                  {locale === 'ar' ? 'رقم الطلب' : 'Order Number'}
+                </span>
+                <span className="font-mono font-bold text-primary">
+                  #{paymentConfirmDialog.orderNumber}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 text-sm">
+                  {locale === 'ar' ? 'المبلغ' : 'Amount'}
+                </span>
+                <span className="font-bold text-lg text-slate-900">
+                  {paymentConfirmDialog.orderTotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+              <p className="text-xs text-amber-800">
+                {locale === 'ar'
+                  ? 'تحذير: بتأكيد استلام الدفع، أنت تقر بأنك استلمت المبلغ المذكور من العميل. هذا الإجراء لا يمكن التراجع عنه.'
+                  : 'Warning: By confirming payment, you acknowledge that you have received the amount from the customer. This action cannot be undone.'}
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={cancelPaymentConfirmation}
+              >
+                {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button
+                className="flex-1 bg-deal hover:bg-deal/90"
+                onClick={handleConfirmPayment}
+              >
+                <CheckCircle2 className="w-4 h-4 me-2" />
+                {locale === 'ar' ? 'تأكيد الاستلام' : 'Confirm Receipt'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </ProviderLayout>
   )
 }

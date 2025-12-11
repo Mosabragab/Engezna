@@ -3,6 +3,32 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
+import {
+  checkRateLimit,
+  resetRateLimit,
+  getRateLimitKey,
+  OTP_SEND_LIMIT,
+  OTP_VERIFY_LIMIT,
+  LOGIN_LIMIT,
+  PASSWORD_RESET_LIMIT,
+} from '@/lib/utils/rate-limit'
+
+/**
+ * Get client IP from headers
+ */
+async function getClientIP(): Promise<string> {
+  const headersList = await headers()
+  const forwardedFor = headersList.get('x-forwarded-for')
+  const realIP = headersList.get('x-real-ip')
+
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim()
+  }
+  if (realIP) {
+    return realIP
+  }
+  return 'unknown'
+}
 
 /**
  * Sign up with email and password
@@ -58,6 +84,15 @@ export async function signInWithEmail(formData: {
   password: string
   locale: string
 }) {
+  // Rate limit check
+  const ip = await getClientIP()
+  const rateLimitKey = getRateLimitKey(ip, formData.email, 'login')
+  const rateLimitResult = checkRateLimit(rateLimitKey, LOGIN_LIMIT)
+
+  if (!rateLimitResult.allowed) {
+    return { error: rateLimitResult.message }
+  }
+
   const supabase = await createClient()
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -68,6 +103,9 @@ export async function signInWithEmail(formData: {
   if (error) {
     return { error: error.message }
   }
+
+  // Reset rate limit on successful login
+  resetRateLimit(rateLimitKey)
 
   return { success: true, data }
 }
@@ -80,6 +118,16 @@ export async function signInWithOTP(formData: {
   email?: string
   locale: string
 }) {
+  // Rate limit check - prevent OTP spam
+  const ip = await getClientIP()
+  const target = formData.phone || formData.email || ''
+  const rateLimitKey = getRateLimitKey(ip, target, 'otp-send')
+  const rateLimitResult = checkRateLimit(rateLimitKey, OTP_SEND_LIMIT)
+
+  if (!rateLimitResult.allowed) {
+    return { error: rateLimitResult.message }
+  }
+
   const supabase = await createClient()
 
   if (formData.phone) {
@@ -121,6 +169,16 @@ export async function verifyOTP(formData: {
   token: string
   type: 'sms' | 'email'
 }) {
+  // Rate limit check - prevent brute force attacks on OTP codes
+  const ip = await getClientIP()
+  const target = formData.phone || formData.email || ''
+  const rateLimitKey = getRateLimitKey(ip, target, 'otp-verify')
+  const rateLimitResult = checkRateLimit(rateLimitKey, OTP_VERIFY_LIMIT)
+
+  if (!rateLimitResult.allowed) {
+    return { error: rateLimitResult.message }
+  }
+
   const supabase = await createClient()
 
   if (formData.type === 'sms' && formData.phone) {
@@ -133,6 +191,10 @@ export async function verifyOTP(formData: {
     if (error) {
       return { error: error.message }
     }
+
+    // Reset rate limits on successful verification
+    resetRateLimit(rateLimitKey)
+    resetRateLimit(getRateLimitKey(ip, target, 'otp-send'))
 
     return { success: true, data }
   }
@@ -147,6 +209,10 @@ export async function verifyOTP(formData: {
     if (error) {
       return { error: error.message }
     }
+
+    // Reset rate limits on successful verification
+    resetRateLimit(rateLimitKey)
+    resetRateLimit(getRateLimitKey(ip, target, 'otp-send'))
 
     return { success: true, data }
   }
@@ -167,6 +233,15 @@ export async function signOut(locale: string) {
  * Reset password - send reset email
  */
 export async function resetPassword(formData: { email: string; locale: string }) {
+  // Rate limit check - prevent password reset spam
+  const ip = await getClientIP()
+  const rateLimitKey = getRateLimitKey(ip, formData.email, 'password-reset')
+  const rateLimitResult = checkRateLimit(rateLimitKey, PASSWORD_RESET_LIMIT)
+
+  if (!rateLimitResult.allowed) {
+    return { error: rateLimitResult.message }
+  }
+
   const supabase = await createClient()
 
   const { data, error } = await supabase.auth.resetPasswordForEmail(formData.email, {
