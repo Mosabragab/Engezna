@@ -92,6 +92,36 @@ PASSWORD_RESET_LIMIT: { maxAttempts: 3, windowMs: 60*60*1000, blockDurationMs: 6
 □ Route Protection: Logout and access /checkout directly
 ```
 
+### Phase 4: Admin Panel Optimization
+| Fix | File | Description |
+|-----|------|-------------|
+| N+1 Query (Approvals) | `src/app/[locale]/admin/approvals/page.tsx` | Batch fetch users (80+ → 3 queries) |
+| N+1 Query (Orders) | `src/app/[locale]/admin/approvals/page.tsx` | Join for customer names |
+| Error Handling | `src/app/[locale]/admin/approvals/page.tsx` | User-facing alerts for failures |
+| Input Validation | `src/app/[locale]/admin/approvals/page.tsx` | Commission rate (0-100%) validation |
+| Badge Counts | `src/app/[locale]/admin/layout.tsx` | Error handling for sidebar badges |
+| Dashboard Errors | `src/app/[locale]/admin/page.tsx` | Error display with retry button |
+
+### Admin Performance Improvement
+```
+Before: 80+ database queries for 20 approvals
+After:  3 queries total
+
+Technique:
+1. Collect all unique admin IDs from approvals
+2. Batch fetch admin_users with .in('id', adminIds)
+3. Batch fetch profiles with .in('id', userIds)
+4. Map data in memory (no additional queries)
+```
+
+### Admin Testing Checklist
+```
+□ Approvals: /admin/approvals - Load page (should be fast now)
+□ Create Request: /admin/approvals - Create commission change request
+□ Dashboard: /admin - Verify stats load correctly
+□ Error Recovery: Disconnect network, verify retry button appears
+```
+
 ---
 
 ## 🎯 Project Overview
