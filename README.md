@@ -406,6 +406,54 @@ npm run type-check   # TypeScript type checking
 - ✅ **Payment Confirmation**: Added confirmation dialog for marking payments as received
 - ✅ **Error Handling**: Improved order cancellation with in-modal error display
 - ✅ **Realtime Retry Logic**: Added exponential backoff for subscription failures
+- ✅ **Chat API Login Message**: Shows "Please login first" instead of generic error
+- ✅ **Cart Discount Fix**: Fixed discount calculation for variant original_price
+- ✅ **Min Order Feedback**: Shows "Add X EGP to get discount" when min not met
+
+**Phase 4: Admin Panel Optimization**
+- ✅ **N+1 Query Fix (Approvals)**: Reduced 80+ queries to 3 using batch fetch
+- ✅ **N+1 Query Fix (Orders Modal)**: Used Supabase join for customer names
+- ✅ **Error Handling (Approvals)**: User-facing alerts for success/failure
+- ✅ **Input Validation**: Commission rate (0-100%) and promo discount validation
+- ✅ **Badge Counts Error Handling**: Graceful failure in sidebar badge loading
+- ✅ **Dashboard Error Display**: Error alert with retry button
+
+### 🧪 Testing Checklist (Session 17)
+
+**Customer Workflow Tests:**
+```
+□ Chat API: Open chat without login → Should show "يرجى تسجيل الدخول أولاً"
+□ Phone Validation: Try checkout with invalid phone (0501234567) → Should reject
+□ Phone Validation: Try checkout with valid phone (01012345678) → Should accept
+□ Provider Switch: Add item, then browse another restaurant → Should warn
+□ Cart Discount (Single Item): Add discounted item → Discount should show
+□ Cart Discount (Min Order): Add item below min order → Show "Add X EGP" message
+□ Order Cancellation: Cancel pending order → Should work with in-modal error handling
+```
+
+**Provider Workflow Tests:**
+```
+□ Payment Confirmation: Click "تأكيد الاستلام" → Should update payment_status
+□ Payment Error: If update fails → Should show Arabic/English error message
+□ Order Notifications: New order arrives → Should get realtime notification
+```
+
+**Admin Workflow Tests:**
+```
+□ Dashboard Load: /admin → Stats should load (with retry on error)
+□ Approvals Load: /admin/approvals → Should load fast (3 queries, not 80+)
+□ Create Approval: Try commission change > 100% → Should show validation error
+□ Create Promo: Try discount > 100% → Should show validation error
+□ Approve/Reject: Take action → Should show success message
+□ Sidebar Badges: Should show pending providers and tickets count
+```
+
+**Performance Tests:**
+```
+□ Approvals with 20+ items: Load time should be < 2 seconds
+□ Dashboard with network issues: Should show error with retry button
+□ Rate Limiting: 11+ failed logins → Should block for 30 minutes
+```
 
 ---
 
