@@ -84,8 +84,32 @@ export default function CartPage() {
     return null
   }
 
-  // Calculate discount for a single item
+  // Calculate variant-level discount (from original_price)
+  const calculateVariantDiscount = (item: CartItem): number => {
+    // Check if variant has original_price (meaning it's discounted)
+    if (item.selectedVariant?.original_price && item.selectedVariant.original_price > item.selectedVariant.price) {
+      const discountPerUnit = item.selectedVariant.original_price - item.selectedVariant.price
+      return discountPerUnit * item.quantity
+    }
+
+    // Check if menu item has original_price (meaning it's discounted)
+    if (item.menuItem.original_price && item.menuItem.original_price > item.menuItem.price) {
+      const discountPerUnit = item.menuItem.original_price - item.menuItem.price
+      return discountPerUnit * item.quantity
+    }
+
+    return 0
+  }
+
+  // Calculate discount for a single item (from promotions table)
   const calculateItemDiscount = (item: CartItem): number => {
+    // First check for variant-level discount (original_price)
+    const variantDiscount = calculateVariantDiscount(item)
+    if (variantDiscount > 0) {
+      return variantDiscount
+    }
+
+    // Then check for promotions-based discount
     const promo = getProductPromotion(item.menuItem.id)
     if (!promo) return 0
 

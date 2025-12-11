@@ -400,7 +400,6 @@ export default function ProviderOrdersPage() {
         .from('orders')
         .update({
           payment_status: 'completed',
-          payment_confirmed_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
