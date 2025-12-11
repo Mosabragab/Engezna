@@ -91,6 +91,12 @@ export default function CartPage() {
 
     const price = item.selectedVariant?.price ?? item.menuItem.price
     const itemTotal = price * item.quantity
+    const subtotal = getSubtotal()
+
+    // Check if this specific promotion meets min_order_amount requirement
+    if (promo.min_order_amount && subtotal < promo.min_order_amount) {
+      return 0 // This promotion doesn't apply due to minimum order
+    }
 
     if (promo.type === 'percentage') {
       let discount = (itemTotal * promo.discount_value) / 100
@@ -120,18 +126,8 @@ export default function CartPage() {
 
   // Calculate total discount
   const calculateTotalDiscount = (): number => {
-    let totalDiscount = items.reduce((sum, item) => sum + calculateItemDiscount(item), 0)
-
-    // Check min_order_amount for any promotion
-    const subtotal = getSubtotal()
-    for (const promo of promotions) {
-      if (promo.min_order_amount && subtotal < promo.min_order_amount) {
-        // Promotion not applicable due to minimum order
-        return 0
-      }
-    }
-
-    return totalDiscount
+    // Sum up discounts per item (min_order_amount is checked per-promotion in calculateItemDiscount)
+    return items.reduce((sum, item) => sum + calculateItemDiscount(item), 0)
   }
 
   const subtotal = getSubtotal()

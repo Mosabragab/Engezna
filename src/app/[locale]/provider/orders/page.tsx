@@ -372,18 +372,56 @@ export default function ProviderOrdersPage() {
 
     const supabase = createClient()
 
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        payment_status: 'completed',
-        payment_confirmed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', orderId)
+    try {
+      // First verify the order exists and belongs to this provider
+      const { data: existingOrder, error: fetchError } = await supabase
+        .from('orders')
+        .select('id, payment_status, provider_id')
+        .eq('id', orderId)
+        .single()
 
-    if (!error && providerId) {
-      await loadOrders(providerId)
+      if (fetchError || !existingOrder) {
+        console.error('Error fetching order:', fetchError)
+        alert(locale === 'ar' ? 'خطأ: لم يتم العثور على الطلب' : 'Error: Order not found')
+        setActionLoading(null)
+        return
+      }
+
+      // Verify provider ownership
+      if (existingOrder.provider_id !== providerId) {
+        console.error('Provider mismatch')
+        alert(locale === 'ar' ? 'خطأ: ليس لديك صلاحية تحديث هذا الطلب' : 'Error: You do not have permission to update this order')
+        setActionLoading(null)
+        return
+      }
+
+      // Perform the update
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          payment_status: 'completed',
+          payment_confirmed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .eq('provider_id', providerId) // Extra safety check
+
+      if (updateError) {
+        console.error('Error updating payment status:', updateError)
+        alert(locale === 'ar' ? 'خطأ في تحديث حالة الدفع: ' + updateError.message : 'Error updating payment status: ' + updateError.message)
+        setActionLoading(null)
+        return
+      }
+
+      // Success - reload orders to reflect changes
+      if (providerId) {
+        await loadOrders(providerId)
+      }
+    } catch (err) {
+      console.error('Unexpected error in handleConfirmPayment:', err)
+      alert(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     }
+
     setActionLoading(null)
   }
 
