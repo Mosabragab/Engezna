@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
+import { usePathname } from 'next/navigation'
 import { PermissionsProvider } from '@/lib/permissions/use-permissions'
 import { AdminSidebarProvider, useAdminSidebar } from '@/components/admin/AdminSidebarContext'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
@@ -12,16 +13,23 @@ interface AdminLayoutInnerProps {
 }
 
 function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
+  const pathname = usePathname()
   const { isOpen, close, hasMounted } = useAdminSidebar()
   const [pendingProviders, setPendingProviders] = useState(0)
   const [openTickets, setOpenTickets] = useState(0)
 
+  // Check if current page is login page - don't show sidebar
+  const isLoginPage = pathname?.includes('/admin/login')
+
   useEffect(() => {
+    // Don't load badge counts on login page
+    if (isLoginPage) return
+
     loadBadgeCounts()
     // Refresh badge counts every 60 seconds
     const interval = setInterval(loadBadgeCounts, 60000)
     return () => clearInterval(interval)
-  }, [])
+  }, [isLoginPage])
 
   async function loadBadgeCounts() {
     try {
@@ -50,6 +58,11 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
       // Silently fail for badge counts - not critical
       console.error('Error loading badge counts:', error)
     }
+  }
+
+  // Login page - render without sidebar
+  if (isLoginPage) {
+    return <>{children}</>
   }
 
   return (
