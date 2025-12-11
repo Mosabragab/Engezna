@@ -32,6 +32,12 @@
     --error: 0 84% 60%;                 /* #EF4444 Red - Errors/Cancelled */
     --warning: 48 97% 53%;              /* #FACC15 Yellow - Warnings/Pending */
 
+    /* EXTENDED SEMANTIC COLORS - Additional Dashboard States */
+    --amber: 38 92% 50%;                /* #F59E0B Amber - Pending/Attention */
+    --purple: 271 81% 56%;              /* #8B5CF6 Purple - Premium/Reports */
+    --emerald: 160 84% 39%;             /* #10B981 Emerald - High Value */
+    --orange: 25 95% 53%;               /* #F97316 Orange - High Priority */
+
     /* CONTRAST SYSTEM - Text Hierarchy */
     --text-primary: 222 47% 11%;        /* #0F172A Main text - highest contrast */
     --text-secondary: 215 16% 47%;      /* #475569 Secondary text */
@@ -52,6 +58,10 @@
     --card-bg-info: 198 100% 97%;       /* Cyan 10% - #E0F4FF */
     --card-bg-warning: 48 100% 95%;     /* Yellow 10% - #FEF9C3 */
     --card-bg-error: 0 86% 97%;         /* Red 10% - #FEF2F2 */
+    --card-bg-amber: 38 100% 95%;       /* Amber 10% - #FFFBEB */
+    --card-bg-purple: 271 91% 97%;      /* Purple 10% - #F5F3FF */
+    --card-bg-emerald: 160 84% 95%;     /* Emerald 10% - #D1FAE5 */
+    --card-bg-orange: 25 100% 95%;      /* Orange 10% - #FFF7ED */
 
     /* CARD & POPOVER */
     --card: 0 0% 100%;
@@ -96,6 +106,16 @@
   .bg-card-info { background-color: hsl(var(--card-bg-info)); }
   .bg-card-warning { background-color: hsl(var(--card-bg-warning)); }
   .bg-card-error { background-color: hsl(var(--card-bg-error)); }
+  .bg-card-amber { background-color: hsl(var(--card-bg-amber)); }
+  .bg-card-purple { background-color: hsl(var(--card-bg-purple)); }
+  .bg-card-emerald { background-color: hsl(var(--card-bg-emerald)); }
+  .bg-card-orange { background-color: hsl(var(--card-bg-orange)); }
+
+  /* Extended semantic backgrounds */
+  .bg-amber { background-color: hsl(var(--amber)); }
+  .bg-purple { background-color: hsl(var(--purple)); }
+  .bg-emerald { background-color: hsl(var(--emerald)); }
+  .bg-orange { background-color: hsl(var(--orange)); }
 
   /* Text Colors - Brand */
   .text-primary { color: hsl(var(--primary)); }
@@ -106,6 +126,10 @@
   .text-success { color: hsl(var(--success)); }
   .text-warning { color: hsl(var(--warning)); }
   .text-in-progress { color: hsl(var(--in-progress)); }
+  .text-amber { color: hsl(var(--amber)); }
+  .text-purple { color: hsl(var(--purple)); }
+  .text-emerald { color: hsl(var(--emerald)); }
+  .text-orange { color: hsl(var(--orange)); }
 
   /* Text Colors - Hierarchy */
   .text-body { color: hsl(var(--text-primary)); }
@@ -135,8 +159,21 @@
   .border-success { border-color: hsl(var(--success)); }
   .border-error { border-color: hsl(var(--error)); }
   .border-warning { border-color: hsl(var(--warning)); }
+  .border-amber { border-color: hsl(var(--amber)); }
+  .border-purple { border-color: hsl(var(--purple)); }
+  .border-emerald { border-color: hsl(var(--emerald)); }
+  .border-orange { border-color: hsl(var(--orange)); }
   .border-brand-orange { border-color: hsl(var(--primary)); }
   .border-orange-accent { border-color: hsl(var(--deal)); }
+
+  /* Hover variants with proper transitions */
+  .hover\:border-success:hover { border-color: hsl(var(--success)); }
+  .hover\:border-error:hover { border-color: hsl(var(--error)); }
+  .hover\:border-warning:hover { border-color: hsl(var(--warning)); }
+  .hover\:border-amber:hover { border-color: hsl(var(--amber)); }
+  .hover\:border-purple:hover { border-color: hsl(var(--purple)); }
+  .hover\:border-emerald:hover { border-color: hsl(var(--emerald)); }
+  .hover\:border-primary:hover { border-color: hsl(var(--primary)); }
 }
 
 /* GRADIENTS */
@@ -201,6 +238,36 @@
     background-color: hsl(var(--info) / 0.1);
     color: hsl(var(--info));
     border: 1px solid hsl(var(--info) / 0.3);
+  }
+
+  .status-in-progress {
+    background-color: hsl(var(--in-progress) / 0.1);
+    color: hsl(var(--in-progress));
+    border: 1px solid hsl(var(--in-progress) / 0.3);
+  }
+
+  .status-amber {
+    background-color: hsl(var(--amber) / 0.1);
+    color: hsl(var(--amber));
+    border: 1px solid hsl(var(--amber) / 0.3);
+  }
+
+  .status-purple {
+    background-color: hsl(var(--purple) / 0.1);
+    color: hsl(var(--purple));
+    border: 1px solid hsl(var(--purple) / 0.3);
+  }
+
+  .status-emerald {
+    background-color: hsl(var(--emerald) / 0.1);
+    color: hsl(var(--emerald));
+    border: 1px solid hsl(var(--emerald) / 0.3);
+  }
+
+  .status-orange {
+    background-color: hsl(var(--orange) / 0.1);
+    color: hsl(var(--orange));
+    border: 1px solid hsl(var(--orange) / 0.3);
   }
 }
 

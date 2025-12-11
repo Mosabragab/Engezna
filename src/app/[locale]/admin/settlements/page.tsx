@@ -427,12 +427,12 @@ export default function AdminSettlementsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-700'
-      case 'waived': return 'bg-green-100 text-green-700'
-      case 'pending': return 'bg-yellow-100 text-yellow-700'
-      case 'partially_paid': return 'bg-blue-100 text-blue-700'
-      case 'overdue': return 'bg-red-100 text-red-700'
-      case 'disputed': return 'bg-red-100 text-red-700'
+      case 'paid': return 'status-success'
+      case 'waived': return 'status-success'
+      case 'pending': return 'status-warning'
+      case 'partially_paid': return 'status-in-progress'
+      case 'overdue': return 'status-error'
+      case 'disputed': return 'status-error'
       default: return 'bg-slate-100 text-slate-700'
     }
   }
@@ -530,7 +530,7 @@ export default function AdminSettlementsPage() {
               <Button
                 onClick={handleGenerateWeeklySettlements}
                 disabled={isGenerating}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-primary hover:bg-[#0080b8] text-white"
               >
                 <PlayCircle className="w-4 h-4 mr-2" />
                 {isGenerating
@@ -542,7 +542,7 @@ export default function AdminSettlementsPage() {
               <Button
                 onClick={() => setShowGenerateModal(true)}
                 variant="outline"
-                className="border-green-500 text-green-700 hover:bg-green-600 hover:text-white hover:border-green-600"
+                className="border-primary text-primary hover:bg-primary hover:text-white"
               >
                 <Calendar className="w-4 h-4 mr-2" />
                 {locale === 'ar' ? 'تسوية مخصصة' : 'Custom'}
@@ -569,38 +569,38 @@ export default function AdminSettlementsPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {/* Paid - Green card */}
-            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-5 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-[#22C55E] to-[#16A34A] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <span className="text-emerald-100 text-sm">{stats.paidCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
+                <span className="text-white/80 text-sm">{stats.paidCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
               </div>
-              <p className="text-emerald-100 text-sm mb-1">{locale === 'ar' ? 'إجمالي المدفوع' : 'Total Paid'}</p>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'إجمالي المدفوع' : 'Total Paid'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.totalPaid, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
 
-            {/* Overdue - Red/Coral card (matching platform) */}
-            <div className="bg-gradient-to-br from-red-400 to-red-500 rounded-xl p-5 text-white shadow-lg">
+            {/* Overdue - Red card */}
+            <div className="bg-gradient-to-br from-[#EF4444] to-[#DC2626] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <AlertTriangle className="w-6 h-6" />
                 </div>
-                <span className="text-red-100 text-sm">{stats.overdueCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
+                <span className="text-white/80 text-sm">{stats.overdueCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
               </div>
-              <p className="text-red-100 text-sm mb-1">{locale === 'ar' ? 'مستحقات متأخرة' : 'Overdue Dues'}</p>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'مستحقات متأخرة' : 'Overdue Dues'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.totalOverdue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
 
-            {/* Pending - Amber/Yellow card */}
-            <div className="bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl p-5 text-white shadow-lg">
+            {/* Pending - Amber card */}
+            <div className="bg-gradient-to-br from-[#F59E0B] to-[#D97706] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <Clock className="w-6 h-6" />
                 </div>
-                <span className="text-amber-100 text-sm">{stats.pendingCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
+                <span className="text-white/80 text-sm">{stats.pendingCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
               </div>
-              <p className="text-amber-100 text-sm mb-1">{locale === 'ar' ? 'مستحقات معلقة' : 'Pending Dues'}</p>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'مستحقات معلقة' : 'Pending Dues'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.totalPending, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
           </div>
@@ -718,7 +718,7 @@ export default function AdminSettlementsPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                className="h-8 px-2 text-success hover:text-success/80 hover:bg-card-bg-success"
                                 onClick={() => {
                                   setSelectedSettlement(settlement)
                                   setPaymentForm({
@@ -818,7 +818,7 @@ export default function AdminSettlementsPage() {
               <Button
                 onClick={handleGenerateSettlement}
                 disabled={isGenerating}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-primary hover:bg-[#0080b8] text-white"
               >
                 {isGenerating ? (locale === 'ar' ? 'جاري الإنشاء...' : 'Generating...') : (locale === 'ar' ? 'إنشاء' : 'Generate')}
               </Button>
@@ -905,7 +905,7 @@ export default function AdminSettlementsPage() {
               <Button
                 onClick={handleRecordPayment}
                 disabled={isProcessingPayment}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-success hover:bg-success/90 text-white"
               >
                 {isProcessingPayment ? (locale === 'ar' ? 'جاري التسجيل...' : 'Recording...') : (locale === 'ar' ? 'تسجيل الدفع' : 'Record Payment')}
               </Button>

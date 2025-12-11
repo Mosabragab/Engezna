@@ -293,12 +293,12 @@ export default function AdminFinancePage() {
 
   const getSettlementStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-700'
-      case 'waived': return 'bg-green-100 text-green-700'
-      case 'pending': return 'bg-yellow-100 text-yellow-700'
-      case 'partially_paid': return 'bg-blue-100 text-blue-700'
-      case 'overdue': return 'bg-red-100 text-red-700'
-      case 'disputed': return 'bg-red-100 text-red-700'
+      case 'paid': return 'status-success'
+      case 'waived': return 'status-success'
+      case 'pending': return 'status-warning'
+      case 'partially_paid': return 'status-in-progress'
+      case 'overdue': return 'status-error'
+      case 'disputed': return 'status-error'
       default: return 'bg-slate-100 text-slate-700'
     }
   }
@@ -419,7 +419,7 @@ export default function AdminFinancePage() {
 
           {/* Revenue Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-[#22C55E] to-[#16A34A] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <DollarSign className="w-6 h-6" />
@@ -431,12 +431,12 @@ export default function AdminFinancePage() {
                   </div>
                 )}
               </div>
-              <p className="text-green-100 text-sm mb-1">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</p>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.totalRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-              <p className="text-green-100 text-xs mt-2">{formatNumber(stats.ordersCount, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
+              <p className="text-white/70 text-xs mt-2">{formatNumber(stats.ordersCount, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-[#009DE0] to-[#0080b8] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <Receipt className="w-6 h-6" />
@@ -448,27 +448,27 @@ export default function AdminFinancePage() {
                   </div>
                 )}
               </div>
-              <p className="text-blue-100 text-sm mb-1">{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</p>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.totalCommission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <DollarSign className="w-6 h-6" />
                 </div>
               </div>
-              <p className="text-purple-100 text-sm mb-1">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</p>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.totalDeliveryFees, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
 
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-5 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-[#F59E0B] to-[#D97706] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <Clock className="w-6 h-6" />
                 </div>
               </div>
-              <p className="text-orange-100 text-sm mb-1">{locale === 'ar' ? 'تسويات معلقة' : 'Pending Settlements'}</p>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'تسويات معلقة' : 'Pending Settlements'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.pendingSettlements, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
           </div>
@@ -477,8 +477,8 @@ export default function AdminFinancePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
             <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                  <Banknote className="w-5 h-5 text-green-600" />
+                <div className="w-10 h-10 bg-card-bg-success rounded-xl flex items-center justify-center">
+                  <Banknote className="w-5 h-5 text-success" />
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">{locale === 'ar' ? 'دفع نقدي' : 'Cash'}</p>
@@ -487,7 +487,7 @@ export default function AdminFinancePage() {
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
                 <div
-                  className="bg-green-500 h-2 rounded-full"
+                  className="bg-success h-2 rounded-full"
                   style={{ width: `${stats.totalRevenue > 0 ? (stats.cashOrders / stats.totalRevenue) * 100 : 0}%` }}
                 />
               </div>
@@ -498,8 +498,8 @@ export default function AdminFinancePage() {
 
             <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-card-bg-primary rounded-xl flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">{locale === 'ar' ? 'بطاقة' : 'Card'}</p>
@@ -508,7 +508,7 @@ export default function AdminFinancePage() {
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
                 <div
-                  className="bg-blue-500 h-2 rounded-full"
+                  className="bg-primary h-2 rounded-full"
                   style={{ width: `${stats.totalRevenue > 0 ? (stats.cardOrders / stats.totalRevenue) * 100 : 0}%` }}
                 />
               </div>
@@ -519,8 +519,8 @@ export default function AdminFinancePage() {
 
             <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                  <Wallet className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 bg-card-bg-purple rounded-xl flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-purple" />
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">{locale === 'ar' ? 'محفظة' : 'Wallet'}</p>
@@ -529,7 +529,7 @@ export default function AdminFinancePage() {
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2">
                 <div
-                  className="bg-purple-500 h-2 rounded-full"
+                  className="bg-purple h-2 rounded-full"
                   style={{ width: `${stats.totalRevenue > 0 ? (stats.walletOrders / stats.totalRevenue) * 100 : 0}%` }}
                 />
               </div>
