@@ -12,7 +12,7 @@ interface AdminLayoutInnerProps {
 }
 
 function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
-  const { isOpen, close } = useAdminSidebar()
+  const { isOpen, close, hasMounted } = useAdminSidebar()
   const [pendingProviders, setPendingProviders] = useState(0)
   const [openTickets, setOpenTickets] = useState(0)
 
@@ -60,6 +60,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
         onClose={close}
         pendingProviders={pendingProviders}
         openTickets={openTickets}
+        hasMounted={hasMounted}
       />
 
       {/* Main content area - pages render here */}
