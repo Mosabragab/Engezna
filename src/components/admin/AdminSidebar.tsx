@@ -57,7 +57,8 @@ export function AdminSidebar({
   pendingTasks = 0,
   pendingApprovals = 0,
   unreadMessages = 0,
-}: AdminSidebarProps) {
+  hasMounted = false,
+}: AdminSidebarProps & { hasMounted?: boolean }) {
   const locale = useLocale()
   const pathname = usePathname()
   const isRTL = locale === 'ar'
@@ -253,8 +254,8 @@ export function AdminSidebar({
         className={`
           fixed lg:static inset-y-0 z-50
           w-64 bg-white shadow-sm
-          transform transition-transform duration-300 ease-in-out
-          flex flex-col overflow-hidden
+          transform flex flex-col overflow-hidden
+          ${hasMounted ? 'transition-transform duration-300 ease-in-out' : ''}
           ${isRTL ? 'right-0 border-l border-slate-200' : 'left-0 border-r border-slate-200'}
           ${isOpen ? 'translate-x-0' : isRTL ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}

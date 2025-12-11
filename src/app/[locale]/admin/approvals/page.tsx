@@ -211,52 +211,80 @@ export default function AdminApprovalsPage() {
 
     if (error) {
       console.error('Error loading approvals:', error)
+      alert(locale === 'ar' ? 'خطأ في تحميل طلبات الموافقة' : 'Error loading approval requests')
       return
     }
 
-    // Load requester and decider names
-    const approvalsWithUsers = await Promise.all(
-      (approvalsData || []).map(async (approval) => {
-        let requester = null
-        let decider = null
+    if (!approvalsData || approvalsData.length === 0) {
+      setApprovals([])
+      calculateStats([], currentAdminId)
+      return
+    }
 
-        if (approval.requested_by) {
-          const { data: requesterAdmin } = await supabase
-            .from('admin_users')
-            .select('user_id')
-            .eq('id', approval.requested_by)
-            .single()
+    // Collect unique admin IDs to fetch in batch
+    const adminIds = new Set<string>()
+    approvalsData.forEach(approval => {
+      if (approval.requested_by) adminIds.add(approval.requested_by)
+      if (approval.decided_by) adminIds.add(approval.decided_by)
+    })
 
-          if (requesterAdmin) {
-            const { data: requesterProfile } = await supabase
-              .from('profiles')
-              .select('full_name, email')
-              .eq('id', requesterAdmin.user_id)
-              .single()
-            requester = requesterProfile
-          }
+    // Batch fetch admin users (single query instead of N queries)
+    const adminIdArray = Array.from(adminIds)
+    let adminUsersMap: Record<string, string> = {} // admin_id -> user_id
+
+    if (adminIdArray.length > 0) {
+      const { data: adminUsers } = await supabase
+        .from('admin_users')
+        .select('id, user_id')
+        .in('id', adminIdArray)
+
+      if (adminUsers) {
+        adminUsers.forEach(admin => {
+          adminUsersMap[admin.id] = admin.user_id
+        })
+      }
+    }
+
+    // Collect user IDs for profiles batch fetch
+    const userIds = new Set<string>(Object.values(adminUsersMap))
+
+    // Batch fetch profiles (single query instead of N queries)
+    let profilesMap: Record<string, { full_name: string | null; email: string | null }> = {}
+
+    if (userIds.size > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', Array.from(userIds))
+
+      if (profiles) {
+        profiles.forEach(profile => {
+          profilesMap[profile.id] = { full_name: profile.full_name, email: profile.email }
+        })
+      }
+    }
+
+    // Map approvals with user data (in memory, no additional queries)
+    const approvalsWithUsers = approvalsData.map(approval => {
+      let requester = null
+      let decider = null
+
+      if (approval.requested_by) {
+        const userId = adminUsersMap[approval.requested_by]
+        if (userId && profilesMap[userId]) {
+          requester = profilesMap[userId]
         }
+      }
 
-        if (approval.decided_by) {
-          const { data: deciderAdmin } = await supabase
-            .from('admin_users')
-            .select('user_id')
-            .eq('id', approval.decided_by)
-            .single()
-
-          if (deciderAdmin) {
-            const { data: deciderProfile } = await supabase
-              .from('profiles')
-              .select('full_name, email')
-              .eq('id', deciderAdmin.user_id)
-              .single()
-            decider = deciderProfile
-          }
+      if (approval.decided_by) {
+        const userId = adminUsersMap[approval.decided_by]
+        if (userId && profilesMap[userId]) {
+          decider = profilesMap[userId]
         }
+      }
 
-        return { ...approval, requester, decider }
-      })
-    )
+      return { ...approval, requester, decider }
+    })
 
     setApprovals(approvalsWithUsers)
     calculateStats(approvalsWithUsers, currentAdminId)
@@ -341,9 +369,15 @@ export default function AdminApprovalsPage() {
 
     if (error) {
       console.error('Error updating approval:', error)
+      alert(locale === 'ar' ? 'خطأ في تحديث حالة الطلب: ' + error.message : 'Error updating approval status: ' + error.message)
       setFormLoading(false)
       return
     }
+
+    // Show success message
+    alert(locale === 'ar'
+      ? (actionType === 'approve' ? 'تمت الموافقة على الطلب بنجاح' : 'تم رفض الطلب')
+      : (actionType === 'approve' ? 'Request approved successfully' : 'Request rejected'))
 
     await loadApprovals(supabase)
     setShowActionModal(false)
@@ -379,6 +413,28 @@ export default function AdminApprovalsPage() {
     if ((formData.type === 'provider_suspend' || formData.type === 'commission_change') && !formData.related_provider_id) {
       setFormError(locale === 'ar' ? 'يجب اختيار المتجر' : 'Please select the provider')
       return
+    }
+
+    // Validate commission rate range
+    if (formData.type === 'commission_change') {
+      const rate = parseFloat(formData.new_commission_rate)
+      if (isNaN(rate) || rate < 0 || rate > 100) {
+        setFormError(locale === 'ar' ? 'نسبة العمولة يجب أن تكون بين 0 و 100' : 'Commission rate must be between 0 and 100')
+        return
+      }
+    }
+
+    // Validate promo discount range
+    if (formData.type === 'promo_create') {
+      const discount = parseFloat(formData.promo_discount)
+      if (isNaN(discount) || discount < 1 || discount > 100) {
+        setFormError(locale === 'ar' ? 'نسبة الخصم يجب أن تكون بين 1 و 100' : 'Discount must be between 1 and 100')
+        return
+      }
+      if (!formData.promo_code.trim()) {
+        setFormError(locale === 'ar' ? 'كود العرض مطلوب' : 'Promo code is required')
+        return
+      }
     }
 
     setFormLoading(true)
@@ -456,52 +512,51 @@ export default function AdminApprovalsPage() {
     setLoadingEntities(true)
     const supabase = createClient()
 
-    // Load orders
-    const { data: ordersData } = await supabase
-      .from('orders')
-      .select('id, order_number, customer_id')
-      .order('created_at', { ascending: false })
-      .limit(100)
+    try {
+      // Load orders with customer names using join (single query instead of N+1)
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('id, order_number, customer_id, profiles!customer_id(full_name)')
+        .order('created_at', { ascending: false })
+        .limit(100)
 
-    if (ordersData) {
-      const ordersWithNames = await Promise.all(
-        ordersData.map(async (order) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', order.customer_id)
-            .single()
+      if (ordersData) {
+        const ordersWithNames = ordersData.map(order => {
+          // Handle join result which may be array or object
+          const profile = Array.isArray(order.profiles) ? order.profiles[0] : order.profiles
           return {
             id: order.id,
             order_number: order.order_number,
             customer_name: profile?.full_name || 'N/A',
           }
         })
-      )
-      setOrders(ordersWithNames)
-    }
+        setOrders(ordersWithNames)
+      }
 
-    // Load customers
-    const { data: customersData } = await supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .eq('role', 'customer')
-      .order('full_name')
-      .limit(100)
+      // Load customers
+      const { data: customersData } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('role', 'customer')
+        .order('full_name')
+        .limit(100)
 
-    if (customersData) {
-      setCustomers(customersData)
-    }
+      if (customersData) {
+        setCustomers(customersData)
+      }
 
-    // Load providers
-    const { data: providersData } = await supabase
-      .from('providers')
-      .select('id, name_ar, name_en')
-      .order('name_ar')
-      .limit(100)
+      // Load providers
+      const { data: providersData } = await supabase
+        .from('providers')
+        .select('id, name_ar, name_en')
+        .order('name_ar')
+        .limit(100)
 
-    if (providersData) {
-      setProviders(providersData)
+      if (providersData) {
+        setProviders(providersData)
+      }
+    } catch (error) {
+      console.error('Error loading entities:', error)
     }
 
     setLoadingEntities(false)

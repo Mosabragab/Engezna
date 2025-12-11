@@ -84,6 +84,7 @@ export default function AdminDashboard() {
   })
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([])
   const [pendingProviders, setPendingProviders] = useState<PendingProvider[]>([])
+  const [dataError, setDataError] = useState<string | null>(null)
 
   useEffect(() => {
     checkAuth()
@@ -180,6 +181,7 @@ export default function AdminDashboard() {
       setRecentOrders(transformedOrders as RecentOrder[])
     } catch (error) {
       console.error('Error loading dashboard data:', error)
+      setDataError(locale === 'ar' ? 'خطأ في تحميل بيانات لوحة التحكم' : 'Error loading dashboard data')
     }
   }
 
@@ -279,6 +281,23 @@ export default function AdminDashboard() {
               {locale === 'ar' ? 'إليك نظرة عامة على منصة إنجزنا' : "Here's an overview of Engezna platform"}
             </p>
           </div>
+
+          {/* Error Alert */}
+          {dataError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center justify-between">
+              <span>{dataError}</span>
+              <button
+                onClick={() => {
+                  setDataError(null)
+                  const supabase = createClient()
+                  loadDashboardData(supabase)
+                }}
+                className="text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded-lg transition-colors"
+              >
+                {locale === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+              </button>
+            </div>
+          )}
 
           {/* KPI Cards - Row 1 */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

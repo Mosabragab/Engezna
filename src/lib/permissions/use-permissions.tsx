@@ -41,27 +41,97 @@ interface CachedPermissions {
   geographicScope: GeographicConstraint;
 }
 
+// Session storage key for caching permissions
+const PERMISSIONS_CACHE_KEY = 'admin_permissions_cache';
+const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+
+interface StoredCache {
+  adminId: string;
+  legacyRole: string | null;
+  permissions: [PermissionCode, { constraints: Record<string, unknown> }][];
+  deniedPermissions: PermissionCode[];
+  roles: AdminRole[];
+  geographicScope: GeographicConstraint;
+  timestamp: number;
+}
+
+// Load cached permissions from sessionStorage
+function loadFromSessionStorage(): StoredCache | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cached = sessionStorage.getItem(PERMISSIONS_CACHE_KEY);
+    if (!cached) return null;
+    const data: StoredCache = JSON.parse(cached);
+    // Check if cache is expired
+    if (Date.now() - data.timestamp > CACHE_EXPIRY_MS) {
+      sessionStorage.removeItem(PERMISSIONS_CACHE_KEY);
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+// Save permissions to sessionStorage
+function saveToSessionStorage(data: Omit<StoredCache, 'timestamp'>) {
+  if (typeof window === 'undefined') return;
+  try {
+    const stored: StoredCache = { ...data, timestamp: Date.now() };
+    sessionStorage.setItem(PERMISSIONS_CACHE_KEY, JSON.stringify(stored));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+// Clear permissions cache (call on logout)
+function clearPermissionsCache() {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.removeItem(PERMISSIONS_CACHE_KEY);
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export function PermissionsProvider({ children }: { children: ReactNode }) {
-  const [loading, setLoading] = useState(true);
-  const [adminId, setAdminId] = useState<string | null>(null);
+  // Try to load from cache for faster initial render
+  const cachedData = loadFromSessionStorage();
+
+  const [loading, setLoading] = useState(!cachedData);
+  const [adminId, setAdminId] = useState<string | null>(cachedData?.adminId || null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [legacyRole, setLegacyRole] = useState<string | null>(null); // الدور من جدول admin_users
-  const [cache, setCache] = useState<CachedPermissions>({
-    permissions: new Map(),
-    deniedPermissions: new Set(),
-    roles: [],
-    geographicScope: { governorates: [], cities: [], districts: [] },
+  const [legacyRole, setLegacyRole] = useState<string | null>(cachedData?.legacyRole || null);
+  const [cache, setCache] = useState<CachedPermissions>(() => {
+    if (cachedData) {
+      return {
+        permissions: new Map(cachedData.permissions),
+        deniedPermissions: new Set(cachedData.deniedPermissions),
+        roles: cachedData.roles,
+        geographicScope: cachedData.geographicScope,
+      };
+    }
+    return {
+      permissions: new Map(),
+      deniedPermissions: new Set(),
+      roles: [],
+      geographicScope: { governorates: [], cities: [], districts: [] },
+    };
   });
 
   // تحميل الصلاحيات
-  const loadPermissions = useCallback(async () => {
-    setLoading(true);
+  const loadPermissions = useCallback(async (backgroundRefresh = false) => {
+    if (!backgroundRefresh) {
+      setLoading(true);
+    }
     const supabase = createClient();
 
     try {
       // جلب المستخدم الحالي
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        // Clear cache when no user is logged in
+        clearPermissionsCache();
         setLoading(false);
         return;
       }
@@ -190,6 +260,16 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       }
 
       setCache(newCache);
+
+      // Save to sessionStorage for faster subsequent loads
+      saveToSessionStorage({
+        adminId: adminUser.id,
+        legacyRole: effectiveRole,
+        permissions: Array.from(newCache.permissions.entries()),
+        deniedPermissions: Array.from(newCache.deniedPermissions),
+        roles: newCache.roles,
+        geographicScope: newCache.geographicScope,
+      });
     } catch (error) {
       console.error('Error loading permissions:', error);
     }
@@ -198,8 +278,16 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    loadPermissions();
-  }, [loadPermissions]);
+    // If we have cached data, load in background without showing loading state
+    // Otherwise, load with loading state
+    if (cachedData) {
+      // Background refresh - don't set loading to true
+      loadPermissions(true).catch(() => {});
+    } else {
+      loadPermissions(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // التحقق من صلاحية (async مع context)
   const can = useCallback(
@@ -311,7 +399,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     can,
     canSync,
     hasResource,
-    reload: loadPermissions,
+    reload: () => loadPermissions(false), // Manual reload always shows loading
   };
 
   return (
