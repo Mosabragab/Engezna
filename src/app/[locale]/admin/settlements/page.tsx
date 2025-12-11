@@ -569,38 +569,38 @@ export default function AdminSettlementsPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {/* Paid - Green card */}
-            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-5 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-[#22C55E] to-[#16A34A] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <span className="text-emerald-100 text-sm">{stats.paidCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
+                <span className="text-white/80 text-sm">{stats.paidCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
               </div>
-              <p className="text-emerald-100 text-sm mb-1">{locale === 'ar' ? 'إجمالي المدفوع' : 'Total Paid'}</p>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'إجمالي المدفوع' : 'Total Paid'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.totalPaid, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
 
-            {/* Overdue - Red/Coral card (matching platform) */}
-            <div className="bg-gradient-to-br from-red-400 to-red-500 rounded-xl p-5 text-white shadow-lg">
+            {/* Overdue - Red card */}
+            <div className="bg-gradient-to-br from-[#EF4444] to-[#DC2626] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <AlertTriangle className="w-6 h-6" />
                 </div>
-                <span className="text-red-100 text-sm">{stats.overdueCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
+                <span className="text-white/80 text-sm">{stats.overdueCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
               </div>
-              <p className="text-red-100 text-sm mb-1">{locale === 'ar' ? 'مستحقات متأخرة' : 'Overdue Dues'}</p>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'مستحقات متأخرة' : 'Overdue Dues'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.totalOverdue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
 
-            {/* Pending - Amber/Yellow card */}
-            <div className="bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl p-5 text-white shadow-lg">
+            {/* Pending - Amber card */}
+            <div className="bg-gradient-to-br from-[#F59E0B] to-[#D97706] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                   <Clock className="w-6 h-6" />
                 </div>
-                <span className="text-amber-100 text-sm">{stats.pendingCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
+                <span className="text-white/80 text-sm">{stats.pendingCount} {locale === 'ar' ? 'تسوية' : 'settlements'}</span>
               </div>
-              <p className="text-amber-100 text-sm mb-1">{locale === 'ar' ? 'مستحقات معلقة' : 'Pending Dues'}</p>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'مستحقات معلقة' : 'Pending Dues'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.totalPending, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
           </div>
