@@ -271,11 +271,25 @@ export default function GovernoratePage() {
                     <MapPinned className="w-4 h-4 text-muted-foreground" />
                     {locale === 'ar' ? 'المحافظة' : 'Governorate'}
                   </Label>
-                  <Select value={governorateId} onValueChange={setGovernorateId}>
+                  <Select
+                    value={governorateId}
+                    onValueChange={(value) => {
+                      if (value === '_welcome_') {
+                        // Navigate to welcome page
+                        router.push(`/${locale}/welcome`)
+                      } else {
+                        setGovernorateId(value)
+                      }
+                    }}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder={locale === 'ar' ? 'اختر المحافظة' : 'Select governorate'} />
                     </SelectTrigger>
                     <SelectContent>
+                      {/* Welcome page option - always first */}
+                      <SelectItem value="_welcome_" className="text-primary border-b border-slate-100 mb-1">
+                        {locale === 'ar' ? '← العودة لصفحة الترحيب' : '← Back to Welcome Page'}
+                      </SelectItem>
                       {governorates.map((gov) => (
                         <SelectItem key={gov.id} value={gov.id}>
                           {locale === 'ar' ? gov.name_ar : gov.name_en}
