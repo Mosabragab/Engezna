@@ -347,7 +347,7 @@ export interface Database {
       };
 
       // --------------------------------------------------------------------
-      // Menu Items
+      // Menu Items - Updated December 2025 with variants, pricing types
       // --------------------------------------------------------------------
       menu_items: {
         Row: {
@@ -372,6 +372,23 @@ export interface Database {
           metadata: Json | null;
           created_at: string;
           updated_at: string;
+          // Variant and pricing fields - Added Dec 2025
+          pricing_type: 'fixed' | 'per_unit' | 'variants';
+          has_variants: boolean;
+          provider_category_id: string | null;
+          variant_type: string | null; // 'size', 'weight', 'option', 'coffee_weight'
+          unit_type: string | null; // 'kg', 'gram', 'liter', 'piece', etc.
+          unit_price: number | null;
+          min_quantity: number | null;
+          quantity_step: number | null;
+          price_from: number | null;
+          // Combo and special fields
+          combo_contents_ar: string | null;
+          combo_contents_en: string | null;
+          serves_count: number | null;
+          is_popular: boolean;
+          is_new: boolean;
+          import_id: string | null;
         };
         Insert: {
           id?: string;
@@ -395,6 +412,23 @@ export interface Database {
           metadata?: Json | null;
           created_at?: string;
           updated_at?: string;
+          // Variant and pricing fields
+          pricing_type?: 'fixed' | 'per_unit' | 'variants';
+          has_variants?: boolean;
+          provider_category_id?: string | null;
+          variant_type?: string | null;
+          unit_type?: string | null;
+          unit_price?: number | null;
+          min_quantity?: number | null;
+          quantity_step?: number | null;
+          price_from?: number | null;
+          // Combo and special fields
+          combo_contents_ar?: string | null;
+          combo_contents_en?: string | null;
+          serves_count?: number | null;
+          is_popular?: boolean;
+          is_new?: boolean;
+          import_id?: string | null;
         };
         Update: {
           id?: string;
@@ -418,6 +452,176 @@ export interface Database {
           metadata?: Json | null;
           created_at?: string;
           updated_at?: string;
+          // Variant and pricing fields
+          pricing_type?: 'fixed' | 'per_unit' | 'variants';
+          has_variants?: boolean;
+          provider_category_id?: string | null;
+          variant_type?: string | null;
+          unit_type?: string | null;
+          unit_price?: number | null;
+          min_quantity?: number | null;
+          quantity_step?: number | null;
+          price_from?: number | null;
+          // Combo and special fields
+          combo_contents_ar?: string | null;
+          combo_contents_en?: string | null;
+          serves_count?: number | null;
+          is_popular?: boolean;
+          is_new?: boolean;
+          import_id?: string | null;
+        };
+      };
+
+      // --------------------------------------------------------------------
+      // Product Variants - Sizes, weights, options for menu items
+      // --------------------------------------------------------------------
+      product_variants: {
+        Row: {
+          id: string;
+          product_id: string;
+          variant_type: string; // 'size', 'weight', 'option'
+          name_ar: string;
+          name_en: string | null;
+          price: number;
+          original_price: number | null;
+          is_default: boolean;
+          display_order: number;
+          is_available: boolean;
+          multiplier: number | null; // For weight-based variants
+          metadata: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          variant_type: string;
+          name_ar: string;
+          name_en?: string | null;
+          price: number;
+          original_price?: number | null;
+          is_default?: boolean;
+          display_order?: number;
+          is_available?: boolean;
+          multiplier?: number | null;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          product_id?: string;
+          variant_type?: string;
+          name_ar?: string;
+          name_en?: string | null;
+          price?: number;
+          original_price?: number | null;
+          is_default?: boolean;
+          display_order?: number;
+          is_available?: boolean;
+          multiplier?: number | null;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      // --------------------------------------------------------------------
+      // Provider Categories - Provider-specific menu categories
+      // --------------------------------------------------------------------
+      provider_categories: {
+        Row: {
+          id: string;
+          provider_id: string;
+          name_ar: string;
+          name_en: string | null;
+          display_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          provider_id: string;
+          name_ar: string;
+          name_en?: string | null;
+          display_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          provider_id?: string;
+          name_ar?: string;
+          name_en?: string | null;
+          display_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      // --------------------------------------------------------------------
+      // Promotions - Provider offers (separate from platform promo codes)
+      // --------------------------------------------------------------------
+      promotions: {
+        Row: {
+          id: string;
+          provider_id: string;
+          name_ar: string;
+          name_en: string | null;
+          type: 'percentage' | 'fixed' | 'buy_x_get_y';
+          discount_value: number;
+          buy_quantity: number | null;
+          get_quantity: number | null;
+          min_order_amount: number | null;
+          max_discount: number | null;
+          start_date: string;
+          end_date: string;
+          is_active: boolean;
+          applies_to: 'all' | 'specific' | 'category';
+          product_ids: string[] | null;
+          category_ids: string[] | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          provider_id: string;
+          name_ar: string;
+          name_en?: string | null;
+          type: 'percentage' | 'fixed' | 'buy_x_get_y';
+          discount_value: number;
+          buy_quantity?: number | null;
+          get_quantity?: number | null;
+          min_order_amount?: number | null;
+          max_discount?: number | null;
+          start_date: string;
+          end_date: string;
+          is_active?: boolean;
+          applies_to?: 'all' | 'specific' | 'category';
+          product_ids?: string[] | null;
+          category_ids?: string[] | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          provider_id?: string;
+          name_ar?: string;
+          name_en?: string | null;
+          type?: 'percentage' | 'fixed' | 'buy_x_get_y';
+          discount_value?: number;
+          buy_quantity?: number | null;
+          get_quantity?: number | null;
+          min_order_amount?: number | null;
+          max_discount?: number | null;
+          start_date?: string;
+          end_date?: string;
+          is_active?: boolean;
+          applies_to?: 'all' | 'specific' | 'category';
+          product_ids?: string[] | null;
+          category_ids?: string[] | null;
+          created_at?: string;
         };
       };
 
