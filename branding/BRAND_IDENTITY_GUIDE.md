@@ -553,8 +553,8 @@ The Engezna animated logo uses a unique RTL reveal animation that writes the Ara
   - **7% commission (maximum)** on order value after that period.
 
 - **Customer service fee:**
-  - 0% for the first **12 months** from platform launch.
-  - **2% service fee** on order value after that period.
+  - **0% – No customer service fees** (الخدمة مجانية للعميل).
+  - This differentiates us from competitors who charge customers additional fees.
 
 - **Delivery execution:**
   - Delivery is handled by the **merchant's own driver** or a local driver they manage.

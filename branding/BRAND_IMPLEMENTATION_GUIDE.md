@@ -124,8 +124,8 @@ Neutrals (light vs dark) are defined under `:root` and `.dark` in CSS.
     - Commission = 7% maximum of order value.
 
 - **Customer service fee:**
-  - 0% for first 12 months.
-  - After 12 months: 2% of order value as "service fee".
+  - **0% – No customer service fees** forever.
+  - We do not charge customers any additional fees.
 
 All logic must be configurable in the backend (feature flags + per-city config).
 
