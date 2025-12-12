@@ -26,6 +26,7 @@ import {
   Loader2,
   MessagesSquare,
   Store,
+  Globe,
 } from 'lucide-react'
 
 interface Governorate {
@@ -41,6 +42,12 @@ export default function WelcomePage() {
   const isRTL = locale === 'ar'
   const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Toggle language
+  const toggleLanguage = () => {
+    const newLocale = locale === 'ar' ? 'en' : 'ar'
+    router.push(`/${newLocale}/welcome`)
+  }
 
   // Check if user already has location set - non-blocking redirect
   useEffect(() => {
@@ -199,7 +206,19 @@ export default function WelcomePage() {
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative container mx-auto px-4 pt-8 pb-12">
+        <div className="relative container mx-auto px-4 pt-4 pb-12">
+          {/* Header with Language Toggle */}
+          <div className="flex justify-between items-center mb-6">
+            <div /> {/* Spacer */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-primary bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-slate-200 transition-colors"
+            >
+              <Globe className="w-4 h-4" />
+              {locale === 'ar' ? 'English' : 'العربية'}
+            </button>
+          </div>
+
           {/* Logo */}
           <div className="flex justify-center mb-8">
             <EngeznaLogo size="lg" static showPen={false} />
