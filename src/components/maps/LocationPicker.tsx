@@ -33,7 +33,7 @@ export function LocationPicker({
   const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const searchTimeout = useRef<NodeJS.Timeout>();
+  const searchTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { isLoaded, error, autosuggest, reverseGeocode, formatAddress } = useHereMaps();
