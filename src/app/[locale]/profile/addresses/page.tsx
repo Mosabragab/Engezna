@@ -487,7 +487,7 @@ export default function AddressesPage() {
                 <Select value={governorateId} onValueChange={(value) => {
                   setGovernorateId(value)
                   setCityId('')
-                  setDistrictId('')
+                  setLocation(null) // Reset GPS location when governorate changes
                 }}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={tForm('governoratePlaceholder')} />
