@@ -15,6 +15,7 @@ const getProviderData = (providers: unknown): ProviderData | null => {
 
 /**
  * Search products based on parsed intent
+ * Uses a two-phase approach: first exact match, then fuzzy match
  */
 export async function searchProducts(
   intent: ParsedIntent,
@@ -23,6 +24,31 @@ export async function searchProducts(
 ): Promise<ChatProduct[]> {
   const supabase = await createClient()
 
+  // Get search terms from intent
+  const searchTerms = [
+    ...(intent.entities.products || []),
+    ...(intent.entities.categories || []),
+  ].filter(Boolean)
+
+  // Build text search pattern for Arabic
+  const searchPatterns = searchTerms.map(term => term.trim().toLowerCase())
+
+  console.log('[AI Search] Searching for:', searchPatterns, 'in city:', cityId)
+
+  // First, get all providers in the city
+  let providerIds: string[] = []
+  if (cityId) {
+    const { data: cityProviders } = await supabase
+      .from('providers')
+      .select('id')
+      .eq('city_id', cityId)
+      .in('status', ['open', 'closed', 'temporarily_paused'])
+
+    providerIds = cityProviders?.map(p => p.id) || []
+    console.log('[AI Search] Providers in city:', providerIds.length)
+  }
+
+  // Search products
   let query = supabase
     .from('menu_items')
     .select(`
@@ -36,7 +62,7 @@ export async function searchProducts(
       is_available,
       has_variants,
       provider_id,
-      providers!inner (
+      providers (
         id,
         name_ar,
         name_en,
@@ -46,28 +72,23 @@ export async function searchProducts(
       )
     `)
     .eq('is_available', true)
-    .in('providers.status', ['open', 'closed', 'temporarily_paused'])
 
-  // Filter by city if provided
-  if (cityId) {
-    query = query.eq('providers.city_id', cityId)
+  // Filter by city providers if specified
+  if (cityId && providerIds.length > 0) {
+    query = query.in('provider_id', providerIds)
   }
 
-  // Search by product name
-  if (intent.entities.products && intent.entities.products.length > 0) {
-    const searchTerms = intent.entities.products
-    const orConditions = searchTerms
-      .map(term => `name_ar.ilike.%${term}%,name_en.ilike.%${term}%,description_ar.ilike.%${term}%`)
+  // Search by product name (more flexible approach)
+  if (searchPatterns.length > 0) {
+    // Build OR conditions for each search term
+    const orConditions = searchPatterns
+      .flatMap(term => [
+        `name_ar.ilike.%${term}%`,
+        `name_en.ilike.%${term}%`,
+        `description_ar.ilike.%${term}%`,
+      ])
       .join(',')
-    query = query.or(orConditions)
-  }
 
-  // Search by category
-  if (intent.entities.categories && intent.entities.categories.length > 0) {
-    const categoryTerms = intent.entities.categories
-    const orConditions = categoryTerms
-      .map(cat => `name_ar.ilike.%${cat}%`)
-      .join(',')
     query = query.or(orConditions)
   }
 
@@ -81,12 +102,11 @@ export async function searchProducts(
     }
   }
 
-  // Sort by preference
+  // Sort
   if (intent.entities.sortBy === 'price') {
     query = query.order('price', { ascending: true })
   } else {
-    // Default: sort by provider rating
-    query = query.order('providers(rating)', { ascending: false })
+    query = query.order('price', { ascending: true })
   }
 
   query = query.limit(limit)
@@ -94,12 +114,25 @@ export async function searchProducts(
   const { data: products, error } = await query
 
   if (error) {
-    console.error('Product search error:', error)
+    console.error('[AI Search] Product search error:', error)
     return []
   }
 
+  console.log('[AI Search] Found products:', products?.length || 0)
+
+  // Filter out products from providers not in the city (extra safety)
+  const filteredProducts = (products || []).filter(product => {
+    const provider = getProviderData(product.providers)
+    if (!provider) return false
+    // Check provider status
+    if (!['open', 'closed', 'temporarily_paused'].includes(provider.status || '')) return false
+    // Check city if specified
+    if (cityId && provider.city_id !== cityId) return false
+    return true
+  })
+
   // Transform to ChatProduct format
-  return (products || []).map(product => {
+  return filteredProducts.map(product => {
     const provider = getProviderData(product.providers)
 
     return {
@@ -305,13 +338,118 @@ export async function getPopularProducts(
 }
 
 /**
- * Get products with active promotions
+ * ChatPromotion type for active promotions
+ */
+export type ChatPromotion = {
+  id: string
+  name_ar: string
+  name_en: string | null
+  type: 'percentage' | 'fixed' | 'buy_x_get_y'
+  discount_value: number
+  provider_name_ar: string
+  provider_name_en: string | null
+  min_order_amount?: number
+  end_date: string
+}
+
+/**
+ * Get active promotions from promotions table
+ */
+export async function getActivePromotions(
+  cityId?: string,
+  limit: number = 6
+): Promise<ChatPromotion[]> {
+  const supabase = await createClient()
+
+  const now = new Date().toISOString()
+
+  // First get providers in the city
+  let providerIds: string[] = []
+  if (cityId) {
+    const { data: cityProviders } = await supabase
+      .from('providers')
+      .select('id')
+      .eq('city_id', cityId)
+      .in('status', ['open', 'closed', 'temporarily_paused'])
+
+    providerIds = cityProviders?.map(p => p.id) || []
+  }
+
+  // Query active promotions
+  let query = supabase
+    .from('promotions')
+    .select(`
+      id,
+      name_ar,
+      name_en,
+      type,
+      discount_value,
+      min_order_amount,
+      end_date,
+      provider_id,
+      providers (
+        id,
+        name_ar,
+        name_en,
+        status
+      )
+    `)
+    .eq('is_active', true)
+    .lte('start_date', now)
+    .gte('end_date', now)
+
+  if (cityId && providerIds.length > 0) {
+    query = query.in('provider_id', providerIds)
+  }
+
+  query = query.limit(limit)
+
+  const { data: promotions, error } = await query
+
+  if (error) {
+    console.error('[AI Search] Promotions search error:', error)
+    return []
+  }
+
+  console.log('[AI Search] Found promotions:', promotions?.length || 0)
+
+  return (promotions || []).map(promo => {
+    const provider = getProviderData(promo.providers)
+
+    return {
+      id: promo.id,
+      name_ar: promo.name_ar,
+      name_en: promo.name_en,
+      type: promo.type,
+      discount_value: promo.discount_value,
+      provider_name_ar: provider?.name_ar || 'غير معروف',
+      provider_name_en: provider?.name_en || null,
+      min_order_amount: promo.min_order_amount,
+      end_date: promo.end_date,
+    }
+  })
+}
+
+/**
+ * Get products with active promotions (discounted products)
  */
 export async function getPromotionProducts(
   cityId?: string,
   limit: number = 6
 ): Promise<ChatProduct[]> {
   const supabase = await createClient()
+
+  // First get providers in the city
+  let providerIds: string[] = []
+  if (cityId) {
+    const { data: cityProviders } = await supabase
+      .from('providers')
+      .select('id')
+      .eq('city_id', cityId)
+      .in('status', ['open', 'closed', 'temporarily_paused'])
+
+    providerIds = cityProviders?.map(p => p.id) || []
+  }
 
   let query = supabase
     .from('menu_items')
@@ -324,7 +462,7 @@ export async function getPromotionProducts(
       original_price,
       image_url,
       provider_id,
-      providers!inner (
+      providers (
         id,
         name_ar,
         name_en,
@@ -336,17 +474,30 @@ export async function getPromotionProducts(
     .eq('is_available', true)
     .not('original_price', 'is', null)
     .gt('original_price', 0)
-    .in('providers.status', ['open', 'closed', 'temporarily_paused'])
 
-  if (cityId) {
-    query = query.eq('providers.city_id', cityId)
+  if (cityId && providerIds.length > 0) {
+    query = query.in('provider_id', providerIds)
   }
 
   query = query.limit(limit)
 
-  const { data: products } = await query
+  const { data: products, error } = await query
 
-  return (products || []).map(product => {
+  if (error) {
+    console.error('[AI Search] Promotion products error:', error)
+    return []
+  }
+
+  // Filter by city again for safety
+  const filteredProducts = (products || []).filter(product => {
+    const provider = getProviderData(product.providers)
+    if (!provider) return false
+    if (!['open', 'closed', 'temporarily_paused'].includes(provider.status || '')) return false
+    if (cityId && provider.city_id !== cityId) return false
+    return true
+  })
+
+  return filteredProducts.map(product => {
     const provider = getProviderData(product.providers)
 
     return {

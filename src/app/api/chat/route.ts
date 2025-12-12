@@ -5,7 +5,7 @@
 
 import { OpenAI } from 'openai'
 import { buildCustomerContext, getLastOrder } from '@/lib/ai/context-builder'
-import { searchProducts, searchProviders, getPopularProducts, getPromotionProducts } from '@/lib/ai/product-search'
+import { searchProducts, searchProviders, getPopularProducts, getPromotionProducts, getActivePromotions } from '@/lib/ai/product-search'
 import { compareProvidersForProduct, generateComparisonText } from '@/lib/ai/comparison-engine'
 import {
   INTENT_DETECTION_PROMPT,
@@ -293,22 +293,50 @@ export async function POST(request: Request) {
 
     // Handle show_promotions quick action
     if (intent.type === 'get_recommendations' &&
-        message.toLowerCase().includes('عرض') ||
-        message.toLowerCase().includes('خصم')) {
-      const promoProducts = await getPromotionProducts(cityId, 6)
-      if (promoProducts.length > 0) {
-        const promoText = '🔥 العروض المتاحة دلوقتي:\n\n' +
-          promoProducts.slice(0, 4).map(p => {
-            const discount = p.original_price ? Math.round((1 - p.price / p.original_price) * 100) : 0
-            return `• ${p.name_ar} - ${p.price} ج.م ${discount > 0 ? `(خصم ${discount}%)` : ''}\n  من ${p.provider_name_ar}`
-          }).join('\n\n')
+        (message.includes('عرض') || message.includes('عروض') ||
+         message.includes('خصم') || message.includes('ورني العروض'))) {
 
+      // Get both active promotions from promotions table and discounted products
+      const [activePromotions, promoProducts] = await Promise.all([
+        getActivePromotions(cityId, 6),
+        getPromotionProducts(cityId, 6),
+      ])
+
+      console.log('[Chat] Active promotions:', activePromotions.length, 'Promo products:', promoProducts.length)
+
+      let promoText = ''
+
+      // Show active promotions first
+      if (activePromotions.length > 0) {
+        promoText += '🎉 العروض النشطة دلوقتي:\n\n'
+        activePromotions.slice(0, 4).forEach(promo => {
+          const discountText = promo.type === 'percentage'
+            ? `خصم ${promo.discount_value}%`
+            : promo.type === 'fixed'
+              ? `خصم ${promo.discount_value} ج.م`
+              : `اشتري واحد وخد واحد`
+
+          promoText += `🏷️ ${promo.name_ar} - ${discountText}\n   من ${promo.provider_name_ar}\n\n`
+        })
+      }
+
+      // Also show discounted products if available
+      if (promoProducts.length > 0) {
+        if (promoText) promoText += '---\n\n'
+        promoText += '🔥 منتجات بخصومات:\n\n'
+        promoProducts.slice(0, 3).forEach(p => {
+          const discount = p.original_price ? Math.round((1 - p.price / p.original_price) * 100) : 0
+          promoText += `• ${p.name_ar} - ${p.price} ج.م ${discount > 0 ? `(كان ${p.original_price} ج.م)` : ''}\n  من ${p.provider_name_ar}\n\n`
+        })
+      }
+
+      if (promoText) {
         return Response.json({
           success: true,
           message: {
             id: Date.now().toString(),
             role: 'assistant',
-            content: promoText,
+            content: promoText.trim(),
             timestamp: new Date(),
             intent,
             actions: ['show_promotions'],
