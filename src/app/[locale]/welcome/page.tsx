@@ -1,10 +1,11 @@
 import Link from 'next/link'
-import { createStaticClient } from '@/lib/supabase/static'
+import { Suspense } from 'react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { Button } from '@/components/ui/button'
 import { Footer } from '@/components/shared/Footer'
 import { InstallPrompt } from '@/components/pwa/InstallPrompt'
 import { WelcomeClientWrapper, LanguageToggle } from '@/components/welcome/WelcomeClientWrapper'
+import { GovernoratesList, GovernoratesListSkeleton } from '@/components/welcome/GovernoratesList'
 import {
   MessageCircle,
   Star,
@@ -17,37 +18,9 @@ import {
   Apple,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
   MessagesSquare,
   Store,
 } from 'lucide-react'
-
-interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
-  is_active: boolean
-}
-
-// Fetch governorates on the server (static - no cookies)
-async function getGovernorates(): Promise<Governorate[]> {
-  try {
-    const supabase = createStaticClient()
-    const { data, error } = await supabase
-      .from('governorates')
-      .select('id, name_ar, name_en, is_active')
-      .eq('is_active', true)
-      .order('name_ar')
-
-    if (!error && data) {
-      return data
-    }
-    return []
-  } catch (err) {
-    console.error('Error fetching governorates:', err)
-    return []
-  }
-}
 
 interface PageProps {
   params: Promise<{ locale: string }>
@@ -56,9 +29,6 @@ interface PageProps {
 export default async function WelcomePage({ params }: PageProps) {
   const { locale } = await params
   const isRTL = locale === 'ar'
-
-  // Fetch governorates on the server - no loading state needed!
-  const governorates = await getGovernorates()
 
   const categories = [
     {
@@ -318,7 +288,7 @@ export default async function WelcomePage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* Available Governorates Section - No loading state! */}
+        {/* Available Governorates Section - Streamed with Suspense */}
         <section className="py-12 px-4 bg-white">
           <div className="container mx-auto">
             <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-8 text-center">
@@ -329,23 +299,10 @@ export default async function WelcomePage({ params }: PageProps) {
                 </h2>
               </div>
 
-              {governorates.length > 0 ? (
-                <div className="flex flex-wrap justify-center gap-3 mb-6">
-                  {governorates.map((gov) => (
-                    <span
-                      key={gov.id}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-white rounded-full text-slate-700 font-medium shadow-sm border border-slate-100"
-                    >
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      {isRTL ? gov.name_ar : gov.name_en}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-slate-500 mb-6">
-                  {isRTL ? 'قريباً في محافظتك' : 'Coming soon to your governorate'}
-                </p>
-              )}
+              {/* Governorates list loads separately - page renders instantly */}
+              <Suspense fallback={<GovernoratesListSkeleton locale={locale} />}>
+                <GovernoratesList locale={locale} />
+              </Suspense>
 
               <p className="text-slate-600 text-sm">
                 {isRTL
