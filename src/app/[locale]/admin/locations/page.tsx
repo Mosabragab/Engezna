@@ -133,6 +133,7 @@ export default function AdminLocationsPage() {
     commission_override: null as number | null,
   })
   const [selectedGovernorateToActivate, setSelectedGovernorateToActivate] = useState<string>('')
+  const [selectedCityToActivate, setSelectedCityToActivate] = useState<string>('')
 
   // Delete confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -402,6 +403,7 @@ export default function AdminLocationsPage() {
       commission_override: null,
     })
     setSelectedGovernorateToActivate('')
+    setSelectedCityToActivate('')
     setFormError('')
     setEditItem(null)
     setModalType('add')
@@ -433,8 +435,24 @@ export default function AdminLocationsPage() {
         setFormError(locale === 'ar' ? 'اختر محافظة لتفعيلها' : 'Select a governorate to activate')
         return
       }
+    } else if (viewLevel === 'cities' && modalType === 'add') {
+      // For cities in add mode, we activate an existing one
+      if (!selectedCityToActivate) {
+        setFormError(locale === 'ar' ? 'اختر مدينة لتفعيلها' : 'Select a city to activate')
+        return
+      }
+      if (!formData.governorate_id) {
+        setFormError(locale === 'ar' ? 'اختر المحافظة أولاً' : 'Select governorate first')
+        return
+      }
+    } else if (viewLevel === 'districts' && modalType === 'add') {
+      // For districts, require names (manual creation)
+      if (!formData.name_ar || !formData.name_en) {
+        setFormError(locale === 'ar' ? 'الاسمان بالعربية والإنجليزية مطلوبان' : 'Both Arabic and English names are required')
+        return
+      }
     } else {
-      // For other cases, require names
+      // For edit mode, require names
       if (!formData.name_ar || !formData.name_en) {
         setFormError(locale === 'ar' ? 'الاسمان بالعربية والإنجليزية مطلوبان' : 'Both Arabic and English names are required')
         return
@@ -474,21 +492,12 @@ export default function AdminLocationsPage() {
           if (error) throw error
         }
       } else if (viewLevel === 'cities') {
-        if (!formData.governorate_id) {
-          setFormError(locale === 'ar' ? 'المحافظة مطلوبة' : 'Governorate is required')
-          setFormLoading(false)
-          return
-        }
-
         if (modalType === 'add') {
+          // Activate existing city
           const { error } = await supabase
             .from('cities')
-            .insert({
-              name_ar: formData.name_ar,
-              name_en: formData.name_en,
-              governorate_id: formData.governorate_id,
-              is_active: formData.is_active,
-            })
+            .update({ is_active: true })
+            .eq('id', selectedCityToActivate)
           if (error) throw error
         } else {
           const { error } = await supabase
@@ -810,6 +819,8 @@ export default function AdminLocationsPage() {
                   <Plus className="w-4 h-4" />
                   {viewLevel === 'governorates'
                     ? (locale === 'ar' ? 'تفعيل محافظة' : 'Activate Governorate')
+                    : viewLevel === 'cities'
+                    ? (locale === 'ar' ? 'تفعيل مدينة' : 'Activate City')
                     : (locale === 'ar' ? 'إضافة ' + getViewLevelLabel(viewLevel).arSingular : 'Add ' + getViewLevelLabel(viewLevel).enSingular)
                   }
                 </Button>
@@ -1314,6 +1325,8 @@ export default function AdminLocationsPage() {
               <h2 className="text-xl font-bold text-slate-900">
                 {viewLevel === 'governorates' && modalType === 'add'
                   ? (locale === 'ar' ? 'تفعيل محافظة' : 'Activate Governorate')
+                  : viewLevel === 'cities' && modalType === 'add'
+                  ? (locale === 'ar' ? 'تفعيل مدينة' : 'Activate City')
                   : modalType === 'add'
                   ? (locale === 'ar' ? 'إضافة ' + getViewLevelLabel(viewLevel).arSingular : 'Add ' + getViewLevelLabel(viewLevel).enSingular)
                   : (locale === 'ar' ? 'تعديل ' + getViewLevelLabel(viewLevel).arSingular : 'Edit ' + getViewLevelLabel(viewLevel).enSingular)
@@ -1361,8 +1374,59 @@ export default function AdminLocationsPage() {
                 </div>
               )}
 
-              {/* Name fields - Not shown when adding governorate (we're activating existing) */}
-              {!(viewLevel === 'governorates' && modalType === 'add') && (
+              {/* City Selection Dropdown - For activating existing cities */}
+              {viewLevel === 'cities' && modalType === 'add' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'المحافظة' : 'Governorate'} *
+                    </label>
+                    <select
+                      value={formData.governorate_id}
+                      onChange={(e) => {
+                        setFormData({ ...formData, governorate_id: e.target.value })
+                        setSelectedCityToActivate('')
+                      }}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="">{locale === 'ar' ? 'اختر المحافظة...' : 'Select governorate...'}</option>
+                      {governorates.filter(g => g.is_active).map(g => (
+                        <option key={g.id} value={g.id}>
+                          {locale === 'ar' ? g.name_ar : g.name_en}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {formData.governorate_id && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'اختر المدينة لتفعيلها' : 'Select City to Activate'} *
+                      </label>
+                      <select
+                        value={selectedCityToActivate}
+                        onChange={(e) => setSelectedCityToActivate(e.target.value)}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="">{locale === 'ar' ? 'اختر المدينة...' : 'Select city...'}</option>
+                        {cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).map(c => (
+                          <option key={c.id} value={c.id}>
+                            {locale === 'ar' ? c.name_ar : c.name_en}
+                          </option>
+                        ))}
+                      </select>
+                      {cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).length === 0 && (
+                        <p className="mt-2 text-sm text-amber-600">
+                          {locale === 'ar' ? 'جميع مدن هذه المحافظة مفعّلة بالفعل' : 'All cities in this governorate are already activated'}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Name fields - Not shown when adding governorate or city (we're activating existing) */}
+              {!(viewLevel === 'governorates' && modalType === 'add') && !(viewLevel === 'cities' && modalType === 'add') && (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -1462,8 +1526,8 @@ export default function AdminLocationsPage() {
                 </div>
               )}
 
-              {/* Active/Inactive Toggle - More Prominent (hidden when activating governorate) */}
-              {!(viewLevel === 'governorates' && modalType === 'add') && (
+              {/* Active/Inactive Toggle - More Prominent (hidden when activating governorate or city) */}
+              {!(viewLevel === 'governorates' && modalType === 'add') && !(viewLevel === 'cities' && modalType === 'add') && (
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col">
@@ -1528,7 +1592,7 @@ export default function AdminLocationsPage() {
                   <RefreshCw className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    {viewLevel === 'governorates' && modalType === 'add' ? (
+                    {(viewLevel === 'governorates' && modalType === 'add') || (viewLevel === 'cities' && modalType === 'add') ? (
                       <>
                         <CheckCircle2 className="w-4 h-4 me-2" />
                         {locale === 'ar' ? 'تفعيل' : 'Activate'}
