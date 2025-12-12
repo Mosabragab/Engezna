@@ -571,10 +571,10 @@ export default function AdminLocationsPage() {
   const filteredItems = getFilteredItems()
 
   const getViewLevelLabel = (level: ViewLevel) => {
-    const labels: Record<ViewLevel, { ar: string; en: string; icon: React.ElementType }> = {
-      governorates: { ar: 'المحافظات', en: 'Governorates', icon: Building },
-      cities: { ar: 'المدن', en: 'Cities', icon: Map },
-      districts: { ar: 'الأحياء', en: 'Districts', icon: Home },
+    const labels: Record<ViewLevel, { ar: string; en: string; arSingular: string; enSingular: string; icon: React.ElementType }> = {
+      governorates: { ar: 'المحافظات', en: 'Governorates', arSingular: 'محافظة', enSingular: 'Governorate', icon: Building },
+      cities: { ar: 'المدن', en: 'Cities', arSingular: 'مدينة', enSingular: 'City', icon: Map },
+      districts: { ar: 'الأحياء', en: 'Districts', arSingular: 'حي', enSingular: 'District', icon: Home },
     }
     return labels[level]
   }
@@ -781,7 +781,7 @@ export default function AdminLocationsPage() {
                   className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
                 >
                   <Plus className="w-4 h-4" />
-                  {locale === 'ar' ? 'إضافة' : 'Add'} {getViewLevelLabel(viewLevel)[locale === 'ar' ? 'ar' : 'en'].slice(0, -2) || getViewLevelLabel(viewLevel)[locale === 'ar' ? 'ar' : 'en']}
+                  {locale === 'ar' ? 'إضافة ' + getViewLevelLabel(viewLevel).arSingular : 'Add ' + getViewLevelLabel(viewLevel).enSingular}
                 </Button>
               )}
             </div>
@@ -1283,8 +1283,8 @@ export default function AdminLocationsPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-900">
                 {modalType === 'add'
-                  ? (locale === 'ar' ? 'إضافة ' : 'Add ') + getViewLevelLabel(viewLevel)[locale === 'ar' ? 'ar' : 'en'].slice(0, -2)
-                  : (locale === 'ar' ? 'تعديل ' : 'Edit ') + getViewLevelLabel(viewLevel)[locale === 'ar' ? 'ar' : 'en'].slice(0, -2)
+                  ? (locale === 'ar' ? 'إضافة ' + getViewLevelLabel(viewLevel).arSingular : 'Add ' + getViewLevelLabel(viewLevel).enSingular)
+                  : (locale === 'ar' ? 'تعديل ' + getViewLevelLabel(viewLevel).arSingular : 'Edit ' + getViewLevelLabel(viewLevel).enSingular)
                 }
               </h2>
               <button
