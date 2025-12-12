@@ -94,7 +94,8 @@ async function parseIntent(message: string, conversationHistory: ChatMessage[]):
  */
 async function fetchRelevantData(
   intent: ParsedIntent,
-  cityId?: string
+  cityId?: string,
+  governorateId?: string
 ): Promise<{
   products: ChatProduct[]
   providers: ChatProvider[]
@@ -104,11 +105,13 @@ async function fetchRelevantData(
   let providers: ChatProvider[] = []
   let comparison: string | null = null
 
+  console.log('[fetchRelevantData] Intent:', intent.type, 'cityId:', cityId, 'governorateId:', governorateId)
+
   try {
     switch (intent.type) {
       case 'search_product':
       case 'get_recommendations':
-        products = await searchProducts(intent, cityId, 6)
+        products = await searchProducts(intent, cityId, 6, governorateId)
         break
 
       case 'search_provider':
@@ -142,6 +145,7 @@ async function fetchRelevantData(
     console.error('Error fetching data:', error)
   }
 
+  console.log('[fetchRelevantData] Found products:', products.length, 'providers:', providers.length)
   return { products, providers, comparison }
 }
 
@@ -348,7 +352,7 @@ export async function POST(request: Request) {
     }
 
     // Fetch relevant data
-    const data = await fetchRelevantData(intent, cityId)
+    const data = await fetchRelevantData(intent, cityId, governorateId)
 
     // Create streaming response
     const encoder = new TextEncoder()

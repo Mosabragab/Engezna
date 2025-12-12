@@ -20,7 +20,8 @@ const getProviderData = (providers: unknown): ProviderData | null => {
 export async function searchProducts(
   intent: ParsedIntent,
   cityId?: string,
-  limit: number = 10
+  limit: number = 10,
+  governorateId?: string
 ): Promise<ChatProduct[]> {
   const supabase = await createClient()
 
@@ -33,10 +34,12 @@ export async function searchProducts(
   // Build text search pattern for Arabic
   const searchPatterns = searchTerms.map(term => term.trim().toLowerCase())
 
-  console.log('[AI Search] Searching for:', searchPatterns, 'in city:', cityId)
+  console.log('[AI Search] Searching for:', searchPatterns, 'cityId:', cityId, 'governorateId:', governorateId)
 
-  // First, get all providers in the city
+  // First, get all providers in the location (try city_id first, then governorate_id)
   let providerIds: string[] = []
+
+  // Try city_id first if provided
   if (cityId) {
     const { data: cityProviders } = await supabase
       .from('providers')
@@ -45,7 +48,37 @@ export async function searchProducts(
       .in('status', ['open', 'closed', 'temporarily_paused'])
 
     providerIds = cityProviders?.map(p => p.id) || []
-    console.log('[AI Search] Providers in city:', providerIds.length)
+    console.log('[AI Search] Providers found by city_id:', providerIds.length)
+  }
+
+  // If no providers found by city, try governorate_id
+  if (providerIds.length === 0 && governorateId) {
+    const { data: govProviders } = await supabase
+      .from('providers')
+      .select('id')
+      .eq('governorate_id', governorateId)
+      .in('status', ['open', 'closed', 'temporarily_paused'])
+
+    providerIds = govProviders?.map(p => p.id) || []
+    console.log('[AI Search] Providers found by governorate_id:', providerIds.length)
+  }
+
+  // If still no providers, get ALL active providers (for development/testing)
+  if (providerIds.length === 0) {
+    const { data: allProviders } = await supabase
+      .from('providers')
+      .select('id')
+      .in('status', ['open', 'closed', 'temporarily_paused'])
+      .limit(50)
+
+    providerIds = allProviders?.map(p => p.id) || []
+    console.log('[AI Search] Using all active providers:', providerIds.length)
+  }
+
+  // If still no providers, return empty
+  if (providerIds.length === 0) {
+    console.log('[AI Search] No providers found at all!')
+    return []
   }
 
   // Search products
@@ -68,15 +101,12 @@ export async function searchProducts(
         name_en,
         rating,
         city_id,
+        governorate_id,
         status
       )
     `)
     .eq('is_available', true)
-
-  // Filter by city providers if specified
-  if (cityId && providerIds.length > 0) {
-    query = query.in('provider_id', providerIds)
-  }
+    .in('provider_id', providerIds)
 
   // Search by product name (more flexible approach)
   if (searchPatterns.length > 0) {
@@ -120,19 +150,8 @@ export async function searchProducts(
 
   console.log('[AI Search] Found products:', products?.length || 0)
 
-  // Filter out products from providers not in the city (extra safety)
-  const filteredProducts = (products || []).filter(product => {
-    const provider = getProviderData(product.providers)
-    if (!provider) return false
-    // Check provider status
-    if (!['open', 'closed', 'temporarily_paused'].includes(provider.status || '')) return false
-    // Check city if specified
-    if (cityId && provider.city_id !== cityId) return false
-    return true
-  })
-
   // Transform to ChatProduct format
-  return filteredProducts.map(product => {
+  return (products || []).map(product => {
     const provider = getProviderData(product.providers)
 
     return {
