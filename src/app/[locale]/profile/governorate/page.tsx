@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { MapPinned, Loader2, Check, User } from 'lucide-react'
+import { MapPinned, Loader2, Check, User, ArrowRight, ArrowLeft } from 'lucide-react'
 import { useGuestLocation, type GuestLocation } from '@/lib/hooks/useGuestLocation'
 
 type Governorate = {
@@ -41,6 +41,7 @@ export default function GovernoratePage() {
 
   const [userId, setUserId] = useState<string | null>(null)
   const [isGuest, setIsGuest] = useState(false)
+  const [isNewVisitor, setIsNewVisitor] = useState(false) // Guest without location
   const [authLoading, setAuthLoading] = useState(true)
 
   const [governorates, setGovernorates] = useState<Governorate[]>([])
@@ -89,6 +90,9 @@ export default function GovernoratePage() {
         if (guestLocation.cityId) {
           setCityId(guestLocation.cityId)
         }
+      } else {
+        // New visitor without any location set
+        setIsNewVisitor(true)
       }
       setLoading(false)
     }
@@ -240,6 +244,17 @@ export default function GovernoratePage() {
               </p>
             </div>
           </div>
+        )}
+
+        {/* Back to Welcome Page - Only for new visitors */}
+        {isNewVisitor && (
+          <button
+            onClick={() => router.push(`/${locale}/welcome`)}
+            className="mb-4 flex items-center gap-2 text-sm text-slate-600 hover:text-primary transition-colors"
+          >
+            {locale === 'ar' ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+            {locale === 'ar' ? 'العودة لصفحة الترحيب' : 'Back to Welcome Page'}
+          </button>
         )}
 
         <Card>
