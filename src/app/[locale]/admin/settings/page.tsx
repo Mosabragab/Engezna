@@ -53,6 +53,11 @@ interface PlatformSettings {
   allow_wallet_payment: boolean
   order_auto_cancel_minutes: number
   provider_commission_payout_day: number
+  // Commission settings
+  default_commission_rate: number
+  max_commission_rate: number
+  grace_period_days: number
+  grace_period_enabled: boolean
 }
 
 const defaultSettings: PlatformSettings = {
@@ -75,6 +80,11 @@ const defaultSettings: PlatformSettings = {
   allow_wallet_payment: true,
   order_auto_cancel_minutes: 30,
   provider_commission_payout_day: 1,
+  // Commission settings - 0% for 6 months, max 7% after
+  default_commission_rate: 7.0,
+  max_commission_rate: 7.0,
+  grace_period_days: 180, // 6 months
+  grace_period_enabled: true,
 }
 
 export default function AdminSettingsPage() {
@@ -90,7 +100,7 @@ export default function AdminSettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false)
 
   const [settings, setSettings] = useState<PlatformSettings>(defaultSettings)
-  const [activeTab, setActiveTab] = useState<'general' | 'payments' | 'delivery' | 'notifications' | 'account'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'commission' | 'payments' | 'delivery' | 'notifications' | 'account'>('general')
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('')
@@ -219,6 +229,7 @@ export default function AdminSettingsPage() {
 
   const tabs = [
     { id: 'general', label: locale === 'ar' ? 'عام' : 'General', icon: Building },
+    { id: 'commission', label: locale === 'ar' ? 'العمولات' : 'Commission', icon: Percent },
     { id: 'payments', label: locale === 'ar' ? 'الدفع' : 'Payments', icon: CreditCard },
     { id: 'delivery', label: locale === 'ar' ? 'التوصيل' : 'Delivery', icon: Truck },
     { id: 'notifications', label: locale === 'ar' ? 'الإشعارات' : 'Notifications', icon: Bell },
@@ -394,6 +405,172 @@ export default function AdminSettingsPage() {
                     />
                     <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'commission' && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                  {locale === 'ar' ? 'إعدادات العمولات' : 'Commission Settings'}
+                </h3>
+
+                {/* Commission Overview Card */}
+                <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                      <Percent className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-green-800">
+                        {locale === 'ar' ? 'نموذج العمولات الحالي' : 'Current Commission Model'}
+                      </h4>
+                      <p className="text-sm text-green-700 mt-1">
+                        {locale === 'ar'
+                          ? `${settings.grace_period_enabled ? `0% لمدة ${Math.round(settings.grace_period_days / 30)} شهور (فترة مجانية)، ` : ''}ثم حد أقصى ${settings.max_commission_rate}%`
+                          : `${settings.grace_period_enabled ? `0% for ${Math.round(settings.grace_period_days / 30)} months (free period), ` : ''}then max ${settings.max_commission_rate}%`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Default Commission Rate */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'نسبة العمولة الافتراضية (%)' : 'Default Commission Rate (%)'}
+                    </label>
+                    <div className="relative">
+                      <Percent className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                      <input
+                        type="number"
+                        value={settings.default_commission_rate}
+                        onChange={(e) => setSettings({ ...settings, default_commission_rate: parseFloat(e.target.value) || 0 })}
+                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {locale === 'ar'
+                        ? 'النسبة المطبقة على مقدمي الخدمات بعد انتهاء الفترة المجانية'
+                        : 'Rate applied to providers after grace period ends'}
+                    </p>
+                  </div>
+
+                  {/* Max Commission Rate */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'الحد الأقصى للعمولة (%)' : 'Maximum Commission Rate (%)'}
+                    </label>
+                    <div className="relative">
+                      <Percent className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                      <input
+                        type="number"
+                        value={settings.max_commission_rate}
+                        onChange={(e) => setSettings({ ...settings, max_commission_rate: parseFloat(e.target.value) || 0 })}
+                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {locale === 'ar'
+                        ? 'لا يمكن للعمولة تجاوز هذه النسبة حتى مع التعديلات الخاصة بالمحافظات'
+                        : 'Commission cannot exceed this rate even with governorate overrides'}
+                    </p>
+                  </div>
+
+                  {/* Grace Period Duration */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'مدة الفترة المجانية (أيام)' : 'Grace Period Duration (days)'}
+                    </label>
+                    <div className="relative">
+                      <Clock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                      <input
+                        type="number"
+                        value={settings.grace_period_days}
+                        onChange={(e) => setSettings({ ...settings, grace_period_days: parseInt(e.target.value) || 0 })}
+                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                        min="0"
+                        step="30"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {locale === 'ar'
+                        ? `180 يوم = 6 شهور. حالياً: ${Math.round(settings.grace_period_days / 30)} شهور`
+                        : `180 days = 6 months. Currently: ${Math.round(settings.grace_period_days / 30)} months`}
+                    </p>
+                  </div>
+
+                  {/* Commission Payout Day */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'يوم صرف العمولات الشهري' : 'Monthly Commission Payout Day'}
+                    </label>
+                    <select
+                      value={settings.provider_commission_payout_day}
+                      onChange={(e) => setSettings({ ...settings, provider_commission_payout_day: parseInt(e.target.value) })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    >
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
+                        <option key={day} value={day}>
+                          {locale === 'ar' ? `يوم ${formatNumber(day, locale)}` : `Day ${formatNumber(day, locale)}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Grace Period Toggle */}
+                <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                  <div className="flex-1">
+                    <p className="font-medium text-blue-800">
+                      {locale === 'ar' ? 'تفعيل الفترة المجانية' : 'Enable Grace Period'}
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      {locale === 'ar'
+                        ? 'عند التفعيل، يحصل مقدمو الخدمات الجدد على فترة مجانية بدون عمولة'
+                        : 'When enabled, new providers get a commission-free period'}
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.grace_period_enabled}
+                      onChange={(e) => setSettings({ ...settings, grace_period_enabled: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                {/* Info Box */}
+                <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-amber-800">
+                        {locale === 'ar' ? 'ملاحظة مهمة' : 'Important Note'}
+                      </p>
+                      <ul className="text-sm text-amber-700 mt-1 space-y-1 list-disc list-inside">
+                        <li>
+                          {locale === 'ar'
+                            ? 'يمكن تعيين نسب عمولة خاصة لكل محافظة من صفحة إدارة المواقع'
+                            : 'Custom commission rates can be set per governorate from the Locations page'}
+                        </li>
+                        <li>
+                          {locale === 'ar'
+                            ? 'مقدمو الخدمات المعفيون أو ذوو النسب الخاصة لا يتأثرون بهذه الإعدادات'
+                            : 'Exempt providers or those with custom rates are not affected by these settings'}
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

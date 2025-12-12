@@ -50,6 +50,7 @@ interface Governorate {
   is_active: boolean
   created_at: string
   cities_count?: number
+  commission_override?: number | null
 }
 
 interface City {
@@ -129,6 +130,7 @@ export default function AdminLocationsPage() {
     governorate_id: '',
     city_id: '',
     is_active: true,
+    commission_override: null as number | null,
   })
 
   // Delete confirmation
@@ -396,6 +398,7 @@ export default function AdminLocationsPage() {
       governorate_id: selectedGovernorate || '',
       city_id: selectedCity || '',
       is_active: true,
+      commission_override: null,
     })
     setFormError('')
     setEditItem(null)
@@ -409,6 +412,7 @@ export default function AdminLocationsPage() {
       governorate_id: 'governorate_id' in item ? item.governorate_id : '',
       city_id: 'city_id' in item && item.city_id ? item.city_id : '',
       is_active: item.is_active,
+      commission_override: 'commission_override' in item ? item.commission_override ?? null : null,
     })
     setFormError('')
     setEditItem(item)
@@ -439,6 +443,7 @@ export default function AdminLocationsPage() {
               name_ar: formData.name_ar,
               name_en: formData.name_en,
               is_active: formData.is_active,
+              commission_override: formData.commission_override,
             })
           if (error) throw error
         } else {
@@ -448,6 +453,7 @@ export default function AdminLocationsPage() {
               name_ar: formData.name_ar,
               name_en: formData.name_en,
               is_active: formData.is_active,
+              commission_override: formData.commission_override,
             })
             .eq('id', editItem!.id)
           if (error) throw error
@@ -798,6 +804,11 @@ export default function AdminLocationsPage() {
                         {locale === 'ar' ? 'المدن' : 'Cities'}
                       </th>
                     )}
+                    {viewLevel === 'governorates' && (
+                      <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                        {locale === 'ar' ? 'العمولة' : 'Commission'}
+                      </th>
+                    )}
                     {viewLevel === 'cities' && (
                       <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
                         {locale === 'ar' ? 'الأحياء' : 'Districts'}
@@ -840,6 +851,20 @@ export default function AdminLocationsPage() {
                             <span className="text-sm text-slate-600">
                               {formatNumber((item as Governorate).cities_count || 0, locale)} {locale === 'ar' ? 'مدينة' : 'cities'}
                             </span>
+                          </td>
+                        )}
+                        {viewLevel === 'governorates' && (
+                          <td className="px-4 py-3">
+                            {(item as Governorate).commission_override !== null && (item as Governorate).commission_override !== undefined ? (
+                              <span className="inline-flex items-center gap-1 text-sm font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                                <Percent className="w-3 h-3" />
+                                {(item as Governorate).commission_override}%
+                              </span>
+                            ) : (
+                              <span className="text-sm text-slate-400">
+                                {locale === 'ar' ? 'افتراضي (7%)' : 'Default (7%)'}
+                              </span>
+                            )}
                           </td>
                         )}
                         {viewLevel === 'cities' && (
@@ -901,7 +926,7 @@ export default function AdminLocationsPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={isSuperAdmin ? 5 : 4} className="px-4 py-12 text-center">
+                      <td colSpan={isSuperAdmin ? (viewLevel === 'governorates' ? 6 : 5) : (viewLevel === 'governorates' ? 5 : 4)} className="px-4 py-12 text-center">
                         <MapPin className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                         <p className="text-slate-500">
                           {locale === 'ar' ? 'لا توجد نتائج' : 'No results found'}
@@ -1341,6 +1366,36 @@ export default function AdminLocationsPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {/* Commission Override - Only for Governorates */}
+              {viewLevel === 'governorates' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {locale === 'ar' ? 'نسبة العمولة الخاصة (%)' : 'Custom Commission Rate (%)'}
+                  </label>
+                  <div className="relative">
+                    <Percent className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                    <input
+                      type="number"
+                      value={formData.commission_override ?? ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        commission_override: e.target.value === '' ? null : parseFloat(e.target.value)
+                      })}
+                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                      placeholder={locale === 'ar' ? 'اتركه فارغاً للنسبة الافتراضية (7%)' : 'Leave empty for default rate (7%)'}
+                      min="0"
+                      max="7"
+                      step="0.5"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {locale === 'ar'
+                      ? 'الحد الأقصى 7%. اتركه فارغاً لاستخدام النسبة الافتراضية للمنصة.'
+                      : 'Max 7%. Leave empty to use platform default rate.'}
+                  </p>
                 </div>
               )}
 
