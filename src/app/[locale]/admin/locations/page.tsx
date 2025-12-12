@@ -134,6 +134,7 @@ export default function AdminLocationsPage() {
   })
   const [selectedGovernorateToActivate, setSelectedGovernorateToActivate] = useState<string>('')
   const [selectedCityToActivate, setSelectedCityToActivate] = useState<string>('')
+  const [activateAllCities, setActivateAllCities] = useState(false)
 
   // Delete confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -404,6 +405,7 @@ export default function AdminLocationsPage() {
     })
     setSelectedGovernorateToActivate('')
     setSelectedCityToActivate('')
+    setActivateAllCities(false)
     setFormError('')
     setEditItem(null)
     setModalType('add')
@@ -436,9 +438,9 @@ export default function AdminLocationsPage() {
         return
       }
     } else if (viewLevel === 'cities' && modalType === 'add') {
-      // For cities in add mode, we activate an existing one
-      if (!selectedCityToActivate) {
-        setFormError(locale === 'ar' ? 'اختر مدينة لتفعيلها' : 'Select a city to activate')
+      // For cities in add mode, we activate existing ones
+      if (!activateAllCities && !selectedCityToActivate) {
+        setFormError(locale === 'ar' ? 'اختر مدينة لتفعيلها أو اختر تفعيل كل المدن' : 'Select a city to activate or choose to activate all cities')
         return
       }
       if (!formData.governorate_id) {
@@ -493,12 +495,27 @@ export default function AdminLocationsPage() {
         }
       } else if (viewLevel === 'cities') {
         if (modalType === 'add') {
-          // Activate existing city
-          const { error } = await supabase
-            .from('cities')
-            .update({ is_active: true })
-            .eq('id', selectedCityToActivate)
-          if (error) throw error
+          if (activateAllCities) {
+            // Activate ALL inactive cities in the selected governorate
+            const inactiveCityIds = cities
+              .filter(c => c.governorate_id === formData.governorate_id && !c.is_active)
+              .map(c => c.id)
+
+            if (inactiveCityIds.length > 0) {
+              const { error } = await supabase
+                .from('cities')
+                .update({ is_active: true })
+                .in('id', inactiveCityIds)
+              if (error) throw error
+            }
+          } else {
+            // Activate single city
+            const { error } = await supabase
+              .from('cities')
+              .update({ is_active: true })
+              .eq('id', selectedCityToActivate)
+            if (error) throw error
+          }
         } else {
           const { error } = await supabase
             .from('cities')
@@ -1399,28 +1416,64 @@ export default function AdminLocationsPage() {
                   </div>
 
                   {formData.governorate_id && (
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        {locale === 'ar' ? 'اختر المدينة لتفعيلها' : 'Select City to Activate'} *
-                      </label>
-                      <select
-                        value={selectedCityToActivate}
-                        onChange={(e) => setSelectedCityToActivate(e.target.value)}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                      >
-                        <option value="">{locale === 'ar' ? 'اختر المدينة...' : 'Select city...'}</option>
-                        {cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).map(c => (
-                          <option key={c.id} value={c.id}>
-                            {locale === 'ar' ? c.name_ar : c.name_en}
-                          </option>
-                        ))}
-                      </select>
+                    <>
+                      {/* Activate All Cities Option */}
+                      {cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).length > 1 && (
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={activateAllCities}
+                              onChange={(e) => {
+                                setActivateAllCities(e.target.checked)
+                                if (e.target.checked) {
+                                  setSelectedCityToActivate('')
+                                }
+                              }}
+                              className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-blue-800">
+                                {locale === 'ar' ? 'تفعيل كل المدن' : 'Activate All Cities'}
+                              </span>
+                              <span className="text-xs text-blue-600">
+                                {locale === 'ar'
+                                  ? `تفعيل ${cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).length} مدينة دفعة واحدة`
+                                  : `Activate ${cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).length} cities at once`
+                                }
+                              </span>
+                            </div>
+                          </label>
+                        </div>
+                      )}
+
+                      {/* Single City Selection - Hidden when activating all */}
+                      {!activateAllCities && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            {locale === 'ar' ? 'اختر المدينة لتفعيلها' : 'Select City to Activate'} *
+                          </label>
+                          <select
+                            value={selectedCityToActivate}
+                            onChange={(e) => setSelectedCityToActivate(e.target.value)}
+                            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                          >
+                            <option value="">{locale === 'ar' ? 'اختر المدينة...' : 'Select city...'}</option>
+                            {cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).map(c => (
+                              <option key={c.id} value={c.id}>
+                                {locale === 'ar' ? c.name_ar : c.name_en}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
                       {cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).length === 0 && (
                         <p className="mt-2 text-sm text-amber-600">
                           {locale === 'ar' ? 'جميع مدن هذه المحافظة مفعّلة بالفعل' : 'All cities in this governorate are already activated'}
                         </p>
                       )}
-                    </div>
+                    </>
                   )}
                 </>
               )}
@@ -1545,6 +1598,7 @@ export default function AdminLocationsPage() {
                     type="button"
                     role="switch"
                     aria-checked={formData.is_active}
+                    dir="ltr"
                     onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
                     className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
                       formData.is_active ? 'bg-green-500' : 'bg-slate-300'
@@ -1552,7 +1606,7 @@ export default function AdminLocationsPage() {
                   >
                     <span
                       className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
-                        formData.is_active ? (isRTL ? 'translate-x-2' : 'translate-x-8') : (isRTL ? 'translate-x-8' : 'translate-x-1')
+                        formData.is_active ? 'translate-x-8' : 'translate-x-1'
                       }`}
                     />
                   </button>
@@ -1595,7 +1649,10 @@ export default function AdminLocationsPage() {
                     {(viewLevel === 'governorates' && modalType === 'add') || (viewLevel === 'cities' && modalType === 'add') ? (
                       <>
                         <CheckCircle2 className="w-4 h-4 me-2" />
-                        {locale === 'ar' ? 'تفعيل' : 'Activate'}
+                        {viewLevel === 'cities' && activateAllCities
+                          ? (locale === 'ar' ? 'تفعيل الكل' : 'Activate All')
+                          : (locale === 'ar' ? 'تفعيل' : 'Activate')
+                        }
                       </>
                     ) : (
                       <>
