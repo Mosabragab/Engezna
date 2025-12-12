@@ -28,7 +28,7 @@ This file serves as a map for all brand-related documentation.
 ## 2. Technical Styling
 
 5. **engezna-theme.css**
-   - Central CSS token file for colors, neutrals, and component styles (light and dark themes).
+   - Central CSS token file for colors, neutrals, and component styles (light theme only).
    - Referenced by web frontends and used as source of truth for design tokens.
 
 ---

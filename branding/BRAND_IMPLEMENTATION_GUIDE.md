@@ -70,7 +70,7 @@ Accents:
 - Info: `--color-info: 194 86% 58%;`          #36C5F0
 - Error: `--color-error: 358 100% 68%;`       #FF5A5F
 
-Neutrals (light vs dark) are defined under `:root` and `.dark` in CSS.
+Neutrals are defined under `:root` in CSS (light theme only, dark mode removed).
 
 ---
 

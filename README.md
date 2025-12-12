@@ -90,7 +90,7 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 - **Monitoring:** Sentry (planned)
 
 #### **Third-Party Services**
-- **Maps:** Google Maps API
+- **Maps:** HERE Maps API
 - **Payments:** Fawry (Egyptian payment gateway)
 - **SMS:** Twilio or local Egyptian provider
 - **Push Notifications:** Firebase Cloud Messaging

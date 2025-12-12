@@ -37,6 +37,12 @@ import {
   MessageCircle,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
+import {
+  getCommissionInfo,
+  type CommissionInfo,
+  COMMISSION_CONFIG
+} from '@/lib/commission/utils'
+import { Gift } from 'lucide-react'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -50,6 +56,10 @@ interface Provider {
   status: 'incomplete' | 'pending_approval' | 'approved' | 'rejected' | 'open' | 'closed' | 'temporarily_paused' | 'on_vacation'
   category: string
   rejection_reason?: string | null
+  grace_period_start?: string | null
+  grace_period_end?: string | null
+  commission_status?: 'in_grace_period' | 'active' | 'exempt'
+  custom_commission_rate?: number | null
 }
 
 // Stats type
@@ -97,6 +107,7 @@ export default function ProviderDashboard() {
     todayOnlineOrders: 0,
     todayOnlineRevenue: 0,
   })
+  const [commissionInfo, setCommissionInfo] = useState<CommissionInfo | null>(null)
 
   // Real-time order notifications
   const { newOrderCount, hasNewOrder } = useProviderOrderNotifications(provider?.id || null)
@@ -255,8 +266,12 @@ export default function ProviderDashboard() {
         .limit(1)
 
       if (providerData && providerData.length > 0) {
-        setProvider(providerData[0])
-        await loadStats(providerData[0].id, supabase)
+        const providerRecord = providerData[0]
+        setProvider(providerRecord)
+        // Calculate commission info
+        const info = getCommissionInfo(providerRecord)
+        setCommissionInfo(info)
+        await loadStats(providerRecord.id, supabase)
       }
     }
 
@@ -938,6 +953,71 @@ export default function ProviderDashboard() {
                   <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
                 </div>
               </div>
+
+              {/* Grace Period / Commission Status Card */}
+              {commissionInfo && (
+                <div className={`rounded-xl p-4 border shadow-sm mb-6 ${
+                  commissionInfo.isInGracePeriod
+                    ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200'
+                    : 'bg-gradient-to-br from-slate-50 to-gray-50 border-slate-200'
+                }`}>
+                  <div className="flex items-start gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      commissionInfo.isInGracePeriod ? 'bg-emerald-500' : 'bg-slate-500'
+                    }`}>
+                      <Gift className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-grow">
+                      <h3 className={`text-lg font-bold mb-1 ${
+                        commissionInfo.isInGracePeriod ? 'text-emerald-700' : 'text-slate-700'
+                      }`}>
+                        {commissionInfo.isInGracePeriod
+                          ? (locale === 'ar' ? '🎉 فترة السماح المجانية' : '🎉 Free Grace Period')
+                          : (locale === 'ar' ? 'نسبة العمولة' : 'Commission Rate')
+                        }
+                      </h3>
+                      {commissionInfo.isInGracePeriod ? (
+                        <div>
+                          <p className="text-emerald-600 text-sm mb-2">
+                            {locale === 'ar'
+                              ? `متبقي ${commissionInfo.daysRemaining} يوم من فترة السماح المجانية (6 أشهر)`
+                              : `${commissionInfo.daysRemaining} days remaining in your free grace period (6 months)`
+                            }
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-slate-500">
+                            <span>
+                              {locale === 'ar' ? 'العمولة الحالية:' : 'Current rate:'} <strong className="text-emerald-600">0%</strong>
+                            </span>
+                            {commissionInfo.gracePeriodEndDate && (
+                              <span>
+                                {locale === 'ar' ? 'تنتهي:' : 'Ends:'} {commissionInfo.gracePeriodEndDate.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-400 mt-2">
+                            {locale === 'ar'
+                              ? `بعد انتهاء فترة السماح، ستكون العمولة ${COMMISSION_CONFIG.MAX_RATE}% كحد أقصى`
+                              : `After grace period ends, commission will be up to ${COMMISSION_CONFIG.MAX_RATE}%`
+                            }
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-2xl font-bold text-slate-900">
+                            {locale === 'ar' ? `حتى ${commissionInfo.rate}%` : `Up to ${commissionInfo.rate}%`}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {locale === 'ar'
+                              ? 'على قيمة الطلبات (بدون رسوم توصيل)'
+                              : 'On order value (excluding delivery)'
+                            }
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Today's Payment Breakdown */}
               {stats.todayOrders > 0 && (
