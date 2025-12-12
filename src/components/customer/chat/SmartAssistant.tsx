@@ -16,6 +16,7 @@ import { DEFAULT_QUICK_ACTIONS } from '@/types/chat'
 import type { ChatProduct } from '@/types/chat'
 import Link from 'next/link'
 import { useCart } from '@/lib/store/cart'
+import { createClient } from '@/lib/supabase/client'
 
 interface SmartAssistantProps {
   isOpen: boolean
@@ -23,6 +24,7 @@ interface SmartAssistantProps {
   userId?: string
   cityId?: string
   governorateId?: string
+  customerName?: string // Can be passed directly if already available
 }
 
 export function SmartAssistant({
@@ -31,10 +33,37 @@ export function SmartAssistant({
   userId,
   cityId,
   governorateId,
+  customerName: propCustomerName,
 }: SmartAssistantProps) {
   const [inputValue, setInputValue] = useState('')
+  const [customerName, setCustomerName] = useState<string | undefined>(propCustomerName)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Fetch customer name if userId is available and customerName not provided
+  useEffect(() => {
+    if (userId && !propCustomerName) {
+      const fetchCustomerName = async () => {
+        try {
+          const supabase = createClient()
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', userId)
+            .single()
+
+          if (profile?.full_name) {
+            // Extract first name for friendly greeting
+            const firstName = profile.full_name.split(' ')[0]
+            setCustomerName(firstName)
+          }
+        } catch (error) {
+          console.error('Error fetching customer name:', error)
+        }
+      }
+      fetchCustomerName()
+    }
+  }, [userId, propCustomerName])
 
   const {
     messages,
@@ -45,7 +74,7 @@ export function SmartAssistant({
     sendQuickAction,
     addToCartFromChat,
     clearChat,
-  } = useAIChat({ userId, cityId, governorateId })
+  } = useAIChat({ userId, cityId, governorateId, customerName })
 
   const { getItemCount } = useCart()
   const cartCount = getItemCount()

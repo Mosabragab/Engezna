@@ -18,6 +18,7 @@ export interface UseAIChatOptions {
   userId?: string
   cityId?: string
   governorateId?: string
+  customerName?: string
 }
 
 export interface UseAIChatReturn {
@@ -36,29 +37,36 @@ export interface UseAIChatReturn {
   retryLastMessage: () => Promise<void>
 }
 
-// Welcome message
-const WELCOME_MESSAGE: ChatMessage = {
-  id: 'welcome',
-  role: 'assistant',
-  content: `مرحباً! 👋 أنا مساعد إنجزنا الذكي.
+/**
+ * Generate personalized welcome message
+ */
+function createWelcomeMessage(customerName?: string): ChatMessage {
+  const greeting = customerName
+    ? `أهلاً ${customerName}! 👋`
+    : `أهلاً بيك! 👋`
 
-اكتب لي ماذا تريد أن تطلب اليوم؟
+  return {
+    id: 'welcome',
+    role: 'assistant',
+    content: `${greeting}
+أنا مساعد إنجزنا الذكي، معاك عشان أساعدك تطلب أكلك المفضل بأسرع وقت.
 
-مثال: "عايز 2 شاورما فراخ من مطعم الأمير"`,
-  timestamp: new Date(),
-  suggestions: [
-    '🔥 العروض',
-    '⭐ الأكثر طلباً',
-    '🔄 آخر طلب',
-    '🍕 بيتزا',
-  ],
+ممكن تقولي عايز إيه النهارده؟ 🍔`,
+    timestamp: new Date(),
+    suggestions: [
+      '🔥 العروض',
+      '⭐ الأكثر طلباً',
+      '🔄 آخر طلب',
+      '🍕 بيتزا',
+    ],
+  }
 }
 
 export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
-  const { userId, cityId, governorateId } = options
+  const { userId, cityId, governorateId, customerName } = options
 
-  // State
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE])
+  // State - Initialize with personalized welcome message
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [createWelcomeMessage(customerName)])
   const [isLoading, setIsLoading] = useState(false)
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -77,6 +85,17 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       abortControllerRef.current?.abort()
     }
   }, [])
+
+  // Update welcome message when customerName becomes available
+  useEffect(() => {
+    setMessages(prev => {
+      // Only update if the first message is the welcome message and no other messages yet
+      if (prev.length === 1 && prev[0].id === 'welcome') {
+        return [createWelcomeMessage(customerName)]
+      }
+      return prev
+    })
+  }, [customerName])
 
   /**
    * Send message to AI
@@ -299,10 +318,10 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
    */
   const clearChat = useCallback(() => {
     abortControllerRef.current?.abort()
-    setMessages([WELCOME_MESSAGE])
+    setMessages([createWelcomeMessage(customerName)])
     setError(null)
     setStreamingContent('')
-  }, [])
+  }, [customerName])
 
   /**
    * Retry last message

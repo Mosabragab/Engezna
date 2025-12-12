@@ -20,6 +20,64 @@ interface MessageBubbleProps {
   streamingContent?: string
 }
 
+/**
+ * Parse AI response that might be JSON
+ * Extract text and suggestions from JSON format
+ */
+function parseAIResponse(content: string): {
+  text: string
+  suggestions?: string[]
+  actions?: string[]
+} {
+  // If it's empty, return empty
+  if (!content || !content.trim()) {
+    return { text: '' }
+  }
+
+  // Try to parse as JSON
+  try {
+    // Check if content looks like JSON (starts with { or contains "text":)
+    const trimmed = content.trim()
+    if (trimmed.startsWith('{') || trimmed.includes('"text"')) {
+      const parsed = JSON.parse(trimmed)
+      if (parsed.text) {
+        return {
+          text: parsed.text,
+          suggestions: parsed.suggestions,
+          actions: parsed.actions,
+        }
+      }
+    }
+  } catch {
+    // Not valid JSON, continue
+  }
+
+  // Check if it's a partial JSON that starts with { but isn't complete
+  if (content.trim().startsWith('{') && content.includes('"text"')) {
+    // Try to extract text field manually
+    const textMatch = content.match(/"text"\s*:\s*"([^"]*(?:\\"[^"]*)*)"/)
+    if (textMatch) {
+      // Unescape the text
+      const text = textMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+
+      // Try to extract suggestions
+      const suggestionsMatch = content.match(/"suggestions"\s*:\s*\[([^\]]*)\]/)
+      let suggestions: string[] | undefined
+      if (suggestionsMatch) {
+        suggestions = suggestionsMatch[1]
+          .split(',')
+          .map(s => s.trim().replace(/"/g, '').replace(/'/g, ''))
+          .filter(s => s.length > 0)
+      }
+
+      return { text, suggestions }
+    }
+  }
+
+  // Return as-is if not JSON
+  return { text: content }
+}
+
 export const MessageBubble = memo(function MessageBubble({
   message,
   onSuggestionClick,
@@ -28,7 +86,14 @@ export const MessageBubble = memo(function MessageBubble({
   streamingContent = '',
 }: MessageBubbleProps) {
   const isUser = message.role === 'user'
-  const content = isStreaming ? streamingContent : message.content
+
+  // Parse the content - extract text from JSON if needed
+  const rawContent = isStreaming ? streamingContent : message.content
+  const parsed = isUser ? { text: rawContent } : parseAIResponse(rawContent)
+  const content = parsed.text
+
+  // Merge parsed suggestions with message suggestions
+  const allSuggestions = message.suggestions || parsed.suggestions
 
   return (
     <motion.div
@@ -87,10 +152,10 @@ export const MessageBubble = memo(function MessageBubble({
           </div>
         )}
 
-        {/* Suggestions */}
-        {!isUser && message.suggestions && message.suggestions.length > 0 && !isStreaming && (
+        {/* Suggestions - use parsed or message suggestions */}
+        {!isUser && allSuggestions && allSuggestions.length > 0 && !isStreaming && (
           <SuggestionChips
-            suggestions={message.suggestions}
+            suggestions={allSuggestions}
             onSelect={onSuggestionClick}
           />
         )}
