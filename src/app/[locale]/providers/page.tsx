@@ -8,6 +8,7 @@ import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/cu
 import { ChatFAB } from '@/components/customer/voice'
 import { useFavorites } from '@/hooks/customer'
 import { Star, Clock, Percent, ArrowUpDown, MapPin } from 'lucide-react'
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 
 type Provider = {
   id: string
@@ -62,6 +63,7 @@ export default function ProvidersPage() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
+      // Logged-in user - get city from profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('city_id')
@@ -81,6 +83,18 @@ export default function ProvidersPage() {
         if (city) {
           setUserCityName(locale === 'ar' ? city.name_ar : city.name_en)
         }
+      }
+    } else {
+      // Guest user - get city from localStorage
+      const guestLocation = guestLocationStorage.get()
+      if (guestLocation?.cityId) {
+        setUserCityId(guestLocation.cityId)
+        if (guestLocation.cityName) {
+          setUserCityName(locale === 'ar' ? guestLocation.cityName.ar : guestLocation.cityName.en)
+        }
+      } else if (guestLocation?.governorateName) {
+        // Show governorate name if only that is set
+        setUserCityName(locale === 'ar' ? guestLocation.governorateName.ar : guestLocation.governorateName.en)
       }
     }
   }

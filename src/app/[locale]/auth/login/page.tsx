@@ -14,6 +14,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 
 // Form validation schema
 const loginSchema = z.object({
@@ -91,6 +92,34 @@ export default function LoginPage() {
             )
           }
           return
+        }
+
+        // Sync guest location to profile if exists
+        const guestLocation = guestLocationStorage.get()
+        if (guestLocation?.governorateId) {
+          // Check if user has no location set
+          const hasLocation = profile?.role === 'customer' // Will refetch below
+
+          const { data: currentProfile } = await supabase
+            .from('profiles')
+            .select('governorate_id, city_id')
+            .eq('id', authData.user.id)
+            .single()
+
+          // Only sync if user doesn't have a location set
+          if (!currentProfile?.governorate_id) {
+            await supabase
+              .from('profiles')
+              .update({
+                governorate_id: guestLocation.governorateId,
+                city_id: guestLocation.cityId || null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', authData.user.id)
+          }
+
+          // Clear guest location after sync
+          guestLocationStorage.clear()
         }
 
         // Customer - redirect to home page

@@ -15,6 +15,7 @@ import {
 import { ChatFAB } from '@/components/customer/voice'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 
 // Demo offers data - Unified blue gradient colors per brand guidelines
 const demoOffers = [
@@ -141,7 +142,9 @@ export default function HomePage() {
     const { data: { user } } = await supabase.auth.getUser()
 
     let cityId: string | null = null
+
     if (user) {
+      // Logged-in user - get city from profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('city_id')
@@ -151,6 +154,16 @@ export default function HomePage() {
       if (profile?.city_id) {
         cityId = profile.city_id
         setUserCityId(cityId)
+      }
+    } else {
+      // Guest user - get city from localStorage
+      const guestLocation = guestLocationStorage.get()
+      if (guestLocation?.cityId) {
+        cityId = guestLocation.cityId
+        setUserCityId(cityId)
+      } else if (guestLocation?.governorateId) {
+        // If only governorate is set, we'll filter by that later
+        // For now, just proceed without city filter
       }
     }
 

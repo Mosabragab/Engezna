@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { useNotifications } from '@/hooks/customer'
 import { useCart } from '@/lib/store/cart'
+import { useGuestLocation } from '@/lib/hooks/useGuestLocation'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface CustomerHeaderProps {
@@ -25,7 +26,11 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
   const t = useTranslations('header')
 
   const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [currentLocation, setCurrentLocation] = useState(locale === 'ar' ? 'بني سويف' : 'Beni Suef')
+  const [currentLocation, setCurrentLocation] = useState<string | null>(null)
+  const [locationLoading, setLocationLoading] = useState(true)
+
+  // Guest location hook
+  const { location: guestLocation, isLoaded: guestLocationLoaded } = useGuestLocation()
 
   // Use real-time notifications hook
   const { unreadCount } = useNotifications()
@@ -35,8 +40,10 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
   const cartItemCount = getItemCount()
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    if (guestLocationLoaded) {
+      checkAuth()
+    }
+  }, [guestLocationLoaded])
 
   async function checkAuth() {
     const supabase = createClient()
@@ -45,44 +52,55 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
 
-      if (!user) return
+      if (user) {
+        // Logged-in user - get location from profile
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select(`
+              governorate_id,
+              city_id,
+              governorates:governorate_id (name_ar, name_en),
+              cities:city_id (name_ar, name_en)
+            `)
+            .eq('id', user.id)
+            .single()
 
-      // Get user's current location from profile
-      try {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select(`
-            governorate_id,
-            city_id,
-            governorates:governorate_id (name_ar, name_en),
-            cities:city_id (name_ar, name_en)
-          `)
-          .eq('id', user.id)
-          .single()
+          if (error) {
+            console.log('Error fetching profile location:', error.message)
+          } else if (profile) {
+            // Supabase returns joined data as the object directly
+            const govData = profile.governorates as unknown as { name_ar: string; name_en: string } | null
+            const cityData = profile.cities as unknown as { name_ar: string; name_en: string } | null
 
-        if (error) {
-          console.log('Error fetching profile location:', error.message)
-          return
-        }
-
-        if (profile) {
-          // Supabase returns joined data as the object directly
-          const govData = profile.governorates as unknown as { name_ar: string; name_en: string } | null
-          const cityData = profile.cities as unknown as { name_ar: string; name_en: string } | null
-
-          if (cityData && cityData.name_ar) {
-            setCurrentLocation(locale === 'ar' ? cityData.name_ar : cityData.name_en)
-          } else if (govData && govData.name_ar) {
-            setCurrentLocation(locale === 'ar' ? govData.name_ar : govData.name_en)
+            if (cityData && cityData.name_ar) {
+              setCurrentLocation(locale === 'ar' ? cityData.name_ar : cityData.name_en)
+            } else if (govData && govData.name_ar) {
+              setCurrentLocation(locale === 'ar' ? govData.name_ar : govData.name_en)
+            }
           }
+        } catch (error) {
+          console.log('Error fetching location:', error)
         }
-      } catch (error) {
-        console.log('Error fetching location:', error)
+      } else {
+        // Guest user - get location from localStorage
+        if (guestLocation.cityName) {
+          setCurrentLocation(locale === 'ar' ? guestLocation.cityName.ar : guestLocation.cityName.en)
+        } else if (guestLocation.governorateName) {
+          setCurrentLocation(locale === 'ar' ? guestLocation.governorateName.ar : guestLocation.governorateName.en)
+        }
       }
     } catch (error) {
       console.error('Error checking auth:', error)
     }
+
+    setLocationLoading(false)
   }
+
+  // Display text for location button
+  const locationDisplayText = locationLoading
+    ? '...'
+    : currentLocation || (locale === 'ar' ? 'اختر موقعك' : 'Select location')
 
   return (
     <header className={`sticky top-0 z-40 ${transparent ? 'bg-transparent' : 'bg-white border-b border-slate-100 shadow-sm'}`}>
@@ -93,11 +111,13 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             {!title ? (
               <button
                 onClick={() => router.push(`/${locale}/profile/governorate`)}
-                className="flex items-center gap-2 text-sm hover:bg-slate-50 rounded-lg px-2 py-1 transition-colors"
+                className={`flex items-center gap-2 text-sm hover:bg-slate-50 rounded-lg px-2 py-1 transition-colors ${
+                  !currentLocation ? 'border border-dashed border-primary/50' : ''
+                }`}
               >
-                <MapPin className="h-5 w-5 text-primary" />
-                <span className="font-medium text-primary max-w-[150px] truncate">
-                  {currentLocation}
+                <MapPin className={`h-5 w-5 ${currentLocation ? 'text-primary' : 'text-primary/60'}`} />
+                <span className={`font-medium max-w-[150px] truncate ${currentLocation ? 'text-primary' : 'text-primary/60'}`}>
+                  {locationDisplayText}
                 </span>
                 <ChevronDown className="h-4 w-4 text-slate-400" />
               </button>

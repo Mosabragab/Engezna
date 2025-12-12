@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { MapPinned, Loader2, Check } from 'lucide-react'
+import { MapPinned, Loader2, Check, User } from 'lucide-react'
+import { useGuestLocation, type GuestLocation } from '@/lib/hooks/useGuestLocation'
 
 type Governorate = {
   id: string
@@ -35,7 +36,11 @@ export default function GovernoratePage() {
   const t = useTranslations('settings.governorate')
   const router = useRouter()
 
+  // Guest location hook
+  const { location: guestLocation, setLocation: setGuestLocation, isLoaded: guestLocationLoaded } = useGuestLocation()
+
   const [userId, setUserId] = useState<string | null>(null)
+  const [isGuest, setIsGuest] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
 
   const [governorates, setGovernorates] = useState<Governorate[]>([])
@@ -50,7 +55,7 @@ export default function GovernoratePage() {
 
   useEffect(() => {
     checkAuthAndLoadData()
-  }, [])
+  }, [guestLocationLoaded])
 
   useEffect(() => {
     if (governorateId) {
@@ -62,19 +67,33 @@ export default function GovernoratePage() {
   }, [governorateId])
 
   async function checkAuthAndLoadData() {
+    if (!guestLocationLoaded) return
+
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/profile/governorate`)
-      return
+    if (user) {
+      // Logged in user
+      setUserId(user.id)
+      setIsGuest(false)
+      await loadGovernorates()
+      await loadCurrentSelection(user.id)
+    } else {
+      // Guest user - allow browsing without login
+      setIsGuest(true)
+      await loadGovernorates()
+
+      // Load from localStorage
+      if (guestLocation.governorateId) {
+        setGovernorateId(guestLocation.governorateId)
+        if (guestLocation.cityId) {
+          setCityId(guestLocation.cityId)
+        }
+      }
+      setLoading(false)
     }
 
-    setUserId(user.id)
     setAuthLoading(false)
-
-    await loadGovernorates()
-    await loadCurrentSelection(user.id)
   }
 
   async function loadGovernorates() {
@@ -83,7 +102,7 @@ export default function GovernoratePage() {
       .from('governorates')
       .select('*')
       .eq('is_active', true)
-      .order('name_en')
+      .order('name_ar')
 
     if (data) {
       setGovernorates(data)
@@ -97,7 +116,7 @@ export default function GovernoratePage() {
       .select('*')
       .eq('governorate_id', govId)
       .eq('is_active', true)
-      .order('name_en')
+      .order('name_ar')
 
     if (data) {
       setCities(data)
@@ -127,8 +146,6 @@ export default function GovernoratePage() {
   }
 
   async function handleSave() {
-    if (!userId) return
-
     if (!governorateId) {
       setMessage({ type: 'error', text: locale === 'ar' ? 'يرجى اختيار المحافظة' : 'Please select a governorate' })
       return
@@ -137,30 +154,51 @@ export default function GovernoratePage() {
     setSaving(true)
     setMessage(null)
 
-    const supabase = createClient()
+    // Get names for display
+    const selectedGov = governorates.find(g => g.id === governorateId)
+    const selectedCity = cities.find(c => c.id === cityId)
 
-    // Update profile with location data (district_id always null - deprecated)
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        governorate_id: governorateId,
-        city_id: cityId || null,
-        district_id: null, // DEPRECATED - always null
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId)
+    if (isGuest) {
+      // Save to localStorage for guests
+      const newLocation: GuestLocation = {
+        governorateId,
+        governorateName: selectedGov ? { ar: selectedGov.name_ar, en: selectedGov.name_en } : null,
+        cityId: cityId || null,
+        cityName: selectedCity ? { ar: selectedCity.name_ar, en: selectedCity.name_en } : null,
+      }
+      setGuestLocation(newLocation)
+      setMessage({ type: 'success', text: locale === 'ar' ? 'تم حفظ الموقع' : 'Location saved' })
 
-    if (error) {
-      console.error('Error saving location:', error)
-      setMessage({
-        type: 'error',
-        text: locale === 'ar'
-          ? `حدث خطأ: ${error.message}`
-          : `Error: ${error.message}`
-      })
-    } else {
-      setMessage({ type: 'success', text: t('saved') })
-      setTimeout(() => setMessage(null), 3000)
+      // Redirect to home after short delay
+      setTimeout(() => {
+        router.push(`/${locale}`)
+      }, 1000)
+    } else if (userId) {
+      // Save to profile for logged-in users
+      const supabase = createClient()
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          governorate_id: governorateId,
+          city_id: cityId || null,
+          district_id: null, // DEPRECATED - always null
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId)
+
+      if (error) {
+        console.error('Error saving location:', error)
+        setMessage({
+          type: 'error',
+          text: locale === 'ar'
+            ? `حدث خطأ: ${error.message}`
+            : `Error: ${error.message}`
+        })
+      } else {
+        setMessage({ type: 'success', text: t('saved') })
+        setTimeout(() => setMessage(null), 3000)
+      }
     }
 
     setSaving(false)
@@ -186,6 +224,23 @@ export default function GovernoratePage() {
         <p className="text-muted-foreground mb-6">
           {locale === 'ar' ? 'اختر موقعك لعرض الخدمات المتاحة' : 'Select your location to see available services'}
         </p>
+
+        {/* Guest Mode Notice */}
+        {isGuest && (
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
+            <User className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <p className="text-sm text-blue-800 font-medium">
+                {locale === 'ar' ? 'أنت تتصفح كزائر' : "You're browsing as a guest"}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {locale === 'ar'
+                  ? 'يمكنك تصفح المتاجر بدون تسجيل. سجّل دخولك عند الطلب.'
+                  : 'You can browse stores without signing in. Sign in when you want to order.'}
+              </p>
+            </div>
+          </div>
+        )}
 
         <Card>
           <CardContent className="pt-6 space-y-4">
