@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/static'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { Button } from '@/components/ui/button'
 import { Footer } from '@/components/shared/Footer'
@@ -29,10 +29,10 @@ interface Governorate {
   is_active: boolean
 }
 
-// Fetch governorates on the server
+// Fetch governorates on the server (static - no cookies)
 async function getGovernorates(): Promise<Governorate[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createStaticClient()
     const { data, error } = await supabase
       .from('governorates')
       .select('id, name_ar, name_en, is_active')
