@@ -42,6 +42,14 @@ interface Governorate {
   is_active: boolean
 }
 
+interface City {
+  id: string
+  governorate_id: string
+  name_ar: string
+  name_en: string
+  is_active: boolean
+}
+
 // Business category options with icons
 // Updated December 2025 - New categories: restaurant_cafe, coffee_patisserie, grocery, vegetables_fruits
 const businessCategories = [
@@ -67,6 +75,9 @@ const partnerSignupSchema = z.object({
   businessCategory: z.string().min(1, 'Please select a business category'),
   partnerRole: z.string().min(1, 'Please select your role'),
   governorateId: z.string().min(1, 'Please select your governorate'),
+  cityId: z.string().optional(),
+  customCityNameAr: z.string().optional(),
+  customCityNameEn: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -85,6 +96,9 @@ export default function PartnerRegisterPage() {
   const [step, setStep] = useState(1) // Step 1: Personal Info, Step 2: Business Info
   const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [loadingGovernorates, setLoadingGovernorates] = useState(true)
+  const [cities, setCities] = useState<City[]>([])
+  const [loadingCities, setLoadingCities] = useState(false)
+  const [isAddingNewCity, setIsAddingNewCity] = useState(false)
 
   const {
     register,
@@ -99,12 +113,16 @@ export default function PartnerRegisterPage() {
       businessCategory: '',
       partnerRole: '',
       governorateId: '',
+      cityId: '',
+      customCityNameAr: '',
+      customCityNameEn: '',
     }
   })
 
   const businessCategory = watch('businessCategory')
   const partnerRole = watch('partnerRole')
   const governorateId = watch('governorateId')
+  const cityId = watch('cityId')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -126,6 +144,33 @@ export default function PartnerRegisterPage() {
     fetchGovernorates()
   }, [])
 
+  // Fetch cities when governorate changes
+  useEffect(() => {
+    if (!governorateId) {
+      setCities([])
+      setValue('cityId', '')
+      setIsAddingNewCity(false)
+      return
+    }
+
+    async function fetchCities() {
+      setLoadingCities(true)
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('cities')
+        .select('id, governorate_id, name_ar, name_en, is_active')
+        .eq('governorate_id', governorateId)
+        .eq('is_active', true)
+        .order('name_ar')
+
+      if (!error && data) {
+        setCities(data)
+      }
+      setLoadingCities(false)
+    }
+    fetchCities()
+  }, [governorateId, setValue])
+
   // Handle next step
   const handleNextStep = async () => {
     const isValid = await trigger(['fullName', 'phone', 'email', 'password', 'confirmPassword'])
@@ -145,6 +190,28 @@ export default function PartnerRegisterPage() {
 
     try {
       const supabase = createClient()
+
+      // Handle custom city creation if needed
+      let finalCityId = data.cityId
+      if (isAddingNewCity && data.customCityNameAr && data.customCityNameEn) {
+        const { data: newCity, error: cityError } = await supabase
+          .from('cities')
+          .insert({
+            governorate_id: data.governorateId,
+            name_ar: data.customCityNameAr,
+            name_en: data.customCityNameEn,
+            is_active: false, // Needs admin approval
+          })
+          .select('id')
+          .single()
+
+        if (cityError) {
+          console.error('City creation error:', cityError)
+          setError(locale === 'ar' ? 'حدث خطأ أثناء إضافة المدينة' : 'Error adding city')
+          return
+        }
+        finalCityId = newCity.id
+      }
 
       // 1. Create user account in auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -176,6 +243,7 @@ export default function PartnerRegisterPage() {
             role: 'provider_owner',
             partner_role: data.partnerRole,
             governorate_id: data.governorateId,
+            city_id: finalCityId || null,
           })
 
         if (profileError) {
@@ -197,6 +265,7 @@ export default function PartnerRegisterPage() {
             delivery_fee: 0, // Will be completed later
             status: 'incomplete',
             governorate_id: data.governorateId, // Save governorate (fixed, non-editable later)
+            city_id: finalCityId || null,
           })
 
         if (providerError) {
@@ -470,6 +539,90 @@ export default function PartnerRegisterPage() {
                     </p>
                   )}
                 </div>
+
+                {/* City Selection - Shows after governorate is selected */}
+                {governorateId && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      {locale === 'ar' ? 'المدينة' : 'City'}
+                    </Label>
+
+                    {!isAddingNewCity ? (
+                      <>
+                        <div className="relative">
+                          <select
+                            value={cityId}
+                            onChange={(e) => {
+                              if (e.target.value === 'ADD_NEW') {
+                                setIsAddingNewCity(true)
+                                setValue('cityId', '')
+                              } else {
+                                setValue('cityId', e.target.value)
+                              }
+                            }}
+                            disabled={isLoading || loadingCities}
+                            className={`w-full h-10 px-3 py-2 text-sm rounded-md border bg-background appearance-none cursor-pointer border-input
+                              focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
+                              disabled:cursor-not-allowed disabled:opacity-50`}
+                          >
+                            <option value="">
+                              {loadingCities
+                                ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
+                                : (locale === 'ar' ? 'اختر المدينة' : 'Select city')
+                              }
+                            </option>
+                            {cities.map((city) => (
+                              <option key={city.id} value={city.id}>
+                                {locale === 'ar' ? city.name_ar : city.name_en}
+                              </option>
+                            ))}
+                            <option value="ADD_NEW" className="font-medium text-primary">
+                              ➕ {locale === 'ar' ? 'أضف مدينتك' : 'Add your city'}
+                            </option>
+                          </select>
+                          <ChevronDown className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none`} />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-slate-700">
+                            {locale === 'ar' ? 'إضافة مدينة جديدة' : 'Add new city'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAddingNewCity(false)
+                              setValue('customCityNameAr', '')
+                              setValue('customCityNameEn', '')
+                            }}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                          </button>
+                        </div>
+                        <Input
+                          placeholder={locale === 'ar' ? 'اسم المدينة بالعربية' : 'City name in Arabic'}
+                          {...register('customCityNameAr')}
+                          disabled={isLoading}
+                          dir="rtl"
+                        />
+                        <Input
+                          placeholder={locale === 'ar' ? 'اسم المدينة بالإنجليزية' : 'City name in English'}
+                          {...register('customCityNameEn')}
+                          disabled={isLoading}
+                          dir="ltr"
+                        />
+                        <p className="text-xs text-amber-600">
+                          {locale === 'ar'
+                            ? 'سيتم مراجعة المدينة من قبل الإدارة قبل تفعيلها'
+                            : 'City will be reviewed by admin before activation'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label>{t('businessCategory')}</Label>
