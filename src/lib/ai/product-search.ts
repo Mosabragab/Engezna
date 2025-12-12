@@ -25,16 +25,14 @@ export async function searchProducts(
 ): Promise<ChatProduct[]> {
   const supabase = await createClient()
 
-  // Get search terms from intent
+  // Get search terms from intent - combine products, categories, and attributes
   const searchTerms = [
     ...(intent.entities.products || []),
     ...(intent.entities.categories || []),
-  ].filter(Boolean)
+  ].filter(Boolean).map(term => term.trim())
 
-  // Build text search pattern for Arabic
-  const searchPatterns = searchTerms.map(term => term.trim().toLowerCase())
-
-  console.log('[AI Search] Searching for:', searchPatterns, 'cityId:', cityId, 'governorateId:', governorateId)
+  console.log('[AI Search] Intent:', JSON.stringify(intent))
+  console.log('[AI Search] Search terms:', searchTerms, 'cityId:', cityId, 'governorateId:', governorateId)
 
   // First, get all providers in the location (try city_id first, then governorate_id)
   let providerIds: string[] = []
@@ -108,18 +106,14 @@ export async function searchProducts(
     .eq('is_available', true)
     .in('provider_id', providerIds)
 
-  // Search by product name (more flexible approach)
-  if (searchPatterns.length > 0) {
-    // Build OR conditions for each search term
-    const orConditions = searchPatterns
-      .flatMap(term => [
-        `name_ar.ilike.%${term}%`,
-        `name_en.ilike.%${term}%`,
-        `description_ar.ilike.%${term}%`,
-      ])
-      .join(',')
+  // Search by product name - use direct search for better Arabic support
+  if (searchTerms.length > 0) {
+    // For Arabic text, search directly by name_ar using ilike
+    // This is more reliable than the .or() string method for Arabic
+    const primarySearchTerm = searchTerms[0]
+    console.log('[AI Search] Primary search term:', primarySearchTerm)
 
-    query = query.or(orConditions)
+    query = query.ilike('name_ar', `%${primarySearchTerm}%`)
   }
 
   // Filter by price range
@@ -149,6 +143,9 @@ export async function searchProducts(
   }
 
   console.log('[AI Search] Found products:', products?.length || 0)
+  if (products && products.length > 0) {
+    console.log('[AI Search] Product names:', products.map(p => p.name_ar).join(', '))
+  }
 
   // If no products found with search, try getting ANY available products as fallback
   if ((!products || products.length === 0) && providerIds.length > 0) {
@@ -259,13 +256,11 @@ export async function searchProviders(
     query = query.eq('city_id', cityId)
   }
 
-  // Search by provider name
+  // Search by provider name - use direct ilike for Arabic support
   if (intent.entities.providers && intent.entities.providers.length > 0) {
-    const searchTerms = intent.entities.providers
-    const orConditions = searchTerms
-      .map(term => `name_ar.ilike.%${term}%,name_en.ilike.%${term}%`)
-      .join(',')
-    query = query.or(orConditions)
+    const primaryTerm = intent.entities.providers[0].trim()
+    console.log('[AI Search] Searching provider:', primaryTerm)
+    query = query.ilike('name_ar', `%${primaryTerm}%`)
   }
 
   // Sort
@@ -504,6 +499,78 @@ export async function getActivePromotions(
       end_date: promo.end_date,
     }
   })
+}
+
+/**
+ * Get products from a specific provider by name
+ */
+export async function getProductsFromProvider(
+  providerName: string,
+  limit: number = 10
+): Promise<ChatProduct[]> {
+  const supabase = await createClient()
+
+  console.log('[AI Search] Getting products from provider:', providerName)
+
+  // First find the provider
+  const { data: providers } = await supabase
+    .from('providers')
+    .select('id, name_ar, name_en, rating')
+    .ilike('name_ar', `%${providerName}%`)
+    .in('status', ['open', 'closed', 'temporarily_paused'])
+    .limit(1)
+
+  if (!providers || providers.length === 0) {
+    console.log('[AI Search] Provider not found:', providerName)
+    return []
+  }
+
+  const provider = providers[0]
+  console.log('[AI Search] Found provider:', provider.name_ar, 'id:', provider.id)
+
+  // Get products from this provider
+  const { data: products, error } = await supabase
+    .from('menu_items')
+    .select(`
+      id,
+      name_ar,
+      name_en,
+      description_ar,
+      price,
+      original_price,
+      image_url,
+      provider_id,
+      has_variants
+    `)
+    .eq('provider_id', provider.id)
+    .eq('is_available', true)
+    .order('price', { ascending: true })
+    .limit(limit)
+
+  if (error) {
+    console.error('[AI Search] Products from provider error:', error)
+    return []
+  }
+
+  console.log('[AI Search] Found products from provider:', products?.length || 0)
+  if (products && products.length > 0) {
+    console.log('[AI Search] Product names:', products.map(p => p.name_ar).join(', '))
+  }
+
+  return (products || []).map(product => ({
+    id: product.id,
+    name_ar: product.name_ar,
+    name_en: product.name_en,
+    description_ar: product.description_ar,
+    price: product.price,
+    original_price: product.original_price,
+    image_url: product.image_url,
+    provider_id: product.provider_id,
+    provider_name_ar: provider.name_ar,
+    provider_name_en: provider.name_en,
+    rating: provider.rating,
+    has_variants: product.has_variants,
+  }))
 }
 
 /**

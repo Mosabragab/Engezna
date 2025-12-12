@@ -5,7 +5,7 @@
 
 import { OpenAI } from 'openai'
 import { buildCustomerContext, getLastOrder } from '@/lib/ai/context-builder'
-import { searchProducts, searchProviders, getPopularProducts, getPromotionProducts, getActivePromotions } from '@/lib/ai/product-search'
+import { searchProducts, searchProviders, getPopularProducts, getPromotionProducts, getActivePromotions, getProductsFromProvider } from '@/lib/ai/product-search'
 import { compareProvidersForProduct, generateComparisonText } from '@/lib/ai/comparison-engine'
 import {
   INTENT_DETECTION_PROMPT,
@@ -116,6 +116,11 @@ async function fetchRelevantData(
 
       case 'search_provider':
         providers = await searchProviders(intent, cityId, 5)
+        // Also get products from the first provider found
+        if (intent.entities.providers && intent.entities.providers.length > 0) {
+          const providerName = intent.entities.providers[0]
+          products = await getProductsFromProvider(providerName, 6)
+        }
         break
 
       case 'compare':
