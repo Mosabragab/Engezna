@@ -222,6 +222,20 @@ export async function searchProviders(
 ): Promise<ChatProvider[]> {
   const supabase = await createClient()
 
+  // Map Arabic category names to DB category values
+  const categoryMap: Record<string, string[]> = {
+    'مطاعم': ['restaurant', 'fast_food'],
+    'كافيهات': ['cafe', 'coffee'],
+    'مطاعم وكافيهات': ['restaurant', 'fast_food', 'cafe', 'coffee'],
+    'سوبر ماركت': ['supermarket', 'grocery'],
+    'البن': ['coffee', 'sweets'],
+    'حلويات': ['sweets', 'bakery'],
+    'البن والحلويات': ['coffee', 'sweets', 'bakery'],
+    'خضروات': ['vegetables', 'fruits', 'grocery'],
+    'فواكه': ['vegetables', 'fruits'],
+    'خضروات وفواكه': ['vegetables', 'fruits', 'grocery'],
+  }
+
   let query = supabase
     .from('providers')
     .select(`
@@ -246,8 +260,33 @@ export async function searchProviders(
   // Search by provider name - use direct ilike for Arabic support
   if (intent.entities.providers && intent.entities.providers.length > 0) {
     const primaryTerm = intent.entities.providers[0].trim()
-    console.log('[AI Search] Searching provider:', primaryTerm)
+    console.log('[AI Search] Searching provider by name:', primaryTerm)
     query = query.ilike('name_ar', `%${primaryTerm}%`)
+  }
+
+  // Filter by category if browsing categories
+  if (intent.entities.categories && intent.entities.categories.length > 0) {
+    const categoryTerms = intent.entities.categories
+    console.log('[AI Search] Filtering by categories:', categoryTerms)
+
+    // Collect all matching DB categories
+    const dbCategories: string[] = []
+    for (const term of categoryTerms) {
+      const normalizedTerm = term.trim()
+      // Check each mapping
+      for (const [key, values] of Object.entries(categoryMap)) {
+        if (normalizedTerm.includes(key) || key.includes(normalizedTerm)) {
+          dbCategories.push(...values)
+        }
+      }
+    }
+
+    // Remove duplicates and filter
+    const uniqueCategories = [...new Set(dbCategories)]
+    if (uniqueCategories.length > 0) {
+      console.log('[AI Search] DB categories:', uniqueCategories)
+      query = query.in('category', uniqueCategories)
+    }
   }
 
   // Sort
