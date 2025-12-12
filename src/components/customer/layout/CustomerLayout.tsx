@@ -4,6 +4,7 @@ import { ReactNode } from 'react'
 import { CustomerHeader } from './CustomerHeader'
 import { BottomNavigation } from './BottomNavigation'
 import { Footer } from '@/components/shared/Footer'
+import { InstallPrompt } from '@/components/pwa/InstallPrompt'
 
 interface CustomerLayoutProps {
   children: ReactNode
@@ -52,6 +53,9 @@ export function CustomerLayout({
 
       {/* Bottom Navigation - Mobile only */}
       {showBottomNav && <BottomNavigation />}
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </div>
   )
 }

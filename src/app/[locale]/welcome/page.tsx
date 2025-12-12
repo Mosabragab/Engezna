@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { Button } from '@/components/ui/button'
 import { Footer } from '@/components/shared/Footer'
+import { InstallPrompt } from '@/components/pwa/InstallPrompt'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 import {
   MessageCircle,
@@ -417,6 +418,9 @@ export default function WelcomePage() {
 
       {/* Footer */}
       <Footer />
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </div>
   )
 }
