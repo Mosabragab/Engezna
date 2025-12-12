@@ -116,10 +116,10 @@ async function fetchRelevantData(
 
       case 'search_provider':
         providers = await searchProviders(intent, cityId, 5)
-        // Also get products from the first provider found
+        // Also get products from the first provider found (must be in customer's city!)
         if (intent.entities.providers && intent.entities.providers.length > 0) {
           const providerName = intent.entities.providers[0]
-          products = await getProductsFromProvider(providerName, 6)
+          products = await getProductsFromProvider(providerName, 6, cityId)
         }
         break
 

@@ -34,48 +34,33 @@ export async function searchProducts(
   console.log('[AI Search] Intent:', JSON.stringify(intent))
   console.log('[AI Search] Search terms:', searchTerms, 'cityId:', cityId, 'governorateId:', governorateId)
 
-  // First, get all providers in the location (try city_id first, then governorate_id)
+  // IMPORTANT: Get providers ONLY from customer's city
+  // This is critical - we must NOT show products from other cities!
   let providerIds: string[] = []
 
-  // Try city_id first if provided
   if (cityId) {
-    const { data: cityProviders } = await supabase
+    // Get providers in customer's city ONLY
+    const { data: cityProviders, error: providerError } = await supabase
       .from('providers')
-      .select('id')
+      .select('id, name_ar')
       .eq('city_id', cityId)
       .in('status', ['open', 'closed', 'temporarily_paused'])
 
+    if (providerError) {
+      console.error('[AI Search] Error fetching providers:', providerError)
+    }
+
     providerIds = cityProviders?.map(p => p.id) || []
-    console.log('[AI Search] Providers found by city_id:', providerIds.length)
+    console.log('[AI Search] Providers in city:', providerIds.length,
+      cityProviders?.map(p => p.name_ar).join(', ') || 'none')
+  } else {
+    console.log('[AI Search] WARNING: No cityId provided!')
   }
 
-  // If no providers found by city, try governorate_id
-  if (providerIds.length === 0 && governorateId) {
-    const { data: govProviders } = await supabase
-      .from('providers')
-      .select('id')
-      .eq('governorate_id', governorateId)
-      .in('status', ['open', 'closed', 'temporarily_paused'])
-
-    providerIds = govProviders?.map(p => p.id) || []
-    console.log('[AI Search] Providers found by governorate_id:', providerIds.length)
-  }
-
-  // If still no providers, get ALL active providers (for development/testing)
+  // If no providers in customer's city, return empty
+  // Do NOT fallback to other cities - this is a business requirement!
   if (providerIds.length === 0) {
-    const { data: allProviders } = await supabase
-      .from('providers')
-      .select('id')
-      .in('status', ['open', 'closed', 'temporarily_paused'])
-      .limit(50)
-
-    providerIds = allProviders?.map(p => p.id) || []
-    console.log('[AI Search] Using all active providers:', providerIds.length)
-  }
-
-  // If still no providers, return empty
-  if (providerIds.length === 0) {
-    console.log('[AI Search] No providers found at all!')
+    console.log('[AI Search] No providers found in customer city. cityId:', cityId)
     return []
   }
 
@@ -503,25 +488,33 @@ export async function getActivePromotions(
 
 /**
  * Get products from a specific provider by name
+ * IMPORTANT: Must also filter by customer's city!
  */
 export async function getProductsFromProvider(
   providerName: string,
-  limit: number = 10
+  limit: number = 10,
+  cityId?: string
 ): Promise<ChatProduct[]> {
   const supabase = await createClient()
 
-  console.log('[AI Search] Getting products from provider:', providerName)
+  console.log('[AI Search] Getting products from provider:', providerName, 'cityId:', cityId)
 
-  // First find the provider
-  const { data: providers } = await supabase
+  // Build query for provider - must match name AND be in customer's city
+  let providerQuery = supabase
     .from('providers')
-    .select('id, name_ar, name_en, rating')
+    .select('id, name_ar, name_en, rating, city_id')
     .ilike('name_ar', `%${providerName}%`)
     .in('status', ['open', 'closed', 'temporarily_paused'])
-    .limit(1)
+
+  // IMPORTANT: Filter by city to ensure we only show providers in customer's city
+  if (cityId) {
+    providerQuery = providerQuery.eq('city_id', cityId)
+  }
+
+  const { data: providers } = await providerQuery.limit(1)
 
   if (!providers || providers.length === 0) {
-    console.log('[AI Search] Provider not found:', providerName)
+    console.log('[AI Search] Provider not found in customer city:', providerName, 'cityId:', cityId)
     return []
   }
 
