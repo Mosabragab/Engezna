@@ -1,8 +1,35 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 11, 2025 (Session 17)
-**Status:** Week 5 - Complete Feature Set (Session 17) ✅
-**Branch:** `claude/review-project-planning-014sifTa3MmUskjXMTF3M9FN`
+**Last Updated:** December 12, 2025 (Session 18)
+**Status:** Week 5 - Complete Feature Set (Session 18) ✅
+**Branch:** `claude/here-maps-integration-017zDHWVpx3H1i4KP3Bc42bx`
+
+---
+
+## 🆕 Session 18 Updates (December 12, 2025)
+
+### Guest Location Support
+- `useGuestLocation` hook for localStorage-based location storage
+- Guests can browse stores without login
+- Location persists across sessions
+
+### Customer Welcome Page (`/welcome`)
+- First-time visitor landing page
+- Features showcase: Chat to Order, Store Chat, Ratings, 0% Service Fees
+- Dynamic governorates from database
+- PWA install prompt
+
+### Provider Filtering Fix
+- Strict filtering by city/governorate (no fallback)
+- Homepage and providers page show ONLY stores from selected location
+
+### Files Created/Modified:
+- `src/lib/hooks/useGuestLocation.ts` - Guest location storage hook
+- `src/app/[locale]/welcome/page.tsx` - Welcome landing page
+- `src/app/[locale]/page.tsx` - Guest location support + filtering fix
+- `src/app/[locale]/providers/page.tsx` - Filtering fix
+- `src/components/customer/layout/CustomerHeader.tsx` - Guest location display
+- `src/app/[locale]/profile/governorate/page.tsx` - Works without login
 
 ---
 

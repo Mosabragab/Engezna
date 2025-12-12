@@ -30,7 +30,8 @@
 To bring modern food delivery services to Upper Egypt while supporting local businesses and creating economic opportunities through fair, transparent pricing.
 
 #### **Key Differentiator**
-- **Ultra-low 5-7% commission** (vs competitors' 15-20%)
+- **6 months 0% commission** then **max 7%** (vs competitors' 25-30%)
+- **0% customer service fees** - always!
 - Providers manage their own delivery staff
 - Arabic-first user experience with full RTL support
 - Built for local market dynamics
@@ -49,7 +50,7 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 #### **For Restaurant Partners**
 - 📋 Simple menu management
 - 📊 Real-time order notifications
-- 💰 Transparent 5-7% commission
+- 💰 **0% for 6 months**, then **max 7%** commission
 - 📈 Sales analytics and insights
 - 🚚 Use your existing delivery staff
 - 💻 Easy-to-use dashboard

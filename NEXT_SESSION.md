@@ -1,5 +1,48 @@
 # Next Session Plan
 
+## Date: 2025-12-12 (Completed - Session 18)
+
+## ✅ Completed Tasks (2025-12-12 - Session 18)
+
+### 1. Guest Location Support ✅
+**Status**: Implemented
+
+#### What was done:
+- Created `useGuestLocation` hook for localStorage location storage
+- Updated governorate selection page to work without login
+- Updated CustomerHeader to display guest location
+- Updated homepage and providers page to filter by guest location
+- Added custom event `guestLocationChanged` for reactive updates
+
+### 2. Customer Welcome/Landing Page ✅
+**Status**: Implemented
+
+#### What was done:
+- Created `/welcome` page for first-time visitors
+- Hero section with value proposition
+- Categories showcase (4 categories)
+- Key features: Chat to Order, Store Chat, Ratings, 0% Service Fees
+- Dynamic governorates section from database
+- How it works (3 steps)
+- Partner CTA section
+- PWA install prompt integration
+- Full Footer component
+
+### 3. Provider Filtering Bug Fix ✅
+**Status**: Fixed
+
+#### What was done:
+- Fixed strict filtering by city/governorate (no fallback to all stores)
+- Homepage and providers page now show ONLY stores from selected location
+- Added governorate filtering when city not selected
+
+### 4. UX Improvements ✅
+- Added "Back to Welcome Page" option in governorate dropdown
+- Added separate back button for new visitors
+- PWA install prompt enabled on all customer pages
+
+---
+
 ## Date: 2025-12-11 (Completed - Session 17)
 
 ## ✅ Completed Tasks (2025-12-11 - Session 17)
