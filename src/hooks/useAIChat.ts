@@ -39,6 +39,7 @@ export interface UseAIChatReturn {
 
 /**
  * Generate personalized welcome message
+ * Provider-First Approach: Ask WHERE they want to order FROM first
  */
 function createWelcomeMessage(customerName?: string): ChatMessage {
   const greeting = customerName
@@ -51,13 +52,13 @@ function createWelcomeMessage(customerName?: string): ChatMessage {
     content: `${greeting}
 أنا مساعد إنجزنا الذكي، معاك عشان أساعدك تطلب أكلك المفضل بأسرع وقت.
 
-ممكن تقولي عايز إيه النهارده؟ 🍔`,
+عايز تطلب منين النهارده؟ 🏪`,
     timestamp: new Date(),
     suggestions: [
-      '🔥 العروض',
-      '⭐ الأكثر طلباً',
-      '🔄 آخر طلب',
-      '🍕 بيتزا',
+      '🍕 مطاعم وكافيهات',
+      '🛒 سوبر ماركت',
+      '☕ البن والحلويات',
+      '🥬 خضروات وفواكه',
     ],
   }
 }
@@ -243,10 +244,12 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
 
   /**
    * Send quick action
+   * Provider-First: Categories map to provider type searches
    */
   const sendQuickAction = useCallback(async (action: string) => {
     // Map quick action to message
     const actionMessages: Record<string, string> = {
+      // Old actions (backwards compatibility)
       'reorder_last': 'عايز أكرر آخر طلب',
       'show_promotions': 'ورني العروض',
       'show_popular': 'إيه الأكثر طلباً؟',
@@ -260,6 +263,11 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       '☕ مشروبات': 'عايز مشروبات',
       '🔄 جرب تاني': lastUserMessageRef.current || 'مرحبا',
       '🏠 الرئيسية': 'مرحبا',
+      // New Provider-First category buttons
+      '🍕 مطاعم وكافيهات': 'عايز أشوف المطاعم والكافيهات',
+      '🛒 سوبر ماركت': 'عايز أشوف السوبر ماركت',
+      '☕ البن والحلويات': 'عايز أشوف محلات البن والحلويات',
+      '🥬 خضروات وفواكه': 'عايز أشوف محلات الخضروات والفواكه',
     }
 
     const message = actionMessages[action] || action

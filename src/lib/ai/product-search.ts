@@ -91,14 +91,16 @@ export async function searchProducts(
     .eq('is_available', true)
     .in('provider_id', providerIds)
 
-  // Search by product name - use direct search for better Arabic support
+  // Search by product name - search in name_ar, name_en, and description_ar
   if (searchTerms.length > 0) {
-    // For Arabic text, search directly by name_ar using ilike
-    // This is more reliable than the .or() string method for Arabic
     const primarySearchTerm = searchTerms[0]
     console.log('[AI Search] Primary search term:', primarySearchTerm)
 
-    query = query.ilike('name_ar', `%${primarySearchTerm}%`)
+    // Search across multiple fields for better matching
+    // Use OR to search in name_ar, name_en, and description_ar
+    query = query.or(
+      `name_ar.ilike.%${primarySearchTerm}%,name_en.ilike.%${primarySearchTerm}%,description_ar.ilike.%${primarySearchTerm}%`
+    )
   }
 
   // Filter by price range
@@ -522,6 +524,8 @@ export async function getProductsFromProvider(
   console.log('[AI Search] Found provider:', provider.name_ar, 'id:', provider.id)
 
   // Get products from this provider
+  // IMPORTANT: Show MAIN products (not extras like خبز, شطة, مياه)
+  // Main products typically cost > 15 EGP, extras cost < 10 EGP
   const { data: products, error } = await supabase
     .from('menu_items')
     .select(`
@@ -537,7 +541,8 @@ export async function getProductsFromProvider(
     `)
     .eq('provider_id', provider.id)
     .eq('is_available', true)
-    .order('price', { ascending: true })
+    .gte('price', 15) // Filter out extras (low-priced items like خبز, شطة)
+    .order('price', { ascending: false }) // Show main items (higher priced) first
     .limit(limit)
 
   if (error) {
