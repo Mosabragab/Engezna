@@ -12,7 +12,8 @@ import {
   TopRatedSection,
   NearbySection,
 } from '@/components/customer/home'
-import { ChatFAB } from '@/components/customer/voice'
+import { ChatFAB, SmartAssistant } from '@/components/customer/chat'
+import { useGuestLocation } from '@/lib/hooks/useGuestLocation'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
@@ -68,11 +69,15 @@ export default function HomePage() {
   const locale = useLocale()
   const router = useRouter()
   const { addItem, clearCart } = useCart()
+  const { location: guestLocation } = useGuestLocation()
+  const guestCityId = guestLocation.cityId
+  const guestGovernorateId = guestLocation.governorateId
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [lastOrder, setLastOrder] = useState<LastOrderDisplay | null>(null)
   const [nearbyProviders, setNearbyProviders] = useState<any[]>([])
   const [topRatedProviders, setTopRatedProviders] = useState<any[]>([])
   const [userCityId, setUserCityId] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | undefined>()
   const [isReordering, setIsReordering] = useState(false)
   const [isCheckingLocation, setIsCheckingLocation] = useState(true)
 
@@ -96,6 +101,7 @@ export default function HomePage() {
           return
         }
         // User has location, proceed
+        setUserId(user.id)
         setIsCheckingLocation(false)
       } else {
         // Guest user - check localStorage
@@ -445,10 +451,17 @@ export default function HomePage() {
         />
       </div>
 
-      {/* Chat FAB */}
+      {/* AI Smart Assistant */}
       <ChatFAB
+        onClick={() => setIsChatOpen(!isChatOpen)}
         isOpen={isChatOpen}
-        onOpenChange={setIsChatOpen}
+      />
+      <SmartAssistant
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        userId={userId}
+        cityId={userCityId || guestCityId || undefined}
+        governorateId={guestGovernorateId || undefined}
       />
     </CustomerLayout>
   )
