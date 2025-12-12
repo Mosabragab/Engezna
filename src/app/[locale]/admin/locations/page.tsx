@@ -449,23 +449,27 @@ export default function AdminLocationsPage() {
       if (viewLevel === 'governorates') {
         if (modalType === 'add') {
           // Activate existing governorate
+          const updateData: Record<string, unknown> = { is_active: true }
+          if (formData.commission_override !== null) {
+            updateData.commission_override = formData.commission_override
+          }
           const { error } = await supabase
             .from('governorates')
-            .update({
-              is_active: true,
-              commission_override: formData.commission_override,
-            })
+            .update(updateData)
             .eq('id', selectedGovernorateToActivate)
           if (error) throw error
         } else {
+          const updateData: Record<string, unknown> = {
+            name_ar: formData.name_ar,
+            name_en: formData.name_en,
+            is_active: formData.is_active,
+          }
+          if (formData.commission_override !== null) {
+            updateData.commission_override = formData.commission_override
+          }
           const { error } = await supabase
             .from('governorates')
-            .update({
-              name_ar: formData.name_ar,
-              name_en: formData.name_en,
-              is_active: formData.is_active,
-              commission_override: formData.commission_override,
-            })
+            .update(updateData)
             .eq('id', editItem!.id)
           if (error) throw error
         }
