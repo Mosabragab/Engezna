@@ -150,6 +150,63 @@ export async function searchProducts(
 
   console.log('[AI Search] Found products:', products?.length || 0)
 
+  // If no products found with search, try getting ANY available products as fallback
+  if ((!products || products.length === 0) && providerIds.length > 0) {
+    console.log('[AI Search] No products with search, trying fallback to any products...')
+
+    const { data: fallbackProducts, error: fallbackError } = await supabase
+      .from('menu_items')
+      .select(`
+        id,
+        name_ar,
+        name_en,
+        description_ar,
+        price,
+        original_price,
+        image_url,
+        is_available,
+        has_variants,
+        provider_id,
+        providers (
+          id,
+          name_ar,
+          name_en,
+          rating,
+          city_id,
+          governorate_id,
+          status
+        )
+      `)
+      .eq('is_available', true)
+      .in('provider_id', providerIds)
+      .limit(limit)
+
+    if (fallbackError) {
+      console.error('[AI Search] Fallback search error:', fallbackError)
+    } else {
+      console.log('[AI Search] Fallback found products:', fallbackProducts?.length || 0)
+      if (fallbackProducts && fallbackProducts.length > 0) {
+        return fallbackProducts.map(product => {
+          const provider = getProviderData(product.providers)
+          return {
+            id: product.id,
+            name_ar: product.name_ar,
+            name_en: product.name_en,
+            description_ar: product.description_ar,
+            price: product.price,
+            original_price: product.original_price,
+            image_url: product.image_url,
+            provider_id: product.provider_id,
+            provider_name_ar: provider?.name_ar || 'غير معروف',
+            provider_name_en: provider?.name_en || null,
+            rating: provider?.rating,
+            has_variants: product.has_variants,
+          }
+        })
+      }
+    }
+  }
+
   // Transform to ChatProduct format
   return (products || []).map(product => {
     const provider = getProviderData(product.providers)
