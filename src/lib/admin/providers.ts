@@ -411,11 +411,11 @@ export async function suspendProvider(
       };
     }
 
-    // Update provider
+    // Update provider - use 'temporarily_paused' for consistency with UI
     const { data: updated, error: updateError } = await supabase
       .from('providers')
       .update({
-        status: 'suspended',
+        status: 'temporarily_paused',
         rejection_reason: reason.trim(),
         updated_at: new Date().toISOString(),
       })
@@ -440,7 +440,7 @@ export async function suspendProvider(
       resourceId: providerId,
       resourceName: current.name_ar,
       oldData: { status: current.status },
-      newData: { status: 'suspended', rejection_reason: reason.trim() },
+      newData: { status: 'temporarily_paused', rejection_reason: reason.trim() },
       reason: reason.trim(),
     });
 
@@ -476,8 +476,9 @@ export async function reactivateProvider(
       return { success: false, error: 'Provider not found', errorCode: 'NOT_FOUND' };
     }
 
-    // Can only reactivate suspended providers
-    if (current.status !== 'suspended') {
+    // Can only reactivate suspended or temporarily paused providers
+    const reactivatableStatuses = ['suspended', 'temporarily_paused'];
+    if (!reactivatableStatuses.includes(current.status)) {
       return {
         success: false,
         error: `Cannot reactivate provider with status: ${current.status}`,
@@ -485,11 +486,11 @@ export async function reactivateProvider(
       };
     }
 
-    // Update provider
+    // Update provider - set to 'open' so they can receive orders
     const { data: updated, error: updateError } = await supabase
       .from('providers')
       .update({
-        status: 'approved',
+        status: 'open',
         rejection_reason: null,
         updated_at: new Date().toISOString(),
       })
@@ -514,7 +515,7 @@ export async function reactivateProvider(
       resourceId: providerId,
       resourceName: current.name_ar,
       oldData: { status: current.status },
-      newData: { status: 'approved' },
+      newData: { status: 'open' },
     });
 
     // Log activity
