@@ -50,6 +50,7 @@ interface Governorate {
   is_active: boolean
   created_at: string
   cities_count?: number
+  commission_override?: number | null
 }
 
 interface City {
@@ -129,7 +130,11 @@ export default function AdminLocationsPage() {
     governorate_id: '',
     city_id: '',
     is_active: true,
+    commission_override: null as number | null,
   })
+  const [selectedGovernorateToActivate, setSelectedGovernorateToActivate] = useState<string>('')
+  const [selectedCityToActivate, setSelectedCityToActivate] = useState<string>('')
+  const [activateAllCities, setActivateAllCities] = useState(false)
 
   // Delete confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -396,7 +401,11 @@ export default function AdminLocationsPage() {
       governorate_id: selectedGovernorate || '',
       city_id: selectedCity || '',
       is_active: true,
+      commission_override: null,
     })
+    setSelectedGovernorateToActivate('')
+    setSelectedCityToActivate('')
+    setActivateAllCities(false)
     setFormError('')
     setEditItem(null)
     setModalType('add')
@@ -409,6 +418,7 @@ export default function AdminLocationsPage() {
       governorate_id: 'governorate_id' in item ? item.governorate_id : '',
       city_id: 'city_id' in item && item.city_id ? item.city_id : '',
       is_active: item.is_active,
+      commission_override: 'commission_override' in item ? item.commission_override ?? null : null,
     })
     setFormError('')
     setEditItem(item)
@@ -421,9 +431,34 @@ export default function AdminLocationsPage() {
   }
 
   async function handleSave() {
-    if (!formData.name_ar || !formData.name_en) {
-      setFormError(locale === 'ar' ? 'الاسمان بالعربية والإنجليزية مطلوبان' : 'Both Arabic and English names are required')
-      return
+    // For governorates in add mode, we activate an existing one
+    if (viewLevel === 'governorates' && modalType === 'add') {
+      if (!selectedGovernorateToActivate) {
+        setFormError(locale === 'ar' ? 'اختر محافظة لتفعيلها' : 'Select a governorate to activate')
+        return
+      }
+    } else if (viewLevel === 'cities' && modalType === 'add') {
+      // For cities in add mode, we activate existing ones
+      if (!activateAllCities && !selectedCityToActivate) {
+        setFormError(locale === 'ar' ? 'اختر مدينة لتفعيلها أو اختر تفعيل كل المدن' : 'Select a city to activate or choose to activate all cities')
+        return
+      }
+      if (!formData.governorate_id) {
+        setFormError(locale === 'ar' ? 'اختر المحافظة أولاً' : 'Select governorate first')
+        return
+      }
+    } else if (viewLevel === 'districts' && modalType === 'add') {
+      // For districts, require names (manual creation)
+      if (!formData.name_ar || !formData.name_en) {
+        setFormError(locale === 'ar' ? 'الاسمان بالعربية والإنجليزية مطلوبان' : 'Both Arabic and English names are required')
+        return
+      }
+    } else {
+      // For edit mode, require names
+      if (!formData.name_ar || !formData.name_en) {
+        setFormError(locale === 'ar' ? 'الاسمان بالعربية والإنجليزية مطلوبان' : 'Both Arabic and English names are required')
+        return
+      }
     }
 
     setFormLoading(true)
@@ -433,42 +468,54 @@ export default function AdminLocationsPage() {
     try {
       if (viewLevel === 'governorates') {
         if (modalType === 'add') {
+          // Activate existing governorate
+          const updateData: Record<string, unknown> = { is_active: true }
+          if (formData.commission_override !== null) {
+            updateData.commission_override = formData.commission_override
+          }
           const { error } = await supabase
             .from('governorates')
-            .insert({
-              name_ar: formData.name_ar,
-              name_en: formData.name_en,
-              is_active: formData.is_active,
-            })
+            .update(updateData)
+            .eq('id', selectedGovernorateToActivate)
           if (error) throw error
         } else {
+          const updateData: Record<string, unknown> = {
+            name_ar: formData.name_ar,
+            name_en: formData.name_en,
+            is_active: formData.is_active,
+          }
+          if (formData.commission_override !== null) {
+            updateData.commission_override = formData.commission_override
+          }
           const { error } = await supabase
             .from('governorates')
-            .update({
-              name_ar: formData.name_ar,
-              name_en: formData.name_en,
-              is_active: formData.is_active,
-            })
+            .update(updateData)
             .eq('id', editItem!.id)
           if (error) throw error
         }
       } else if (viewLevel === 'cities') {
-        if (!formData.governorate_id) {
-          setFormError(locale === 'ar' ? 'المحافظة مطلوبة' : 'Governorate is required')
-          setFormLoading(false)
-          return
-        }
-
         if (modalType === 'add') {
-          const { error } = await supabase
-            .from('cities')
-            .insert({
-              name_ar: formData.name_ar,
-              name_en: formData.name_en,
-              governorate_id: formData.governorate_id,
-              is_active: formData.is_active,
-            })
-          if (error) throw error
+          if (activateAllCities) {
+            // Activate ALL inactive cities in the selected governorate
+            const inactiveCityIds = cities
+              .filter(c => c.governorate_id === formData.governorate_id && !c.is_active)
+              .map(c => c.id)
+
+            if (inactiveCityIds.length > 0) {
+              const { error } = await supabase
+                .from('cities')
+                .update({ is_active: true })
+                .in('id', inactiveCityIds)
+              if (error) throw error
+            }
+          } else {
+            // Activate single city
+            const { error } = await supabase
+              .from('cities')
+              .update({ is_active: true })
+              .eq('id', selectedCityToActivate)
+            if (error) throw error
+          }
         } else {
           const { error } = await supabase
             .from('cities')
@@ -518,7 +565,8 @@ export default function AdminLocationsPage() {
       setModalType(null)
     } catch (error: any) {
       console.error('Error saving:', error)
-      setFormError(locale === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Error saving')
+      const errorMsg = error?.message || error?.code || 'Unknown error'
+      setFormError(locale === 'ar' ? 'حدث خطأ أثناء الحفظ: ' + errorMsg : 'Error saving: ' + errorMsg)
     }
 
     setFormLoading(false)
@@ -554,21 +602,32 @@ export default function AdminLocationsPage() {
     const supabase = createClient()
     const tableName = type === 'governorates' ? 'governorates' : type === 'cities' ? 'cities' : 'districts'
 
-    await supabase
-      .from(tableName)
-      .update({ is_active: !item.is_active })
-      .eq('id', item.id)
+    try {
+      const { error } = await supabase
+        .from(tableName)
+        .update({ is_active: !item.is_active })
+        .eq('id', item.id)
 
-    await loadLocations(supabase)
+      if (error) {
+        console.error('Toggle error:', error)
+        alert(locale === 'ar' ? 'حدث خطأ أثناء تغيير الحالة: ' + error.message : 'Error changing status: ' + error.message)
+        return
+      }
+
+      await loadLocations(supabase)
+    } catch (err) {
+      console.error('Toggle exception:', err)
+      alert(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
+    }
   }
 
   const filteredItems = getFilteredItems()
 
   const getViewLevelLabel = (level: ViewLevel) => {
-    const labels: Record<ViewLevel, { ar: string; en: string; icon: React.ElementType }> = {
-      governorates: { ar: 'المحافظات', en: 'Governorates', icon: Building },
-      cities: { ar: 'المدن', en: 'Cities', icon: Map },
-      districts: { ar: 'الأحياء', en: 'Districts', icon: Home },
+    const labels: Record<ViewLevel, { ar: string; en: string; arSingular: string; enSingular: string; icon: React.ElementType }> = {
+      governorates: { ar: 'المحافظات', en: 'Governorates', arSingular: 'محافظة', enSingular: 'Governorate', icon: Building },
+      cities: { ar: 'المدن', en: 'Cities', arSingular: 'مدينة', enSingular: 'City', icon: Map },
+      districts: { ar: 'الأحياء', en: 'Districts', arSingular: 'حي', enSingular: 'District', icon: Home },
     }
     return labels[level]
   }
@@ -775,7 +834,12 @@ export default function AdminLocationsPage() {
                   className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
                 >
                   <Plus className="w-4 h-4" />
-                  {locale === 'ar' ? 'إضافة' : 'Add'} {getViewLevelLabel(viewLevel)[locale === 'ar' ? 'ar' : 'en'].slice(0, -2) || getViewLevelLabel(viewLevel)[locale === 'ar' ? 'ar' : 'en']}
+                  {viewLevel === 'governorates'
+                    ? (locale === 'ar' ? 'تفعيل محافظة' : 'Activate Governorate')
+                    : viewLevel === 'cities'
+                    ? (locale === 'ar' ? 'تفعيل مدينة' : 'Activate City')
+                    : (locale === 'ar' ? 'إضافة ' + getViewLevelLabel(viewLevel).arSingular : 'Add ' + getViewLevelLabel(viewLevel).enSingular)
+                  }
                 </Button>
               )}
             </div>
@@ -796,6 +860,11 @@ export default function AdminLocationsPage() {
                     {viewLevel === 'governorates' && (
                       <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
                         {locale === 'ar' ? 'المدن' : 'Cities'}
+                      </th>
+                    )}
+                    {viewLevel === 'governorates' && (
+                      <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                        {locale === 'ar' ? 'العمولة' : 'Commission'}
                       </th>
                     )}
                     {viewLevel === 'cities' && (
@@ -840,6 +909,20 @@ export default function AdminLocationsPage() {
                             <span className="text-sm text-slate-600">
                               {formatNumber((item as Governorate).cities_count || 0, locale)} {locale === 'ar' ? 'مدينة' : 'cities'}
                             </span>
+                          </td>
+                        )}
+                        {viewLevel === 'governorates' && (
+                          <td className="px-4 py-3">
+                            {(item as Governorate).commission_override !== null && (item as Governorate).commission_override !== undefined ? (
+                              <span className="inline-flex items-center gap-1 text-sm font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                                <Percent className="w-3 h-3" />
+                                {(item as Governorate).commission_override}%
+                              </span>
+                            ) : (
+                              <span className="text-sm text-slate-400">
+                                {locale === 'ar' ? 'افتراضي (7%)' : 'Default (7%)'}
+                              </span>
+                            )}
                           </td>
                         )}
                         {viewLevel === 'cities' && (
@@ -901,7 +984,7 @@ export default function AdminLocationsPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={isSuperAdmin ? 5 : 4} className="px-4 py-12 text-center">
+                      <td colSpan={isSuperAdmin ? (viewLevel === 'governorates' ? 6 : 5) : (viewLevel === 'governorates' ? 5 : 4)} className="px-4 py-12 text-center">
                         <MapPin className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                         <p className="text-slate-500">
                           {locale === 'ar' ? 'لا توجد نتائج' : 'No results found'}
@@ -1257,9 +1340,13 @@ export default function AdminLocationsPage() {
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-900">
-                {modalType === 'add'
-                  ? (locale === 'ar' ? 'إضافة ' : 'Add ') + getViewLevelLabel(viewLevel)[locale === 'ar' ? 'ar' : 'en'].slice(0, -2)
-                  : (locale === 'ar' ? 'تعديل ' : 'Edit ') + getViewLevelLabel(viewLevel)[locale === 'ar' ? 'ar' : 'en'].slice(0, -2)
+                {viewLevel === 'governorates' && modalType === 'add'
+                  ? (locale === 'ar' ? 'تفعيل محافظة' : 'Activate Governorate')
+                  : viewLevel === 'cities' && modalType === 'add'
+                  ? (locale === 'ar' ? 'تفعيل مدينة' : 'Activate City')
+                  : modalType === 'add'
+                  ? (locale === 'ar' ? 'إضافة ' + getViewLevelLabel(viewLevel).arSingular : 'Add ' + getViewLevelLabel(viewLevel).enSingular)
+                  : (locale === 'ar' ? 'تعديل ' + getViewLevelLabel(viewLevel).arSingular : 'Edit ' + getViewLevelLabel(viewLevel).enSingular)
                 }
               </h2>
               <button
@@ -1278,31 +1365,149 @@ export default function AdminLocationsPage() {
             )}
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  {locale === 'ar' ? 'الاسم بالعربية' : 'Arabic Name'} *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name_ar}
-                  onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                  dir="rtl"
-                />
-              </div>
+              {/* Governorate Selection Dropdown - For activating existing governorates */}
+              {viewLevel === 'governorates' && modalType === 'add' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {locale === 'ar' ? 'اختر المحافظة لتفعيلها' : 'Select Governorate to Activate'} *
+                  </label>
+                  <select
+                    value={selectedGovernorateToActivate}
+                    onChange={(e) => setSelectedGovernorateToActivate(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  >
+                    <option value="">{locale === 'ar' ? 'اختر المحافظة...' : 'Select governorate...'}</option>
+                    {governorates.filter(g => !g.is_active).map(g => (
+                      <option key={g.id} value={g.id}>
+                        {locale === 'ar' ? g.name_ar : g.name_en}
+                      </option>
+                    ))}
+                  </select>
+                  {governorates.filter(g => !g.is_active).length === 0 && (
+                    <p className="mt-2 text-sm text-amber-600">
+                      {locale === 'ar' ? 'جميع المحافظات مفعّلة بالفعل' : 'All governorates are already activated'}
+                    </p>
+                  )}
+                </div>
+              )}
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  {locale === 'ar' ? 'الاسم بالإنجليزية' : 'English Name'} *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name_en}
-                  onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
-                  dir="ltr"
-                />
-              </div>
+              {/* City Selection Dropdown - For activating existing cities */}
+              {viewLevel === 'cities' && modalType === 'add' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'المحافظة' : 'Governorate'} *
+                    </label>
+                    <select
+                      value={formData.governorate_id}
+                      onChange={(e) => {
+                        setFormData({ ...formData, governorate_id: e.target.value })
+                        setSelectedCityToActivate('')
+                      }}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="">{locale === 'ar' ? 'اختر المحافظة...' : 'Select governorate...'}</option>
+                      {governorates.filter(g => g.is_active).map(g => (
+                        <option key={g.id} value={g.id}>
+                          {locale === 'ar' ? g.name_ar : g.name_en}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {formData.governorate_id && (
+                    <>
+                      {/* Activate All Cities Option */}
+                      {cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).length > 1 && (
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={activateAllCities}
+                              onChange={(e) => {
+                                setActivateAllCities(e.target.checked)
+                                if (e.target.checked) {
+                                  setSelectedCityToActivate('')
+                                }
+                              }}
+                              className="w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-blue-800">
+                                {locale === 'ar' ? 'تفعيل كل المدن' : 'Activate All Cities'}
+                              </span>
+                              <span className="text-xs text-blue-600">
+                                {locale === 'ar'
+                                  ? `تفعيل ${cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).length} مدينة دفعة واحدة`
+                                  : `Activate ${cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).length} cities at once`
+                                }
+                              </span>
+                            </div>
+                          </label>
+                        </div>
+                      )}
+
+                      {/* Single City Selection - Hidden when activating all */}
+                      {!activateAllCities && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            {locale === 'ar' ? 'اختر المدينة لتفعيلها' : 'Select City to Activate'} *
+                          </label>
+                          <select
+                            value={selectedCityToActivate}
+                            onChange={(e) => setSelectedCityToActivate(e.target.value)}
+                            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                          >
+                            <option value="">{locale === 'ar' ? 'اختر المدينة...' : 'Select city...'}</option>
+                            {cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).map(c => (
+                              <option key={c.id} value={c.id}>
+                                {locale === 'ar' ? c.name_ar : c.name_en}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {cities.filter(c => c.governorate_id === formData.governorate_id && !c.is_active).length === 0 && (
+                        <p className="mt-2 text-sm text-amber-600">
+                          {locale === 'ar' ? 'جميع مدن هذه المحافظة مفعّلة بالفعل' : 'All cities in this governorate are already activated'}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* Name fields - Not shown when adding governorate or city (we're activating existing) */}
+              {!(viewLevel === 'governorates' && modalType === 'add') && !(viewLevel === 'cities' && modalType === 'add') && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'الاسم بالعربية' : 'Arabic Name'} *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name_ar}
+                      onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      dir="rtl"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      {locale === 'ar' ? 'الاسم بالإنجليزية' : 'English Name'} *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name_en}
+                      onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      dir="ltr"
+                    />
+                  </div>
+                </>
+              )}
 
               {(viewLevel === 'cities' || viewLevel === 'districts') && (
                 <div>
@@ -1344,18 +1549,83 @@ export default function AdminLocationsPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
-                />
-                <label htmlFor="is_active" className="text-sm text-slate-700">
-                  {locale === 'ar' ? 'نشط' : 'Active'}
-                </label>
+              {/* Commission Override - Only for Governorates */}
+              {viewLevel === 'governorates' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {locale === 'ar' ? 'نسبة العمولة الخاصة (%)' : 'Custom Commission Rate (%)'}
+                  </label>
+                  <div className="relative">
+                    <Percent className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                    <input
+                      type="number"
+                      value={formData.commission_override ?? ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        commission_override: e.target.value === '' ? null : parseFloat(e.target.value)
+                      })}
+                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                      placeholder={locale === 'ar' ? 'اتركه فارغاً للنسبة الافتراضية (7%)' : 'Leave empty for default rate (7%)'}
+                      min="0"
+                      max="7"
+                      step="0.5"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {locale === 'ar'
+                      ? 'الحد الأقصى 7%. اتركه فارغاً لاستخدام النسبة الافتراضية للمنصة.'
+                      : 'Max 7%. Leave empty to use platform default rate.'}
+                  </p>
+                </div>
+              )}
+
+              {/* Active/Inactive Toggle - More Prominent (hidden when activating governorate or city) */}
+              {!(viewLevel === 'governorates' && modalType === 'add') && !(viewLevel === 'cities' && modalType === 'add') && (
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-slate-700">
+                      {locale === 'ar' ? 'حالة التفعيل' : 'Activation Status'}
+                    </span>
+                    <span className="text-xs text-slate-500 mt-0.5">
+                      {formData.is_active
+                        ? (locale === 'ar' ? 'سيكون مرئياً للمستخدمين' : 'Will be visible to users')
+                        : (locale === 'ar' ? 'لن يكون مرئياً للمستخدمين' : 'Will not be visible to users')
+                      }
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={formData.is_active}
+                    dir="ltr"
+                    onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                      formData.is_active ? 'bg-green-500' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
+                        formData.is_active ? 'translate-x-8' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className={`mt-2 flex items-center gap-2 text-sm ${formData.is_active ? 'text-green-600' : 'text-slate-500'}`}>
+                  {formData.is_active ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{locale === 'ar' ? 'مفعّل' : 'Activated'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-4 h-4" />
+                      <span>{locale === 'ar' ? 'غير مفعّل' : 'Deactivated'}</span>
+                    </>
+                  )}
+                </div>
               </div>
+              )}
             </div>
 
             <div className="flex gap-3 mt-6">
@@ -1376,8 +1646,20 @@ export default function AdminLocationsPage() {
                   <RefreshCw className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <Save className="w-4 h-4 me-2" />
-                    {locale === 'ar' ? 'حفظ' : 'Save'}
+                    {(viewLevel === 'governorates' && modalType === 'add') || (viewLevel === 'cities' && modalType === 'add') ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 me-2" />
+                        {viewLevel === 'cities' && activateAllCities
+                          ? (locale === 'ar' ? 'تفعيل الكل' : 'Activate All')
+                          : (locale === 'ar' ? 'تفعيل' : 'Activate')
+                        }
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 me-2" />
+                        {locale === 'ar' ? 'حفظ' : 'Save'}
+                      </>
+                    )}
                   </>
                 )}
               </Button>

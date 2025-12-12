@@ -30,7 +30,8 @@
 To bring modern food delivery services to Upper Egypt while supporting local businesses and creating economic opportunities through fair, transparent pricing.
 
 #### **Key Differentiator**
-- **Ultra-low 5-7% commission** (vs competitors' 15-20%)
+- **6 months 0% commission** then **max 7%** (vs competitors' 25-30%)
+- **0% customer service fees** - always!
 - Providers manage their own delivery staff
 - Arabic-first user experience with full RTL support
 - Built for local market dynamics
@@ -49,7 +50,7 @@ To bring modern food delivery services to Upper Egypt while supporting local bus
 #### **For Restaurant Partners**
 - 📋 Simple menu management
 - 📊 Real-time order notifications
-- 💰 Transparent 5-7% commission
+- 💰 **0% for 6 months**, then **max 7%** commission
 - 📈 Sales analytics and insights
 - 🚚 Use your existing delivery staff
 - 💻 Easy-to-use dashboard
@@ -482,8 +483,8 @@ npm run type-check   # TypeScript type checking
   - Notification management (mark read, delete)
 - ✅ **Smart Settlements System (Complete - Part 4)**
   - **COD vs Online Payment Logic**:
-    - COD orders: Provider collects → Owes 6% commission to Engezna
-    - Online orders: Engezna collects → Owes 94% payout to provider
+    - COD orders: Provider collects → Owes up to 7% commission to Engezna
+    - Online orders: Engezna collects → Owes 93%+ payout to provider
     - Net balance determines who pays whom
   - Admin settlements page with COD/Online breakdown (orange/blue color coding)
   - Provider settlements page with history and dues overview
@@ -492,7 +493,7 @@ npm run type-check   # TypeScript type checking
   - Dynamic provider name display instead of generic "مزود"
   - Settlement generation with period selector (daily, every 3 days, weekly)
   - **CRITICAL**: Only includes orders with BOTH `status='delivered'` AND `payment_status='completed'`
-  - 6% platform commission rate applied
+  - Up to 7% platform commission rate (0% for first 6 months grace period)
   - Payment methods: cash, bank_transfer, instapay, vodafone_cash
 - ✅ **Voice to Chat Transition**
   - Converted voice ordering to text chat ("دردش واطلب" / "Chat & Order")
@@ -790,7 +791,7 @@ npm run dev
   - صفحة تسويات الإدارة (`/admin/settlements`)
   - صفحة تسويات المتجر (`/provider/settlements`)
   - يشمل فقط الطلبات المسلمة والمدفوعة
-  - نسبة عمولة 6% للمنصة
+  - نسبة عمولة حتى 7% للمنصة (0% أول 6 شهور)
 - ✅ **تحويل الصوت للدردشة** - "دردش واطلب" بدلاً من الميكروفون
 - ✅ **تحليلات التوسع** - مؤشر جاهزية التوسع للمحافظات
 - ✅ **اختيار المحافظة عند التسجيل** - إلزامي للمستخدمين الجدد

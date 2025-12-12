@@ -8,6 +8,7 @@ import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/cu
 import { ChatFAB } from '@/components/customer/voice'
 import { useFavorites } from '@/hooks/customer'
 import { Star, Clock, Percent, ArrowUpDown, MapPin } from 'lucide-react'
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 
 type Provider = {
   id: string
@@ -42,6 +43,7 @@ export default function ProvidersPage() {
   const [showOpenOnly, setShowOpenOnly] = useState(false)
   const [showOffersOnly, setShowOffersOnly] = useState(false)
   const [userCityId, setUserCityId] = useState<string | null>(null)
+  const [userGovernorateId, setUserGovernorateId] = useState<string | null>(null)
   const [userCityName, setUserCityName] = useState<string | null>(null)
   const [isChatOpen, setIsChatOpen] = useState(false)
 
@@ -51,20 +53,30 @@ export default function ProvidersPage() {
   // Load user's city on mount
   useEffect(() => {
     loadUserCity()
+
+    // Listen for guest location changes
+    const handleLocationChange = () => {
+      loadUserCity()
+    }
+    window.addEventListener('guestLocationChanged', handleLocationChange)
+    return () => {
+      window.removeEventListener('guestLocationChanged', handleLocationChange)
+    }
   }, [])
 
   useEffect(() => {
     fetchProviders()
-  }, [selectedCategory, userCityId])
+  }, [selectedCategory, userCityId, userGovernorateId])
 
   async function loadUserCity() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
+      // Logged-in user - get city and governorate from profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('city_id')
+        .select('city_id, governorate_id')
         .eq('id', user.id)
         .single()
 
@@ -80,6 +92,25 @@ export default function ProvidersPage() {
 
         if (city) {
           setUserCityName(locale === 'ar' ? city.name_ar : city.name_en)
+        }
+      }
+      if (profile?.governorate_id) {
+        setUserGovernorateId(profile.governorate_id)
+      }
+    } else {
+      // Guest user - get city and governorate from localStorage
+      const guestLocation = guestLocationStorage.get()
+      if (guestLocation?.cityId) {
+        setUserCityId(guestLocation.cityId)
+        if (guestLocation.cityName) {
+          setUserCityName(locale === 'ar' ? guestLocation.cityName.ar : guestLocation.cityName.en)
+        }
+      }
+      if (guestLocation?.governorateId) {
+        setUserGovernorateId(guestLocation.governorateId)
+        // Show governorate name if no city name
+        if (!guestLocation.cityId && guestLocation.governorateName) {
+          setUserCityName(locale === 'ar' ? guestLocation.governorateName.ar : guestLocation.governorateName.en)
         }
       }
     }
@@ -163,9 +194,11 @@ export default function ProvidersPage() {
         .order('is_featured', { ascending: false })
         .order('rating', { ascending: false })
 
-      // Filter by user's city if set
+      // STRICT filtering by city or governorate - no fallback
       if (userCityId) {
         query = query.eq('city_id', userCityId)
+      } else if (userGovernorateId) {
+        query = query.eq('governorate_id', userGovernorateId)
       }
 
       if (selectedCategory !== 'all') {
@@ -176,28 +209,10 @@ export default function ProvidersPage() {
 
       if (error) {
         console.error('Error fetching providers:', error.message, error.details, error.hint)
+        setProviders([])
       } else {
-        // Fallback: If no providers found for user's city, show all providers
-        if (data?.length === 0 && userCityId) {
-          console.log('No providers in user city, fetching all providers...')
-          let fallbackQuery = supabase
-            .from('providers')
-            .select('*')
-            .in('status', ['open', 'closed'])
-            .order('is_featured', { ascending: false })
-            .order('rating', { ascending: false })
-
-          if (selectedCategory !== 'all') {
-            fallbackQuery = fallbackQuery.eq('category', selectedCategory)
-          }
-
-          const { data: allProviders } = await fallbackQuery
-          console.log('Fallback providers loaded:', allProviders?.length || 0)
-          setProviders(allProviders || [])
-        } else {
-          console.log('Providers loaded:', data?.length || 0, userCityId ? `for city ${userCityId}` : 'all cities')
-          setProviders(data || [])
-        }
+        // No fallback - only show providers from user's location
+        setProviders(data || [])
       }
     } catch (err) {
       console.error('Unexpected error fetching providers:', err)

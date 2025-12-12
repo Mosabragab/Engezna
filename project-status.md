@@ -1,12 +1,12 @@
 # Engezna Project Status
 
-## Last Updated: 2025-12-11
+## Last Updated: 2025-12-12
 
 ## Project Overview
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
 
 ## Tech Stack
-- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth, RLS)
 - **State Management**: Zustand (cart)
 - **UI Components**: shadcn/ui
@@ -36,6 +36,9 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - [x] **Product detail modal** - Full product view with description
 - [x] **Variant selection** - Size/weight/option variants
 - [x] **Category filtering** - Filter products by category on provider page
+- [x] **Guest browsing** - Browse stores without login (localStorage location)
+- [x] **Welcome/Landing page** - First-time visitor experience with features showcase
+- [x] **PWA support** - Install prompt for mobile users
 
 #### Provider Side
 - [x] Provider registration & approval flow

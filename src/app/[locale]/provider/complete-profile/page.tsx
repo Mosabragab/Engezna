@@ -20,8 +20,10 @@ import {
   AlertCircle,
   ArrowLeft,
   Image as ImageIcon,
-  Loader2
+  Loader2,
+  MapPin
 } from 'lucide-react'
+import { LocationPicker } from '@/components/maps/LocationPicker'
 
 // Types
 interface Governorate {
@@ -53,6 +55,8 @@ interface Provider {
   category: string
   governorate_id: string | null
   city_id: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 // Form validation schema
@@ -93,6 +97,9 @@ export default function CompleteProfilePage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
+
+  // GPS Location state
+  const [storeLocation, setStoreLocation] = useState<{ lat: number; lng: number } | null>(null)
 
   const {
     register,
@@ -171,6 +178,11 @@ export default function CompleteProfilePage() {
       if (providerData.logo_url) {
         setLogoUrl(providerData.logo_url)
         setLogoPreview(providerData.logo_url)
+      }
+
+      // Pre-fill GPS location if exists
+      if (providerData.latitude && providerData.longitude) {
+        setStoreLocation({ lat: providerData.latitude, lng: providerData.longitude })
       }
 
       // Pre-fill governorate if set (locked from registration)
@@ -312,6 +324,9 @@ export default function CompleteProfilePage() {
         city_id: data.cityId,
         status: 'pending_approval', // Change status to pending approval
         updated_at: new Date().toISOString(),
+        // GPS coordinates
+        latitude: storeLocation?.lat || null,
+        longitude: storeLocation?.lng || null,
       }
 
       // Only update governorate if not locked (not set during registration)
@@ -561,6 +576,33 @@ export default function CompleteProfilePage() {
                     <p className="text-sm text-destructive">{errors.address.message}</p>
                   )}
                 </div>
+
+                {/* GPS Location Picker */}
+                {watch('cityId') && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      {locale === 'ar' ? 'موقع المتجر على الخريطة' : 'Store Location on Map'}
+                    </Label>
+                    <LocationPicker
+                      value={storeLocation}
+                      onChange={(coords, address) => {
+                        setStoreLocation(coords)
+                        // Optionally update address if not already set
+                        if (address && !watch('address')) {
+                          setValue('address', address)
+                        }
+                      }}
+                      placeholder={locale === 'ar' ? 'ابحث عن موقع متجرك أو استخدم GPS' : 'Search for your store location or use GPS'}
+                      disabled={isSaving}
+                    />
+                    {!storeLocation && (
+                      <p className="text-xs text-amber-600">
+                        {locale === 'ar' ? '📍 يُفضل تحديد الموقع لمساعدة العملاء في الوصول إليك' : '📍 Setting location helps customers find you'}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Logo Upload */}
                 <div className="space-y-2">

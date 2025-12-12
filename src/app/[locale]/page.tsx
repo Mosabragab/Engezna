@@ -15,6 +15,8 @@ import {
 import { ChatFAB } from '@/components/customer/voice'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
+import { Loader2 } from 'lucide-react'
 
 // Demo offers data - Unified blue gradient colors per brand guidelines
 const demoOffers = [
@@ -72,11 +74,62 @@ export default function HomePage() {
   const [topRatedProviders, setTopRatedProviders] = useState<any[]>([])
   const [userCityId, setUserCityId] = useState<string | null>(null)
   const [isReordering, setIsReordering] = useState(false)
+  const [isCheckingLocation, setIsCheckingLocation] = useState(true)
+
+  // Check if user has location set - redirect to welcome page if not
+  useEffect(() => {
+    async function checkLocationAndAuth() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        // Logged-in user - check profile for location
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('governorate_id')
+          .eq('id', user.id)
+          .single()
+
+        if (!profile?.governorate_id) {
+          // Logged-in user without location - redirect to select location
+          router.replace(`/${locale}/profile/governorate`)
+          return
+        }
+        // User has location, proceed
+        setIsCheckingLocation(false)
+      } else {
+        // Guest user - check localStorage
+        const guestLocation = guestLocationStorage.get()
+        if (!guestLocation?.governorateId) {
+          // Guest without location - redirect to welcome page
+          router.replace(`/${locale}/welcome`)
+          return
+        }
+        // Guest has location, proceed
+        setIsCheckingLocation(false)
+      }
+    }
+
+    checkLocationAndAuth()
+  }, [locale, router])
 
   // Load user's city and providers
   useEffect(() => {
-    loadUserCityAndProviders()
-    loadLastOrder()
+    if (!isCheckingLocation) {
+      loadUserCityAndProviders()
+      loadLastOrder()
+    }
+  }, [isCheckingLocation])
+
+  // Listen for guest location changes
+  useEffect(() => {
+    const handleLocationChange = () => {
+      loadUserCityAndProviders()
+    }
+    window.addEventListener('guestLocationChanged', handleLocationChange)
+    return () => {
+      window.removeEventListener('guestLocationChanged', handleLocationChange)
+    }
   }, [])
 
   // Load last completed order for reorder section
@@ -141,10 +194,13 @@ export default function HomePage() {
     const { data: { user } } = await supabase.auth.getUser()
 
     let cityId: string | null = null
+    let governorateId: string | null = null
+
     if (user) {
+      // Logged-in user - get city and governorate from profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('city_id')
+        .select('city_id, governorate_id')
         .eq('id', user.id)
         .single()
 
@@ -152,64 +208,80 @@ export default function HomePage() {
         cityId = profile.city_id
         setUserCityId(cityId)
       }
+      if (profile?.governorate_id) {
+        governorateId = profile.governorate_id
+      }
+    } else {
+      // Guest user - get city from localStorage
+      const guestLocation = guestLocationStorage.get()
+      if (guestLocation?.cityId) {
+        cityId = guestLocation.cityId
+        setUserCityId(cityId)
+      }
+      // Get governorate for fallback filtering
+      governorateId = guestLocation?.governorateId || null
     }
 
-    // Fetch providers filtered by city
-    fetchNearbyProviders(cityId)
-    fetchTopRatedProviders(cityId)
+    // Fetch providers filtered by city (or governorate if no city)
+    fetchNearbyProviders(cityId, governorateId)
+    fetchTopRatedProviders(cityId, governorateId)
   }
 
-  async function fetchNearbyProviders(cityId: string | null) {
+  async function fetchNearbyProviders(cityId: string | null, governorateId: string | null = null) {
     const supabase = createClient()
 
-    // Optimized query: Fetch all providers in one query, prioritize user's city
-    const { data } = await supabase
+    // Build query with proper filtering
+    let query = supabase
       .from('providers')
-      .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id')
+      .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id, governorate_id')
       .in('status', ['open', 'closed'])
-      .limit(20) // Fetch more to allow filtering
+
+    // Filter by city or governorate - STRICT filtering
+    if (cityId) {
+      query = query.eq('city_id', cityId)
+    } else if (governorateId) {
+      query = query.eq('governorate_id', governorateId)
+    }
+
+    const { data } = await query.limit(10)
 
     if (data) {
-      // Prioritize providers from user's city, then show others
-      let sortedProviders = data
-      if (cityId) {
-        const inCity = data.filter(p => p.city_id === cityId)
-        const outOfCity = data.filter(p => p.city_id !== cityId)
-        sortedProviders = [...inCity, ...outOfCity]
-      }
-
-      // Take top 6 and add mock distance for demo
-      const withDistance = sortedProviders.slice(0, 6).map((p, i) => ({
+      // Add mock distance for demo
+      const withDistance = data.slice(0, 6).map((p, i) => ({
         ...p,
-        distance: p.city_id === cityId ? 0.5 + i * 0.2 : 2.0 + i * 0.5,
+        distance: 0.5 + i * 0.3,
       }))
       setNearbyProviders(withDistance)
+    } else {
+      setNearbyProviders([])
     }
   }
 
-  async function fetchTopRatedProviders(cityId: string | null) {
+  async function fetchTopRatedProviders(cityId: string | null, governorateId: string | null = null) {
     const supabase = createClient()
 
-    // Optimized query: Fetch top rated providers in one query, with specific columns
-    const { data } = await supabase
+    // Build query with proper filtering
+    let query = supabase
       .from('providers')
-      .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id, rating, is_featured, delivery_fee, estimated_delivery_time_min')
+      .select('id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id, governorate_id, rating, is_featured, delivery_fee, estimated_delivery_time_min')
       .in('status', ['open', 'closed'])
+
+    // Filter by city or governorate - STRICT filtering
+    if (cityId) {
+      query = query.eq('city_id', cityId)
+    } else if (governorateId) {
+      query = query.eq('governorate_id', governorateId)
+    }
+
+    const { data } = await query
       .order('is_featured', { ascending: false })
       .order('rating', { ascending: false })
-      .limit(20) // Fetch more to allow filtering
+      .limit(10)
 
     if (data) {
-      // Prioritize providers from user's city, then show others (maintaining rating order within groups)
-      let sortedProviders = data
-      if (cityId) {
-        const inCity = data.filter(p => p.city_id === cityId)
-        const outOfCity = data.filter(p => p.city_id !== cityId)
-        sortedProviders = [...inCity, ...outOfCity]
-      }
-
-      // Take top 6
-      setTopRatedProviders(sortedProviders.slice(0, 6))
+      setTopRatedProviders(data.slice(0, 6))
+    } else {
+      setTopRatedProviders([])
     }
   }
 
@@ -315,6 +387,17 @@ export default function HomePage() {
 
   const handleViewOrderDetails = (orderId: string) => {
     router.push(`/${locale}/orders/${orderId}`)
+  }
+
+  // Show loading while checking location
+  if (isCheckingLocation) {
+    return (
+      <CustomerLayout showHeader={false} showBottomNav={false}>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </CustomerLayout>
+    )
   }
 
   return (

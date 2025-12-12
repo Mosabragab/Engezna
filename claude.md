@@ -1,8 +1,35 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 11, 2025 (Session 17)
-**Status:** Week 5 - Complete Feature Set (Session 17) ✅
-**Branch:** `claude/review-project-planning-014sifTa3MmUskjXMTF3M9FN`
+**Last Updated:** December 12, 2025 (Session 18)
+**Status:** Week 5 - Complete Feature Set (Session 18) ✅
+**Branch:** `claude/here-maps-integration-017zDHWVpx3H1i4KP3Bc42bx`
+
+---
+
+## 🆕 Session 18 Updates (December 12, 2025)
+
+### Guest Location Support
+- `useGuestLocation` hook for localStorage-based location storage
+- Guests can browse stores without login
+- Location persists across sessions
+
+### Customer Welcome Page (`/welcome`)
+- First-time visitor landing page
+- Features showcase: Chat to Order, Store Chat, Ratings, 0% Service Fees
+- Dynamic governorates from database
+- PWA install prompt
+
+### Provider Filtering Fix
+- Strict filtering by city/governorate (no fallback)
+- Homepage and providers page show ONLY stores from selected location
+
+### Files Created/Modified:
+- `src/lib/hooks/useGuestLocation.ts` - Guest location storage hook
+- `src/app/[locale]/welcome/page.tsx` - Welcome landing page
+- `src/app/[locale]/page.tsx` - Guest location support + filtering fix
+- `src/app/[locale]/providers/page.tsx` - Filtering fix
+- `src/components/customer/layout/CustomerHeader.tsx` - Guest location display
+- `src/app/[locale]/profile/governorate/page.tsx` - Works without login
 
 ---
 
@@ -257,7 +284,7 @@ Technique:
 ### Finance & Payments (✅)
 1. ✅ Visit `/ar/provider/finance` or `/en/provider/finance`
 2. ✅ Total earnings and pending payout cards
-3. ✅ Commission breakdown (6% platform fee)
+3. ✅ Commission breakdown (up to 7% platform fee, 0% for first 6 months)
 4. ✅ This month vs last month earnings comparison
 5. ✅ Payout schedule information (weekly on Sundays)
 6. ✅ Transaction history with date range filter
@@ -284,7 +311,7 @@ Technique:
 9. ✅ Status filtering (all, pending, processing, completed, failed)
 10. ✅ Geographic filtering by governorate/city
 11. ✅ **CRITICAL**: Only includes orders where both `status='delivered'` AND `payment_status='completed'`
-12. ✅ 6% platform commission rate applied
+12. ✅ Up to 7% platform commission rate (0% for first 6 months grace period)
 
 #### Admin Settlement Detail (`/admin/settlements/[id]`)
 1. ✅ Provider info with phone and period
@@ -641,9 +668,10 @@ const categories = await supabase.from('provider_categories').select('*')
 
 #### Smart Payment-Aware Settlements
 - ✅ **COD vs Online Payment Logic**:
-  - COD orders: Provider collects cash → Owes 6% commission to Engezna
-  - Online orders: Engezna collects payment → Owes 94% payout to provider
+  - COD orders: Provider collects cash → Owes up to 7% commission to Engezna
+  - Online orders: Engezna collects payment → Owes 93%+ payout to provider
   - Net balance calculation: Determines who pays whom
+  - 6-month grace period with 0% commission for new providers
 
 - ✅ **Database Schema Update** (`20251207000003_settlements_cod_online_breakdown.sql`):
   - `cod_orders_count`, `cod_gross_revenue`, `cod_commission_owed`
@@ -696,7 +724,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Provider Settlements Page** (`/provider/settlements` - NEW):
   - Stats overview: Total due, Total paid, Pending settlements, Overdue settlements
   - Settlement history with expandable cards
-  - Shows gross revenue, platform commission (6%), net payout
+  - Shows gross revenue, platform commission (up to 7%), net payout
   - Payment details for completed settlements
   - Full bilingual support (AR/EN)
 
@@ -1350,7 +1378,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Finance Page**: Created `/provider/finance` with comprehensive financial dashboard
   - Total earnings card with all-time earnings
   - Pending payout card showing next payment
-  - Commission breakdown showing 6% platform fee
+  - Commission breakdown showing up to 7% platform fee (0% for first 6 months)
   - This month vs last month earnings comparison
   - Payout schedule information (weekly on Sundays)
   - Transaction history with date range filtering

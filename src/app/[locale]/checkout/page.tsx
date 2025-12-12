@@ -43,6 +43,7 @@ interface City {
   name_en: string
 }
 
+// District interface kept for backward compatibility with saved addresses
 interface District {
   id: string
   city_id: string | null
@@ -534,10 +535,9 @@ export default function CheckoutPage() {
         address_id: addr.id,
       }
     } else {
-      // New address
+      // New address - districts deprecated, using GPS instead
       const selectedGov = governorates.find(g => g.id === selectedGovernorateId)
       const selectedCity = cities.find(c => c.id === selectedCityId)
-      const selectedDist = districts.find(d => d.id === selectedDistrictId)
 
       return {
         // Geographic hierarchy with IDs and names
@@ -547,9 +547,9 @@ export default function CheckoutPage() {
         city_id: selectedCityId || null,
         city_ar: selectedCity?.name_ar || null,
         city_en: selectedCity?.name_en || null,
-        district_id: selectedDistrictId || null,
-        district_ar: selectedDist?.name_ar || null,
-        district_en: selectedDist?.name_en || null,
+        district_id: null, // DEPRECATED - always null for new addresses
+        district_ar: null,
+        district_en: null,
         // Address details
         address: addressLine1,
         address_line1: addressLine1,
@@ -939,8 +939,8 @@ export default function CheckoutPage() {
                   {/* New Address Form */}
                   {addressMode === 'new' && (
                     <div className="space-y-4">
-                      {/* Geographic Hierarchy */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Geographic Hierarchy - Districts removed, using GPS instead */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Governorate */}
                         <div>
                           <Label>{locale === 'ar' ? 'المحافظة' : 'Governorate'} *</Label>
@@ -976,27 +976,6 @@ export default function CheckoutPage() {
                               {cities.map((city) => (
                                 <option key={city.id} value={city.id}>
                                   {locale === 'ar' ? city.name_ar : city.name_en}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                          </div>
-                        </div>
-
-                        {/* District */}
-                        <div>
-                          <Label>{locale === 'ar' ? 'المنطقة/الحي' : 'District'}</Label>
-                          <div className="relative">
-                            <select
-                              value={selectedDistrictId}
-                              onChange={(e) => setSelectedDistrictId(e.target.value)}
-                              className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background text-sm appearance-none cursor-pointer"
-                              disabled={isLoading || !selectedCityId || districts.length === 0}
-                            >
-                              <option value="">{locale === 'ar' ? 'اختر المنطقة' : 'Select District'}</option>
-                              {districts.map((dist) => (
-                                <option key={dist.id} value={dist.id}>
-                                  {locale === 'ar' ? dist.name_ar : dist.name_en}
                                 </option>
                               ))}
                             </select>
