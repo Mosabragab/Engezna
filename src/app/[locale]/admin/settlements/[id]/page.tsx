@@ -547,7 +547,7 @@ export default function SettlementDetailPage() {
                   <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                     <div className="flex items-center gap-3 mb-2">
                       <Percent className="w-5 h-5 text-red-500" />
-                      <span className="text-sm text-slate-600">{locale === 'ar' ? 'عمولة إنجزنا (6%)' : 'Engezna Commission (6%)'}</span>
+                      <span className="text-sm text-slate-600">{locale === 'ar' ? 'عمولة إنجزنا (حتى 7%)' : 'Engezna Commission (up to 7%)'}</span>
                     </div>
                     <p className="text-2xl font-bold text-red-600">
                       {formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
@@ -729,7 +729,7 @@ export default function SettlementDetailPage() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-red-600">
-                            {formatCurrency(order.platform_commission || (order.total * 0.06), locale)}
+                            {formatCurrency(order.platform_commission || (order.total * 0.07), locale)}
                           </span>
                         </td>
                         <td className="px-4 py-3">

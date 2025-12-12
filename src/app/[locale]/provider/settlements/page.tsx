@@ -292,8 +292,8 @@ export default function ProviderSettlementsPage() {
                 </p>
                 <p className="text-sm text-slate-600">
                   {locale === 'ar'
-                    ? 'يتم إنشاء تسوية أسبوعية تحتوي على عمولة المنصة (6%) من جميع طلباتك المكتملة. يجب دفع المبلغ المستحق خلال 7 أيام من نهاية فترة التسوية لتجنب رسوم التأخير.'
-                    : 'A weekly settlement is generated containing the platform commission (6%) from all your completed orders. The due amount should be paid within 7 days of the settlement period end to avoid late fees.'}
+                    ? 'يتم إنشاء تسوية أسبوعية تحتوي على عمولة المنصة (حتى 7%) من جميع طلباتك المكتملة. يجب دفع المبلغ المستحق خلال 7 أيام من نهاية فترة التسوية لتجنب رسوم التأخير.'
+                    : 'A weekly settlement is generated containing the platform commission (up to 7%) from all your completed orders. The due amount should be paid within 7 days of the settlement period end to avoid late fees.'}
                 </p>
               </div>
             </div>
@@ -400,7 +400,7 @@ export default function ProviderSettlementsPage() {
                               <p className="font-medium text-slate-900">{formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
                             </div>
                             <div>
-                              <p className="text-slate-500">{locale === 'ar' ? 'عمولة المنصة (6%)' : 'Platform Commission (6%)'}</p>
+                              <p className="text-slate-500">{locale === 'ar' ? 'عمولة المنصة (حتى 7%)' : 'Platform Commission (up to 7%)'}</p>
                               <p className="font-medium text-red-600">-{formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
                             </div>
                             <div>
