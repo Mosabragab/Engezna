@@ -535,7 +535,8 @@ export default function AdminLocationsPage() {
       setModalType(null)
     } catch (error: any) {
       console.error('Error saving:', error)
-      setFormError(locale === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Error saving')
+      const errorMsg = error?.message || error?.code || 'Unknown error'
+      setFormError(locale === 'ar' ? 'حدث خطأ أثناء الحفظ: ' + errorMsg : 'Error saving: ' + errorMsg)
     }
 
     setFormLoading(false)
