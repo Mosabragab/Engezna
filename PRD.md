@@ -13,7 +13,10 @@
 
 **Engezna (إنجزنا)** is a B2C food delivery marketplace platform designed specifically for Beni Suef, Upper Egypt. The platform connects local restaurants, coffee shops, and grocery stores with customers, enabling fast and reliable food delivery in an underserved market.
 
-**Mission:** To bring modern food delivery services to Upper Egypt, starting with Beni Suef, while supporting local businesses and creating economic opportunities.
+Mission: To bring modern food delivery services to Egyptian governorates outside 
+the major cities (Cairo, Giza, Alexandria, North Coast), starting with Beni Suef, 
+while supporting local businesses and creating economic opportunities through 
+fair, transparent pricing.
 
 **Key Differentiator:** Ultra-low 5-7% commission model where providers manage their own delivery staff, allowing us to offer the most competitive rates in the Egyptian market.
 
