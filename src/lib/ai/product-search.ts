@@ -222,18 +222,20 @@ export async function searchProviders(
 ): Promise<ChatProvider[]> {
   const supabase = await createClient()
 
-  // Map Arabic category names to DB category values
+  // Map Arabic category names to ACTUAL DB category values
+  // Based on query: SELECT DISTINCT category FROM providers
+  // Values: restaurant_cafe, grocery
   const categoryMap: Record<string, string[]> = {
-    'مطاعم': ['restaurant', 'fast_food'],
-    'كافيهات': ['cafe', 'coffee'],
-    'مطاعم وكافيهات': ['restaurant', 'fast_food', 'cafe', 'coffee'],
-    'سوبر ماركت': ['supermarket', 'grocery'],
-    'البن': ['coffee', 'sweets'],
-    'حلويات': ['sweets', 'bakery'],
-    'البن والحلويات': ['coffee', 'sweets', 'bakery'],
-    'خضروات': ['vegetables', 'fruits', 'grocery'],
-    'فواكه': ['vegetables', 'fruits'],
-    'خضروات وفواكه': ['vegetables', 'fruits', 'grocery'],
+    'مطاعم': ['restaurant_cafe'],
+    'كافيهات': ['restaurant_cafe'],
+    'مطاعم وكافيهات': ['restaurant_cafe'],
+    'سوبر ماركت': ['grocery'],
+    'البن': ['restaurant_cafe'], // Coffee shops are under restaurant_cafe
+    'حلويات': ['restaurant_cafe'],
+    'البن والحلويات': ['restaurant_cafe'],
+    'خضروات': ['grocery'],
+    'فواكه': ['grocery'],
+    'خضروات وفواكه': ['grocery'],
   }
 
   let query = supabase
