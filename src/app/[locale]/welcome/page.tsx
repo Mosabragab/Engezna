@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { Button } from '@/components/ui/button'
+import { Footer } from '@/components/shared/Footer'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 import {
   MessageCircle,
@@ -40,12 +41,20 @@ export default function WelcomePage() {
   const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Check if user already has location set
+  // Check if user already has location set - non-blocking redirect
   useEffect(() => {
-    const guestLocation = guestLocationStorage.get()
-    if (guestLocation?.governorateId) {
-      // User already has location, redirect to home
-      router.replace(`/${locale}`)
+    // Small delay to ensure the page renders first, then check location
+    const checkLocation = () => {
+      const guestLocation = guestLocationStorage.get()
+      if (guestLocation?.governorateId) {
+        router.replace(`/${locale}`)
+      }
+    }
+    // Use requestIdleCallback if available, otherwise setTimeout
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(checkLocation)
+    } else {
+      setTimeout(checkLocation, 100)
     }
   }, [locale, router])
 
@@ -133,8 +142,8 @@ export default function WelcomePage() {
       icon: ShieldCheck,
       title_ar: 'بدون رسوم خدمة',
       title_en: 'No Service Fees',
-      description_ar: '0% رسوم خدمة - بعكس المنصات التانية اللي بتاخد 25-30%',
-      description_en: '0% service fees - unlike other platforms that charge 25-30%',
+      description_ar: '0% رسوم خدمة على طلباتك - ادفع فقط ثمن الطلب والتوصيل',
+      description_en: '0% service fees on your orders - pay only for your order and delivery',
       color: 'bg-green-50 text-green-600',
     },
     {
@@ -407,13 +416,7 @@ export default function WelcomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-6 px-4 bg-slate-900 text-white text-center">
-        <div className="container mx-auto">
-          <p className="text-slate-400 text-sm">
-            © 2025 {isRTL ? 'إنجزنا - جميع الحقوق محفوظة' : 'Engezna - All rights reserved'}
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
