@@ -1,12 +1,19 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, Navigation, Search, Loader2, X, Check } from 'lucide-react';
+import { MapPin, Navigation, Search, Loader2, X, Check, Map } from 'lucide-react';
 import { useHereMaps, useGeolocation } from '@/hooks/useHereMaps';
 import { Coordinates, HereSearchResult, HERE_CONFIG } from '@/lib/here-maps/config';
 import { cn } from '@/lib/utils';
+
+// Dynamic import for InteractiveMapPicker to avoid SSR issues
+const InteractiveMapPicker = dynamic(() => import('./InteractiveMapPicker'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-96" />
+});
 
 interface LocationPickerProps {
   value?: { lat: number; lng: number } | null;
@@ -32,6 +39,7 @@ export function LocationPicker({
   const [isSearching, setIsSearching] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   const searchTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -112,6 +120,19 @@ export function LocationPicker({
     setSuggestions([]);
   }, []);
 
+  // Handle map picker selection
+  const handleMapSelect = useCallback(async (coords: { lat: number; lng: number }) => {
+    const address = await reverseGeocode(coords);
+    if (address) {
+      const formattedAddress = formatAddress(address);
+      setSelectedAddress(formattedAddress);
+      onChange(coords, formattedAddress);
+    } else {
+      setSelectedAddress('موقع محدد على الخريطة');
+      onChange(coords, 'موقع محدد على الخريطة');
+    }
+  }, [reverseGeocode, formatAddress, onChange]);
+
   // Close suggestions on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -171,6 +192,18 @@ export function LocationPicker({
               <Navigation className="h-4 w-4" />
             )}
           </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setShowMapPicker(true)}
+            disabled={disabled}
+            title="اختر من الخريطة"
+            className="shrink-0"
+          >
+            <Map className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Suggestions Dropdown */}
@@ -218,19 +251,25 @@ export function LocationPicker({
         </div>
       )}
 
-      {/* Map Container (optional - can be replaced with static map image) */}
+      {/* Map Container - OpenStreetMap embed */}
       {showMap && value && (
-        <div className="w-full h-48 rounded-lg overflow-hidden border bg-gray-100">
-          {/* Static map image from HERE Maps */}
-          <img
-            src={`https://image.maps.ls.hereapi.com/mia/1.6/mapview?apiKey=${HERE_CONFIG.apiKey}&c=${value.lat},${value.lng}&z=15&w=400&h=200&f=0&ml=ara&ppi=320&t=0`}
-            alt="Map location"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              // Hide image on error
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
+        <div className="w-full h-48 rounded-lg overflow-hidden border bg-gray-100 relative">
+          <iframe
+            src={`https://www.openstreetmap.org/export/embed.html?bbox=${value.lng - 0.01}%2C${value.lat - 0.01}%2C${value.lng + 0.01}%2C${value.lat + 0.01}&layer=mapnik&marker=${value.lat}%2C${value.lng}`}
+            className="w-full h-full border-0"
+            loading="lazy"
+            title="Location Map"
           />
+          {/* Link to open in full map */}
+          <a
+            href={`https://www.openstreetmap.org/?mlat=${value.lat}&mlon=${value.lng}#map=16/${value.lat}/${value.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute bottom-2 left-2 bg-white/90 text-xs px-2 py-1 rounded shadow hover:bg-white transition-colors flex items-center gap-1"
+          >
+            <MapPin className="w-3 h-3" />
+            فتح في خريطة أكبر
+          </a>
         </div>
       )}
 
@@ -247,6 +286,15 @@ export function LocationPicker({
           * يرجى تحديد موقعك
         </p>
       )}
+
+      {/* Interactive Map Picker Modal */}
+      <InteractiveMapPicker
+        isOpen={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onSelect={handleMapSelect}
+        initialPosition={value}
+        title="اختر موقعك على الخريطة"
+      />
     </div>
   );
 }
