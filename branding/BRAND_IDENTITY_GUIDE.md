@@ -549,8 +549,8 @@ The Engezna animated logo uses a unique RTL reveal animation that writes the Ara
   - **0 EGP – forever** (no sign-up fee for service providers).
 
 - **Merchant commission:**
-  - 0% for the first **9 months** from platform launch in their city.
-  - **6% commission** on order value after that period.
+  - 0% for the first **6 months** from platform launch in their city.
+  - **7% commission (maximum)** on order value after that period.
 
 - **Customer service fee:**
   - 0% for the first **12 months** from platform launch.

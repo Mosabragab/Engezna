@@ -57,6 +57,9 @@ export type SettlementStatus = 'pending' | 'partially_paid' | 'paid' | 'overdue'
 // NEW: Settlement direction for COD/Online breakdown
 export type SettlementDirection = 'platform_pays_provider' | 'provider_pays_platform' | 'balanced';
 
+// NEW: Commission status for providers
+export type CommissionStatus = 'in_grace_period' | 'active' | 'exempt';
+
 // ============================================================================
 // DATABASE TYPES
 // ============================================================================
@@ -188,6 +191,20 @@ export interface Database {
           metadata: Json | null;
           created_at: string;
           updated_at: string;
+          // Location fields
+          governorate_id: string | null;
+          city_id: string | null;
+          district_id: string | null;
+          latitude: number | null;
+          longitude: number | null;
+          // Commission fields
+          commission_status: CommissionStatus | null;
+          grace_period_start: string | null;
+          grace_period_end: string | null;
+          custom_commission_rate: number | null;
+          // Other fields
+          rejection_reason: string | null;
+          settlement_group_id: string | null;
         };
         Insert: {
           id?: string;
@@ -222,6 +239,20 @@ export interface Database {
           metadata?: Json | null;
           created_at?: string;
           updated_at?: string;
+          // Location fields
+          governorate_id?: string | null;
+          city_id?: string | null;
+          district_id?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          // Commission fields
+          commission_status?: CommissionStatus | null;
+          grace_period_start?: string | null;
+          grace_period_end?: string | null;
+          custom_commission_rate?: number | null;
+          // Other fields
+          rejection_reason?: string | null;
+          settlement_group_id?: string | null;
         };
         Update: {
           id?: string;
@@ -256,6 +287,20 @@ export interface Database {
           metadata?: Json | null;
           created_at?: string;
           updated_at?: string;
+          // Location fields
+          governorate_id?: string | null;
+          city_id?: string | null;
+          district_id?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          // Commission fields
+          commission_status?: CommissionStatus | null;
+          grace_period_start?: string | null;
+          grace_period_end?: string | null;
+          custom_commission_rate?: number | null;
+          // Other fields
+          rejection_reason?: string | null;
+          settlement_group_id?: string | null;
         };
       };
 
@@ -399,6 +444,14 @@ export interface Database {
           is_active: boolean;
           created_at: string;
           updated_at: string;
+          // Location reference fields
+          governorate_id: string | null;
+          city_id: string | null;
+          district_id: string | null;
+          street_address: string | null;
+          // GPS coordinates
+          latitude: number | null;
+          longitude: number | null;
         };
         Insert: {
           id?: string;
@@ -419,6 +472,14 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+          // Location reference fields
+          governorate_id?: string | null;
+          city_id?: string | null;
+          district_id?: string | null;
+          street_address?: string | null;
+          // GPS coordinates
+          latitude?: number | null;
+          longitude?: number | null;
         };
         Update: {
           id?: string;
@@ -439,6 +500,14 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+          // Location reference fields
+          governorate_id?: string | null;
+          city_id?: string | null;
+          district_id?: string | null;
+          street_address?: string | null;
+          // GPS coordinates
+          latitude?: number | null;
+          longitude?: number | null;
         };
       };
 
@@ -1173,6 +1242,9 @@ export interface Database {
           is_active: boolean;
           created_at: string;
           updated_at: string;
+          // Commission & display settings
+          commission_override: number | null;
+          display_order: number;
         };
         Insert: {
           id?: string;
@@ -1181,6 +1253,9 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+          // Commission & display settings
+          commission_override?: number | null;
+          display_order?: number;
         };
         Update: {
           id?: string;
@@ -1189,6 +1264,9 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+          // Commission & display settings
+          commission_override?: number | null;
+          display_order?: number;
         };
       };
 
@@ -1227,6 +1305,7 @@ export interface Database {
 
       // --------------------------------------------------------------------
       // Districts (أحياء) - Egyptian Administrative Level 3
+      // NOTE: Districts are deprecated - using GPS coordinates instead
       // --------------------------------------------------------------------
       districts: {
         Row: {
@@ -1260,6 +1339,33 @@ export interface Database {
           updated_at?: string;
         };
       };
+
+      // --------------------------------------------------------------------
+      // Platform Settings - Global configuration for commission, grace period, etc.
+      // --------------------------------------------------------------------
+      platform_settings: {
+        Row: {
+          key: string;
+          value: Json;
+          description: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          key: string;
+          value: Json;
+          description?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          key?: string;
+          value?: Json;
+          description?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -1278,6 +1384,7 @@ export interface Database {
       notification_type: NotificationType;
       settlement_status: SettlementStatus;
       settlement_direction: SettlementDirection;
+      commission_status: CommissionStatus;
     };
   };
 }

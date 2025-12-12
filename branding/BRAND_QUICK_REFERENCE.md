@@ -29,8 +29,8 @@ Version: 2.1
 
 - **Merchant Registration Fee:** 0 EGP – forever
 - **Merchant Commission:**
-  - 0% first 9 months from launch
-  - 6% after that
+  - 0% first 6 months from launch
+  - 7% maximum after that
 - **Customer Service Fee:**
   - 0% first 12 months
   - 2% after that

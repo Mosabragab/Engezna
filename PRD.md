@@ -103,8 +103,8 @@
 
 **Part 4: Smart Settlements (COD vs Online):**
 - ✅ **Payment-aware settlement logic**:
-  - COD orders: Provider collects cash → Owes 6% commission to Engezna
-  - Online orders: Engezna collects payment → Owes 94% payout to provider
+  - COD orders: Provider collects cash → Owes up to 7% commission to Engezna
+  - Online orders: Engezna collects payment → Owes 93%+ payout to provider
   - Net balance calculation determines who pays whom
 - ✅ Database schema update (`20251207000003_settlements_cod_online_breakdown.sql`):
   - `cod_orders_count`, `cod_gross_revenue`, `cod_commission_owed`
@@ -133,7 +133,7 @@
 - ✅ Provider settlements page (`/provider/settlements`) with:
   - Stats overview: Total due, Total paid, Pending settlements, Overdue settlements
   - Settlement history with expandable cards
-  - Shows gross revenue, platform commission (6%), net payout
+  - Shows gross revenue, platform commission (up to 7%), net payout
   - Payment details for completed settlements
 - ✅ **CRITICAL FIX**: Settlement generation now checks BOTH `status='delivered'` AND `payment_status='completed'`
   - This ensures COD orders are only included after payment is confirmed
@@ -1014,10 +1014,10 @@ reviews (
    - Simple, transparent pricing
    - Lower than competitors (Talabat: 15-20%)
    - Competitive advantage for providers
-   - Tiered structure:
-     - Small providers (<50 orders/month): 7%
-     - Medium providers (50-200 orders/month): 6%
-     - Large providers (200+ orders/month): 5%
+   - Commission structure:
+     - Maximum commission: 7%
+     - 0% commission for first 6 months (grace period)
+     - Governorate-specific rates may apply
 
 **Note:** Providers handle their own delivery using existing staff. They set their own delivery fees directly with customers. Engezna does NOT charge delivery fees or manage drivers.
 
@@ -1053,13 +1053,13 @@ reviews (
 
 ### **Financial Projections (Year 1)**
 
-**Model:** 6% average commission (middle tier)
+**Model:** 7% maximum commission
 
 **Conservative Scenario:**
 - Average order value: 80 EGP
 - Orders per month: 1,000 (Month 3) → 5,000 (Month 12)
-- Commission: 6% average = 4.80 EGP per order
-- Monthly revenue (Month 12): 5,000 × 4.80 = ~24,000 EGP
+- Commission: 7% max = 5.60 EGP per order
+- Monthly revenue (Month 12): 5,000 × 5.60 = ~28,000 EGP
 - Annual revenue: ~180,000 EGP
 - Profit margin: ~60% after costs = ~108,000 EGP/year
 
@@ -1104,7 +1104,7 @@ reviews (
 - Arabic-first experience
 
 ### **4. Simple, Transparent Pricing**
-- Tiered commission (5% / 6% / 7%)
+- Maximum 7% commission (0% for first 6 months)
 - No hidden fees
 - No delivery fee split confusion
 - Providers set their own delivery charges
@@ -1359,7 +1359,7 @@ reviews (
   - [x] Top 5 selling products
 - [x] **Finance Dashboard** (`/provider/finance`)
   - [x] Total earnings and pending payout
-  - [x] Commission breakdown (6% platform fee)
+  - [x] Commission breakdown (up to 7% platform fee)
   - [x] Transaction history with date range filter
 - [x] **Provider Settings** (`/provider/settings`)
   - [x] Store Info, Delivery, Status tabs

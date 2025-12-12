@@ -24,7 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { MapPin, Plus, Loader2, Check, Trash2, Edit, Star } from 'lucide-react'
+import { MapPin, Plus, Loader2, Check, Trash2, Edit, Star, Navigation } from 'lucide-react'
+import { LocationPicker } from '@/components/maps/LocationPicker'
 
 type Address = {
   id: string
@@ -35,7 +36,7 @@ type Address = {
   area: string | null
   governorate_id: string | null
   city_id: string | null
-  district_id: string | null
+  district_id: string | null // DEPRECATED - use GPS coordinates instead
   building: string | null
   floor: string | null
   apartment: string | null
@@ -43,6 +44,8 @@ type Address = {
   phone: string | null
   delivery_instructions: string | null
   is_default: boolean
+  latitude: number | null
+  longitude: number | null
 }
 
 type Governorate = {
@@ -58,12 +61,7 @@ type City = {
   name_en: string
 }
 
-type District = {
-  id: string
-  city_id: string
-  name_ar: string
-  name_en: string
-}
+// District type removed - GPS coordinates are now used instead
 
 export default function AddressesPage() {
   const locale = useLocale()
@@ -85,13 +83,13 @@ export default function AddressesPage() {
   // Cascading location data
   const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [cities, setCities] = useState<City[]>([])
-  const [districts, setDistricts] = useState<District[]>([])
 
   // Form fields
   const [label, setLabel] = useState('')
   const [governorateId, setGovernorateId] = useState('')
   const [cityId, setCityId] = useState('')
-  const [districtId, setDistrictId] = useState('')
+  // GPS location
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [addressLine1, setAddressLine1] = useState('')
   const [building, setBuilding] = useState('')
   const [floor, setFloor] = useState('')
@@ -110,17 +108,8 @@ export default function AddressesPage() {
       loadCities(governorateId)
     } else {
       setCities([])
-      setDistricts([])
     }
   }, [governorateId])
-
-  useEffect(() => {
-    if (cityId) {
-      loadDistricts(cityId)
-    } else {
-      setDistricts([])
-    }
-  }, [cityId])
 
   async function checkAuthAndLoadData() {
     const supabase = createClient()
@@ -184,20 +173,6 @@ export default function AddressesPage() {
     }
   }
 
-  async function loadDistricts(cityId: string) {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('districts')
-      .select('*')
-      .eq('city_id', cityId)
-      .eq('is_active', true)
-      .order('name_en')
-
-    if (data) {
-      setDistricts(data)
-    }
-  }
-
   function openAddDialog() {
     resetForm()
     setEditingAddress(null)
@@ -216,18 +191,20 @@ export default function AddressesPage() {
     setDeliveryInstructions(address.delivery_instructions || '')
     setIsDefault(address.is_default)
 
-    // Load cities and districts for editing
+    // Load GPS location if exists
+    if (address.latitude && address.longitude) {
+      setLocation({ lat: address.latitude, lng: address.longitude })
+    } else {
+      setLocation(null)
+    }
+
+    // Load cities for editing
     if (address.governorate_id) {
       setGovernorateId(address.governorate_id)
       await loadCities(address.governorate_id)
 
       if (address.city_id) {
         setCityId(address.city_id)
-        await loadDistricts(address.city_id)
-
-        if (address.district_id) {
-          setDistrictId(address.district_id)
-        }
       }
     }
 
@@ -238,7 +215,7 @@ export default function AddressesPage() {
     setLabel('')
     setGovernorateId('')
     setCityId('')
-    setDistrictId('')
+    setLocation(null)
     setAddressLine1('')
     setBuilding('')
     setFloor('')
@@ -262,12 +239,9 @@ export default function AddressesPage() {
 
     const supabase = createClient()
 
-    // Get city and area names from selected district/city
+    // Get city name from selected city
     const selectedCity = cities.find(c => c.id === cityId)
-    const selectedDistrict = districts.find(d => d.id === districtId)
-
     const cityName = selectedCity ? (locale === 'ar' ? selectedCity.name_ar : selectedCity.name_en) : ''
-    const areaName = selectedDistrict ? (locale === 'ar' ? selectedDistrict.name_ar : selectedDistrict.name_en) : ''
 
     const addressData = {
       user_id: userId,
@@ -275,10 +249,10 @@ export default function AddressesPage() {
       address_line1: addressLine1,
       address_line2: null,
       city: cityName,
-      area: areaName || null,
+      area: null, // Districts deprecated - use GPS instead
       governorate_id: governorateId || null,
       city_id: cityId || null,
-      district_id: districtId || null,
+      district_id: null, // DEPRECATED - always null
       building: building || null,
       floor: floor || null,
       apartment: apartment || null,
@@ -286,6 +260,9 @@ export default function AddressesPage() {
       phone: phone || null,
       delivery_instructions: deliveryInstructions || null,
       is_default: isDefault,
+      // GPS coordinates
+      latitude: location?.lat || null,
+      longitude: location?.lng || null,
     }
 
     // If setting as default, unset other defaults first
@@ -529,10 +506,7 @@ export default function AddressesPage() {
               {governorateId && (
                 <div className="space-y-2">
                   <Label>{tForm('city')}</Label>
-                  <Select value={cityId} onValueChange={(value) => {
-                    setCityId(value)
-                    setDistrictId('')
-                  }}>
+                  <Select value={cityId} onValueChange={setCityId}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder={tForm('cityPlaceholder')} />
                     </SelectTrigger>
@@ -547,22 +521,30 @@ export default function AddressesPage() {
                 </div>
               )}
 
-              {/* District/Area */}
-              {cityId && districts.length > 0 && (
+              {/* GPS Location Picker */}
+              {cityId && (
                 <div className="space-y-2">
-                  <Label>{tForm('area')}</Label>
-                  <Select value={districtId} onValueChange={setDistrictId}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder={tForm('areaPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {districts.map((district) => (
-                        <SelectItem key={district.id} value={district.id}>
-                          {locale === 'ar' ? district.name_ar : district.name_en}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="flex items-center gap-2">
+                    <Navigation className="w-4 h-4" />
+                    {locale === 'ar' ? 'حدد موقعك على الخريطة' : 'Set your location on map'}
+                  </Label>
+                  <LocationPicker
+                    value={location}
+                    onChange={(coords, address) => {
+                      setLocation(coords)
+                      // Auto-fill address if empty
+                      if (address && !addressLine1) {
+                        setAddressLine1(address)
+                      }
+                    }}
+                    placeholder={locale === 'ar' ? 'ابحث عن موقعك أو استخدم GPS' : 'Search for location or use GPS'}
+                    disabled={saving}
+                  />
+                  {!location && (
+                    <p className="text-xs text-amber-600">
+                      {locale === 'ar' ? '📍 تحديد الموقع يساعد في توصيل طلبك بشكل أسرع' : '📍 Setting location helps deliver your order faster'}
+                    </p>
+                  )}
                 </div>
               )}
 
