@@ -1399,17 +1399,49 @@ export default function AdminLocationsPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
-                />
-                <label htmlFor="is_active" className="text-sm text-slate-700">
-                  {locale === 'ar' ? 'نشط' : 'Active'}
-                </label>
+              {/* Active/Inactive Toggle - More Prominent */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-slate-700">
+                      {locale === 'ar' ? 'حالة التفعيل' : 'Activation Status'}
+                    </span>
+                    <span className="text-xs text-slate-500 mt-0.5">
+                      {formData.is_active
+                        ? (locale === 'ar' ? 'سيكون مرئياً للمستخدمين' : 'Will be visible to users')
+                        : (locale === 'ar' ? 'لن يكون مرئياً للمستخدمين' : 'Will not be visible to users')
+                      }
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={formData.is_active}
+                    onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                      formData.is_active ? 'bg-green-500' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
+                        formData.is_active ? (isRTL ? 'translate-x-2' : 'translate-x-8') : (isRTL ? 'translate-x-8' : 'translate-x-1')
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className={`mt-2 flex items-center gap-2 text-sm ${formData.is_active ? 'text-green-600' : 'text-slate-500'}`}>
+                  {formData.is_active ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{locale === 'ar' ? 'مفعّل' : 'Activated'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-4 h-4" />
+                      <span>{locale === 'ar' ? 'غير مفعّل' : 'Deactivated'}</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
