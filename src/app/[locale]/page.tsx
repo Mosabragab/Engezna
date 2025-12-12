@@ -16,6 +16,7 @@ import { ChatFAB } from '@/components/customer/voice'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
+import { Loader2 } from 'lucide-react'
 
 // Demo offers data - Unified blue gradient colors per brand guidelines
 const demoOffers = [
@@ -73,11 +74,62 @@ export default function HomePage() {
   const [topRatedProviders, setTopRatedProviders] = useState<any[]>([])
   const [userCityId, setUserCityId] = useState<string | null>(null)
   const [isReordering, setIsReordering] = useState(false)
+  const [isCheckingLocation, setIsCheckingLocation] = useState(true)
+
+  // Check if user has location set - redirect to welcome page if not
+  useEffect(() => {
+    async function checkLocationAndAuth() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        // Logged-in user - check profile for location
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('governorate_id')
+          .eq('id', user.id)
+          .single()
+
+        if (!profile?.governorate_id) {
+          // Logged-in user without location - redirect to select location
+          router.replace(`/${locale}/profile/governorate`)
+          return
+        }
+        // User has location, proceed
+        setIsCheckingLocation(false)
+      } else {
+        // Guest user - check localStorage
+        const guestLocation = guestLocationStorage.get()
+        if (!guestLocation?.governorateId) {
+          // Guest without location - redirect to welcome page
+          router.replace(`/${locale}/welcome`)
+          return
+        }
+        // Guest has location, proceed
+        setIsCheckingLocation(false)
+      }
+    }
+
+    checkLocationAndAuth()
+  }, [locale, router])
 
   // Load user's city and providers
   useEffect(() => {
-    loadUserCityAndProviders()
-    loadLastOrder()
+    if (!isCheckingLocation) {
+      loadUserCityAndProviders()
+      loadLastOrder()
+    }
+  }, [isCheckingLocation])
+
+  // Listen for guest location changes
+  useEffect(() => {
+    const handleLocationChange = () => {
+      loadUserCityAndProviders()
+    }
+    window.addEventListener('guestLocationChanged', handleLocationChange)
+    return () => {
+      window.removeEventListener('guestLocationChanged', handleLocationChange)
+    }
   }, [])
 
   // Load last completed order for reorder section
@@ -328,6 +380,17 @@ export default function HomePage() {
 
   const handleViewOrderDetails = (orderId: string) => {
     router.push(`/${locale}/orders/${orderId}`)
+  }
+
+  // Show loading while checking location
+  if (isCheckingLocation) {
+    return (
+      <CustomerLayout showHeader={false} showBottomNav={false}>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </CustomerLayout>
+    )
   }
 
   return (

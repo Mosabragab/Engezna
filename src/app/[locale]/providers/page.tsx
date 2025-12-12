@@ -52,6 +52,15 @@ export default function ProvidersPage() {
   // Load user's city on mount
   useEffect(() => {
     loadUserCity()
+
+    // Listen for guest location changes
+    const handleLocationChange = () => {
+      loadUserCity()
+    }
+    window.addEventListener('guestLocationChanged', handleLocationChange)
+    return () => {
+      window.removeEventListener('guestLocationChanged', handleLocationChange)
+    }
   }, [])
 
   useEffect(() => {

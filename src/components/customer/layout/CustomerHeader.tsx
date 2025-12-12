@@ -45,6 +45,24 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
     }
   }, [guestLocationLoaded])
 
+  // Listen for guest location changes
+  useEffect(() => {
+    const handleLocationChange = (event: Event) => {
+      const customEvent = event as CustomEvent
+      const newLocation = customEvent.detail
+      // Update location display immediately with the new data
+      if (newLocation?.cityName) {
+        setCurrentLocation(locale === 'ar' ? newLocation.cityName.ar : newLocation.cityName.en)
+      } else if (newLocation?.governorateName) {
+        setCurrentLocation(locale === 'ar' ? newLocation.governorateName.ar : newLocation.governorateName.en)
+      }
+    }
+    window.addEventListener('guestLocationChanged', handleLocationChange)
+    return () => {
+      window.removeEventListener('guestLocationChanged', handleLocationChange)
+    }
+  }, [locale])
+
   async function checkAuth() {
     const supabase = createClient()
 

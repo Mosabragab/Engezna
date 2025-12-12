@@ -45,6 +45,8 @@ export function useGuestLocation() {
     try {
       localStorage.setItem(GUEST_LOCATION_KEY, JSON.stringify(newLocation))
       setLocationState(newLocation)
+      // Dispatch custom event to notify other components of location change
+      window.dispatchEvent(new CustomEvent('guestLocationChanged', { detail: newLocation }))
     } catch (error) {
       console.error('Error saving guest location:', error)
     }
