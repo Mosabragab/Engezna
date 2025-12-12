@@ -292,7 +292,7 @@ export default function AdminSettlementsPage() {
       console.log('Already settled orders count:', settledOrderIds.size)
 
       let createdCount = 0
-      const COMMISSION_RATE = 0.06 // 6%
+      const COMMISSION_RATE = 0.07 // 7% max
 
       for (const provider of activeProviders) {
         // Get delivered orders for this provider in the period (including payment_method)
@@ -392,7 +392,7 @@ export default function AdminSettlementsPage() {
     setIsGenerating(true)
     try {
       const supabase = createClient()
-      const COMMISSION_RATE = 0.06 // 6%
+      const COMMISSION_RATE = 0.07 // 7% max
 
       // Get all order IDs already included in previous settlements
       const { data: existingSettlements } = await supabase

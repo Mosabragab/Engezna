@@ -70,7 +70,7 @@ export default function FinancePage() {
   const isRTL = locale === 'ar'
 
   const [providerId, setProviderId] = useState<string | null>(null)
-  const [commissionRate, setCommissionRate] = useState<number>(0.06) // Default 6%, will be fetched from DB
+  const [commissionRate, setCommissionRate] = useState<number>(0.07) // Default 7% max, will be fetched from DB
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [stats, setStats] = useState<FinanceStats>({
@@ -174,10 +174,10 @@ export default function FinancePage() {
       return
     }
 
-    // Set commission rate from database (default to 6% if not set)
+    // Set commission rate from database (default to 7% max if not set)
     const providerCommissionRate = provider.commission_rate != null
-      ? provider.commission_rate / 100  // Convert from percentage (e.g., 6) to decimal (0.06)
-      : 0.06
+      ? provider.commission_rate / 100  // Convert from percentage (e.g., 7) to decimal (0.07)
+      : 0.07
 
     setCommissionRate(providerCommissionRate)
     setProviderId(provider.id)
@@ -629,8 +629,8 @@ export default function FinancePage() {
                 </p>
                 <p className="text-sm text-slate-500">
                   {locale === 'ar'
-                    ? 'عمولة المنصة 6% فقط من قيمة كل طلب. يتم تحويل أرباحك المؤكدة أسبوعياً إلى حسابك البنكي.'
-                    : 'Platform commission is only 6% of each order. Your confirmed earnings are transferred weekly to your bank account.'}
+                    ? 'عمولة المنصة حتى 7% فقط من قيمة كل طلب. يتم تحويل أرباحك المؤكدة أسبوعياً إلى حسابك البنكي.'
+                    : 'Platform commission is up to 7% of each order. Your confirmed earnings are transferred weekly to your bank account.'}
                 </p>
               </div>
             </div>
