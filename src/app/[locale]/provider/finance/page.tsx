@@ -489,7 +489,7 @@ export default function FinancePage() {
                 <Banknote className="w-8 h-8 text-info" />
               </div>
               <p className="text-2xl font-bold text-info">{formatCurrency(stats.totalCommission)}</p>
-              <p className="text-xs text-slate-500">{locale === 'ar' ? 'العمولات (6%)' : 'Commission (6%)'}</p>
+              <p className="text-xs text-slate-500">{locale === 'ar' ? 'العمولات (حتى 7%)' : 'Commission (up to 7%)'}</p>
             </CardContent>
           </Card>
         </div>

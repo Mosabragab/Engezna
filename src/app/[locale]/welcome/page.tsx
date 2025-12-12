@@ -1,15 +1,11 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { Suspense } from 'react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { Button } from '@/components/ui/button'
 import { Footer } from '@/components/shared/Footer'
 import { InstallPrompt } from '@/components/pwa/InstallPrompt'
-import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
+import { WelcomeClientWrapper, LanguageToggle } from '@/components/welcome/WelcomeClientWrapper'
+import { GovernoratesList, GovernoratesListSkeleton } from '@/components/welcome/GovernoratesList'
 import {
   MessageCircle,
   Star,
@@ -22,73 +18,17 @@ import {
   Apple,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
-  Loader2,
   MessagesSquare,
   Store,
-  Globe,
 } from 'lucide-react'
 
-interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
-  is_active: boolean
+interface PageProps {
+  params: Promise<{ locale: string }>
 }
 
-export default function WelcomePage() {
-  const locale = useLocale()
-  const router = useRouter()
+export default async function WelcomePage({ params }: PageProps) {
+  const { locale } = await params
   const isRTL = locale === 'ar'
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [loading, setLoading] = useState(true)
-
-  // Toggle language
-  const toggleLanguage = () => {
-    const newLocale = locale === 'ar' ? 'en' : 'ar'
-    router.push(`/${newLocale}/welcome`)
-  }
-
-  // Check if user already has location set - non-blocking redirect
-  useEffect(() => {
-    // Small delay to ensure the page renders first, then check location
-    const checkLocation = () => {
-      const guestLocation = guestLocationStorage.get()
-      if (guestLocation?.governorateId) {
-        router.replace(`/${locale}`)
-      }
-    }
-    // Use requestIdleCallback if available, otherwise setTimeout
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(checkLocation)
-    } else {
-      setTimeout(checkLocation, 100)
-    }
-  }, [locale, router])
-
-  // Fetch active governorates
-  useEffect(() => {
-    async function fetchGovernorates() {
-      try {
-        const supabase = createClient()
-        const { data, error } = await supabase
-          .from('governorates')
-          .select('id, name_ar, name_en, is_active')
-          .eq('is_active', true)
-          .order('name_ar')
-
-        if (!error && data) {
-          setGovernorates(data)
-        }
-      } catch (err) {
-        console.error('Error fetching governorates:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchGovernorates()
-  }, [])
 
   const categories = [
     {
@@ -197,249 +137,228 @@ export default function WelcomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-[#E0F4FF] via-[#F0FAFF] to-white overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative container mx-auto px-4 pt-4 pb-12">
-          {/* Header with Language Toggle */}
-          <div className="flex justify-between items-center mb-6">
-            <div /> {/* Spacer */}
-            <button
-              onClick={toggleLanguage}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-primary bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-slate-200 transition-colors"
-            >
-              <Globe className="w-4 h-4" />
-              {locale === 'ar' ? 'English' : 'العربية'}
-            </button>
+    <WelcomeClientWrapper>
+      <div className="min-h-screen bg-white">
+        {/* Hero Section */}
+        <section className="relative bg-gradient-to-b from-[#E0F4FF] via-[#F0FAFF] to-white overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+            <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
           </div>
 
-          {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <EngeznaLogo size="lg" static showPen={false} />
-          </div>
+          <div className="relative container mx-auto px-4 pt-4 pb-12">
+            {/* Header with Language Toggle */}
+            <div className="flex justify-between items-center mb-6">
+              <div /> {/* Spacer */}
+              <LanguageToggle />
+            </div>
 
-          {/* Hero Content */}
-          <div className="text-center max-w-2xl mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              {isRTL ? 'عايز تطلب؟ إنجزنا!' : 'Want to order? Engezna!'}
-            </h1>
-            <p className="text-lg text-slate-600 mb-6">
+            {/* Logo */}
+            <div className="flex justify-center mb-8">
+              <EngeznaLogo size="lg" static showPen={false} />
+            </div>
+
+            {/* Hero Content */}
+            <div className="text-center max-w-2xl mx-auto">
+              <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                {isRTL ? 'عايز تطلب؟ إنجزنا!' : 'Want to order? Engezna!'}
+              </h1>
+              <p className="text-lg text-slate-600 mb-6">
+                {isRTL
+                  ? 'توصيل أسرع بينك وبين أقرب تاجر في محافظتك - بدون رسوم خدمة'
+                  : 'Fast delivery connecting you with the nearest merchant in your governorate - no service fees'}
+              </p>
+
+              {/* CTA Button */}
+              <Link href={`/${locale}/profile/governorate`}>
+                <Button
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg shadow-primary/20 gap-2"
+                >
+                  <MapPin className="w-5 h-5" />
+                  {isRTL ? 'اختر موقعك للبدء' : 'Select Your Location to Start'}
+                  {isRTL ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                </Button>
+              </Link>
+
+              {/* Already have account */}
+              <p className="mt-4 text-sm text-slate-500">
+                {isRTL ? 'لديك حساب؟' : 'Have an account?'}{' '}
+                <Link href={`/${locale}/auth/login`} className="text-primary hover:underline font-medium">
+                  {isRTL ? 'سجل دخول' : 'Sign in'}
+                </Link>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Categories Section */}
+        <section className="py-12 px-4 bg-slate-50">
+          <div className="container mx-auto">
+            <h2 className="text-2xl font-bold text-center text-slate-900 mb-8">
+              {isRTL ? 'ماذا نقدم؟' : 'What We Offer'}
+            </h2>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="bg-white rounded-xl p-6 text-center shadow-sm border border-slate-100 hover:border-primary/30 hover:shadow-md transition-all"
+                >
+                  <div className={`w-14 h-14 rounded-full ${category.color} flex items-center justify-center mx-auto mb-3`}>
+                    <category.icon className="w-7 h-7" />
+                  </div>
+                  <h3 className="font-semibold text-slate-900">
+                    {isRTL ? category.name_ar : category.name_en}
+                  </h3>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-12 px-4">
+          <div className="container mx-auto">
+            <h2 className="text-2xl font-bold text-center text-slate-900 mb-3">
+              {isRTL ? 'ليه إنجزنا؟' : 'Why Engezna?'}
+            </h2>
+            <p className="text-slate-600 text-center mb-8 max-w-xl mx-auto">
               {isRTL
-                ? 'توصيل أسرع بينك وبين أقرب تاجر في محافظتك - بدون رسوم خدمة'
-                : 'Fast delivery connecting you with the nearest merchant in your governorate - no service fees'}
+                ? 'تجربة طلب مختلفة - سهلة وسريعة ومن غير رسوم خدمة'
+                : 'A different ordering experience - easy, fast, and with no service fees'}
             </p>
 
-            {/* CTA Button */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((feature, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-xl p-6 border border-slate-100 hover:border-primary/20 hover:shadow-md transition-all"
+                >
+                  <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4`}>
+                    <feature.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-slate-900 mb-2">
+                    {isRTL ? feature.title_ar : feature.title_en}
+                  </h3>
+                  <p className="text-slate-600 text-sm">
+                    {isRTL ? feature.description_ar : feature.description_en}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works Section */}
+        <section className="py-12 px-4 bg-gradient-to-b from-slate-50 to-white">
+          <div className="container mx-auto">
+            <h2 className="text-2xl font-bold text-center text-slate-900 mb-3">
+              {isRTL ? 'كيف يعمل؟' : 'How It Works'}
+            </h2>
+            <p className="text-slate-600 text-center mb-10 max-w-xl mx-auto">
+              {isRTL ? 'ثلاث خطوات بسيطة فقط' : 'Just three simple steps'}
+            </p>
+
+            <div className="max-w-3xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {steps.map((step, index) => (
+                  <div key={index} className="text-center relative">
+                    {/* Connector line */}
+                    {index < steps.length - 1 && (
+                      <div className="hidden md:block absolute top-8 left-1/2 w-full h-0.5 bg-slate-200" />
+                    )}
+
+                    {/* Step number */}
+                    <div className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4 relative z-10 shadow-lg shadow-primary/20">
+                      {step.number}
+                    </div>
+
+                    <h3 className="font-bold text-slate-900 mb-2">
+                      {isRTL ? step.title_ar : step.title_en}
+                    </h3>
+                    <p className="text-slate-600 text-sm">
+                      {isRTL ? step.description_ar : step.description_en}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Available Governorates Section - Streamed with Suspense */}
+        <section className="py-12 px-4 bg-white">
+          <div className="container mx-auto">
+            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-8 text-center">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <MapPin className="w-6 h-6 text-primary" />
+                <h2 className="text-2xl font-bold text-slate-900">
+                  {isRTL ? 'متاحين في' : 'Available In'}
+                </h2>
+              </div>
+
+              {/* Governorates list loads separately - page renders instantly */}
+              <Suspense fallback={<GovernoratesListSkeleton locale={locale} />}>
+                <GovernoratesList locale={locale} />
+              </Suspense>
+
+              <p className="text-slate-600 text-sm">
+                {isRTL
+                  ? 'نتوسع باستمرار - قريباً في محافظات أكثر!'
+                  : 'We are constantly expanding - coming soon to more governorates!'}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-16 px-4 bg-gradient-to-b from-white to-[#E0F4FF]">
+          <div className="container mx-auto text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">
+              {isRTL ? 'جاهز تبدأ؟' : 'Ready to Start?'}
+            </h2>
+            <p className="text-slate-600 mb-8 max-w-lg mx-auto">
+              {isRTL
+                ? 'اختر موقعك وابدأ تصفح المتاجر المتاحة في منطقتك'
+                : 'Select your location and start browsing available stores in your area'}
+            </p>
+
             <Link href={`/${locale}/profile/governorate`}>
               <Button
                 size="lg"
                 className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg shadow-primary/20 gap-2"
               >
                 <MapPin className="w-5 h-5" />
-                {isRTL ? 'اختر موقعك للبدء' : 'Select Your Location to Start'}
+                {isRTL ? 'اختر موقعك الآن' : 'Select Your Location Now'}
                 {isRTL ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
               </Button>
             </Link>
 
-            {/* Already have account */}
-            <p className="mt-4 text-sm text-slate-500">
-              {isRTL ? 'لديك حساب؟' : 'Have an account?'}{' '}
-              <Link href={`/${locale}/auth/login`} className="text-primary hover:underline font-medium">
-                {isRTL ? 'سجل دخول' : 'Sign in'}
-              </Link>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="py-12 px-4 bg-slate-50">
-        <div className="container mx-auto">
-          <h2 className="text-2xl font-bold text-center text-slate-900 mb-8">
-            {isRTL ? 'ماذا نقدم؟' : 'What We Offer'}
-          </h2>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className="bg-white rounded-xl p-6 text-center shadow-sm border border-slate-100 hover:border-primary/30 hover:shadow-md transition-all"
-              >
-                <div className={`w-14 h-14 rounded-full ${category.color} flex items-center justify-center mx-auto mb-3`}>
-                  <category.icon className="w-7 h-7" />
-                </div>
-                <h3 className="font-semibold text-slate-900">
-                  {isRTL ? category.name_ar : category.name_en}
-                </h3>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-12 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-2xl font-bold text-center text-slate-900 mb-3">
-            {isRTL ? 'ليه إنجزنا؟' : 'Why Engezna?'}
-          </h2>
-          <p className="text-slate-600 text-center mb-8 max-w-xl mx-auto">
-            {isRTL
-              ? 'تجربة طلب مختلفة - سهلة وسريعة ومن غير رسوم خدمة'
-              : 'A different ordering experience - easy, fast, and with no service fees'}
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-xl p-6 border border-slate-100 hover:border-primary/20 hover:shadow-md transition-all"
-              >
-                <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4`}>
-                  <feature.icon className="w-6 h-6" />
-                </div>
-                <h3 className="font-bold text-slate-900 mb-2">
-                  {isRTL ? feature.title_ar : feature.title_en}
-                </h3>
-                <p className="text-slate-600 text-sm">
-                  {isRTL ? feature.description_ar : feature.description_en}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-12 px-4 bg-gradient-to-b from-slate-50 to-white">
-        <div className="container mx-auto">
-          <h2 className="text-2xl font-bold text-center text-slate-900 mb-3">
-            {isRTL ? 'كيف يعمل؟' : 'How It Works'}
-          </h2>
-          <p className="text-slate-600 text-center mb-10 max-w-xl mx-auto">
-            {isRTL ? 'ثلاث خطوات بسيطة فقط' : 'Just three simple steps'}
-          </p>
-
-          <div className="max-w-3xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {steps.map((step, index) => (
-                <div key={index} className="text-center relative">
-                  {/* Connector line */}
-                  {index < steps.length - 1 && (
-                    <div className="hidden md:block absolute top-8 left-1/2 w-full h-0.5 bg-slate-200" />
-                  )}
-
-                  {/* Step number */}
-                  <div className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4 relative z-10 shadow-lg shadow-primary/20">
-                    {step.number}
-                  </div>
-
-                  <h3 className="font-bold text-slate-900 mb-2">
-                    {isRTL ? step.title_ar : step.title_en}
-                  </h3>
-                  <p className="text-slate-600 text-sm">
-                    {isRTL ? step.description_ar : step.description_en}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Available Governorates Section */}
-      <section className="py-12 px-4 bg-white">
-        <div className="container mx-auto">
-          <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-8 text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <MapPin className="w-6 h-6 text-primary" />
-              <h2 className="text-2xl font-bold text-slate-900">
-                {isRTL ? 'متاحين في' : 'Available In'}
-              </h2>
-            </div>
-
-            {loading ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : governorates.length > 0 ? (
-              <div className="flex flex-wrap justify-center gap-3 mb-6">
-                {governorates.map((gov) => (
-                  <span
-                    key={gov.id}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white rounded-full text-slate-700 font-medium shadow-sm border border-slate-100"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    {isRTL ? gov.name_ar : gov.name_en}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-500 mb-6">
-                {isRTL ? 'قريباً في محافظتك' : 'Coming soon to your governorate'}
+            {/* Partner CTA */}
+            <div className="mt-10 pt-8 border-t border-slate-200">
+              <p className="text-slate-600 mb-3">
+                {isRTL ? 'أنت صاحب متجر أو مطعم؟' : 'Own a store or restaurant?'}
               </p>
-            )}
-
-            <p className="text-slate-600 text-sm">
-              {isRTL
-                ? 'نتوسع باستمرار - قريباً في محافظات أكثر!'
-                : 'We are constantly expanding - coming soon to more governorates!'}
-            </p>
+              <Link
+                href={`/${locale}/partner`}
+                className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+              >
+                <Store className="w-5 h-5" />
+                {isRTL ? 'انضم كشريك - 6 شهور بدون عمولة' : 'Join as a Partner - 6 months with 0% commission'}
+                {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA Section */}
-      <section className="py-16 px-4 bg-gradient-to-b from-white to-[#E0F4FF]">
-        <div className="container mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">
-            {isRTL ? 'جاهز تبدأ؟' : 'Ready to Start?'}
-          </h2>
-          <p className="text-slate-600 mb-8 max-w-lg mx-auto">
-            {isRTL
-              ? 'اختر موقعك وابدأ تصفح المتاجر المتاحة في منطقتك'
-              : 'Select your location and start browsing available stores in your area'}
-          </p>
+        {/* Footer */}
+        <Footer />
 
-          <Link href={`/${locale}/profile/governorate`}>
-            <Button
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg shadow-primary/20 gap-2"
-            >
-              <MapPin className="w-5 h-5" />
-              {isRTL ? 'اختر موقعك الآن' : 'Select Your Location Now'}
-              {isRTL ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-            </Button>
-          </Link>
-
-          {/* Partner CTA */}
-          <div className="mt-10 pt-8 border-t border-slate-200">
-            <p className="text-slate-600 mb-3">
-              {isRTL ? 'أنت صاحب متجر أو مطعم؟' : 'Own a store or restaurant?'}
-            </p>
-            <Link
-              href={`/${locale}/partner`}
-              className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
-            >
-              <Store className="w-5 h-5" />
-              {isRTL ? 'انضم كشريك - 6 شهور بدون عمولة' : 'Join as a Partner - 6 months with 0% commission'}
-              {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <Footer />
-
-      {/* PWA Install Prompt */}
-      <InstallPrompt />
-    </div>
+        {/* PWA Install Prompt */}
+        <InstallPrompt />
+      </div>
+    </WelcomeClientWrapper>
   )
 }
