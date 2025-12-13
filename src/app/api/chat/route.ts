@@ -510,7 +510,7 @@ function handleConfirmAdd(memory: ChatMemory): PayloadHandlerResult | null {
     quick_replies: [
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
       { title: `➕ أضف من ${providerName}`, payload: `provider:${pending_item.provider_id}` },
-      { title: '🏠 الأقسام', payload: 'categories' },
+      { title: `📋 منيو ${providerName}`, payload: `provider:${pending_item.provider_id}` },
     ],
     cart_action,
     selected_provider_id: pending_item.provider_id,
@@ -564,7 +564,7 @@ function handleClearCartAndAdd(memory: ChatMemory): PayloadHandlerResult | null 
     quick_replies: [
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
       { title: `➕ أضف من ${providerName}`, payload: `provider:${pending_item.provider_id}` },
-      { title: '🏠 الأقسام', payload: 'categories' },
+      { title: `📋 منيو ${providerName}`, payload: `provider:${pending_item.provider_id}` },
     ],
     cart_action,
     selected_provider_id: pending_item.provider_id,
@@ -609,28 +609,35 @@ async function performDirectSearch(
 
   // If we have a selected provider, search in it
   if (selectedProviderId && isValidUUID(selectedProviderId)) {
-    // Search in selected provider
-    const { data: items } = await supabase
+    // ALWAYS use normalization-based search for better Arabic matching
+    // This handles ه/ة, أ/ا, etc. variations that ilike cannot
+    const normalizedQuery = normalizeArabic(searchQuery)
+    logNormalization('performDirectSearch (provider)', searchQuery, normalizedQuery)
+
+    // Fetch all available items and filter with normalization
+    const { data: allItems } = await supabase
       .from('menu_items')
       .select('id, name_ar, price, has_variants')
       .eq('provider_id', selectedProviderId)
       .eq('is_available', true)
       .or('has_stock.eq.true,has_stock.is.null')
-      .ilike('name_ar', `%${searchQuery}%`)
-      .limit(10)
+      .limit(100)
 
-    // Also try with Arabic normalization if no results
-    let filteredItems = items || []
+    // Apply Arabic normalization filter (handles سلطه↔سلطة, كفته↔كفتة, etc.)
+    let filteredItems = filterByNormalizedArabic(allItems || [], searchQuery, (item) => [item.name_ar])
+
+    // If normalization didn't find anything, try exact ilike as fallback
     if (filteredItems.length === 0) {
-      const { data: allItems } = await supabase
+      const { data: exactItems } = await supabase
         .from('menu_items')
         .select('id, name_ar, price, has_variants')
         .eq('provider_id', selectedProviderId)
         .eq('is_available', true)
         .or('has_stock.eq.true,has_stock.is.null')
-        .limit(50)
+        .ilike('name_ar', `%${searchQuery}%`)
+        .limit(10)
 
-      filteredItems = filterByNormalizedArabic(allItems || [], searchQuery, (item) => [item.name_ar])
+      filteredItems = exactItems || []
     }
 
     // Get provider name
@@ -663,6 +670,10 @@ async function performDirectSearch(
     }
   } else {
     // No provider selected - search city-wide
+    // ALWAYS use normalization-based search for better Arabic matching
+    const normalizedQuery = normalizeArabic(searchQuery)
+    logNormalization('performDirectSearch (city-wide)', searchQuery, normalizedQuery)
+
     const { data: providers } = await supabase
       .from('providers')
       .select('id')
@@ -672,30 +683,30 @@ async function performDirectSearch(
     if (providers && providers.length > 0) {
       const providerIds = providers.map(p => p.id)
 
-      const { data: items } = await supabase
+      // Fetch more items for normalization filtering
+      const { data: allItems } = await supabase
         .from('menu_items')
         .select('id, name_ar, price, provider_id, providers(name_ar)')
         .in('provider_id', providerIds)
         .eq('is_available', true)
         .or('has_stock.eq.true,has_stock.is.null')
-        .ilike('name_ar', `%${searchQuery}%`)
-        .limit(20)
+        .limit(200)
 
-      // Also try with Arabic normalization if few results
-      let filteredItems = items || []
-      if (filteredItems.length < 3) {
-        const { data: allItems } = await supabase
+      // Apply Arabic normalization filter (handles سلطه↔سلطة, كفته↔كفتة, etc.)
+      let filteredItems = filterByNormalizedArabic(allItems || [], searchQuery, (item) => [item.name_ar])
+
+      // If normalization didn't find enough, try exact ilike as fallback
+      if (filteredItems.length === 0) {
+        const { data: exactItems } = await supabase
           .from('menu_items')
           .select('id, name_ar, price, provider_id, providers(name_ar)')
           .in('provider_id', providerIds)
           .eq('is_available', true)
           .or('has_stock.eq.true,has_stock.is.null')
-          .limit(100)
+          .ilike('name_ar', `%${searchQuery}%`)
+          .limit(20)
 
-        const normalized = filterByNormalizedArabic(allItems || [], searchQuery, (item) => [item.name_ar])
-        if (normalized.length > filteredItems.length) {
-          filteredItems = normalized
-        }
+        filteredItems = exactItems || []
       }
 
       if (filteredItems.length > 0) {
