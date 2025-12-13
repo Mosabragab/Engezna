@@ -1,7 +1,13 @@
 /**
  * AI Module Exports for Engezna Smart Assistant
- * Cleared for new implementation
+ * New Implementation - Function Calling + Streaming
  */
+
+// System Prompt
+export * from './systemPrompt'
+
+// Tools (Function Definitions)
+export * from './tools'
 
 // Context Builder
 export * from './context-builder'
