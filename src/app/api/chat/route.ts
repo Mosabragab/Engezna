@@ -1104,12 +1104,39 @@ async function handleToolCall(
         })
       )
 
+      // ========================================================================
+      // ALSO fetch items with product-level discounts (original_price > price)
+      // These are individual item discounts, not promotions table entries
+      // ========================================================================
+      let discountedItemsQuery = supabase
+        .from('menu_items')
+        .select('id, name_ar, price, original_price, provider_id, providers!inner(id, name_ar, city_id)')
+        .eq('is_available', true)
+        .eq('providers.city_id', cityId)
+        .not('original_price', 'is', null)
+        .gt('original_price', 0)
+
+      if (providerId) {
+        discountedItemsQuery = discountedItemsQuery.eq('provider_id', providerId)
+      }
+
+      const { data: discountedItems } = await discountedItemsQuery.limit(20)
+
+      // Filter items where original_price > price (actual discount)
+      const actualDiscountedItems = (discountedItems || []).filter(
+        item => item.original_price && item.original_price > item.price
+      ).map(item => ({
+        ...item,
+        discount_percentage: Math.round(((item.original_price - item.price) / item.original_price) * 100),
+      }))
+
       // 📦 Log promotions result with products
       console.log('📦 [AI PROMOTIONS RESULT]', {
         tool: 'get_promotions',
         cityId,
         providerId,
-        count: promotionsWithProducts.length,
+        promotionsCount: promotionsWithProducts.length,
+        discountedItemsCount: actualDiscountedItems.length,
         promotions: promotionsWithProducts.map(p => ({
           id: p.id,
           title: p.title_ar || p.title,
@@ -1120,7 +1147,11 @@ async function handleToolCall(
         })),
       })
 
-      result = promotionsWithProducts
+      // Return both promotions AND discounted items
+      result = {
+        promotions: promotionsWithProducts,
+        discounted_items: actualDiscountedItems,
+      }
       break
     }
 
@@ -1617,6 +1648,164 @@ export async function POST(request: Request) {
       })
     }
 
+    // =======================================================================
+    // Handle "في X" queries (is there X?) - Direct search without GPT
+    // This fixes the inconsistent search results issue
+    // =======================================================================
+    const fiQueryMatch = lastUserMessage.match(/^(?:في|فى|فيه|فية)\s+(.+?)(?:\?|؟)?$/i)
+    if (fiQueryMatch) {
+      const searchQuery = fiQueryMatch[1].trim()
+      console.log('🚀 [DIRECT HANDLER] "في X" query:', searchQuery, 'provider:', selected_provider_id)
+
+      const supabase = await createClient()
+
+      // If we have a selected provider, search in it
+      if (selected_provider_id && isValidUUID(selected_provider_id)) {
+        // Search in selected provider
+        const { data: items } = await supabase
+          .from('menu_items')
+          .select('id, name_ar, price, has_variants')
+          .eq('provider_id', selected_provider_id)
+          .eq('is_available', true)
+          .or('has_stock.eq.true,has_stock.is.null')
+          .ilike('name_ar', `%${searchQuery}%`)
+          .limit(10)
+
+        // Also try with Arabic normalization if no results
+        let filteredItems = items || []
+        if (filteredItems.length === 0) {
+          const { data: allItems } = await supabase
+            .from('menu_items')
+            .select('id, name_ar, price, has_variants')
+            .eq('provider_id', selected_provider_id)
+            .eq('is_available', true)
+            .or('has_stock.eq.true,has_stock.is.null')
+            .limit(50)
+
+          filteredItems = filterByNormalizedArabic(allItems || [], searchQuery, (item) => [item.name_ar])
+        }
+
+        if (filteredItems.length > 0) {
+          // Get provider name
+          const { data: provider } = await supabase
+            .from('providers')
+            .select('name_ar')
+            .eq('id', selected_provider_id)
+            .single()
+
+          return Response.json({
+            reply: `أيوه موجود ${searchQuery} عند ${provider?.name_ar || 'المطعم'} 👇`,
+            quick_replies: filteredItems.slice(0, 8).map(item => ({
+              title: `${item.name_ar} (${item.price} ج.م)`,
+              payload: `item:${item.id}`,
+            })),
+            selected_provider_id,
+            selected_category,
+            memory,
+          })
+        } else {
+          // Get provider name for better message
+          const { data: provider } = await supabase
+            .from('providers')
+            .select('name_ar')
+            .eq('id', selected_provider_id)
+            .single()
+
+          return Response.json({
+            reply: `مش لاقي ${searchQuery} في ${provider?.name_ar || 'المتجر ده'}. تحب تدور على حاجة تانية؟`,
+            quick_replies: [
+              { title: '📋 شوف المنيو', payload: `provider:${selected_provider_id}` },
+              { title: '🔍 ابحث في مكان تاني', payload: 'categories' },
+            ],
+            selected_provider_id,
+            selected_category,
+            memory,
+          })
+        }
+      } else {
+        // No provider selected - search city-wide
+        const { data: providers } = await supabase
+          .from('providers')
+          .select('id')
+          .eq('city_id', city_id)
+          .eq('status', 'open')
+
+        if (providers && providers.length > 0) {
+          const providerIds = providers.map(p => p.id)
+
+          const { data: items } = await supabase
+            .from('menu_items')
+            .select('id, name_ar, price, provider_id, providers(name_ar)')
+            .in('provider_id', providerIds)
+            .eq('is_available', true)
+            .or('has_stock.eq.true,has_stock.is.null')
+            .ilike('name_ar', `%${searchQuery}%`)
+            .limit(20)
+
+          // Also try with Arabic normalization if few results
+          let filteredItems = items || []
+          if (filteredItems.length < 3) {
+            const { data: allItems } = await supabase
+              .from('menu_items')
+              .select('id, name_ar, price, provider_id, providers(name_ar)')
+              .in('provider_id', providerIds)
+              .eq('is_available', true)
+              .or('has_stock.eq.true,has_stock.is.null')
+              .limit(100)
+
+            const normalized = filterByNormalizedArabic(allItems || [], searchQuery, (item) => [item.name_ar])
+            if (normalized.length > filteredItems.length) {
+              filteredItems = normalized
+            }
+          }
+
+          if (filteredItems.length > 0) {
+            // Group by provider
+            const byProvider = new Map<string, { name: string; items: typeof filteredItems }>()
+            for (const item of filteredItems) {
+              const providerData = item.providers as { name_ar: string } | { name_ar: string }[] | null
+              const providerName = Array.isArray(providerData) ? providerData[0]?.name_ar : providerData?.name_ar
+              if (!byProvider.has(item.provider_id)) {
+                byProvider.set(item.provider_id, { name: providerName || 'متجر', items: [] })
+              }
+              byProvider.get(item.provider_id)?.items.push(item)
+            }
+
+            const providerList = Array.from(byProvider.entries())
+              .map(([, data]) => data.name)
+              .slice(0, 3)
+              .join(' و')
+
+            return Response.json({
+              reply: `أيوه موجود ${searchQuery} عند ${providerList} 👇`,
+              quick_replies: filteredItems.slice(0, 8).map(item => {
+                const providerData = item.providers as { name_ar: string } | { name_ar: string }[] | null
+                const providerName = Array.isArray(providerData) ? providerData[0]?.name_ar : providerData?.name_ar
+                return {
+                  title: `${item.name_ar} (${item.price} ج.م) - ${providerName || ''}`,
+                  payload: `item:${item.id}`,
+                }
+              }),
+              selected_provider_id,
+              selected_category,
+              memory,
+            })
+          }
+        }
+
+        return Response.json({
+          reply: `مش لاقي ${searchQuery} دلوقتي. تحب تدور على حاجة تانية؟`,
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+    }
+
     // Handle provider name text (when user types provider name directly)
     // This is useful when user selects from search results like "الصفا" or "سلطان بيتزا"
     const providerNameMatch = lastUserMessage.match(/^(?:📍\s*)?(.+)$/)
@@ -1822,9 +2011,20 @@ function generateQuickRepliesFromToolResults(
         break
 
       case 'get_promotions':
+        // Handle new format: { promotions: [...], discounted_items: [...] }
+        const promoResult = result as { promotions?: unknown[]; discounted_items?: unknown[] }
+        const promotionsList = promoResult.promotions || (Array.isArray(result) ? result : [])
+        const discountedItemsList = promoResult.discounted_items || []
+
         // Generate promotion-related buttons
         // For specific promotions, show the affected products as item buttons
-        for (const promo of result.slice(0, 5)) {
+        for (const promo of (promotionsList as Array<{
+          applies_to?: string
+          affected_products?: Array<{ id: string; name_ar: string; price: number }>
+          discount_percentage?: number
+          provider_id?: string
+          providers?: { name_ar: string }
+        }>).slice(0, 5)) {
           if (promo.applies_to === 'specific' && promo.affected_products && Array.isArray(promo.affected_products)) {
             // Show affected products as item buttons
             for (const item of promo.affected_products.slice(0, 5)) {
@@ -1842,6 +2042,24 @@ function generateQuickRepliesFromToolResults(
             replies.push({
               title: `🎉 ${promo.providers.name_ar}`,
               payload: `provider:${promo.provider_id}`,
+            })
+          }
+        }
+
+        // Also add discounted items (product-level discounts)
+        for (const item of (discountedItemsList as Array<{
+          id: string
+          name_ar: string
+          price: number
+          discount_percentage: number
+          providers?: { name_ar: string }
+        }>).slice(0, 8)) {
+          if (item.id && item.name_ar) {
+            const priceText = item.price ? ` (${item.price} ج.م)` : ''
+            const discountText = item.discount_percentage ? ` -${item.discount_percentage}%` : ''
+            replies.push({
+              title: `🔥 ${item.name_ar}${priceText}${discountText}`,
+              payload: `item:${item.id}`,
             })
           }
         }
