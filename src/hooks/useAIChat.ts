@@ -101,6 +101,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null)
   const lastUserMessageRef = useRef<string>('')
+  const isInitializedRef = useRef(false)
 
   // Rehydrate store on client side (needed because skipHydration: true)
   useEffect(() => {
@@ -108,12 +109,17 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     setIsHydrated(true)
   }, [])
 
-  // Initialize with welcome message if empty (after hydration)
+  // Initialize with welcome message if empty (after hydration) - runs only once
   useEffect(() => {
-    if (isHydrated && messages.length === 0) {
-      setMessages([createWelcomeMessage(customerName)])
+    if (isHydrated && !isInitializedRef.current) {
+      isInitializedRef.current = true
+      // Check messages from store after rehydration
+      const currentMessages = useChatStore.getState().messages
+      if (currentMessages.length === 0) {
+        setMessages([createWelcomeMessage(customerName)])
+      }
     }
-  }, [isHydrated, messages.length, customerName, setMessages])
+  }, [isHydrated, customerName, setMessages])
 
   // Cart store
   const { addItem: cartAddItem } = useCart()
@@ -124,14 +130,6 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       abortControllerRef.current?.abort()
     }
   }, [])
-
-  // Update welcome message when customerName becomes available
-  useEffect(() => {
-    // Only update if the first message is the welcome message and no other messages yet
-    if (messages.length === 1 && messages[0].id === 'welcome' && customerName) {
-      setMessages([createWelcomeMessage(customerName)])
-    }
-  }, [customerName, messages, setMessages])
 
   /**
    * Send message to AI
