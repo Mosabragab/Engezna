@@ -96,17 +96,24 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [streamingContent, setStreamingContent] = useState('')
+  const [isHydrated, setIsHydrated] = useState(false)
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null)
   const lastUserMessageRef = useRef<string>('')
 
-  // Initialize with welcome message if empty
+  // Rehydrate store on client side (needed because skipHydration: true)
   useEffect(() => {
-    if (messages.length === 0) {
+    useChatStore.persist.rehydrate()
+    setIsHydrated(true)
+  }, [])
+
+  // Initialize with welcome message if empty (after hydration)
+  useEffect(() => {
+    if (isHydrated && messages.length === 0) {
       setMessages([createWelcomeMessage(customerName)])
     }
-  }, [messages.length, customerName, setMessages])
+  }, [isHydrated, messages.length, customerName, setMessages])
 
   // Cart store
   const { addItem: cartAddItem } = useCart()

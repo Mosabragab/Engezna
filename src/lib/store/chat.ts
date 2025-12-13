@@ -3,7 +3,7 @@
  */
 
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import type { ChatMessage } from '@/types/chat'
 
 interface QuickReply {
@@ -61,6 +61,20 @@ function createWelcomeMessage(customerName?: string): StoredChatMessage {
       '🥬 خضروات وفواكه',
     ],
   }
+}
+
+// Custom storage that handles SSR (no sessionStorage on server)
+const createNoopStorage = (): StateStorage => ({
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+})
+
+const getStorage = () => {
+  if (typeof window === 'undefined') {
+    return createNoopStorage()
+  }
+  return sessionStorage
 }
 
 export const useChatStore = create<ChatState>()(
@@ -130,13 +144,15 @@ export const useChatStore = create<ChatState>()(
     }),
     {
       name: 'engezna-chat-storage',
-      storage: createJSONStorage(() => sessionStorage), // Use sessionStorage to clear on browser close
+      storage: createJSONStorage(getStorage), // SSR-safe storage
       partialize: (state) => ({
         messages: state.messages,
         selectedProviderId: state.selectedProviderId,
         selectedProviderCategory: state.selectedProviderCategory,
         memory: state.memory,
       }),
+      // Skip hydration warnings
+      skipHydration: true,
     }
   )
 )
