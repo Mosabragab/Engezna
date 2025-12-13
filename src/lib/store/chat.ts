@@ -80,10 +80,17 @@ function createWelcomeMessage(customerName?: string): StoredChatMessage {
     content: `${greeting}\nأنا مساعد إنجزنا الذكي، معاك عشان أساعدك تطلب أكلك المفضل بأسرع وقت.\n\nعايز تطلب منين النهارده؟ 🏪`,
     timestamp: new Date(),
     suggestions: [
-      '🍕 مطاعم وكافيهات',
+      '🍽️ مطاعم وكافيهات',
       '🛒 سوبر ماركت',
-      '☕ البن والحلويات',
-      '🥬 خضروات وفواكه',
+      '🍰 البن والحلويات',
+      '🥦 خضروات وفواكه',
+    ],
+    // Quick replies with payloads for direct handling
+    quickReplies: [
+      { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+      { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+      { title: '🍰 البن والحلويات', payload: 'category:coffee_patisserie' },
+      { title: '🥦 خضروات وفواكه', payload: 'category:vegetables_fruits' },
     ],
   }
 }

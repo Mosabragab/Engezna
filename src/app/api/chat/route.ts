@@ -1510,6 +1510,68 @@ export async function POST(request: Request) {
       })
     }
 
+    // Handle category text buttons (in case sent as text instead of payload)
+    const categoryTextMap: Record<string, string> = {
+      '🍽️ مطاعم وكافيهات': 'restaurant_cafe',
+      '🍕 مطاعم وكافيهات': 'restaurant_cafe',
+      'مطاعم وكافيهات': 'restaurant_cafe',
+      '🛒 سوبر ماركت': 'grocery',
+      'سوبر ماركت': 'grocery',
+      '🍰 البن والحلويات': 'coffee_patisserie',
+      '☕ البن والحلويات': 'coffee_patisserie',
+      'البن والحلويات': 'coffee_patisserie',
+      '🥦 خضروات وفواكه': 'vegetables_fruits',
+      '🥬 خضروات وفواكه': 'vegetables_fruits',
+      'خضروات وفواكه': 'vegetables_fruits',
+    }
+
+    if (categoryTextMap[lastUserMessage]) {
+      const categoryCode = categoryTextMap[lastUserMessage]
+      console.log('🚀 [DIRECT HANDLER] category text:', lastUserMessage, '→', categoryCode)
+
+      const result = await handleCategoryPayload(categoryCode, city_id)
+      return Response.json({
+        reply: result.reply,
+        quick_replies: result.quick_replies,
+        cart_action: result.cart_action,
+        selected_provider_id: result.selected_provider_id || selected_provider_id,
+        selected_provider_category: selected_provider_category,
+        selected_category: result.selected_category || selected_category,
+        memory: result.memory || memory,
+      })
+    }
+
+    // Handle provider name text (when user types provider name directly)
+    // This is useful when user selects from search results like "الصفا" or "سلطان بيتزا"
+    const providerNameMatch = lastUserMessage.match(/^(?:📍\s*)?(.+)$/)
+    if (providerNameMatch && lastUserMessage.length <= 30 && !lastUserMessage.includes(':')) {
+      const potentialProviderName = providerNameMatch[1].trim()
+
+      // Check if this looks like a provider name (not a product search)
+      const isLikelyProviderName = !PRODUCT_SEARCH_KEYWORDS.some(kw => lastUserMessage.includes(kw)) &&
+                                    !GREETING_KEYWORDS.some(kw => lastUserMessage.includes(kw)) &&
+                                    !PROMOTION_KEYWORDS.some(kw => lastUserMessage.includes(kw))
+
+      if (isLikelyProviderName) {
+        // Try to resolve provider by name
+        const resolved = await resolveProviderByName(potentialProviderName, city_id)
+        if (resolved) {
+          console.log('🚀 [DIRECT HANDLER] provider name:', potentialProviderName, '→', resolved.id)
+
+          const result = await handleProviderPayload(resolved.id, city_id)
+          return Response.json({
+            reply: result.reply,
+            quick_replies: result.quick_replies,
+            cart_action: result.cart_action,
+            selected_provider_id: result.selected_provider_id || resolved.id,
+            selected_provider_category: selected_provider_category,
+            selected_category: selected_category,
+            memory: result.memory || memory,
+          })
+        }
+      }
+    }
+
     // =======================================================================
     // 🤖 GPT FALLBACK - For natural language that doesn't match payloads
     // =======================================================================
