@@ -16,7 +16,15 @@ interface ChatRequest {
   city_id: string
   selected_provider_id?: string
   selected_provider_category?: string
+  selected_category?: string // User's chosen category (restaurant_cafe, grocery, etc.)
   memory?: Record<string, unknown>
+}
+
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function isValidUUID(id: unknown): boolean {
+  return typeof id === 'string' && UUID_REGEX.test(id)
 }
 
 interface QuickReply {
@@ -134,6 +142,13 @@ async function handleToolCall(
     }
 
     case 'get_provider_menu': {
+      // Validate provider_id is a valid UUID
+      if (!isValidUUID(args.provider_id)) {
+        console.warn('🚨 [AI INVALID UUID] get_provider_menu provider_id:', args.provider_id)
+        result = { error: 'Invalid provider_id format', items: [] }
+        break
+      }
+
       const { data, error } = await supabase
         .from('menu_items')
         .select('id, name_ar, price, pricing_type, has_variants, price_from, image_url, description_ar, is_available, has_stock')
@@ -167,13 +182,24 @@ async function handleToolCall(
     }
 
     case 'search_in_provider': {
+      // Validate provider_id is a valid UUID
+      if (!isValidUUID(args.provider_id)) {
+        console.warn('🚨 [AI INVALID UUID] search_in_provider provider_id:', args.provider_id)
+        result = { error: 'Invalid provider_id format', items: [] }
+        break
+      }
+
+      const searchQuery = args.query as string || ''
+      // Combine filters: (has_stock=true OR has_stock IS NULL) AND (name OR description matches)
+      const combinedFilter = `and(or(has_stock.eq.true,has_stock.is.null),or(name_ar.ilike.%${searchQuery}%,name_en.ilike.%${searchQuery}%,description_ar.ilike.%${searchQuery}%))`
+
       const { data, error } = await supabase
         .from('menu_items')
         .select('id, name_ar, price, pricing_type, has_variants, image_url, is_available, has_stock')
         .eq('provider_id', args.provider_id as string)
         .eq('is_available', true)
-        .or('has_stock.eq.true,has_stock.is.null')
-        .or(`name_ar.ilike.%${args.query}%,name_en.ilike.%${args.query}%,description_ar.ilike.%${args.query}%`)
+        .or(`has_stock.eq.true,has_stock.is.null`)
+        .ilike('name_ar', `%${searchQuery}%`)
         .limit((args.limit as number) || 8)
 
       if (error) {
@@ -213,6 +239,13 @@ async function handleToolCall(
     }
 
     case 'get_menu_item_details': {
+      // Validate menu_item_id is a valid UUID
+      if (!isValidUUID(args.menu_item_id)) {
+        console.warn('🚨 [AI INVALID UUID] get_menu_item_details menu_item_id:', args.menu_item_id)
+        result = { error: 'Invalid menu_item_id format', item: null }
+        break
+      }
+
       const { data } = await supabase
         .from('menu_items')
         .select('*, providers(id, name_ar)')
@@ -224,6 +257,13 @@ async function handleToolCall(
     }
 
     case 'get_item_variants': {
+      // Validate menu_item_id is a valid UUID
+      if (!isValidUUID(args.menu_item_id)) {
+        console.warn('🚨 [AI INVALID UUID] get_item_variants menu_item_id:', args.menu_item_id)
+        result = { error: 'Invalid menu_item_id format', variants: [] }
+        break
+      }
+
       const { data } = await supabase
         .from('product_variants')
         .select('id, name_ar, price, is_default')
@@ -237,6 +277,13 @@ async function handleToolCall(
     }
 
     case 'get_variant_details': {
+      // Validate variant_id is a valid UUID
+      if (!isValidUUID(args.variant_id)) {
+        console.warn('🚨 [AI INVALID UUID] get_variant_details variant_id:', args.variant_id)
+        result = { error: 'Invalid variant_id format', variant: null }
+        break
+      }
+
       const { data } = await supabase
         .from('product_variants')
         .select('*')
@@ -249,18 +296,48 @@ async function handleToolCall(
 
     case 'get_promotions': {
       const now = new Date().toISOString()
+
+      // If provider_id is specified, validate it
+      if (args.provider_id && !isValidUUID(args.provider_id)) {
+        console.warn('🚨 [AI INVALID UUID] get_promotions provider_id:', args.provider_id)
+        result = { error: 'Invalid provider_id format', promotions: [] }
+        break
+      }
+
+      // Query promotions with provider join for city filtering
+      // promotions table has NO city_id, so we join via providers
       let query = supabase
         .from('promotions')
-        .select('*, providers(id, name_ar)')
+        .select('*, providers!inner(id, name_ar, city_id)')
         .eq('is_active', true)
         .lte('start_date', now)
         .gte('end_date', now)
+        .eq('providers.city_id', cityId) // Filter by city via provider
 
       if (args.provider_id) {
         query = query.eq('provider_id', args.provider_id as string)
       }
 
-      const { data } = await query.limit((args.limit as number) || 10)
+      const { data, error } = await query.limit((args.limit as number) || 10)
+
+      if (error) {
+        console.error('❌ [AI DB ERROR] get_promotions:', error)
+      }
+
+      // 📦 Log promotions result
+      console.log('📦 [AI PROMOTIONS RESULT]', {
+        tool: 'get_promotions',
+        cityId,
+        providerId: args.provider_id,
+        count: data?.length ?? 0,
+        promotions: data?.map(p => ({
+          id: p.id,
+          title: p.title_ar || p.title,
+          provider: p.providers?.name_ar,
+          discount: p.discount_percentage || p.discount_amount,
+        })),
+      })
+
       result = data || []
       break
     }
@@ -346,7 +423,8 @@ async function handleToolCall(
  */
 async function processWithTools(
   messages: ChatCompletionMessageParam[],
-  cityId: string
+  cityId: string,
+  contextInfo: string
 ): Promise<{
   content: string
   quick_replies?: QuickReply[]
@@ -354,11 +432,14 @@ async function processWithTools(
 }> {
   const openai = getOpenAI()
 
+  // Combine SYSTEM_PROMPT with context (single system message to avoid confusion)
+  const fullSystemPrompt = `${SYSTEM_PROMPT}\n\n${contextInfo}`
+
   // First call with tools
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: fullSystemPrompt },
       ...messages,
     ],
     tools,
@@ -397,11 +478,11 @@ async function processWithTools(
     })
   }
 
-  // Second call with tool results
+  // Second call with tool results (same system prompt)
   const followUpResponse = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: fullSystemPrompt },
       ...messages,
       assistantMessage as ChatCompletionMessageParam,
       ...toolResults,
@@ -458,7 +539,18 @@ function parseAssistantResponse(content: string): {
 export async function POST(request: Request) {
   try {
     const body: ChatRequest = await request.json()
-    const { messages, customer_id, city_id, selected_provider_id, selected_provider_category, memory } = body
+    const { messages, customer_id, city_id, selected_provider_id, selected_provider_category, selected_category, memory } = body
+
+    // 🔍 Log incoming request
+    console.log('🔍 [AI REQUEST]', {
+      cityId: city_id,
+      customerId: customer_id,
+      selectedProviderId: selected_provider_id,
+      selectedProviderCategory: selected_provider_category,
+      selectedCategory: selected_category,
+      messageCount: messages?.length,
+      lastMessage: messages?.[messages.length - 1]?.content?.slice(0, 100),
+    })
 
     // Validate city_id
     if (!city_id) {
@@ -466,6 +558,11 @@ export async function POST(request: Request) {
         reply: 'اختار المدينة من فوق الأول 🏙️',
         quick_replies: [],
       })
+    }
+
+    // Validate selected_provider_id if provided
+    if (selected_provider_id && !isValidUUID(selected_provider_id)) {
+      console.warn('🚨 [AI INVALID UUID] selected_provider_id:', selected_provider_id)
     }
 
     // Rate limiting
@@ -477,33 +574,33 @@ export async function POST(request: Request) {
       }, { status: 429 })
     }
 
-    // Build context message
+    // Build context as part of system prompt (NOT as a separate message)
+    // This avoids the "double system message" issue
     const contextInfo = `
-[Context]
+[Current Context - REQUIRED for all tool calls]
 city_id: ${city_id}
 ${customer_id ? `customer_id: ${customer_id}` : ''}
-${selected_provider_id ? `selected_provider_id: ${selected_provider_id}` : ''}
+${selected_provider_id && isValidUUID(selected_provider_id) ? `selected_provider_id: ${selected_provider_id}` : ''}
 ${selected_provider_category ? `selected_provider_category: ${selected_provider_category}` : ''}
+${selected_category ? `selected_category: ${selected_category}` : ''}
 ${memory ? `memory: ${JSON.stringify(memory)}` : ''}
 `
 
-    // Convert messages to OpenAI format
-    const openaiMessages: ChatCompletionMessageParam[] = [
-      { role: 'system', content: contextInfo },
-      ...messages.slice(-10).map(m => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })),
-    ]
+    // Convert messages to OpenAI format (NO extra system message - context is in SYSTEM_PROMPT)
+    const openaiMessages: ChatCompletionMessageParam[] = messages.slice(-10).map(m => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    }))
 
-    // Process with tools
-    const result = await processWithTools(openaiMessages, city_id)
+    // Process with tools (context is passed as part of the system prompt)
+    const result = await processWithTools(openaiMessages, city_id, contextInfo)
 
     // Generate default quick replies if none provided
     if (!result.quick_replies || result.quick_replies.length === 0) {
       result.quick_replies = generateDefaultQuickReplies(
         messages[messages.length - 1]?.content || '',
-        selected_provider_id
+        selected_provider_id,
+        selected_category
       )
     }
 
@@ -513,6 +610,7 @@ ${memory ? `memory: ${JSON.stringify(memory)}` : ''}
       cart_action: result.cart_action,
       selected_provider_id,
       selected_provider_category,
+      selected_category,
       memory,
     })
 
@@ -528,12 +626,21 @@ ${memory ? `memory: ${JSON.stringify(memory)}` : ''}
 /**
  * Generate default quick replies based on context
  */
-function generateDefaultQuickReplies(lastMessage: string, providerId?: string): QuickReply[] {
+function generateDefaultQuickReplies(lastMessage: string, providerId?: string, selectedCategory?: string): QuickReply[] {
   // If we have a provider selected, offer menu navigation
-  if (providerId) {
+  if (providerId && isValidUUID(providerId)) {
     return [
       { title: '📋 شوف المنيو', payload: `provider:${providerId}` },
       { title: '🔍 ابحث', payload: 'search' },
+      { title: '🏠 الأقسام', payload: 'categories' },
+    ]
+  }
+
+  // If category is selected but no provider, offer to list providers
+  if (selectedCategory) {
+    return [
+      { title: '🔍 اعرض المحلات', payload: `category:${selectedCategory}` },
+      { title: '🔥 العروض', payload: 'promotions' },
       { title: '🏠 الأقسام', payload: 'categories' },
     ]
   }

@@ -22,7 +22,8 @@ interface ChatState {
 
   // Conversation state
   selectedProviderId?: string
-  selectedProviderCategory?: string
+  selectedProviderCategory?: string // Category of the selected provider (from providers.category)
+  selectedCategory?: string // User's chosen category from quick buttons (restaurant_cafe, grocery, etc.)
   memory: Record<string, unknown>
 
   // Actions
@@ -34,6 +35,7 @@ interface ChatState {
   // State management
   setSelectedProviderId: (id: string | undefined) => void
   setSelectedProviderCategory: (category: string | undefined) => void
+  setSelectedCategory: (category: string | undefined) => void
   setMemory: (memory: Record<string, unknown>) => void
   resetConversationState: () => void
 }
@@ -83,6 +85,7 @@ export const useChatStore = create<ChatState>()(
       messages: [],
       selectedProviderId: undefined,
       selectedProviderCategory: undefined,
+      selectedCategory: undefined,
       memory: {},
 
       addMessage: (message) =>
@@ -123,6 +126,7 @@ export const useChatStore = create<ChatState>()(
           messages: [],
           selectedProviderId: undefined,
           selectedProviderCategory: undefined,
+          selectedCategory: undefined,
           memory: {},
         }),
 
@@ -132,6 +136,9 @@ export const useChatStore = create<ChatState>()(
       setSelectedProviderCategory: (category) =>
         set({ selectedProviderCategory: category }),
 
+      setSelectedCategory: (category) =>
+        set({ selectedCategory: category }),
+
       setMemory: (memory) =>
         set({ memory }),
 
@@ -139,6 +146,7 @@ export const useChatStore = create<ChatState>()(
         set({
           selectedProviderId: undefined,
           selectedProviderCategory: undefined,
+          selectedCategory: undefined,
           memory: {},
         }),
     }),
@@ -149,6 +157,7 @@ export const useChatStore = create<ChatState>()(
         messages: state.messages,
         selectedProviderId: state.selectedProviderId,
         selectedProviderCategory: state.selectedProviderCategory,
+        selectedCategory: state.selectedCategory,
         memory: state.memory,
       }),
       // Skip hydration warnings

@@ -23,6 +23,7 @@ interface ChatAPIRequest {
   city_id: string
   selected_provider_id?: string
   selected_provider_category?: string
+  selected_category?: string // User's chosen category (restaurant_cafe, grocery, etc.)
   memory?: Record<string, unknown>
 }
 
@@ -85,9 +86,11 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     clearMessages,
     selectedProviderId,
     selectedProviderCategory,
+    selectedCategory,
     memory,
     setSelectedProviderId,
     setSelectedProviderCategory,
+    setSelectedCategory,
     setMemory,
   } = useChatStore()
 
@@ -174,6 +177,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         city_id: cityId || '',
         selected_provider_id: selectedProviderId,
         selected_provider_category: selectedProviderCategory,
+        selected_category: selectedCategory,
         memory,
       }
 
@@ -285,7 +289,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       setIsStreaming(false)
       setStreamingContent('')
     }
-  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, memory, cartAddItem, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
+  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
 
   /**
    * Send quick action
@@ -355,12 +359,21 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       // Add current message with PAYLOAD for API
       conversationHistory.push({ role: 'user', content: messageToSend })
 
+      // Parse category payload and update selected_category
+      let categoryToSend = selectedCategory
+      if (messageToSend.startsWith('category:')) {
+        const categoryCode = messageToSend.replace('category:', '')
+        setSelectedCategory(categoryCode)
+        categoryToSend = categoryCode
+      }
+
       const requestBody: ChatAPIRequest = {
         messages: conversationHistory,
         customer_id: userId,
         city_id: cityId || '',
         selected_provider_id: selectedProviderId,
         selected_provider_category: selectedProviderCategory,
+        selected_category: categoryToSend,
         memory,
       }
 
@@ -465,7 +478,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, memory, cartAddItem, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
+  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, addMessage, setSelectedProviderId, setSelectedProviderCategory, setSelectedCategory, setMemory])
 
   /**
    * Add product to cart from chat
