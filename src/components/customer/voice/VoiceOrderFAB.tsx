@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { TextChat } from './TextChat'
-import { useCart, MenuItem, Provider } from '@/lib/store/cart'
-import { CartItem } from '@/hooks/customer/useVoiceOrder'
+import { SmartAssistant } from '@/components/customer/chat/SmartAssistant'
+import { createClient } from '@/lib/supabase/client'
 
 interface ChatFABProps {
   className?: string
@@ -24,7 +23,41 @@ export function ChatFAB({
   const locale = useLocale()
   const [internalIsOpen, setInternalIsOpen] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
-  const addItem = useCart((state) => state.addItem)
+  const [userId, setUserId] = useState<string | undefined>()
+  const [cityId, setCityId] = useState<string | undefined>()
+  const [governorateId, setGovernorateId] = useState<string | undefined>()
+  const [customerName, setCustomerName] = useState<string | undefined>()
+
+  // Fetch user data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (user) {
+          setUserId(user.id)
+
+          // Fetch profile for name and city
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, city_id, governorate_id')
+            .eq('id', user.id)
+            .single()
+
+          if (profile) {
+            setCustomerName(profile.full_name?.split(' ')[0])
+            setCityId(profile.city_id)
+            setGovernorateId(profile.governorate_id)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+      }
+    }
+
+    fetchUserData()
+  }, [])
 
   // Show tooltip for new users
   useEffect(() => {
@@ -43,46 +76,6 @@ export function ChatFAB({
     } else {
       setInternalIsOpen(value)
     }
-  }
-
-  const handleAddToCart = (items: CartItem[]) => {
-    if (items.length === 0) return
-
-    // Create provider object from first item
-    const firstItem = items[0]
-    const provider: Provider = {
-      id: firstItem.providerId,
-      name_ar: firstItem.providerNameAr || firstItem.providerName,
-      name_en: firstItem.providerName,
-      delivery_fee: 0, // Will be updated when loading provider details
-      min_order_amount: 0,
-      estimated_delivery_time_min: 30,
-    }
-
-    items.forEach((item) => {
-      const menuItem: MenuItem = {
-        id: item.productId,
-        provider_id: item.providerId,
-        name_ar: item.productNameAr || item.productName,
-        name_en: item.productName,
-        description_ar: null,
-        description_en: null,
-        price: item.price,
-        image_url: null,
-        is_available: true,
-        is_vegetarian: false,
-        is_spicy: false,
-        preparation_time_min: 15,
-      }
-
-      // Add each item with its quantity
-      for (let i = 0; i < item.quantity; i++) {
-        addItem(menuItem, provider)
-      }
-    })
-
-    // Close the chat after adding to cart
-    setIsOpen(false)
   }
 
   const handleClick = () => {
@@ -115,16 +108,19 @@ export function ChatFAB({
             )}
             aria-label={locale === 'ar' ? 'دردش واطلب' : 'Chat and Order'}
           >
-            <MessageCircle className="w-6 h-6" />
+            <Sparkles className="w-6 h-6" />
           </button>
         </>
       )}
 
-      {/* Text Chat Modal */}
-      <TextChat
+      {/* Smart Assistant Modal - NEW SYSTEM */}
+      <SmartAssistant
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        onAddToCart={handleAddToCart}
+        userId={userId}
+        cityId={cityId}
+        governorateId={governorateId}
+        customerName={customerName}
       />
     </>
   )
