@@ -35,7 +35,9 @@ interface PendingVariant {
 export interface ChatMemory {
   pending_item?: PendingItem
   pending_variant?: PendingVariant
+  pending_quantity?: number
   awaiting_quantity?: boolean
+  awaiting_confirmation?: boolean
   [key: string]: unknown
 }
 

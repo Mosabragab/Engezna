@@ -51,6 +51,7 @@ interface ChatAPIResponse {
   selected_provider_category?: string
   selected_category?: string
   memory?: Record<string, unknown>
+  navigate_to?: string // Signal to navigate to a specific route
 }
 
 export interface UseAIChatOptions {
@@ -67,6 +68,7 @@ export interface UseAIChatReturn {
   isStreaming: boolean
   error: string | null
   streamingContent: string
+  pendingNavigation: string | null // Route to navigate to (component should handle and clear)
 
   // Actions
   sendMessage: (message: string) => Promise<void>
@@ -74,6 +76,7 @@ export interface UseAIChatReturn {
   addToCartFromChat: (product: ChatProduct, quantity?: number) => void
   clearChat: () => void
   retryLastMessage: () => Promise<void>
+  clearPendingNavigation: () => void
 }
 
 export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
@@ -101,6 +104,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
   const [error, setError] = useState<string | null>(null)
   const [streamingContent, setStreamingContent] = useState('')
   const [isHydrated, setIsHydrated] = useState(false)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -211,6 +215,11 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       // Memory must be updated to preserve pending_item, pending_variant, awaiting_quantity
       if (data.memory !== undefined) {
         setMemory(data.memory)
+      }
+
+      // Handle navigation request (component should handle actual navigation)
+      if (data.navigate_to) {
+        setPendingNavigation(data.navigate_to)
       }
 
       // Handle cart action if present
@@ -413,6 +422,11 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         setMemory(data.memory)
       }
 
+      // Handle navigation request (component should handle actual navigation)
+      if (data.navigate_to) {
+        setPendingNavigation(data.navigate_to)
+      }
+
       // Handle cart action if present
       if (data.cart_action && data.cart_action.type === 'ADD_ITEM') {
         const cartAction = data.cart_action
@@ -565,17 +579,26 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     }
   }, [sendMessage, messages, setMessages])
 
+  /**
+   * Clear pending navigation (after component handles navigation)
+   */
+  const clearPendingNavigation = useCallback(() => {
+    setPendingNavigation(null)
+  }, [])
+
   return {
     messages,
     isLoading,
     isStreaming,
     error,
     streamingContent,
+    pendingNavigation,
     sendMessage,
     sendQuickAction,
     addToCartFromChat,
     clearChat,
     retryLastMessage,
+    clearPendingNavigation,
   }
 }
 

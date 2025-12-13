@@ -31,7 +31,9 @@ interface PendingVariant {
 interface ChatMemory {
   pending_item?: PendingItem
   pending_variant?: PendingVariant
+  pending_quantity?: number
   awaiting_quantity?: boolean
+  awaiting_confirmation?: boolean
   [key: string]: unknown
 }
 
@@ -400,6 +402,7 @@ async function handleVariantPayload(
 
 /**
  * Handle qty:x payload or quantity input when awaiting_quantity is true
+ * NOW: Shows confirmation instead of directly adding to cart
  */
 function handleQuantityInput(
   quantity: number,
@@ -415,20 +418,57 @@ function handleQuantityInput(
 
   const finalPrice = pending_variant?.price || pending_item.price
   const variantText = pending_variant ? ` - ${pending_variant.name_ar}` : ''
+  const totalPrice = quantity * finalPrice
+
+  // Show confirmation instead of adding directly
+  return {
+    reply: `📋 تأكيد الطلب:\n\n${quantity}x ${pending_item.name_ar}${variantText}\n💰 الإجمالي: ${totalPrice} ج.م\n\nتأكيد الإضافة للسلة؟`,
+    quick_replies: [
+      { title: '✅ تأكيد وإضافة', payload: 'confirm_add' },
+      { title: '🔄 تغيير الكمية', payload: `item:${pending_item.id}` },
+      { title: '🔙 رجوع للمنيو', payload: `provider:${pending_item.provider_id}` },
+    ],
+    selected_provider_id: pending_item.provider_id,
+    memory: {
+      // Keep pending items and store quantity for confirmation
+      pending_item,
+      pending_variant,
+      pending_quantity: quantity,
+      awaiting_quantity: false,
+      awaiting_confirmation: true,
+    },
+  }
+}
+
+/**
+ * Handle confirm_add payload - Actually add item to cart after user confirmation
+ */
+function handleConfirmAdd(memory: ChatMemory): PayloadHandlerResult | null {
+  const { pending_item, pending_variant, pending_quantity } = memory
+
+  if (!pending_item || !pending_quantity) {
+    return null
+  }
+
+  console.log('✅ [CONFIRM] Adding to cart:', pending_quantity, 'x', pending_item.name_ar)
+
+  const finalPrice = pending_variant?.price || pending_item.price
+  const variantText = pending_variant ? ` - ${pending_variant.name_ar}` : ''
+  const totalPrice = pending_quantity * finalPrice
 
   const cart_action: CartAction = {
     type: 'ADD_ITEM',
     provider_id: pending_item.provider_id,
     menu_item_id: pending_item.id,
     menu_item_name_ar: pending_item.name_ar,
-    quantity,
+    quantity: pending_quantity,
     unit_price: finalPrice,
     variant_id: pending_variant?.id,
     variant_name_ar: pending_variant?.name_ar,
   }
 
   return {
-    reply: `تمام! ✅ ضفت ${quantity}x ${pending_item.name_ar}${variantText} للسلة (${quantity * finalPrice} ج.م)\n\nتحب تضيف حاجة تانية؟`,
+    reply: `تمام! ✅ ضفت ${pending_quantity}x ${pending_item.name_ar}${variantText} للسلة (${totalPrice} ج.م)\n\nتحب تضيف حاجة تانية؟`,
     quick_replies: [
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
       { title: '➕ أضف المزيد', payload: `provider:${pending_item.provider_id}` },
@@ -437,10 +477,12 @@ function handleQuantityInput(
     cart_action,
     selected_provider_id: pending_item.provider_id,
     memory: {
-      // Clear pending items after adding to cart
+      // Clear all pending items after confirmed add to cart
       pending_item: undefined,
       pending_variant: undefined,
+      pending_quantity: undefined,
       awaiting_quantity: false,
+      awaiting_confirmation: false,
     },
   }
 }
@@ -1493,6 +1535,40 @@ export async function POST(request: Request) {
       }
     }
 
+    // Handle confirm_add payload (user confirmed adding to cart)
+    if (lastUserMessage === 'confirm_add' && memory?.awaiting_confirmation && memory?.pending_item) {
+      console.log('🚀 [DIRECT HANDLER] confirm_add')
+
+      const result = handleConfirmAdd(memory as ChatMemory)
+      if (result) {
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory,
+        })
+      }
+    }
+
+    // Handle go_to_cart payload (navigate to cart - frontend handles actual navigation)
+    if (lastUserMessage === 'go_to_cart') {
+      console.log('🚀 [DIRECT HANDLER] go_to_cart')
+      return Response.json({
+        reply: 'تمام! روح للسلة عشان تكمل طلبك 🛒',
+        quick_replies: [
+          { title: '🛒 فتح السلة', payload: 'navigate:/checkout' },
+          { title: '➕ أضف المزيد', payload: 'categories' },
+        ],
+        navigate_to: '/checkout', // Signal to frontend to navigate
+        selected_provider_id,
+        selected_category,
+        memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false, awaiting_confirmation: false },
+      })
+    }
+
     // Handle special payloads
     if (lastUserMessage === 'categories' || lastUserMessage === 'الأقسام') {
       console.log('🚀 [DIRECT HANDLER] categories')
@@ -1506,7 +1582,7 @@ export async function POST(request: Request) {
         ],
         selected_provider_id: undefined,
         selected_category: undefined,
-        memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false },
+        memory: { ...memory, pending_item: undefined, pending_variant: undefined, pending_quantity: undefined, awaiting_quantity: false, awaiting_confirmation: false },
       })
     }
 
