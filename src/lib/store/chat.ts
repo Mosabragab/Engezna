@@ -16,6 +16,29 @@ export interface StoredChatMessage extends ChatMessage {
   quickReplies?: QuickReply[]
 }
 
+// Memory structure for pending items
+interface PendingItem {
+  id: string
+  name_ar: string
+  price: number
+  provider_id: string
+  provider_name_ar?: string
+  has_variants?: boolean
+}
+
+interface PendingVariant {
+  id: string
+  name_ar: string
+  price: number
+}
+
+export interface ChatMemory {
+  pending_item?: PendingItem
+  pending_variant?: PendingVariant
+  awaiting_quantity?: boolean
+  [key: string]: unknown
+}
+
 interface ChatState {
   // Messages
   messages: StoredChatMessage[]
@@ -24,7 +47,7 @@ interface ChatState {
   selectedProviderId?: string
   selectedProviderCategory?: string // Category of the selected provider (from providers.category)
   selectedCategory?: string // User's chosen category from quick buttons (restaurant_cafe, grocery, etc.)
-  memory: Record<string, unknown>
+  memory: ChatMemory
 
   // Actions
   addMessage: (message: StoredChatMessage) => void
@@ -36,7 +59,7 @@ interface ChatState {
   setSelectedProviderId: (id: string | undefined) => void
   setSelectedProviderCategory: (category: string | undefined) => void
   setSelectedCategory: (category: string | undefined) => void
-  setMemory: (memory: Record<string, unknown>) => void
+  setMemory: (memory: ChatMemory) => void
   resetConversationState: () => void
 }
 

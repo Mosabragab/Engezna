@@ -49,6 +49,7 @@ interface ChatAPIResponse {
   cart_action?: CartAction
   selected_provider_id?: string
   selected_provider_category?: string
+  selected_category?: string
   memory?: Record<string, unknown>
 }
 
@@ -197,13 +198,18 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       const data: ChatAPIResponse = await response.json()
 
       // Update conversation state from response
-      if (data.selected_provider_id) {
-        setSelectedProviderId(data.selected_provider_id)
+      // Always update these values (even if undefined to clear them)
+      if (data.selected_provider_id !== undefined) {
+        setSelectedProviderId(data.selected_provider_id || undefined)
       }
-      if (data.selected_provider_category) {
-        setSelectedProviderCategory(data.selected_provider_category)
+      if (data.selected_provider_category !== undefined) {
+        setSelectedProviderCategory(data.selected_provider_category || undefined)
       }
-      if (data.memory) {
+      if (data.selected_category !== undefined) {
+        setSelectedCategory(data.selected_category || undefined)
+      }
+      // Memory must be updated to preserve pending_item, pending_variant, awaiting_quantity
+      if (data.memory !== undefined) {
         setMemory(data.memory)
       }
 
@@ -392,13 +398,18 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       const data: ChatAPIResponse = await response.json()
 
       // Update conversation state from response
-      if (data.selected_provider_id) {
-        setSelectedProviderId(data.selected_provider_id)
+      // Always update these values (even if undefined to clear them)
+      if (data.selected_provider_id !== undefined) {
+        setSelectedProviderId(data.selected_provider_id || undefined)
       }
-      if (data.selected_provider_category) {
-        setSelectedProviderCategory(data.selected_provider_category)
+      if (data.selected_provider_category !== undefined) {
+        setSelectedProviderCategory(data.selected_provider_category || undefined)
       }
-      if (data.memory) {
+      if (data.selected_category !== undefined) {
+        setSelectedCategory(data.selected_category || undefined)
+      }
+      // Memory must be updated to preserve pending_item, pending_variant, awaiting_quantity
+      if (data.memory !== undefined) {
         setMemory(data.memory)
       }
 

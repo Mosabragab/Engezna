@@ -1,6 +1,6 @@
 # مساعد إنجزنا الذكي - AI Smart Assistant
 
-> **حالة المشروع:** قيد الاختبار - تم إضافة Intent Router
+> **حالة المشروع:** ✅ محدّث - تم إضافة Direct Payload Handlers
 
 ---
 
@@ -12,7 +12,11 @@
 - استعراض العروض
 - إضافة المنتجات للسلة
 
-### الميزات الجديدة (الجلسة الحالية)
+### الميزات الجديدة (13 ديسمبر 2025)
+- **🚀 Direct Payload Handlers**: معالجة أزرار الاختيار (category, provider, item, variant) مباشرة بدون GPT
+- **💾 Memory System**: حفظ pending_item و pending_variant في الذاكرة لمتابعة السياق
+- **🔢 Arabic Quantity Parser**: تحويل الأرقام العربية (واحد، اتنين، ٢) للكمية
+- **⚡ Faster Response**: ردود فورية لأزرار الاختيار بدون استدعاء OpenAI
 - **Intent Router**: نظام ذكي لاكتشاف نية المستخدم وإجبار استدعاء Tools
 - **Quick Replies من DB**: توليد أزرار تلقائية من نتائج البحث
 - **دعم أفضل للأسماء العربية**: البحث عن متاجر بالاسم مثل "الصفا"
@@ -223,8 +227,64 @@ interface ChatAPIResponse {
 
 - [ ] اختبار شامل للسيناريوهات في Production
 - [ ] إضافة caching للنتائج المتكررة
-- [ ] اختبار الـ cart_action مع variants
 - [ ] تحسين أداء البحث للمدن الكبيرة
+
+---
+
+## نظام Direct Payload Handlers (جديد)
+
+### كيف يعمل؟
+
+بدلاً من إرسال كل رسالة لـ GPT، النظام الجديد يعالج الأزرار مباشرة:
+
+```
+User clicks "حواوشي لحمة (55 ج.م)" → item:abc123
+                                          ↓
+                               Direct Handler (NO GPT)
+                                          ↓
+                           Get item details + variants
+                                          ↓
+                        Show variant buttons + save to memory
+```
+
+### Payloads المدعومة
+
+| Payload | Handler | الوصف |
+|---------|---------|-------|
+| `category:xxx` | `handleCategoryPayload()` | عرض المتاجر في القسم |
+| `provider:xxx` | `handleProviderPayload()` | عرض منيو المتجر |
+| `item:xxx` | `handleItemPayload()` | عرض variants أو سؤال الكمية |
+| `variant:xxx` | `handleVariantPayload()` | سؤال الكمية |
+| `qty:x` | `handleQuantityInput()` | إضافة للسلة |
+
+### Memory System
+
+```typescript
+interface ChatMemory {
+  pending_item?: {
+    id: string
+    name_ar: string
+    price: number
+    provider_id: string
+    provider_name_ar?: string
+    has_variants?: boolean
+  }
+  pending_variant?: {
+    id: string
+    name_ar: string
+    price: number
+  }
+  awaiting_quantity?: boolean
+}
+```
+
+### Arabic Quantity Parser
+
+يدعم تحويل:
+- أرقام إنجليزية: `1`, `2`, `3`...
+- أرقام عربية: `١`, `٢`, `٣`...
+- كلمات: `واحد`, `اتنين`, `تلاته`...
+- كلمات شائعة: `عادي` = 1
 
 ---
 
@@ -252,4 +312,4 @@ interface ChatAPIResponse {
 
 ---
 
-*آخر تحديث: 13 ديسمبر 2025 - تم إضافة Intent Router*
+*آخر تحديث: 13 ديسمبر 2025 - تم إضافة Direct Payload Handlers و Memory System*

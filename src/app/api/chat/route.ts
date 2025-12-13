@@ -2,6 +2,7 @@
  * AI Chat API Route - New Implementation
  * Uses GPT-4o-mini with Function Calling + Streaming
  * With Zapier-style Intent Router for tool forcing
+ * + Direct Payload Handlers for item/variant/provider buttons
  */
 
 import { OpenAI } from 'openai'
@@ -12,6 +13,28 @@ import { normalizeArabic, filterByNormalizedArabic, logNormalization } from '@/l
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions'
 
 // Types
+interface PendingItem {
+  id: string
+  name_ar: string
+  price: number
+  provider_id: string
+  provider_name_ar?: string
+  has_variants?: boolean
+}
+
+interface PendingVariant {
+  id: string
+  name_ar: string
+  price: number
+}
+
+interface ChatMemory {
+  pending_item?: PendingItem
+  pending_variant?: PendingVariant
+  awaiting_quantity?: boolean
+  [key: string]: unknown
+}
+
 interface ChatRequest {
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
   customer_id?: string
@@ -19,7 +42,7 @@ interface ChatRequest {
   selected_provider_id?: string
   selected_provider_category?: string
   selected_category?: string // User's chosen category (restaurant_cafe, grocery, etc.)
-  memory?: Record<string, unknown>
+  memory?: ChatMemory
 }
 
 // UUID validation regex
@@ -27,6 +50,399 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 function isValidUUID(id: unknown): boolean {
   return typeof id === 'string' && UUID_REGEX.test(id)
+}
+
+// =============================================================================
+// ARABIC QUANTITY PARSER - Converts Arabic words/numbers to integers
+// =============================================================================
+
+const ARABIC_NUMBER_WORDS: Record<string, number> = {
+  // Arabic words
+  'واحد': 1, 'واحده': 1, 'واحدة': 1,
+  'اتنين': 2, 'اثنين': 2, 'اتنان': 2,
+  'تلاته': 3, 'ثلاثه': 3, 'ثلاثة': 3, 'تلاتة': 3,
+  'اربعه': 4, 'أربعه': 4, 'أربعة': 4, 'اربعة': 4,
+  'خمسه': 5, 'خمسة': 5,
+  'سته': 6, 'ستة': 6, 'ستّة': 6,
+  'سبعه': 7, 'سبعة': 7,
+  'تمنيه': 8, 'ثمانية': 8, 'تمانية': 8,
+  'تسعه': 9, 'تسعة': 9,
+  'عشره': 10, 'عشرة': 10,
+  // Common phrases
+  'كام': 0, // Question, not a quantity
+  'عاديه': 1, 'عادي': 1, 'عادية': 1, // "normal" = 1
+  'كتير': 5, // "many" = 5 as default
+}
+
+/**
+ * Parse Arabic quantity from user message
+ * Returns 0 if not a valid quantity
+ */
+function parseArabicQuantity(message: string): number {
+  const trimmed = message.trim().toLowerCase()
+
+  // Check for Arabic word numbers
+  if (ARABIC_NUMBER_WORDS[trimmed] !== undefined) {
+    return ARABIC_NUMBER_WORDS[trimmed]
+  }
+
+  // Check for numeric digits (Arabic or English)
+  const arabicNumerals = trimmed
+    .replace(/[٠]/g, '0')
+    .replace(/[١]/g, '1')
+    .replace(/[٢]/g, '2')
+    .replace(/[٣]/g, '3')
+    .replace(/[٤]/g, '4')
+    .replace(/[٥]/g, '5')
+    .replace(/[٦]/g, '6')
+    .replace(/[٧]/g, '7')
+    .replace(/[٨]/g, '8')
+    .replace(/[٩]/g, '9')
+
+  const numericMatch = arabicNumerals.match(/^(\d+)$/)
+  if (numericMatch) {
+    const num = parseInt(numericMatch[1], 10)
+    if (num > 0 && num <= 99) {
+      return num
+    }
+  }
+
+  return 0
+}
+
+// =============================================================================
+// DIRECT PAYLOAD HANDLERS - Handle button clicks without GPT
+// =============================================================================
+
+interface PayloadHandlerResult {
+  reply: string
+  quick_replies: QuickReply[]
+  cart_action?: CartAction
+  selected_provider_id?: string
+  selected_category?: string
+  memory?: ChatMemory
+}
+
+/**
+ * Handle category:xxx payload
+ */
+async function handleCategoryPayload(
+  categoryCode: string,
+  cityId: string
+): Promise<PayloadHandlerResult> {
+  const supabase = await createClient()
+
+  console.log('📦 [PAYLOAD] category:', categoryCode)
+
+  // Get providers in this category
+  const mappedCategories = CATEGORY_MAPPING[categoryCode] || [categoryCode]
+
+  const { data: providers } = await supabase
+    .from('providers')
+    .select('id, name_ar, rating, logo_url, category')
+    .eq('city_id', cityId)
+    .eq('status', 'open')
+    .neq('name_ar', '')
+    .in('category', mappedCategories)
+    .order('is_featured', { ascending: false })
+    .order('rating', { ascending: false })
+    .limit(10)
+
+  if (!providers || providers.length === 0) {
+    return {
+      reply: 'مش لاقي متاجر في القسم ده دلوقتي 😕 جرب قسم تاني',
+      quick_replies: [
+        { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+        { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+      ],
+      selected_category: categoryCode,
+    }
+  }
+
+  const categoryNames: Record<string, string> = {
+    'restaurant_cafe': 'المطاعم والكافيهات',
+    'grocery': 'السوبر ماركت',
+    'coffee_patisserie': 'البن والحلويات',
+    'vegetables_fruits': 'الخضروات والفواكه',
+  }
+
+  return {
+    reply: `هنا المتاجر المتاحة في ${categoryNames[categoryCode] || 'القسم ده'} 👇`,
+    quick_replies: providers.map(p => ({
+      title: `📍 ${p.name_ar}`,
+      payload: `provider:${p.id}`,
+    })),
+    selected_category: categoryCode,
+  }
+}
+
+/**
+ * Handle provider:xxx payload
+ */
+async function handleProviderPayload(
+  providerId: string,
+  cityId: string
+): Promise<PayloadHandlerResult> {
+  const supabase = await createClient()
+
+  console.log('📦 [PAYLOAD] provider:', providerId)
+
+  // Get provider info
+  const { data: provider } = await supabase
+    .from('providers')
+    .select('id, name_ar, rating, category')
+    .eq('id', providerId)
+    .single()
+
+  if (!provider) {
+    return {
+      reply: 'مش لاقي المتجر ده 😕 جرب تاني',
+      quick_replies: [
+        { title: '🏠 الأقسام', payload: 'categories' },
+      ],
+    }
+  }
+
+  // Get menu items
+  const { data: menuItems } = await supabase
+    .from('menu_items')
+    .select('id, name_ar, price, has_variants, pricing_type, image_url')
+    .eq('provider_id', providerId)
+    .eq('is_available', true)
+    .or('has_stock.eq.true,has_stock.is.null')
+    .order('price', { ascending: false })
+    .limit(12)
+
+  if (!menuItems || menuItems.length === 0) {
+    return {
+      reply: `${provider.name_ar} مفيش منتجات متاحة دلوقتي 😕`,
+      quick_replies: [
+        { title: '🏠 الأقسام', payload: 'categories' },
+        { title: '🔥 العروض', payload: 'show_promotions' },
+      ],
+      selected_provider_id: providerId,
+    }
+  }
+
+  return {
+    reply: `تمام! هنا منيو ${provider.name_ar} ⭐${provider.rating || ''} 👇`,
+    quick_replies: menuItems.slice(0, 10).map(item => ({
+      title: `${item.name_ar} (${item.price} ج.م)`,
+      payload: `item:${item.id}`,
+    })),
+    selected_provider_id: providerId,
+  }
+}
+
+/**
+ * Handle item:xxx payload
+ */
+async function handleItemPayload(
+  itemId: string,
+  selectedProviderId?: string
+): Promise<PayloadHandlerResult> {
+  const supabase = await createClient()
+
+  console.log('📦 [PAYLOAD] item:', itemId)
+
+  // Get item details
+  const { data: item } = await supabase
+    .from('menu_items')
+    .select('id, name_ar, price, has_variants, pricing_type, provider_id, providers(name_ar)')
+    .eq('id', itemId)
+    .single()
+
+  if (!item) {
+    return {
+      reply: 'مش لاقي الصنف ده 😕 جرب تاني',
+      quick_replies: [
+        { title: '🏠 الأقسام', payload: 'categories' },
+      ],
+    }
+  }
+
+  // providers is returned as array from join, get first element
+  const providersData = item.providers as { name_ar: string }[] | { name_ar: string } | null
+  const providerName = Array.isArray(providersData)
+    ? providersData[0]?.name_ar || ''
+    : providersData?.name_ar || ''
+
+  // Check if item has variants
+  if (item.has_variants || item.pricing_type === 'variants') {
+    // Get variants
+    const { data: variants } = await supabase
+      .from('product_variants')
+      .select('id, name_ar, price, is_default')
+      .eq('product_id', itemId)
+      .eq('is_available', true)
+      .order('is_default', { ascending: false })
+      .order('price', { ascending: true })
+      .limit(10)
+
+    if (variants && variants.length > 0) {
+      return {
+        reply: `${item.name_ar} له اختيارات مختلفة 👇`,
+        quick_replies: variants.map(v => ({
+          title: `${v.name_ar} (${v.price} ج.م)`,
+          payload: `variant:${v.id}`,
+        })),
+        selected_provider_id: item.provider_id,
+        memory: {
+          pending_item: {
+            id: item.id,
+            name_ar: item.name_ar,
+            price: item.price,
+            provider_id: item.provider_id,
+            provider_name_ar: providerName,
+            has_variants: true,
+          },
+        },
+      }
+    }
+  }
+
+  // No variants - ask for quantity directly
+  return {
+    reply: `${item.name_ar} بـ ${item.price} ج.م 🍽️\n\nكام واحدة تحب؟`,
+    quick_replies: [
+      { title: '1️⃣ واحدة', payload: 'qty:1' },
+      { title: '2️⃣ اتنين', payload: 'qty:2' },
+      { title: '3️⃣ تلاتة', payload: 'qty:3' },
+    ],
+    selected_provider_id: item.provider_id,
+    memory: {
+      pending_item: {
+        id: item.id,
+        name_ar: item.name_ar,
+        price: item.price,
+        provider_id: item.provider_id,
+        provider_name_ar: providerName,
+        has_variants: false,
+      },
+      awaiting_quantity: true,
+    },
+  }
+}
+
+/**
+ * Handle variant:xxx payload
+ */
+async function handleVariantPayload(
+  variantId: string,
+  existingMemory?: ChatMemory
+): Promise<PayloadHandlerResult> {
+  const supabase = await createClient()
+
+  console.log('📦 [PAYLOAD] variant:', variantId)
+
+  // Get variant details with product info
+  const { data: variant } = await supabase
+    .from('product_variants')
+    .select('id, name_ar, price, product_id')
+    .eq('id', variantId)
+    .single()
+
+  if (!variant) {
+    return {
+      reply: 'مش لاقي الاختيار ده 😕 جرب تاني',
+      quick_replies: [
+        { title: '🏠 الأقسام', payload: 'categories' },
+      ],
+    }
+  }
+
+  // Get parent product info if not in memory
+  let pendingItem = existingMemory?.pending_item
+  if (!pendingItem) {
+    const { data: product } = await supabase
+      .from('menu_items')
+      .select('id, name_ar, price, provider_id, providers(name_ar)')
+      .eq('id', variant.product_id)
+      .single()
+
+    if (product) {
+      // providers is returned as array from join, get first element
+      const providersData = product.providers as { name_ar: string }[] | { name_ar: string } | null
+      const providerName = Array.isArray(providersData)
+        ? providersData[0]?.name_ar || ''
+        : providersData?.name_ar || ''
+
+      pendingItem = {
+        id: product.id,
+        name_ar: product.name_ar,
+        price: product.price,
+        provider_id: product.provider_id,
+        provider_name_ar: providerName,
+        has_variants: true,
+      }
+    }
+  }
+
+  return {
+    reply: `${pendingItem?.name_ar || 'الصنف'} - ${variant.name_ar} بـ ${variant.price} ج.م 🍽️\n\nكام واحدة تحب؟`,
+    quick_replies: [
+      { title: '1️⃣ واحدة', payload: 'qty:1' },
+      { title: '2️⃣ اتنين', payload: 'qty:2' },
+      { title: '3️⃣ تلاتة', payload: 'qty:3' },
+    ],
+    selected_provider_id: pendingItem?.provider_id,
+    memory: {
+      pending_item: pendingItem,
+      pending_variant: {
+        id: variant.id,
+        name_ar: variant.name_ar,
+        price: variant.price,
+      },
+      awaiting_quantity: true,
+    },
+  }
+}
+
+/**
+ * Handle qty:x payload or quantity input when awaiting_quantity is true
+ */
+function handleQuantityInput(
+  quantity: number,
+  memory: ChatMemory
+): PayloadHandlerResult | null {
+  const { pending_item, pending_variant } = memory
+
+  if (!pending_item) {
+    return null
+  }
+
+  console.log('📦 [PAYLOAD] quantity:', quantity, 'for item:', pending_item.name_ar)
+
+  const finalPrice = pending_variant?.price || pending_item.price
+  const variantText = pending_variant ? ` - ${pending_variant.name_ar}` : ''
+
+  const cart_action: CartAction = {
+    type: 'ADD_ITEM',
+    provider_id: pending_item.provider_id,
+    menu_item_id: pending_item.id,
+    menu_item_name_ar: pending_item.name_ar,
+    quantity,
+    unit_price: finalPrice,
+    variant_id: pending_variant?.id,
+    variant_name_ar: pending_variant?.name_ar,
+  }
+
+  return {
+    reply: `تمام! ✅ ضفت ${quantity}x ${pending_item.name_ar}${variantText} للسلة (${quantity * finalPrice} ج.م)\n\nتحب تضيف حاجة تانية؟`,
+    quick_replies: [
+      { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
+      { title: '➕ أضف المزيد', payload: `provider:${pending_item.provider_id}` },
+      { title: '🏠 الأقسام', payload: 'categories' },
+    ],
+    cart_action,
+    selected_provider_id: pending_item.provider_id,
+    memory: {
+      // Clear pending items after adding to cart
+      pending_item: undefined,
+      pending_variant: undefined,
+      awaiting_quantity: false,
+    },
+  }
 }
 
 // =============================================================================
@@ -927,6 +1343,7 @@ export async function POST(request: Request) {
       selectedCategory: selected_category,
       messageCount: messages?.length,
       lastMessage: messages?.[messages.length - 1]?.content?.slice(0, 100),
+      memory: memory,
     })
 
     // Validate city_id
@@ -951,6 +1368,152 @@ export async function POST(request: Request) {
       }, { status: 429 })
     }
 
+    // Get the last user message
+    const lastUserMessage = messages[messages.length - 1]?.content || ''
+
+    // =======================================================================
+    // 🚀 DIRECT PAYLOAD HANDLERS - Handle button payloads WITHOUT calling GPT
+    // This ensures consistent, fast responses for button clicks
+    // =======================================================================
+
+    // Handle category:xxx payload
+    if (lastUserMessage.startsWith('category:')) {
+      const categoryCode = lastUserMessage.replace('category:', '')
+      console.log('🚀 [DIRECT HANDLER] category:', categoryCode)
+
+      const result = await handleCategoryPayload(categoryCode, city_id)
+      return Response.json({
+        reply: result.reply,
+        quick_replies: result.quick_replies,
+        cart_action: result.cart_action,
+        selected_provider_id: result.selected_provider_id || selected_provider_id,
+        selected_provider_category: selected_provider_category,
+        selected_category: result.selected_category || selected_category,
+        memory: result.memory || memory,
+      })
+    }
+
+    // Handle provider:xxx payload
+    if (lastUserMessage.startsWith('provider:')) {
+      const providerId = lastUserMessage.replace('provider:', '')
+      if (isValidUUID(providerId)) {
+        console.log('🚀 [DIRECT HANDLER] provider:', providerId)
+
+        const result = await handleProviderPayload(providerId, city_id)
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || providerId,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory || memory,
+        })
+      }
+    }
+
+    // Handle item:xxx payload
+    if (lastUserMessage.startsWith('item:')) {
+      const itemId = lastUserMessage.replace('item:', '')
+      if (isValidUUID(itemId)) {
+        console.log('🚀 [DIRECT HANDLER] item:', itemId)
+
+        const result = await handleItemPayload(itemId, selected_provider_id)
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory || memory,
+        })
+      }
+    }
+
+    // Handle variant:xxx payload
+    if (lastUserMessage.startsWith('variant:')) {
+      const variantId = lastUserMessage.replace('variant:', '')
+      if (isValidUUID(variantId)) {
+        console.log('🚀 [DIRECT HANDLER] variant:', variantId)
+
+        const result = await handleVariantPayload(variantId, memory as ChatMemory)
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory || memory,
+        })
+      }
+    }
+
+    // Handle qty:x payload (from quantity buttons)
+    if (lastUserMessage.startsWith('qty:')) {
+      const qtyStr = lastUserMessage.replace('qty:', '')
+      const quantity = parseInt(qtyStr, 10)
+      if (quantity > 0 && memory?.pending_item) {
+        console.log('🚀 [DIRECT HANDLER] qty:', quantity)
+
+        const result = handleQuantityInput(quantity, memory as ChatMemory)
+        if (result) {
+          return Response.json({
+            reply: result.reply,
+            quick_replies: result.quick_replies,
+            cart_action: result.cart_action,
+            selected_provider_id: result.selected_provider_id || selected_provider_id,
+            selected_provider_category: selected_provider_category,
+            selected_category: selected_category,
+            memory: result.memory,
+          })
+        }
+      }
+    }
+
+    // Handle quantity input when awaiting_quantity is true
+    if (memory?.awaiting_quantity && memory?.pending_item) {
+      const quantity = parseArabicQuantity(lastUserMessage)
+      if (quantity > 0) {
+        console.log('🚀 [DIRECT HANDLER] parsed quantity:', quantity, 'from:', lastUserMessage)
+
+        const result = handleQuantityInput(quantity, memory as ChatMemory)
+        if (result) {
+          return Response.json({
+            reply: result.reply,
+            quick_replies: result.quick_replies,
+            cart_action: result.cart_action,
+            selected_provider_id: result.selected_provider_id || selected_provider_id,
+            selected_provider_category: selected_provider_category,
+            selected_category: selected_category,
+            memory: result.memory,
+          })
+        }
+      }
+    }
+
+    // Handle special payloads
+    if (lastUserMessage === 'categories' || lastUserMessage === 'الأقسام') {
+      console.log('🚀 [DIRECT HANDLER] categories')
+      return Response.json({
+        reply: 'اختار القسم اللي تحبه 👇',
+        quick_replies: [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+          { title: '🍰 البن والحلويات', payload: 'category:coffee_patisserie' },
+          { title: '🥦 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+        ],
+        selected_provider_id: undefined,
+        selected_category: undefined,
+        memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false },
+      })
+    }
+
+    // =======================================================================
+    // 🤖 GPT FALLBACK - For natural language that doesn't match payloads
+    // =======================================================================
+
     // Build context as part of system prompt (NOT as a separate message)
     // This avoids the "double system message" issue
     const contextInfo = `
@@ -968,9 +1531,6 @@ ${memory ? `memory: ${JSON.stringify(memory)}` : ''}
       role: m.role as 'user' | 'assistant',
       content: m.content,
     }))
-
-    // Get the last user message for intent detection
-    const lastUserMessage = messages[messages.length - 1]?.content || ''
 
     // 🎯 INTENT ROUTER: Detect intent and determine forced tool
     const detectedIntent = detectIntent(
