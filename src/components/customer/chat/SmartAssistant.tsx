@@ -15,6 +15,7 @@ import { QuickActionsBar } from './QuickActionsBar'
 import { DEFAULT_QUICK_ACTIONS } from '@/types/chat'
 import type { ChatProduct } from '@/types/chat'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/store/cart'
 import { createClient } from '@/lib/supabase/client'
 
@@ -39,6 +40,7 @@ export function SmartAssistant({
   const [customerName, setCustomerName] = useState<string | undefined>(propCustomerName)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
 
   // Fetch customer name if userId is available and customerName not provided
   useEffect(() => {
@@ -70,11 +72,26 @@ export function SmartAssistant({
     isLoading,
     isStreaming,
     streamingContent,
+    pendingNavigation,
     sendMessage,
     sendQuickAction,
     addToCartFromChat,
     clearChat,
+    clearPendingNavigation,
   } = useAIChat({ userId, cityId, governorateId, customerName })
+
+  // Handle navigation requests from chat
+  useEffect(() => {
+    if (pendingNavigation) {
+      // Close the chat modal first
+      onClose()
+      // Navigate after a short delay to allow modal to close
+      setTimeout(() => {
+        router.push(pendingNavigation)
+        clearPendingNavigation()
+      }, 100)
+    }
+  }, [pendingNavigation, router, onClose, clearPendingNavigation])
 
   const { getItemCount } = useCart()
   const cartCount = getItemCount()

@@ -16,6 +16,38 @@ export interface StoredChatMessage extends ChatMessage {
   quickReplies?: QuickReply[]
 }
 
+// Memory structure for pending items
+interface PendingItem {
+  id: string
+  name_ar: string
+  price: number
+  provider_id: string
+  provider_name_ar?: string
+  has_variants?: boolean
+}
+
+interface PendingVariant {
+  id: string
+  name_ar: string
+  price: number
+}
+
+// Current provider context - persists after cart addition
+interface CurrentProvider {
+  id: string
+  name_ar: string
+}
+
+export interface ChatMemory {
+  pending_item?: PendingItem
+  pending_variant?: PendingVariant
+  pending_quantity?: number
+  awaiting_quantity?: boolean
+  awaiting_confirmation?: boolean
+  current_provider?: CurrentProvider // Persists after cart addition for follow-up orders
+  [key: string]: unknown
+}
+
 interface ChatState {
   // Messages
   messages: StoredChatMessage[]
@@ -24,7 +56,7 @@ interface ChatState {
   selectedProviderId?: string
   selectedProviderCategory?: string // Category of the selected provider (from providers.category)
   selectedCategory?: string // User's chosen category from quick buttons (restaurant_cafe, grocery, etc.)
-  memory: Record<string, unknown>
+  memory: ChatMemory
 
   // Actions
   addMessage: (message: StoredChatMessage) => void
@@ -36,7 +68,7 @@ interface ChatState {
   setSelectedProviderId: (id: string | undefined) => void
   setSelectedProviderCategory: (category: string | undefined) => void
   setSelectedCategory: (category: string | undefined) => void
-  setMemory: (memory: Record<string, unknown>) => void
+  setMemory: (memory: ChatMemory) => void
   resetConversationState: () => void
 }
 
@@ -57,10 +89,17 @@ function createWelcomeMessage(customerName?: string): StoredChatMessage {
     content: `${greeting}\nأنا مساعد إنجزنا الذكي، معاك عشان أساعدك تطلب أكلك المفضل بأسرع وقت.\n\nعايز تطلب منين النهارده؟ 🏪`,
     timestamp: new Date(),
     suggestions: [
-      '🍕 مطاعم وكافيهات',
+      '🍽️ مطاعم وكافيهات',
       '🛒 سوبر ماركت',
-      '☕ البن والحلويات',
-      '🥬 خضروات وفواكه',
+      '🍰 البن والحلويات',
+      '🥦 خضروات وفواكه',
+    ],
+    // Quick replies with payloads for direct handling
+    quickReplies: [
+      { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+      { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+      { title: '🍰 البن والحلويات', payload: 'category:coffee_patisserie' },
+      { title: '🥦 خضروات وفواكه', payload: 'category:vegetables_fruits' },
     ],
   }
 }
