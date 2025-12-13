@@ -1,15 +1,10 @@
 /**
  * AI Module Exports for Engezna Smart Assistant
+ * Cleared for new implementation
  */
-
-// Chat Prompts
-export * from './chat-prompts'
 
 // Context Builder
 export * from './context-builder'
-
-// Product Search
-export * from './product-search'
 
 // Comparison Engine
 export * from './comparison-engine'
