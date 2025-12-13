@@ -1,6 +1,7 @@
 /**
  * AI Chat API Route - New Implementation
  * Uses GPT-4o-mini with Function Calling + Streaming
+ * With Zapier-style Intent Router for tool forcing
  */
 
 import { OpenAI } from 'openai'
@@ -8,7 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import { SYSTEM_PROMPT, CATEGORY_MAPPING } from '@/lib/ai/systemPrompt'
 import { tools } from '@/lib/ai/tools'
 import { normalizeArabic, filterByNormalizedArabic, logNormalization } from '@/lib/ai/normalizeArabic'
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
+import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions'
 
 // Types
 interface ChatRequest {
@@ -28,12 +29,155 @@ function isValidUUID(id: unknown): boolean {
   return typeof id === 'string' && UUID_REGEX.test(id)
 }
 
+// =============================================================================
+// INTENT ROUTER - Zapier-style intent detection and tool forcing
+// =============================================================================
+
+interface DetectedIntent {
+  type: 'promotions' | 'provider_selection' | 'product_search' | 'greeting' | 'general'
+  forcedTool?: string
+  forcedArgs?: Record<string, unknown>
+  confidence: 'high' | 'medium' | 'low'
+}
+
+// Keywords for intent detection
+const PROMOTION_KEYWORDS = ['عروض', 'خصم', 'خصومات', 'promo', 'promotions', 'offers', 'show_promotions', 'العروض']
+const PRODUCT_SEARCH_KEYWORDS = ['عايز', 'عاوز', 'عاوزه', 'موجود', 'فين', 'عندكم', 'ابحث', 'دور']
+const GREETING_KEYWORDS = ['هاي', 'هلو', 'السلام', 'صباح', 'مساء', 'أهلا', 'اهلا', 'مرحبا']
+const PROVIDER_NAME_PATTERNS = [
+  /^(?:من|عند|في)\s+(.+?)$/,
+  /^(.+?)\s+(?:المطعم|السوبر|المحل)$/,
+  /^مطعم\s+(.+)$/,
+  /^سوبر\s*ماركت\s+(.+)$/,
+]
+
+/**
+ * Detect user intent from message
+ */
+function detectIntent(
+  message: string,
+  selectedProviderId?: string,
+  selectedCategory?: string
+): DetectedIntent {
+  const lowerMessage = message.toLowerCase().trim()
+  const normalizedMessage = normalizeArabic(message)
+
+  console.log('🎯 [INTENT ROUTER] Analyzing:', { message, selectedProviderId, selectedCategory })
+
+  // Skip payload messages (handled by specific handlers)
+  if (message.startsWith('category:') ||
+      message.startsWith('provider:') ||
+      message.startsWith('item:') ||
+      message.startsWith('variant:')) {
+    console.log('🎯 [INTENT] Detected: PAYLOAD (skip forcing)')
+    return { type: 'general', confidence: 'low' }
+  }
+
+  // 1. Check for promotions intent
+  if (PROMOTION_KEYWORDS.some(kw => lowerMessage.includes(kw) || normalizedMessage.includes(normalizeArabic(kw)))) {
+    console.log('🎯 [INTENT] Detected: PROMOTIONS')
+    return {
+      type: 'promotions',
+      forcedTool: 'get_promotions',
+      forcedArgs: selectedProviderId && isValidUUID(selectedProviderId)
+        ? { provider_id: selectedProviderId }
+        : {},
+      confidence: 'high'
+    }
+  }
+
+  // 2. Check for greeting (should show categories)
+  const isGreeting = GREETING_KEYWORDS.some(kw => lowerMessage.includes(kw)) ||
+                     /^(hi|hello|hey|مرحب|اهل|اهلا)/i.test(lowerMessage)
+  if (isGreeting && message.length < 30) {
+    console.log('🎯 [INTENT] Detected: GREETING')
+    return {
+      type: 'greeting',
+      forcedTool: 'get_available_categories_in_city',
+      forcedArgs: {},
+      confidence: 'high'
+    }
+  }
+
+  // 3. Check for product search intent
+  if (PRODUCT_SEARCH_KEYWORDS.some(kw => lowerMessage.includes(kw))) {
+    // Extract what they want (everything after the keyword)
+    let searchQuery = message
+    for (const kw of PRODUCT_SEARCH_KEYWORDS) {
+      const kwIndex = lowerMessage.indexOf(kw)
+      if (kwIndex !== -1) {
+        searchQuery = message.slice(kwIndex + kw.length).trim()
+        break
+      }
+    }
+
+    if (selectedProviderId && isValidUUID(selectedProviderId)) {
+      console.log('🎯 [INTENT] Detected: PRODUCT_SEARCH (in provider)', searchQuery)
+      return {
+        type: 'product_search',
+        forcedTool: 'search_in_provider',
+        forcedArgs: { provider_id: selectedProviderId, query: searchQuery || message },
+        confidence: 'high'
+      }
+    } else {
+      console.log('🎯 [INTENT] Detected: PRODUCT_SEARCH (city-wide)', searchQuery)
+      return {
+        type: 'product_search',
+        forcedTool: 'search_product_in_city',
+        forcedArgs: { query: searchQuery || message },
+        confidence: 'high'
+      }
+    }
+  }
+
+  // 4. Check for provider name selection
+  // This should be more liberal - any short Arabic text that isn't a known command
+  const isShortMessage = message.length <= 30
+  const providerNameMatch = PROVIDER_NAME_PATTERNS.find(p => p.test(message))
+  const looksLikeProviderName = /^[؀-ۿ\s]+$/.test(message.trim()) && message.length >= 3 // Arabic text, at least 3 chars
+
+  // Don't treat as provider name if it contains known keywords
+  const containsKnownKeywords =
+    GREETING_KEYWORDS.some(kw => lowerMessage.includes(kw)) ||
+    PROMOTION_KEYWORDS.some(kw => lowerMessage.includes(kw)) ||
+    PRODUCT_SEARCH_KEYWORDS.some(kw => lowerMessage.includes(kw))
+
+  if ((providerNameMatch || (isShortMessage && looksLikeProviderName)) && !containsKnownKeywords && !selectedProviderId) {
+    // Extract provider name
+    let providerName = message.trim()
+    if (providerNameMatch) {
+      const match = message.match(providerNameMatch)
+      if (match && match[1]) {
+        providerName = match[1].trim()
+      }
+    }
+
+    // Clean the provider name
+    providerName = providerName.replace(/^(?:مطعم|سوبر\s*ماركت|محل|من|عند|في)\s*/i, '').trim()
+
+    if (providerName.length >= 2) {
+      console.log('🎯 [INTENT] Detected: PROVIDER_SELECTION, name:', providerName)
+      return {
+        type: 'provider_selection',
+        forcedTool: 'search_providers',
+        forcedArgs: { query: providerName },
+        confidence: providerNameMatch ? 'high' : 'medium'
+      }
+    }
+  }
+
+  // 5. Default: general intent
+  console.log('🎯 [INTENT] Detected: GENERAL')
+  return { type: 'general', confidence: 'low' }
+}
+
 // Regex to detect provider name mentions in Arabic
 const PROVIDER_NAME_REGEX = /(?:من|عند|في)\s+(.+?)(?:\s*$|[،,?؟])/
 
 /**
  * Try to resolve a provider name to UUID
  * Used when user mentions provider by name instead of selecting from buttons
+ * Supports multiple search strategies for better Arabic matching
  */
 async function resolveProviderByName(
   name: string,
@@ -44,23 +188,60 @@ async function resolveProviderByName(
   const normalizedName = normalizeArabic(name)
   logNormalization('resolveProviderByName', name, normalizedName)
 
-  // Search for providers matching the name
-  const { data: providers } = await supabase
+  // Remove common prefixes like "مطعم", "سوبر ماركت", etc.
+  const cleanName = name
+    .replace(/^(?:مطعم|سوبر\s*ماركت|محل|من|عند|في)\s*/i, '')
+    .trim()
+
+  console.log('🔍 [PROVIDER RESOLVE] Searching for:', { original: name, cleaned: cleanName, normalized: normalizedName })
+
+  // Strategy 1: Try exact ilike match with original name
+  let { data: providers } = await supabase
     .from('providers')
     .select('id, name_ar')
     .eq('city_id', cityId)
     .eq('status', 'open')
     .neq('name_ar', '')
     .ilike('name_ar', `%${name}%`)
-    .limit(5)
+    .limit(10)
+
+  // Strategy 2: Try with cleaned name if no results
+  if ((!providers || providers.length === 0) && cleanName !== name) {
+    const result = await supabase
+      .from('providers')
+      .select('id, name_ar')
+      .eq('city_id', cityId)
+      .eq('status', 'open')
+      .neq('name_ar', '')
+      .ilike('name_ar', `%${cleanName}%`)
+      .limit(10)
+    providers = result.data
+  }
+
+  // Strategy 3: Get all providers and filter with normalization
+  if (!providers || providers.length === 0) {
+    console.log('🔍 [PROVIDER RESOLVE] Trying full list with normalization...')
+    const result = await supabase
+      .from('providers')
+      .select('id, name_ar')
+      .eq('city_id', cityId)
+      .eq('status', 'open')
+      .neq('name_ar', '')
+      .limit(100)
+
+    if (result.data && result.data.length > 0) {
+      // Apply Arabic normalization filter
+      providers = filterByNormalizedArabic(result.data, cleanName, (p) => [p.name_ar])
+    }
+  }
 
   if (!providers || providers.length === 0) {
     console.log('🔍 [PROVIDER RESOLVE] No providers found for:', name)
     return null
   }
 
-  // Apply Arabic normalization to filter results
-  const filtered = filterByNormalizedArabic(providers, name, (p) => [p.name_ar])
+  // Apply Arabic normalization to filter results further
+  const filtered = filterByNormalizedArabic(providers, cleanName, (p) => [p.name_ar])
 
   if (filtered.length === 1) {
     console.log('✅ [PROVIDER RESOLVE] Found exact match:', filtered[0].name_ar)
@@ -590,20 +771,31 @@ async function handleToolCall(
 
 /**
  * Process message with function calling
+ * Supports forced tool choice via Zapier-style Intent Router
  */
 async function processWithTools(
   messages: ChatCompletionMessageParam[],
   cityId: string,
-  contextInfo: string
+  contextInfo: string,
+  forcedTool?: string,
+  forcedArgs?: Record<string, unknown>
 ): Promise<{
   content: string
   quick_replies?: QuickReply[]
   cart_action?: CartAction
+  tool_results?: unknown[] // Return tool results for generating quick_replies
 }> {
   const openai = getOpenAI()
 
   // Combine SYSTEM_PROMPT with context (single system message to avoid confusion)
   const fullSystemPrompt = `${SYSTEM_PROMPT}\n\n${contextInfo}`
+
+  // Determine tool_choice based on intent detection
+  let toolChoice: 'auto' | { type: 'function'; function: { name: string } } = 'auto'
+  if (forcedTool) {
+    toolChoice = { type: 'function', function: { name: forcedTool } }
+    console.log('🎯 [INTENT ROUTER] Forcing tool:', forcedTool, 'with args:', forcedArgs)
+  }
 
   // First call with tools
   const response = await openai.chat.completions.create({
@@ -613,7 +805,7 @@ async function processWithTools(
       ...messages,
     ],
     tools,
-    tool_choice: 'auto',
+    tool_choice: toolChoice,
     temperature: 0.7,
     max_tokens: 1000,
   })
@@ -627,13 +819,20 @@ async function processWithTools(
 
   // Process tool calls
   const toolResults: ChatCompletionMessageParam[] = []
+  const rawToolResults: Array<{ name: string; args: Record<string, unknown>; result: unknown }> = []
 
   for (const toolCall of assistantMessage.tool_calls) {
     // Skip non-function tool calls
     if (toolCall.type !== 'function') continue
 
     const name = toolCall.function.name
-    const args = JSON.parse(toolCall.function.arguments || '{}')
+    let args = JSON.parse(toolCall.function.arguments || '{}')
+
+    // If we have forced args from intent router, merge them
+    if (forcedTool === name && forcedArgs) {
+      args = { ...args, ...forcedArgs }
+      console.log('🎯 [INTENT ROUTER] Merged forced args:', args)
+    }
 
     console.log(`[Tool Call] ${name}:`, args)
 
@@ -646,6 +845,9 @@ async function processWithTools(
       tool_call_id: toolCall.id,
       content: JSON.stringify(result),
     })
+
+    // Track raw results for quick_replies generation
+    rawToolResults.push({ name, args, result })
   }
 
   // Second call with tool results (same system prompt)
@@ -661,7 +863,12 @@ async function processWithTools(
     max_tokens: 1000,
   })
 
-  return parseAssistantResponse(followUpResponse.choices[0].message.content || '')
+  const parsed = parseAssistantResponse(followUpResponse.choices[0].message.content || '')
+
+  return {
+    ...parsed,
+    tool_results: rawToolResults,
+  }
 }
 
 /**
@@ -762,10 +969,42 @@ ${memory ? `memory: ${JSON.stringify(memory)}` : ''}
       content: m.content,
     }))
 
-    // Process with tools (context is passed as part of the system prompt)
-    const result = await processWithTools(openaiMessages, city_id, contextInfo)
+    // Get the last user message for intent detection
+    const lastUserMessage = messages[messages.length - 1]?.content || ''
 
-    // Generate default quick replies if none provided
+    // 🎯 INTENT ROUTER: Detect intent and determine forced tool
+    const detectedIntent = detectIntent(
+      lastUserMessage,
+      selected_provider_id,
+      selected_category
+    )
+
+    console.log('🎯 [INTENT DETECTION RESULT]', {
+      message: lastUserMessage.slice(0, 50),
+      intent: detectedIntent.type,
+      confidence: detectedIntent.confidence,
+      forcedTool: detectedIntent.forcedTool,
+    })
+
+    // Process with tools (context is passed as part of the system prompt)
+    // Pass forced tool if intent has high confidence
+    const result = await processWithTools(
+      openaiMessages,
+      city_id,
+      contextInfo,
+      detectedIntent.confidence === 'high' ? detectedIntent.forcedTool : undefined,
+      detectedIntent.confidence === 'high' ? detectedIntent.forcedArgs : undefined
+    )
+
+    // Generate quick replies from tool results first (if we have them)
+    if ((!result.quick_replies || result.quick_replies.length === 0) && result.tool_results && result.tool_results.length > 0) {
+      result.quick_replies = generateQuickRepliesFromToolResults(
+        result.tool_results as Array<{ name: string; args: Record<string, unknown>; result: unknown }>
+      )
+      console.log('🔘 [QUICK REPLIES] Generated from tool results:', result.quick_replies?.length)
+    }
+
+    // Fall back to default quick replies if still none
     if (!result.quick_replies || result.quick_replies.length === 0) {
       result.quick_replies = generateDefaultQuickReplies(
         messages[messages.length - 1]?.content || '',
@@ -791,6 +1030,128 @@ ${memory ? `memory: ${JSON.stringify(memory)}` : ''}
       quick_replies: [],
     }, { status: 500 })
   }
+}
+
+/**
+ * Generate quick replies from tool results
+ * This converts DB results into clickable buttons
+ */
+function generateQuickRepliesFromToolResults(
+  toolResults: Array<{ name: string; args: Record<string, unknown>; result: unknown }>
+): QuickReply[] {
+  const replies: QuickReply[] = []
+
+  for (const { name, result } of toolResults) {
+    if (!Array.isArray(result)) continue
+
+    switch (name) {
+      case 'search_providers':
+        // Generate provider buttons
+        for (const provider of result.slice(0, 8)) {
+          if (provider.id && provider.name_ar) {
+            replies.push({
+              title: provider.name_ar,
+              payload: `provider:${provider.id}`,
+            })
+          }
+        }
+        break
+
+      case 'get_provider_menu':
+      case 'search_in_provider':
+        // Generate menu item buttons
+        for (const item of result.slice(0, 8)) {
+          if (item.id && item.name_ar) {
+            const priceText = item.price ? ` (${item.price} ج.م)` : ''
+            replies.push({
+              title: `${item.name_ar}${priceText}`,
+              payload: `item:${item.id}`,
+            })
+          }
+        }
+        break
+
+      case 'get_item_variants':
+        // Generate variant buttons
+        for (const variant of result.slice(0, 8)) {
+          if (variant.id && variant.name_ar) {
+            const priceText = variant.price ? ` (${variant.price} ج.م)` : ''
+            replies.push({
+              title: `${variant.name_ar}${priceText}`,
+              payload: `variant:${variant.id}`,
+            })
+          }
+        }
+        break
+
+      case 'get_available_categories_in_city':
+        // Generate category buttons
+        const categoryMap: Record<string, string> = {
+          'restaurant_cafe': '🍽️ مطاعم وكافيهات',
+          'grocery': '🛒 سوبر ماركت',
+          'coffee_patisserie': '🍰 البن والحلويات',
+          'vegetables_fruits': '🥦 خضروات وفواكه',
+        }
+        for (const cat of result) {
+          if (typeof cat === 'string' && categoryMap[cat]) {
+            replies.push({
+              title: categoryMap[cat],
+              payload: `category:${cat}`,
+            })
+          }
+        }
+        break
+
+      case 'search_product_in_city':
+        // Generate provider-grouped results
+        // Group by provider first
+        const byProvider = new Map<string, { providerName: string; items: Array<{ id: string; name_ar: string; price: number }> }>()
+        for (const item of result.slice(0, 12)) {
+          const providerId = item.provider_id || item.providers?.id
+          const providerName = item.providers?.name_ar || 'متجر'
+          if (!byProvider.has(providerId)) {
+            byProvider.set(providerId, { providerName, items: [] })
+          }
+          byProvider.get(providerId)?.items.push(item)
+        }
+        // Show provider buttons
+        for (const [pid, data] of byProvider) {
+          replies.push({
+            title: `📍 ${data.providerName}`,
+            payload: `provider:${pid}`,
+          })
+        }
+        break
+
+      case 'get_promotions':
+        // Generate promotion-related buttons
+        // For specific promotions, show the affected products as item buttons
+        for (const promo of result.slice(0, 5)) {
+          if (promo.applies_to === 'specific' && promo.affected_products && Array.isArray(promo.affected_products)) {
+            // Show affected products as item buttons
+            for (const item of promo.affected_products.slice(0, 5)) {
+              if (item.id && item.name_ar) {
+                const priceText = item.price ? ` (${item.price} ج.م)` : ''
+                const discountText = promo.discount_percentage ? ` -${promo.discount_percentage}%` : ''
+                replies.push({
+                  title: `🏷️ ${item.name_ar}${priceText}${discountText}`,
+                  payload: `item:${item.id}`,
+                })
+              }
+            }
+          } else if (promo.provider_id && promo.providers?.name_ar) {
+            // For general promotions, show the provider
+            replies.push({
+              title: `🎉 ${promo.providers.name_ar}`,
+              payload: `provider:${promo.provider_id}`,
+            })
+          }
+        }
+        break
+    }
+  }
+
+  return replies
 }
 
 /**
