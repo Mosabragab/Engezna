@@ -71,6 +71,16 @@ async function handleToolCall(
 ): Promise<unknown> {
   const supabase = await createClient()
 
+  // 🔍 Log tool call start
+  console.log('🔍 [AI TOOL CALL]', {
+    tool: name,
+    args,
+    cityId,
+    timestamp: new Date().toISOString(),
+  })
+
+  let result: unknown
+
   switch (name) {
     case 'get_customer_name': {
       const { data } = await supabase
@@ -78,7 +88,8 @@ async function handleToolCall(
         .select('full_name')
         .eq('id', args.customer_id as string)
         .maybeSingle()
-      return { name: data?.full_name ?? null }
+      result = { name: data?.full_name ?? null }
+      break
     }
 
     case 'get_available_categories_in_city': {
@@ -90,7 +101,8 @@ async function handleToolCall(
         .neq('name_ar', '')
 
       const categories = [...new Set(data?.map(p => p.category) || [])]
-      return categories
+      result = categories
+      break
     }
 
     case 'search_providers': {
@@ -117,34 +129,87 @@ async function handleToolCall(
         .order('rating', { ascending: false })
         .limit((args.limit as number) || 10)
 
-      return data || []
+      result = data || []
+      break
     }
 
     case 'get_provider_menu': {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('menu_items')
-        .select('id, name_ar, price, pricing_type, has_variants, price_from, image_url, description_ar')
+        .select('id, name_ar, price, pricing_type, has_variants, price_from, image_url, description_ar, is_available, has_stock')
         .eq('provider_id', args.provider_id as string)
         .eq('is_available', true)
-        .eq('has_stock', true)
+        .or('has_stock.eq.true,has_stock.is.null')
         .gte('price', 15) // Filter out extras
         .order('price', { ascending: false })
         .limit((args.limit as number) || 12)
 
-      return data || []
+      if (error) {
+        console.error('❌ [AI DB ERROR] get_provider_menu:', error)
+      }
+
+      // 📦 Detailed logging for menu items
+      console.log('📦 [AI MENU RESULT]', {
+        tool: 'get_provider_menu',
+        providerId: args.provider_id,
+        count: data?.length ?? 0,
+        items: data?.slice(0, 5).map(i => ({
+          id: i.id,
+          name: i.name_ar,
+          price: i.price,
+          is_available: i.is_available,
+          has_stock: i.has_stock,
+        })),
+      })
+
+      result = data || []
+      break
     }
 
     case 'search_in_provider': {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('menu_items')
-        .select('id, name_ar, price, pricing_type, has_variants, image_url')
+        .select('id, name_ar, price, pricing_type, has_variants, image_url, is_available, has_stock')
         .eq('provider_id', args.provider_id as string)
         .eq('is_available', true)
-        .eq('has_stock', true)
+        .or('has_stock.eq.true,has_stock.is.null')
         .or(`name_ar.ilike.%${args.query}%,name_en.ilike.%${args.query}%,description_ar.ilike.%${args.query}%`)
         .limit((args.limit as number) || 8)
 
-      return data || []
+      if (error) {
+        console.error('❌ [AI DB ERROR] search_in_provider:', error)
+      }
+
+      // 📦 Detailed logging for search
+      console.log('📦 [AI SEARCH RESULT]', {
+        tool: 'search_in_provider',
+        providerId: args.provider_id,
+        query: args.query,
+        count: data?.length ?? 0,
+        items: data?.map(i => ({
+          id: i.id,
+          name: i.name_ar,
+          price: i.price,
+          is_available: i.is_available,
+          has_stock: i.has_stock,
+        })),
+      })
+
+      // 🚨 Warning if no results
+      if (!data || data.length === 0) {
+        console.warn('🚨 [AI EMPTY RESULT]', {
+          tool: 'search_in_provider',
+          providerId: args.provider_id,
+          query: args.query,
+          filters: {
+            is_available: true,
+            has_stock: 'true OR null',
+          },
+        })
+      }
+
+      result = data || []
+      break
     }
 
     case 'get_menu_item_details': {
@@ -154,7 +219,8 @@ async function handleToolCall(
         .eq('id', args.menu_item_id as string)
         .maybeSingle()
 
-      return data
+      result = data
+      break
     }
 
     case 'get_item_variants': {
@@ -166,7 +232,8 @@ async function handleToolCall(
         .order('is_default', { ascending: false })
         .limit((args.limit as number) || 12)
 
-      return data || []
+      result = data || []
+      break
     }
 
     case 'get_variant_details': {
@@ -176,7 +243,8 @@ async function handleToolCall(
         .eq('id', args.variant_id as string)
         .maybeSingle()
 
-      return data
+      result = data
+      break
     }
 
     case 'get_promotions': {
@@ -193,7 +261,8 @@ async function handleToolCall(
       }
 
       const { data } = await query.limit((args.limit as number) || 10)
-      return data || []
+      result = data || []
+      break
     }
 
     case 'search_product_in_city': {
@@ -204,26 +273,72 @@ async function handleToolCall(
         .eq('city_id', cityId)
         .eq('status', 'open')
 
-      if (!providers?.length) return []
+      if (!providers?.length) {
+        console.warn('🚨 [AI] No providers found in city:', cityId)
+        result = []
+        break
+      }
 
       const providerIds = providers.map(p => p.id)
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('menu_items')
-        .select('id, name_ar, price, provider_id, providers(id, name_ar)')
+        .select('id, name_ar, price, provider_id, is_available, has_stock, providers(id, name_ar)')
         .in('provider_id', providerIds)
         .eq('is_available', true)
-        .eq('has_stock', true)
+        .or('has_stock.eq.true,has_stock.is.null')
         .or(`name_ar.ilike.%${args.query}%,name_en.ilike.%${args.query}%`)
         .limit((args.limit as number) || 10)
 
-      return data || []
+      if (error) {
+        console.error('❌ [AI DB ERROR] search_product_in_city:', error)
+      }
+
+      // 📦 Detailed logging for city-wide search
+      console.log('📦 [AI CITY SEARCH RESULT]', {
+        tool: 'search_product_in_city',
+        cityId,
+        query: args.query,
+        providersInCity: providers.length,
+        count: data?.length ?? 0,
+        items: data?.map(i => ({
+          id: i.id,
+          name: i.name_ar,
+          price: i.price,
+          provider: i.providers,
+          is_available: i.is_available,
+          has_stock: i.has_stock,
+        })),
+      })
+
+      // 🚨 Warning if no results
+      if (!data || data.length === 0) {
+        console.warn('🚨 [AI EMPTY CITY SEARCH]', {
+          tool: 'search_product_in_city',
+          cityId,
+          query: args.query,
+          providersSearched: providers.length,
+        })
+      }
+
+      result = data || []
+      break
     }
 
     default:
-      console.warn(`Unknown tool: ${name}`)
-      return []
+      console.warn(`⚠️ [AI] Unknown tool: ${name}`)
+      result = []
   }
+
+  // 📊 Log final result summary
+  const resultArray = Array.isArray(result) ? result : [result]
+  console.log('✅ [AI TOOL RESULT]', {
+    tool: name,
+    resultCount: Array.isArray(result) ? result.length : (result ? 1 : 0),
+    hasData: resultArray.length > 0 && resultArray[0] !== null,
+  })
+
+  return result
 }
 
 /**
