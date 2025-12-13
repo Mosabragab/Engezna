@@ -7,6 +7,7 @@ import { OpenAI } from 'openai'
 import { createClient } from '@/lib/supabase/server'
 import { SYSTEM_PROMPT, CATEGORY_MAPPING } from '@/lib/ai/systemPrompt'
 import { tools } from '@/lib/ai/tools'
+import { normalizeArabic, filterByNormalizedArabic, logNormalization } from '@/lib/ai/normalizeArabic'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
 // Types
@@ -25,6 +26,56 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 function isValidUUID(id: unknown): boolean {
   return typeof id === 'string' && UUID_REGEX.test(id)
+}
+
+// Regex to detect provider name mentions in Arabic
+const PROVIDER_NAME_REGEX = /(?:من|عند|في)\s+(.+?)(?:\s*$|[،,?؟])/
+
+/**
+ * Try to resolve a provider name to UUID
+ * Used when user mentions provider by name instead of selecting from buttons
+ */
+async function resolveProviderByName(
+  name: string,
+  cityId: string
+): Promise<{ id: string; name_ar: string } | null> {
+  const supabase = await createClient()
+
+  const normalizedName = normalizeArabic(name)
+  logNormalization('resolveProviderByName', name, normalizedName)
+
+  // Search for providers matching the name
+  const { data: providers } = await supabase
+    .from('providers')
+    .select('id, name_ar')
+    .eq('city_id', cityId)
+    .eq('status', 'open')
+    .neq('name_ar', '')
+    .ilike('name_ar', `%${name}%`)
+    .limit(5)
+
+  if (!providers || providers.length === 0) {
+    console.log('🔍 [PROVIDER RESOLVE] No providers found for:', name)
+    return null
+  }
+
+  // Apply Arabic normalization to filter results
+  const filtered = filterByNormalizedArabic(providers, name, (p) => [p.name_ar])
+
+  if (filtered.length === 1) {
+    console.log('✅ [PROVIDER RESOLVE] Found exact match:', filtered[0].name_ar)
+    return filtered[0]
+  }
+
+  if (filtered.length > 1) {
+    // Return the first one but log that there are multiple matches
+    console.log('⚠️ [PROVIDER RESOLVE] Multiple matches for:', name, filtered.map(p => p.name_ar))
+    return filtered[0]
+  }
+
+  // Fallback to first result from DB
+  console.log('⚠️ [PROVIDER RESOLVE] Using first DB result:', providers[0].name_ar)
+  return providers[0]
 }
 
 interface QuickReply {
@@ -114,6 +165,13 @@ async function handleToolCall(
     }
 
     case 'search_providers': {
+      const searchQuery = args.query as string || ''
+
+      // Log normalization
+      if (searchQuery) {
+        logNormalization('search_providers', searchQuery, normalizeArabic(searchQuery))
+      }
+
       let query = supabase
         .from('providers')
         .select('id, name_ar, rating, is_featured, category, logo_url')
@@ -127,32 +185,55 @@ async function handleToolCall(
         query = query.in('category', mappedCategories)
       }
 
-      // Name search
-      if (args.query) {
-        query = query.ilike('name_ar', `%${args.query}%`)
+      // Name search (using DB ilike as first pass)
+      if (searchQuery) {
+        query = query.ilike('name_ar', `%${searchQuery}%`)
       }
 
-      const { data } = await query
+      const { data: rawData } = await query
         .order('is_featured', { ascending: false })
         .order('rating', { ascending: false })
-        .limit((args.limit as number) || 10)
+        .limit(50) // Get more results for normalization filter
 
-      result = data || []
+      // Apply Arabic normalization filter
+      let filtered = rawData || []
+      if (searchQuery && filtered.length > 0) {
+        const beforeCount = filtered.length
+        filtered = filterByNormalizedArabic(filtered, searchQuery, (p) => [p.name_ar])
+
+        console.log('🔤 [NORM FILTER] search_providers:', {
+          query: searchQuery,
+          beforeFilter: beforeCount,
+          afterFilter: filtered.length,
+        })
+      }
+
+      // Limit final results
+      result = filtered.slice(0, (args.limit as number) || 10)
       break
     }
 
     case 'get_provider_menu': {
-      // Validate provider_id is a valid UUID
-      if (!isValidUUID(args.provider_id)) {
-        console.warn('🚨 [AI INVALID UUID] get_provider_menu provider_id:', args.provider_id)
-        result = { error: 'Invalid provider_id format', items: [] }
-        break
+      let providerId = args.provider_id as string
+
+      // Try to resolve provider_id if it's not a valid UUID (might be a name)
+      if (!isValidUUID(providerId)) {
+        console.log('🔍 [AI] get_provider_menu: provider_id is not UUID, trying to resolve name:', providerId)
+        const resolved = await resolveProviderByName(providerId, cityId)
+        if (resolved) {
+          providerId = resolved.id
+          console.log('✅ [AI] Resolved provider name to UUID:', providerId, '(' + resolved.name_ar + ')')
+        } else {
+          console.warn('🚨 [AI] Could not resolve provider name:', providerId)
+          result = { error: 'Provider not found', items: [] }
+          break
+        }
       }
 
       const { data, error } = await supabase
         .from('menu_items')
         .select('id, name_ar, price, pricing_type, has_variants, price_from, image_url, description_ar, is_available, has_stock')
-        .eq('provider_id', args.provider_id as string)
+        .eq('provider_id', providerId)
         .eq('is_available', true)
         .or('has_stock.eq.true,has_stock.is.null')
         .gte('price', 15) // Filter out extras
@@ -182,37 +263,68 @@ async function handleToolCall(
     }
 
     case 'search_in_provider': {
-      // Validate provider_id is a valid UUID
-      if (!isValidUUID(args.provider_id)) {
-        console.warn('🚨 [AI INVALID UUID] search_in_provider provider_id:', args.provider_id)
-        result = { error: 'Invalid provider_id format', items: [] }
-        break
+      let providerId = args.provider_id as string
+
+      // Try to resolve provider_id if it's not a valid UUID (might be a name)
+      if (!isValidUUID(providerId)) {
+        console.log('🔍 [AI] provider_id is not UUID, trying to resolve name:', providerId)
+        const resolved = await resolveProviderByName(providerId, cityId)
+        if (resolved) {
+          providerId = resolved.id
+          console.log('✅ [AI] Resolved provider name to UUID:', providerId, '(' + resolved.name_ar + ')')
+        } else {
+          console.warn('🚨 [AI] Could not resolve provider name:', providerId)
+          result = { error: 'Provider not found', items: [] }
+          break
+        }
       }
 
       const searchQuery = args.query as string || ''
-      // Combine filters: (has_stock=true OR has_stock IS NULL) AND (name OR description matches)
-      const combinedFilter = `and(or(has_stock.eq.true,has_stock.is.null),or(name_ar.ilike.%${searchQuery}%,name_en.ilike.%${searchQuery}%,description_ar.ilike.%${searchQuery}%))`
+      const normalizedQuery = normalizeArabic(searchQuery)
+      logNormalization('search_in_provider', searchQuery, normalizedQuery)
 
-      const { data, error } = await supabase
+      // Get more results from DB for normalization filter
+      const { data: rawData, error } = await supabase
         .from('menu_items')
-        .select('id, name_ar, price, pricing_type, has_variants, image_url, is_available, has_stock')
-        .eq('provider_id', args.provider_id as string)
+        .select('id, name_ar, name_en, description_ar, price, pricing_type, has_variants, image_url, is_available, has_stock')
+        .eq('provider_id', providerId)
         .eq('is_available', true)
-        .or(`has_stock.eq.true,has_stock.is.null`)
-        .ilike('name_ar', `%${searchQuery}%`)
-        .limit((args.limit as number) || 8)
+        .or('has_stock.eq.true,has_stock.is.null')
+        .limit(50)
 
       if (error) {
         console.error('❌ [AI DB ERROR] search_in_provider:', error)
       }
 
+      // Apply Arabic normalization filter
+      let filtered = rawData || []
+      if (searchQuery && filtered.length > 0) {
+        const beforeCount = filtered.length
+        filtered = filterByNormalizedArabic(filtered, searchQuery, (item) => [
+          item.name_ar || '',
+          item.name_en || '',
+          item.description_ar || '',
+        ])
+
+        console.log('🔤 [NORM FILTER] search_in_provider:', {
+          query: searchQuery,
+          normalizedQuery,
+          beforeFilter: beforeCount,
+          afterFilter: filtered.length,
+          firstFewNames: filtered.slice(0, 3).map(i => i.name_ar),
+        })
+      }
+
+      // Limit final results
+      const finalData = filtered.slice(0, (args.limit as number) || 8)
+
       // 📦 Detailed logging for search
       console.log('📦 [AI SEARCH RESULT]', {
         tool: 'search_in_provider',
-        providerId: args.provider_id,
-        query: args.query,
-        count: data?.length ?? 0,
-        items: data?.map(i => ({
+        providerId,
+        query: searchQuery,
+        count: finalData.length,
+        items: finalData.map(i => ({
           id: i.id,
           name: i.name_ar,
           price: i.price,
@@ -222,19 +334,17 @@ async function handleToolCall(
       })
 
       // 🚨 Warning if no results
-      if (!data || data.length === 0) {
+      if (finalData.length === 0) {
         console.warn('🚨 [AI EMPTY RESULT]', {
           tool: 'search_in_provider',
-          providerId: args.provider_id,
-          query: args.query,
-          filters: {
-            is_available: true,
-            has_stock: 'true OR null',
-          },
+          providerId,
+          query: searchQuery,
+          normalizedQuery,
+          filters: { is_available: true, has_stock: 'true OR null' },
         })
       }
 
-      result = data || []
+      result = finalData
       break
     }
 
@@ -297,52 +407,89 @@ async function handleToolCall(
     case 'get_promotions': {
       const now = new Date().toISOString()
 
-      // If provider_id is specified, validate it
-      if (args.provider_id && !isValidUUID(args.provider_id)) {
-        console.warn('🚨 [AI INVALID UUID] get_promotions provider_id:', args.provider_id)
-        result = { error: 'Invalid provider_id format', promotions: [] }
-        break
+      // If provider_id is specified, validate it or try to resolve name
+      let providerId = args.provider_id as string | undefined
+      if (providerId && !isValidUUID(providerId)) {
+        console.log('🔍 [AI] promotion provider_id is not UUID, trying to resolve:', providerId)
+        const resolved = await resolveProviderByName(providerId, cityId)
+        if (resolved) {
+          providerId = resolved.id
+        } else {
+          console.warn('🚨 [AI] Could not resolve provider for promotions:', providerId)
+          providerId = undefined
+        }
       }
 
       // Query promotions with provider join for city filtering
       // promotions table has NO city_id, so we join via providers
+      // Also select applies_to and product_ids for specific promotions
       let query = supabase
         .from('promotions')
         .select('*, providers!inner(id, name_ar, city_id)')
         .eq('is_active', true)
         .lte('start_date', now)
         .gte('end_date', now)
-        .eq('providers.city_id', cityId) // Filter by city via provider
+        .eq('providers.city_id', cityId)
 
-      if (args.provider_id) {
-        query = query.eq('provider_id', args.provider_id as string)
+      if (providerId) {
+        query = query.eq('provider_id', providerId)
       }
 
-      const { data, error } = await query.limit((args.limit as number) || 10)
+      const { data: promotions, error } = await query.limit((args.limit as number) || 10)
 
       if (error) {
         console.error('❌ [AI DB ERROR] get_promotions:', error)
       }
 
-      // 📦 Log promotions result
+      // For promotions with applies_to='specific', fetch the affected products
+      const promotionsWithProducts = await Promise.all(
+        (promotions || []).map(async (promo) => {
+          // Check if this promotion applies to specific products
+          if (promo.applies_to === 'specific' && promo.product_ids && Array.isArray(promo.product_ids) && promo.product_ids.length > 0) {
+            // Fetch the specific products
+            const { data: products } = await supabase
+              .from('menu_items')
+              .select('id, name_ar, price, provider_id')
+              .in('id', promo.product_ids)
+              .limit(10)
+
+            return {
+              ...promo,
+              affected_products: products || [],
+            }
+          }
+          return {
+            ...promo,
+            affected_products: [],
+          }
+        })
+      )
+
+      // 📦 Log promotions result with products
       console.log('📦 [AI PROMOTIONS RESULT]', {
         tool: 'get_promotions',
         cityId,
-        providerId: args.provider_id,
-        count: data?.length ?? 0,
-        promotions: data?.map(p => ({
+        providerId,
+        count: promotionsWithProducts.length,
+        promotions: promotionsWithProducts.map(p => ({
           id: p.id,
           title: p.title_ar || p.title,
           provider: p.providers?.name_ar,
           discount: p.discount_percentage || p.discount_amount,
+          applies_to: p.applies_to,
+          affected_products_count: p.affected_products?.length || 0,
         })),
       })
 
-      result = data || []
+      result = promotionsWithProducts
       break
     }
 
     case 'search_product_in_city': {
+      const searchQuery = args.query as string || ''
+      const normalizedQuery = normalizeArabic(searchQuery)
+      logNormalization('search_product_in_city', searchQuery, normalizedQuery)
+
       // First get providers in city
       const { data: providers } = await supabase
         .from('providers')
@@ -358,27 +505,49 @@ async function handleToolCall(
 
       const providerIds = providers.map(p => p.id)
 
-      const { data, error } = await supabase
+      // Get more results for normalization filter
+      const { data: rawData, error } = await supabase
         .from('menu_items')
-        .select('id, name_ar, price, provider_id, is_available, has_stock, providers(id, name_ar)')
+        .select('id, name_ar, name_en, description_ar, price, provider_id, is_available, has_stock, providers(id, name_ar)')
         .in('provider_id', providerIds)
         .eq('is_available', true)
         .or('has_stock.eq.true,has_stock.is.null')
-        .or(`name_ar.ilike.%${args.query}%,name_en.ilike.%${args.query}%`)
-        .limit((args.limit as number) || 10)
+        .limit(100) // Get more for filtering
 
       if (error) {
         console.error('❌ [AI DB ERROR] search_product_in_city:', error)
       }
 
+      // Apply Arabic normalization filter
+      let filtered = rawData || []
+      if (searchQuery && filtered.length > 0) {
+        const beforeCount = filtered.length
+        filtered = filterByNormalizedArabic(filtered, searchQuery, (item) => [
+          item.name_ar || '',
+          item.name_en || '',
+          item.description_ar || '',
+        ])
+
+        console.log('🔤 [NORM FILTER] search_product_in_city:', {
+          query: searchQuery,
+          normalizedQuery,
+          beforeFilter: beforeCount,
+          afterFilter: filtered.length,
+        })
+      }
+
+      // Limit final results
+      const finalData = filtered.slice(0, (args.limit as number) || 10)
+
       // 📦 Detailed logging for city-wide search
       console.log('📦 [AI CITY SEARCH RESULT]', {
         tool: 'search_product_in_city',
         cityId,
-        query: args.query,
+        query: searchQuery,
+        normalizedQuery,
         providersInCity: providers.length,
-        count: data?.length ?? 0,
-        items: data?.map(i => ({
+        count: finalData.length,
+        items: finalData.map(i => ({
           id: i.id,
           name: i.name_ar,
           price: i.price,
@@ -389,16 +558,17 @@ async function handleToolCall(
       })
 
       // 🚨 Warning if no results
-      if (!data || data.length === 0) {
+      if (finalData.length === 0) {
         console.warn('🚨 [AI EMPTY CITY SEARCH]', {
           tool: 'search_product_in_city',
           cityId,
-          query: args.query,
+          query: searchQuery,
+          normalizedQuery,
           providersSearched: providers.length,
         })
       }
 
-      result = data || []
+      result = finalData
       break
     }
 
