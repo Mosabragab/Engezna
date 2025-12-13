@@ -28,12 +28,19 @@ interface PendingVariant {
   price: number
 }
 
+// Current provider context - persists after cart addition
+interface CurrentProvider {
+  id: string
+  name_ar: string
+}
+
 interface ChatMemory {
   pending_item?: PendingItem
   pending_variant?: PendingVariant
   pending_quantity?: number
   awaiting_quantity?: boolean
   awaiting_confirmation?: boolean
+  current_provider?: CurrentProvider // Persists after cart addition for follow-up orders
   [key: string]: unknown
 }
 
@@ -450,11 +457,12 @@ function handleConfirmAdd(memory: ChatMemory): PayloadHandlerResult | null {
     return null
   }
 
-  console.log('✅ [CONFIRM] Adding to cart:', pending_quantity, 'x', pending_item.name_ar)
+  console.log('✅ [CONFIRM] Adding to cart:', pending_quantity, 'x', pending_item.name_ar, 'from', pending_item.provider_name_ar)
 
   const finalPrice = pending_variant?.price || pending_item.price
   const variantText = pending_variant ? ` - ${pending_variant.name_ar}` : ''
   const totalPrice = pending_quantity * finalPrice
+  const providerName = pending_item.provider_name_ar || 'المتجر'
 
   const cart_action: CartAction = {
     type: 'ADD_ITEM',
@@ -467,22 +475,28 @@ function handleConfirmAdd(memory: ChatMemory): PayloadHandlerResult | null {
     variant_name_ar: pending_variant?.name_ar,
   }
 
+  // Include provider name in the response so user knows where the item is from
   return {
-    reply: `تمام! ✅ ضفت ${pending_quantity}x ${pending_item.name_ar}${variantText} للسلة (${totalPrice} ج.م)\n\nتحب تضيف حاجة تانية؟`,
+    reply: `تمام! ✅ ضفت ${pending_quantity}x ${pending_item.name_ar}${variantText} للسلة من ${providerName} (${totalPrice} ج.م)\n\nتحب تضيف حاجة تانية من ${providerName}؟`,
     quick_replies: [
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-      { title: '➕ أضف المزيد', payload: `provider:${pending_item.provider_id}` },
+      { title: `➕ أضف من ${providerName}`, payload: `provider:${pending_item.provider_id}` },
       { title: '🏠 الأقسام', payload: 'categories' },
     ],
     cart_action,
     selected_provider_id: pending_item.provider_id,
     memory: {
-      // Clear all pending items after confirmed add to cart
+      // Clear pending items but PRESERVE current_provider for follow-up orders
       pending_item: undefined,
       pending_variant: undefined,
       pending_quantity: undefined,
       awaiting_quantity: false,
       awaiting_confirmation: false,
+      // Keep track of the provider for follow-up "كمان" requests
+      current_provider: {
+        id: pending_item.provider_id,
+        name_ar: providerName,
+      },
     },
   }
 }
@@ -1936,8 +1950,67 @@ export async function POST(request: Request) {
     // =======================================================================
     // Handle search queries - Direct search without GPT
     // This fixes the inconsistent search results issue
-    // Patterns: "في X", "الاقي X فين", "ولا X", "عايز X", "هطلب X"
+    // Patterns: "كمان X", "في X", "الاقي X فين", "ولا X", "عايز X", "هطلب X"
     // =======================================================================
+
+    // Pattern 0: "كمان X" / "وكمان X" / "برضو X" (also X / I also want X)
+    // Uses current_provider from memory to search in the same provider first
+    const kamanQueryMatch = lastUserMessage.match(/^(?:كمان|وكمان|برضو|برضه|وبرضو|ومعاه|ومعاها|زود|زودلي)\s+(.+?)$/i)
+    if (kamanQueryMatch) {
+      const searchQuery = kamanQueryMatch[1].trim()
+      console.log('🚀 [DIRECT HANDLER] "كمان X" query:', searchQuery, 'current_provider:', memory?.current_provider)
+
+      // Use current_provider from memory if available
+      const providerIdToSearch = memory?.current_provider?.id || selected_provider_id
+
+      if (providerIdToSearch && isValidUUID(providerIdToSearch)) {
+        // Search in the current provider first
+        const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory)
+
+        // If found items, return them
+        if (searchResult.quick_replies.length > 0 && !searchResult.reply.includes('مش لاقي')) {
+          return Response.json({
+            ...searchResult,
+            selected_provider_id: providerIdToSearch,
+            selected_category,
+          })
+        }
+
+        // If not found in current provider, search city-wide and inform user
+        const cityWideResult = await performDirectSearch(searchQuery, city_id, undefined, memory)
+        if (cityWideResult.quick_replies.length > 0 && !cityWideResult.reply.includes('مش لاقي')) {
+          const providerName = memory?.current_provider?.name_ar || 'المتجر الحالي'
+          return Response.json({
+            reply: `مش لاقي ${searchQuery} في ${providerName}، بس لقيته في أماكن تانية 👇`,
+            quick_replies: cityWideResult.quick_replies,
+            selected_provider_id: providerIdToSearch,
+            selected_category,
+            memory,
+          })
+        }
+
+        // Not found anywhere
+        const providerName = memory?.current_provider?.name_ar || 'المتجر'
+        return Response.json({
+          reply: `مش لاقي ${searchQuery} في ${providerName} ولا في أماكن تانية. تحب تدور على حاجة مختلفة؟`,
+          quick_replies: [
+            { title: `📋 شوف منيو ${providerName}`, payload: `provider:${providerIdToSearch}` },
+            { title: '🏠 الأقسام', payload: 'categories' },
+          ],
+          selected_provider_id: providerIdToSearch,
+          selected_category,
+          memory,
+        })
+      } else {
+        // No current provider, search city-wide
+        const searchResult = await performDirectSearch(searchQuery, city_id, undefined, memory)
+        return Response.json({
+          ...searchResult,
+          selected_provider_id,
+          selected_category,
+        })
+      }
+    }
 
     // Pattern 1: "الاقي X فين" / "ألاقي X فين" (where can I find X)
     const ala2iQueryMatch = lastUserMessage.match(/^(?:الاقي|ألاقي|الاقى|ألاقى|لاقي|لاقى|هلاقي|هلاقى)\s+(.+?)\s+(?:فين|فن|وين)(?:\?|؟)?$/i)
@@ -1960,23 +2033,60 @@ export async function POST(request: Request) {
     }
 
     // Pattern 3: "عايز X" / "عاوز X" / "هطلب X" / "نفسي في X" (I want X / I'll order X)
+    // Uses current_provider from memory as fallback
     const ayezQueryMatch = lastUserMessage.match(/^(?:عايز|عاوز|عاوزه|عايزه|هطلب|نفسي في|نفسي فى|ابي|أبي|ابغى|أبغى)\s+(.+?)$/i)
     if (ayezQueryMatch) {
       const searchQuery = ayezQueryMatch[1].trim()
-      console.log('🚀 [DIRECT HANDLER] "عايز X" query:', searchQuery)
+      const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
+      console.log('🚀 [DIRECT HANDLER] "عايز X" query:', searchQuery, 'provider:', providerIdToSearch)
 
-      const searchResult = await performDirectSearch(searchQuery, city_id, selected_provider_id, memory)
-      return Response.json(searchResult)
+      const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory)
+      return Response.json({
+        ...searchResult,
+        selected_provider_id: providerIdToSearch || selected_provider_id,
+        selected_category,
+      })
+    }
+
+    // Pattern 3.5: "عنده X" / "عندهم X" / "معاه X" (does he/they have X - asking about current provider)
+    const andoQueryMatch = lastUserMessage.match(/^(?:عنده|عندهم|عندها|معاه|معاهم|يبيع)\s+(.+?)(?:\?|؟)?$/i)
+    if (andoQueryMatch) {
+      const searchQuery = andoQueryMatch[1].trim()
+      const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
+      console.log('🚀 [DIRECT HANDLER] "عنده X" query:', searchQuery, 'provider:', providerIdToSearch)
+
+      if (providerIdToSearch && isValidUUID(providerIdToSearch)) {
+        const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory)
+        return Response.json({
+          ...searchResult,
+          selected_provider_id: providerIdToSearch,
+          selected_category,
+        })
+      } else {
+        // No provider context, search city-wide
+        const searchResult = await performDirectSearch(searchQuery, city_id, undefined, memory)
+        return Response.json({
+          ...searchResult,
+          selected_provider_id,
+          selected_category,
+        })
+      }
     }
 
     // Pattern 4: "في X" / "فيه X" (is there X?)
+    // Uses current_provider from memory as fallback
     const fiQueryMatch = lastUserMessage.match(/^(?:في|فى|فيه|فية)\s+(.+?)(?:\?|؟)?$/i)
     if (fiQueryMatch) {
       const searchQuery = fiQueryMatch[1].trim()
-      console.log('🚀 [DIRECT HANDLER] "في X" query:', searchQuery, 'provider:', selected_provider_id)
+      const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
+      console.log('🚀 [DIRECT HANDLER] "في X" query:', searchQuery, 'provider:', providerIdToSearch)
 
-      const searchResult = await performDirectSearch(searchQuery, city_id, selected_provider_id, memory)
-      return Response.json(searchResult)
+      const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory)
+      return Response.json({
+        ...searchResult,
+        selected_provider_id: providerIdToSearch || selected_provider_id,
+        selected_category,
+      })
     }
 
     // Handle provider name text (when user types provider name directly)
