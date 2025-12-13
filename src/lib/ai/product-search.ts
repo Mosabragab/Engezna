@@ -223,19 +223,23 @@ export async function searchProviders(
   const supabase = await createClient()
 
   // Map Arabic category names to ACTUAL DB category values
-  // Based on query: SELECT DISTINCT category FROM providers
-  // Values: restaurant_cafe, grocery
+  // Based on business_categories table:
+  // - restaurant_cafe (مطاعم وكافيهات)
+  // - grocery (سوبر ماركت)
+  // - vegetables_fruits (خضروات وفواكه)
+  // - coffee_patisserie (البن والحلويات)
   const categoryMap: Record<string, string[]> = {
     'مطاعم': ['restaurant_cafe'],
     'كافيهات': ['restaurant_cafe'],
     'مطاعم وكافيهات': ['restaurant_cafe'],
     'سوبر ماركت': ['grocery'],
-    'البن': ['restaurant_cafe'], // Coffee shops are under restaurant_cafe
-    'حلويات': ['restaurant_cafe'],
-    'البن والحلويات': ['restaurant_cafe'],
-    'خضروات': ['grocery'],
-    'فواكه': ['grocery'],
-    'خضروات وفواكه': ['grocery'],
+    'البقالة': ['grocery'],
+    'البن': ['coffee_patisserie'],
+    'حلويات': ['coffee_patisserie'],
+    'البن والحلويات': ['coffee_patisserie'],
+    'خضروات': ['vegetables_fruits'],
+    'فواكه': ['vegetables_fruits'],
+    'خضروات وفواكه': ['vegetables_fruits'],
   }
 
   let query = supabase
