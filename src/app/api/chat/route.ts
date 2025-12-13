@@ -52,6 +52,8 @@ interface ChatRequest {
   selected_provider_category?: string
   selected_category?: string // User's chosen category (restaurant_cafe, grocery, etc.)
   memory?: ChatMemory
+  cart_provider_id?: string // Provider ID of items currently in cart (for conflict detection)
+  cart_provider_name?: string // Provider name for user-friendly messages
 }
 
 // UUID validation regex
@@ -413,7 +415,9 @@ async function handleVariantPayload(
  */
 function handleQuantityInput(
   quantity: number,
-  memory: ChatMemory
+  memory: ChatMemory,
+  cartProviderId?: string,
+  cartProviderName?: string
 ): PayloadHandlerResult | null {
   const { pending_item, pending_variant } = memory
 
@@ -421,13 +425,38 @@ function handleQuantityInput(
     return null
   }
 
-  console.log('📦 [PAYLOAD] quantity:', quantity, 'for item:', pending_item.name_ar)
+  console.log('📦 [PAYLOAD] quantity:', quantity, 'for item:', pending_item.name_ar, 'cart_provider:', cartProviderId)
 
   const finalPrice = pending_variant?.price || pending_item.price
   const variantText = pending_variant ? ` - ${pending_variant.name_ar}` : ''
   const totalPrice = quantity * finalPrice
+  const providerName = pending_item.provider_name_ar || 'المتجر'
 
-  // Show confirmation instead of adding directly
+  // Check for cart provider conflict
+  if (cartProviderId && cartProviderId !== pending_item.provider_id) {
+    // Cart has items from different provider - show conflict warning
+    const existingProviderName = cartProviderName || 'متجر آخر'
+    return {
+      reply: `⚠️ السلة فيها منتجات من ${existingProviderName}\n\nمينفعش تضيف منتجات من ${providerName} لنفس الطلب.\n\nتحب تفضي السلة وتبدأ طلب جديد من ${providerName}؟`,
+      quick_replies: [
+        { title: '🗑️ فضي السلة وأضف', payload: 'clear_cart_and_add' },
+        { title: `🔙 ارجع لـ ${existingProviderName}`, payload: `provider:${cartProviderId}` },
+        { title: '🏠 الأقسام', payload: 'categories' },
+      ],
+      selected_provider_id: pending_item.provider_id,
+      memory: {
+        // Keep pending items for potential clear_cart_and_add action
+        pending_item,
+        pending_variant,
+        pending_quantity: quantity,
+        awaiting_quantity: false,
+        awaiting_confirmation: false,
+        awaiting_cart_clear: true, // New state for cart clearing
+      },
+    }
+  }
+
+  // No conflict - show normal confirmation
   return {
     reply: `📋 تأكيد الطلب:\n\n${quantity}x ${pending_item.name_ar}${variantText}\n💰 الإجمالي: ${totalPrice} ج.م\n\nتأكيد الإضافة للسلة؟`,
     quick_replies: [
@@ -493,6 +522,59 @@ function handleConfirmAdd(memory: ChatMemory): PayloadHandlerResult | null {
       awaiting_quantity: false,
       awaiting_confirmation: false,
       // Keep track of the provider for follow-up "كمان" requests
+      current_provider: {
+        id: pending_item.provider_id,
+        name_ar: providerName,
+      },
+    },
+  }
+}
+
+/**
+ * Handle clear_cart_and_add payload - Clear cart and add pending item
+ * Used when user confirms they want to switch providers
+ */
+function handleClearCartAndAdd(memory: ChatMemory): PayloadHandlerResult | null {
+  const { pending_item, pending_variant, pending_quantity } = memory
+
+  if (!pending_item || !pending_quantity) {
+    return null
+  }
+
+  console.log('🗑️ [CLEAR_CART] Clearing cart and adding:', pending_quantity, 'x', pending_item.name_ar)
+
+  const finalPrice = pending_variant?.price || pending_item.price
+  const variantText = pending_variant ? ` - ${pending_variant.name_ar}` : ''
+  const totalPrice = pending_quantity * finalPrice
+  const providerName = pending_item.provider_name_ar || 'المتجر'
+
+  const cart_action: CartAction = {
+    type: 'CLEAR_AND_ADD', // Frontend will clear cart first, then add
+    provider_id: pending_item.provider_id,
+    menu_item_id: pending_item.id,
+    menu_item_name_ar: pending_item.name_ar,
+    quantity: pending_quantity,
+    unit_price: finalPrice,
+    variant_id: pending_variant?.id,
+    variant_name_ar: pending_variant?.name_ar,
+  }
+
+  return {
+    reply: `تمام! ✅ فضيت السلة وضفت ${pending_quantity}x ${pending_item.name_ar}${variantText} من ${providerName} (${totalPrice} ج.م)\n\nتحب تضيف حاجة تانية من ${providerName}؟`,
+    quick_replies: [
+      { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
+      { title: `➕ أضف من ${providerName}`, payload: `provider:${pending_item.provider_id}` },
+      { title: '🏠 الأقسام', payload: 'categories' },
+    ],
+    cart_action,
+    selected_provider_id: pending_item.provider_id,
+    memory: {
+      pending_item: undefined,
+      pending_variant: undefined,
+      pending_quantity: undefined,
+      awaiting_quantity: false,
+      awaiting_confirmation: false,
+      awaiting_cart_clear: false,
       current_provider: {
         id: pending_item.provider_id,
         name_ar: providerName,
@@ -896,7 +978,7 @@ interface QuickReply {
 }
 
 interface CartAction {
-  type: 'ADD_ITEM'
+  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' // CLEAR_AND_ADD clears cart first, then adds item
   provider_id: string
   menu_item_id: string
   menu_item_name_ar: string
@@ -1578,7 +1660,7 @@ function parseAssistantResponse(content: string): {
 export async function POST(request: Request) {
   try {
     const body: ChatRequest = await request.json()
-    const { messages, customer_id, city_id, selected_provider_id, selected_provider_category, selected_category, memory } = body
+    const { messages, customer_id, city_id, selected_provider_id, selected_provider_category, selected_category, memory, cart_provider_id, cart_provider_name } = body
 
     // 🔍 Log incoming request
     console.log('🔍 [AI REQUEST]', {
@@ -1587,6 +1669,8 @@ export async function POST(request: Request) {
       selectedProviderId: selected_provider_id,
       selectedProviderCategory: selected_provider_category,
       selectedCategory: selected_category,
+      cartProviderId: cart_provider_id,
+      cartProviderName: cart_provider_name,
       messageCount: messages?.length,
       lastMessage: messages?.[messages.length - 1]?.content?.slice(0, 100),
       memory: memory,
@@ -1703,7 +1787,7 @@ export async function POST(request: Request) {
       if (quantity > 0 && memory?.pending_item) {
         console.log('🚀 [DIRECT HANDLER] qty:', quantity)
 
-        const result = handleQuantityInput(quantity, memory as ChatMemory)
+        const result = handleQuantityInput(quantity, memory as ChatMemory, cart_provider_id, cart_provider_name)
         if (result) {
           return Response.json({
             reply: result.reply,
@@ -1724,7 +1808,7 @@ export async function POST(request: Request) {
       if (quantity > 0) {
         console.log('🚀 [DIRECT HANDLER] parsed quantity:', quantity, 'from:', lastUserMessage)
 
-        const result = handleQuantityInput(quantity, memory as ChatMemory)
+        const result = handleQuantityInput(quantity, memory as ChatMemory, cart_provider_id, cart_provider_name)
         if (result) {
           return Response.json({
             reply: result.reply,
@@ -1744,6 +1828,24 @@ export async function POST(request: Request) {
       console.log('🚀 [DIRECT HANDLER] confirm_add')
 
       const result = handleConfirmAdd(memory as ChatMemory)
+      if (result) {
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory,
+        })
+      }
+    }
+
+    // Handle clear_cart_and_add payload (user wants to clear cart and add from new provider)
+    if (lastUserMessage === 'clear_cart_and_add' && memory?.awaiting_cart_clear && memory?.pending_item) {
+      console.log('🚀 [DIRECT HANDLER] clear_cart_and_add')
+
+      const result = handleClearCartAndAdd(memory as ChatMemory)
       if (result) {
         return Response.json({
           reply: result.reply,
@@ -2012,10 +2114,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // Pattern 1: "الاقي X فين" / "ألاقي X فين" (where can I find X)
+    // Pattern 1: "الاقي X فين" / "ألاقي X فين" / "الاقي فين X" (where can I find X)
+    // Handles both word orders: "الاقي البيض فين" AND "الاقي فين البيض"
     const ala2iQueryMatch = lastUserMessage.match(/^(?:الاقي|ألاقي|الاقى|ألاقى|لاقي|لاقى|هلاقي|هلاقى)\s+(.+?)\s+(?:فين|فن|وين)(?:\?|؟)?$/i)
-    if (ala2iQueryMatch) {
-      const searchQuery = ala2iQueryMatch[1].trim()
+    const ala2iReversedMatch = lastUserMessage.match(/^(?:الاقي|ألاقي|الاقى|ألاقى|لاقي|لاقى|هلاقي|هلاقى)\s+(?:فين|فن|وين)\s+(.+?)(?:\?|؟)?$/i)
+    if (ala2iQueryMatch || ala2iReversedMatch) {
+      const searchQuery = (ala2iQueryMatch?.[1] || ala2iReversedMatch?.[1])?.trim() || ''
       console.log('🚀 [DIRECT HANDLER] "الاقي X فين" query:', searchQuery)
 
       const searchResult = await performDirectSearch(searchQuery, city_id, selected_provider_id, memory)
@@ -2032,9 +2136,10 @@ export async function POST(request: Request) {
       return Response.json(searchResult)
     }
 
-    // Pattern 3: "عايز X" / "عاوز X" / "هطلب X" / "نفسي في X" (I want X / I'll order X)
+    // Pattern 3: "عايز X" / "عاوز X" / "عايزين X" / "هطلب X" / "نفسي في X" (I want X / I'll order X)
+    // Includes plural forms: عايزين, عاوزين
     // Uses current_provider from memory as fallback
-    const ayezQueryMatch = lastUserMessage.match(/^(?:عايز|عاوز|عاوزه|عايزه|هطلب|نفسي في|نفسي فى|ابي|أبي|ابغى|أبغى)\s+(.+?)$/i)
+    const ayezQueryMatch = lastUserMessage.match(/^(?:عايز|عايزين|عاوز|عاوزين|عاوزه|عايزه|هطلب|هنطلب|نفسي في|نفسي فى|ابي|أبي|ابغى|أبغى|نبي|نبغى)\s+(.+?)$/i)
     if (ayezQueryMatch) {
       const searchQuery = ayezQueryMatch[1].trim()
       const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
@@ -2121,7 +2226,99 @@ export async function POST(request: Request) {
     }
 
     // =======================================================================
-    // 🤖 GPT FALLBACK - For natural language that doesn't match payloads
+    // 🧠 SMART INTENT EXTRACTION - Use GPT to understand ANY phrase
+    // This handles all the variations like "محتاج بيض", "جيبلي بيض", "ممكن بيض", etc.
+    // =======================================================================
+
+    // Check if message looks like it might be a product search (has Arabic text, not a command)
+    const looksLikeProductSearch = /[؀-ۿ]/.test(lastUserMessage) && // Has Arabic
+      !lastUserMessage.startsWith('category:') &&
+      !lastUserMessage.startsWith('provider:') &&
+      !lastUserMessage.startsWith('item:') &&
+      !lastUserMessage.startsWith('variant:') &&
+      !lastUserMessage.startsWith('qty:') &&
+      lastUserMessage.length > 2 &&
+      lastUserMessage.length < 100
+
+    if (looksLikeProductSearch) {
+      try {
+        // Use a quick GPT call to extract the search intent
+        const openai = getOpenAI()
+        const extractionResponse = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `أنت مساعد لاستخراج نية المستخدم. حلل الرسالة وأرجع JSON فقط:
+{
+  "intent": "product_search" | "greeting" | "question" | "other",
+  "product": "اسم المنتج المطلوب (لو intent = product_search)" | null
+}
+
+أمثلة:
+- "عايز بيض" → {"intent": "product_search", "product": "بيض"}
+- "محتاج شوية بيض" → {"intent": "product_search", "product": "بيض"}
+- "جيبلي كباب" → {"intent": "product_search", "product": "كباب"}
+- "ممكن بيتزا" → {"intent": "product_search", "product": "بيتزا"}
+- "في تونة؟" → {"intent": "product_search", "product": "تونة"}
+- "البيض فين" → {"intent": "product_search", "product": "بيض"}
+- "اهلا" → {"intent": "greeting", "product": null}
+- "احنا فين؟" → {"intent": "question", "product": null}
+
+أرجع JSON فقط بدون أي نص إضافي.`
+            },
+            { role: 'user', content: lastUserMessage }
+          ],
+          temperature: 0,
+          max_tokens: 100,
+        })
+
+        const extractionContent = extractionResponse.choices[0].message.content || ''
+        console.log('🧠 [SMART EXTRACTION] Raw response:', extractionContent)
+
+        // Parse the JSON response
+        const jsonMatch = extractionContent.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          const extracted = JSON.parse(jsonMatch[0])
+          console.log('🧠 [SMART EXTRACTION] Parsed:', extracted)
+
+          if (extracted.intent === 'product_search' && extracted.product) {
+            // Use our direct search with the extracted product name
+            const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
+            console.log('🧠 [SMART EXTRACTION] Searching for:', extracted.product, 'in provider:', providerIdToSearch)
+
+            const searchResult = await performDirectSearch(extracted.product, city_id, providerIdToSearch, memory)
+            return Response.json({
+              ...searchResult,
+              selected_provider_id: providerIdToSearch || selected_provider_id,
+              selected_category,
+            })
+          }
+
+          if (extracted.intent === 'greeting') {
+            // Show categories for greeting
+            return Response.json({
+              reply: 'أهلاً بيك! 👋 اختار القسم اللي تحبه 👇',
+              quick_replies: [
+                { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+                { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+                { title: '🍰 البن والحلويات', payload: 'category:coffee_patisserie' },
+                { title: '🥦 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+              ],
+              selected_provider_id,
+              selected_category,
+              memory,
+            })
+          }
+        }
+      } catch (extractionError) {
+        console.warn('🧠 [SMART EXTRACTION] Failed:', extractionError)
+        // Continue to normal GPT fallback
+      }
+    }
+
+    // =======================================================================
+    // 🤖 GPT FALLBACK - For complex queries that don't match any pattern
     // =======================================================================
 
     // Build context as part of system prompt (NOT as a separate message)

@@ -25,6 +25,8 @@ interface ChatAPIRequest {
   selected_provider_category?: string
   selected_category?: string // User's chosen category (restaurant_cafe, grocery, etc.)
   memory?: Record<string, unknown>
+  cart_provider_id?: string // Provider ID of items in cart (for conflict detection)
+  cart_provider_name?: string // Provider name for user-friendly messages
 }
 
 interface QuickReply {
@@ -33,7 +35,7 @@ interface QuickReply {
 }
 
 interface CartAction {
-  type: 'ADD_ITEM'
+  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' // CLEAR_AND_ADD clears cart first, then adds
   provider_id: string
   menu_item_id: string
   menu_item_name_ar: string
@@ -130,7 +132,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
   }, [isHydrated, customerName, setMessages])
 
   // Cart store
-  const { addItem: cartAddItem } = useCart()
+  const { addItem: cartAddItem, cart: cartItems, clearCart, provider: cartProvider } = useCart()
 
   // Cleanup on unmount
   useEffect(() => {
@@ -176,6 +178,10 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       // Add current user message
       conversationHistory.push({ role: 'user', content: message.trim() })
 
+      // Get cart provider info for conflict detection
+      const cartProviderId = cartItems.length > 0 ? cartProvider?.id : undefined
+      const cartProviderName = cartItems.length > 0 ? cartProvider?.name_ar : undefined
+
       const requestBody: ChatAPIRequest = {
         messages: conversationHistory,
         customer_id: userId,
@@ -184,6 +190,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         selected_provider_category: selectedProviderCategory,
         selected_category: selectedCategory,
         memory,
+        cart_provider_id: cartProviderId,
+        cart_provider_name: cartProviderName,
       }
 
       const response = await fetch('/api/chat', {
@@ -223,8 +231,14 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       }
 
       // Handle cart action if present
-      if (data.cart_action && data.cart_action.type === 'ADD_ITEM') {
+      if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD')) {
         const action = data.cart_action
+
+        // If CLEAR_AND_ADD, clear the cart first
+        if (action.type === 'CLEAR_AND_ADD') {
+          clearCart()
+        }
+
         // Create minimal menu item and provider for cart
         const menuItem: MenuItem = {
           id: action.menu_item_id,
@@ -304,7 +318,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       setIsStreaming(false)
       setStreamingContent('')
     }
-  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
+  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
 
   /**
    * Send quick action
@@ -382,6 +396,10 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         categoryToSend = categoryCode
       }
 
+      // Get cart provider info for conflict detection
+      const cartProviderId = cartItems.length > 0 ? cartProvider?.id : undefined
+      const cartProviderName = cartItems.length > 0 ? cartProvider?.name_ar : undefined
+
       const requestBody: ChatAPIRequest = {
         messages: conversationHistory,
         customer_id: userId,
@@ -390,6 +408,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         selected_provider_category: selectedProviderCategory,
         selected_category: categoryToSend,
         memory,
+        cart_provider_id: cartProviderId,
+        cart_provider_name: cartProviderName,
       }
 
       const response = await fetch('/api/chat', {
@@ -428,8 +448,14 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       }
 
       // Handle cart action if present
-      if (data.cart_action && data.cart_action.type === 'ADD_ITEM') {
+      if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD')) {
         const cartAction = data.cart_action
+
+        // If CLEAR_AND_ADD, clear the cart first
+        if (cartAction.type === 'CLEAR_AND_ADD') {
+          clearCart()
+        }
+
         const menuItem: MenuItem = {
           id: cartAction.menu_item_id,
           provider_id: cartAction.provider_id,
@@ -503,7 +529,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, addMessage, setSelectedProviderId, setSelectedProviderCategory, setSelectedCategory, setMemory])
+  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setSelectedCategory, setMemory])
 
   /**
    * Add product to cart from chat
