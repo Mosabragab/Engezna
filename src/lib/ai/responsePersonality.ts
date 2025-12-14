@@ -91,9 +91,17 @@ export const CANCEL_RESPONSES = {
     'تمام، عايز تشوف مكان تاني؟',
     'ماشي، خلينا نشوف أماكن تانية 👇',
   ],
+  provider_with_cart: [
+    'تمام! عندك أصناف في السلة خلاص. تحب تكمل ولا تشوف حاجة تانية؟',
+    'ماشي! تحب تضيف حاجة تانية للسلة ولا تخلص؟',
+  ],
   nothing: [
     'مفيش حاجة تتلغي 😊 تحب تبدأ طلب جديد؟',
     'السلة فاضية أصلاً! يلا نطلب حاجة؟',
+  ],
+  nothing_with_cart: [
+    'مفيش حاجة جديدة تتلغي 😊 تحب تكمل طلبك؟',
+    'تمام! تحب تروح للسلة ولا تضيف حاجة تانية؟',
   ],
 }
 
@@ -220,7 +228,7 @@ export function getCartClearedMessage(): string {
 /**
  * Get a random cancel response based on context
  */
-export function getCancelResponse(context: 'variant' | 'item' | 'provider' | 'nothing'): string {
+export function getCancelResponse(context: 'variant' | 'item' | 'provider' | 'provider_with_cart' | 'nothing' | 'nothing_with_cart'): string {
   return randomChoice(CANCEL_RESPONSES[context])
 }
 
