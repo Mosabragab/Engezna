@@ -35,7 +35,7 @@ interface QuickReply {
 }
 
 interface CartAction {
-  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' // CLEAR_AND_ADD clears cart first, then adds
+  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' | 'CLEAR_CART' // CLEAR_AND_ADD clears cart first, then adds; CLEAR_CART just clears
   provider_id: string
   menu_item_id: string
   menu_item_name_ar: string
@@ -233,6 +233,12 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
 
       // Helper function to process a single cart action
       const processCartAction = (action: CartAction, shouldClearFirst: boolean = false) => {
+        // Handle CLEAR_CART - just clear the cart, don't add anything
+        if (action.type === 'CLEAR_CART') {
+          clearCart()
+          return
+        }
+
         // If CLEAR_AND_ADD or shouldClearFirst, clear the cart first
         if (action.type === 'CLEAR_AND_ADD' || shouldClearFirst) {
           clearCart()
@@ -290,7 +296,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         })
       }
       // Handle single cart action (backward compatibility)
-      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD')) {
+      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD' || data.cart_action.type === 'CLEAR_CART')) {
         processCartAction(data.cart_action)
       }
 
@@ -477,6 +483,12 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
 
       // Helper function to process a single cart action
       const processCartAction = (action: CartAction, shouldClearFirst: boolean = false) => {
+        // Handle CLEAR_CART - just clear the cart, don't add anything
+        if (action.type === 'CLEAR_CART') {
+          clearCart()
+          return
+        }
+
         // If CLEAR_AND_ADD or shouldClearFirst, clear the cart first
         if (action.type === 'CLEAR_AND_ADD' || shouldClearFirst) {
           clearCart()
@@ -531,7 +543,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         })
       }
       // Handle single cart action (backward compatibility)
-      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD')) {
+      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD' || data.cart_action.type === 'CLEAR_CART')) {
         processCartAction(data.cart_action)
       }
 

@@ -2014,6 +2014,43 @@ export async function POST(request: Request) {
     }
 
     // =======================================================================
+    // Handle clear cart request - "امسح السلة", "فضي السلة", etc.
+    // =======================================================================
+    const isClearCartRequest = /^(?:امسح|امحي|فضي|فرغ|نظف|شيل)\s*(?:ال)?سل[ةه]/i.test(lastUserMessage) ||
+      lastUserMessage === 'clear_cart' ||
+      lastUserMessage === '🗑️ امسح السلة'
+
+    if (isClearCartRequest) {
+      console.log('🚀 [DIRECT HANDLER] clear_cart')
+      return Response.json({
+        reply: 'تمام! ✅ تم تفريغ السلة.\n\nتحب تطلب من أنهي مكان؟',
+        quick_replies: [
+          { title: '🏠 الأقسام', payload: 'categories' },
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🔥 العروض', payload: 'show_promotions' },
+        ],
+        cart_action: {
+          type: 'CLEAR_CART' as const,
+          provider_id: '',
+          menu_item_id: '',
+          menu_item_name_ar: '',
+          quantity: 0,
+          unit_price: 0,
+        },
+        selected_provider_id: undefined, // Clear provider context
+        selected_category,
+        memory: {
+          pending_item: undefined,
+          pending_variant: undefined,
+          pending_quantity: undefined,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          current_provider: undefined,
+        },
+      })
+    }
+
+    // =======================================================================
     // Handle navigate: payload - Direct navigation commands
     // =======================================================================
     if (lastUserMessage.startsWith('navigate:')) {
