@@ -1798,6 +1798,9 @@ export async function POST(request: Request) {
     const body: ChatRequest = await request.json()
     const { messages, customer_id, city_id, selected_provider_id, selected_provider_category, selected_category, memory, cart_provider_id, cart_provider_name } = body
 
+    // Get the last user message (extracted early for pre-validation handlers)
+    const lastUserMessage = messages[messages.length - 1]?.content || ''
+
     // 🔍 Log incoming request
     console.log('🔍 [AI REQUEST]', {
       cityId: city_id,
@@ -1808,9 +1811,70 @@ export async function POST(request: Request) {
       cartProviderId: cart_provider_id,
       cartProviderName: cart_provider_name,
       messageCount: messages?.length,
-      lastMessage: messages?.[messages.length - 1]?.content?.slice(0, 100),
+      lastMessage: lastUserMessage?.slice(0, 100),
       memory: memory,
     })
+
+    // =========================================================================
+    // 🚀 PRE-VALIDATION HANDLERS - These don't need city_id
+    // =========================================================================
+
+    // Handle provider_category:xxx payload - Show items from provider's menu category
+    // This doesn't need city_id because it gets provider_id from the category itself
+    if (lastUserMessage.startsWith('provider_category:')) {
+      const categoryId = lastUserMessage.replace('provider_category:', '')
+      if (isValidUUID(categoryId)) {
+        console.log('🚀 [DIRECT HANDLER] provider_category:', categoryId)
+
+        const supabase = await createClient()
+
+        // Get category info
+        const { data: category } = await supabase
+          .from('provider_categories')
+          .select('id, name_ar, provider_id')
+          .eq('id', categoryId)
+          .single()
+
+        if (category) {
+          // Get items in this category
+          const { data: items } = await supabase
+            .from('menu_items')
+            .select('id, name_ar, price')
+            .eq('provider_id', category.provider_id)
+            .eq('category_id', categoryId)
+            .eq('is_available', true)
+            .order('display_order')
+            .limit(10)
+
+          if (items && items.length > 0) {
+            return Response.json({
+              reply: `📂 ${category.name_ar}\n\nاختار الصنف اللي تحبه 👇`,
+              quick_replies: items.map(item => ({
+                title: `${item.name_ar} (${item.price} ج.م)`,
+                payload: `item:${item.id}`,
+              })),
+              selected_provider_id: category.provider_id,
+              selected_category,
+              memory: {
+                ...memory,
+                current_provider: memory?.current_provider,
+              },
+            })
+          } else {
+            return Response.json({
+              reply: `مفيش منتجات متاحة في ${category.name_ar} دلوقتي 😕`,
+              quick_replies: [
+                { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${category.provider_id}` },
+                { title: '🏠 الأقسام', payload: 'categories' },
+              ],
+              selected_provider_id: category.provider_id,
+              selected_category,
+              memory,
+            })
+          }
+        }
+      }
+    }
 
     // Validate city_id
     if (!city_id) {
@@ -1833,9 +1897,6 @@ export async function POST(request: Request) {
         quick_replies: [],
       }, { status: 429 })
     }
-
-    // Get the last user message
-    const lastUserMessage = messages[messages.length - 1]?.content || ''
 
     // =======================================================================
     // 🚀 DIRECT PAYLOAD HANDLERS - Handle button payloads WITHOUT calling GPT
@@ -1916,62 +1977,6 @@ export async function POST(request: Request) {
             },
           },
         })
-      }
-    }
-
-    // Handle provider_category:xxx payload - Show items from provider's menu category
-    if (lastUserMessage.startsWith('provider_category:')) {
-      const categoryId = lastUserMessage.replace('provider_category:', '')
-      if (isValidUUID(categoryId)) {
-        console.log('🚀 [DIRECT HANDLER] provider_category:', categoryId)
-
-        const supabase = await createClient()
-
-        // Get category info
-        const { data: category } = await supabase
-          .from('provider_categories')
-          .select('id, name_ar, provider_id')
-          .eq('id', categoryId)
-          .single()
-
-        if (category) {
-          // Get items in this category
-          const { data: items } = await supabase
-            .from('menu_items')
-            .select('id, name_ar, price')
-            .eq('provider_id', category.provider_id)
-            .eq('category_id', categoryId)
-            .eq('is_available', true)
-            .order('display_order')
-            .limit(10)
-
-          if (items && items.length > 0) {
-            return Response.json({
-              reply: `📂 ${category.name_ar}\n\nاختار الصنف اللي تحبه 👇`,
-              quick_replies: items.map(item => ({
-                title: `${item.name_ar} (${item.price} ج.م)`,
-                payload: `item:${item.id}`,
-              })),
-              selected_provider_id: category.provider_id,
-              selected_category,
-              memory: {
-                ...memory,
-                current_provider: memory?.current_provider,
-              },
-            })
-          } else {
-            return Response.json({
-              reply: `مفيش منتجات متاحة في ${category.name_ar} دلوقتي 😕`,
-              quick_replies: [
-                { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${category.provider_id}` },
-                { title: '🏠 الأقسام', payload: 'categories' },
-              ],
-              selected_provider_id: category.provider_id,
-              selected_category,
-              memory,
-            })
-          }
-        }
       }
     }
 
