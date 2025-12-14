@@ -228,34 +228,46 @@ async function handleProviderPayload(
     }
   }
 
-  // Get menu items
-  const { data: menuItems } = await supabase
-    .from('menu_items')
-    .select('id, name_ar, price, has_variants, pricing_type, image_url')
+  // Get provider's own menu categories
+  const { data: providerCategories } = await supabase
+    .from('provider_categories')
+    .select('id, name_ar, icon')
     .eq('provider_id', providerId)
-    .eq('is_available', true)
-    .or('has_stock.eq.true,has_stock.is.null')
-    .order('price', { ascending: false })
-    .limit(12)
+    .eq('is_active', true)
+    .order('display_order')
+    .limit(8)
 
-  if (!menuItems || menuItems.length === 0) {
-    return {
-      reply: `${provider.name_ar} مفيش منتجات متاحة دلوقتي 😕`,
-      quick_replies: [
-        { title: '🏠 الأقسام', payload: 'categories' },
-        { title: '🔥 العروض', payload: 'show_promotions' },
-      ],
-      selected_provider_id: providerId,
-    }
+  // Get category emoji based on provider category
+  const categoryEmoji = provider.category === 'restaurant_cafe' ? '🍽️' :
+    provider.category === 'grocery' ? '🛒' :
+    provider.category === 'coffee_patisserie' ? '☕' : '📍'
+
+  // Build quick replies
+  const quickReplies: QuickReply[] = [
+    { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${providerId}` },
+  ]
+
+  // Add provider's own categories if available
+  if (providerCategories && providerCategories.length > 0) {
+    providerCategories.slice(0, 6).forEach(cat => {
+      quickReplies.push({
+        title: `${cat.icon || '📂'} ${cat.name_ar}`,
+        payload: `provider_category:${cat.id}`,
+      })
+    })
   }
 
+  // Conversational approach: Ask what they want instead of showing full menu
   return {
-    reply: `تمام! هنا منيو ${provider.name_ar} ⭐${provider.rating || ''} 👇`,
-    quick_replies: menuItems.slice(0, 10).map(item => ({
-      title: `${item.name_ar} (${item.price} ج.م)`,
-      payload: `item:${item.id}`,
-    })),
+    reply: `تمام! اخترت ${provider.name_ar} ⭐${provider.rating || ''} ${categoryEmoji}\n\nعايز تطلب إيه؟ اكتب اسم الصنف وهلاقيهولك...`,
+    quick_replies: quickReplies,
     selected_provider_id: providerId,
+    memory: {
+      current_provider: {
+        id: providerId,
+        name_ar: provider.name_ar,
+      },
+    },
   }
 }
 
@@ -1786,6 +1798,9 @@ export async function POST(request: Request) {
     const body: ChatRequest = await request.json()
     const { messages, customer_id, city_id, selected_provider_id, selected_provider_category, selected_category, memory, cart_provider_id, cart_provider_name } = body
 
+    // Get the last user message (extracted early for pre-validation handlers)
+    const lastUserMessage = messages[messages.length - 1]?.content || ''
+
     // 🔍 Log incoming request
     console.log('🔍 [AI REQUEST]', {
       cityId: city_id,
@@ -1796,64 +1811,195 @@ export async function POST(request: Request) {
       cartProviderId: cart_provider_id,
       cartProviderName: cart_provider_name,
       messageCount: messages?.length,
-      lastMessage: messages?.[messages.length - 1]?.content?.slice(0, 100),
+      lastMessage: lastUserMessage?.slice(0, 100),
       memory: memory,
     })
 
-    // Validate city_id
-    if (!city_id) {
-      return Response.json({
-        reply: 'اختار المدينة من فوق الأول 🏙️',
-        quick_replies: [],
-      })
+    // =========================================================================
+    // 🚀 PRE-VALIDATION HANDLERS - These don't need city_id
+    // =========================================================================
+
+    // Handle provider_category:xxx payload - Show items from provider's menu category
+    // This doesn't need city_id because it gets provider_id from the category itself
+    if (lastUserMessage.startsWith('provider_category:')) {
+      const categoryId = lastUserMessage.replace('provider_category:', '')
+      if (isValidUUID(categoryId)) {
+        console.log('🚀 [DIRECT HANDLER] provider_category:', categoryId)
+
+        const supabase = await createClient()
+
+        // Get category info
+        const { data: category } = await supabase
+          .from('provider_categories')
+          .select('id, name_ar, provider_id')
+          .eq('id', categoryId)
+          .single()
+
+        if (category) {
+          // Get items in this category
+          const { data: items } = await supabase
+            .from('menu_items')
+            .select('id, name_ar, price')
+            .eq('provider_id', category.provider_id)
+            .eq('category_id', categoryId)
+            .eq('is_available', true)
+            .order('display_order')
+            .limit(10)
+
+          if (items && items.length > 0) {
+            return Response.json({
+              reply: `📂 ${category.name_ar}\n\nاختار الصنف اللي تحبه 👇`,
+              quick_replies: items.map(item => ({
+                title: `${item.name_ar} (${item.price} ج.م)`,
+                payload: `item:${item.id}`,
+              })),
+              selected_provider_id: category.provider_id,
+              selected_category,
+              memory: {
+                ...memory,
+                current_provider: memory?.current_provider,
+              },
+            })
+          } else {
+            return Response.json({
+              reply: `مفيش منتجات متاحة في ${category.name_ar} دلوقتي 😕`,
+              quick_replies: [
+                { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${category.provider_id}` },
+                { title: '🏠 الأقسام', payload: 'categories' },
+              ],
+              selected_provider_id: category.provider_id,
+              selected_category,
+              memory,
+            })
+          }
+        }
+      }
     }
 
-    // Validate selected_provider_id if provided
-    if (selected_provider_id && !isValidUUID(selected_provider_id)) {
-      console.warn('🚨 [AI INVALID UUID] selected_provider_id:', selected_provider_id)
+    // Handle item:xxx payload - Show item details (doesn't need city_id)
+    if (lastUserMessage.startsWith('item:')) {
+      const itemId = lastUserMessage.replace('item:', '')
+      if (isValidUUID(itemId)) {
+        console.log('🚀 [PRE-VALIDATION HANDLER] item:', itemId)
+
+        const result = await handleItemPayload(itemId, selected_provider_id)
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory || memory,
+        })
+      }
     }
 
-    // Rate limiting
-    const rateLimitKey = customer_id || request.headers.get('x-forwarded-for') || 'anonymous'
-    if (!checkRateLimit(rateLimitKey)) {
-      return Response.json({
-        reply: 'لقد تجاوزت الحد الأقصى للرسائل. جرب بكرة! 😊',
-        quick_replies: [],
-      }, { status: 429 })
+    // Handle variant:xxx payload (doesn't need city_id)
+    if (lastUserMessage.startsWith('variant:')) {
+      const variantId = lastUserMessage.replace('variant:', '')
+      if (isValidUUID(variantId)) {
+        console.log('🚀 [PRE-VALIDATION HANDLER] variant:', variantId)
+
+        const result = await handleVariantPayload(variantId, memory as ChatMemory)
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory || memory,
+        })
+      }
     }
 
-    // Get the last user message
-    const lastUserMessage = messages[messages.length - 1]?.content || ''
+    // Handle qty:x payload (doesn't need city_id)
+    if (lastUserMessage.startsWith('qty:')) {
+      const qtyStr = lastUserMessage.replace('qty:', '')
+      const quantity = parseInt(qtyStr, 10)
+      if (quantity > 0 && memory?.pending_item) {
+        console.log('🚀 [PRE-VALIDATION HANDLER] qty:', quantity)
 
-    // =======================================================================
-    // 🚀 DIRECT PAYLOAD HANDLERS - Handle button payloads WITHOUT calling GPT
-    // This ensures consistent, fast responses for button clicks
-    // =======================================================================
-
-    // Handle category:xxx payload
-    if (lastUserMessage.startsWith('category:')) {
-      const categoryCode = lastUserMessage.replace('category:', '')
-      console.log('🚀 [DIRECT HANDLER] category:', categoryCode)
-
-      const result = await handleCategoryPayload(categoryCode, city_id)
-      return Response.json({
-        reply: result.reply,
-        quick_replies: result.quick_replies,
-        cart_action: result.cart_action,
-        selected_provider_id: result.selected_provider_id || selected_provider_id,
-        selected_provider_category: selected_provider_category,
-        selected_category: result.selected_category || selected_category,
-        memory: result.memory || memory,
-      })
+        const result = handleQuantityInput(quantity, memory as ChatMemory, cart_provider_id, cart_provider_name)
+        if (result) {
+          return Response.json({
+            reply: result.reply,
+            quick_replies: result.quick_replies,
+            cart_action: result.cart_action,
+            selected_provider_id: result.selected_provider_id || selected_provider_id,
+            selected_provider_category: selected_provider_category,
+            selected_category: selected_category,
+            memory: result.memory,
+          })
+        }
+      }
     }
 
-    // Handle provider:xxx payload
+    // Handle quantity input when awaiting_quantity is true (doesn't need city_id)
+    if (memory?.awaiting_quantity && memory?.pending_item) {
+      const quantity = parseArabicQuantity(lastUserMessage)
+      if (quantity > 0) {
+        console.log('🚀 [PRE-VALIDATION HANDLER] parsed quantity:', quantity, 'from:', lastUserMessage)
+
+        const result = handleQuantityInput(quantity, memory as ChatMemory, cart_provider_id, cart_provider_name)
+        if (result) {
+          return Response.json({
+            reply: result.reply,
+            quick_replies: result.quick_replies,
+            cart_action: result.cart_action,
+            selected_provider_id: result.selected_provider_id || selected_provider_id,
+            selected_provider_category: selected_provider_category,
+            selected_category: selected_category,
+            memory: result.memory,
+          })
+        }
+      }
+    }
+
+    // Handle confirm_add payload (doesn't need city_id)
+    if (lastUserMessage === 'confirm_add' && memory?.awaiting_confirmation && memory?.pending_item) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] confirm_add')
+
+      const result = handleConfirmAdd(memory as ChatMemory)
+      if (result) {
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory,
+        })
+      }
+    }
+
+    // Handle clear_cart_and_add payload (doesn't need city_id)
+    if (lastUserMessage === 'clear_cart_and_add' && memory?.awaiting_cart_clear && memory?.pending_item) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] clear_cart_and_add')
+
+      const result = handleClearCartAndAdd(memory as ChatMemory)
+      if (result) {
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory,
+        })
+      }
+    }
+
+    // Handle provider:xxx payload (doesn't need city_id - just looks up provider by ID)
     if (lastUserMessage.startsWith('provider:')) {
       const providerId = lastUserMessage.replace('provider:', '')
       if (isValidUUID(providerId)) {
-        console.log('🚀 [DIRECT HANDLER] provider:', providerId)
+        console.log('🚀 [PRE-VALIDATION HANDLER] provider:', providerId)
 
-        const result = await handleProviderPayload(providerId, city_id)
+        const result = await handleProviderPayload(providerId, city_id || '')
         return Response.json({
           reply: result.reply,
           quick_replies: result.quick_replies,
@@ -1866,13 +2012,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // Handle add_more:xxx payload - Ask user what they want to add from this provider
+    // Handle add_more:xxx payload (doesn't need city_id)
     if (lastUserMessage.startsWith('add_more:')) {
       const providerId = lastUserMessage.replace('add_more:', '')
       if (isValidUUID(providerId)) {
-        console.log('🚀 [DIRECT HANDLER] add_more:', providerId)
+        console.log('🚀 [PRE-VALIDATION HANDLER] add_more:', providerId)
 
-        // Create supabase client and fetch provider name
         const supabase = await createClient()
         const { data: provider } = await supabase
           .from('providers')
@@ -1907,165 +2052,48 @@ export async function POST(request: Request) {
       }
     }
 
-    // Handle item:xxx payload
-    if (lastUserMessage.startsWith('item:')) {
-      const itemId = lastUserMessage.replace('item:', '')
-      if (isValidUUID(itemId)) {
-        console.log('🚀 [DIRECT HANDLER] item:', itemId)
-
-        const result = await handleItemPayload(itemId, selected_provider_id)
-        return Response.json({
-          reply: result.reply,
-          quick_replies: result.quick_replies,
-          cart_action: result.cart_action,
-          selected_provider_id: result.selected_provider_id || selected_provider_id,
-          selected_provider_category: selected_provider_category,
-          selected_category: selected_category,
-          memory: result.memory || memory,
-        })
-      }
+    // Validate city_id
+    if (!city_id) {
+      return Response.json({
+        reply: 'اختار المدينة من فوق الأول 🏙️',
+        quick_replies: [],
+      })
     }
 
-    // Handle variant:xxx payload
-    if (lastUserMessage.startsWith('variant:')) {
-      const variantId = lastUserMessage.replace('variant:', '')
-      if (isValidUUID(variantId)) {
-        console.log('🚀 [DIRECT HANDLER] variant:', variantId)
-
-        const result = await handleVariantPayload(variantId, memory as ChatMemory)
-        return Response.json({
-          reply: result.reply,
-          quick_replies: result.quick_replies,
-          cart_action: result.cart_action,
-          selected_provider_id: result.selected_provider_id || selected_provider_id,
-          selected_provider_category: selected_provider_category,
-          selected_category: selected_category,
-          memory: result.memory || memory,
-        })
-      }
+    // Validate selected_provider_id if provided
+    if (selected_provider_id && !isValidUUID(selected_provider_id)) {
+      console.warn('🚨 [AI INVALID UUID] selected_provider_id:', selected_provider_id)
     }
 
-    // Handle qty:x payload (from quantity buttons)
-    if (lastUserMessage.startsWith('qty:')) {
-      const qtyStr = lastUserMessage.replace('qty:', '')
-      const quantity = parseInt(qtyStr, 10)
-      if (quantity > 0 && memory?.pending_item) {
-        console.log('🚀 [DIRECT HANDLER] qty:', quantity)
-
-        const result = handleQuantityInput(quantity, memory as ChatMemory, cart_provider_id, cart_provider_name)
-        if (result) {
-          return Response.json({
-            reply: result.reply,
-            quick_replies: result.quick_replies,
-            cart_action: result.cart_action,
-            selected_provider_id: result.selected_provider_id || selected_provider_id,
-            selected_provider_category: selected_provider_category,
-            selected_category: selected_category,
-            memory: result.memory,
-          })
-        }
-      }
+    // Rate limiting
+    const rateLimitKey = customer_id || request.headers.get('x-forwarded-for') || 'anonymous'
+    if (!checkRateLimit(rateLimitKey)) {
+      return Response.json({
+        reply: 'لقد تجاوزت الحد الأقصى للرسائل. جرب بكرة! 😊',
+        quick_replies: [],
+      }, { status: 429 })
     }
 
-    // Handle quantity input when awaiting_quantity is true
-    if (memory?.awaiting_quantity && memory?.pending_item) {
-      const quantity = parseArabicQuantity(lastUserMessage)
-      if (quantity > 0) {
-        console.log('🚀 [DIRECT HANDLER] parsed quantity:', quantity, 'from:', lastUserMessage)
+    // =======================================================================
+    // 🚀 DIRECT PAYLOAD HANDLERS - Handle button payloads WITHOUT calling GPT
+    // This ensures consistent, fast responses for button clicks
+    // =======================================================================
 
-        const result = handleQuantityInput(quantity, memory as ChatMemory, cart_provider_id, cart_provider_name)
-        if (result) {
-          return Response.json({
-            reply: result.reply,
-            quick_replies: result.quick_replies,
-            cart_action: result.cart_action,
-            selected_provider_id: result.selected_provider_id || selected_provider_id,
-            selected_provider_category: selected_provider_category,
-            selected_category: selected_category,
-            memory: result.memory,
-          })
-        }
-      }
-    }
+    // Handle category:xxx payload
+    if (lastUserMessage.startsWith('category:')) {
+      const categoryCode = lastUserMessage.replace('category:', '')
+      console.log('🚀 [DIRECT HANDLER] category:', categoryCode)
 
-    // Handle confirm_add payload (user confirmed adding to cart)
-    if (lastUserMessage === 'confirm_add' && memory?.awaiting_confirmation && memory?.pending_item) {
-      console.log('🚀 [DIRECT HANDLER] confirm_add')
-
-      const result = handleConfirmAdd(memory as ChatMemory)
-      if (result) {
-        return Response.json({
-          reply: result.reply,
-          quick_replies: result.quick_replies,
-          cart_action: result.cart_action,
-          selected_provider_id: result.selected_provider_id || selected_provider_id,
-          selected_provider_category: selected_provider_category,
-          selected_category: selected_category,
-          memory: result.memory,
-        })
-      }
-    }
-
-    // Handle quantity modification during confirmation ("ضيف ٢ كمان", "زود ٣", etc.)
-    // This handles when user wants to add more while in confirmation step
-    if (memory?.awaiting_confirmation && memory?.pending_item && memory?.pending_quantity) {
-      // Pattern: "ضيف X كمان" / "زود X" / "خليهم X" / "X كمان"
-      const addMoreMatch = lastUserMessage.match(/^(?:ضيف|زود|زودلي|زودي|خلي|خليهم|اضيف|أضيف)\s*(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)(?:\s*(?:كمان|تاني|زيادة))?$/i)
-      const moreOnlyMatch = lastUserMessage.match(/^(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)\s*(?:كمان|تاني|زيادة)$/i)
-      const setTotalMatch = lastUserMessage.match(/^(?:خليهم|اخليهم|يبقوا|يكونوا)\s*(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)$/i)
-
-      if (addMoreMatch || moreOnlyMatch || setTotalMatch) {
-        const matchedValue = (addMoreMatch?.[1] || moreOnlyMatch?.[1] || setTotalMatch?.[1] || '').trim()
-        const additionalQty = parseArabicQuantity(matchedValue)
-
-        if (additionalQty > 0) {
-          const pending_item = memory.pending_item as PendingItem
-          const pending_variant = memory.pending_variant as PendingVariant | undefined
-          const currentQty = memory.pending_quantity as number
-
-          // If "خليهم X" - set total, otherwise add
-          const newQuantity = setTotalMatch ? additionalQty : currentQty + additionalQty
-          const finalPrice = pending_variant?.price || pending_item.price
-          const variantText = pending_variant ? ` - ${pending_variant.name_ar}` : ''
-          const totalPrice = newQuantity * finalPrice
-
-          console.log('🚀 [DIRECT HANDLER] quantity modification:', currentQty, '→', newQuantity, 'for', pending_item.name_ar)
-
-          return Response.json({
-            reply: `📋 تأكيد الطلب:\n\n${newQuantity}x ${pending_item.name_ar}${variantText}\n💰 الإجمالي: ${totalPrice} ج.م\n\nتأكيد الإضافة للسلة؟`,
-            quick_replies: [
-              { title: '✅ تأكيد وإضافة', payload: 'confirm_add' },
-              { title: '🔄 تغيير الكمية', payload: `item:${pending_item.id}` },
-              { title: '🔙 رجوع للمنيو', payload: `provider:${pending_item.provider_id}` },
-            ],
-            selected_provider_id: pending_item.provider_id,
-            selected_category,
-            memory: {
-              ...memory,
-              pending_quantity: newQuantity,
-              awaiting_confirmation: true,
-            },
-          })
-        }
-      }
-    }
-
-    // Handle clear_cart_and_add payload (user wants to clear cart and add from new provider)
-    if (lastUserMessage === 'clear_cart_and_add' && memory?.awaiting_cart_clear && memory?.pending_item) {
-      console.log('🚀 [DIRECT HANDLER] clear_cart_and_add')
-
-      const result = handleClearCartAndAdd(memory as ChatMemory)
-      if (result) {
-        return Response.json({
-          reply: result.reply,
-          quick_replies: result.quick_replies,
-          cart_action: result.cart_action,
-          selected_provider_id: result.selected_provider_id || selected_provider_id,
-          selected_provider_category: selected_provider_category,
-          selected_category: selected_category,
-          memory: result.memory,
-        })
-      }
+      const result = await handleCategoryPayload(categoryCode, city_id)
+      return Response.json({
+        reply: result.reply,
+        quick_replies: result.quick_replies,
+        cart_action: result.cart_action,
+        selected_provider_id: result.selected_provider_id || selected_provider_id,
+        selected_provider_category: selected_provider_category,
+        selected_category: result.selected_category || selected_category,
+        memory: result.memory || memory,
+      })
     }
 
     // =======================================================================

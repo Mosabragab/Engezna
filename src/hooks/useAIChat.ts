@@ -380,7 +380,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         '🥦 خضروات وفواكه': 'category:vegetables_fruits',
         // Legacy actions
         '🔥 العروض': 'show_promotions',
-        '📋 شوف المنيو': selectedProviderId ? `provider:${selectedProviderId}` : 'مرحبا',
+        // Use navigate: for menu view - handled on frontend, doesn't need city_id
+        '📋 شوف المنيو': selectedProviderId ? `navigate:/ar/providers/${selectedProviderId}` : 'مرحبا',
         '🔍 ابحث': 'search',
       }
 
