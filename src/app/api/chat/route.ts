@@ -228,34 +228,25 @@ async function handleProviderPayload(
     }
   }
 
-  // Get menu items
-  const { data: menuItems } = await supabase
-    .from('menu_items')
-    .select('id, name_ar, price, has_variants, pricing_type, image_url')
-    .eq('provider_id', providerId)
-    .eq('is_available', true)
-    .or('has_stock.eq.true,has_stock.is.null')
-    .order('price', { ascending: false })
-    .limit(12)
+  // Get category emoji based on provider category
+  const categoryEmoji = provider.category === 'restaurant_cafe' ? '🍽️' :
+    provider.category === 'grocery' ? '🛒' :
+    provider.category === 'coffee_patisserie' ? '☕' : '📍'
 
-  if (!menuItems || menuItems.length === 0) {
-    return {
-      reply: `${provider.name_ar} مفيش منتجات متاحة دلوقتي 😕`,
-      quick_replies: [
-        { title: '🏠 الأقسام', payload: 'categories' },
-        { title: '🔥 العروض', payload: 'show_promotions' },
-      ],
-      selected_provider_id: providerId,
-    }
-  }
-
+  // Conversational approach: Ask what they want instead of showing full menu
   return {
-    reply: `تمام! هنا منيو ${provider.name_ar} ⭐${provider.rating || ''} 👇`,
-    quick_replies: menuItems.slice(0, 10).map(item => ({
-      title: `${item.name_ar} (${item.price} ج.م)`,
-      payload: `item:${item.id}`,
-    })),
+    reply: `تمام! اخترت ${provider.name_ar} ⭐${provider.rating || ''} ${categoryEmoji}\n\nعايز تطلب إيه؟ اكتب اسم الصنف وهلاقيهولك...`,
+    quick_replies: [
+      { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${providerId}` },
+      { title: '🏠 الأقسام', payload: 'categories' },
+    ],
     selected_provider_id: providerId,
+    memory: {
+      current_provider: {
+        id: providerId,
+        name_ar: provider.name_ar,
+      },
+    },
   }
 }
 
