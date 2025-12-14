@@ -1876,6 +1876,123 @@ export async function POST(request: Request) {
       }
     }
 
+    // Handle item:xxx payload - Show item details (doesn't need city_id)
+    if (lastUserMessage.startsWith('item:')) {
+      const itemId = lastUserMessage.replace('item:', '')
+      if (isValidUUID(itemId)) {
+        console.log('🚀 [PRE-VALIDATION HANDLER] item:', itemId)
+
+        const result = await handleItemPayload(itemId, selected_provider_id)
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory || memory,
+        })
+      }
+    }
+
+    // Handle variant:xxx payload (doesn't need city_id)
+    if (lastUserMessage.startsWith('variant:')) {
+      const variantId = lastUserMessage.replace('variant:', '')
+      if (isValidUUID(variantId)) {
+        console.log('🚀 [PRE-VALIDATION HANDLER] variant:', variantId)
+
+        const result = await handleVariantPayload(variantId, memory as ChatMemory)
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory || memory,
+        })
+      }
+    }
+
+    // Handle qty:x payload (doesn't need city_id)
+    if (lastUserMessage.startsWith('qty:')) {
+      const qtyStr = lastUserMessage.replace('qty:', '')
+      const quantity = parseInt(qtyStr, 10)
+      if (quantity > 0 && memory?.pending_item) {
+        console.log('🚀 [PRE-VALIDATION HANDLER] qty:', quantity)
+
+        const result = handleQuantityInput(quantity, memory as ChatMemory, cart_provider_id, cart_provider_name)
+        if (result) {
+          return Response.json({
+            reply: result.reply,
+            quick_replies: result.quick_replies,
+            cart_action: result.cart_action,
+            selected_provider_id: result.selected_provider_id || selected_provider_id,
+            selected_provider_category: selected_provider_category,
+            selected_category: selected_category,
+            memory: result.memory,
+          })
+        }
+      }
+    }
+
+    // Handle quantity input when awaiting_quantity is true (doesn't need city_id)
+    if (memory?.awaiting_quantity && memory?.pending_item) {
+      const quantity = parseArabicQuantity(lastUserMessage)
+      if (quantity > 0) {
+        console.log('🚀 [PRE-VALIDATION HANDLER] parsed quantity:', quantity, 'from:', lastUserMessage)
+
+        const result = handleQuantityInput(quantity, memory as ChatMemory, cart_provider_id, cart_provider_name)
+        if (result) {
+          return Response.json({
+            reply: result.reply,
+            quick_replies: result.quick_replies,
+            cart_action: result.cart_action,
+            selected_provider_id: result.selected_provider_id || selected_provider_id,
+            selected_provider_category: selected_provider_category,
+            selected_category: selected_category,
+            memory: result.memory,
+          })
+        }
+      }
+    }
+
+    // Handle confirm_add payload (doesn't need city_id)
+    if (lastUserMessage === 'confirm_add' && memory?.awaiting_confirmation && memory?.pending_item) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] confirm_add')
+
+      const result = handleConfirmAdd(memory as ChatMemory)
+      if (result) {
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory,
+        })
+      }
+    }
+
+    // Handle clear_cart_and_add payload (doesn't need city_id)
+    if (lastUserMessage === 'clear_cart_and_add' && memory?.awaiting_cart_clear && memory?.pending_item) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] clear_cart_and_add')
+
+      const result = handleClearCartAndAdd(memory as ChatMemory)
+      if (result) {
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || selected_provider_id,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory,
+        })
+      }
+    }
+
     // Validate city_id
     if (!city_id) {
       return Response.json({
@@ -1976,167 +2093,6 @@ export async function POST(request: Request) {
               name_ar: providerName,
             },
           },
-        })
-      }
-    }
-
-    // Handle item:xxx payload
-    if (lastUserMessage.startsWith('item:')) {
-      const itemId = lastUserMessage.replace('item:', '')
-      if (isValidUUID(itemId)) {
-        console.log('🚀 [DIRECT HANDLER] item:', itemId)
-
-        const result = await handleItemPayload(itemId, selected_provider_id)
-        return Response.json({
-          reply: result.reply,
-          quick_replies: result.quick_replies,
-          cart_action: result.cart_action,
-          selected_provider_id: result.selected_provider_id || selected_provider_id,
-          selected_provider_category: selected_provider_category,
-          selected_category: selected_category,
-          memory: result.memory || memory,
-        })
-      }
-    }
-
-    // Handle variant:xxx payload
-    if (lastUserMessage.startsWith('variant:')) {
-      const variantId = lastUserMessage.replace('variant:', '')
-      if (isValidUUID(variantId)) {
-        console.log('🚀 [DIRECT HANDLER] variant:', variantId)
-
-        const result = await handleVariantPayload(variantId, memory as ChatMemory)
-        return Response.json({
-          reply: result.reply,
-          quick_replies: result.quick_replies,
-          cart_action: result.cart_action,
-          selected_provider_id: result.selected_provider_id || selected_provider_id,
-          selected_provider_category: selected_provider_category,
-          selected_category: selected_category,
-          memory: result.memory || memory,
-        })
-      }
-    }
-
-    // Handle qty:x payload (from quantity buttons)
-    if (lastUserMessage.startsWith('qty:')) {
-      const qtyStr = lastUserMessage.replace('qty:', '')
-      const quantity = parseInt(qtyStr, 10)
-      if (quantity > 0 && memory?.pending_item) {
-        console.log('🚀 [DIRECT HANDLER] qty:', quantity)
-
-        const result = handleQuantityInput(quantity, memory as ChatMemory, cart_provider_id, cart_provider_name)
-        if (result) {
-          return Response.json({
-            reply: result.reply,
-            quick_replies: result.quick_replies,
-            cart_action: result.cart_action,
-            selected_provider_id: result.selected_provider_id || selected_provider_id,
-            selected_provider_category: selected_provider_category,
-            selected_category: selected_category,
-            memory: result.memory,
-          })
-        }
-      }
-    }
-
-    // Handle quantity input when awaiting_quantity is true
-    if (memory?.awaiting_quantity && memory?.pending_item) {
-      const quantity = parseArabicQuantity(lastUserMessage)
-      if (quantity > 0) {
-        console.log('🚀 [DIRECT HANDLER] parsed quantity:', quantity, 'from:', lastUserMessage)
-
-        const result = handleQuantityInput(quantity, memory as ChatMemory, cart_provider_id, cart_provider_name)
-        if (result) {
-          return Response.json({
-            reply: result.reply,
-            quick_replies: result.quick_replies,
-            cart_action: result.cart_action,
-            selected_provider_id: result.selected_provider_id || selected_provider_id,
-            selected_provider_category: selected_provider_category,
-            selected_category: selected_category,
-            memory: result.memory,
-          })
-        }
-      }
-    }
-
-    // Handle confirm_add payload (user confirmed adding to cart)
-    if (lastUserMessage === 'confirm_add' && memory?.awaiting_confirmation && memory?.pending_item) {
-      console.log('🚀 [DIRECT HANDLER] confirm_add')
-
-      const result = handleConfirmAdd(memory as ChatMemory)
-      if (result) {
-        return Response.json({
-          reply: result.reply,
-          quick_replies: result.quick_replies,
-          cart_action: result.cart_action,
-          selected_provider_id: result.selected_provider_id || selected_provider_id,
-          selected_provider_category: selected_provider_category,
-          selected_category: selected_category,
-          memory: result.memory,
-        })
-      }
-    }
-
-    // Handle quantity modification during confirmation ("ضيف ٢ كمان", "زود ٣", etc.)
-    // This handles when user wants to add more while in confirmation step
-    if (memory?.awaiting_confirmation && memory?.pending_item && memory?.pending_quantity) {
-      // Pattern: "ضيف X كمان" / "زود X" / "خليهم X" / "X كمان"
-      const addMoreMatch = lastUserMessage.match(/^(?:ضيف|زود|زودلي|زودي|خلي|خليهم|اضيف|أضيف)\s*(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)(?:\s*(?:كمان|تاني|زيادة))?$/i)
-      const moreOnlyMatch = lastUserMessage.match(/^(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)\s*(?:كمان|تاني|زيادة)$/i)
-      const setTotalMatch = lastUserMessage.match(/^(?:خليهم|اخليهم|يبقوا|يكونوا)\s*(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)$/i)
-
-      if (addMoreMatch || moreOnlyMatch || setTotalMatch) {
-        const matchedValue = (addMoreMatch?.[1] || moreOnlyMatch?.[1] || setTotalMatch?.[1] || '').trim()
-        const additionalQty = parseArabicQuantity(matchedValue)
-
-        if (additionalQty > 0) {
-          const pending_item = memory.pending_item as PendingItem
-          const pending_variant = memory.pending_variant as PendingVariant | undefined
-          const currentQty = memory.pending_quantity as number
-
-          // If "خليهم X" - set total, otherwise add
-          const newQuantity = setTotalMatch ? additionalQty : currentQty + additionalQty
-          const finalPrice = pending_variant?.price || pending_item.price
-          const variantText = pending_variant ? ` - ${pending_variant.name_ar}` : ''
-          const totalPrice = newQuantity * finalPrice
-
-          console.log('🚀 [DIRECT HANDLER] quantity modification:', currentQty, '→', newQuantity, 'for', pending_item.name_ar)
-
-          return Response.json({
-            reply: `📋 تأكيد الطلب:\n\n${newQuantity}x ${pending_item.name_ar}${variantText}\n💰 الإجمالي: ${totalPrice} ج.م\n\nتأكيد الإضافة للسلة؟`,
-            quick_replies: [
-              { title: '✅ تأكيد وإضافة', payload: 'confirm_add' },
-              { title: '🔄 تغيير الكمية', payload: `item:${pending_item.id}` },
-              { title: '🔙 رجوع للمنيو', payload: `provider:${pending_item.provider_id}` },
-            ],
-            selected_provider_id: pending_item.provider_id,
-            selected_category,
-            memory: {
-              ...memory,
-              pending_quantity: newQuantity,
-              awaiting_confirmation: true,
-            },
-          })
-        }
-      }
-    }
-
-    // Handle clear_cart_and_add payload (user wants to clear cart and add from new provider)
-    if (lastUserMessage === 'clear_cart_and_add' && memory?.awaiting_cart_clear && memory?.pending_item) {
-      console.log('🚀 [DIRECT HANDLER] clear_cart_and_add')
-
-      const result = handleClearCartAndAdd(memory as ChatMemory)
-      if (result) {
-        return Response.json({
-          reply: result.reply,
-          quick_replies: result.quick_replies,
-          cart_action: result.cart_action,
-          selected_provider_id: result.selected_provider_id || selected_provider_id,
-          selected_provider_category: selected_provider_category,
-          selected_category: selected_category,
-          memory: result.memory,
         })
       }
     }
