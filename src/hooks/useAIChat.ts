@@ -49,6 +49,7 @@ interface ChatAPIResponse {
   reply: string
   quick_replies?: QuickReply[]
   cart_action?: CartAction
+  cart_actions?: CartAction[] // Multiple cart actions (e.g., "Add All" from reorder)
   selected_provider_id?: string
   selected_provider_category?: string
   selected_category?: string
@@ -230,12 +231,10 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         setPendingNavigation(data.navigate_to)
       }
 
-      // Handle cart action if present
-      if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD')) {
-        const action = data.cart_action
-
-        // If CLEAR_AND_ADD, clear the cart first
-        if (action.type === 'CLEAR_AND_ADD') {
+      // Helper function to process a single cart action
+      const processCartAction = (action: CartAction, shouldClearFirst: boolean = false) => {
+        // If CLEAR_AND_ADD or shouldClearFirst, clear the cart first
+        if (action.type === 'CLEAR_AND_ADD' || shouldClearFirst) {
           clearCart()
         }
 
@@ -280,6 +279,19 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
             is_available: true,
           } : undefined)
         }
+      }
+
+      // Handle multiple cart actions (e.g., "Add All" from reorder)
+      if (data.cart_actions && Array.isArray(data.cart_actions) && data.cart_actions.length > 0) {
+        // Check if first action is CLEAR_AND_ADD - only clear once
+        const shouldClearFirst = data.cart_actions[0]?.type === 'CLEAR_AND_ADD'
+        data.cart_actions.forEach((action, index) => {
+          processCartAction(action, index === 0 && shouldClearFirst)
+        })
+      }
+      // Handle single cart action (backward compatibility)
+      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD')) {
+        processCartAction(data.cart_action)
       }
 
       // Convert quick_replies to suggestions format
@@ -463,34 +475,32 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         setPendingNavigation(data.navigate_to)
       }
 
-      // Handle cart action if present
-      if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD')) {
-        const cartAction = data.cart_action
-
-        // If CLEAR_AND_ADD, clear the cart first
-        if (cartAction.type === 'CLEAR_AND_ADD') {
+      // Helper function to process a single cart action
+      const processCartAction = (action: CartAction, shouldClearFirst: boolean = false) => {
+        // If CLEAR_AND_ADD or shouldClearFirst, clear the cart first
+        if (action.type === 'CLEAR_AND_ADD' || shouldClearFirst) {
           clearCart()
         }
 
         const menuItem: MenuItem = {
-          id: cartAction.menu_item_id,
-          provider_id: cartAction.provider_id,
-          name_ar: cartAction.menu_item_name_ar,
-          name_en: cartAction.menu_item_name_ar,
+          id: action.menu_item_id,
+          provider_id: action.provider_id,
+          name_ar: action.menu_item_name_ar,
+          name_en: action.menu_item_name_ar,
           description_ar: null,
           description_en: null,
-          price: cartAction.unit_price,
+          price: action.unit_price,
           original_price: null,
           image_url: null,
           is_available: true,
           is_vegetarian: false,
           is_spicy: false,
           preparation_time_min: 15,
-          has_variants: !!cartAction.variant_id,
+          has_variants: !!action.variant_id,
         }
 
         const provider: Provider = {
-          id: cartAction.provider_id,
+          id: action.provider_id,
           name_ar: '',
           name_en: '',
           delivery_fee: 0,
@@ -498,19 +508,31 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
           estimated_delivery_time_min: 30,
         }
 
-        for (let i = 0; i < cartAction.quantity; i++) {
-          cartAddItem(menuItem, provider, cartAction.variant_id ? {
-            id: cartAction.variant_id,
+        for (let i = 0; i < action.quantity; i++) {
+          cartAddItem(menuItem, provider, action.variant_id ? {
+            id: action.variant_id,
             variant_type: 'size' as const,
-            name_ar: cartAction.variant_name_ar || '',
-            name_en: cartAction.variant_name_ar || null,
-            price: cartAction.unit_price,
+            name_ar: action.variant_name_ar || '',
+            name_en: action.variant_name_ar || null,
+            price: action.unit_price,
             original_price: null,
             is_default: false,
             display_order: 0,
             is_available: true,
           } : undefined)
         }
+      }
+
+      // Handle multiple cart actions (e.g., "Add All" from reorder)
+      if (data.cart_actions && Array.isArray(data.cart_actions) && data.cart_actions.length > 0) {
+        const shouldClearFirst = data.cart_actions[0]?.type === 'CLEAR_AND_ADD'
+        data.cart_actions.forEach((action, index) => {
+          processCartAction(action, index === 0 && shouldClearFirst)
+        })
+      }
+      // Handle single cart action (backward compatibility)
+      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD')) {
+        processCartAction(data.cart_action)
       }
 
       // Convert quick_replies to suggestions format

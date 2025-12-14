@@ -2021,12 +2021,11 @@ export async function POST(request: Request) {
       const providerName = Array.isArray(providerData) ? providerData[0]?.name_ar : providerData?.name_ar || 'المتجر'
 
       // Build quick replies for order items
-      const quickReplies: QuickReply[] = orderItems
-        .filter(item => item.menu_item_id) // Only show items with valid menu_item_id
-        .map(item => ({
-          title: `${item.item_name_ar} (${item.unit_price} ج.م)`,
-          payload: `item:${item.menu_item_id}`,
-        }))
+      const validOrderItems = orderItems.filter(item => item.menu_item_id)
+      const quickReplies: QuickReply[] = validOrderItems.map(item => ({
+        title: `${item.item_name_ar} (${item.unit_price} ج.م)`,
+        payload: `item:${item.menu_item_id}`,
+      }))
 
       if (quickReplies.length === 0) {
         return Response.json({
@@ -2041,11 +2040,27 @@ export async function POST(request: Request) {
         })
       }
 
+      // Add "Add All to Cart" button if multiple items
+      if (validOrderItems.length > 1) {
+        quickReplies.unshift({
+          title: `🛒 ضيف الكل للسلة (${validOrderItems.length} أصناف)`,
+          payload: 'add_all_reorder_items',
+        })
+      }
+
       // Add provider menu option
       quickReplies.push({
         title: `📋 منيو ${providerName}`,
         payload: `provider:${lastOrder.provider_id}`,
       })
+
+      // Store reorder items in memory for "add all" functionality
+      const reorderItems = validOrderItems.map(item => ({
+        menu_item_id: item.menu_item_id,
+        name_ar: item.item_name_ar,
+        price: item.unit_price,
+        quantity: item.quantity || 1,
+      }))
 
       return Response.json({
         reply: `🔄 آخر طلب ليك كان من ${providerName}!\n\nتحب تطلب نفس الأصناف تاني؟ 👇`,
@@ -2053,9 +2068,80 @@ export async function POST(request: Request) {
         selected_provider_id: lastOrder.provider_id,
         selected_category,
         memory: {
-          ...memory,
+          // CLEAR pending states to avoid conflicts
+          pending_item: undefined,
+          pending_variant: undefined,
+          pending_quantity: undefined,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          // Set current provider and store reorder items
           current_provider: {
             id: lastOrder.provider_id,
+            name_ar: providerName,
+          },
+          reorder_items: reorderItems,
+          reorder_provider_id: lastOrder.provider_id,
+          reorder_provider_name: providerName,
+        },
+      })
+    }
+
+    // =======================================================================
+    // Handle add_all_reorder_items payload - Add all items from last order to cart
+    // Also handles text patterns like "اه ضيفهم", "ضيفهم كلهم", "نفس الاصناف"
+    // =======================================================================
+    const isAddAllReorder = lastUserMessage === 'add_all_reorder_items' ||
+      /^(?:اه|أيوه|اي|نعم|تمام)?\s*(?:ضيفهم|ضيفيهم|اضيفهم|أضيفهم|حطهم|خدهم)(?:\s*(?:كلهم|كلها|للسلة|في السلة))?$/i.test(lastUserMessage) ||
+      /^(?:اه|أيوه|اي|نعم|تمام)\s*(?:نفس الاصناف|نفس الحاجات|زي ما هو|زي الاول)$/i.test(lastUserMessage)
+
+    if (isAddAllReorder && memory?.reorder_items && Array.isArray(memory.reorder_items) && memory.reorder_items.length > 0) {
+      console.log('🚀 [DIRECT HANDLER] add_all_reorder_items:', memory.reorder_items.length, 'items')
+
+      const reorderItems = memory.reorder_items as Array<{
+        menu_item_id: string
+        name_ar: string
+        price: number
+        quantity: number
+      }>
+      const providerId = memory.reorder_provider_id as string
+      const providerName = (memory.reorder_provider_name as string) || 'المتجر'
+
+      // Build cart actions for all items
+      const cartActions: CartAction[] = reorderItems.map(item => ({
+        type: 'ADD_ITEM' as const,
+        provider_id: providerId,
+        menu_item_id: item.menu_item_id,
+        menu_item_name_ar: item.name_ar,
+        quantity: item.quantity,
+        unit_price: item.price,
+      }))
+
+      // Calculate total
+      const totalPrice = reorderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      const itemsList = reorderItems.map(item => `• ${item.quantity}x ${item.name_ar}`).join('\n')
+
+      return Response.json({
+        reply: `تمام! ✅ ضفت كل الأصناف للسلة من ${providerName}:\n\n${itemsList}\n\n💰 الإجمالي: ${totalPrice} ج.م\n\nتحب تضيف حاجة تانية؟`,
+        quick_replies: [
+          { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
+          { title: `➕ أضف من ${providerName}`, payload: `provider:${providerId}` },
+          { title: `📋 منيو ${providerName}`, payload: `provider:${providerId}` },
+        ],
+        cart_actions: cartActions, // Multiple cart actions
+        selected_provider_id: providerId,
+        selected_category,
+        memory: {
+          // Clear reorder items and set current provider
+          pending_item: undefined,
+          pending_variant: undefined,
+          pending_quantity: undefined,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          reorder_items: undefined,
+          reorder_provider_id: undefined,
+          reorder_provider_name: undefined,
+          current_provider: {
+            id: providerId,
             name_ar: providerName,
           },
         },
