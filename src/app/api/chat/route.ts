@@ -1853,6 +1853,50 @@ export async function POST(request: Request) {
       }
     }
 
+    // Handle quantity modification during confirmation ("ضيف ٢ كمان", "زود ٣", etc.)
+    // This handles when user wants to add more while in confirmation step
+    if (memory?.awaiting_confirmation && memory?.pending_item && memory?.pending_quantity) {
+      // Pattern: "ضيف X كمان" / "زود X" / "خليهم X" / "X كمان"
+      const addMoreMatch = lastUserMessage.match(/^(?:ضيف|زود|زودلي|زودي|خلي|خليهم|اضيف|أضيف)\s*(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)(?:\s*(?:كمان|تاني|زيادة))?$/i)
+      const moreOnlyMatch = lastUserMessage.match(/^(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)\s*(?:كمان|تاني|زيادة)$/i)
+      const setTotalMatch = lastUserMessage.match(/^(?:خليهم|اخليهم|يبقوا|يكونوا)\s*(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)$/i)
+
+      if (addMoreMatch || moreOnlyMatch || setTotalMatch) {
+        const matchedValue = (addMoreMatch?.[1] || moreOnlyMatch?.[1] || setTotalMatch?.[1] || '').trim()
+        const additionalQty = parseArabicQuantity(matchedValue)
+
+        if (additionalQty > 0) {
+          const pending_item = memory.pending_item as PendingItem
+          const pending_variant = memory.pending_variant as PendingVariant | undefined
+          const currentQty = memory.pending_quantity as number
+
+          // If "خليهم X" - set total, otherwise add
+          const newQuantity = setTotalMatch ? additionalQty : currentQty + additionalQty
+          const finalPrice = pending_variant?.price || pending_item.price
+          const variantText = pending_variant ? ` - ${pending_variant.name_ar}` : ''
+          const totalPrice = newQuantity * finalPrice
+
+          console.log('🚀 [DIRECT HANDLER] quantity modification:', currentQty, '→', newQuantity, 'for', pending_item.name_ar)
+
+          return Response.json({
+            reply: `📋 تأكيد الطلب:\n\n${newQuantity}x ${pending_item.name_ar}${variantText}\n💰 الإجمالي: ${totalPrice} ج.م\n\nتأكيد الإضافة للسلة؟`,
+            quick_replies: [
+              { title: '✅ تأكيد وإضافة', payload: 'confirm_add' },
+              { title: '🔄 تغيير الكمية', payload: `item:${pending_item.id}` },
+              { title: '🔙 رجوع للمنيو', payload: `provider:${pending_item.provider_id}` },
+            ],
+            selected_provider_id: pending_item.provider_id,
+            selected_category,
+            memory: {
+              ...memory,
+              pending_quantity: newQuantity,
+              awaiting_confirmation: true,
+            },
+          })
+        }
+      }
+    }
+
     // Handle clear_cart_and_add payload (user wants to clear cart and add from new provider)
     if (lastUserMessage === 'clear_cart_and_add' && memory?.awaiting_cart_clear && memory?.pending_item) {
       console.log('🚀 [DIRECT HANDLER] clear_cart_and_add')
