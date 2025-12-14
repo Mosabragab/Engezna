@@ -1954,6 +1954,43 @@ export async function POST(request: Request) {
       })
     }
 
+    // Handle clear cart/order - "الغي الاوردر", "امسح السلة", "فضي السلة"
+    // This clears the cart completely and starts fresh
+    const clearCartPatterns = [
+      /(?:الغ[يى]|امسح|فض[يى]|شيل)\s*(?:ال)?(?:اوردر|الاوردر|طلب|الطلب|سل[ةه]|السل[ةه]|كارت)/i,
+      /(?:مش\s*)?(?:عايز|عاوز)\s*(?:ال)?(?:اوردر|طلب|سل[ةه])\s*(?:ده|دا|دي)?/i,
+      /^(?:ال)?(?:سل[ةه]|اوردر|طلب)\s*(?:الغ[يى]|امسح|فض[يى])/i,
+      /(?:ابدأ|نبدأ)\s*(?:من\s*)?(?:ال)?(?:اول|جديد)/i,
+      /^clear\s*cart$/i,
+    ]
+
+    if (clearCartPatterns.some(pattern => pattern.test(lastUserMessage))) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] clear_cart/order')
+
+      return Response.json({
+        reply: '🗑️ تمام، السلة اتفضت!\n\nعايز تبدأ طلب جديد؟',
+        quick_replies: [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:supermarket' },
+          { title: '🏠 الأقسام', payload: 'categories' },
+        ],
+        cart_action: {
+          type: 'CLEAR_CART',
+        },
+        selected_provider_id: null, // Clear provider context
+        selected_category: null,
+        memory: {
+          // Reset all memory
+          pending_item: undefined,
+          pending_variant: undefined,
+          pending_quantity: undefined,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          current_provider: undefined,
+        },
+      })
+    }
+
     // Handle cancel/undo - "لأ مش عايز", "الغي", "تراجع", etc.
     const cancelPatterns = [
       /^(?:لا|لأ|لاء)\s*(?:مش|مو)?\s*(?:عايز|عاوز|ابي|ابغى)/i,
