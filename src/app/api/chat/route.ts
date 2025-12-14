@@ -2603,13 +2603,72 @@ export async function POST(request: Request) {
 
     if (isGoToCart) {
       console.log('🚀 [DIRECT HANDLER] go_to_cart')
+
+      // Phase 6: Show order summary before checkout
+      if (cart_items && cart_items.length > 0) {
+        let summary = '📋 **ملخص طلبك:**\n\n'
+        let subtotal = 0
+
+        for (const item of cart_items) {
+          const variantText = item.variant_name_ar ? ` (${item.variant_name_ar})` : ''
+          const itemTotal = item.quantity * item.unit_price
+          subtotal += itemTotal
+          summary += `• ${item.quantity}x ${item.name_ar}${variantText} - ${itemTotal} ج.م\n`
+        }
+
+        summary += `\n💵 **المجموع: ${subtotal} ج.م**`
+
+        // Add delivery info if we have provider context
+        if (cart_provider_id && isValidUUID(cart_provider_id)) {
+          const supabase = await createClient()
+          const { data: provider } = await supabase
+            .from('providers')
+            .select('delivery_fee, free_delivery_threshold')
+            .eq('id', cart_provider_id)
+            .single()
+
+          if (provider) {
+            const deliveryFee = provider.delivery_fee || 0
+            const freeThreshold = provider.free_delivery_threshold
+
+            if (freeThreshold && subtotal >= freeThreshold) {
+              summary += '\n🚚 التوصيل: مجاني! 🎉'
+            } else if (deliveryFee > 0) {
+              summary += `\n🚚 التوصيل: ${deliveryFee} ج.م`
+              summary += `\n💰 **الإجمالي: ${subtotal + deliveryFee} ج.م**`
+              if (freeThreshold) {
+                const remaining = freeThreshold - subtotal
+                if (remaining > 0) {
+                  summary += `\n\n💡 ضيف ${remaining} ج.م كمان والتوصيل هيبقى مجاني!`
+                }
+              }
+            }
+          }
+        }
+
+        summary += '\n\n✅ جاهز تكمل الطلب؟'
+
+        return Response.json({
+          reply: summary,
+          quick_replies: [
+            { title: '✅ أكمل الطلب', payload: 'navigate:/ar/cart' },
+            { title: '➕ أضف حاجة كمان', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
+            { title: '🗑️ فضي السلة', payload: 'clear_cart' },
+          ],
+          navigate_to: '/ar/cart',
+          selected_provider_id,
+          selected_category,
+          memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false, awaiting_confirmation: false },
+        })
+      }
+
+      // Empty cart
       return Response.json({
-        reply: 'تمام! هفتحلك السلة عشان تكمل طلبك 🛒',
+        reply: getCartEmptyMessage(),
         quick_replies: [
-          { title: '🛒 فتح السلة', payload: 'navigate:/ar/cart' },
-          { title: '➕ أضف المزيد', payload: 'categories' },
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:supermarket' },
         ],
-        navigate_to: '/ar/cart', // Signal to frontend to navigate to cart (not checkout)
         selected_provider_id,
         selected_category,
         memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false, awaiting_confirmation: false },
