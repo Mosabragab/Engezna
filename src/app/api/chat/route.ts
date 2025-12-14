@@ -622,6 +622,7 @@ function handleConfirmAdd(memory: ChatMemory): PayloadHandlerResult | null {
     quick_replies: [
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
       { title: '➕ أضف صنف آخر', payload: `add_more:${pending_item.provider_id}` },
+      { title: '📋 شوف المنيو', payload: `navigate:/ar/provider/${pending_item.provider_id}` },
     ],
     cart_action,
     selected_provider_id: pending_item.provider_id,
@@ -675,6 +676,7 @@ function handleClearCartAndAdd(memory: ChatMemory): PayloadHandlerResult | null 
     quick_replies: [
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
       { title: '➕ أضف صنف آخر', payload: `add_more:${pending_item.provider_id}` },
+      { title: '📋 شوف المنيو', payload: `navigate:/ar/provider/${pending_item.provider_id}` },
     ],
     cart_action,
     selected_provider_id: pending_item.provider_id,
@@ -2365,6 +2367,7 @@ export async function POST(request: Request) {
         quick_replies: [
           { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
           { title: '➕ أضف صنف آخر', payload: `add_more:${providerId}` },
+          { title: '📋 شوف المنيو', payload: `navigate:/ar/provider/${providerId}` },
         ],
         cart_actions: cartActions, // Multiple cart actions
         selected_provider_id: providerId,

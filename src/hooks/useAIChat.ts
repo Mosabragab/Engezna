@@ -396,6 +396,14 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     // Store last message for retry
     lastUserMessageRef.current = displayText
 
+    // Handle navigate: payloads directly (don't send to API)
+    if (messageToSend.startsWith('navigate:')) {
+      const navigatePath = messageToSend.replace('navigate:', '')
+      console.log('🚀 [NAVIGATE] Direct navigation to:', navigatePath)
+      setPendingNavigation(navigatePath)
+      return // Don't proceed with API call
+    }
+
     // Cancel any ongoing request
     abortControllerRef.current?.abort()
     abortControllerRef.current = new AbortController()
