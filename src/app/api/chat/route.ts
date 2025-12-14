@@ -247,6 +247,7 @@ async function handleProviderPayload(
 
 /**
  * Handle item:xxx payload
+ * Now checks for active promotions and applies discounts
  */
 async function handleItemPayload(
   itemId: string,
@@ -259,7 +260,7 @@ async function handleItemPayload(
   // Get item details
   const { data: item } = await supabase
     .from('menu_items')
-    .select('id, name_ar, price, has_variants, pricing_type, provider_id, providers(name_ar)')
+    .select('id, name_ar, price, original_price, has_variants, pricing_type, provider_id, providers(name_ar)')
     .eq('id', itemId)
     .single()
 
@@ -278,6 +279,64 @@ async function handleItemPayload(
     ? providersData[0]?.name_ar || ''
     : providersData?.name_ar || ''
 
+  // Check for active promotions on this item
+  let appliedDiscount: { type: string; value: number; name?: string } | null = null
+  let discountedPrice = item.price
+
+  // 1. Check promotions table for this item
+  const { data: promotions } = await supabase
+    .from('promotions')
+    .select('id, name_ar, type, discount_value, product_ids, applies_to')
+    .eq('provider_id', item.provider_id)
+    .eq('is_active', true)
+    .lte('start_date', new Date().toISOString())
+    .or(`end_date.is.null,end_date.gte.${new Date().toISOString()}`)
+    .limit(10)
+
+  // Find promotion that applies to this item
+  for (const promo of promotions || []) {
+    const productIds = promo.product_ids as string[] | null
+    if (promo.applies_to === 'specific' && productIds && productIds.includes(itemId)) {
+      if (promo.type === 'percentage' && promo.discount_value) {
+        discountedPrice = Math.round(item.price * (1 - promo.discount_value / 100))
+        appliedDiscount = { type: 'percentage', value: promo.discount_value, name: promo.name_ar }
+      } else if (promo.type === 'fixed' && promo.discount_value) {
+        discountedPrice = Math.max(0, item.price - promo.discount_value)
+        appliedDiscount = { type: 'fixed', value: promo.discount_value, name: promo.name_ar }
+      }
+      break
+    } else if (promo.applies_to === 'all' || promo.applies_to === 'category') {
+      // Promotion applies to all items from this provider
+      if (promo.type === 'percentage' && promo.discount_value) {
+        discountedPrice = Math.round(item.price * (1 - promo.discount_value / 100))
+        appliedDiscount = { type: 'percentage', value: promo.discount_value, name: promo.name_ar }
+      } else if (promo.type === 'fixed' && promo.discount_value) {
+        discountedPrice = Math.max(0, item.price - promo.discount_value)
+        appliedDiscount = { type: 'fixed', value: promo.discount_value, name: promo.name_ar }
+      }
+      break
+    }
+  }
+
+  // 2. Check for product-level discount (original_price > price)
+  if (!appliedDiscount && item.original_price && item.original_price > item.price) {
+    const discountPercent = Math.round(((item.original_price - item.price) / item.original_price) * 100)
+    appliedDiscount = { type: 'percentage', value: discountPercent }
+    discountedPrice = item.price // Price is already discounted
+  }
+
+  // Build discount text for display
+  let discountText = ''
+  if (appliedDiscount) {
+    if (appliedDiscount.type === 'percentage') {
+      discountText = ` 🏷️ خصم ${appliedDiscount.value}%`
+    } else if (appliedDiscount.type === 'fixed') {
+      discountText = ` 🏷️ خصم ${appliedDiscount.value} ج.م`
+    }
+  }
+
+  console.log('💰 [ITEM] price:', item.price, 'discountedPrice:', discountedPrice, 'appliedDiscount:', appliedDiscount)
+
   // Check if item has variants
   if (item.has_variants || item.pricing_type === 'variants') {
     // Get variants
@@ -291,10 +350,25 @@ async function handleItemPayload(
       .limit(10)
 
     if (variants && variants.length > 0) {
+      // Apply discount to variant prices
+      const variantsWithDiscount = variants.map(v => {
+        let variantDiscountedPrice = v.price
+        if (appliedDiscount) {
+          if (appliedDiscount.type === 'percentage') {
+            variantDiscountedPrice = Math.round(v.price * (1 - appliedDiscount.value / 100))
+          } else if (appliedDiscount.type === 'fixed') {
+            variantDiscountedPrice = Math.max(0, v.price - appliedDiscount.value)
+          }
+        }
+        return { ...v, discountedPrice: variantDiscountedPrice }
+      })
+
       return {
-        reply: `${item.name_ar} له اختيارات مختلفة 👇`,
-        quick_replies: variants.map(v => ({
-          title: `${v.name_ar} (${v.price} ج.م)`,
+        reply: `${item.name_ar} له اختيارات مختلفة${discountText} 👇`,
+        quick_replies: variantsWithDiscount.map(v => ({
+          title: appliedDiscount
+            ? `${v.name_ar} (${v.discountedPrice} ج.م بدل ${v.price})`
+            : `${v.name_ar} (${v.price} ج.م)`,
           payload: `variant:${v.id}`,
         })),
         selected_provider_id: item.provider_id,
@@ -302,19 +376,25 @@ async function handleItemPayload(
           pending_item: {
             id: item.id,
             name_ar: item.name_ar,
-            price: item.price,
+            price: discountedPrice, // Use discounted price
             provider_id: item.provider_id,
             provider_name_ar: providerName,
             has_variants: true,
           },
+          // Store discount info for later use
+          applied_discount: appliedDiscount,
         },
       }
     }
   }
 
   // No variants - ask for quantity directly
+  const priceDisplay = appliedDiscount
+    ? `${discountedPrice} ج.م${discountText} (بدل ${item.price} ج.م)`
+    : `${item.price} ج.م`
+
   return {
-    reply: `${item.name_ar} بـ ${item.price} ج.م 🍽️\n\nكام واحدة تحب؟`,
+    reply: `${item.name_ar} بـ ${priceDisplay} 🍽️\n\nكام واحدة تحب؟`,
     quick_replies: [
       { title: '1️⃣ واحدة', payload: 'qty:1' },
       { title: '2️⃣ اتنين', payload: 'qty:2' },
@@ -325,12 +405,13 @@ async function handleItemPayload(
       pending_item: {
         id: item.id,
         name_ar: item.name_ar,
-        price: item.price,
+        price: discountedPrice, // Use discounted price
         provider_id: item.provider_id,
         provider_name_ar: providerName,
         has_variants: false,
       },
       awaiting_quantity: true,
+      applied_discount: appliedDiscount,
     },
   }
 }
@@ -389,8 +470,24 @@ async function handleVariantPayload(
     }
   }
 
+  // Apply discount from memory if exists
+  const appliedDiscount = existingMemory?.applied_discount as { type: string; value: number } | null
+  let discountedVariantPrice = variant.price
+
+  if (appliedDiscount) {
+    if (appliedDiscount.type === 'percentage') {
+      discountedVariantPrice = Math.round(variant.price * (1 - appliedDiscount.value / 100))
+    } else if (appliedDiscount.type === 'fixed') {
+      discountedVariantPrice = Math.max(0, variant.price - appliedDiscount.value)
+    }
+  }
+
+  const priceDisplay = appliedDiscount
+    ? `${discountedVariantPrice} ج.م (بدل ${variant.price}) 🏷️`
+    : `${variant.price} ج.م`
+
   return {
-    reply: `${pendingItem?.name_ar || 'الصنف'} - ${variant.name_ar} بـ ${variant.price} ج.م 🍽️\n\nكام واحدة تحب؟`,
+    reply: `${pendingItem?.name_ar || 'الصنف'} - ${variant.name_ar} بـ ${priceDisplay} 🍽️\n\nكام واحدة تحب؟`,
     quick_replies: [
       { title: '1️⃣ واحدة', payload: 'qty:1' },
       { title: '2️⃣ اتنين', payload: 'qty:2' },
@@ -402,9 +499,10 @@ async function handleVariantPayload(
       pending_variant: {
         id: variant.id,
         name_ar: variant.name_ar,
-        price: variant.price,
+        price: discountedVariantPrice, // Use discounted price
       },
       awaiting_quantity: true,
+      applied_discount: appliedDiscount, // Pass through
     },
   }
 }
@@ -1916,18 +2014,49 @@ export async function POST(request: Request) {
     }
 
     // Handle go_to_cart payload (navigate to cart - frontend handles actual navigation)
-    if (lastUserMessage === 'go_to_cart') {
+    // Also handle Arabic variations like "اذهب للسلة", "السلة", etc.
+    const isGoToCart = lastUserMessage === 'go_to_cart' ||
+      lastUserMessage === '🛒 اذهب للسلة' ||
+      /^(?:اذهب|روح|خدني)?\s*(?:لل?سل[ةه]|للكارت|for cart|to cart)$/i.test(lastUserMessage) ||
+      /^(?:افتح|فتح|شوف)\s*(?:ال)?سل[ةه]$/i.test(lastUserMessage)
+
+    if (isGoToCart) {
       console.log('🚀 [DIRECT HANDLER] go_to_cart')
       return Response.json({
-        reply: 'تمام! روح للسلة عشان تكمل طلبك 🛒',
+        reply: 'تمام! هفتحلك السلة عشان تكمل طلبك 🛒',
         quick_replies: [
-          { title: '🛒 فتح السلة', payload: 'navigate:/checkout' },
+          { title: '🛒 فتح السلة', payload: 'navigate:/ar/cart' },
           { title: '➕ أضف المزيد', payload: 'categories' },
         ],
-        navigate_to: '/checkout', // Signal to frontend to navigate
+        navigate_to: '/ar/cart', // Signal to frontend to navigate to cart (not checkout)
         selected_provider_id,
         selected_category,
         memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false, awaiting_confirmation: false },
+      })
+    }
+
+    // =======================================================================
+    // Handle cart content queries - "ايه اللي في السلة؟", "فيه ايه في السلة؟"
+    // =======================================================================
+    const isCartQuery = /^(?:ايه|ايش|فيه?\s*(?:ايه|ايش)|عايز اعرف)?(?:\s*اللي|\s*الي)?\s*(?:في|ف)\s*(?:ال)?سل[ةه]/i.test(lastUserMessage) ||
+      /^(?:فيه?\s*(?:ايه|ايش))\s*(?:في|ف)\s*(?:ال)?سل[ةه]/i.test(lastUserMessage) ||
+      /^(?:السل[ةه]\s*فيها?\s*(?:ايه|ايش))/i.test(lastUserMessage) ||
+      /^(?:محتويات|محتوى)\s*(?:ال)?سل[ةه]/i.test(lastUserMessage)
+
+    if (isCartQuery) {
+      console.log('🚀 [DIRECT HANDLER] cart_query')
+      // We don't have direct access to cart from backend
+      // Best approach: tell user to check cart and offer navigation
+      return Response.json({
+        reply: 'عشان تشوف اللي في السلة، اضغط على أيقونة السلة في أعلى الشاشة 🛒\n\nأو اضغط هنا 👇',
+        quick_replies: [
+          { title: '🛒 فتح السلة', payload: 'navigate:/ar/cart' },
+          { title: '➕ أضف حاجة جديدة', payload: 'categories' },
+        ],
+        navigate_to: '/ar/cart',
+        selected_provider_id,
+        selected_category,
+        memory,
       })
     }
 
@@ -2569,6 +2698,69 @@ export async function POST(request: Request) {
           ...searchResult,
           selected_provider_id,
           selected_category,
+        })
+      }
+    }
+
+    // Pattern 4a: Cross-provider search - "في X في مطعم Y" / "في X عند Y"
+    // Handles user asking about products in a SPECIFIC provider (different from current context)
+    const crossProviderMatch = lastUserMessage.match(/^(?:في|فى|فيه|فية)\s+(.+?)\s+(?:في|فى|عند|من)\s+(?:مطعم\s+|محل\s+)?(.+?)(?:\?|؟)?$/i)
+    if (crossProviderMatch) {
+      const searchQuery = crossProviderMatch[1].trim()
+      const providerName = crossProviderMatch[2].trim()
+      console.log('🚀 [DIRECT HANDLER] cross-provider search:', searchQuery, 'in provider:', providerName)
+
+      // Try to resolve the provider by name
+      const resolved = await resolveProviderByName(providerName, city_id)
+      if (resolved) {
+        const searchResult = await performDirectSearch(searchQuery, city_id, resolved.id, memory)
+        return Response.json({
+          ...searchResult,
+          selected_provider_id: resolved.id,
+          selected_category,
+          memory: { ...memory, current_provider: { id: resolved.id, name_ar: resolved.name_ar } },
+        })
+      } else {
+        // Provider not found
+        return Response.json({
+          reply: `مش لاقي ${providerName} 😕 جرب تدور في الأقسام أو اكتب اسم المطعم صح`,
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+    }
+
+    // Pattern 4b: "ايه اللي في/عند [provider]" - What's at this provider?
+    const whatAtProviderMatch = lastUserMessage.match(/^(?:ايه|ايش|شو|عايز اعرف)\s*(?:اللي|الي)?\s*(?:موجود|متاح)?\s*(?:في|فى|عند|من)\s+(?:مطعم\s+|محل\s+)?(.+?)(?:\?|؟)?$/i)
+    if (whatAtProviderMatch) {
+      const providerName = whatAtProviderMatch[1].trim()
+      console.log('🚀 [DIRECT HANDLER] what at provider:', providerName)
+
+      const resolved = await resolveProviderByName(providerName, city_id)
+      if (resolved) {
+        const result = await handleProviderPayload(resolved.id, city_id)
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          selected_provider_id: resolved.id,
+          selected_category,
+          memory: { ...memory, current_provider: { id: resolved.id, name_ar: resolved.name_ar } },
+        })
+      } else {
+        return Response.json({
+          reply: `مش لاقي ${providerName} 😕 جرب تدور في الأقسام`,
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
         })
       }
     }

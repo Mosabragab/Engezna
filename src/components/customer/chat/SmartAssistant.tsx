@@ -176,9 +176,9 @@ export function SmartAssistant({
               </div>
 
               <div className="flex items-center gap-1">
-                {/* Cart button */}
+                {/* Cart button - navigates to cart page, not checkout */}
                 {cartCount > 0 && (
-                  <Link href="/checkout">
+                  <Link href="/ar/cart">
                     <Button
                       variant="ghost"
                       size="icon"
