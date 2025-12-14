@@ -1886,6 +1886,115 @@ export async function POST(request: Request) {
       })
     }
 
+    // =======================================================================
+    // Handle reorder_last payload - Show items from user's last order
+    // =======================================================================
+    if (lastUserMessage === 'reorder_last' || lastUserMessage === 'اخر طلب' || lastUserMessage === 'آخر طلب' || lastUserMessage === '🔄 اخر طلب') {
+      console.log('🚀 [DIRECT HANDLER] reorder_last')
+
+      if (!customer_id) {
+        return Response.json({
+          reply: 'لازم تسجل دخول الأول عشان أقدر أجيبلك طلبك الأخير 🔐',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+
+      const supabase = await createClient()
+
+      // Get user's last delivered order
+      const { data: lastOrder } = await supabase
+        .from('orders')
+        .select('id, provider_id, providers(name_ar)')
+        .eq('customer_id', customer_id)
+        .in('status', ['delivered', 'completed'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (!lastOrder) {
+        return Response.json({
+          reply: 'مش لاقي طلبات سابقة ليك 😕 يلا نبدأ طلب جديد!',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+
+      // Get order items
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select('id, menu_item_id, item_name_ar, unit_price, quantity')
+        .eq('order_id', lastOrder.id)
+        .limit(10)
+
+      if (!orderItems || orderItems.length === 0) {
+        return Response.json({
+          reply: 'مش لاقي تفاصيل الطلب السابق 😕 يلا نبدأ طلب جديد!',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+
+      const providerData = lastOrder.providers as { name_ar: string } | { name_ar: string }[] | null
+      const providerName = Array.isArray(providerData) ? providerData[0]?.name_ar : providerData?.name_ar || 'المتجر'
+
+      // Build quick replies for order items
+      const quickReplies: QuickReply[] = orderItems
+        .filter(item => item.menu_item_id) // Only show items with valid menu_item_id
+        .map(item => ({
+          title: `${item.item_name_ar} (${item.unit_price} ج.م)`,
+          payload: `item:${item.menu_item_id}`,
+        }))
+
+      if (quickReplies.length === 0) {
+        return Response.json({
+          reply: 'الأصناف اللي طلبتها قبل كده مش متاحة دلوقتي 😕 يلا نبدأ طلب جديد!',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+
+      // Add provider menu option
+      quickReplies.push({
+        title: `📋 منيو ${providerName}`,
+        payload: `provider:${lastOrder.provider_id}`,
+      })
+
+      return Response.json({
+        reply: `🔄 آخر طلب ليك كان من ${providerName}!\n\nتحب تطلب نفس الأصناف تاني؟ 👇`,
+        quick_replies: quickReplies.slice(0, 10),
+        selected_provider_id: lastOrder.provider_id,
+        selected_category,
+        memory: {
+          ...memory,
+          current_provider: {
+            id: lastOrder.provider_id,
+            name_ar: providerName,
+          },
+        },
+      })
+    }
+
     // Handle special payloads
     if (lastUserMessage === 'categories' || lastUserMessage === 'الأقسام') {
       console.log('🚀 [DIRECT HANDLER] categories')
@@ -1975,9 +2084,24 @@ export async function POST(request: Request) {
       for (const promo of promotionsWithProducts) {
         if (promo.affected_products && promo.affected_products.length > 0) {
           for (const item of promo.affected_products.slice(0, 4)) {
-            const discountText = promo.discount_percentage ? ` -${promo.discount_percentage}%` : ''
+            // Check for discount: prefer percentage, then amount
+            let discountText = ''
+            if (promo.discount_percentage && promo.discount_percentage > 0) {
+              discountText = ` -${promo.discount_percentage}%`
+            } else if (promo.discount_amount && promo.discount_amount > 0) {
+              discountText = ` -${promo.discount_amount} ج.م`
+            } else if (promo.title_ar || promo.title) {
+              // If no specific discount, show promotion title indicator
+              discountText = ` 🎁`
+            }
+
+            // Calculate discounted price if percentage discount
+            const displayPrice = promo.discount_percentage && promo.discount_percentage > 0
+              ? Math.round(item.price * (1 - promo.discount_percentage / 100))
+              : item.price
+
             quickReplies.push({
-              title: `🏷️ ${item.name_ar} (${item.price} ج.م)${discountText}`,
+              title: `🏷️ ${item.name_ar} (${displayPrice} ج.م)${discountText}`,
               payload: `item:${item.id}`,
             })
           }
