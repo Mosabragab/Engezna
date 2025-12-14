@@ -228,18 +228,39 @@ async function handleProviderPayload(
     }
   }
 
+  // Get provider's own menu categories
+  const { data: providerCategories } = await supabase
+    .from('provider_categories')
+    .select('id, name_ar, icon')
+    .eq('provider_id', providerId)
+    .eq('is_active', true)
+    .order('display_order')
+    .limit(8)
+
   // Get category emoji based on provider category
   const categoryEmoji = provider.category === 'restaurant_cafe' ? '🍽️' :
     provider.category === 'grocery' ? '🛒' :
     provider.category === 'coffee_patisserie' ? '☕' : '📍'
 
+  // Build quick replies
+  const quickReplies: QuickReply[] = [
+    { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${providerId}` },
+  ]
+
+  // Add provider's own categories if available
+  if (providerCategories && providerCategories.length > 0) {
+    providerCategories.slice(0, 6).forEach(cat => {
+      quickReplies.push({
+        title: `${cat.icon || '📂'} ${cat.name_ar}`,
+        payload: `provider_category:${cat.id}`,
+      })
+    })
+  }
+
   // Conversational approach: Ask what they want instead of showing full menu
   return {
     reply: `تمام! اخترت ${provider.name_ar} ⭐${provider.rating || ''} ${categoryEmoji}\n\nعايز تطلب إيه؟ اكتب اسم الصنف وهلاقيهولك...`,
-    quick_replies: [
-      { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${providerId}` },
-      { title: '🏠 الأقسام', payload: 'categories' },
-    ],
+    quick_replies: quickReplies,
     selected_provider_id: providerId,
     memory: {
       current_provider: {
@@ -1895,6 +1916,62 @@ export async function POST(request: Request) {
             },
           },
         })
+      }
+    }
+
+    // Handle provider_category:xxx payload - Show items from provider's menu category
+    if (lastUserMessage.startsWith('provider_category:')) {
+      const categoryId = lastUserMessage.replace('provider_category:', '')
+      if (isValidUUID(categoryId)) {
+        console.log('🚀 [DIRECT HANDLER] provider_category:', categoryId)
+
+        const supabase = await createClient()
+
+        // Get category info
+        const { data: category } = await supabase
+          .from('provider_categories')
+          .select('id, name_ar, provider_id')
+          .eq('id', categoryId)
+          .single()
+
+        if (category) {
+          // Get items in this category
+          const { data: items } = await supabase
+            .from('menu_items')
+            .select('id, name_ar, price')
+            .eq('provider_id', category.provider_id)
+            .eq('category_id', categoryId)
+            .eq('is_available', true)
+            .order('display_order')
+            .limit(10)
+
+          if (items && items.length > 0) {
+            return Response.json({
+              reply: `📂 ${category.name_ar}\n\nاختار الصنف اللي تحبه 👇`,
+              quick_replies: items.map(item => ({
+                title: `${item.name_ar} (${item.price} ج.م)`,
+                payload: `item:${item.id}`,
+              })),
+              selected_provider_id: category.provider_id,
+              selected_category,
+              memory: {
+                ...memory,
+                current_provider: memory?.current_provider,
+              },
+            })
+          } else {
+            return Response.json({
+              reply: `مفيش منتجات متاحة في ${category.name_ar} دلوقتي 😕`,
+              quick_replies: [
+                { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${category.provider_id}` },
+                { title: '🏠 الأقسام', payload: 'categories' },
+              ],
+              selected_provider_id: category.provider_id,
+              selected_category,
+              memory,
+            })
+          }
+        }
       }
     }
 
