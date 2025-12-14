@@ -44,6 +44,14 @@ interface ChatMemory {
   [key: string]: unknown
 }
 
+// Cart item for inquiry
+interface CartItemInfo {
+  name_ar: string
+  quantity: number
+  unit_price: number
+  variant_name_ar?: string
+}
+
 interface ChatRequest {
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
   customer_id?: string
@@ -54,6 +62,7 @@ interface ChatRequest {
   memory?: ChatMemory
   cart_provider_id?: string // Provider ID of items currently in cart (for conflict detection)
   cart_provider_name?: string // Provider name for user-friendly messages
+  cart_items?: CartItemInfo[] // Cart contents for inquiry
 }
 
 // UUID validation regex
@@ -119,6 +128,76 @@ function parseArabicQuantity(message: string): number {
   }
 
   return 0
+}
+
+/**
+ * Extract quantity and product name from search queries like "عايز 2 بيتزا" or "عايز اتنين بيتزا"
+ * Returns { quantity: number, product: string }
+ */
+function extractQuantityFromSearch(searchText: string): { quantity: number; product: string } {
+  const trimmed = searchText.trim()
+
+  // Pattern 1: Number at the start "2 بيتزا" or "٢ بيتزا"
+  const numericStartMatch = trimmed.match(/^(\d+|[٠-٩]+)\s+(.+)$/)
+  if (numericStartMatch) {
+    const arabicNumerals = numericStartMatch[1]
+      .replace(/[٠]/g, '0')
+      .replace(/[١]/g, '1')
+      .replace(/[٢]/g, '2')
+      .replace(/[٣]/g, '3')
+      .replace(/[٤]/g, '4')
+      .replace(/[٥]/g, '5')
+      .replace(/[٦]/g, '6')
+      .replace(/[٧]/g, '7')
+      .replace(/[٨]/g, '8')
+      .replace(/[٩]/g, '9')
+    const qty = parseInt(arabicNumerals, 10)
+    if (qty > 0 && qty <= 99) {
+      return { quantity: qty, product: numericStartMatch[2].trim() }
+    }
+  }
+
+  // Pattern 2: Arabic word number at the start "اتنين بيتزا"
+  const words = trimmed.split(/\s+/)
+  if (words.length >= 2) {
+    const firstWord = words[0]
+    const qty = ARABIC_NUMBER_WORDS[firstWord]
+    if (qty && qty > 0) {
+      return { quantity: qty, product: words.slice(1).join(' ') }
+    }
+  }
+
+  // Pattern 3: Number after product "بيتزا 2" or "بيتزا اتنين"
+  const numericEndMatch = trimmed.match(/^(.+?)\s+(\d+|[٠-٩]+)$/)
+  if (numericEndMatch) {
+    const arabicNumerals = numericEndMatch[2]
+      .replace(/[٠]/g, '0')
+      .replace(/[١]/g, '1')
+      .replace(/[٢]/g, '2')
+      .replace(/[٣]/g, '3')
+      .replace(/[٤]/g, '4')
+      .replace(/[٥]/g, '5')
+      .replace(/[٦]/g, '6')
+      .replace(/[٧]/g, '7')
+      .replace(/[٨]/g, '8')
+      .replace(/[٩]/g, '9')
+    const qty = parseInt(arabicNumerals, 10)
+    if (qty > 0 && qty <= 99) {
+      return { quantity: qty, product: numericEndMatch[1].trim() }
+    }
+  }
+
+  // Pattern 4: Arabic word at end "بيتزا اتنين"
+  if (words.length >= 2) {
+    const lastWord = words[words.length - 1]
+    const qty = ARABIC_NUMBER_WORDS[lastWord]
+    if (qty && qty > 0) {
+      return { quantity: qty, product: words.slice(0, -1).join(' ') }
+    }
+  }
+
+  // No quantity found, return default
+  return { quantity: 1, product: trimmed }
 }
 
 // =============================================================================
@@ -1796,7 +1875,7 @@ function parseAssistantResponse(content: string): {
 export async function POST(request: Request) {
   try {
     const body: ChatRequest = await request.json()
-    const { messages, customer_id, city_id, selected_provider_id, selected_provider_category, selected_category, memory, cart_provider_id, cart_provider_name } = body
+    const { messages, customer_id, city_id, selected_provider_id, selected_provider_category, selected_category, memory, cart_provider_id, cart_provider_name, cart_items } = body
 
     // Get the last user message (extracted early for pre-validation handlers)
     const lastUserMessage = messages[messages.length - 1]?.content || ''
@@ -1810,6 +1889,7 @@ export async function POST(request: Request) {
       selectedCategory: selected_category,
       cartProviderId: cart_provider_id,
       cartProviderName: cart_provider_name,
+      cartItemsCount: cart_items?.length || 0,
       messageCount: messages?.length,
       lastMessage: lastUserMessage?.slice(0, 100),
       memory: memory,
@@ -1818,6 +1898,128 @@ export async function POST(request: Request) {
     // =========================================================================
     // 🚀 PRE-VALIDATION HANDLERS - These don't need city_id
     // =========================================================================
+
+    // Handle cart inquiry - "ايه في السلة", "السلة فيها ايه", etc.
+    const cartInquiryPatterns = [
+      /(?:ايه|إيه|ايش|شو|وش)\s*(?:اللي\s*)?(?:في|فى|ب)\s*(?:ال)?سل[ةه]/i,
+      /(?:ال)?سل[ةه]\s*(?:فيها|فيه)\s*(?:ايه|إيه|ايش|شو)/i,
+      /(?:عايز|عاوز)\s*(?:اعرف|اشوف)\s*(?:ال)?سل[ةه]/i,
+      /(?:وريني|فرجني|ارني)\s*(?:ال)?سل[ةه]/i,
+      /(?:محتويات|محتوى)\s*(?:ال)?سل[ةه]/i,
+      /^(?:ال)?سل[ةه]$/i,
+    ]
+
+    if (cartInquiryPatterns.some(pattern => pattern.test(lastUserMessage))) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] cart_inquiry')
+
+      if (!cart_items || cart_items.length === 0) {
+        return Response.json({
+          reply: 'السلة فاضية دلوقتي 🛒\n\nتحب تطلب حاجة؟',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+
+      // Build cart summary
+      let cartSummary = '🛒 **السلة الحالية:**\n\n'
+      let total = 0
+
+      for (const item of cart_items) {
+        const variantText = item.variant_name_ar ? ` (${item.variant_name_ar})` : ''
+        const itemTotal = item.quantity * item.unit_price
+        total += itemTotal
+        cartSummary += `• ${item.quantity}x ${item.name_ar}${variantText} - ${itemTotal} ج.م\n`
+      }
+
+      cartSummary += `\n💰 **الإجمالي: ${total} ج.م**`
+      if (cart_provider_name) {
+        cartSummary += `\n📍 من: ${cart_provider_name}`
+      }
+
+      return Response.json({
+        reply: cartSummary,
+        quick_replies: [
+          { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
+          { title: '➕ أضف صنف آخر', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
+          { title: '🗑️ امسح السلة', payload: 'clear_cart' },
+        ],
+        selected_provider_id,
+        selected_category,
+        memory,
+      })
+    }
+
+    // Handle cancel/undo - "لأ مش عايز", "الغي", "تراجع", etc.
+    const cancelPatterns = [
+      /^(?:لا|لأ|لاء)\s*(?:مش|مو)?\s*(?:عايز|عاوز|ابي|ابغى)/i,
+      /^(?:الغ[يى]|كانسل|cancel)/i,
+      /^(?:تراجع|ارجع|رجعني)/i,
+      /^(?:مش|مو)\s*(?:عايز|عاوز|ابي)/i,
+      /^(?:غير|بدل)\s*(?:رأي[ي]?|راي)/i,
+      /^(?:لا|لأ)\s*(?:شكرا|خلاص)?$/i,
+      /^(?:امسح|شيل)\s*(?:ده|دا|هذا)?$/i,
+    ]
+
+    if (cancelPatterns.some(pattern => pattern.test(lastUserMessage))) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] cancel/undo')
+
+      // Determine what to cancel based on memory state
+      const hasSelectedItem = memory?.selected_item_id
+      const hasSelectedVariant = memory?.selected_variant_id
+      const hasSelectedProvider = memory?.current_provider || selected_provider_id
+
+      let reply = ''
+      let quick_replies: { title: string; payload: string }[] = []
+      let updatedMemory = { ...memory }
+
+      if (hasSelectedVariant) {
+        // Cancel variant selection, go back to item
+        reply = 'تمام، خلينا نرجع للصنف. عايز تختار حجم تاني؟'
+        updatedMemory.selected_variant_id = undefined
+        quick_replies = [
+          { title: '↩️ اختار حجم تاني', payload: `item:${hasSelectedItem}` },
+          { title: '📋 شوف المنيو', payload: hasSelectedProvider ? `provider:${typeof hasSelectedProvider === 'object' ? hasSelectedProvider.id : hasSelectedProvider}` : 'categories' },
+          { title: '🏠 الرئيسية', payload: 'categories' },
+        ]
+      } else if (hasSelectedItem) {
+        // Cancel item selection, go back to provider
+        reply = 'تمام، الصنف اتشال. عايز تشوف حاجة تانية؟'
+        updatedMemory.selected_item_id = undefined
+        quick_replies = [
+          { title: '📋 شوف المنيو', payload: hasSelectedProvider ? `provider:${typeof hasSelectedProvider === 'object' ? hasSelectedProvider.id : hasSelectedProvider}` : 'categories' },
+          { title: '🏠 الرئيسية', payload: 'categories' },
+        ]
+      } else if (hasSelectedProvider) {
+        // Cancel provider selection, go back to categories
+        reply = 'تمام، عايز تشوف مكان تاني؟'
+        updatedMemory.current_provider = undefined
+        quick_replies = [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:supermarket' },
+          { title: '🏠 الأقسام', payload: 'categories' },
+        ]
+      } else {
+        // Nothing to cancel
+        reply = 'مفيش حاجة تتلغي 😊\n\nتحب تبدأ طلب جديد؟'
+        quick_replies = [
+          { title: '🏠 الأقسام', payload: 'categories' },
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+        ]
+      }
+
+      return Response.json({
+        reply,
+        quick_replies,
+        selected_provider_id: hasSelectedVariant || hasSelectedItem ? selected_provider_id : undefined,
+        selected_category,
+        memory: updatedMemory,
+      })
+    }
 
     // Handle provider_category:xxx payload - Show items from provider's menu category
     // This doesn't need city_id because it gets provider_id from the category itself
@@ -2837,18 +3039,32 @@ export async function POST(request: Request) {
 
     // Pattern 3: "عايز X" / "عاوز X" / "عايزين X" / "هطلب X" / "نفسي في X" (I want X / I'll order X)
     // Includes plural forms: عايزين, عاوزين
+    // Now supports quantity: "عايز 2 بيتزا" or "عايز اتنين بيتزا"
     // Uses current_provider from memory as fallback
     const ayezQueryMatch = lastUserMessage.match(/^(?:عايز|عايزين|عاوز|عاوزين|عاوزه|عايزه|هطلب|هنطلب|نفسي في|نفسي فى|ابي|أبي|ابغى|أبغى|نبي|نبغى)\s+(.+?)$/i)
     if (ayezQueryMatch) {
-      const searchQuery = ayezQueryMatch[1].trim()
+      const rawQuery = ayezQueryMatch[1].trim()
+      // Extract quantity from search query (e.g., "2 بيتزا" → quantity=2, product="بيتزا")
+      const { quantity, product: searchQuery } = extractQuantityFromSearch(rawQuery)
       const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
-      console.log('🚀 [DIRECT HANDLER] "عايز X" query:', searchQuery, 'provider:', providerIdToSearch)
+      console.log('🚀 [DIRECT HANDLER] "عايز X" query:', searchQuery, 'quantity:', quantity, 'provider:', providerIdToSearch)
 
       const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory)
+
+      // Store quantity in memory if > 1 so it's used when item is selected
+      const updatedMemory = {
+        ...searchResult.memory,
+        pending_quantity: quantity > 1 ? quantity : undefined,
+      }
+
       return Response.json({
         ...searchResult,
+        reply: quantity > 1
+          ? `${searchResult.reply}\n\n📝 هضيف ${quantity} من اللي تختاره`
+          : searchResult.reply,
         selected_provider_id: providerIdToSearch || selected_provider_id,
         selected_category,
+        memory: updatedMemory,
       })
     }
 

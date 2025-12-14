@@ -16,6 +16,14 @@ import {
 } from '@/lib/store/chat'
 import type { ChatMessage, ChatProduct } from '@/types/chat'
 
+// Cart item info for API
+interface CartItemInfo {
+  name_ar: string
+  quantity: number
+  unit_price: number
+  variant_name_ar?: string
+}
+
 // API Request/Response types for new implementation
 interface ChatAPIRequest {
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
@@ -27,6 +35,7 @@ interface ChatAPIRequest {
   memory?: Record<string, unknown>
   cart_provider_id?: string // Provider ID of items in cart (for conflict detection)
   cart_provider_name?: string // Provider name for user-friendly messages
+  cart_items?: CartItemInfo[] // Cart contents for inquiry
 }
 
 interface QuickReply {
@@ -183,6 +192,14 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       const cartProviderId = cartItems.length > 0 ? cartProvider?.id : undefined
       const cartProviderName = cartItems.length > 0 ? cartProvider?.name_ar : undefined
 
+      // Build cart items for inquiry
+      const cartItemsInfo: CartItemInfo[] = cartItems.map(item => ({
+        name_ar: item.menuItem.name_ar,
+        quantity: item.quantity,
+        unit_price: item.selectedVariant?.price || item.menuItem.price,
+        variant_name_ar: item.selectedVariant?.name_ar,
+      }))
+
       const requestBody: ChatAPIRequest = {
         messages: conversationHistory,
         customer_id: userId,
@@ -193,6 +210,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         memory,
         cart_provider_id: cartProviderId,
         cart_provider_name: cartProviderName,
+        cart_items: cartItemsInfo,
       }
 
       const response = await fetch('/api/chat', {
@@ -443,6 +461,14 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       const cartProviderId = cartItems.length > 0 ? cartProvider?.id : undefined
       const cartProviderName = cartItems.length > 0 ? cartProvider?.name_ar : undefined
 
+      // Build cart items for inquiry
+      const cartItemsInfo: CartItemInfo[] = cartItems.map(item => ({
+        name_ar: item.menuItem.name_ar,
+        quantity: item.quantity,
+        unit_price: item.selectedVariant?.price || item.menuItem.price,
+        variant_name_ar: item.selectedVariant?.name_ar,
+      }))
+
       const requestBody: ChatAPIRequest = {
         messages: conversationHistory,
         customer_id: userId,
@@ -453,6 +479,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         memory,
         cart_provider_id: cartProviderId,
         cart_provider_name: cartProviderName,
+        cart_items: cartItemsInfo,
       }
 
       const response = await fetch('/api/chat', {
