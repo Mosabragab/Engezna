@@ -167,6 +167,12 @@ async function handleCategoryPayload(
         { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
       ],
       selected_category: categoryCode,
+      // Clear provider context when browsing categories
+      memory: {
+        pending_item: undefined,
+        pending_variant: undefined,
+        current_provider: undefined,
+      },
     }
   }
 
@@ -184,6 +190,12 @@ async function handleCategoryPayload(
       payload: `provider:${p.id}`,
     })),
     selected_category: categoryCode,
+    // IMPORTANT: Clear provider context when browsing categories
+    memory: {
+      pending_item: undefined,
+      pending_variant: undefined,
+      current_provider: undefined,
+    },
   }
 }
 
