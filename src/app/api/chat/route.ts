@@ -35,12 +35,12 @@ interface CurrentProvider {
 }
 
 interface ChatMemory {
-  pending_item?: PendingItem
-  pending_variant?: PendingVariant
-  pending_quantity?: number
+  pending_item?: PendingItem | null
+  pending_variant?: PendingVariant | null
+  pending_quantity?: number | null
   awaiting_quantity?: boolean
   awaiting_confirmation?: boolean
-  current_provider?: CurrentProvider // Persists after cart addition for follow-up orders
+  current_provider?: CurrentProvider | null // Persists after cart addition for follow-up orders
   [key: string]: unknown
 }
 
@@ -129,8 +129,8 @@ interface PayloadHandlerResult {
   reply: string
   quick_replies: QuickReply[]
   cart_action?: CartAction
-  selected_provider_id?: string
-  selected_category?: string
+  selected_provider_id?: string | null // null explicitly clears the provider
+  selected_category?: string | null
   memory?: ChatMemory
 }
 
@@ -167,11 +167,12 @@ async function handleCategoryPayload(
         { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
       ],
       selected_category: categoryCode,
+      selected_provider_id: null, // null (not undefined) so JSON includes it
       // Clear provider context when browsing categories
       memory: {
-        pending_item: undefined,
-        pending_variant: undefined,
-        current_provider: undefined,
+        pending_item: null,
+        pending_variant: null,
+        current_provider: null,
       },
     }
   }
@@ -190,11 +191,12 @@ async function handleCategoryPayload(
       payload: `provider:${p.id}`,
     })),
     selected_category: categoryCode,
+    selected_provider_id: null, // null (not undefined) so JSON includes it
     // IMPORTANT: Clear provider context when browsing categories
     memory: {
-      pending_item: undefined,
-      pending_variant: undefined,
-      current_provider: undefined,
+      pending_item: null,
+      pending_variant: null,
+      current_provider: null,
     },
   }
 }
@@ -2049,15 +2051,15 @@ export async function POST(request: Request) {
           quantity: 0,
           unit_price: 0,
         },
-        selected_provider_id: undefined, // Clear provider context
-        selected_category,
+        selected_provider_id: null, // null (not undefined) so JSON includes it
+        selected_category: null,
         memory: {
-          pending_item: undefined,
-          pending_variant: undefined,
-          pending_quantity: undefined,
+          pending_item: null,
+          pending_variant: null,
+          pending_quantity: null,
           awaiting_quantity: false,
           awaiting_confirmation: false,
-          current_provider: undefined,
+          current_provider: null, // Clear provider for city-wide search
         },
       })
     }
@@ -2360,16 +2362,15 @@ export async function POST(request: Request) {
           { title: '🍰 البن والحلويات', payload: 'category:coffee_patisserie' },
           { title: '🥦 خضروات وفواكه', payload: 'category:vegetables_fruits' },
         ],
-        selected_provider_id: undefined,
-        selected_category: undefined,
+        selected_provider_id: null, // null (not undefined) so JSON includes it
+        selected_category: null,
         memory: {
-          ...memory,
-          pending_item: undefined,
-          pending_variant: undefined,
-          pending_quantity: undefined,
+          pending_item: null,
+          pending_variant: null,
+          pending_quantity: null,
           awaiting_quantity: false,
           awaiting_confirmation: false,
-          current_provider: undefined, // CLEAR provider context!
+          current_provider: null, // CLEAR provider context!
         },
       })
     }
@@ -2385,17 +2386,16 @@ export async function POST(request: Request) {
           { title: '🍰 البن والحلويات', payload: 'category:coffee_patisserie' },
           { title: '🥦 خضروات وفواكه', payload: 'category:vegetables_fruits' },
         ],
-        selected_provider_id: undefined,
-        selected_category: undefined,
+        selected_provider_id: null, // null (not undefined) so JSON includes it
+        selected_category: null,
         // IMPORTANT: Clear current_provider to allow city-wide search
         memory: {
-          ...memory,
-          pending_item: undefined,
-          pending_variant: undefined,
-          pending_quantity: undefined,
+          pending_item: null,
+          pending_variant: null,
+          pending_quantity: null,
           awaiting_quantity: false,
           awaiting_confirmation: false,
-          current_provider: undefined, // Clear provider context for new search
+          current_provider: null, // null (not undefined) for JSON
         },
       })
     }
