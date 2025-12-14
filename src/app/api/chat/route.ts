@@ -1993,6 +1993,65 @@ export async function POST(request: Request) {
       }
     }
 
+    // Handle provider:xxx payload (doesn't need city_id - just looks up provider by ID)
+    if (lastUserMessage.startsWith('provider:')) {
+      const providerId = lastUserMessage.replace('provider:', '')
+      if (isValidUUID(providerId)) {
+        console.log('🚀 [PRE-VALIDATION HANDLER] provider:', providerId)
+
+        const result = await handleProviderPayload(providerId, city_id || '')
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          cart_action: result.cart_action,
+          selected_provider_id: result.selected_provider_id || providerId,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: result.memory || memory,
+        })
+      }
+    }
+
+    // Handle add_more:xxx payload (doesn't need city_id)
+    if (lastUserMessage.startsWith('add_more:')) {
+      const providerId = lastUserMessage.replace('add_more:', '')
+      if (isValidUUID(providerId)) {
+        console.log('🚀 [PRE-VALIDATION HANDLER] add_more:', providerId)
+
+        const supabase = await createClient()
+        const { data: provider } = await supabase
+          .from('providers')
+          .select('name_ar')
+          .eq('id', providerId)
+          .single()
+
+        const providerName = provider?.name_ar || 'المتجر'
+
+        return Response.json({
+          reply: `عايز تضيف إيه من ${providerName}؟ 🍽️\n\nاكتب اسم الصنف وهلاقيهولك...`,
+          quick_replies: [
+            { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
+            { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${providerId}` },
+          ],
+          selected_provider_id: providerId,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: {
+            ...memory,
+            pending_item: null,
+            pending_variant: null,
+            pending_quantity: null,
+            awaiting_quantity: false,
+            awaiting_confirmation: false,
+            current_provider: {
+              id: providerId,
+              name_ar: providerName,
+            },
+          },
+        })
+      }
+    }
+
     // Validate city_id
     if (!city_id) {
       return Response.json({
@@ -2035,66 +2094,6 @@ export async function POST(request: Request) {
         selected_category: result.selected_category || selected_category,
         memory: result.memory || memory,
       })
-    }
-
-    // Handle provider:xxx payload
-    if (lastUserMessage.startsWith('provider:')) {
-      const providerId = lastUserMessage.replace('provider:', '')
-      if (isValidUUID(providerId)) {
-        console.log('🚀 [DIRECT HANDLER] provider:', providerId)
-
-        const result = await handleProviderPayload(providerId, city_id)
-        return Response.json({
-          reply: result.reply,
-          quick_replies: result.quick_replies,
-          cart_action: result.cart_action,
-          selected_provider_id: result.selected_provider_id || providerId,
-          selected_provider_category: selected_provider_category,
-          selected_category: selected_category,
-          memory: result.memory || memory,
-        })
-      }
-    }
-
-    // Handle add_more:xxx payload - Ask user what they want to add from this provider
-    if (lastUserMessage.startsWith('add_more:')) {
-      const providerId = lastUserMessage.replace('add_more:', '')
-      if (isValidUUID(providerId)) {
-        console.log('🚀 [DIRECT HANDLER] add_more:', providerId)
-
-        // Create supabase client and fetch provider name
-        const supabase = await createClient()
-        const { data: provider } = await supabase
-          .from('providers')
-          .select('name_ar')
-          .eq('id', providerId)
-          .single()
-
-        const providerName = provider?.name_ar || 'المتجر'
-
-        return Response.json({
-          reply: `عايز تضيف إيه من ${providerName}؟ 🍽️\n\nاكتب اسم الصنف وهلاقيهولك...`,
-          quick_replies: [
-            { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-            { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${providerId}` },
-          ],
-          selected_provider_id: providerId,
-          selected_provider_category: selected_provider_category,
-          selected_category: selected_category,
-          memory: {
-            ...memory,
-            pending_item: null,
-            pending_variant: null,
-            pending_quantity: null,
-            awaiting_quantity: false,
-            awaiting_confirmation: false,
-            current_provider: {
-              id: providerId,
-              name_ar: providerName,
-            },
-          },
-        })
-      }
     }
 
     // =======================================================================
