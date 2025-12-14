@@ -1405,9 +1405,10 @@ async function handleToolCall(
         discountedItemsCount: actualDiscountedItems.length,
         promotions: promotionsWithProducts.map(p => ({
           id: p.id,
-          title: p.title_ar || p.title,
+          title: p.name_ar,
           provider: p.providers?.name_ar,
-          discount: p.discount_percentage || p.discount_amount,
+          type: p.type,
+          discount_value: p.discount_value,
           applies_to: p.applies_to,
           affected_products_count: p.affected_products?.length || 0,
         })),
@@ -1907,17 +1908,37 @@ export async function POST(request: Request) {
 
       const supabase = await createClient()
 
-      // Get user's last delivered order
-      const { data: lastOrder } = await supabase
+      console.log('🔄 [REORDER] Looking for orders for customer:', customer_id)
+
+      // First try delivered/completed orders
+      let { data: lastOrder } = await supabase
         .from('orders')
-        .select('id, provider_id, providers(name_ar)')
+        .select('id, provider_id, status, providers(name_ar)')
         .eq('customer_id', customer_id)
         .in('status', ['delivered', 'completed'])
         .order('created_at', { ascending: false })
         .limit(1)
         .single()
 
+      // If no delivered orders, try any recent order
       if (!lastOrder) {
+        console.log('🔄 [REORDER] No delivered orders, trying any order...')
+        const { data: anyOrder } = await supabase
+          .from('orders')
+          .select('id, provider_id, status, providers(name_ar)')
+          .eq('customer_id', customer_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (anyOrder) {
+          console.log('🔄 [REORDER] Found order with status:', anyOrder.status)
+          lastOrder = anyOrder
+        }
+      }
+
+      if (!lastOrder) {
+        console.log('🔄 [REORDER] No orders found for customer:', customer_id)
         return Response.json({
           reply: 'مش لاقي طلبات سابقة ليك 😕 يلا نبدأ طلب جديد!',
           quick_replies: [
@@ -1929,6 +1950,8 @@ export async function POST(request: Request) {
           memory,
         })
       }
+
+      console.log('🔄 [REORDER] Found order:', lastOrder.id, 'status:', lastOrder.status)
 
       // Get order items
       const { data: orderItems } = await supabase
@@ -2084,21 +2107,23 @@ export async function POST(request: Request) {
       for (const promo of promotionsWithProducts) {
         if (promo.affected_products && promo.affected_products.length > 0) {
           for (const item of promo.affected_products.slice(0, 4)) {
-            // Check for discount: prefer percentage, then amount
+            // Check for discount based on promotion type and discount_value
+            // Database schema: type = 'percentage' | 'fixed' | 'buy_x_get_y', discount_value = number
             let discountText = ''
-            if (promo.discount_percentage && promo.discount_percentage > 0) {
-              discountText = ` -${promo.discount_percentage}%`
-            } else if (promo.discount_amount && promo.discount_amount > 0) {
-              discountText = ` -${promo.discount_amount} ج.م`
-            } else if (promo.title_ar || promo.title) {
-              // If no specific discount, show promotion title indicator
-              discountText = ` 🎁`
-            }
+            let displayPrice = item.price
 
-            // Calculate discounted price if percentage discount
-            const displayPrice = promo.discount_percentage && promo.discount_percentage > 0
-              ? Math.round(item.price * (1 - promo.discount_percentage / 100))
-              : item.price
+            if (promo.type === 'percentage' && promo.discount_value && promo.discount_value > 0) {
+              discountText = ` -${promo.discount_value}%`
+              displayPrice = Math.round(item.price * (1 - promo.discount_value / 100))
+            } else if (promo.type === 'fixed' && promo.discount_value && promo.discount_value > 0) {
+              discountText = ` -${promo.discount_value} ج.م`
+              displayPrice = Math.max(0, item.price - promo.discount_value)
+            } else if (promo.type === 'buy_x_get_y') {
+              discountText = ` 🎁 اشتري ${promo.buy_quantity || 1} واحصل على ${promo.get_quantity || 1}`
+            } else if (promo.name_ar) {
+              // Show promotion name if no specific discount value
+              discountText = ` 🏷️`
+            }
 
             quickReplies.push({
               title: `🏷️ ${item.name_ar} (${displayPrice} ج.م)${discountText}`,
@@ -2736,7 +2761,10 @@ function generateQuickRepliesFromToolResults(
         for (const promo of (promotionsList as Array<{
           applies_to?: string
           affected_products?: Array<{ id: string; name_ar: string; price: number }>
-          discount_percentage?: number
+          type?: 'percentage' | 'fixed' | 'buy_x_get_y'
+          discount_value?: number
+          buy_quantity?: number
+          get_quantity?: number
           provider_id?: string
           providers?: { name_ar: string }
         }>).slice(0, 5)) {
@@ -2744,8 +2772,19 @@ function generateQuickRepliesFromToolResults(
             // Show affected products as item buttons
             for (const item of promo.affected_products.slice(0, 5)) {
               if (item.id && item.name_ar) {
-                const priceText = item.price ? ` (${item.price} ج.م)` : ''
-                const discountText = promo.discount_percentage ? ` -${promo.discount_percentage}%` : ''
+                // Calculate discount text based on promotion type
+                let discountText = ''
+                let displayPrice = item.price
+                if (promo.type === 'percentage' && promo.discount_value) {
+                  discountText = ` -${promo.discount_value}%`
+                  displayPrice = Math.round(item.price * (1 - promo.discount_value / 100))
+                } else if (promo.type === 'fixed' && promo.discount_value) {
+                  discountText = ` -${promo.discount_value} ج.م`
+                  displayPrice = Math.max(0, item.price - promo.discount_value)
+                } else if (promo.type === 'buy_x_get_y') {
+                  discountText = ` 🎁`
+                }
+                const priceText = displayPrice ? ` (${displayPrice} ج.م)` : ''
                 replies.push({
                   title: `🏷️ ${item.name_ar}${priceText}${discountText}`,
                   payload: `item:${item.id}`,
