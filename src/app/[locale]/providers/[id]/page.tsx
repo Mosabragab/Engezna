@@ -7,9 +7,11 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
 import { useFavorites } from '@/hooks/customer'
+import { useGuestLocation } from '@/lib/hooks/useGuestLocation'
 import { Button } from '@/components/ui/button'
 import { ProductCard, RatingStars, StatusBadge, EmptyState, ProductDetailModal } from '@/components/customer/shared'
 import { VoiceOrderFAB } from '@/components/customer/voice'
+import { ChatFAB, SmartAssistant } from '@/components/customer/chat'
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout'
 import {
   Clock,
@@ -118,8 +120,12 @@ export default function ProviderDetailPage() {
 
   const { addItem, removeItem, getItemQuantity, getTotal, getItemCount, confirmProviderSwitch, cancelProviderSwitch, pendingItem } = useCart()
   const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites()
+  const { location: guestLocation } = useGuestLocation()
+  const guestCityId = guestLocation.cityId
 
   const [provider, setProvider] = useState<Provider | null>(null)
+  const [userId, setUserId] = useState<string | undefined>()
+  const [userCityId, setUserCityId] = useState<string | undefined>()
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
@@ -130,6 +136,7 @@ export default function ProviderDetailPage() {
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<MenuItem | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [providerSwitchInfo, setProviderSwitchInfo] = useState<{show: boolean; currentProvider: string; newProvider: string} | null>(null)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const categoriesRef = useRef<HTMLDivElement>(null)
 
   // Smart Arabic text normalization for search
@@ -147,6 +154,27 @@ export default function ProviderDetailPage() {
   useEffect(() => {
     fetchProviderData()
   }, [providerId])
+
+  // Get user info for SmartAssistant
+  useEffect(() => {
+    async function fetchUserData() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+        // Get user's city from profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('city_id')
+          .eq('id', user.id)
+          .single()
+        if (profile?.city_id) {
+          setUserCityId(profile.city_id)
+        }
+      }
+    }
+    fetchUserData()
+  }, [])
 
   async function fetchProviderData() {
     setLoading(true)
@@ -803,6 +831,22 @@ export default function ProviderDetailPage() {
 
       {/* Voice Order FAB - Show only when cart is empty */}
       {cartItemCount === 0 && <VoiceOrderFAB />}
+
+      {/* AI Smart Assistant - Always available */}
+      {cartItemCount > 0 && (
+        <>
+          <ChatFAB
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            isOpen={isChatOpen}
+          />
+          <SmartAssistant
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+            userId={userId}
+            cityId={userCityId || guestCityId || undefined}
+          />
+        </>
+      )}
 
       {/* Product Detail Modal */}
       {selectedProductForDetail && (

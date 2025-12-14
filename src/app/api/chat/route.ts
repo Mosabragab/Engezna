@@ -35,12 +35,12 @@ interface CurrentProvider {
 }
 
 interface ChatMemory {
-  pending_item?: PendingItem
-  pending_variant?: PendingVariant
-  pending_quantity?: number
+  pending_item?: PendingItem | null
+  pending_variant?: PendingVariant | null
+  pending_quantity?: number | null
   awaiting_quantity?: boolean
   awaiting_confirmation?: boolean
-  current_provider?: CurrentProvider // Persists after cart addition for follow-up orders
+  current_provider?: CurrentProvider | null // Persists after cart addition for follow-up orders
   [key: string]: unknown
 }
 
@@ -129,8 +129,8 @@ interface PayloadHandlerResult {
   reply: string
   quick_replies: QuickReply[]
   cart_action?: CartAction
-  selected_provider_id?: string
-  selected_category?: string
+  selected_provider_id?: string | null // null explicitly clears the provider
+  selected_category?: string | null
   memory?: ChatMemory
 }
 
@@ -167,6 +167,13 @@ async function handleCategoryPayload(
         { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
       ],
       selected_category: categoryCode,
+      selected_provider_id: null, // null (not undefined) so JSON includes it
+      // Clear provider context when browsing categories
+      memory: {
+        pending_item: null,
+        pending_variant: null,
+        current_provider: null,
+      },
     }
   }
 
@@ -184,6 +191,13 @@ async function handleCategoryPayload(
       payload: `provider:${p.id}`,
     })),
     selected_category: categoryCode,
+    selected_provider_id: null, // null (not undefined) so JSON includes it
+    // IMPORTANT: Clear provider context when browsing categories
+    memory: {
+      pending_item: null,
+      pending_variant: null,
+      current_provider: null,
+    },
   }
 }
 
@@ -607,8 +621,8 @@ function handleConfirmAdd(memory: ChatMemory): PayloadHandlerResult | null {
     reply: `تمام! ✅ ضفت ${pending_quantity}x ${pending_item.name_ar}${variantText} للسلة من ${providerName} (${totalPrice} ج.م)\n\nتحب تضيف حاجة تانية من ${providerName}؟`,
     quick_replies: [
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-      { title: `➕ أضف من ${providerName}`, payload: `provider:${pending_item.provider_id}` },
-      { title: `📋 منيو ${providerName}`, payload: `provider:${pending_item.provider_id}` },
+      { title: '➕ أضف صنف آخر', payload: `add_more:${pending_item.provider_id}` },
+      { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${pending_item.provider_id}` },
     ],
     cart_action,
     selected_provider_id: pending_item.provider_id,
@@ -661,8 +675,8 @@ function handleClearCartAndAdd(memory: ChatMemory): PayloadHandlerResult | null 
     reply: `تمام! ✅ فضيت السلة وضفت ${pending_quantity}x ${pending_item.name_ar}${variantText} من ${providerName} (${totalPrice} ج.م)\n\nتحب تضيف حاجة تانية من ${providerName}؟`,
     quick_replies: [
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-      { title: `➕ أضف من ${providerName}`, payload: `provider:${pending_item.provider_id}` },
-      { title: `📋 منيو ${providerName}`, payload: `provider:${pending_item.provider_id}` },
+      { title: '➕ أضف صنف آخر', payload: `add_more:${pending_item.provider_id}` },
+      { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${pending_item.provider_id}` },
     ],
     cart_action,
     selected_provider_id: pending_item.provider_id,
@@ -759,8 +773,8 @@ async function performDirectSearch(
       return {
         reply: `مش لاقي ${searchQuery} في ${provider?.name_ar || 'المتجر ده'}. تحب تدور على حاجة تانية؟`,
         quick_replies: [
-          { title: '📋 شوف المنيو', payload: `provider:${selectedProviderId}` },
-          { title: '🔍 ابحث في مكان تاني', payload: 'categories' },
+          { title: '➕ دور على صنف تاني', payload: `add_more:${selectedProviderId}` },
+          { title: '🔍 ابحث في مكان تاني', payload: 'search_elsewhere' },
         ],
         selected_provider_id: selectedProviderId,
         memory,
@@ -1852,6 +1866,47 @@ export async function POST(request: Request) {
       }
     }
 
+    // Handle add_more:xxx payload - Ask user what they want to add from this provider
+    if (lastUserMessage.startsWith('add_more:')) {
+      const providerId = lastUserMessage.replace('add_more:', '')
+      if (isValidUUID(providerId)) {
+        console.log('🚀 [DIRECT HANDLER] add_more:', providerId)
+
+        // Create supabase client and fetch provider name
+        const supabase = await createClient()
+        const { data: provider } = await supabase
+          .from('providers')
+          .select('name_ar')
+          .eq('id', providerId)
+          .single()
+
+        const providerName = provider?.name_ar || 'المتجر'
+
+        return Response.json({
+          reply: `عايز تضيف إيه من ${providerName}؟ 🍽️\n\nاكتب اسم الصنف وهلاقيهولك...`,
+          quick_replies: [
+            { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
+            { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${providerId}` },
+          ],
+          selected_provider_id: providerId,
+          selected_provider_category: selected_provider_category,
+          selected_category: selected_category,
+          memory: {
+            ...memory,
+            pending_item: null,
+            pending_variant: null,
+            pending_quantity: null,
+            awaiting_quantity: false,
+            awaiting_confirmation: false,
+            current_provider: {
+              id: providerId,
+              name_ar: providerName,
+            },
+          },
+        })
+      }
+    }
+
     // Handle item:xxx payload
     if (lastUserMessage.startsWith('item:')) {
       const itemId = lastUserMessage.replace('item:', '')
@@ -2037,15 +2092,15 @@ export async function POST(request: Request) {
           quantity: 0,
           unit_price: 0,
         },
-        selected_provider_id: undefined, // Clear provider context
-        selected_category,
+        selected_provider_id: null, // null (not undefined) so JSON includes it
+        selected_category: null,
         memory: {
-          pending_item: undefined,
-          pending_variant: undefined,
-          pending_quantity: undefined,
+          pending_item: null,
+          pending_variant: null,
+          pending_quantity: null,
           awaiting_quantity: false,
           awaiting_confirmation: false,
-          current_provider: undefined,
+          current_provider: null, // Clear provider for city-wide search
         },
       })
     }
@@ -2234,10 +2289,10 @@ export async function POST(request: Request) {
         })
       }
 
-      // Add provider menu option
+      // Add "add more items" option instead of full menu
       quickReplies.push({
-        title: `📋 منيو ${providerName}`,
-        payload: `provider:${lastOrder.provider_id}`,
+        title: '➕ أضف صنف آخر',
+        payload: `add_more:${lastOrder.provider_id}`,
       })
 
       // Store reorder items in memory for "add all" functionality
@@ -2310,8 +2365,8 @@ export async function POST(request: Request) {
         reply: `تمام! ✅ ضفت كل الأصناف للسلة من ${providerName}:\n\n${itemsList}\n\n💰 الإجمالي: ${totalPrice} ج.م\n\nتحب تضيف حاجة تانية؟`,
         quick_replies: [
           { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-          { title: `➕ أضف من ${providerName}`, payload: `provider:${providerId}` },
-          { title: `📋 منيو ${providerName}`, payload: `provider:${providerId}` },
+          { title: '➕ أضف صنف آخر', payload: `add_more:${providerId}` },
+          { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${providerId}` },
         ],
         cart_actions: cartActions, // Multiple cart actions
         selected_provider_id: providerId,
@@ -2334,8 +2389,35 @@ export async function POST(request: Request) {
       })
     }
 
+    // Handle "search elsewhere" - Clear provider context and show categories
+    const isSearchElsewhere = lastUserMessage === '🔍 ابحث في مكان تاني' ||
+      /^(?:ابحث|دور)\s*(?:في|ف)?\s*(?:مكان|محل)\s*(?:تاني|اخر|آخر)$/i.test(lastUserMessage)
+
+    if (isSearchElsewhere) {
+      console.log('🚀 [DIRECT HANDLER] search_elsewhere - clearing provider context')
+      return Response.json({
+        reply: 'تمام! 🔍 هدور في كل المتاجر المتاحة.\n\nاختار القسم اللي تحبه 👇',
+        quick_replies: [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+          { title: '🍰 البن والحلويات', payload: 'category:coffee_patisserie' },
+          { title: '🥦 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+        ],
+        selected_provider_id: null, // null (not undefined) so JSON includes it
+        selected_category: null,
+        memory: {
+          pending_item: null,
+          pending_variant: null,
+          pending_quantity: null,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          current_provider: null, // CLEAR provider context!
+        },
+      })
+    }
+
     // Handle special payloads
-    if (lastUserMessage === 'categories' || lastUserMessage === 'الأقسام') {
+    if (lastUserMessage === 'categories' || lastUserMessage === 'الأقسام' || lastUserMessage === '🏠 الأقسام') {
       console.log('🚀 [DIRECT HANDLER] categories')
       return Response.json({
         reply: 'اختار القسم اللي تحبه 👇',
@@ -2345,9 +2427,17 @@ export async function POST(request: Request) {
           { title: '🍰 البن والحلويات', payload: 'category:coffee_patisserie' },
           { title: '🥦 خضروات وفواكه', payload: 'category:vegetables_fruits' },
         ],
-        selected_provider_id: undefined,
-        selected_category: undefined,
-        memory: { ...memory, pending_item: undefined, pending_variant: undefined, pending_quantity: undefined, awaiting_quantity: false, awaiting_confirmation: false },
+        selected_provider_id: null, // null (not undefined) so JSON includes it
+        selected_category: null,
+        // IMPORTANT: Clear current_provider to allow city-wide search
+        memory: {
+          pending_item: null,
+          pending_variant: null,
+          pending_quantity: null,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          current_provider: null, // null (not undefined) for JSON
+        },
       })
     }
 
@@ -2677,7 +2767,7 @@ export async function POST(request: Request) {
         return Response.json({
           reply: `مش لاقي ${searchQuery} في ${providerName} ولا في أماكن تانية. تحب تدور على حاجة مختلفة؟`,
           quick_replies: [
-            { title: `📋 شوف منيو ${providerName}`, payload: `provider:${providerIdToSearch}` },
+            { title: '➕ دور على صنف تاني', payload: `add_more:${providerIdToSearch}` },
             { title: '🏠 الأقسام', payload: 'categories' },
           ],
           selected_provider_id: providerIdToSearch,
@@ -3207,10 +3297,10 @@ function generateQuickRepliesFromToolResults(
  * Generate default quick replies based on context
  */
 function generateDefaultQuickReplies(lastMessage: string, providerId?: string, selectedCategory?: string): QuickReply[] {
-  // If we have a provider selected, offer menu navigation
+  // If we have a provider selected, offer to add more items
   if (providerId && isValidUUID(providerId)) {
     return [
-      { title: '📋 شوف المنيو', payload: `provider:${providerId}` },
+      { title: '➕ أضف صنف', payload: `add_more:${providerId}` },
       { title: '🔍 ابحث', payload: 'search' },
       { title: '🏠 الأقسام', payload: 'categories' },
     ]
