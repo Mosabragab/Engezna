@@ -10,6 +10,23 @@ import { createClient } from '@/lib/supabase/server'
 import { SYSTEM_PROMPT, CATEGORY_MAPPING } from '@/lib/ai/systemPrompt'
 import { tools } from '@/lib/ai/tools'
 import { normalizeArabic, filterByNormalizedArabic, logNormalization } from '@/lib/ai/normalizeArabic'
+import {
+  getTimeBasedGreeting,
+  getProviderSelectedMessage,
+  getItemFoundMessage,
+  getItemNotFoundMessage,
+  getQuantityAskMessage,
+  getVariantAskMessage,
+  getAddedToCartMessage,
+  getCartEmptyMessage,
+  getCartClearedMessage,
+  getCancelResponse,
+  getRecommendationHeader,
+  getConfirmationHeader,
+  randomChoice,
+  getUpsellSuggestions,
+  UPSELL_SUGGESTIONS,
+} from '@/lib/ai/responsePersonality'
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions'
 
 // Types
@@ -337,8 +354,9 @@ async function handleProviderPayload(
   }
 
   // Conversational approach: Ask what they want instead of showing full menu
+  // Use personality-driven response
   return {
-    reply: `تمام! اخترت ${provider.name_ar} ⭐${provider.rating || ''} ${categoryEmoji}\n\nعايز تطلب إيه؟ اكتب اسم الصنف وهلاقيهولك...`,
+    reply: getProviderSelectedMessage(provider.name_ar, provider.rating),
     quick_replies: quickReplies,
     selected_provider_id: providerId,
     memory: {
@@ -707,13 +725,27 @@ function handleConfirmAdd(memory: ChatMemory): PayloadHandlerResult | null {
     variant_name_ar: pending_variant?.name_ar,
   }
 
-  // Include provider name in the response so user knows where the item is from
+  // Use personality-driven response with smart upselling
+  const baseReply = getAddedToCartMessage(pending_quantity, `${pending_item.name_ar}${variantText}`, totalPrice, providerName)
+
+  // Smart upselling based on item name (Phase 2)
+  const itemNameLower = pending_item.name_ar.toLowerCase()
+  let upsellCategory = 'default'
+  if (itemNameLower.includes('بيتزا') || itemNameLower.includes('pizza')) upsellCategory = 'pizza'
+  else if (itemNameLower.includes('برجر') || itemNameLower.includes('burger')) upsellCategory = 'burger'
+  else if (itemNameLower.includes('فراخ') || itemNameLower.includes('دجاج')) upsellCategory = 'chicken'
+  else if (itemNameLower.includes('باستا') || itemNameLower.includes('مكرونة')) upsellCategory = 'pasta'
+  else if (itemNameLower.includes('قهوة') || itemNameLower.includes('coffee')) upsellCategory = 'coffee'
+
+  const upsellItems = getUpsellSuggestions(upsellCategory)
+  const upsellMessage = randomChoice(UPSELL_SUGGESTIONS)(upsellItems)
+
   return {
-    reply: `تمام! ✅ ضفت ${pending_quantity}x ${pending_item.name_ar}${variantText} للسلة من ${providerName} (${totalPrice} ج.م)\n\nتحب تضيف حاجة تانية من ${providerName}؟`,
+    reply: `${baseReply}\n\n${upsellMessage}`,
     quick_replies: [
+      { title: `🥤 ${upsellItems[0]}`, payload: `search:${upsellItems[0]}` },
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
       { title: '➕ أضف صنف آخر', payload: `add_more:${pending_item.provider_id}` },
-      { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${pending_item.provider_id}` },
     ],
     cart_action,
     selected_provider_id: pending_item.provider_id,
@@ -1914,7 +1946,7 @@ export async function POST(request: Request) {
 
       if (!cart_items || cart_items.length === 0) {
         return Response.json({
-          reply: 'السلة فاضية دلوقتي 🛒\n\nتحب تطلب حاجة؟',
+          reply: getCartEmptyMessage(),
           quick_replies: [
             { title: '🏠 الأقسام', payload: 'categories' },
             { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
@@ -1968,7 +2000,7 @@ export async function POST(request: Request) {
       console.log('🚀 [PRE-VALIDATION HANDLER] clear_cart/order')
 
       return Response.json({
-        reply: '🗑️ تمام، السلة اتفضت!\n\nعايز تبدأ طلب جديد؟',
+        reply: getCartClearedMessage(),
         quick_replies: [
           { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
           { title: '🛒 سوبر ماركت', payload: 'category:supermarket' },
@@ -2016,7 +2048,7 @@ export async function POST(request: Request) {
 
       if (hasSelectedVariant) {
         // Cancel variant selection, go back to item
-        reply = 'تمام، خلينا نرجع للصنف. عايز تختار حجم تاني؟'
+        reply = getCancelResponse('variant')
         updatedMemory.selected_variant_id = undefined
         quick_replies = [
           { title: '↩️ اختار حجم تاني', payload: `item:${hasSelectedItem}` },
@@ -2025,7 +2057,7 @@ export async function POST(request: Request) {
         ]
       } else if (hasSelectedItem) {
         // Cancel item selection, go back to provider
-        reply = 'تمام، الصنف اتشال. عايز تشوف حاجة تانية؟'
+        reply = getCancelResponse('item')
         updatedMemory.selected_item_id = undefined
         quick_replies = [
           { title: '📋 شوف المنيو', payload: hasSelectedProvider ? `provider:${typeof hasSelectedProvider === 'object' ? hasSelectedProvider.id : hasSelectedProvider}` : 'categories' },
@@ -2033,7 +2065,7 @@ export async function POST(request: Request) {
         ]
       } else if (hasSelectedProvider) {
         // Cancel provider selection, go back to categories
-        reply = 'تمام، عايز تشوف مكان تاني؟'
+        reply = getCancelResponse('provider')
         updatedMemory.current_provider = undefined
         quick_replies = [
           { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
@@ -2042,7 +2074,7 @@ export async function POST(request: Request) {
         ]
       } else {
         // Nothing to cancel
-        reply = 'مفيش حاجة تتلغي 😊\n\nتحب تبدأ طلب جديد؟'
+        reply = getCancelResponse('nothing')
         quick_replies = [
           { title: '🏠 الأقسام', payload: 'categories' },
           { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
