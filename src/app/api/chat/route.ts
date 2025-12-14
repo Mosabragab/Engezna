@@ -2013,10 +2013,30 @@ export async function POST(request: Request) {
       }
     }
 
+    // =======================================================================
+    // Handle navigate: payload - Direct navigation commands
+    // =======================================================================
+    if (lastUserMessage.startsWith('navigate:')) {
+      const targetRoute = lastUserMessage.replace('navigate:', '')
+      console.log('🚀 [DIRECT HANDLER] navigate:', targetRoute)
+
+      return Response.json({
+        reply: 'تمام! 🚀',
+        quick_replies: [
+          { title: '➕ أضف المزيد', payload: 'categories' },
+        ],
+        navigate_to: targetRoute,
+        selected_provider_id,
+        selected_category,
+        memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false, awaiting_confirmation: false },
+      })
+    }
+
     // Handle go_to_cart payload (navigate to cart - frontend handles actual navigation)
     // Also handle Arabic variations like "اذهب للسلة", "السلة", etc.
     const isGoToCart = lastUserMessage === 'go_to_cart' ||
       lastUserMessage === '🛒 اذهب للسلة' ||
+      lastUserMessage === '🛒 فتح السلة' || // Direct match for the button text
       /^(?:اذهب|روح|خدني)?\s*(?:لل?سل[ةه]|للكارت|for cart|to cart)$/i.test(lastUserMessage) ||
       /^(?:افتح|فتح|شوف)\s*(?:ال)?سل[ةه]$/i.test(lastUserMessage)
 
