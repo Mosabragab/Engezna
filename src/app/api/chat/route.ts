@@ -2153,6 +2153,111 @@ export async function POST(request: Request) {
       })
     }
 
+    // =======================================================================
+    // Handle show_popular payload - Show most popular/ordered items
+    // =======================================================================
+    if (lastUserMessage === 'show_popular' || lastUserMessage === 'الأكثر طلباً' || lastUserMessage === '⭐ الأكثر طلباً') {
+      console.log('🚀 [DIRECT HANDLER] show_popular')
+
+      const supabase = await createClient()
+
+      // Get popular items based on is_popular flag or high order count
+      let query = supabase
+        .from('menu_items')
+        .select('id, name_ar, price, provider_id, providers!inner(id, name_ar, city_id)')
+        .eq('is_available', true)
+        .eq('providers.city_id', city_id)
+        .or('has_stock.eq.true,has_stock.is.null')
+        .eq('is_popular', true)
+        .limit(15)
+
+      if (selected_provider_id && isValidUUID(selected_provider_id)) {
+        query = query.eq('provider_id', selected_provider_id)
+      }
+
+      const { data: popularItems } = await query
+
+      if (popularItems && popularItems.length > 0) {
+        const quickReplies: QuickReply[] = popularItems.slice(0, 10).map(item => {
+          const providerData = item.providers as { name_ar: string } | { name_ar: string }[] | null
+          const providerName = Array.isArray(providerData) ? providerData[0]?.name_ar : providerData?.name_ar || ''
+          return {
+            title: `${item.name_ar} (${item.price} ج.م) - ${providerName}`,
+            payload: `item:${item.id}`,
+          }
+        })
+
+        return Response.json({
+          reply: `⭐ الأكثر طلباً في مدينتك 👇`,
+          quick_replies: quickReplies,
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      } else {
+        return Response.json({
+          reply: 'مفيش منتجات مميزة دلوقتي 😕 جرب تدور في الأقسام',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+    }
+
+    // =======================================================================
+    // Handle show_nearby payload - Show nearest providers
+    // =======================================================================
+    if (lastUserMessage === 'show_nearby' || lastUserMessage === 'الأقرب' || lastUserMessage === '📍 الأقرب') {
+      console.log('🚀 [DIRECT HANDLER] show_nearby')
+
+      const supabase = await createClient()
+
+      // Get providers in user's city (sorted by featured/rating)
+      const { data: nearbyProviders } = await supabase
+        .from('providers')
+        .select('id, name_ar, category, rating, is_featured')
+        .eq('city_id', city_id)
+        .eq('status', 'open')
+        .neq('name_ar', '')
+        .order('is_featured', { ascending: false })
+        .order('rating', { ascending: false, nullsFirst: false })
+        .limit(10)
+
+      if (nearbyProviders && nearbyProviders.length > 0) {
+        const quickReplies: QuickReply[] = nearbyProviders.map(provider => {
+          const ratingText = provider.rating ? ` ⭐${provider.rating}` : ''
+          const featuredText = provider.is_featured ? ' 🌟' : ''
+          return {
+            title: `${provider.name_ar}${ratingText}${featuredText}`,
+            payload: `provider:${provider.id}`,
+          }
+        })
+
+        return Response.json({
+          reply: `📍 أقرب المتاجر ليك 👇`,
+          quick_replies: quickReplies,
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      } else {
+        return Response.json({
+          reply: 'مفيش متاجر قريبة منك دلوقتي 😕 جرب تدور في الأقسام',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+    }
+
     // Handle category text buttons (in case sent as text instead of payload)
     const categoryTextMap: Record<string, string> = {
       '🍽️ مطاعم وكافيهات': 'restaurant_cafe',

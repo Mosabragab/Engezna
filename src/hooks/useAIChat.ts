@@ -334,12 +334,21 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     // Find payload from last message's quickReplies
     const lastAssistantMessage = messages.filter(m => m.role === 'assistant').pop()
     const quickReplies = (lastAssistantMessage as ChatMessage & { quickReplies?: QuickReply[] })?.quickReplies
-    const matchingReply = quickReplies?.find(qr => qr.title === action)
+    // Check both by title AND by payload
+    const matchingReply = quickReplies?.find(qr => qr.title === action || qr.payload === action)
 
     if (matchingReply) {
       displayText = matchingReply.title
       messageToSend = matchingReply.payload
     } else {
+      // Map QuickActionsBar actions (payload → display text)
+      const quickActionLabels: Record<string, string> = {
+        'reorder_last': '🔄 إعادة آخر طلب',
+        'show_promotions': '🔥 العروض',
+        'show_popular': '⭐ الأكثر طلباً',
+        'show_nearby': '📍 الأقرب',
+      }
+
       // Fallback: Map title to message (backwards compatibility)
       const actionMessages: Record<string, string> = {
         // Retry and navigation
@@ -352,11 +361,18 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         '🍰 البن والحلويات': 'category:coffee_patisserie',
         '🥦 خضروات وفواكه': 'category:vegetables_fruits',
         // Legacy actions
-        '🔥 العروض': 'فيه عروض؟',
+        '🔥 العروض': 'show_promotions',
         '📋 شوف المنيو': selectedProviderId ? `provider:${selectedProviderId}` : 'مرحبا',
         '🔍 ابحث': 'search',
       }
-      messageToSend = actionMessages[action] || action
+
+      // If action is a QuickActionsBar payload, use its label for display
+      if (quickActionLabels[action]) {
+        displayText = quickActionLabels[action]
+        messageToSend = action // The payload is already correct
+      } else {
+        messageToSend = actionMessages[action] || action
+      }
     }
 
     // Store last message for retry
