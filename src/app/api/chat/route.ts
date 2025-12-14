@@ -247,6 +247,7 @@ async function handleProviderPayload(
 
 /**
  * Handle item:xxx payload
+ * Now checks for active promotions and applies discounts
  */
 async function handleItemPayload(
   itemId: string,
@@ -259,7 +260,7 @@ async function handleItemPayload(
   // Get item details
   const { data: item } = await supabase
     .from('menu_items')
-    .select('id, name_ar, price, has_variants, pricing_type, provider_id, providers(name_ar)')
+    .select('id, name_ar, price, original_price, has_variants, pricing_type, provider_id, providers(name_ar)')
     .eq('id', itemId)
     .single()
 
@@ -278,6 +279,64 @@ async function handleItemPayload(
     ? providersData[0]?.name_ar || ''
     : providersData?.name_ar || ''
 
+  // Check for active promotions on this item
+  let appliedDiscount: { type: string; value: number; name?: string } | null = null
+  let discountedPrice = item.price
+
+  // 1. Check promotions table for this item
+  const { data: promotions } = await supabase
+    .from('promotions')
+    .select('id, name_ar, type, discount_value, product_ids, applies_to')
+    .eq('provider_id', item.provider_id)
+    .eq('is_active', true)
+    .lte('start_date', new Date().toISOString())
+    .or(`end_date.is.null,end_date.gte.${new Date().toISOString()}`)
+    .limit(10)
+
+  // Find promotion that applies to this item
+  for (const promo of promotions || []) {
+    const productIds = promo.product_ids as string[] | null
+    if (promo.applies_to === 'specific' && productIds && productIds.includes(itemId)) {
+      if (promo.type === 'percentage' && promo.discount_value) {
+        discountedPrice = Math.round(item.price * (1 - promo.discount_value / 100))
+        appliedDiscount = { type: 'percentage', value: promo.discount_value, name: promo.name_ar }
+      } else if (promo.type === 'fixed' && promo.discount_value) {
+        discountedPrice = Math.max(0, item.price - promo.discount_value)
+        appliedDiscount = { type: 'fixed', value: promo.discount_value, name: promo.name_ar }
+      }
+      break
+    } else if (promo.applies_to === 'all' || promo.applies_to === 'category') {
+      // Promotion applies to all items from this provider
+      if (promo.type === 'percentage' && promo.discount_value) {
+        discountedPrice = Math.round(item.price * (1 - promo.discount_value / 100))
+        appliedDiscount = { type: 'percentage', value: promo.discount_value, name: promo.name_ar }
+      } else if (promo.type === 'fixed' && promo.discount_value) {
+        discountedPrice = Math.max(0, item.price - promo.discount_value)
+        appliedDiscount = { type: 'fixed', value: promo.discount_value, name: promo.name_ar }
+      }
+      break
+    }
+  }
+
+  // 2. Check for product-level discount (original_price > price)
+  if (!appliedDiscount && item.original_price && item.original_price > item.price) {
+    const discountPercent = Math.round(((item.original_price - item.price) / item.original_price) * 100)
+    appliedDiscount = { type: 'percentage', value: discountPercent }
+    discountedPrice = item.price // Price is already discounted
+  }
+
+  // Build discount text for display
+  let discountText = ''
+  if (appliedDiscount) {
+    if (appliedDiscount.type === 'percentage') {
+      discountText = ` 🏷️ خصم ${appliedDiscount.value}%`
+    } else if (appliedDiscount.type === 'fixed') {
+      discountText = ` 🏷️ خصم ${appliedDiscount.value} ج.م`
+    }
+  }
+
+  console.log('💰 [ITEM] price:', item.price, 'discountedPrice:', discountedPrice, 'appliedDiscount:', appliedDiscount)
+
   // Check if item has variants
   if (item.has_variants || item.pricing_type === 'variants') {
     // Get variants
@@ -291,10 +350,25 @@ async function handleItemPayload(
       .limit(10)
 
     if (variants && variants.length > 0) {
+      // Apply discount to variant prices
+      const variantsWithDiscount = variants.map(v => {
+        let variantDiscountedPrice = v.price
+        if (appliedDiscount) {
+          if (appliedDiscount.type === 'percentage') {
+            variantDiscountedPrice = Math.round(v.price * (1 - appliedDiscount.value / 100))
+          } else if (appliedDiscount.type === 'fixed') {
+            variantDiscountedPrice = Math.max(0, v.price - appliedDiscount.value)
+          }
+        }
+        return { ...v, discountedPrice: variantDiscountedPrice }
+      })
+
       return {
-        reply: `${item.name_ar} له اختيارات مختلفة 👇`,
-        quick_replies: variants.map(v => ({
-          title: `${v.name_ar} (${v.price} ج.م)`,
+        reply: `${item.name_ar} له اختيارات مختلفة${discountText} 👇`,
+        quick_replies: variantsWithDiscount.map(v => ({
+          title: appliedDiscount
+            ? `${v.name_ar} (${v.discountedPrice} ج.م بدل ${v.price})`
+            : `${v.name_ar} (${v.price} ج.م)`,
           payload: `variant:${v.id}`,
         })),
         selected_provider_id: item.provider_id,
@@ -302,19 +376,25 @@ async function handleItemPayload(
           pending_item: {
             id: item.id,
             name_ar: item.name_ar,
-            price: item.price,
+            price: discountedPrice, // Use discounted price
             provider_id: item.provider_id,
             provider_name_ar: providerName,
             has_variants: true,
           },
+          // Store discount info for later use
+          applied_discount: appliedDiscount,
         },
       }
     }
   }
 
   // No variants - ask for quantity directly
+  const priceDisplay = appliedDiscount
+    ? `${discountedPrice} ج.م${discountText} (بدل ${item.price} ج.م)`
+    : `${item.price} ج.م`
+
   return {
-    reply: `${item.name_ar} بـ ${item.price} ج.م 🍽️\n\nكام واحدة تحب؟`,
+    reply: `${item.name_ar} بـ ${priceDisplay} 🍽️\n\nكام واحدة تحب؟`,
     quick_replies: [
       { title: '1️⃣ واحدة', payload: 'qty:1' },
       { title: '2️⃣ اتنين', payload: 'qty:2' },
@@ -325,12 +405,13 @@ async function handleItemPayload(
       pending_item: {
         id: item.id,
         name_ar: item.name_ar,
-        price: item.price,
+        price: discountedPrice, // Use discounted price
         provider_id: item.provider_id,
         provider_name_ar: providerName,
         has_variants: false,
       },
       awaiting_quantity: true,
+      applied_discount: appliedDiscount,
     },
   }
 }
@@ -389,8 +470,24 @@ async function handleVariantPayload(
     }
   }
 
+  // Apply discount from memory if exists
+  const appliedDiscount = existingMemory?.applied_discount as { type: string; value: number } | null
+  let discountedVariantPrice = variant.price
+
+  if (appliedDiscount) {
+    if (appliedDiscount.type === 'percentage') {
+      discountedVariantPrice = Math.round(variant.price * (1 - appliedDiscount.value / 100))
+    } else if (appliedDiscount.type === 'fixed') {
+      discountedVariantPrice = Math.max(0, variant.price - appliedDiscount.value)
+    }
+  }
+
+  const priceDisplay = appliedDiscount
+    ? `${discountedVariantPrice} ج.م (بدل ${variant.price}) 🏷️`
+    : `${variant.price} ج.م`
+
   return {
-    reply: `${pendingItem?.name_ar || 'الصنف'} - ${variant.name_ar} بـ ${variant.price} ج.م 🍽️\n\nكام واحدة تحب؟`,
+    reply: `${pendingItem?.name_ar || 'الصنف'} - ${variant.name_ar} بـ ${priceDisplay} 🍽️\n\nكام واحدة تحب؟`,
     quick_replies: [
       { title: '1️⃣ واحدة', payload: 'qty:1' },
       { title: '2️⃣ اتنين', payload: 'qty:2' },
@@ -402,9 +499,10 @@ async function handleVariantPayload(
       pending_variant: {
         id: variant.id,
         name_ar: variant.name_ar,
-        price: variant.price,
+        price: discountedVariantPrice, // Use discounted price
       },
       awaiting_quantity: true,
+      applied_discount: appliedDiscount, // Pass through
     },
   }
 }
@@ -1405,9 +1503,10 @@ async function handleToolCall(
         discountedItemsCount: actualDiscountedItems.length,
         promotions: promotionsWithProducts.map(p => ({
           id: p.id,
-          title: p.title_ar || p.title,
+          title: p.name_ar,
           provider: p.providers?.name_ar,
-          discount: p.discount_percentage || p.discount_amount,
+          type: p.type,
+          discount_value: p.discount_value,
           applies_to: p.applies_to,
           affected_products_count: p.affected_products?.length || 0,
         })),
@@ -1852,6 +1951,50 @@ export async function POST(request: Request) {
       }
     }
 
+    // Handle quantity modification during confirmation ("ضيف ٢ كمان", "زود ٣", etc.)
+    // This handles when user wants to add more while in confirmation step
+    if (memory?.awaiting_confirmation && memory?.pending_item && memory?.pending_quantity) {
+      // Pattern: "ضيف X كمان" / "زود X" / "خليهم X" / "X كمان"
+      const addMoreMatch = lastUserMessage.match(/^(?:ضيف|زود|زودلي|زودي|خلي|خليهم|اضيف|أضيف)\s*(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)(?:\s*(?:كمان|تاني|زيادة))?$/i)
+      const moreOnlyMatch = lastUserMessage.match(/^(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)\s*(?:كمان|تاني|زيادة)$/i)
+      const setTotalMatch = lastUserMessage.match(/^(?:خليهم|اخليهم|يبقوا|يكونوا)\s*(\d+|[٠-٩]+|واحد|واحده|اتنين|تلاته|تلاتة|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)$/i)
+
+      if (addMoreMatch || moreOnlyMatch || setTotalMatch) {
+        const matchedValue = (addMoreMatch?.[1] || moreOnlyMatch?.[1] || setTotalMatch?.[1] || '').trim()
+        const additionalQty = parseArabicQuantity(matchedValue)
+
+        if (additionalQty > 0) {
+          const pending_item = memory.pending_item as PendingItem
+          const pending_variant = memory.pending_variant as PendingVariant | undefined
+          const currentQty = memory.pending_quantity as number
+
+          // If "خليهم X" - set total, otherwise add
+          const newQuantity = setTotalMatch ? additionalQty : currentQty + additionalQty
+          const finalPrice = pending_variant?.price || pending_item.price
+          const variantText = pending_variant ? ` - ${pending_variant.name_ar}` : ''
+          const totalPrice = newQuantity * finalPrice
+
+          console.log('🚀 [DIRECT HANDLER] quantity modification:', currentQty, '→', newQuantity, 'for', pending_item.name_ar)
+
+          return Response.json({
+            reply: `📋 تأكيد الطلب:\n\n${newQuantity}x ${pending_item.name_ar}${variantText}\n💰 الإجمالي: ${totalPrice} ج.م\n\nتأكيد الإضافة للسلة؟`,
+            quick_replies: [
+              { title: '✅ تأكيد وإضافة', payload: 'confirm_add' },
+              { title: '🔄 تغيير الكمية', payload: `item:${pending_item.id}` },
+              { title: '🔙 رجوع للمنيو', payload: `provider:${pending_item.provider_id}` },
+            ],
+            selected_provider_id: pending_item.provider_id,
+            selected_category,
+            memory: {
+              ...memory,
+              pending_quantity: newQuantity,
+              awaiting_confirmation: true,
+            },
+          })
+        }
+      }
+    }
+
     // Handle clear_cart_and_add payload (user wants to clear cart and add from new provider)
     if (lastUserMessage === 'clear_cart_and_add' && memory?.awaiting_cart_clear && memory?.pending_item) {
       console.log('🚀 [DIRECT HANDLER] clear_cart_and_add')
@@ -1870,19 +2013,324 @@ export async function POST(request: Request) {
       }
     }
 
-    // Handle go_to_cart payload (navigate to cart - frontend handles actual navigation)
-    if (lastUserMessage === 'go_to_cart') {
-      console.log('🚀 [DIRECT HANDLER] go_to_cart')
+    // =======================================================================
+    // Handle clear cart request - "امسح السلة", "فضي السلة", etc.
+    // =======================================================================
+    const isClearCartRequest = /^(?:امسح|امحي|فضي|فرغ|نظف|شيل)\s*(?:ال)?سل[ةه]/i.test(lastUserMessage) ||
+      lastUserMessage === 'clear_cart' ||
+      lastUserMessage === '🗑️ امسح السلة'
+
+    if (isClearCartRequest) {
+      console.log('🚀 [DIRECT HANDLER] clear_cart')
       return Response.json({
-        reply: 'تمام! روح للسلة عشان تكمل طلبك 🛒',
+        reply: 'تمام! ✅ تم تفريغ السلة.\n\nتحب تطلب من أنهي مكان؟',
         quick_replies: [
-          { title: '🛒 فتح السلة', payload: 'navigate:/checkout' },
+          { title: '🏠 الأقسام', payload: 'categories' },
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🔥 العروض', payload: 'show_promotions' },
+        ],
+        cart_action: {
+          type: 'CLEAR_CART' as const,
+          provider_id: '',
+          menu_item_id: '',
+          menu_item_name_ar: '',
+          quantity: 0,
+          unit_price: 0,
+        },
+        selected_provider_id: undefined, // Clear provider context
+        selected_category,
+        memory: {
+          pending_item: undefined,
+          pending_variant: undefined,
+          pending_quantity: undefined,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          current_provider: undefined,
+        },
+      })
+    }
+
+    // =======================================================================
+    // Handle navigate: payload - Direct navigation commands
+    // =======================================================================
+    if (lastUserMessage.startsWith('navigate:')) {
+      const targetRoute = lastUserMessage.replace('navigate:', '')
+      console.log('🚀 [DIRECT HANDLER] navigate:', targetRoute)
+
+      return Response.json({
+        reply: 'تمام! 🚀',
+        quick_replies: [
           { title: '➕ أضف المزيد', payload: 'categories' },
         ],
-        navigate_to: '/checkout', // Signal to frontend to navigate
+        navigate_to: targetRoute,
         selected_provider_id,
         selected_category,
         memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false, awaiting_confirmation: false },
+      })
+    }
+
+    // Handle go_to_cart payload (navigate to cart - frontend handles actual navigation)
+    // Also handle Arabic variations like "اذهب للسلة", "السلة", etc.
+    const isGoToCart = lastUserMessage === 'go_to_cart' ||
+      lastUserMessage === '🛒 اذهب للسلة' ||
+      lastUserMessage === '🛒 فتح السلة' || // Direct match for the button text
+      /^(?:اذهب|روح|خدني)?\s*(?:لل?سل[ةه]|للكارت|for cart|to cart)$/i.test(lastUserMessage) ||
+      /^(?:افتح|فتح|شوف)\s*(?:ال)?سل[ةه]$/i.test(lastUserMessage)
+
+    if (isGoToCart) {
+      console.log('🚀 [DIRECT HANDLER] go_to_cart')
+      return Response.json({
+        reply: 'تمام! هفتحلك السلة عشان تكمل طلبك 🛒',
+        quick_replies: [
+          { title: '🛒 فتح السلة', payload: 'navigate:/ar/cart' },
+          { title: '➕ أضف المزيد', payload: 'categories' },
+        ],
+        navigate_to: '/ar/cart', // Signal to frontend to navigate to cart (not checkout)
+        selected_provider_id,
+        selected_category,
+        memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false, awaiting_confirmation: false },
+      })
+    }
+
+    // =======================================================================
+    // Handle cart content queries - "ايه اللي في السلة؟", "فيه ايه في السلة؟"
+    // =======================================================================
+    const isCartQuery = /^(?:ايه|ايش|فيه?\s*(?:ايه|ايش)|عايز اعرف)?(?:\s*اللي|\s*الي)?\s*(?:في|ف)\s*(?:ال)?سل[ةه]/i.test(lastUserMessage) ||
+      /^(?:فيه?\s*(?:ايه|ايش))\s*(?:في|ف)\s*(?:ال)?سل[ةه]/i.test(lastUserMessage) ||
+      /^(?:السل[ةه]\s*فيها?\s*(?:ايه|ايش))/i.test(lastUserMessage) ||
+      /^(?:محتويات|محتوى)\s*(?:ال)?سل[ةه]/i.test(lastUserMessage)
+
+    if (isCartQuery) {
+      console.log('🚀 [DIRECT HANDLER] cart_query')
+      // We don't have direct access to cart from backend
+      // Best approach: tell user to check cart and offer navigation
+      return Response.json({
+        reply: 'عشان تشوف اللي في السلة، اضغط على أيقونة السلة في أعلى الشاشة 🛒\n\nأو اضغط هنا 👇',
+        quick_replies: [
+          { title: '🛒 فتح السلة', payload: 'navigate:/ar/cart' },
+          { title: '➕ أضف حاجة جديدة', payload: 'categories' },
+        ],
+        navigate_to: '/ar/cart',
+        selected_provider_id,
+        selected_category,
+        memory,
+      })
+    }
+
+    // =======================================================================
+    // Handle reorder_last payload - Show items from user's last order
+    // =======================================================================
+    if (lastUserMessage === 'reorder_last' || lastUserMessage === 'اخر طلب' || lastUserMessage === 'آخر طلب' || lastUserMessage === '🔄 اخر طلب') {
+      console.log('🚀 [DIRECT HANDLER] reorder_last')
+
+      if (!customer_id) {
+        return Response.json({
+          reply: 'لازم تسجل دخول الأول عشان أقدر أجيبلك طلبك الأخير 🔐',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+
+      const supabase = await createClient()
+
+      console.log('🔄 [REORDER] Looking for orders for customer:', customer_id)
+
+      // First try delivered/completed orders
+      let { data: lastOrder } = await supabase
+        .from('orders')
+        .select('id, provider_id, status, providers(name_ar)')
+        .eq('customer_id', customer_id)
+        .in('status', ['delivered', 'completed'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      // If no delivered orders, try any recent order
+      if (!lastOrder) {
+        console.log('🔄 [REORDER] No delivered orders, trying any order...')
+        const { data: anyOrder } = await supabase
+          .from('orders')
+          .select('id, provider_id, status, providers(name_ar)')
+          .eq('customer_id', customer_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (anyOrder) {
+          console.log('🔄 [REORDER] Found order with status:', anyOrder.status)
+          lastOrder = anyOrder
+        }
+      }
+
+      if (!lastOrder) {
+        console.log('🔄 [REORDER] No orders found for customer:', customer_id)
+        return Response.json({
+          reply: 'مش لاقي طلبات سابقة ليك 😕 يلا نبدأ طلب جديد!',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+
+      console.log('🔄 [REORDER] Found order:', lastOrder.id, 'status:', lastOrder.status)
+
+      // Get order items
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select('id, menu_item_id, item_name_ar, unit_price, quantity')
+        .eq('order_id', lastOrder.id)
+        .limit(10)
+
+      if (!orderItems || orderItems.length === 0) {
+        return Response.json({
+          reply: 'مش لاقي تفاصيل الطلب السابق 😕 يلا نبدأ طلب جديد!',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+
+      const providerData = lastOrder.providers as { name_ar: string } | { name_ar: string }[] | null
+      const providerName = Array.isArray(providerData) ? providerData[0]?.name_ar : providerData?.name_ar || 'المتجر'
+
+      // Build quick replies for order items
+      const validOrderItems = orderItems.filter(item => item.menu_item_id)
+      const quickReplies: QuickReply[] = validOrderItems.map(item => ({
+        title: `${item.item_name_ar} (${item.unit_price} ج.م)`,
+        payload: `item:${item.menu_item_id}`,
+      }))
+
+      if (quickReplies.length === 0) {
+        return Response.json({
+          reply: 'الأصناف اللي طلبتها قبل كده مش متاحة دلوقتي 😕 يلا نبدأ طلب جديد!',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+
+      // Add "Add All to Cart" button if multiple items
+      if (validOrderItems.length > 1) {
+        quickReplies.unshift({
+          title: `🛒 ضيف الكل للسلة (${validOrderItems.length} أصناف)`,
+          payload: 'add_all_reorder_items',
+        })
+      }
+
+      // Add provider menu option
+      quickReplies.push({
+        title: `📋 منيو ${providerName}`,
+        payload: `provider:${lastOrder.provider_id}`,
+      })
+
+      // Store reorder items in memory for "add all" functionality
+      const reorderItems = validOrderItems.map(item => ({
+        menu_item_id: item.menu_item_id,
+        name_ar: item.item_name_ar,
+        price: item.unit_price,
+        quantity: item.quantity || 1,
+      }))
+
+      return Response.json({
+        reply: `🔄 آخر طلب ليك كان من ${providerName}!\n\nتحب تطلب نفس الأصناف تاني؟ 👇`,
+        quick_replies: quickReplies.slice(0, 10),
+        selected_provider_id: lastOrder.provider_id,
+        selected_category,
+        memory: {
+          // CLEAR pending states to avoid conflicts
+          pending_item: undefined,
+          pending_variant: undefined,
+          pending_quantity: undefined,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          // Set current provider and store reorder items
+          current_provider: {
+            id: lastOrder.provider_id,
+            name_ar: providerName,
+          },
+          reorder_items: reorderItems,
+          reorder_provider_id: lastOrder.provider_id,
+          reorder_provider_name: providerName,
+        },
+      })
+    }
+
+    // =======================================================================
+    // Handle add_all_reorder_items payload - Add all items from last order to cart
+    // Also handles text patterns like "اه ضيفهم", "ضيفهم كلهم", "نفس الاصناف"
+    // =======================================================================
+    const isAddAllReorder = lastUserMessage === 'add_all_reorder_items' ||
+      /^(?:اه|أيوه|اي|نعم|تمام)?\s*(?:ضيفهم|ضيفيهم|اضيفهم|أضيفهم|حطهم|خدهم)(?:\s*(?:كلهم|كلها|للسلة|في السلة))?$/i.test(lastUserMessage) ||
+      /^(?:اه|أيوه|اي|نعم|تمام)\s*(?:نفس الاصناف|نفس الحاجات|زي ما هو|زي الاول)$/i.test(lastUserMessage)
+
+    if (isAddAllReorder && memory?.reorder_items && Array.isArray(memory.reorder_items) && memory.reorder_items.length > 0) {
+      console.log('🚀 [DIRECT HANDLER] add_all_reorder_items:', memory.reorder_items.length, 'items')
+
+      const reorderItems = memory.reorder_items as Array<{
+        menu_item_id: string
+        name_ar: string
+        price: number
+        quantity: number
+      }>
+      const providerId = memory.reorder_provider_id as string
+      const providerName = (memory.reorder_provider_name as string) || 'المتجر'
+
+      // Build cart actions for all items
+      const cartActions: CartAction[] = reorderItems.map(item => ({
+        type: 'ADD_ITEM' as const,
+        provider_id: providerId,
+        menu_item_id: item.menu_item_id,
+        menu_item_name_ar: item.name_ar,
+        quantity: item.quantity,
+        unit_price: item.price,
+      }))
+
+      // Calculate total
+      const totalPrice = reorderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      const itemsList = reorderItems.map(item => `• ${item.quantity}x ${item.name_ar}`).join('\n')
+
+      return Response.json({
+        reply: `تمام! ✅ ضفت كل الأصناف للسلة من ${providerName}:\n\n${itemsList}\n\n💰 الإجمالي: ${totalPrice} ج.م\n\nتحب تضيف حاجة تانية؟`,
+        quick_replies: [
+          { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
+          { title: `➕ أضف من ${providerName}`, payload: `provider:${providerId}` },
+          { title: `📋 منيو ${providerName}`, payload: `provider:${providerId}` },
+        ],
+        cart_actions: cartActions, // Multiple cart actions
+        selected_provider_id: providerId,
+        selected_category,
+        memory: {
+          // Clear reorder items and set current provider
+          pending_item: undefined,
+          pending_variant: undefined,
+          pending_quantity: undefined,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          reorder_items: undefined,
+          reorder_provider_id: undefined,
+          reorder_provider_name: undefined,
+          current_provider: {
+            id: providerId,
+            name_ar: providerName,
+          },
+        },
       })
     }
 
@@ -1975,9 +2423,26 @@ export async function POST(request: Request) {
       for (const promo of promotionsWithProducts) {
         if (promo.affected_products && promo.affected_products.length > 0) {
           for (const item of promo.affected_products.slice(0, 4)) {
-            const discountText = promo.discount_percentage ? ` -${promo.discount_percentage}%` : ''
+            // Check for discount based on promotion type and discount_value
+            // Database schema: type = 'percentage' | 'fixed' | 'buy_x_get_y', discount_value = number
+            let discountText = ''
+            let displayPrice = item.price
+
+            if (promo.type === 'percentage' && promo.discount_value && promo.discount_value > 0) {
+              discountText = ` -${promo.discount_value}%`
+              displayPrice = Math.round(item.price * (1 - promo.discount_value / 100))
+            } else if (promo.type === 'fixed' && promo.discount_value && promo.discount_value > 0) {
+              discountText = ` -${promo.discount_value} ج.م`
+              displayPrice = Math.max(0, item.price - promo.discount_value)
+            } else if (promo.type === 'buy_x_get_y') {
+              discountText = ` 🎁 اشتري ${promo.buy_quantity || 1} واحصل على ${promo.get_quantity || 1}`
+            } else if (promo.name_ar) {
+              // Show promotion name if no specific discount value
+              discountText = ` 🏷️`
+            }
+
             quickReplies.push({
-              title: `🏷️ ${item.name_ar} (${item.price} ج.م)${discountText}`,
+              title: `🏷️ ${item.name_ar} (${displayPrice} ج.م)${discountText}`,
               payload: `item:${item.id}`,
             })
           }
@@ -2027,6 +2492,111 @@ export async function POST(request: Request) {
         selected_category,
         memory,
       })
+    }
+
+    // =======================================================================
+    // Handle show_popular payload - Show most popular/ordered items
+    // =======================================================================
+    if (lastUserMessage === 'show_popular' || lastUserMessage === 'الأكثر طلباً' || lastUserMessage === '⭐ الأكثر طلباً') {
+      console.log('🚀 [DIRECT HANDLER] show_popular')
+
+      const supabase = await createClient()
+
+      // Get popular items based on is_popular flag or high order count
+      let query = supabase
+        .from('menu_items')
+        .select('id, name_ar, price, provider_id, providers!inner(id, name_ar, city_id)')
+        .eq('is_available', true)
+        .eq('providers.city_id', city_id)
+        .or('has_stock.eq.true,has_stock.is.null')
+        .eq('is_popular', true)
+        .limit(15)
+
+      if (selected_provider_id && isValidUUID(selected_provider_id)) {
+        query = query.eq('provider_id', selected_provider_id)
+      }
+
+      const { data: popularItems } = await query
+
+      if (popularItems && popularItems.length > 0) {
+        const quickReplies: QuickReply[] = popularItems.slice(0, 10).map(item => {
+          const providerData = item.providers as { name_ar: string } | { name_ar: string }[] | null
+          const providerName = Array.isArray(providerData) ? providerData[0]?.name_ar : providerData?.name_ar || ''
+          return {
+            title: `${item.name_ar} (${item.price} ج.م) - ${providerName}`,
+            payload: `item:${item.id}`,
+          }
+        })
+
+        return Response.json({
+          reply: `⭐ الأكثر طلباً في مدينتك 👇`,
+          quick_replies: quickReplies,
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      } else {
+        return Response.json({
+          reply: 'مفيش منتجات مميزة دلوقتي 😕 جرب تدور في الأقسام',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+    }
+
+    // =======================================================================
+    // Handle show_nearby payload - Show nearest providers
+    // =======================================================================
+    if (lastUserMessage === 'show_nearby' || lastUserMessage === 'الأقرب' || lastUserMessage === '📍 الأقرب') {
+      console.log('🚀 [DIRECT HANDLER] show_nearby')
+
+      const supabase = await createClient()
+
+      // Get providers in user's city (sorted by featured/rating)
+      const { data: nearbyProviders } = await supabase
+        .from('providers')
+        .select('id, name_ar, category, rating, is_featured')
+        .eq('city_id', city_id)
+        .eq('status', 'open')
+        .neq('name_ar', '')
+        .order('is_featured', { ascending: false })
+        .order('rating', { ascending: false, nullsFirst: false })
+        .limit(10)
+
+      if (nearbyProviders && nearbyProviders.length > 0) {
+        const quickReplies: QuickReply[] = nearbyProviders.map(provider => {
+          const ratingText = provider.rating ? ` ⭐${provider.rating}` : ''
+          const featuredText = provider.is_featured ? ' 🌟' : ''
+          return {
+            title: `${provider.name_ar}${ratingText}${featuredText}`,
+            payload: `provider:${provider.id}`,
+          }
+        })
+
+        return Response.json({
+          reply: `📍 أقرب المتاجر ليك 👇`,
+          quick_replies: quickReplies,
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      } else {
+        return Response.json({
+          reply: 'مفيش متاجر قريبة منك دلوقتي 😕 جرب تدور في الأقسام',
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🔥 العروض', payload: 'show_promotions' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
     }
 
     // Handle category text buttons (in case sent as text instead of payload)
@@ -2185,6 +2755,69 @@ export async function POST(request: Request) {
           ...searchResult,
           selected_provider_id,
           selected_category,
+        })
+      }
+    }
+
+    // Pattern 4a: Cross-provider search - "في X في مطعم Y" / "في X عند Y"
+    // Handles user asking about products in a SPECIFIC provider (different from current context)
+    const crossProviderMatch = lastUserMessage.match(/^(?:في|فى|فيه|فية)\s+(.+?)\s+(?:في|فى|عند|من)\s+(?:مطعم\s+|محل\s+)?(.+?)(?:\?|؟)?$/i)
+    if (crossProviderMatch) {
+      const searchQuery = crossProviderMatch[1].trim()
+      const providerName = crossProviderMatch[2].trim()
+      console.log('🚀 [DIRECT HANDLER] cross-provider search:', searchQuery, 'in provider:', providerName)
+
+      // Try to resolve the provider by name
+      const resolved = await resolveProviderByName(providerName, city_id)
+      if (resolved) {
+        const searchResult = await performDirectSearch(searchQuery, city_id, resolved.id, memory)
+        return Response.json({
+          ...searchResult,
+          selected_provider_id: resolved.id,
+          selected_category,
+          memory: { ...memory, current_provider: { id: resolved.id, name_ar: resolved.name_ar } },
+        })
+      } else {
+        // Provider not found
+        return Response.json({
+          reply: `مش لاقي ${providerName} 😕 جرب تدور في الأقسام أو اكتب اسم المطعم صح`,
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+    }
+
+    // Pattern 4b: "ايه اللي في/عند [provider]" - What's at this provider?
+    const whatAtProviderMatch = lastUserMessage.match(/^(?:ايه|ايش|شو|عايز اعرف)\s*(?:اللي|الي)?\s*(?:موجود|متاح)?\s*(?:في|فى|عند|من)\s+(?:مطعم\s+|محل\s+)?(.+?)(?:\?|؟)?$/i)
+    if (whatAtProviderMatch) {
+      const providerName = whatAtProviderMatch[1].trim()
+      console.log('🚀 [DIRECT HANDLER] what at provider:', providerName)
+
+      const resolved = await resolveProviderByName(providerName, city_id)
+      if (resolved) {
+        const result = await handleProviderPayload(resolved.id, city_id)
+        return Response.json({
+          reply: result.reply,
+          quick_replies: result.quick_replies,
+          selected_provider_id: resolved.id,
+          selected_category,
+          memory: { ...memory, current_provider: { id: resolved.id, name_ar: resolved.name_ar } },
+        })
+      } else {
+        return Response.json({
+          reply: `مش لاقي ${providerName} 😕 جرب تدور في الأقسام`,
+          quick_replies: [
+            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          ],
+          selected_provider_id,
+          selected_category,
+          memory,
         })
       }
     }
@@ -2507,7 +3140,10 @@ function generateQuickRepliesFromToolResults(
         for (const promo of (promotionsList as Array<{
           applies_to?: string
           affected_products?: Array<{ id: string; name_ar: string; price: number }>
-          discount_percentage?: number
+          type?: 'percentage' | 'fixed' | 'buy_x_get_y'
+          discount_value?: number
+          buy_quantity?: number
+          get_quantity?: number
           provider_id?: string
           providers?: { name_ar: string }
         }>).slice(0, 5)) {
@@ -2515,8 +3151,19 @@ function generateQuickRepliesFromToolResults(
             // Show affected products as item buttons
             for (const item of promo.affected_products.slice(0, 5)) {
               if (item.id && item.name_ar) {
-                const priceText = item.price ? ` (${item.price} ج.م)` : ''
-                const discountText = promo.discount_percentage ? ` -${promo.discount_percentage}%` : ''
+                // Calculate discount text based on promotion type
+                let discountText = ''
+                let displayPrice = item.price
+                if (promo.type === 'percentage' && promo.discount_value) {
+                  discountText = ` -${promo.discount_value}%`
+                  displayPrice = Math.round(item.price * (1 - promo.discount_value / 100))
+                } else if (promo.type === 'fixed' && promo.discount_value) {
+                  discountText = ` -${promo.discount_value} ج.م`
+                  displayPrice = Math.max(0, item.price - promo.discount_value)
+                } else if (promo.type === 'buy_x_get_y') {
+                  discountText = ` 🎁`
+                }
+                const priceText = displayPrice ? ` (${displayPrice} ج.م)` : ''
                 replies.push({
                   title: `🏷️ ${item.name_ar}${priceText}${discountText}`,
                   payload: `item:${item.id}`,
