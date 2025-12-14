@@ -2334,8 +2334,36 @@ export async function POST(request: Request) {
       })
     }
 
+    // Handle "search elsewhere" - Clear provider context and show categories
+    const isSearchElsewhere = lastUserMessage === '🔍 ابحث في مكان تاني' ||
+      /^(?:ابحث|دور)\s*(?:في|ف)?\s*(?:مكان|محل)\s*(?:تاني|اخر|آخر)$/i.test(lastUserMessage)
+
+    if (isSearchElsewhere) {
+      console.log('🚀 [DIRECT HANDLER] search_elsewhere - clearing provider context')
+      return Response.json({
+        reply: 'تمام! 🔍 هدور في كل المتاجر المتاحة.\n\nاختار القسم اللي تحبه 👇',
+        quick_replies: [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+          { title: '🍰 البن والحلويات', payload: 'category:coffee_patisserie' },
+          { title: '🥦 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+        ],
+        selected_provider_id: undefined,
+        selected_category: undefined,
+        memory: {
+          ...memory,
+          pending_item: undefined,
+          pending_variant: undefined,
+          pending_quantity: undefined,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          current_provider: undefined, // CLEAR provider context!
+        },
+      })
+    }
+
     // Handle special payloads
-    if (lastUserMessage === 'categories' || lastUserMessage === 'الأقسام') {
+    if (lastUserMessage === 'categories' || lastUserMessage === 'الأقسام' || lastUserMessage === '🏠 الأقسام') {
       console.log('🚀 [DIRECT HANDLER] categories')
       return Response.json({
         reply: 'اختار القسم اللي تحبه 👇',
@@ -2347,7 +2375,16 @@ export async function POST(request: Request) {
         ],
         selected_provider_id: undefined,
         selected_category: undefined,
-        memory: { ...memory, pending_item: undefined, pending_variant: undefined, pending_quantity: undefined, awaiting_quantity: false, awaiting_confirmation: false },
+        // IMPORTANT: Clear current_provider to allow city-wide search
+        memory: {
+          ...memory,
+          pending_item: undefined,
+          pending_variant: undefined,
+          pending_quantity: undefined,
+          awaiting_quantity: false,
+          awaiting_confirmation: false,
+          current_provider: undefined, // Clear provider context for new search
+        },
       })
     }
 
