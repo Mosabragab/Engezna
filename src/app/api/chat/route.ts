@@ -1931,14 +1931,15 @@ export async function POST(request: Request) {
     // 🚀 PRE-VALIDATION HANDLERS - These don't need city_id
     // =========================================================================
 
-    // Handle cart inquiry - "ايه في السلة", "السلة فيها ايه", etc.
+    // Handle cart inquiry - "ايه في السلة", "السلة فيها ايه", "ايه اللي عندي في السله"
     const cartInquiryPatterns = [
-      /(?:ايه|إيه|ايش|شو|وش)\s*(?:اللي\s*)?(?:في|فى|ب)\s*(?:ال)?سل[ةه]/i,
+      /(?:ايه|إيه|ايش|شو|وش)\s*(?:اللي\s*)?(?:في|فى|ب|عندي\s*في)\s*(?:ال)?سل[ةه]/i,
       /(?:ال)?سل[ةه]\s*(?:فيها|فيه)\s*(?:ايه|إيه|ايش|شو)/i,
       /(?:عايز|عاوز)\s*(?:اعرف|اشوف)\s*(?:ال)?سل[ةه]/i,
       /(?:وريني|فرجني|ارني)\s*(?:ال)?سل[ةه]/i,
       /(?:محتويات|محتوى)\s*(?:ال)?سل[ةه]/i,
       /^(?:ال)?سل[ةه]$/i,
+      /(?:ايه|إيه)\s*(?:اللي\s*)?عندي/i, // "ايه اللي عندي"
     ]
 
     if (cartInquiryPatterns.some(pattern => pattern.test(lastUserMessage))) {
@@ -2088,6 +2089,175 @@ export async function POST(request: Request) {
         selected_category,
         memory: updatedMemory,
       })
+    }
+
+    // Handle delivery info inquiry - "التوصيل بكام", "مصاريف الشحن", etc.
+    const deliveryInfoPatterns = [
+      /(?:ال)?توصيل\s*(?:بكام|كام|بكم)/i,
+      /(?:مصاريف|تكلف[ةه]?|سعر)\s*(?:ال)?(?:توصيل|شحن|دليفري)/i,
+      /(?:ال)?(?:دليفري|delivery)\s*(?:بكام|كام)/i,
+      /كام\s*(?:ال)?توصيل/i,
+      /(?:في|فيه)\s*توصيل/i,
+    ]
+
+    if (deliveryInfoPatterns.some(pattern => pattern.test(lastUserMessage))) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] delivery_info')
+
+      const providerId = selected_provider_id || memory?.current_provider?.id
+
+      if (providerId && isValidUUID(providerId)) {
+        const supabase = await createClient()
+
+        const { data: provider } = await supabase
+          .from('providers')
+          .select('name_ar, delivery_fee, min_order_amount, estimated_delivery_time, free_delivery_threshold')
+          .eq('id', providerId)
+          .single()
+
+        if (provider) {
+          let deliveryInfo = `🚚 **معلومات التوصيل من ${provider.name_ar}:**\n\n`
+
+          if (provider.delivery_fee === 0 || provider.delivery_fee === null) {
+            deliveryInfo += '✅ التوصيل مجاني!\n'
+          } else {
+            deliveryInfo += `💰 رسوم التوصيل: ${provider.delivery_fee} ج.م\n`
+          }
+
+          if (provider.free_delivery_threshold) {
+            deliveryInfo += `🎁 توصيل مجاني للطلبات فوق ${provider.free_delivery_threshold} ج.م\n`
+          }
+
+          if (provider.min_order_amount) {
+            deliveryInfo += `📦 الحد الأدنى للطلب: ${provider.min_order_amount} ج.م\n`
+          }
+
+          if (provider.estimated_delivery_time) {
+            deliveryInfo += `⏱️ وقت التوصيل المتوقع: ${provider.estimated_delivery_time} دقيقة\n`
+          }
+
+          return Response.json({
+            reply: deliveryInfo,
+            quick_replies: [
+              { title: '📋 شوف المنيو', payload: `provider:${providerId}` },
+              { title: '🛒 السلة', payload: 'cart_inquiry' },
+            ],
+            selected_provider_id: providerId,
+            selected_category,
+            memory,
+          })
+        }
+      }
+
+      // No provider context - give general info
+      return Response.json({
+        reply: '🚚 رسوم التوصيل بتختلف من مكان للتاني.\n\nاختار مطعم أو متجر وهقولك تفاصيل التوصيل بتاعه 👇',
+        quick_replies: [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:supermarket' },
+        ],
+        selected_provider_id,
+        selected_category,
+        memory,
+      })
+    }
+
+    // Handle recommendations - "اقترح عليا", "ايه الحلو", "بترشح ايه"
+    const recommendationPatterns = [
+      /^(?:اقترح|قترح|رشح|رشحلي|اقترحلي)\s*(?:عليا?|لي)?/i,
+      /^(?:ايه|إيه|شو)\s*(?:ال)?(?:حلو|مميز|جميل|كويس|احسن|الأفضل)/i,
+      /^(?:بترشح|ترشح|تقترح)\s*(?:ايه|إيه|شو)/i,
+      /^(?:عندك|عندكم)\s*(?:ايه|إيه|شو)\s*(?:حلو|مميز)/i,
+    ]
+
+    if (recommendationPatterns.some(pattern => pattern.test(lastUserMessage))) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] recommendations')
+
+      const supabase = await createClient()
+      const providerId = selected_provider_id || memory?.current_provider?.id
+
+      if (providerId && isValidUUID(providerId)) {
+        const { data: items } = await supabase
+          .from('menu_items')
+          .select('id, name_ar, price, is_featured')
+          .eq('provider_id', providerId)
+          .eq('is_available', true)
+          .order('is_featured', { ascending: false })
+          .order('price', { ascending: true })
+          .limit(8)
+
+        const { data: provider } = await supabase
+          .from('providers')
+          .select('name_ar')
+          .eq('id', providerId)
+          .single()
+
+        if (items && items.length > 0) {
+          return Response.json({
+            reply: getRecommendationHeader(provider?.name_ar),
+            quick_replies: items.slice(0, 6).map(item => ({
+              title: `${item.name_ar} (${item.price} ج.م)`,
+              payload: `item:${item.id}`,
+            })),
+            selected_provider_id: providerId,
+            selected_category,
+            memory,
+          })
+        }
+      }
+
+      // No provider context - show top providers
+      const { data: providers } = await supabase
+        .from('providers')
+        .select('id, name_ar, rating, is_featured')
+        .eq('city_id', city_id)
+        .eq('status', 'open')
+        .order('is_featured', { ascending: false })
+        .order('rating', { ascending: false })
+        .limit(6)
+
+      if (providers && providers.length > 0) {
+        return Response.json({
+          reply: getRecommendationHeader(),
+          quick_replies: providers.map(p => ({
+            title: `📍 ${p.name_ar}${p.rating ? ` ⭐${p.rating}` : ''}`,
+            payload: `provider:${p.id}`,
+          })),
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+    }
+
+    // Handle price inquiry - "البيتزا بكام", "سعر الكباب"
+    const priceInquiryPatterns = [
+      /^(.+?)\s*(?:بكام|بكم|سعره?[ا]?)\s*(?:\?|؟)?$/i,
+      /^(?:سعر|ثمن|تمن)\s+(.+?)(?:\?|؟)?$/i,
+      /^(?:بكام|بكم)\s+(.+?)(?:\?|؟)?$/i,
+    ]
+
+    for (const pattern of priceInquiryPatterns) {
+      const priceMatch = lastUserMessage.match(pattern)
+      if (priceMatch) {
+        const productName = priceMatch[1].trim()
+        if (productName.length < 2 || productName.includes(':')) continue
+
+        console.log('🚀 [PRE-VALIDATION HANDLER] price_inquiry:', productName)
+
+        const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
+        const searchResult = await performDirectSearch(productName, city_id, providerIdToSearch, memory)
+
+        if (searchResult.quick_replies.length > 0) {
+          return Response.json({
+            reply: `💰 أسعار ${productName}:\n\n` + searchResult.quick_replies.slice(0, 5).map(qr => `• ${qr.title}`).join('\n') + '\n\nاختار واحد عشان تضيفه للسلة 👇',
+            quick_replies: searchResult.quick_replies.slice(0, 5),
+            selected_provider_id: providerIdToSearch || selected_provider_id,
+            selected_category,
+            memory,
+          })
+        }
+        break
+      }
     }
 
     // Handle provider_category:xxx payload - Show items from provider's menu category
