@@ -1886,8 +1886,7 @@ export async function POST(request: Request) {
           reply: `عايز تضيف إيه من ${providerName}؟ 🍽️\n\nاكتب اسم الصنف وهلاقيهولك...`,
           quick_replies: [
             { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-            { title: '🔍 ابحث في مكان تاني', payload: 'search_elsewhere' },
-            { title: '🏠 الأقسام', payload: 'categories' },
+            { title: '📋 شوف المنيو', payload: `navigate:/ar/provider/${providerId}` },
           ],
           selected_provider_id: providerId,
           selected_provider_category: selected_provider_category,
