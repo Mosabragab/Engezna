@@ -10,6 +10,7 @@ import { useFavorites } from '@/hooks/customer'
 import { Button } from '@/components/ui/button'
 import { ProductCard, RatingStars, StatusBadge, EmptyState, ProductDetailModal } from '@/components/customer/shared'
 import { VoiceOrderFAB } from '@/components/customer/voice'
+import { ChatFAB, SmartAssistant } from '@/components/customer/chat'
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout'
 import {
   Clock,
@@ -130,6 +131,7 @@ export default function ProviderDetailPage() {
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<MenuItem | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [providerSwitchInfo, setProviderSwitchInfo] = useState<{show: boolean; currentProvider: string; newProvider: string} | null>(null)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const categoriesRef = useRef<HTMLDivElement>(null)
 
   // Smart Arabic text normalization for search
@@ -803,6 +805,20 @@ export default function ProviderDetailPage() {
 
       {/* Voice Order FAB - Show only when cart is empty */}
       {cartItemCount === 0 && <VoiceOrderFAB />}
+
+      {/* AI Smart Assistant - Always available */}
+      {cartItemCount > 0 && (
+        <>
+          <ChatFAB
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            isOpen={isChatOpen}
+          />
+          <SmartAssistant
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+          />
+        </>
+      )}
 
       {/* Product Detail Modal */}
       {selectedProductForDetail && (
