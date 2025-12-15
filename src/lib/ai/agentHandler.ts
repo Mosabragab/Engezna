@@ -399,7 +399,10 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
 // =============================================================================
 
 /**
- * Generate dynamic quick replies based on context
+ * Smart Quick Reply Generator
+ *
+ * Analyzes the AI response content and tool results to generate
+ * contextually relevant quick replies. More intelligent than hardcoded logic.
  */
 function generateDynamicQuickReplies(
   content: string,
@@ -415,6 +418,78 @@ function generateDynamicQuickReplies(
     ? `navigate:/ar/providers/${providerId}`
     : 'ورّيني المنيو'
 
+  // Analyze content for intent signals
+  const contentLower = content.toLowerCase()
+
+  // =================================================================
+  // INTENT DETECTION: Analyze what the AI said to determine best actions
+  // =================================================================
+
+  // Check if AI is asking about size/variant selection
+  const isAskingVariant = contentLower.includes('حجم') ||
+    contentLower.includes('أي حجم') ||
+    contentLower.includes('صغير') && contentLower.includes('كبير') ||
+    contentLower.includes('اختار')
+
+  // Check if AI is asking about quantity
+  const isAskingQuantity = contentLower.includes('كام واحد') ||
+    contentLower.includes('كام واحدة') ||
+    contentLower.includes('الكمية')
+
+  // Check if AI is confirming something
+  const isConfirming = contentLower.includes('صح؟') ||
+    contentLower.includes('صح كده') ||
+    contentLower.includes('تمام كده')
+
+  // Check if search returned no results
+  const noResults = contentLower.includes('مش لاقي') ||
+    contentLower.includes('ملقتش') ||
+    contentLower.includes('مفيش')
+
+  // Check if AI is showing promotions
+  const showingPromotions = toolsUsed?.includes('get_promotions') ||
+    contentLower.includes('عرض') || contentLower.includes('خصم')
+
+  // =================================================================
+  // CONTEXTUAL QUICK REPLIES
+  // =================================================================
+
+  // Size/Variant selection needed
+  if (isAskingVariant && hasProducts) {
+    return {
+      suggestions: ['صغير', 'وسط', 'كبير'],
+      quickReplies: [
+        { title: '📏 صغير', payload: 'عايز الحجم الصغير' },
+        { title: '📏 وسط', payload: 'عايز الحجم الوسط' },
+        { title: '📏 كبير', payload: 'عايز الحجم الكبير' }
+      ]
+    }
+  }
+
+  // Quantity selection needed
+  if (isAskingQuantity) {
+    return {
+      suggestions: ['1️⃣ واحدة', '2️⃣ اتنين', '3️⃣ تلاتة'],
+      quickReplies: [
+        { title: '1️⃣ واحدة', payload: 'واحدة بس' },
+        { title: '2️⃣ اتنين', payload: 'اتنين' },
+        { title: '3️⃣ تلاتة', payload: 'تلاتة' }
+      ]
+    }
+  }
+
+  // Confirmation needed
+  if (isConfirming) {
+    return {
+      suggestions: ['✅ أيوه تمام', '❌ لأ غير', '🔄 عدل الكمية'],
+      quickReplies: [
+        { title: '✅ أيوه تمام', payload: 'أيوه ضيف للسلة' },
+        { title: '❌ لأ غير', payload: 'لأ عايز أغير' },
+        { title: '🔄 عدل الكمية', payload: 'عايز أغير الكمية' }
+      ]
+    }
+  }
+
   // After adding to cart
   if (hasCartAction) {
     return {
@@ -423,6 +498,18 @@ function generateDynamicQuickReplies(
         { title: '🛒 شوف السلة', payload: 'ايه في السلة؟' },
         { title: '➕ أضف حاجة تانية', payload: 'عايز أضيف حاجة تانية' },
         { title: '✅ كمل للدفع', payload: 'navigate:/ar/checkout' }
+      ]
+    }
+  }
+
+  // No results found - help user search differently
+  if (noResults) {
+    return {
+      suggestions: ['🔍 بحث تاني', '📋 شوف المنيو', '🔥 العروض'],
+      quickReplies: [
+        { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة تانية' },
+        { title: '📋 شوف المنيو', payload: menuPayload },
+        { title: '🔥 العروض', payload: 'فيه عروض ايه دلوقتي؟' }
       ]
     }
   }
@@ -439,8 +526,20 @@ function generateDynamicQuickReplies(
     }
   }
 
-  // Order-related context
-  if (content.includes('طلب') && (content.includes('تتبع') || content.includes('حالة'))) {
+  // Showing promotions
+  if (showingPromotions) {
+    return {
+      suggestions: ['🎁 استخدم العرض', '🍽️ شوف المنيو', '🔍 بحث'],
+      quickReplies: [
+        { title: '🎁 استخدم العرض', payload: 'عايز أستخدم العرض ده' },
+        { title: '🍽️ شوف المنيو', payload: menuPayload },
+        { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' }
+      ]
+    }
+  }
+
+  // Order tracking context
+  if (toolsUsed?.includes('track_order') || toolsUsed?.includes('get_order_status')) {
     return {
       suggestions: ['📍 تتبع الطلب', '📞 اتصل بالمطعم', '❌ إلغاء الطلب'],
       quickReplies: [
@@ -452,7 +551,8 @@ function generateDynamicQuickReplies(
   }
 
   // Complaint or problem context
-  if (content.includes('مشكلة') || content.includes('شكوى') || content.includes('زعلان')) {
+  if (contentLower.includes('مشكلة') || contentLower.includes('شكوى') ||
+      contentLower.includes('زعلان') || contentLower.includes('معلش')) {
     return {
       suggestions: ['📞 كلم خدمة العملاء', '📝 اكتب شكوى', '🔙 رجوع'],
       quickReplies: [
@@ -464,7 +564,8 @@ function generateDynamicQuickReplies(
   }
 
   // Cart summary context
-  if (content.includes('السلة') && (content.includes('فيها') || content.includes('إجمالي'))) {
+  if (toolsUsed?.includes('get_cart_summary') ||
+      (contentLower.includes('السلة') && contentLower.includes('فيها'))) {
     return {
       suggestions: ['✅ كمل للدفع', '➕ أضف حاجة', '🗑️ فضي السلة'],
       quickReplies: [
@@ -476,7 +577,8 @@ function generateDynamicQuickReplies(
   }
 
   // Delivery info context
-  if (content.includes('توصيل') || content.includes('رسوم')) {
+  if (toolsUsed?.includes('get_delivery_info') ||
+      contentLower.includes('توصيل') || contentLower.includes('رسوم')) {
     return {
       suggestions: ['✅ تمام، اطلب', '🔍 بحث تاني', '📋 المنيو'],
       quickReplies: [
@@ -501,7 +603,8 @@ function generateDynamicQuickReplies(
   }
 
   // Greeting/welcome context
-  if (content.includes('أهلاً') || content.includes('صباح') || content.includes('مساء')) {
+  if (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
+      contentLower.includes('صباح') || contentLower.includes('مساء')) {
     return {
       suggestions: ['🍔 عايز آكل', '📦 طلباتي', '🔥 العروض'],
       quickReplies: [
@@ -524,11 +627,57 @@ function generateDynamicQuickReplies(
 }
 
 /**
+ * Sanitize AI response to remove unsafe content
+ * This is a POST-PROCESSING GUARDRAIL to ensure no URLs or markdown images slip through
+ */
+function sanitizeAgentResponse(content: string): string {
+  let sanitized = content
+
+  // Remove markdown image syntax: ![alt](url)
+  sanitized = sanitized.replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
+
+  // Remove markdown links but keep the text: [text](url) -> text
+  sanitized = sanitized.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+
+  // Remove raw URLs (http, https, ftp)
+  sanitized = sanitized.replace(/https?:\/\/[^\s<>"\)]+/gi, '')
+  sanitized = sanitized.replace(/ftp:\/\/[^\s<>"\)]+/gi, '')
+
+  // Remove any remaining URL-like patterns
+  sanitized = sanitized.replace(/www\.[^\s<>"\)]+/gi, '')
+
+  // Remove bold/italic markdown that might look odd
+  sanitized = sanitized.replace(/\*\*([^*]+)\*\*/g, '$1')
+  sanitized = sanitized.replace(/\*([^*]+)\*/g, '$1')
+  sanitized = sanitized.replace(/__([^_]+)__/g, '$1')
+  sanitized = sanitized.replace(/_([^_]+)_/g, '$1')
+
+  // Remove code blocks
+  sanitized = sanitized.replace(/```[\s\S]*?```/g, '')
+  sanitized = sanitized.replace(/`([^`]+)`/g, '$1')
+
+  // Remove HTML tags
+  sanitized = sanitized.replace(/<[^>]+>/g, '')
+
+  // Remove JSON blocks (sometimes AI outputs raw JSON)
+  sanitized = sanitized.replace(/\{[\s\S]*?"[\s\S]*?\}/g, '')
+
+  // Clean up extra whitespace
+  sanitized = sanitized.replace(/\n{3,}/g, '\n\n')
+  sanitized = sanitized.replace(/  +/g, ' ')
+
+  return sanitized.trim()
+}
+
+/**
  * Parse agent output to extract structured response
  */
 function parseAgentOutput(content: string, turns: ConversationTurn[], providerId?: string): AgentResponse {
+  // Apply post-processing guardrails to sanitize the response
+  const sanitizedContent = sanitizeAgentResponse(content)
+
   const response: AgentResponse = {
-    content: content.trim(),
+    content: sanitizedContent,
     suggestions: [],
     quickReplies: [],
     products: []
