@@ -25,6 +25,23 @@ import {
   getConfirmationHeader,
   randomChoice,
 } from '@/lib/ai/responsePersonality'
+import {
+  classifyIntent,
+  isPayload,
+  type IntentType,
+  type ClassifiedIntent,
+} from '@/lib/ai/intentClassifier'
+import {
+  handleCartInquiry,
+  handleClearCart,
+  handleRemoveItem,
+  handleCancel,
+  handleDeliveryInfo,
+  handleGreeting,
+  handleThanks,
+  handleGoToCart,
+  type IntentContext,
+} from '@/lib/ai/intentHandlers'
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions'
 
 // Types
@@ -1913,64 +1930,105 @@ export async function POST(request: Request) {
     })
 
     // =========================================================================
-    // 🚀 PRE-VALIDATION HANDLERS - These don't need city_id
+    // 🧠 GPT INTENT CLASSIFICATION - Replaces regex pattern matching
+    // Handles typos, dialects, and natural language variations
     // =========================================================================
 
-    // Handle cart inquiry - "ايه في السلة", "السلة فيها ايه", "ايه اللي عندي في السله"
-    const cartInquiryPatterns = [
-      /(?:ايه|إيه|ايش|شو|وش)\s*(?:اللي\s*)?(?:في|فى|ب|عندي\s*في)\s*(?:ال)?سل[ةه]/i,
-      /(?:ال)?سل[ةه]\s*(?:فيها|فيه)\s*(?:ايه|إيه|ايش|شو)/i,
-      /(?:عايز|عاوز)\s*(?:اعرف|اشوف)\s*(?:ال)?سل[ةه]/i,
-      /(?:وريني|فرجني|ارني)\s*(?:ال)?سل[ةه]/i,
-      /(?:محتويات|محتوى)\s*(?:ال)?سل[ةه]/i,
-      /^(?:ال)?سل[ةه]$/i,
-      /(?:ايه|إيه)\s*(?:اللي\s*)?عندي/i, // "ايه اللي عندي"
-    ]
-
-    if (cartInquiryPatterns.some(pattern => pattern.test(lastUserMessage))) {
-      console.log('🚀 [PRE-VALIDATION HANDLER] cart_inquiry')
-
-      if (!cart_items || cart_items.length === 0) {
-        return Response.json({
-          reply: getCartEmptyMessage(),
-          quick_replies: [
-            { title: '🏠 الأقسام', payload: 'categories' },
-            { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
-          ],
-          selected_provider_id,
-          selected_category,
-          memory,
-        })
-      }
-
-      // Build cart summary
-      let cartSummary = '🛒 **السلة الحالية:**\n\n'
-      let total = 0
-
-      for (const item of cart_items) {
-        const variantText = item.variant_name_ar ? ` (${item.variant_name_ar})` : ''
-        const itemTotal = item.quantity * item.unit_price
-        total += itemTotal
-        cartSummary += `• ${item.quantity}x ${item.name_ar}${variantText} - ${itemTotal} ج.م\n`
-      }
-
-      cartSummary += `\n💰 **الإجمالي: ${total} ج.م**`
-      if (cart_provider_name) {
-        cartSummary += `\n📍 من: ${cart_provider_name}`
-      }
-
-      return Response.json({
-        reply: cartSummary,
-        quick_replies: [
-          { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-          { title: '➕ أضف صنف آخر', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
-          { title: '🗑️ امسح السلة', payload: 'clear_cart' },
-        ],
+    // Skip intent classification for payloads (button clicks)
+    if (!isPayload(lastUserMessage)) {
+      // Build context for intent classification
+      const intentContext: IntentContext = {
+        city_id,
         selected_provider_id,
-        selected_category,
+        cart_provider_id,
+        cart_provider_name,
+        cart_items,
         memory,
+      }
+
+      // Classify user intent using GPT
+      const classifiedIntent = await classifyIntent(lastUserMessage, {
+        hasCartItems: cart_items && cart_items.length > 0,
+        hasSelectedProvider: !!selected_provider_id || !!cart_provider_id,
+        awaitingQuantity: !!memory?.awaiting_quantity,
+        awaitingConfirmation: !!memory?.awaiting_confirmation,
       })
+
+      console.log('🧠 [INTENT]', classifiedIntent.intent, 'confidence:', classifiedIntent.confidence, 'entities:', classifiedIntent.entities)
+
+      // Handle intents with high confidence
+      if (classifiedIntent.confidence >= 0.7) {
+        let intentResult = null
+
+        switch (classifiedIntent.intent) {
+          case 'cart_inquiry':
+            intentResult = handleCartInquiry(intentContext)
+            break
+
+          case 'clear_cart':
+            intentResult = handleClearCart(intentContext)
+            break
+
+          case 'remove_item':
+            intentResult = handleRemoveItem(classifiedIntent.entities.product_name, intentContext)
+            break
+
+          case 'cancel':
+            intentResult = handleCancel(intentContext)
+            break
+
+          case 'delivery_info':
+            intentResult = await handleDeliveryInfo(intentContext)
+            break
+
+          case 'greeting':
+            intentResult = handleGreeting(intentContext)
+            break
+
+          case 'thanks':
+            intentResult = handleThanks(intentContext)
+            break
+
+          case 'go_to_cart':
+            intentResult = handleGoToCart(intentContext)
+            break
+
+          case 'quantity_response':
+            // Let it fall through to existing quantity handling
+            break
+
+          case 'confirm':
+            // Let it fall through to existing confirmation handling
+            break
+
+          case 'search_product':
+            // Let it fall through to GPT function calling for search
+            break
+
+          case 'unknown':
+          default:
+            // Let it fall through to GPT
+            break
+        }
+
+        // Return if intent was handled
+        if (intentResult) {
+          return Response.json({
+            reply: intentResult.reply,
+            quick_replies: intentResult.quick_replies,
+            cart_action: intentResult.cart_action,
+            selected_provider_id: intentResult.selected_provider_id !== undefined ? intentResult.selected_provider_id : selected_provider_id,
+            selected_category: intentResult.selected_category !== undefined ? intentResult.selected_category : selected_category,
+            memory: intentResult.memory || memory,
+          })
+        }
+      }
     }
+
+    // =========================================================================
+    // 🚀 PAYLOAD HANDLERS - Handle button clicks and compound commands
+    // Note: Simple intents (cart_inquiry, clear_cart, etc.) are now handled by GPT above
+    // =========================================================================
 
     // Handle compound commands - "كنسل الكشري وضيف 2 فته", "الغي البيتزا و اضف برجر"
     // Pattern: (cancel item) + و/and + (add item with optional quantity)
@@ -2138,331 +2196,6 @@ export async function POST(request: Request) {
           })
         }
       }
-    }
-
-    // Handle remove specific item from cart - "امسح الكشري من السله", "شيل البيتزا", "كنسل البيبسي"
-    // Also handles pronoun reference "امسحه" (remove it) if last_mentioned_item is in memory
-    // Pattern: (امسح|شيل|الغي|كنسل) + item_name + (من السلة)?
-
-    // First check for pronoun-based remove: "امسحه", "شيله", "الغيه"
-    const pronounRemovePattern = /^(?:امسح|شيل|الغ[يى]|كنسل)(?:ه|ها|هم)$/i
-    if (pronounRemovePattern.test(lastUserMessage.trim()) && cart_items && cart_items.length > 0) {
-      console.log('🚀 [PRE-VALIDATION HANDLER] remove_item_pronoun')
-
-      // Try to find the last mentioned item in context (from memory or last search result)
-      const lastMentionedItem = memory?.last_mentioned_item_name as string | undefined
-
-      if (lastMentionedItem && typeof lastMentionedItem === 'string') {
-        const normalizedSearch = normalizeArabic(lastMentionedItem)
-        const matchedItem = cart_items.find(item => {
-          const normalizedName = normalizeArabic(item.name_ar)
-          return normalizedName.includes(normalizedSearch) || normalizedSearch.includes(normalizedName)
-        })
-
-        if (matchedItem) {
-          return Response.json({
-            reply: `تمام! ✅ شلت ${matchedItem.name_ar} من السلة.\n\nتحب تكمل طلبك ولا تضيف حاجة تانية؟`,
-            quick_replies: [
-              { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-              { title: '➕ أضف صنف آخر', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
-            ],
-            cart_action: {
-              type: 'REMOVE_ITEM' as const,
-              provider_id: cart_provider_id || '',
-              menu_item_id: '',
-              menu_item_name_ar: matchedItem.name_ar,
-              quantity: 0,
-              unit_price: 0,
-            },
-            selected_provider_id,
-            selected_category,
-            memory: { ...memory, last_mentioned_item_name: undefined },
-          })
-        }
-      }
-
-      // No context - ask which item to remove
-      const cartItemsList = cart_items.map(item => `• ${item.name_ar}`).join('\n')
-      return Response.json({
-        reply: `أنهي صنف تحب امسحه من السلة؟ 🤔\n\n${cartItemsList}`,
-        quick_replies: cart_items.slice(0, 3).map(item => ({
-          title: `🗑️ ${item.name_ar}`,
-          payload: `remove_item:${item.name_ar}`,
-        })),
-        selected_provider_id,
-        selected_category,
-        memory,
-      })
-    }
-
-    const removeItemPatterns = [
-      /(?:امسح|شيل|الغ[يى]|كنسل)\s+(?:ال)?(.+?)\s+(?:من\s*)?(?:ال)?سل[ةه]/i,
-      /(?:امسح|شيل|الغ[يى]|كنسل)\s+(?:ال)?(.+?)\s+(?:من\s*)?(?:ال)?كارت/i,
-      // New: "كنسل البيبسي" without "من السلة" - only if cart has items
-      /^(?:كنسل|الغ[يى])\s+(?:ال)?(.+)$/i,
-    ]
-
-    for (const pattern of removeItemPatterns) {
-      const match = lastUserMessage.match(pattern)
-      if (match && match[1]) {
-        const itemToRemove = match[1].trim()
-        console.log('🚀 [PRE-VALIDATION HANDLER] remove_item:', itemToRemove)
-
-        // Find the item in cart
-        if (cart_items && cart_items.length > 0) {
-          const normalizedSearch = normalizeArabic(itemToRemove)
-          const matchedItem = cart_items.find(item => {
-            const normalizedName = normalizeArabic(item.name_ar)
-            return normalizedName.includes(normalizedSearch) || normalizedSearch.includes(normalizedName)
-          })
-
-          if (matchedItem) {
-            return Response.json({
-              reply: `تمام! ✅ شلت ${matchedItem.name_ar} من السلة.\n\nتحب تكمل طلبك ولا تضيف حاجة تانية؟`,
-              quick_replies: [
-                { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-                { title: '➕ أضف صنف آخر', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
-              ],
-              cart_action: {
-                type: 'REMOVE_ITEM' as const,
-                provider_id: cart_provider_id || '',
-                menu_item_id: '', // Frontend will match by name
-                menu_item_name_ar: matchedItem.name_ar,
-                quantity: 0,
-                unit_price: 0,
-              },
-              selected_provider_id,
-              selected_category,
-              memory,
-            })
-          } else {
-            return Response.json({
-              reply: `مش لاقي "${itemToRemove}" في السلة 🤔\n\nتحب تشوف اللي في السلة؟`,
-              quick_replies: [
-                { title: '🛒 شوف السلة', payload: 'cart_inquiry' },
-                { title: '🗑️ امسح كل السلة', payload: 'clear_cart' },
-              ],
-              selected_provider_id,
-              selected_category,
-              memory,
-            })
-          }
-        } else {
-          return Response.json({
-            reply: 'السلة فاضية أصلاً! 🛒 تحب تطلب حاجة؟',
-            quick_replies: [
-              { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
-              { title: '🛒 سوبر ماركت', payload: 'category:supermarket' },
-            ],
-            selected_provider_id,
-            selected_category,
-            memory,
-          })
-        }
-      }
-    }
-
-    // Handle clear cart/order - "الغي الاوردر", "امسح السلة", "فضي السلة"
-    // This clears the cart completely and starts fresh
-    const clearCartPatterns = [
-      /(?:الغ[يى]|امسح|فض[يى]|شيل)\s*(?:ال)?(?:اوردر|الاوردر|طلب|الطلب|سل[ةه]|السل[ةه]|كارت)/i,
-      /(?:مش\s*)?(?:عايز|عاوز)\s*(?:ال)?(?:اوردر|طلب|سل[ةه])\s*(?:ده|دا|دي)?/i,
-      /^(?:ال)?(?:سل[ةه]|اوردر|طلب)\s*(?:الغ[يى]|امسح|فض[يى])/i,
-      /(?:ابدأ|نبدأ)\s*(?:من\s*)?(?:ال)?(?:اول|جديد)/i,
-      /^clear\s*cart$/i,
-    ]
-
-    if (clearCartPatterns.some(pattern => pattern.test(lastUserMessage))) {
-      console.log('🚀 [PRE-VALIDATION HANDLER] clear_cart/order')
-
-      return Response.json({
-        reply: getCartClearedMessage(),
-        quick_replies: [
-          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
-          { title: '🛒 سوبر ماركت', payload: 'category:supermarket' },
-          { title: '🏠 الأقسام', payload: 'categories' },
-        ],
-        cart_action: {
-          type: 'CLEAR_CART',
-        },
-        selected_provider_id: null, // Clear provider context
-        selected_category: null,
-        memory: {
-          // Reset all memory
-          pending_item: undefined,
-          pending_variant: undefined,
-          pending_quantity: undefined,
-          awaiting_quantity: false,
-          awaiting_confirmation: false,
-          current_provider: undefined,
-        },
-      })
-    }
-
-    // Handle cancel/undo - "لأ مش عايز", "الغي", "تراجع", etc.
-    const cancelPatterns = [
-      /^(?:لا|لأ|لاء)\s*(?:مش|مو)?\s*(?:عايز|عاوز|ابي|ابغى)/i,
-      /^(?:الغ[يى]|كانسل|cancel)/i,
-      /^(?:تراجع|ارجع|رجعني)/i,
-      /^(?:مش|مو)\s*(?:عايز|عاوز|ابي)/i,
-      /^(?:غير|بدل)\s*(?:رأي[ي]?|راي)/i,
-      /^(?:لا|لأ)\s*(?:شكرا|خلاص)?$/i,
-      /^(?:امسح|شيل)\s*(?:ده|دا|هذا)?$/i,
-    ]
-
-    if (cancelPatterns.some(pattern => pattern.test(lastUserMessage))) {
-      console.log('🚀 [PRE-VALIDATION HANDLER] cancel/undo')
-
-      // Determine what to cancel based on memory state
-      const hasSelectedItem = memory?.selected_item_id
-      const hasSelectedVariant = memory?.selected_variant_id
-      const hasSelectedProvider = memory?.current_provider || selected_provider_id
-      const hasCartItems = cart_items && cart_items.length > 0
-
-      let reply = ''
-      let quick_replies: { title: string; payload: string }[] = []
-      let updatedMemory = { ...memory }
-      let keepProviderId = selected_provider_id
-
-      if (hasSelectedVariant) {
-        // Cancel variant selection, go back to item
-        reply = getCancelResponse('variant')
-        updatedMemory.selected_variant_id = undefined
-        quick_replies = [
-          { title: '↩️ اختار حجم تاني', payload: `item:${hasSelectedItem}` },
-          { title: '📋 شوف المنيو', payload: hasSelectedProvider ? `provider:${typeof hasSelectedProvider === 'object' ? hasSelectedProvider.id : hasSelectedProvider}` : 'categories' },
-          { title: '🏠 الرئيسية', payload: 'categories' },
-        ]
-      } else if (hasSelectedItem) {
-        // Cancel item selection, go back to provider
-        reply = getCancelResponse('item')
-        updatedMemory.selected_item_id = undefined
-        quick_replies = [
-          { title: '📋 شوف المنيو', payload: hasSelectedProvider ? `provider:${typeof hasSelectedProvider === 'object' ? hasSelectedProvider.id : hasSelectedProvider}` : 'categories' },
-          { title: '🏠 الرئيسية', payload: 'categories' },
-        ]
-      } else if (hasSelectedProvider) {
-        // Cancel provider selection - check if user has items in cart
-        if (hasCartItems) {
-          // User has items in cart, don't suggest changing provider
-          reply = getCancelResponse('provider_with_cart')
-          // Keep the provider context since they have items from this provider
-          quick_replies = [
-            { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-            { title: '➕ أضف صنف آخر', payload: cart_provider_id ? `add_more:${cart_provider_id}` : `provider:${typeof hasSelectedProvider === 'object' ? hasSelectedProvider.id : hasSelectedProvider}` },
-            { title: '📋 شوف المنيو', payload: `provider:${typeof hasSelectedProvider === 'object' ? hasSelectedProvider.id : hasSelectedProvider}` },
-          ]
-          // Keep the provider context
-          keepProviderId = cart_provider_id || (typeof hasSelectedProvider === 'object' ? hasSelectedProvider.id : hasSelectedProvider)
-        } else {
-          // No items in cart, ok to go back to categories
-          reply = getCancelResponse('provider')
-          updatedMemory.current_provider = undefined
-          keepProviderId = undefined
-          quick_replies = [
-            { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
-            { title: '🛒 سوبر ماركت', payload: 'category:supermarket' },
-            { title: '🏠 الأقسام', payload: 'categories' },
-          ]
-        }
-      } else {
-        // Nothing to cancel - check if has cart items
-        if (hasCartItems) {
-          reply = getCancelResponse('nothing_with_cart')
-          quick_replies = [
-            { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
-            { title: '➕ أضف صنف آخر', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
-          ]
-          keepProviderId = cart_provider_id
-        } else {
-          reply = getCancelResponse('nothing')
-          quick_replies = [
-            { title: '🏠 الأقسام', payload: 'categories' },
-            { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
-          ]
-        }
-      }
-
-      return Response.json({
-        reply,
-        quick_replies,
-        selected_provider_id: keepProviderId,
-        selected_category,
-        memory: updatedMemory,
-      })
-    }
-
-    // Handle delivery info inquiry - "التوصيل بكام", "مصاريف الشحن", "بكام التوصيل" etc.
-    const deliveryInfoPatterns = [
-      /(?:ال)?توصيل\s*(?:بكام|كام|بكم)/i,
-      /(?:مصاريف|تكلف[ةه]?|سعر)\s*(?:ال)?(?:توصيل|شحن|دليفري)/i,
-      /(?:ال)?(?:دليفري|delivery)\s*(?:بكام|كام)/i,
-      /كام\s*(?:ال)?توصيل/i,
-      /(?:في|فيه)\s*توصيل/i,
-      /بكام\s*(?:ال)?(?:توصيل|دليفري|شحن)/i, // "بكام التوصيل"
-      /(?:ال)?(?:شحن|دليفري)\s*(?:بكام|كام)/i,
-    ]
-
-    if (deliveryInfoPatterns.some(pattern => pattern.test(lastUserMessage))) {
-      console.log('🚀 [PRE-VALIDATION HANDLER] delivery_info')
-
-      // Check all possible provider contexts - cart_provider_id is most reliable
-      const providerId = cart_provider_id || selected_provider_id || memory?.current_provider?.id
-
-      if (providerId && isValidUUID(providerId)) {
-        const supabase = await createClient()
-
-        const { data: provider } = await supabase
-          .from('providers')
-          .select('name_ar, delivery_fee, min_order_amount, estimated_delivery_time, free_delivery_threshold')
-          .eq('id', providerId)
-          .single()
-
-        if (provider) {
-          let deliveryInfo = `🚚 **معلومات التوصيل من ${provider.name_ar}:**\n\n`
-
-          if (provider.delivery_fee === 0 || provider.delivery_fee === null) {
-            deliveryInfo += '✅ التوصيل مجاني!\n'
-          } else {
-            deliveryInfo += `💰 رسوم التوصيل: ${provider.delivery_fee} ج.م\n`
-          }
-
-          if (provider.free_delivery_threshold) {
-            deliveryInfo += `🎁 توصيل مجاني للطلبات فوق ${provider.free_delivery_threshold} ج.م\n`
-          }
-
-          if (provider.min_order_amount) {
-            deliveryInfo += `📦 الحد الأدنى للطلب: ${provider.min_order_amount} ج.م\n`
-          }
-
-          if (provider.estimated_delivery_time) {
-            deliveryInfo += `⏱️ وقت التوصيل المتوقع: ${provider.estimated_delivery_time} دقيقة\n`
-          }
-
-          return Response.json({
-            reply: deliveryInfo,
-            quick_replies: [
-              { title: '📋 شوف المنيو', payload: `provider:${providerId}` },
-              { title: '🛒 السلة', payload: 'cart_inquiry' },
-            ],
-            selected_provider_id: providerId,
-            selected_category,
-            memory,
-          })
-        }
-      }
-
-      // No provider context - give general info
-      return Response.json({
-        reply: '🚚 رسوم التوصيل بتختلف من مكان للتاني.\n\nاختار مطعم أو متجر وهقولك تفاصيل التوصيل بتاعه 👇',
-        quick_replies: [
-          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
-          { title: '🛒 سوبر ماركت', payload: 'category:supermarket' },
-        ],
-        selected_provider_id,
-        selected_category,
-        memory,
-      })
     }
 
     // Handle recommendations - "اقترح عليا", "ايه الحلو", "بترشح ايه"
