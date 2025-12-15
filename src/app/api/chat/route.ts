@@ -2050,11 +2050,11 @@ export async function POST(request: Request) {
 
             if (searchResults && searchResults.length > 0) {
               const normalizedAddSearch = normalizeArabic(itemToAdd)
-              const filtered = filterByNormalizedArabic(searchResults, normalizedAddSearch, 'name_ar')
+              const filtered = filterByNormalizedArabic(searchResults, normalizedAddSearch, (item) => [item.name_ar || '', item.name_en || ''])
 
               if (filtered.length > 0) {
-                const item = filtered[0] as { id: string; name_ar: string; price: number; has_variants?: boolean; provider_id: string; providers: { name_ar: string } }
-                const providerName = (item.providers as { name_ar: string })?.name_ar || 'المتجر'
+                const item = filtered[0] as unknown as { id: string; name_ar: string; price: number; has_variants?: boolean; provider_id: string; providers: { name_ar: string } }
+                const providerName = item.providers?.name_ar || 'المتجر'
 
                 let removeMessage = ''
                 if (removedItem) {
