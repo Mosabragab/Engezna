@@ -40,6 +40,8 @@ import {
   handleGreeting,
   handleThanks,
   handleGoToCart,
+  handleProductInfo,
+  handleShowMenu,
   type IntentContext,
 } from '@/lib/ai/intentHandlers'
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions'
@@ -2008,6 +2010,17 @@ export async function POST(request: Request) {
 
           case 'search_product':
             // Let it fall through to GPT function calling for search
+            break
+
+          case 'product_info':
+            intentResult = await handleProductInfo(
+              classifiedIntent.entities.product_name,
+              intentContext
+            )
+            break
+
+          case 'show_menu':
+            intentResult = await handleShowMenu(intentContext)
             break
 
           case 'unknown':

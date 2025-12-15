@@ -493,3 +493,190 @@ export function handleGoToCart(context: IntentContext): IntentResult {
     memory: context.memory,
   }
 }
+
+/**
+ * Handle product info intent
+ * "بيتزا نيويورك عبارة عن ايه"، "الكشري فيه ايه"، "مكونات البرجر"
+ */
+export async function handleProductInfo(
+  productName: string | undefined,
+  context: IntentContext
+): Promise<IntentResult> {
+  const { cart_provider_id, selected_provider_id, memory } = context
+
+  // Get provider context
+  const providerId = cart_provider_id || selected_provider_id || (memory?.current_provider as { id: string } | undefined)?.id
+
+  if (!productName) {
+    return {
+      reply: 'أنهي صنف عايز تعرف عنه؟ قولي اسمه وهقولك التفاصيل 📋',
+      quick_replies: [
+        { title: '📋 شوف المنيو', payload: providerId ? `provider:${providerId}` : 'categories' },
+        { title: '🛒 السلة', payload: 'cart_inquiry' },
+      ],
+      selected_provider_id: providerId,
+      memory,
+    }
+  }
+
+  try {
+    const supabase = await createClient()
+
+    // Search for the product
+    let query = supabase
+      .from('menu_items')
+      .select('id, name_ar, description_ar, price, provider_id')
+      .ilike('name_ar', `%${productName}%`)
+      .limit(1)
+
+    // Filter by provider if we have context
+    if (providerId) {
+      query = query.eq('provider_id', providerId)
+    }
+
+    const { data: items } = await query
+
+    if (items && items.length > 0) {
+      const item = items[0]
+      const description = item.description_ar || 'مفيش وصف متاح للصنف ده'
+
+      return {
+        reply: `📋 **${item.name_ar}**\n\n${description}\n\n💰 السعر: ${item.price} ج.م`,
+        quick_replies: [
+          { title: '🛒 أضف للسلة', payload: `item:${item.id}` },
+          { title: '📋 المنيو', payload: `provider:${item.provider_id}` },
+        ],
+        selected_provider_id: item.provider_id,
+        memory,
+      }
+    }
+
+    // Product not found
+    return {
+      reply: `مش لاقي "${productName}" 😕 ممكن تقولي الاسم تاني أو تتصفح المنيو`,
+      quick_replies: [
+        { title: '📋 شوف المنيو', payload: providerId ? `provider:${providerId}` : 'categories' },
+        { title: '🔍 ابحث', payload: 'categories' },
+      ],
+      selected_provider_id: providerId,
+      memory,
+    }
+  } catch (err) {
+    console.error('🔍 [PRODUCT_INFO] Error:', err)
+    return {
+      reply: 'حصلت مشكلة في البحث. جرب تاني 🙏',
+      quick_replies: [
+        { title: '🏠 الأقسام', payload: 'categories' },
+      ],
+      selected_provider_id: providerId,
+      memory,
+    }
+  }
+}
+
+/**
+ * Handle show menu intent
+ * "عايز المنيو"، "هاتلي المنيو"، "شوفلي الأصناف"
+ */
+export async function handleShowMenu(context: IntentContext): Promise<IntentResult> {
+  const { cart_provider_id, selected_provider_id, memory } = context
+
+  // Get provider context
+  const providerId = cart_provider_id || selected_provider_id || (memory?.current_provider as { id: string } | undefined)?.id
+
+  if (!providerId) {
+    return {
+      reply: 'اختار مطعم أو متجر الأول وبعدين هعرضلك المنيو 👇',
+      quick_replies: [
+        { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+        { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+      ],
+      selected_provider_id: undefined,
+      memory,
+    }
+  }
+
+  try {
+    const supabase = await createClient()
+
+    // Get provider name
+    const { data: provider } = await supabase
+      .from('providers')
+      .select('name_ar')
+      .eq('id', providerId)
+      .single()
+
+    // Get menu categories
+    const { data: categories } = await supabase
+      .from('menu_categories')
+      .select('id, name_ar')
+      .eq('provider_id', providerId)
+      .order('display_order')
+      .limit(6)
+
+    const providerName = provider?.name_ar || 'المتجر'
+
+    if (categories && categories.length > 0) {
+      const categoryButtons = categories.map(cat => ({
+        title: `📂 ${cat.name_ar}`,
+        payload: `menu_category:${cat.id}`,
+      }))
+
+      return {
+        reply: `📋 **منيو ${providerName}**\n\nاختار القسم اللي تحبه 👇`,
+        quick_replies: [
+          ...categoryButtons,
+          { title: '🛒 السلة', payload: 'cart_inquiry' },
+        ],
+        selected_provider_id: providerId,
+        memory,
+      }
+    }
+
+    // No categories - show items directly
+    const { data: items } = await supabase
+      .from('menu_items')
+      .select('id, name_ar, price')
+      .eq('provider_id', providerId)
+      .eq('is_available', true)
+      .order('name_ar')
+      .limit(8)
+
+    if (items && items.length > 0) {
+      const itemButtons = items.slice(0, 5).map(item => ({
+        title: `${item.name_ar} (${item.price} ج.م)`,
+        payload: `item:${item.id}`,
+      }))
+
+      return {
+        reply: `📋 **منيو ${providerName}**\n\nاختار الصنف اللي تحبه 👇`,
+        quick_replies: [
+          ...itemButtons,
+          { title: '🛒 السلة', payload: 'cart_inquiry' },
+        ],
+        selected_provider_id: providerId,
+        memory,
+      }
+    }
+
+    return {
+      reply: `للأسف مش لاقي أصناف متاحة في ${providerName} دلوقتي 😕`,
+      quick_replies: [
+        { title: '🏠 الأقسام', payload: 'categories' },
+        { title: '🛒 السلة', payload: 'cart_inquiry' },
+      ],
+      selected_provider_id: providerId,
+      memory,
+    }
+  } catch (err) {
+    console.error('📋 [SHOW_MENU] Error:', err)
+    return {
+      reply: 'حصلت مشكلة في عرض المنيو. جرب تاني 🙏',
+      quick_replies: [
+        { title: '🏠 الأقسام', payload: 'categories' },
+      ],
+      selected_provider_id: providerId,
+      memory,
+    }
+  }
+}
