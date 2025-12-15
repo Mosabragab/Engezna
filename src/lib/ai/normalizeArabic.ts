@@ -145,7 +145,7 @@ export function filterByNormalizedArabic<T>(
   items: T[],
   query: string,
   getSearchableText: (item: T) => string | string[],
-  fuzzyThreshold: number = 0.6
+  fuzzyThreshold: number = 0.7  // Increased from 0.6 to avoid false matches like "بيتزا" ~ "بيضا"
 ): T[] {
   const normalizedQuery = normalizeArabic(query)
 
