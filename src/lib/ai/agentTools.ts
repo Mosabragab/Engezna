@@ -15,6 +15,7 @@ export interface ToolResult {
   success: boolean
   data?: unknown
   error?: string
+  message?: string // Friendly message for the AI to use in response
 }
 
 export interface ToolDefinition {
