@@ -225,12 +225,73 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.reply || 'فشل في الاتصال بالسيرفر')
+        const errorText = await response.text().catch(() => '')
+        throw new Error('فشل في الاتصال بالسيرفر')
       }
 
-      // Handle response (new non-streaming format)
-      const data: ChatAPIResponse = await response.json()
+      // Handle SSE streaming response
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error('فشل في قراءة الرد')
+      }
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let data: ChatAPIResponse = { reply: '' }
+      let fullContent = ''
+
+      setIsStreaming(true)
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Parse SSE events from buffer
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // Keep incomplete line in buffer
+
+        let currentEvent = ''
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7)
+          } else if (line.startsWith('data: ')) {
+            const jsonData = line.slice(6)
+            try {
+              const parsed = JSON.parse(jsonData)
+
+              if (currentEvent === 'content' && parsed.chunk) {
+                // Stream content chunk
+                fullContent += parsed.chunk
+                setStreamingContent(fullContent)
+              } else if (currentEvent === 'message') {
+                // Final message with all data
+                data = {
+                  reply: parsed.content || fullContent,
+                  quick_replies: parsed.quick_replies,
+                  navigate_to: parsed.navigate_to,
+                }
+              } else if (currentEvent === 'error') {
+                throw new Error(parsed.error || 'حصل خطأ')
+              }
+            } catch (e) {
+              // Ignore JSON parse errors for incomplete data
+              if (currentEvent === 'error') {
+                throw new Error('حصل خطأ في الرد')
+              }
+            }
+          }
+        }
+      }
+
+      // If we got streaming content but no final message, use the streamed content
+      if (!data.reply && fullContent) {
+        data.reply = fullContent
+      }
+
+      setIsStreaming(false)
+      setStreamingContent('')
 
       // Update conversation state from response
       // Always update these values (even if undefined to clear them)
@@ -520,11 +581,73 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.reply || 'فشل في الاتصال بالسيرفر')
+        const errorText = await response.text().catch(() => '')
+        throw new Error('فشل في الاتصال بالسيرفر')
       }
 
-      const data: ChatAPIResponse = await response.json()
+      // Handle SSE streaming response
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error('فشل في قراءة الرد')
+      }
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let data: ChatAPIResponse = { reply: '' }
+      let fullContent = ''
+
+      setIsStreaming(true)
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Parse SSE events from buffer
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // Keep incomplete line in buffer
+
+        let currentEvent = ''
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7)
+          } else if (line.startsWith('data: ')) {
+            const jsonData = line.slice(6)
+            try {
+              const parsed = JSON.parse(jsonData)
+
+              if (currentEvent === 'content' && parsed.chunk) {
+                // Stream content chunk
+                fullContent += parsed.chunk
+                setStreamingContent(fullContent)
+              } else if (currentEvent === 'message') {
+                // Final message with all data
+                data = {
+                  reply: parsed.content || fullContent,
+                  quick_replies: parsed.quick_replies,
+                  navigate_to: parsed.navigate_to,
+                }
+              } else if (currentEvent === 'error') {
+                throw new Error(parsed.error || 'حصل خطأ')
+              }
+            } catch (e) {
+              // Ignore JSON parse errors for incomplete data
+              if (currentEvent === 'error') {
+                throw new Error('حصل خطأ في الرد')
+              }
+            }
+          }
+        }
+      }
+
+      // If we got streaming content but no final message, use the streamed content
+      if (!data.reply && fullContent) {
+        data.reply = fullContent
+      }
+
+      setIsStreaming(false)
+      setStreamingContent('')
 
       // Update conversation state from response
       // Always update these values (even if undefined to clear them)
