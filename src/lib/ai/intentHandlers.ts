@@ -309,7 +309,7 @@ export async function handleDeliveryInfo(context: IntentContext): Promise<Intent
 
       const { data: provider, error } = await supabase
         .from('providers')
-        .select('name_ar, delivery_fee, min_order_amount, estimated_delivery_time_min, free_delivery_threshold')
+        .select('name_ar, delivery_fee, min_order_amount, estimated_delivery_time_min')
         .eq('id', providerId)
         .single()
 
@@ -324,10 +324,6 @@ export async function handleDeliveryInfo(context: IntentContext): Promise<Intent
           deliveryInfo += '✅ التوصيل مجاني!\n'
         } else {
           deliveryInfo += `💰 رسوم التوصيل: ${provider.delivery_fee} ج.م\n`
-        }
-
-        if (provider.free_delivery_threshold) {
-          deliveryInfo += `🎁 توصيل مجاني للطلبات فوق ${provider.free_delivery_threshold} ج.م\n`
         }
 
         if (provider.min_order_amount) {
