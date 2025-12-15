@@ -2155,11 +2155,66 @@ export async function POST(request: Request) {
       }
     }
 
-    // Handle remove specific item from cart - "امسح الكشري من السله", "شيل البيتزا"
+    // Handle remove specific item from cart - "امسح الكشري من السله", "شيل البيتزا", "كنسل البيبسي"
+    // Also handles pronoun reference "امسحه" (remove it) if last_mentioned_item is in memory
     // Pattern: (امسح|شيل|الغي|كنسل) + item_name + (من السلة)?
+
+    // First check for pronoun-based remove: "امسحه", "شيله", "الغيه"
+    const pronounRemovePattern = /^(?:امسح|شيل|الغ[يى]|كنسل)(?:ه|ها|هم)$/i
+    if (pronounRemovePattern.test(lastUserMessage.trim()) && cart_items && cart_items.length > 0) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] remove_item_pronoun')
+
+      // Try to find the last mentioned item in context (from memory or last search result)
+      const lastMentionedItem = memory?.last_mentioned_item_name as string | undefined
+
+      if (lastMentionedItem && typeof lastMentionedItem === 'string') {
+        const normalizedSearch = normalizeArabic(lastMentionedItem)
+        const matchedItem = cart_items.find(item => {
+          const normalizedName = normalizeArabic(item.name_ar)
+          return normalizedName.includes(normalizedSearch) || normalizedSearch.includes(normalizedName)
+        })
+
+        if (matchedItem) {
+          return Response.json({
+            reply: `تمام! ✅ شلت ${matchedItem.name_ar} من السلة.\n\nتحب تكمل طلبك ولا تضيف حاجة تانية؟`,
+            quick_replies: [
+              { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
+              { title: '➕ أضف صنف آخر', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
+            ],
+            cart_action: {
+              type: 'REMOVE_ITEM' as const,
+              provider_id: cart_provider_id || '',
+              menu_item_id: '',
+              menu_item_name_ar: matchedItem.name_ar,
+              quantity: 0,
+              unit_price: 0,
+            },
+            selected_provider_id,
+            selected_category,
+            memory: { ...memory, last_mentioned_item_name: undefined },
+          })
+        }
+      }
+
+      // No context - ask which item to remove
+      const cartItemsList = cart_items.map(item => `• ${item.name_ar}`).join('\n')
+      return Response.json({
+        reply: `أنهي صنف تحب امسحه من السلة؟ 🤔\n\n${cartItemsList}`,
+        quick_replies: cart_items.slice(0, 3).map(item => ({
+          title: `🗑️ ${item.name_ar}`,
+          payload: `remove_item:${item.name_ar}`,
+        })),
+        selected_provider_id,
+        selected_category,
+        memory,
+      })
+    }
+
     const removeItemPatterns = [
       /(?:امسح|شيل|الغ[يى]|كنسل)\s+(?:ال)?(.+?)\s+(?:من\s*)?(?:ال)?سل[ةه]/i,
       /(?:امسح|شيل|الغ[يى]|كنسل)\s+(?:ال)?(.+?)\s+(?:من\s*)?(?:ال)?كارت/i,
+      // New: "كنسل البيبسي" without "من السلة" - only if cart has items
+      /^(?:كنسل|الغ[يى])\s+(?:ال)?(.+)$/i,
     ]
 
     for (const pattern of removeItemPatterns) {
@@ -2695,6 +2750,41 @@ export async function POST(request: Request) {
           selected_category: selected_category,
           memory: result.memory,
         })
+      }
+    }
+
+    // Handle remove_item:xxx payload - Remove specific item from cart by name
+    if (lastUserMessage.startsWith('remove_item:')) {
+      const itemName = lastUserMessage.replace('remove_item:', '')
+      console.log('🚀 [PRE-VALIDATION HANDLER] remove_item payload:', itemName)
+
+      if (cart_items && cart_items.length > 0) {
+        const normalizedSearch = normalizeArabic(itemName)
+        const matchedItem = cart_items.find(item => {
+          const normalizedName = normalizeArabic(item.name_ar)
+          return normalizedName.includes(normalizedSearch) || normalizedSearch.includes(normalizedName)
+        })
+
+        if (matchedItem) {
+          return Response.json({
+            reply: `تمام! ✅ شلت ${matchedItem.name_ar} من السلة.\n\nتحب تكمل طلبك ولا تضيف حاجة تانية؟`,
+            quick_replies: [
+              { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
+              { title: '➕ أضف صنف آخر', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
+            ],
+            cart_action: {
+              type: 'REMOVE_ITEM' as const,
+              provider_id: cart_provider_id || '',
+              menu_item_id: '',
+              menu_item_name_ar: matchedItem.name_ar,
+              quantity: 0,
+              unit_price: 0,
+            },
+            selected_provider_id,
+            selected_category,
+            memory,
+          })
+        }
       }
     }
 

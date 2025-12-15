@@ -44,7 +44,7 @@ interface QuickReply {
 }
 
 interface CartAction {
-  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' | 'CLEAR_CART' // CLEAR_AND_ADD clears cart first, then adds; CLEAR_CART just clears
+  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' | 'CLEAR_CART' | 'REMOVE_ITEM' // CLEAR_AND_ADD clears cart first, then adds; CLEAR_CART just clears; REMOVE_ITEM removes specific item
   provider_id: string
   menu_item_id: string
   menu_item_name_ar: string
@@ -142,7 +142,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
   }, [isHydrated, customerName, setMessages])
 
   // Cart store
-  const { addItem: cartAddItem, cart: cartItems, clearCart, provider: cartProvider } = useCart()
+  const { addItem: cartAddItem, cart: cartItems, clearCart, removeItem: cartRemoveItem, provider: cartProvider } = useCart()
 
   // Cleanup on unmount
   useEffect(() => {
@@ -257,6 +257,20 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
           return
         }
 
+        // Handle REMOVE_ITEM - find and remove item by name
+        if (action.type === 'REMOVE_ITEM') {
+          // Find the item in cart by name
+          const itemToRemove = cartItems.find(item =>
+            item.menuItem.name_ar === action.menu_item_name_ar ||
+            item.menuItem.name_ar.includes(action.menu_item_name_ar) ||
+            action.menu_item_name_ar.includes(item.menuItem.name_ar)
+          )
+          if (itemToRemove) {
+            cartRemoveItem(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
+          }
+          return
+        }
+
         // If CLEAR_AND_ADD or shouldClearFirst, clear the cart first
         if (action.type === 'CLEAR_AND_ADD' || shouldClearFirst) {
           clearCart()
@@ -314,7 +328,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         })
       }
       // Handle single cart action (backward compatibility)
-      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD' || data.cart_action.type === 'CLEAR_CART')) {
+      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD' || data.cart_action.type === 'CLEAR_CART' || data.cart_action.type === 'REMOVE_ITEM')) {
         processCartAction(data.cart_action)
       }
 
@@ -354,7 +368,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       setIsStreaming(false)
       setStreamingContent('')
     }
-  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
+  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartRemoveItem, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
 
   /**
    * Send quick action
@@ -525,6 +539,19 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
           return
         }
 
+        // Handle REMOVE_ITEM - find and remove item by name
+        if (action.type === 'REMOVE_ITEM') {
+          const itemToRemove = cartItems.find(item =>
+            item.menuItem.name_ar === action.menu_item_name_ar ||
+            item.menuItem.name_ar.includes(action.menu_item_name_ar) ||
+            action.menu_item_name_ar.includes(item.menuItem.name_ar)
+          )
+          if (itemToRemove) {
+            cartRemoveItem(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
+          }
+          return
+        }
+
         // If CLEAR_AND_ADD or shouldClearFirst, clear the cart first
         if (action.type === 'CLEAR_AND_ADD' || shouldClearFirst) {
           clearCart()
@@ -579,7 +606,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         })
       }
       // Handle single cart action (backward compatibility)
-      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD' || data.cart_action.type === 'CLEAR_CART')) {
+      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD' || data.cart_action.type === 'CLEAR_CART' || data.cart_action.type === 'REMOVE_ITEM')) {
         processCartAction(data.cart_action)
       }
 
@@ -615,7 +642,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setSelectedCategory, setMemory])
+  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartRemoveItem, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setSelectedCategory, setMemory])
 
   /**
    * Add product to cart from chat
