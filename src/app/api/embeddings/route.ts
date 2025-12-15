@@ -20,6 +20,11 @@ import { generateEmbedding, createMenuItemEmbeddingText } from '@/lib/ai/embeddi
 
 const MAX_BATCH_SIZE = 50
 
+// ✅ Fixed: provider_categories can be object, array, or null
+interface ProviderCategory {
+  name_ar: string
+}
+
 interface MenuItem {
   id: string
   name_ar: string
@@ -29,7 +34,16 @@ interface MenuItem {
   is_spicy: boolean | null
   is_vegetarian: boolean | null
   provider_category_id: string | null
-  provider_categories?: { name_ar: string } | null
+  provider_categories: ProviderCategory | ProviderCategory[] | null
+}
+
+// ✅ Helper function to safely extract category name
+function getCategoryName(categories: ProviderCategory | ProviderCategory[] | null): string | undefined {
+  if (!categories) return undefined
+  if (Array.isArray(categories)) {
+    return categories[0]?.name_ar
+  }
+  return categories.name_ar
 }
 
 export async function POST(req: NextRequest) {
@@ -124,13 +138,16 @@ export async function POST(req: NextRequest) {
 
     for (const item of items as MenuItem[]) {
       try {
+        // ✅ Fixed: Use helper function to safely get category name
+        const categoryName = getCategoryName(item.provider_categories)
+
         // Create embedding text
         const embeddingText = createMenuItemEmbeddingText({
           name_ar: item.name_ar,
           name_en: item.name_en || undefined,
           description_ar: item.description_ar || undefined,
           description_en: item.description_en || undefined,
-          category_name_ar: item.provider_categories?.name_ar,
+          category_name_ar: categoryName,
           is_spicy: item.is_spicy || false,
           is_vegetarian: item.is_vegetarian || false
         })
