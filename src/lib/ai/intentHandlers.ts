@@ -507,7 +507,11 @@ export async function handleProductInfo(
   // Get provider context
   const providerId = cart_provider_id || selected_provider_id || (memory?.current_provider as { id: string } | undefined)?.id
 
-  if (!productName) {
+  // If no product name provided, check if we have a pending item in context
+  const pendingItem = memory?.pending_item as { id?: string; name_ar?: string; provider_id?: string } | undefined
+  const searchName = productName || pendingItem?.name_ar
+
+  if (!searchName) {
     return {
       reply: 'أنهي صنف عايز تعرف عنه؟ قولي اسمه وهقولك التفاصيل 📋',
       quick_replies: [
@@ -519,41 +523,76 @@ export async function handleProductInfo(
     }
   }
 
+  console.log('🔍 [PRODUCT_INFO] Searching for:', searchName, 'provider:', providerId)
+
   try {
     const supabase = await createClient()
 
-    // Search for the product
+    // If we have a pending item with ID, get it directly
+    if (!productName && pendingItem?.id) {
+      const { data: item } = await supabase
+        .from('menu_items')
+        .select('id, name_ar, description_ar, price, provider_id')
+        .eq('id', pendingItem.id)
+        .single()
+
+      if (item) {
+        const description = item.description_ar || 'مفيش وصف متاح للصنف ده'
+        return {
+          reply: `📋 **${item.name_ar}**\n\n${description}\n\n💰 السعر: ${item.price} ج.م`,
+          quick_replies: [
+            { title: '🛒 أضف للسلة', payload: `item:${item.id}` },
+            { title: '📋 المنيو', payload: `provider:${item.provider_id}` },
+          ],
+          selected_provider_id: item.provider_id,
+          memory,
+        }
+      }
+    }
+
+    // Search for the product using normalization for better matching
+    const normalizedSearch = normalizeArabic(searchName)
+    console.log('🔍 [PRODUCT_INFO] Normalized search:', normalizedSearch)
+
+    // Build query
     let query = supabase
       .from('menu_items')
       .select('id, name_ar, description_ar, price, provider_id')
-      .ilike('name_ar', `%${productName}%`)
-      .limit(1)
 
     // Filter by provider if we have context
     if (providerId) {
       query = query.eq('provider_id', providerId)
     }
 
-    const { data: items } = await query
+    const { data: allItems } = await query
 
-    if (items && items.length > 0) {
-      const item = items[0]
-      const description = item.description_ar || 'مفيش وصف متاح للصنف ده'
+    // Use normalization-based filtering
+    if (allItems && allItems.length > 0) {
+      const filteredItems = filterByNormalizedArabic(
+        allItems,
+        searchName,
+        (item) => item.name_ar
+      )
 
-      return {
-        reply: `📋 **${item.name_ar}**\n\n${description}\n\n💰 السعر: ${item.price} ج.م`,
-        quick_replies: [
-          { title: '🛒 أضف للسلة', payload: `item:${item.id}` },
-          { title: '📋 المنيو', payload: `provider:${item.provider_id}` },
-        ],
-        selected_provider_id: item.provider_id,
-        memory,
+      if (filteredItems.length > 0) {
+        const item = filteredItems[0]
+        const description = item.description_ar || 'مفيش وصف متاح للصنف ده'
+
+        return {
+          reply: `📋 **${item.name_ar}**\n\n${description}\n\n💰 السعر: ${item.price} ج.م`,
+          quick_replies: [
+            { title: '🛒 أضف للسلة', payload: `item:${item.id}` },
+            { title: '📋 المنيو', payload: `provider:${item.provider_id}` },
+          ],
+          selected_provider_id: item.provider_id,
+          memory,
+        }
       }
     }
 
     // Product not found
     return {
-      reply: `مش لاقي "${productName}" 😕 ممكن تقولي الاسم تاني أو تتصفح المنيو`,
+      reply: `مش لاقي "${searchName}" 😕 ممكن تقولي الاسم تاني أو تتصفح المنيو`,
       quick_replies: [
         { title: '📋 شوف المنيو', payload: providerId ? `provider:${providerId}` : 'categories' },
         { title: '🔍 ابحث', payload: 'categories' },

@@ -1966,6 +1966,7 @@ export async function POST(request: Request) {
         hasSelectedProvider: !!selected_provider_id || !!cart_provider_id,
         awaitingQuantity: !!memory?.awaiting_quantity,
         awaitingConfirmation: !!memory?.awaiting_confirmation,
+        currentItemName: memory?.pending_item?.name_ar,
       })
 
       console.log('🧠 [INTENT]', classifiedIntent.intent, 'confidence:', classifiedIntent.confidence, 'entities:', classifiedIntent.entities)
