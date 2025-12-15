@@ -570,7 +570,7 @@ function parseAgentOutput(content: string, turns: ConversationTurn[]): AgentResp
   const { suggestions, quickReplies } = generateDynamicQuickReplies(
     content,
     !!response.cartAction,
-    response.products && response.products.length > 0,
+    !!(response.products && response.products.length > 0),
     response.products?.[0]?.id,
     toolsUsed
   )
