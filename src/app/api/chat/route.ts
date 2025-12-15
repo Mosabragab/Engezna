@@ -842,7 +842,8 @@ async function performDirectSearch(
   searchQuery: string,
   cityId: string,
   selectedProviderId?: string,
-  memory?: ChatMemory
+  memory?: ChatMemory,
+  cartProviderId?: string
 ): Promise<DirectSearchResult> {
   const supabase = await createClient()
 
@@ -897,12 +898,23 @@ async function performDirectSearch(
         memory,
       }
     } else {
+      // Build quick replies based on cart state
+      const quickReplies: QuickReply[] = [
+        { title: '➕ دور على صنف تاني', payload: `add_more:${selectedProviderId}` },
+      ]
+
+      // Only show "search elsewhere" if cart is empty (no items from current provider)
+      // If cart has items, user should complete current order first
+      if (!cartProviderId) {
+        quickReplies.push({ title: '🔍 ابحث في مكان تاني', payload: 'search_elsewhere' })
+      } else {
+        // Cart has items - show option to go to cart instead
+        quickReplies.push({ title: '🛒 اذهب للسلة', payload: 'go_to_cart' })
+      }
+
       return {
         reply: `مش لاقي ${searchQuery} في ${provider?.name_ar || 'المتجر ده'}. تحب تدور على حاجة تانية؟`,
-        quick_replies: [
-          { title: '➕ دور على صنف تاني', payload: `add_more:${selectedProviderId}` },
-          { title: '🔍 ابحث في مكان تاني', payload: 'search_elsewhere' },
-        ],
+        quick_replies: quickReplies,
         selected_provider_id: selectedProviderId,
         memory,
       }
@@ -2300,7 +2312,7 @@ export async function POST(request: Request) {
         console.log('🚀 [PRE-VALIDATION HANDLER] price_inquiry:', productName)
 
         const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
-        const searchResult = await performDirectSearch(productName, city_id, providerIdToSearch, memory)
+        const searchResult = await performDirectSearch(productName, city_id, providerIdToSearch, memory, cart_provider_id)
 
         if (searchResult.quick_replies.length > 0) {
           return Response.json({
@@ -3356,7 +3368,7 @@ export async function POST(request: Request) {
 
       if (providerIdToSearch && isValidUUID(providerIdToSearch)) {
         // Search in the current provider first
-        const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory)
+        const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory, cart_provider_id)
 
         // If found items, return them
         if (searchResult.quick_replies.length > 0 && !searchResult.reply.includes('مش لاقي')) {
@@ -3368,7 +3380,7 @@ export async function POST(request: Request) {
         }
 
         // If not found in current provider, search city-wide and inform user
-        const cityWideResult = await performDirectSearch(searchQuery, city_id, undefined, memory)
+        const cityWideResult = await performDirectSearch(searchQuery, city_id, undefined, memory, cart_provider_id)
         if (cityWideResult.quick_replies.length > 0 && !cityWideResult.reply.includes('مش لاقي')) {
           const providerName = memory?.current_provider?.name_ar || 'المتجر الحالي'
           return Response.json({
@@ -3394,7 +3406,7 @@ export async function POST(request: Request) {
         })
       } else {
         // No current provider, search city-wide
-        const searchResult = await performDirectSearch(searchQuery, city_id, undefined, memory)
+        const searchResult = await performDirectSearch(searchQuery, city_id, undefined, memory, cart_provider_id)
         return Response.json({
           ...searchResult,
           selected_provider_id,
@@ -3411,7 +3423,7 @@ export async function POST(request: Request) {
       const searchQuery = (ala2iQueryMatch?.[1] || ala2iReversedMatch?.[1])?.trim() || ''
       console.log('🚀 [DIRECT HANDLER] "الاقي X فين" query:', searchQuery)
 
-      const searchResult = await performDirectSearch(searchQuery, city_id, selected_provider_id, memory)
+      const searchResult = await performDirectSearch(searchQuery, city_id, selected_provider_id, memory, cart_provider_id)
       return Response.json(searchResult)
     }
 
@@ -3421,7 +3433,7 @@ export async function POST(request: Request) {
       const searchQuery = walaQueryMatch[1].trim()
       console.log('🚀 [DIRECT HANDLER] "ولا X" query:', searchQuery)
 
-      const searchResult = await performDirectSearch(searchQuery, city_id, selected_provider_id, memory)
+      const searchResult = await performDirectSearch(searchQuery, city_id, selected_provider_id, memory, cart_provider_id)
       return Response.json(searchResult)
     }
 
@@ -3437,7 +3449,7 @@ export async function POST(request: Request) {
       const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
       console.log('🚀 [DIRECT HANDLER] "عايز X" query:', searchQuery, 'quantity:', quantity, 'provider:', providerIdToSearch)
 
-      const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory)
+      const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory, cart_provider_id)
 
       // Store quantity in memory if > 1 so it's used when item is selected
       const updatedMemory = {
@@ -3464,7 +3476,7 @@ export async function POST(request: Request) {
       console.log('🚀 [DIRECT HANDLER] "عنده X" query:', searchQuery, 'provider:', providerIdToSearch)
 
       if (providerIdToSearch && isValidUUID(providerIdToSearch)) {
-        const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory)
+        const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory, cart_provider_id)
         return Response.json({
           ...searchResult,
           selected_provider_id: providerIdToSearch,
@@ -3472,7 +3484,7 @@ export async function POST(request: Request) {
         })
       } else {
         // No provider context, search city-wide
-        const searchResult = await performDirectSearch(searchQuery, city_id, undefined, memory)
+        const searchResult = await performDirectSearch(searchQuery, city_id, undefined, memory, cart_provider_id)
         return Response.json({
           ...searchResult,
           selected_provider_id,
@@ -3492,7 +3504,7 @@ export async function POST(request: Request) {
       // Try to resolve the provider by name
       const resolved = await resolveProviderByName(providerName, city_id)
       if (resolved) {
-        const searchResult = await performDirectSearch(searchQuery, city_id, resolved.id, memory)
+        const searchResult = await performDirectSearch(searchQuery, city_id, resolved.id, memory, cart_provider_id)
         return Response.json({
           ...searchResult,
           selected_provider_id: resolved.id,
@@ -3552,7 +3564,7 @@ export async function POST(request: Request) {
       const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
       console.log('🚀 [DIRECT HANDLER] "في X" query:', searchQuery, 'provider:', providerIdToSearch)
 
-      const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory)
+      const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory, cart_provider_id)
       return Response.json({
         ...searchResult,
         selected_provider_id: providerIdToSearch || selected_provider_id,
@@ -3653,7 +3665,7 @@ export async function POST(request: Request) {
             const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
             console.log('🧠 [SMART EXTRACTION] Searching for:', extracted.product, 'in provider:', providerIdToSearch)
 
-            const searchResult = await performDirectSearch(extracted.product, city_id, providerIdToSearch, memory)
+            const searchResult = await performDirectSearch(extracted.product, city_id, providerIdToSearch, memory, cart_provider_id)
             return Response.json({
               ...searchResult,
               selected_provider_id: providerIdToSearch || selected_provider_id,
