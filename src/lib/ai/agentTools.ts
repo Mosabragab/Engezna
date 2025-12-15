@@ -298,16 +298,16 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'get_delivery_info',
-    description: 'الحصول على معلومات التوصيل (رسوم التوصيل، الحد الأدنى، الوقت المتوقع)',
+    description: 'الحصول على معلومات التوصيل (رسوم التوصيل، الحد الأدنى، الوقت المتوقع) - لو مفيش provider_id هيستخدم تاجر السلة',
     parameters: {
       type: 'object',
       properties: {
         provider_id: {
           type: 'string',
-          description: 'معرف التاجر'
+          description: 'معرف التاجر (اختياري - لو مش موجود هيستخدم تاجر السلة)'
         }
       },
-      required: ['provider_id']
+      required: []
     }
   },
   {
@@ -430,16 +430,16 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   // ─────────────────────────────────────────────────────────────────────────
   {
     name: 'get_provider_promotions',
-    description: 'الحصول على العروض الحالية لتاجر معين',
+    description: 'الحصول على العروض الحالية - لو مفيش provider_id هيستخدم تاجر السلة أو التاجر الحالي',
     parameters: {
       type: 'object',
       properties: {
         provider_id: {
           type: 'string',
-          description: 'معرف التاجر'
+          description: 'معرف التاجر (اختياري - لو مش موجود هيستخدم تاجر السلة)'
         }
       },
-      required: ['provider_id']
+      required: []
     }
   },
   {
@@ -698,15 +698,54 @@ export async function executeAgentTool(
 
           if (error) throw error
 
-          // If no results, include provider info for better response
-          if (!data || data.length === 0) {
-            return {
-              success: true,
-              data: [],
-              message: 'مش لاقي نتائج في المنيو الحالي'
+          // If found results in current provider, return them
+          if (data && data.length > 0) {
+            return { success: true, data }
+          }
+
+          // FALLBACK: No results in current provider, search globally
+          const effectiveCityId = city_id || context.cityId
+
+          // Get active providers in the city
+          let providersQuery = supabase
+            .from('providers')
+            .select('id, name_ar')
+            .in('status', ['open', 'closed', 'temporarily_paused'])
+            .neq('id', effectiveProviderId) // Exclude current provider (already searched)
+
+          if (effectiveCityId) {
+            providersQuery = providersQuery.eq('city_id', effectiveCityId)
+          }
+
+          const { data: otherProviders } = await providersQuery.limit(50)
+
+          if (otherProviders?.length) {
+            const { data: globalData, error: globalError } = await supabase
+              .from('menu_items')
+              .select(`
+                id, name_ar, price, image_url, has_variants, provider_id,
+                providers(id, name_ar),
+                provider_categories!provider_category_id(name_ar)
+              `)
+              .in('provider_id', otherProviders.map(p => p.id))
+              .eq('is_available', true)
+              .or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
+              .limit(10)
+
+            if (!globalError && globalData && globalData.length > 0) {
+              return {
+                success: true,
+                data: globalData,
+                message: 'مش لاقي في التاجر الحالي، بس لقيت في تجار تانيين'
+              }
             }
           }
-          return { success: true, data }
+
+          return {
+            success: true,
+            data: [],
+            message: 'مش لاقي نتائج للمنتج ده'
+          }
         } else {
           // Search across all providers in the city
           const effectiveCityId = city_id || context.cityId
@@ -1255,18 +1294,37 @@ export async function executeAgentTool(
       // 🎁 PROMOTIONS TOOLS
       // ─────────────────────────────────────────────────────────────────────
       case 'get_provider_promotions': {
-        const { provider_id } = params as { provider_id: string }
+        const { provider_id } = params as { provider_id?: string }
+        const effectiveProviderId = getEffectiveProviderId({ provider_id }, context)
+
+        if (!effectiveProviderId) {
+          return {
+            success: true,
+            data: [],
+            message: 'محتاج أعرف المطعم الأول عشان أجيب العروض'
+          }
+        }
+
         const now = new Date().toISOString()
 
         const { data, error } = await supabase
           .from('promotions')
           .select('id, name_ar, name_en, type, discount_value, min_order_amount, max_discount, start_date, end_date')
-          .eq('provider_id', provider_id)
+          .eq('provider_id', effectiveProviderId)
           .eq('is_active', true)
           .lte('start_date', now)
           .gte('end_date', now)
 
         if (error) throw error
+
+        if (!data || data.length === 0) {
+          return {
+            success: true,
+            data: [],
+            message: 'مفيش عروض متاحة حالياً من التاجر ده'
+          }
+        }
+
         return { success: true, data }
       }
 
