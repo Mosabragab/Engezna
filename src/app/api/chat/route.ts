@@ -24,8 +24,6 @@ import {
   getRecommendationHeader,
   getConfirmationHeader,
   randomChoice,
-  getUpsellSuggestions,
-  UPSELL_SUGGESTIONS,
 } from '@/lib/ai/responsePersonality'
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions'
 
@@ -725,25 +723,12 @@ function handleConfirmAdd(memory: ChatMemory): PayloadHandlerResult | null {
     variant_name_ar: pending_variant?.name_ar,
   }
 
-  // Use personality-driven response with smart upselling
+  // Simple confirmation message without upselling
   const baseReply = getAddedToCartMessage(pending_quantity, `${pending_item.name_ar}${variantText}`, totalPrice, providerName)
 
-  // Smart upselling based on item name (Phase 2)
-  const itemNameLower = pending_item.name_ar.toLowerCase()
-  let upsellCategory = 'default'
-  if (itemNameLower.includes('بيتزا') || itemNameLower.includes('pizza')) upsellCategory = 'pizza'
-  else if (itemNameLower.includes('برجر') || itemNameLower.includes('burger')) upsellCategory = 'burger'
-  else if (itemNameLower.includes('فراخ') || itemNameLower.includes('دجاج')) upsellCategory = 'chicken'
-  else if (itemNameLower.includes('باستا') || itemNameLower.includes('مكرونة')) upsellCategory = 'pasta'
-  else if (itemNameLower.includes('قهوة') || itemNameLower.includes('coffee')) upsellCategory = 'coffee'
-
-  const upsellItems = getUpsellSuggestions(upsellCategory)
-  const upsellMessage = randomChoice(UPSELL_SUGGESTIONS)(upsellItems)
-
   return {
-    reply: `${baseReply}\n\n${upsellMessage}`,
+    reply: `${baseReply}\n\nتحب تضيف حاجة تانية؟`,
     quick_replies: [
-      { title: `🥤 ${upsellItems[0]}`, payload: `search:${upsellItems[0]}` },
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
       { title: '➕ أضف صنف آخر', payload: `add_more:${pending_item.provider_id}` },
     ],
