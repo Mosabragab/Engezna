@@ -59,6 +59,63 @@ export function normalizeArabic(text: string | null | undefined): string {
 }
 
 /**
+ * Calculate similarity between two strings (0 to 1)
+ * Uses a simple character-based similarity for Arabic text
+ */
+export function calculateSimilarity(str1: string, str2: string): number {
+  if (!str1 || !str2) return 0
+  if (str1 === str2) return 1
+
+  const s1 = normalizeArabic(str1)
+  const s2 = normalizeArabic(str2)
+
+  if (s1 === s2) return 1
+
+  // If one contains the other, high similarity
+  if (s1.includes(s2) || s2.includes(s1)) {
+    const longer = Math.max(s1.length, s2.length)
+    const shorter = Math.min(s1.length, s2.length)
+    return shorter / longer
+  }
+
+  // Levenshtein distance based similarity
+  const distance = levenshteinDistance(s1, s2)
+  const maxLength = Math.max(s1.length, s2.length)
+
+  return maxLength > 0 ? 1 - distance / maxLength : 0
+}
+
+/**
+ * Calculate Levenshtein distance between two strings
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const m = str1.length
+  const n = str2.length
+
+  // Create distance matrix
+  const dp: number[][] = Array(m + 1)
+    .fill(null)
+    .map(() => Array(n + 1).fill(0))
+
+  // Initialize first row and column
+  for (let i = 0; i <= m; i++) dp[i][0] = i
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+
+  // Fill in the rest of the matrix
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1]
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+      }
+    }
+  }
+
+  return dp[m][n]
+}
+
+/**
  * Check if normalized query matches normalized text
  * @param query - The search query
  * @param text - The text to search in
@@ -77,15 +134,18 @@ export function normalizedIncludes(query: string, text: string): boolean {
 /**
  * Filter array of items by normalized Arabic search
  * Supports multi-word queries - matches if ANY word matches the item
+ * Now includes fuzzy matching for typo tolerance!
  * @param items - Array of items to filter
  * @param query - Search query
  * @param getSearchableText - Function to extract searchable text from item
+ * @param fuzzyThreshold - Minimum similarity score for fuzzy matches (default 0.7)
  * @returns Filtered array of items (sorted by match score - best matches first)
  */
 export function filterByNormalizedArabic<T>(
   items: T[],
   query: string,
-  getSearchableText: (item: T) => string[]
+  getSearchableText: (item: T) => string | string[],
+  fuzzyThreshold: number = 0.6
 ): T[] {
   const normalizedQuery = normalizeArabic(query)
 
@@ -96,14 +156,15 @@ export function filterByNormalizedArabic<T>(
 
   // Score items based on how well they match
   const scoredItems = items.map(item => {
-    const searchableTexts = getSearchableText(item)
+    const searchableResult = getSearchableText(item)
+    const searchableTexts = Array.isArray(searchableResult) ? searchableResult : [searchableResult]
     let score = 0
     let matched = false
 
     for (const text of searchableTexts) {
       const normalizedText = normalizeArabic(text)
 
-      // Full query match gets highest score
+      // Full query exact match gets highest score
       if (normalizedText.includes(normalizedQuery)) {
         score += 100
         matched = true
@@ -113,6 +174,30 @@ export function filterByNormalizedArabic<T>(
           if (normalizedText.includes(word)) {
             score += 10
             matched = true
+          } else {
+            // Fuzzy match: check similarity of each word in the text
+            const textWords = normalizedText.split(/\s+/)
+            for (const textWord of textWords) {
+              const similarity = calculateSimilarity(word, textWord)
+              if (similarity >= fuzzyThreshold) {
+                score += Math.round(similarity * 10)
+                matched = true
+                console.log(`🔍 [FUZZY MATCH] "${word}" ~ "${textWord}" (${(similarity * 100).toFixed(0)}%)`)
+              }
+            }
+          }
+        }
+      }
+
+      // Also check overall similarity for single-word queries
+      if (!matched && queryWords.length === 1) {
+        const textWords = normalizedText.split(/\s+/)
+        for (const textWord of textWords) {
+          const similarity = calculateSimilarity(normalizedQuery, textWord)
+          if (similarity >= fuzzyThreshold) {
+            score += Math.round(similarity * 50)
+            matched = true
+            console.log(`🔍 [FUZZY MATCH] "${normalizedQuery}" ~ "${textWord}" (${(similarity * 100).toFixed(0)}%)`)
           }
         }
       }
