@@ -79,6 +79,7 @@ type CartState = {
   // Cancel pending item
   cancelProviderSwitch: () => void
   removeItem: (menuItemId: string, variantId?: string) => void
+  removeItemCompletely: (menuItemId: string, variantId?: string) => void // Removes entire item regardless of quantity
   updateQuantity: (menuItemId: string, quantity: number, variantId?: string) => void
   clearCart: () => void
   getItemQuantity: (menuItemId: string, variantId?: string) => number
@@ -175,6 +176,21 @@ export const useCart = create<CartState>()(
             }
           }
 
+          const newCart = state.cart.filter(
+            (item) => getCartItemKey(item.menuItem.id, item.selectedVariant?.id) !== itemKey
+          )
+
+          return {
+            cart: newCart,
+            provider: newCart.length === 0 ? null : state.provider,
+          }
+        })
+      },
+
+      // Removes entire item from cart regardless of quantity (used by AI assistant)
+      removeItemCompletely: (menuItemId, variantId) => {
+        const itemKey = getCartItemKey(menuItemId, variantId)
+        set((state) => {
           const newCart = state.cart.filter(
             (item) => getCartItemKey(item.menuItem.id, item.selectedVariant?.id) !== itemKey
           )

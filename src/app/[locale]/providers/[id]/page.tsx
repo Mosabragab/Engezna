@@ -45,6 +45,7 @@ type Provider = {
   estimated_delivery_time_min: number
   status: string
   commission_rate: number
+  city_id: string | null
 }
 
 type ProductVariant = {
@@ -833,20 +834,17 @@ export default function ProviderDetailPage() {
       {cartItemCount === 0 && <VoiceOrderFAB />}
 
       {/* AI Smart Assistant - Always available */}
-      {cartItemCount > 0 && (
-        <>
-          <ChatFAB
-            onClick={() => setIsChatOpen(!isChatOpen)}
-            isOpen={isChatOpen}
-          />
-          <SmartAssistant
-            isOpen={isChatOpen}
-            onClose={() => setIsChatOpen(false)}
-            userId={userId}
-            cityId={userCityId || guestCityId || undefined}
-          />
-        </>
-      )}
+      <ChatFAB
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        isOpen={isChatOpen}
+      />
+      <SmartAssistant
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        userId={userId}
+        cityId={userCityId || guestCityId || provider?.city_id || undefined}
+        providerContext={provider ? { id: provider.id, name: provider.name_ar } : undefined}
+      />
 
       {/* Product Detail Modal */}
       {selectedProductForDetail && (

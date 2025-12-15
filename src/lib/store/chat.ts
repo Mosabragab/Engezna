@@ -77,8 +77,40 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
-// Create welcome message
-function createWelcomeMessage(customerName?: string): StoredChatMessage {
+// Provider context for customized welcome messages
+interface ProviderContext {
+  id: string
+  name: string
+}
+
+// Create welcome message - customized based on context
+function createWelcomeMessage(customerName?: string, providerContext?: ProviderContext): StoredChatMessage {
+  // When on a provider page, show provider-specific welcome
+  if (providerContext) {
+    const greeting = customerName
+      ? `أهلاً ${customerName}! 👋`
+      : 'أهلاً بيك! 👋'
+
+    return {
+      id: 'welcome',
+      role: 'assistant',
+      content: `${greeting}\nأهلاً بيك في ${providerContext.name}! 🏪\n\nممكن أساعدك تلاقي أي صنف أو تضيفه للسلة. اكتبلي اللي نفسك فيه!`,
+      timestamp: new Date(),
+      suggestions: [
+        '📋 شوف المنيو',
+        '🔥 العروض',
+        '⭐ الأكتر طلباً',
+      ],
+      // Quick replies for provider page context
+      quickReplies: [
+        { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${providerContext.id}` },
+        { title: '🔥 العروض', payload: 'show_promotions' },
+        { title: '⭐ الأكتر طلباً', payload: 'show_popular' },
+      ],
+    }
+  }
+
+  // Default welcome message (no provider context)
   const greeting = customerName
     ? `أهلاً ${customerName}! 👋`
     : 'أهلاً بيك! 👋'

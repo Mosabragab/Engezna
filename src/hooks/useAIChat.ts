@@ -44,7 +44,7 @@ interface QuickReply {
 }
 
 interface CartAction {
-  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' | 'CLEAR_CART' | 'REMOVE_ITEM' // CLEAR_AND_ADD clears cart first, then adds; CLEAR_CART just clears; REMOVE_ITEM removes specific item
+  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' | 'CLEAR_CART' | 'REMOVE_ITEM' | 'UPDATE_QUANTITY'
   provider_id: string
   menu_item_id: string
   menu_item_name_ar: string
@@ -52,6 +52,7 @@ interface CartAction {
   unit_price: number
   variant_id?: string
   variant_name_ar?: string
+  quantity_change?: number // For UPDATE_QUANTITY: +2 to add, -1 to remove
 }
 
 interface ChatAPIResponse {
@@ -71,6 +72,10 @@ export interface UseAIChatOptions {
   cityId?: string
   governorateId?: string
   customerName?: string
+  providerContext?: {
+    id: string
+    name: string
+  }
 }
 
 export interface UseAIChatReturn {
@@ -92,7 +97,7 @@ export interface UseAIChatReturn {
 }
 
 export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
-  const { userId, cityId, governorateId, customerName } = options
+  const { userId, cityId, governorateId, customerName, providerContext } = options
 
   // Use Zustand store for persistent messages
   const {
@@ -136,13 +141,13 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       // Check messages from store after rehydration
       const currentMessages = useChatStore.getState().messages
       if (currentMessages.length === 0) {
-        setMessages([createWelcomeMessage(customerName)])
+        setMessages([createWelcomeMessage(customerName, providerContext)])
       }
     }
-  }, [isHydrated, customerName, setMessages])
+  }, [isHydrated, customerName, providerContext, setMessages])
 
   // Cart store
-  const { addItem: cartAddItem, cart: cartItems, clearCart, removeItem: cartRemoveItem, provider: cartProvider } = useCart()
+  const { addItem: cartAddItem, cart: cartItems, clearCart, removeItem: cartRemoveItem, removeItemCompletely: cartRemoveItemCompletely, updateQuantity: cartUpdateQuantity, provider: cartProvider } = useCart()
 
   // Cleanup on unmount
   useEffect(() => {
@@ -221,12 +226,74 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.reply || 'فشل في الاتصال بالسيرفر')
+        const errorText = await response.text().catch(() => '')
+        throw new Error('فشل في الاتصال بالسيرفر')
       }
 
-      // Handle response (new non-streaming format)
-      const data: ChatAPIResponse = await response.json()
+      // Handle SSE streaming response
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error('فشل في قراءة الرد')
+      }
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let data: ChatAPIResponse = { reply: '' }
+      let fullContent = ''
+
+      setIsStreaming(true)
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Parse SSE events from buffer
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // Keep incomplete line in buffer
+
+        let currentEvent = ''
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7)
+          } else if (line.startsWith('data: ')) {
+            const jsonData = line.slice(6)
+            try {
+              const parsed = JSON.parse(jsonData)
+
+              if (currentEvent === 'content' && parsed.chunk) {
+                // Stream content chunk
+                fullContent += parsed.chunk
+                setStreamingContent(fullContent)
+              } else if (currentEvent === 'message') {
+                // Final message with all data
+                data = {
+                  reply: parsed.content || fullContent,
+                  quick_replies: parsed.quick_replies,
+                  navigate_to: parsed.navigate_to,
+                  cart_action: parsed.cart_action,
+                }
+              } else if (currentEvent === 'error') {
+                throw new Error(parsed.error || 'حصل خطأ')
+              }
+            } catch (e) {
+              // Ignore JSON parse errors for incomplete data
+              if (currentEvent === 'error') {
+                throw new Error('حصل خطأ في الرد')
+              }
+            }
+          }
+        }
+      }
+
+      // If we got streaming content but no final message, use the streamed content
+      if (!data.reply && fullContent) {
+        data.reply = fullContent
+      }
+
+      setIsStreaming(false)
+      setStreamingContent('')
 
       // Update conversation state from response
       // Always update these values (even if undefined to clear them)
@@ -258,6 +325,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         }
 
         // Handle REMOVE_ITEM - find and remove item by name
+        // Supports partial removal: action.quantity > 0 means remove that many, 0 or >= current means remove all
         if (action.type === 'REMOVE_ITEM') {
           // Find the item in cart by name
           const itemToRemove = cartItems.find(item =>
@@ -266,7 +334,47 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
             action.menu_item_name_ar.includes(item.menuItem.name_ar)
           )
           if (itemToRemove) {
-            cartRemoveItem(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
+            const removeQty = action.quantity || 0
+            const currentQty = itemToRemove.quantity
+
+            // If quantity specified and less than current, do partial removal
+            if (removeQty > 0 && removeQty < currentQty) {
+              // Decrement by the specified amount using updateQuantity
+              const newQty = currentQty - removeQty
+              cartUpdateQuantity(itemToRemove.menuItem.id, newQty, itemToRemove.selectedVariant?.id)
+            } else {
+              // Remove completely
+              cartRemoveItemCompletely(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
+            }
+          }
+          return
+        }
+
+        // Handle UPDATE_QUANTITY - update quantity of an item
+        if (action.type === 'UPDATE_QUANTITY') {
+          const itemToUpdate = cartItems.find(item =>
+            item.menuItem.name_ar === action.menu_item_name_ar ||
+            item.menuItem.name_ar.includes(action.menu_item_name_ar) ||
+            action.menu_item_name_ar.includes(item.menuItem.name_ar)
+          )
+          if (itemToUpdate) {
+            let newQty: number
+            if (action.quantity > 0) {
+              // Absolute quantity specified
+              newQty = action.quantity
+            } else if (action.quantity_change) {
+              // Relative change specified
+              newQty = itemToUpdate.quantity + action.quantity_change
+            } else {
+              return // No change specified
+            }
+
+            if (newQty <= 0) {
+              // Remove item if quantity becomes 0 or negative
+              cartRemoveItemCompletely(itemToUpdate.menuItem.id, itemToUpdate.selectedVariant?.id)
+            } else {
+              cartUpdateQuantity(itemToUpdate.menuItem.id, newQty, itemToUpdate.selectedVariant?.id)
+            }
           }
           return
         }
@@ -368,7 +476,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       setIsStreaming(false)
       setStreamingContent('')
     }
-  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartRemoveItem, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
+  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartRemoveItem, cartRemoveItemCompletely, cartUpdateQuantity, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
 
   /**
    * Send quick action
@@ -504,11 +612,74 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.reply || 'فشل في الاتصال بالسيرفر')
+        const errorText = await response.text().catch(() => '')
+        throw new Error('فشل في الاتصال بالسيرفر')
       }
 
-      const data: ChatAPIResponse = await response.json()
+      // Handle SSE streaming response
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error('فشل في قراءة الرد')
+      }
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let data: ChatAPIResponse = { reply: '' }
+      let fullContent = ''
+
+      setIsStreaming(true)
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Parse SSE events from buffer
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // Keep incomplete line in buffer
+
+        let currentEvent = ''
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7)
+          } else if (line.startsWith('data: ')) {
+            const jsonData = line.slice(6)
+            try {
+              const parsed = JSON.parse(jsonData)
+
+              if (currentEvent === 'content' && parsed.chunk) {
+                // Stream content chunk
+                fullContent += parsed.chunk
+                setStreamingContent(fullContent)
+              } else if (currentEvent === 'message') {
+                // Final message with all data
+                data = {
+                  reply: parsed.content || fullContent,
+                  quick_replies: parsed.quick_replies,
+                  navigate_to: parsed.navigate_to,
+                  cart_action: parsed.cart_action,
+                }
+              } else if (currentEvent === 'error') {
+                throw new Error(parsed.error || 'حصل خطأ')
+              }
+            } catch (e) {
+              // Ignore JSON parse errors for incomplete data
+              if (currentEvent === 'error') {
+                throw new Error('حصل خطأ في الرد')
+              }
+            }
+          }
+        }
+      }
+
+      // If we got streaming content but no final message, use the streamed content
+      if (!data.reply && fullContent) {
+        data.reply = fullContent
+      }
+
+      setIsStreaming(false)
+      setStreamingContent('')
 
       // Update conversation state from response
       // Always update these values (even if undefined to clear them)
@@ -540,6 +711,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         }
 
         // Handle REMOVE_ITEM - find and remove item by name
+        // Supports partial removal: action.quantity > 0 means remove that many, 0 or >= current means remove all
         if (action.type === 'REMOVE_ITEM') {
           const itemToRemove = cartItems.find(item =>
             item.menuItem.name_ar === action.menu_item_name_ar ||
@@ -547,7 +719,42 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
             action.menu_item_name_ar.includes(item.menuItem.name_ar)
           )
           if (itemToRemove) {
-            cartRemoveItem(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
+            const removeQty = action.quantity || 0
+            const currentQty = itemToRemove.quantity
+
+            // If quantity specified and less than current, do partial removal
+            if (removeQty > 0 && removeQty < currentQty) {
+              const newQty = currentQty - removeQty
+              cartUpdateQuantity(itemToRemove.menuItem.id, newQty, itemToRemove.selectedVariant?.id)
+            } else {
+              cartRemoveItemCompletely(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
+            }
+          }
+          return
+        }
+
+        // Handle UPDATE_QUANTITY - update quantity of an item
+        if (action.type === 'UPDATE_QUANTITY') {
+          const itemToUpdate = cartItems.find(item =>
+            item.menuItem.name_ar === action.menu_item_name_ar ||
+            item.menuItem.name_ar.includes(action.menu_item_name_ar) ||
+            action.menu_item_name_ar.includes(item.menuItem.name_ar)
+          )
+          if (itemToUpdate) {
+            let newQty: number
+            if (action.quantity > 0) {
+              newQty = action.quantity
+            } else if (action.quantity_change) {
+              newQty = itemToUpdate.quantity + action.quantity_change
+            } else {
+              return
+            }
+
+            if (newQty <= 0) {
+              cartRemoveItemCompletely(itemToUpdate.menuItem.id, itemToUpdate.selectedVariant?.id)
+            } else {
+              cartUpdateQuantity(itemToUpdate.menuItem.id, newQty, itemToUpdate.selectedVariant?.id)
+            }
           }
           return
         }
@@ -642,7 +849,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartRemoveItem, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setSelectedCategory, setMemory])
+  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartRemoveItem, cartRemoveItemCompletely, cartUpdateQuantity, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setSelectedCategory, setMemory])
 
   /**
    * Add product to cart from chat
@@ -698,10 +905,10 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     abortControllerRef.current?.abort()
     // Use store's clearMessages which resets everything and adds welcome message
     clearMessages()
-    setMessages([createWelcomeMessage(customerName)])
+    setMessages([createWelcomeMessage(customerName, providerContext)])
     setError(null)
     setStreamingContent('')
-  }, [customerName, clearMessages, setMessages])
+  }, [customerName, providerContext, clearMessages, setMessages])
 
   /**
    * Retry last message
