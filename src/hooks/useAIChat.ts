@@ -142,7 +142,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
   }, [isHydrated, customerName, setMessages])
 
   // Cart store
-  const { addItem: cartAddItem, cart: cartItems, clearCart, removeItem: cartRemoveItem, provider: cartProvider } = useCart()
+  const { addItem: cartAddItem, cart: cartItems, clearCart, removeItem: cartRemoveItem, removeItemCompletely: cartRemoveItemCompletely, provider: cartProvider } = useCart()
 
   // Cleanup on unmount
   useEffect(() => {
@@ -257,7 +257,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
           return
         }
 
-        // Handle REMOVE_ITEM - find and remove item by name
+        // Handle REMOVE_ITEM - find and remove entire item by name (all quantity)
         if (action.type === 'REMOVE_ITEM') {
           // Find the item in cart by name
           const itemToRemove = cartItems.find(item =>
@@ -266,7 +266,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
             action.menu_item_name_ar.includes(item.menuItem.name_ar)
           )
           if (itemToRemove) {
-            cartRemoveItem(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
+            // Use removeItemCompletely to remove all quantity, not just decrement by 1
+            cartRemoveItemCompletely(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
           }
           return
         }
@@ -368,7 +369,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       setIsStreaming(false)
       setStreamingContent('')
     }
-  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartRemoveItem, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
+  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartRemoveItem, cartRemoveItemCompletely, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setMemory])
 
   /**
    * Send quick action
@@ -539,7 +540,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
           return
         }
 
-        // Handle REMOVE_ITEM - find and remove item by name
+        // Handle REMOVE_ITEM - find and remove entire item by name (all quantity)
         if (action.type === 'REMOVE_ITEM') {
           const itemToRemove = cartItems.find(item =>
             item.menuItem.name_ar === action.menu_item_name_ar ||
@@ -547,7 +548,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
             action.menu_item_name_ar.includes(item.menuItem.name_ar)
           )
           if (itemToRemove) {
-            cartRemoveItem(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
+            // Use removeItemCompletely to remove all quantity, not just decrement by 1
+            cartRemoveItemCompletely(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
           }
           return
         }
@@ -642,7 +644,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartRemoveItem, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setSelectedCategory, setMemory])
+  }, [isLoading, messages, userId, cityId, selectedProviderId, selectedProviderCategory, selectedCategory, memory, cartAddItem, cartRemoveItem, cartRemoveItemCompletely, cartItems, cartProvider, clearCart, addMessage, setSelectedProviderId, setSelectedProviderCategory, setSelectedCategory, setMemory])
 
   /**
    * Add product to cart from chat
