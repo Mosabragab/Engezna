@@ -854,23 +854,29 @@ async function performDirectSearch(
     const normalizedQuery = normalizeArabic(searchQuery)
     logNormalization('performDirectSearch (provider)', searchQuery, normalizedQuery)
 
-    // Fetch all available items and filter with normalization
+    // Fetch all available items WITH category name for better matching
     const { data: allItems } = await supabase
       .from('menu_items')
-      .select('id, name_ar, price, has_variants')
+      .select('id, name_ar, price, has_variants, provider_categories(name_ar)')
       .eq('provider_id', selectedProviderId)
       .eq('is_available', true)
       .or('has_stock.eq.true,has_stock.is.null')
       .limit(100)
 
-    // Apply Arabic normalization filter (handles سلطه↔سلطة, كفته↔كفتة, etc.)
-    let filteredItems = filterByNormalizedArabic(allItems || [], searchQuery, (item) => [item.name_ar])
+    // Apply Arabic normalization filter - search in BOTH product name AND category name
+    let filteredItems = filterByNormalizedArabic(allItems || [], searchQuery, (item) => {
+      // provider_categories can be an array or object depending on the relationship
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const categories = item.provider_categories as any
+      const categoryName = Array.isArray(categories) ? categories[0]?.name_ar : categories?.name_ar
+      return categoryName ? [item.name_ar, categoryName] : [item.name_ar]
+    })
 
     // If normalization didn't find anything, try exact ilike as fallback
     if (filteredItems.length === 0) {
       const { data: exactItems } = await supabase
         .from('menu_items')
-        .select('id, name_ar, price, has_variants')
+        .select('id, name_ar, price, has_variants, provider_categories(name_ar)')
         .eq('provider_id', selectedProviderId)
         .eq('is_available', true)
         .or('has_stock.eq.true,has_stock.is.null')
@@ -934,23 +940,29 @@ async function performDirectSearch(
     if (providers && providers.length > 0) {
       const providerIds = providers.map(p => p.id)
 
-      // Fetch more items for normalization filtering
+      // Fetch more items WITH category name for better matching
       const { data: allItems } = await supabase
         .from('menu_items')
-        .select('id, name_ar, price, provider_id, providers(name_ar)')
+        .select('id, name_ar, price, provider_id, providers(name_ar), provider_categories(name_ar)')
         .in('provider_id', providerIds)
         .eq('is_available', true)
         .or('has_stock.eq.true,has_stock.is.null')
         .limit(200)
 
-      // Apply Arabic normalization filter (handles سلطه↔سلطة, كفته↔كفتة, etc.)
-      let filteredItems = filterByNormalizedArabic(allItems || [], searchQuery, (item) => [item.name_ar])
+      // Apply Arabic normalization filter - search in BOTH product name AND category name
+      let filteredItems = filterByNormalizedArabic(allItems || [], searchQuery, (item) => {
+        // provider_categories can be an array or object depending on the relationship
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const categories = item.provider_categories as any
+        const categoryName = Array.isArray(categories) ? categories[0]?.name_ar : categories?.name_ar
+        return categoryName ? [item.name_ar, categoryName] : [item.name_ar]
+      })
 
       // If normalization didn't find enough, try exact ilike as fallback
       if (filteredItems.length === 0) {
         const { data: exactItems } = await supabase
           .from('menu_items')
-          .select('id, name_ar, price, provider_id, providers(name_ar)')
+          .select('id, name_ar, price, provider_id, providers(name_ar), provider_categories(name_ar)')
           .in('provider_id', providerIds)
           .eq('is_available', true)
           .or('has_stock.eq.true,has_stock.is.null')
