@@ -71,6 +71,10 @@ export interface UseAIChatOptions {
   cityId?: string
   governorateId?: string
   customerName?: string
+  providerContext?: {
+    id: string
+    name: string
+  }
 }
 
 export interface UseAIChatReturn {
@@ -92,7 +96,7 @@ export interface UseAIChatReturn {
 }
 
 export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
-  const { userId, cityId, governorateId, customerName } = options
+  const { userId, cityId, governorateId, customerName, providerContext } = options
 
   // Use Zustand store for persistent messages
   const {
@@ -136,10 +140,10 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
       // Check messages from store after rehydration
       const currentMessages = useChatStore.getState().messages
       if (currentMessages.length === 0) {
-        setMessages([createWelcomeMessage(customerName)])
+        setMessages([createWelcomeMessage(customerName, providerContext)])
       }
     }
-  }, [isHydrated, customerName, setMessages])
+  }, [isHydrated, customerName, providerContext, setMessages])
 
   // Cart store
   const { addItem: cartAddItem, cart: cartItems, clearCart, removeItem: cartRemoveItem, removeItemCompletely: cartRemoveItemCompletely, updateQuantity: cartUpdateQuantity, provider: cartProvider } = useCart()
@@ -720,10 +724,10 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
     abortControllerRef.current?.abort()
     // Use store's clearMessages which resets everything and adds welcome message
     clearMessages()
-    setMessages([createWelcomeMessage(customerName)])
+    setMessages([createWelcomeMessage(customerName, providerContext)])
     setError(null)
     setStreamingContent('')
-  }, [customerName, clearMessages, setMessages])
+  }, [customerName, providerContext, clearMessages, setMessages])
 
   /**
    * Retry last message

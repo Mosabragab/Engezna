@@ -26,6 +26,10 @@ interface SmartAssistantProps {
   cityId?: string
   governorateId?: string
   customerName?: string // Can be passed directly if already available
+  providerContext?: {    // Provider context when opened from provider page
+    id: string
+    name: string
+  }
 }
 
 export function SmartAssistant({
@@ -35,6 +39,7 @@ export function SmartAssistant({
   cityId,
   governorateId,
   customerName: propCustomerName,
+  providerContext,
 }: SmartAssistantProps) {
   const [inputValue, setInputValue] = useState('')
   const [customerName, setCustomerName] = useState<string | undefined>(propCustomerName)
@@ -78,7 +83,7 @@ export function SmartAssistant({
     addToCartFromChat,
     clearChat,
     clearPendingNavigation,
-  } = useAIChat({ userId, cityId, governorateId, customerName })
+  } = useAIChat({ userId, cityId, governorateId, customerName, providerContext })
 
   // Handle navigation requests from chat
   useEffect(() => {

@@ -843,6 +843,7 @@ export default function ProviderDetailPage() {
         onClose={() => setIsChatOpen(false)}
         userId={userId}
         cityId={userCityId || guestCityId || provider?.city_id || undefined}
+        providerContext={provider ? { id: provider.id, name: provider.name_ar } : undefined}
       />
 
       {/* Product Detail Modal */}
