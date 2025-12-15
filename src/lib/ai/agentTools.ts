@@ -429,17 +429,17 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   // 🎁 PROMOTIONS TOOLS
   // ─────────────────────────────────────────────────────────────────────────
   {
-    name: 'get_provider_promotions',
-    description: 'الحصول على العروض الحالية لتاجر معين',
+    name: 'get_promotions',
+    description: 'الحصول على العروض الحالية - لو مفيش provider_id هيجيب كل العروض المتاحة',
     parameters: {
       type: 'object',
       properties: {
         provider_id: {
           type: 'string',
-          description: 'معرف التاجر'
+          description: 'معرف التاجر (اختياري - لو مش موجود هيجيب كل العروض)'
         }
       },
-      required: ['provider_id']
+      required: []
     }
   },
   {
@@ -1311,20 +1311,58 @@ export async function executeAgentTool(
       // ─────────────────────────────────────────────────────────────────────
       // 🎁 PROMOTIONS TOOLS
       // ─────────────────────────────────────────────────────────────────────
-      case 'get_provider_promotions': {
-        const { provider_id } = params as { provider_id: string }
+      case 'get_promotions': {
+        const { provider_id } = params as { provider_id?: string }
+        const effectiveProviderId = getEffectiveProviderId({ provider_id }, context)
         const now = new Date().toISOString()
 
+        // If we have a provider (from param, cart, or page context), get their promotions + general promotions
+        if (effectiveProviderId) {
+          const { data, error } = await supabase
+            .from('promotions')
+            .select(`
+              id, name_ar, name_en, type, discount_value, discount_type,
+              min_order_amount, max_discount, start_date, end_date,
+              provider_id, providers(name_ar)
+            `)
+            .eq('is_active', true)
+            .lte('start_date', now)
+            .gte('end_date', now)
+            .or(`provider_id.eq.${effectiveProviderId},provider_id.is.null`)
+            .order('discount_value', { ascending: false })
+
+          if (error) throw error
+          return {
+            success: true,
+            data,
+            message: data?.length
+              ? `لقيت ${data.length} عرض متاح`
+              : 'مفيش عروض متاحة دلوقتي'
+          }
+        }
+
+        // No provider context - get all active promotions
         const { data, error } = await supabase
           .from('promotions')
-          .select('id, name_ar, name_en, type, discount_value, min_order_amount, max_discount, start_date, end_date')
-          .eq('provider_id', provider_id)
+          .select(`
+            id, name_ar, name_en, type, discount_value, discount_type,
+            min_order_amount, max_discount, start_date, end_date,
+            provider_id, providers(name_ar)
+          `)
           .eq('is_active', true)
           .lte('start_date', now)
           .gte('end_date', now)
+          .order('discount_value', { ascending: false })
+          .limit(20)
 
         if (error) throw error
-        return { success: true, data }
+        return {
+          success: true,
+          data,
+          message: data?.length
+            ? `لقيت ${data.length} عرض متاح`
+            : 'مفيش عروض متاحة دلوقتي'
+        }
       }
 
       case 'validate_promo_code': {
