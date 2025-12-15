@@ -83,55 +83,82 @@ interface ProviderContext {
   name: string
 }
 
-// Create welcome message - customized based on context
+// Get time-based greeting (synced with agent personality)
+function getTimeBasedGreeting(): string {
+  const hour = new Date().getHours()
+
+  if (hour >= 5 && hour < 12) {
+    return 'صباح الفل! ☀️'
+  } else if (hour >= 12 && hour < 17) {
+    return 'أهلاً! 🌤️'
+  } else if (hour >= 17 && hour < 21) {
+    return 'مساء الخير! 🌆'
+  } else {
+    return 'أهلاً بيك! 🌙'
+  }
+}
+
+// Get time-based suggestion
+function getTimeSuggestion(): string {
+  const hour = new Date().getHours()
+
+  if (hour >= 5 && hour < 12) {
+    return 'فطار ولا قهوة الصبح؟'
+  } else if (hour >= 12 && hour < 17) {
+    return 'وقت الغدا! جعان؟'
+  } else if (hour >= 17 && hour < 21) {
+    return 'عشا ولا حاجة خفيفة؟'
+  } else {
+    return 'سهران؟ عايز تسالي ولا حاجة تاكلها؟'
+  }
+}
+
+// Create welcome message - customized based on context (Ahmad personality)
 function createWelcomeMessage(customerName?: string, providerContext?: ProviderContext): StoredChatMessage {
+  const timeGreeting = getTimeBasedGreeting()
+  const timeSuggestion = getTimeSuggestion()
+
   // When on a provider page, show provider-specific welcome
   if (providerContext) {
-    const greeting = customerName
-      ? `أهلاً ${customerName}! 👋`
-      : 'أهلاً بيك! 👋'
+    const nameGreeting = customerName ? ` يا ${customerName}` : ''
 
     return {
       id: 'welcome',
       role: 'assistant',
-      content: `${greeting}\nأهلاً بيك في ${providerContext.name}! 🏪\n\nممكن أساعدك تلاقي أي صنف أو تضيفه للسلة. اكتبلي اللي نفسك فيه!`,
+      content: `${timeGreeting} أهلاً بيك${nameGreeting} في ${providerContext.name}! 😊\n\nأنا أحمد من إنجزنا، معاك أساعدك تطلب.\nقولي عايز ايه وأنا أجيبهولك! 🍕`,
       timestamp: new Date(),
       suggestions: [
-        '📋 شوف المنيو',
+        '📋 ورّيني المنيو',
         '🔥 العروض',
         '⭐ الأكتر طلباً',
       ],
       // Quick replies for provider page context
       quickReplies: [
-        { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${providerContext.id}` },
-        { title: '🔥 العروض', payload: 'show_promotions' },
-        { title: '⭐ الأكتر طلباً', payload: 'show_popular' },
+        { title: '📋 ورّيني المنيو', payload: 'ورّيني المنيو' },
+        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
+        { title: '⭐ الأكتر طلباً', payload: 'ايه أكتر حاجة الناس بتطلبها؟' },
       ],
     }
   }
 
-  // Default welcome message (no provider context)
-  const greeting = customerName
-    ? `أهلاً ${customerName}! 👋`
-    : 'أهلاً بيك! 👋'
+  // Default welcome message (no provider context) - Ahmad personality
+  const nameGreeting = customerName ? ` يا ${customerName}` : ''
 
   return {
     id: 'welcome',
     role: 'assistant',
-    content: `${greeting}\nأنا مساعد إنجزنا الذكي، معاك عشان أساعدك تطلب أكلك المفضل بأسرع وقت.\n\nعايز تطلب منين النهارده؟ 🏪`,
+    content: `${timeGreeting} أهلاً بيك${nameGreeting} في إنجزنا! 😊\n\nأنا أحمد، ${timeSuggestion}\nقولي عايز تطلب ايه وأنا تحت أمرك!`,
     timestamp: new Date(),
     suggestions: [
-      '🍽️ مطاعم وكافيهات',
-      '🛒 سوبر ماركت',
-      '🍰 البن والحلويات',
-      '🥦 خضروات وفواكه',
+      '🍔 عايز آكل',
+      '📦 طلباتي',
+      '🔥 العروض',
     ],
-    // Quick replies with payloads for direct handling
+    // Quick replies with natural language payloads
     quickReplies: [
-      { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
-      { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
-      { title: '🍰 البن والحلويات', payload: 'category:coffee_patisserie' },
-      { title: '🥦 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+      { title: '🍔 عايز آكل', payload: 'عايز أطلب أكل' },
+      { title: '📦 طلباتي', payload: 'فين طلباتي؟' },
+      { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
     ],
   }
 }
