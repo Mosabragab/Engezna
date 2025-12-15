@@ -4,12 +4,13 @@
  * Uses OpenAI GPT-4o-mini with Function Calling for an AI Agent that can
  * interact with the database and help customers with their orders.
  *
- * @version 2.0.0 - Complete rewrite using AI Agent architecture
+ * @version 2.1.0 - Added Customer Memory for personalized conversations
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { runAgentStream, type AgentStreamEvent, type AgentMessage } from '@/lib/ai/agentHandler'
 import type { AgentContext } from '@/lib/ai/agentPrompt'
+import { getCustomerMemory } from '@/lib/ai/customerMemory'
 
 // =============================================================================
 // TYPES
@@ -76,7 +77,12 @@ export async function POST(request: NextRequest) {
       (sum, item) => sum + (item.unit_price * item.quantity), 0
     ) || 0
 
-    // Build agent context
+    // Fetch customer memory for personalization (only for logged-in users)
+    const customerMemory = body.customer_id
+      ? await getCustomerMemory(body.customer_id)
+      : null
+
+    // Build agent context with customer memory
     const context: AgentContext = {
       customerId: body.customer_id,
       providerId: body.selected_provider_id,
@@ -95,7 +101,9 @@ export async function POST(request: NextRequest) {
         price: item.unit_price
       })),
       cartProviderId: body.cart_provider_id,
-      cartTotal: cartTotal
+      cartTotal: cartTotal,
+      // Customer memory for personalization
+      customerMemory: customerMemory || undefined
     }
 
     // Convert messages to agent format
@@ -228,7 +236,12 @@ export async function PUT(request: NextRequest) {
       (sum, item) => sum + (item.unit_price * item.quantity), 0
     ) || 0
 
-    // Build context
+    // Fetch customer memory for personalization (only for logged-in users)
+    const customerMemory = body.customer_id
+      ? await getCustomerMemory(body.customer_id)
+      : null
+
+    // Build context with customer memory
     const context: AgentContext = {
       customerId: body.customer_id,
       providerId: body.selected_provider_id,
@@ -247,7 +260,9 @@ export async function PUT(request: NextRequest) {
         price: item.unit_price
       })),
       cartProviderId: body.cart_provider_id,
-      cartTotal: cartTotal
+      cartTotal: cartTotal,
+      // Customer memory for personalization
+      customerMemory: customerMemory || undefined
     }
 
     // Convert messages

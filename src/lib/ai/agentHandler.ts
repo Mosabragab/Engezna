@@ -108,14 +108,16 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
   // Run the agent loop (max 5 iterations to prevent infinite loops)
   for (let iteration = 0; iteration < 5; iteration++) {
     try {
-      // Call OpenAI
+      // Call OpenAI with optimized settings for natural conversation
       const completion = await getOpenAIClient().chat.completions.create({
-        model: 'gpt-4o-mini', // Fast and cost-effective
+        model: 'gpt-4o-mini', // Can upgrade to 'gpt-4o' for better conversation quality
         messages: openaiMessages,
         tools: tools.length > 0 ? tools : undefined,
         tool_choice: tools.length > 0 ? 'auto' : undefined,
-        temperature: 0.7,
-        max_tokens: 1000
+        temperature: 0.85, // Higher for more natural, varied responses
+        max_tokens: 1500,  // More room for detailed, helpful responses
+        presence_penalty: 0.1, // Slight penalty to reduce repetition
+        frequency_penalty: 0.1 // Encourage diverse vocabulary
       })
 
       const choice = completion.choices[0]
@@ -185,7 +187,7 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
       })
 
       // Parse the response to extract structured data
-      finalResponse = parseAgentOutput(content, turns)
+      finalResponse = parseAgentOutput(content, turns, context.providerId || context.cartProviderId)
 
       // Stream done event
       onStream?.({
@@ -245,13 +247,16 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
   // Run the agent loop
   for (let iteration = 0; iteration < 5; iteration++) {
     try {
+      // Streaming with optimized settings for natural conversation
       const stream = await getOpenAIClient().chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o-mini', // Can upgrade to 'gpt-4o' for better conversation quality
         messages: openaiMessages,
         tools: tools.length > 0 ? tools : undefined,
         tool_choice: tools.length > 0 ? 'auto' : undefined,
-        temperature: 0.7,
-        max_tokens: 1000,
+        temperature: 0.85, // Higher for more natural, varied responses
+        max_tokens: 1500,  // More room for detailed, helpful responses
+        presence_penalty: 0.1, // Slight penalty to reduce repetition
+        frequency_penalty: 0.1, // Encourage diverse vocabulary
         stream: true
       })
 
@@ -354,7 +359,7 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
       }
 
       // Final response
-      const finalResponse = parseAgentOutput(accumulatedContent, turns)
+      const finalResponse = parseAgentOutput(accumulatedContent, turns, context.providerId || context.cartProviderId)
 
       yield {
         type: 'done',
@@ -394,19 +399,300 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
 // =============================================================================
 
 /**
+ * Smart Quick Reply Generator
+ *
+ * Analyzes the AI response content and tool results to generate
+ * contextually relevant quick replies. More intelligent than hardcoded logic.
+ */
+function generateDynamicQuickReplies(
+  content: string,
+  hasCartAction: boolean,
+  hasProducts: boolean,
+  productId?: string,
+  toolsUsed?: string[],
+  providerId?: string
+): { suggestions: string[]; quickReplies: AgentResponse['quickReplies'] } {
+
+  // Helper: create menu navigation payload
+  const menuPayload = providerId
+    ? `navigate:/ar/providers/${providerId}`
+    : 'ورّيني المنيو'
+
+  // Analyze content for intent signals
+  const contentLower = content.toLowerCase()
+
+  // =================================================================
+  // INTENT DETECTION: Analyze what the AI said to determine best actions
+  // =================================================================
+
+  // Check if AI is asking about size/variant selection
+  const isAskingVariant = contentLower.includes('حجم') ||
+    contentLower.includes('أي حجم') ||
+    contentLower.includes('صغير') && contentLower.includes('كبير') ||
+    contentLower.includes('اختار')
+
+  // Check if AI is asking about quantity
+  const isAskingQuantity = contentLower.includes('كام واحد') ||
+    contentLower.includes('كام واحدة') ||
+    contentLower.includes('الكمية')
+
+  // Check if AI is confirming something
+  const isConfirming = contentLower.includes('صح؟') ||
+    contentLower.includes('صح كده') ||
+    contentLower.includes('تمام كده')
+
+  // Check if search returned no results
+  const noResults = contentLower.includes('مش لاقي') ||
+    contentLower.includes('ملقتش') ||
+    contentLower.includes('مفيش')
+
+  // Check if AI is showing promotions
+  const showingPromotions = toolsUsed?.includes('get_promotions') ||
+    contentLower.includes('عرض') || contentLower.includes('خصم')
+
+  // =================================================================
+  // CONTEXTUAL QUICK REPLIES
+  // =================================================================
+
+  // Size/Variant selection needed
+  if (isAskingVariant && hasProducts) {
+    return {
+      suggestions: ['صغير', 'وسط', 'كبير'],
+      quickReplies: [
+        { title: '📏 صغير', payload: 'عايز الحجم الصغير' },
+        { title: '📏 وسط', payload: 'عايز الحجم الوسط' },
+        { title: '📏 كبير', payload: 'عايز الحجم الكبير' }
+      ]
+    }
+  }
+
+  // Quantity selection needed
+  if (isAskingQuantity) {
+    return {
+      suggestions: ['1️⃣ واحدة', '2️⃣ اتنين', '3️⃣ تلاتة'],
+      quickReplies: [
+        { title: '1️⃣ واحدة', payload: 'واحدة بس' },
+        { title: '2️⃣ اتنين', payload: 'اتنين' },
+        { title: '3️⃣ تلاتة', payload: 'تلاتة' }
+      ]
+    }
+  }
+
+  // Confirmation needed
+  if (isConfirming) {
+    return {
+      suggestions: ['✅ أيوه تمام', '❌ لأ غير', '🔄 عدل الكمية'],
+      quickReplies: [
+        { title: '✅ أيوه تمام', payload: 'أيوه ضيف للسلة' },
+        { title: '❌ لأ غير', payload: 'لأ عايز أغير' },
+        { title: '🔄 عدل الكمية', payload: 'عايز أغير الكمية' }
+      ]
+    }
+  }
+
+  // After adding to cart
+  if (hasCartAction) {
+    return {
+      suggestions: ['🛒 شوف السلة', '➕ أضف حاجة تانية', '✅ كمل للدفع'],
+      quickReplies: [
+        { title: '🛒 شوف السلة', payload: 'ايه في السلة؟' },
+        { title: '➕ أضف حاجة تانية', payload: 'عايز أضيف حاجة تانية' },
+        { title: '✅ كمل للدفع', payload: 'navigate:/ar/checkout' }
+      ]
+    }
+  }
+
+  // No results found - help user search differently
+  if (noResults) {
+    return {
+      suggestions: ['🔍 بحث تاني', '📋 شوف المنيو', '🔥 العروض'],
+      quickReplies: [
+        { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة تانية' },
+        { title: '📋 شوف المنيو', payload: menuPayload },
+        { title: '🔥 العروض', payload: 'فيه عروض ايه دلوقتي؟' }
+      ]
+    }
+  }
+
+  // After search with products found
+  if (hasProducts && productId) {
+    return {
+      suggestions: ['✅ ضيف للسلة', '📋 تفاصيل أكتر', '🔍 حاجة تانية'],
+      quickReplies: [
+        { title: '✅ ضيف للسلة', payload: 'ضيف الأول للسلة' },
+        { title: '📋 تفاصيل أكتر', payload: 'عايز تفاصيل أكتر' },
+        { title: '🔍 حاجة تانية', payload: 'عايز أبحث عن حاجة تانية' }
+      ]
+    }
+  }
+
+  // Showing promotions
+  if (showingPromotions) {
+    return {
+      suggestions: ['🎁 استخدم العرض', '🍽️ شوف المنيو', '🔍 بحث'],
+      quickReplies: [
+        { title: '🎁 استخدم العرض', payload: 'عايز أستخدم العرض ده' },
+        { title: '🍽️ شوف المنيو', payload: menuPayload },
+        { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' }
+      ]
+    }
+  }
+
+  // Order tracking context
+  if (toolsUsed?.includes('track_order') || toolsUsed?.includes('get_order_status')) {
+    return {
+      suggestions: ['📍 تتبع الطلب', '📞 اتصل بالمطعم', '❌ إلغاء الطلب'],
+      quickReplies: [
+        { title: '📍 تتبع الطلب', payload: 'فين طلبي دلوقتي؟' },
+        { title: '📞 اتصل بالمطعم', payload: 'عايز رقم المطعم' },
+        { title: '❌ إلغاء الطلب', payload: 'عايز ألغي الطلب' }
+      ]
+    }
+  }
+
+  // Complaint or problem context
+  if (contentLower.includes('مشكلة') || contentLower.includes('شكوى') ||
+      contentLower.includes('زعلان') || contentLower.includes('معلش')) {
+    return {
+      suggestions: ['📞 كلم خدمة العملاء', '📝 اكتب شكوى', '🔙 رجوع'],
+      quickReplies: [
+        { title: '📞 كلم خدمة العملاء', payload: 'عايز أكلم حد من خدمة العملاء' },
+        { title: '📝 اكتب شكوى', payload: 'عايز أعمل شكوى رسمية' },
+        { title: '🔙 رجوع', payload: 'خلاص مش محتاج' }
+      ]
+    }
+  }
+
+  // Cart summary context
+  if (toolsUsed?.includes('get_cart_summary') ||
+      (contentLower.includes('السلة') && contentLower.includes('فيها'))) {
+    return {
+      suggestions: ['✅ كمل للدفع', '➕ أضف حاجة', '🗑️ فضي السلة'],
+      quickReplies: [
+        { title: '✅ كمل للدفع', payload: 'navigate:/ar/checkout' },
+        { title: '➕ أضف حاجة', payload: 'عايز أضيف حاجة تانية' },
+        { title: '🗑️ فضي السلة', payload: 'امسح السلة كلها' }
+      ]
+    }
+  }
+
+  // Delivery info context
+  if (toolsUsed?.includes('get_delivery_info') ||
+      contentLower.includes('توصيل') || contentLower.includes('رسوم')) {
+    return {
+      suggestions: ['✅ تمام، اطلب', '🔍 بحث تاني', '📋 المنيو'],
+      quickReplies: [
+        { title: '✅ تمام، اطلب', payload: 'عايز أطلب' },
+        { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة' },
+        { title: '📋 المنيو', payload: menuPayload }
+      ]
+    }
+  }
+
+  // Menu/categories context
+  if (toolsUsed?.includes('get_provider_categories') || toolsUsed?.includes('get_menu_items')) {
+    return {
+      suggestions: ['🍕 بيتزا', '🍔 برجر', '🥗 سلطات', '🔍 بحث'],
+      quickReplies: [
+        { title: '🍕 بيتزا', payload: 'عايز بيتزا' },
+        { title: '🍔 برجر', payload: 'عايز برجر' },
+        { title: '🥗 سلطات', payload: 'عايز سلطة' },
+        { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة معينة' }
+      ]
+    }
+  }
+
+  // Greeting/welcome context
+  if (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
+      contentLower.includes('صباح') || contentLower.includes('مساء')) {
+    return {
+      suggestions: ['🍔 عايز آكل', '📦 طلباتي', '🔥 العروض'],
+      quickReplies: [
+        { title: '🍔 عايز آكل', payload: 'عايز أطلب أكل' },
+        { title: '📦 طلباتي', payload: 'فين طلباتي؟' },
+        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
+      ]
+    }
+  }
+
+  // Default suggestions
+  return {
+    suggestions: ['🍽️ شوف المنيو', '🔥 العروض', '📦 طلباتي'],
+    quickReplies: [
+      { title: '🍽️ شوف المنيو', payload: menuPayload },
+      { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
+      { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
+    ]
+  }
+}
+
+/**
+ * Sanitize AI response to remove unsafe content
+ * This is a POST-PROCESSING GUARDRAIL to ensure no URLs or markdown images slip through
+ */
+function sanitizeAgentResponse(content: string): string {
+  let sanitized = content
+
+  // Remove markdown image syntax: ![alt](url)
+  sanitized = sanitized.replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
+
+  // Remove markdown links but keep the text: [text](url) -> text
+  sanitized = sanitized.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+
+  // Remove raw URLs (http, https, ftp)
+  sanitized = sanitized.replace(/https?:\/\/[^\s<>"\)]+/gi, '')
+  sanitized = sanitized.replace(/ftp:\/\/[^\s<>"\)]+/gi, '')
+
+  // Remove any remaining URL-like patterns
+  sanitized = sanitized.replace(/www\.[^\s<>"\)]+/gi, '')
+
+  // Remove bold/italic markdown that might look odd
+  sanitized = sanitized.replace(/\*\*([^*]+)\*\*/g, '$1')
+  sanitized = sanitized.replace(/\*([^*]+)\*/g, '$1')
+  sanitized = sanitized.replace(/__([^_]+)__/g, '$1')
+  sanitized = sanitized.replace(/_([^_]+)_/g, '$1')
+
+  // Remove code blocks
+  sanitized = sanitized.replace(/```[\s\S]*?```/g, '')
+  sanitized = sanitized.replace(/`([^`]+)`/g, '$1')
+
+  // Remove HTML tags
+  sanitized = sanitized.replace(/<[^>]+>/g, '')
+
+  // Remove JSON blocks (sometimes AI outputs raw JSON)
+  sanitized = sanitized.replace(/\{[\s\S]*?"[\s\S]*?\}/g, '')
+
+  // Clean up extra whitespace
+  sanitized = sanitized.replace(/\n{3,}/g, '\n\n')
+  sanitized = sanitized.replace(/  +/g, ' ')
+
+  return sanitized.trim()
+}
+
+/**
  * Parse agent output to extract structured response
  */
-function parseAgentOutput(content: string, turns: ConversationTurn[]): AgentResponse {
+function parseAgentOutput(content: string, turns: ConversationTurn[], providerId?: string): AgentResponse {
+  // Apply post-processing guardrails to sanitize the response
+  const sanitizedContent = sanitizeAgentResponse(content)
+
   const response: AgentResponse = {
-    content: content.trim(),
+    content: sanitizedContent,
     suggestions: [],
     quickReplies: [],
     products: []
   }
 
+  // Track which tools were used
+  const toolsUsed: string[] = []
+
   // Extract products and cart actions from tool results
   for (const turn of turns) {
     if (turn.role === 'tool' && turn.toolResult) {
+      if (turn.toolName) {
+        toolsUsed.push(turn.toolName)
+      }
+
       const result = turn.toolResult as ToolResult
       if (result.success && result.data) {
         const data = result.data as Record<string, unknown>
@@ -435,26 +721,21 @@ function parseAgentOutput(content: string, turns: ConversationTurn[]): AgentResp
     }
   }
 
-  // Generate contextual suggestions based on cart action
-  if (response.cartAction) {
-    response.suggestions = ['🛒 شوف السلة', '➕ أضف حاجة تانية', '🏠 الرئيسية']
-    response.quickReplies = [
-      { title: '🛒 شوف السلة', payload: 'navigate:/ar/cart' },
-      { title: '➕ أضف حاجة تانية', payload: 'search_again' },
-      { title: '🏠 الرئيسية', payload: 'home' }
-    ]
-  } else if (response.products && response.products.length > 0) {
-    response.suggestions = ['🛒 أضف للسلة', '📋 شوف تفاصيل أكتر', '🔍 بحث تاني']
-    response.quickReplies = [
-      { title: '🛒 أضف للسلة', payload: `add_to_cart:${response.products[0]?.id}` },
-      { title: '📋 تفاصيل', payload: `item_details:${response.products[0]?.id}` },
-      { title: '🔍 بحث تاني', payload: 'search_again' }
-    ]
-  } else if (content.includes('طلب') || content.includes('order')) {
-    response.suggestions = ['📦 تتبع الطلب', '❌ إلغاء', '🏠 الرئيسية']
-  } else {
-    response.suggestions = ['🍽️ المنيو', '🔥 العروض', '📦 طلباتي']
-  }
+  // Generate dynamic quick replies based on context
+  // Use provider ID from first product if available, otherwise fall back to context
+  const effectiveProviderId = response.products?.[0]?.providerId || providerId
+
+  const { suggestions, quickReplies } = generateDynamicQuickReplies(
+    content,
+    !!response.cartAction,
+    !!(response.products && response.products.length > 0),
+    response.products?.[0]?.id,
+    toolsUsed,
+    effectiveProviderId
+  )
+
+  response.suggestions = suggestions
+  response.quickReplies = quickReplies
 
   return response
 }
