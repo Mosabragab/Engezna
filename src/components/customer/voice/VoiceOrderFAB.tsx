@@ -6,6 +6,7 @@ import { MessageCircle, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SmartAssistant } from '@/components/customer/chat/SmartAssistant'
 import { createClient } from '@/lib/supabase/client'
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 
 interface ChatFABProps {
   className?: string
@@ -49,6 +50,15 @@ export function ChatFAB({
             setCustomerName(profile.full_name?.split(' ')[0])
             setCityId(profile.city_id)
             setGovernorateId(profile.governorate_id)
+          }
+        } else {
+          // Guest user - check localStorage for selected city
+          const guestLocation = guestLocationStorage.get()
+          if (guestLocation?.cityId) {
+            setCityId(guestLocation.cityId)
+          }
+          if (guestLocation?.governorateId) {
+            setGovernorateId(guestLocation.governorateId)
           }
         }
       } catch (error) {

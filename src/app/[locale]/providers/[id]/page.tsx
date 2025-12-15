@@ -833,20 +833,16 @@ export default function ProviderDetailPage() {
       {cartItemCount === 0 && <VoiceOrderFAB />}
 
       {/* AI Smart Assistant - Always available */}
-      {cartItemCount > 0 && (
-        <>
-          <ChatFAB
-            onClick={() => setIsChatOpen(!isChatOpen)}
-            isOpen={isChatOpen}
-          />
-          <SmartAssistant
-            isOpen={isChatOpen}
-            onClose={() => setIsChatOpen(false)}
-            userId={userId}
-            cityId={userCityId || guestCityId || undefined}
-          />
-        </>
-      )}
+      <ChatFAB
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        isOpen={isChatOpen}
+      />
+      <SmartAssistant
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        userId={userId}
+        cityId={userCityId || guestCityId || provider?.city_id || undefined}
+      />
 
       {/* Product Detail Modal */}
       {selectedProductForDetail && (
