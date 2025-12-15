@@ -30,6 +30,7 @@ interface ChatAPIRequest {
   customer_id?: string
   city_id: string
   selected_provider_id?: string
+  selected_provider_name?: string // Provider name for the current page context
   selected_provider_category?: string
   selected_category?: string // User's chosen category (restaurant_cafe, grocery, etc.)
   memory?: Record<string, unknown>
@@ -205,11 +206,16 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         variant_name_ar: item.selectedVariant?.name_ar,
       }))
 
+      // Use provider from page context as fallback if store doesn't have one
+      const effectiveProviderId = selectedProviderId || providerContext?.id
+      const effectiveProviderName = providerContext?.name
+
       const requestBody: ChatAPIRequest = {
         messages: conversationHistory,
         customer_id: userId,
         city_id: cityId || '',
-        selected_provider_id: selectedProviderId,
+        selected_provider_id: effectiveProviderId,
+        selected_provider_name: effectiveProviderName,
         selected_provider_category: selectedProviderCategory,
         selected_category: selectedCategory,
         memory,
@@ -591,11 +597,16 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         variant_name_ar: item.selectedVariant?.name_ar,
       }))
 
+      // Use provider from page context as fallback if store doesn't have one
+      const effectiveProviderId = selectedProviderId || providerContext?.id
+      const effectiveProviderName = providerContext?.name
+
       const requestBody: ChatAPIRequest = {
         messages: conversationHistory,
         customer_id: userId,
         city_id: cityId || '',
-        selected_provider_id: selectedProviderId,
+        selected_provider_id: effectiveProviderId,
+        selected_provider_name: effectiveProviderName,
         selected_provider_category: selectedProviderCategory,
         selected_category: categoryToSend,
         memory,

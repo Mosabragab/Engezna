@@ -430,7 +430,7 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   // ─────────────────────────────────────────────────────────────────────────
   {
     name: 'get_provider_promotions',
-    description: 'الحصول على العروض الحالية - لو مفيش provider_id هيستخدم تاجر السلة أو التاجر الحالي',
+    description: 'الحصول على العروض والمنتجات المخفضة - يرجع كمباين والمنتجات اللي عليها خصم (original_price > price). لو مفيش provider_id هيستخدم تاجر السلة أو التاجر الحالي',
     parameters: {
       type: 'object',
       properties: {
@@ -679,6 +679,29 @@ export async function executeAgentTool(
           city_id?: string
         }
 
+        // Helper function to fetch variants for items
+        const fetchVariantsForItems = async (items: Array<{ id: string; has_variants: boolean | null }>) => {
+          const itemsWithVariants = items.filter(item => item.has_variants)
+          if (itemsWithVariants.length === 0) return items
+
+          const { data: variants } = await supabase
+            .from('product_variants')
+            .select('id, product_id, name_ar, price, original_price, is_default, variant_type')
+            .in('product_id', itemsWithVariants.map(i => i.id))
+            .eq('is_available', true)
+            .order('display_order')
+
+          // Attach variants to items
+          const itemsMap = new Map(items.map(item => [item.id, { ...item, variants: [] as typeof variants }]))
+          variants?.forEach(variant => {
+            const item = itemsMap.get(variant.product_id)
+            if (item) {
+              item.variants?.push(variant)
+            }
+          })
+          return Array.from(itemsMap.values())
+        }
+
         // Use effective provider ID from context if not explicitly provided
         const effectiveProviderId = getEffectiveProviderId({ provider_id }, context)
 
@@ -687,7 +710,7 @@ export async function executeAgentTool(
           const { data, error } = await supabase
             .from('menu_items')
             .select(`
-              id, name_ar, price, image_url, has_variants, provider_id,
+              id, name_ar, price, original_price, image_url, has_variants, provider_id,
               providers(id, name_ar),
               provider_categories!provider_category_id(name_ar)
             `)
@@ -698,9 +721,10 @@ export async function executeAgentTool(
 
           if (error) throw error
 
-          // If found results in current provider, return them
+          // If found results in current provider, fetch variants and return
           if (data && data.length > 0) {
-            return { success: true, data }
+            const itemsWithVariants = await fetchVariantsForItems(data)
+            return { success: true, data: itemsWithVariants }
           }
 
           // FALLBACK: No results in current provider, search globally
@@ -723,7 +747,7 @@ export async function executeAgentTool(
             const { data: globalData, error: globalError } = await supabase
               .from('menu_items')
               .select(`
-                id, name_ar, price, image_url, has_variants, provider_id,
+                id, name_ar, price, original_price, image_url, has_variants, provider_id,
                 providers(id, name_ar),
                 provider_categories!provider_category_id(name_ar)
               `)
@@ -733,9 +757,10 @@ export async function executeAgentTool(
               .limit(10)
 
             if (!globalError && globalData && globalData.length > 0) {
+              const itemsWithVariants = await fetchVariantsForItems(globalData)
               return {
                 success: true,
-                data: globalData,
+                data: itemsWithVariants,
                 message: 'مش لاقي في التاجر الحالي، بس لقيت في تجار تانيين'
               }
             }
@@ -774,7 +799,7 @@ export async function executeAgentTool(
           const { data, error } = await supabase
             .from('menu_items')
             .select(`
-              id, name_ar, price, image_url, has_variants, provider_id,
+              id, name_ar, price, original_price, image_url, has_variants, provider_id,
               providers(id, name_ar),
               provider_categories!provider_category_id(name_ar)
             `)
@@ -792,7 +817,9 @@ export async function executeAgentTool(
               message: 'مش لاقي نتائج لبحثك'
             }
           }
-          return { success: true, data }
+
+          const itemsWithVariants = await fetchVariantsForItems(data)
+          return { success: true, data: itemsWithVariants }
         }
       }
 
@@ -1307,7 +1334,8 @@ export async function executeAgentTool(
 
         const now = new Date().toISOString()
 
-        const { data, error } = await supabase
+        // Get promotional campaigns
+        const { data: promotions } = await supabase
           .from('promotions')
           .select('id, name_ar, name_en, type, discount_value, min_order_amount, max_discount, start_date, end_date')
           .eq('provider_id', effectiveProviderId)
@@ -1315,17 +1343,49 @@ export async function executeAgentTool(
           .lte('start_date', now)
           .gte('end_date', now)
 
-        if (error) throw error
+        // Get discounted products (where original_price > price)
+        const { data: discountedProducts } = await supabase
+          .from('menu_items')
+          .select(`
+            id, name_ar, price, original_price, image_url, has_variants,
+            provider_categories!provider_category_id(name_ar)
+          `)
+          .eq('provider_id', effectiveProviderId)
+          .eq('is_available', true)
+          .not('original_price', 'is', null)
+          .gt('original_price', 0)
+          .order('original_price', { ascending: false })
+          .limit(10)
 
-        if (!data || data.length === 0) {
+        // Filter products where there's actually a discount (original_price > price)
+        const productsWithDiscount = discountedProducts?.filter(p =>
+          p.original_price && p.price && p.original_price > p.price
+        ).map(p => ({
+          ...p,
+          discount_percentage: Math.round(((p.original_price! - p.price) / p.original_price!) * 100)
+        })) || []
+
+        const hasPromotions = promotions && promotions.length > 0
+        const hasDiscountedProducts = productsWithDiscount.length > 0
+
+        if (!hasPromotions && !hasDiscountedProducts) {
           return {
             success: true,
-            data: [],
+            data: { promotions: [], discounted_products: [] },
             message: 'مفيش عروض متاحة حالياً من التاجر ده'
           }
         }
 
-        return { success: true, data }
+        return {
+          success: true,
+          data: {
+            promotions: promotions || [],
+            discounted_products: productsWithDiscount
+          },
+          message: hasDiscountedProducts
+            ? `لقيت ${productsWithDiscount.length} منتج عليهم خصم!`
+            : undefined
+        }
       }
 
       case 'validate_promo_code': {
