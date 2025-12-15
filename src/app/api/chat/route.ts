@@ -855,13 +855,22 @@ async function performDirectSearch(
     logNormalization('performDirectSearch (provider)', searchQuery, normalizedQuery)
 
     // Fetch all available items WITH category name for better matching
+    // Use explicit FK hint since column is 'category_id' but references 'provider_categories'
     const { data: allItems } = await supabase
       .from('menu_items')
-      .select('id, name_ar, price, has_variants, provider_categories(name_ar)')
+      .select('id, name_ar, price, has_variants, provider_categories!category_id(name_ar)')
       .eq('provider_id', selectedProviderId)
       .eq('is_available', true)
       .or('has_stock.eq.true,has_stock.is.null')
       .limit(100)
+
+    // Debug: Log the first few items to see if category data is being fetched
+    if (allItems && allItems.length > 0) {
+      console.log('🔍 [SEARCH DEBUG] Sample items with category:', allItems.slice(0, 3).map(item => ({
+        name: item.name_ar,
+        category: item.provider_categories
+      })))
+    }
 
     // Apply Arabic normalization filter - search in BOTH product name AND category name
     let filteredItems = filterByNormalizedArabic(allItems || [], searchQuery, (item) => {
@@ -876,7 +885,7 @@ async function performDirectSearch(
     if (filteredItems.length === 0) {
       const { data: exactItems } = await supabase
         .from('menu_items')
-        .select('id, name_ar, price, has_variants, provider_categories(name_ar)')
+        .select('id, name_ar, price, has_variants, provider_categories!category_id(name_ar)')
         .eq('provider_id', selectedProviderId)
         .eq('is_available', true)
         .or('has_stock.eq.true,has_stock.is.null')
@@ -941,9 +950,10 @@ async function performDirectSearch(
       const providerIds = providers.map(p => p.id)
 
       // Fetch more items WITH category name for better matching
+      // Use explicit FK hint since column is 'category_id' but references 'provider_categories'
       const { data: allItems } = await supabase
         .from('menu_items')
-        .select('id, name_ar, price, provider_id, providers(name_ar), provider_categories(name_ar)')
+        .select('id, name_ar, price, provider_id, providers(name_ar), provider_categories!category_id(name_ar)')
         .in('provider_id', providerIds)
         .eq('is_available', true)
         .or('has_stock.eq.true,has_stock.is.null')
@@ -962,7 +972,7 @@ async function performDirectSearch(
       if (filteredItems.length === 0) {
         const { data: exactItems } = await supabase
           .from('menu_items')
-          .select('id, name_ar, price, provider_id, providers(name_ar), provider_categories(name_ar)')
+          .select('id, name_ar, price, provider_id, providers(name_ar), provider_categories!category_id(name_ar)')
           .in('provider_id', providerIds)
           .eq('is_available', true)
           .or('has_stock.eq.true,has_stock.is.null')
