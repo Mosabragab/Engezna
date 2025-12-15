@@ -45,6 +45,7 @@ type Provider = {
   estimated_delivery_time_min: number
   status: string
   commission_rate: number
+  city_id: string | null
 }
 
 type ProductVariant = {
