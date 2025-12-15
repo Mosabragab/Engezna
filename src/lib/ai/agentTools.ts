@@ -684,12 +684,13 @@ export async function executeAgentTool(
 
         if (effectiveProviderId) {
           // Search within a specific provider (from param, cart, or page context)
+          // First: Search by product name/description
           const { data, error } = await supabase
             .from('menu_items')
             .select(`
               id, name_ar, price, image_url, has_variants, provider_id,
               providers(id, name_ar),
-              provider_categories!provider_category_id(name_ar)
+              provider_categories!provider_category_id(id, name_ar)
             `)
             .eq('provider_id', effectiveProviderId)
             .eq('is_available', true)
@@ -698,8 +699,36 @@ export async function executeAgentTool(
 
           if (error) throw error
 
-          // If no results, include provider info for better response
+          // If no results by product name, try searching by category name
           if (!data || data.length === 0) {
+            // Find categories matching the query
+            const { data: categories } = await supabase
+              .from('provider_categories')
+              .select('id')
+              .eq('provider_id', effectiveProviderId)
+              .eq('is_active', true)
+              .ilike('name_ar', `%${query}%`)
+
+            if (categories && categories.length > 0) {
+              // Get products from matching categories
+              const categoryIds = categories.map(c => c.id)
+              const { data: categoryProducts } = await supabase
+                .from('menu_items')
+                .select(`
+                  id, name_ar, price, image_url, has_variants, provider_id,
+                  providers(id, name_ar),
+                  provider_categories!provider_category_id(id, name_ar)
+                `)
+                .eq('provider_id', effectiveProviderId)
+                .eq('is_available', true)
+                .in('provider_category_id', categoryIds)
+                .limit(10)
+
+              if (categoryProducts && categoryProducts.length > 0) {
+                return { success: true, data: categoryProducts }
+              }
+            }
+
             return {
               success: true,
               data: [],
@@ -731,22 +760,50 @@ export async function executeAgentTool(
             }
           }
 
-          // Search items in those providers
+          // Search items in those providers by product name/description
+          const providerIds = providers.map(p => p.id)
           const { data, error } = await supabase
             .from('menu_items')
             .select(`
               id, name_ar, price, image_url, has_variants, provider_id,
               providers(id, name_ar),
-              provider_categories!provider_category_id(name_ar)
+              provider_categories!provider_category_id(id, name_ar)
             `)
-            .in('provider_id', providers.map(p => p.id))
+            .in('provider_id', providerIds)
             .eq('is_available', true)
             .or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
             .limit(20)
 
           if (error) throw error
 
+          // If no results by product name, try searching by category name
           if (!data || data.length === 0) {
+            // Find categories matching the query across all providers
+            const { data: categories } = await supabase
+              .from('provider_categories')
+              .select('id, provider_id')
+              .in('provider_id', providerIds)
+              .eq('is_active', true)
+              .ilike('name_ar', `%${query}%`)
+
+            if (categories && categories.length > 0) {
+              const categoryIds = categories.map(c => c.id)
+              const { data: categoryProducts } = await supabase
+                .from('menu_items')
+                .select(`
+                  id, name_ar, price, image_url, has_variants, provider_id,
+                  providers(id, name_ar),
+                  provider_categories!provider_category_id(id, name_ar)
+                `)
+                .in('provider_category_id', categoryIds)
+                .eq('is_available', true)
+                .limit(20)
+
+              if (categoryProducts && categoryProducts.length > 0) {
+                return { success: true, data: categoryProducts }
+              }
+            }
+
             return {
               success: true,
               data: [],
