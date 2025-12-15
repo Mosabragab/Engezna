@@ -152,6 +152,44 @@ export const AGENT_TOOLS: ToolDefinition[] = [
       required: ['item_id']
     }
   },
+  {
+    name: 'add_to_cart',
+    description: 'إضافة منتج للسلة - استخدمها لما العميل يقول "ضيف" أو "أضف" أو "عايز أطلب"',
+    parameters: {
+      type: 'object',
+      properties: {
+        item_id: {
+          type: 'string',
+          description: 'معرف المنتج'
+        },
+        item_name: {
+          type: 'string',
+          description: 'اسم المنتج'
+        },
+        provider_id: {
+          type: 'string',
+          description: 'معرف التاجر'
+        },
+        price: {
+          type: 'number',
+          description: 'سعر المنتج'
+        },
+        quantity: {
+          type: 'number',
+          description: 'الكمية (اختياري، الافتراضي 1)'
+        },
+        variant_id: {
+          type: 'string',
+          description: 'معرف الحجم/النوع (اختياري)'
+        },
+        variant_name: {
+          type: 'string',
+          description: 'اسم الحجم/النوع (اختياري)'
+        }
+      },
+      required: ['item_id', 'item_name', 'provider_id', 'price']
+    }
+  },
 
   // ─────────────────────────────────────────────────────────────────────────
   // 🏪 PROVIDER TOOLS
@@ -639,6 +677,44 @@ export async function executeAgentTool(
             message: isAvailable
               ? 'المنتج متاح'
               : data?.stock_notes || 'المنتج غير متاح حالياً'
+          }
+        }
+      }
+
+      case 'add_to_cart': {
+        const {
+          item_id,
+          item_name,
+          provider_id,
+          price,
+          quantity = 1,
+          variant_id,
+          variant_name
+        } = params as {
+          item_id: string
+          item_name: string
+          provider_id: string
+          price: number
+          quantity?: number
+          variant_id?: string
+          variant_name?: string
+        }
+
+        // Return a cart action that the frontend will process
+        return {
+          success: true,
+          data: {
+            cart_action: {
+              type: 'ADD_ITEM',
+              provider_id,
+              menu_item_id: item_id,
+              menu_item_name_ar: item_name,
+              quantity,
+              unit_price: price,
+              variant_id,
+              variant_name_ar: variant_name
+            },
+            message: `تم إضافة ${quantity}x ${item_name} للسلة`
           }
         }
       }

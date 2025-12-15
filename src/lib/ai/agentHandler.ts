@@ -399,30 +399,46 @@ function parseAgentOutput(content: string, turns: ConversationTurn[]): AgentResp
     products: []
   }
 
-  // Extract products from tool results
+  // Extract products and cart actions from tool results
   for (const turn of turns) {
     if (turn.role === 'tool' && turn.toolResult) {
       const result = turn.toolResult as ToolResult
-      if (result.success && Array.isArray(result.data)) {
-        // Check if it looks like menu items
-        const items = result.data as Array<Record<string, unknown>>
-        if (items.length > 0 && items[0].name_ar && items[0].price) {
-          response.products = items.slice(0, 5).map(item => ({
-            id: item.id as string,
-            name: item.name_ar as string,
-            price: item.price as number,
-            image: item.image_url as string | undefined,
-            hasVariants: item.has_variants as boolean | undefined,
-            providerId: item.provider_id as string | undefined,
-            providerName: (item.providers as { name_ar?: string })?.name_ar
-          }))
+      if (result.success && result.data) {
+        const data = result.data as Record<string, unknown>
+
+        // Check for cart_action (from add_to_cart tool)
+        if (data.cart_action) {
+          response.cartAction = data.cart_action as AgentResponse['cartAction']
+        }
+
+        // Check if it's an array of menu items
+        if (Array.isArray(result.data)) {
+          const items = result.data as Array<Record<string, unknown>>
+          if (items.length > 0 && items[0].name_ar && items[0].price) {
+            response.products = items.slice(0, 5).map(item => ({
+              id: item.id as string,
+              name: item.name_ar as string,
+              price: item.price as number,
+              image: item.image_url as string | undefined,
+              hasVariants: item.has_variants as boolean | undefined,
+              providerId: item.provider_id as string | undefined,
+              providerName: (item.providers as { name_ar?: string })?.name_ar
+            }))
+          }
         }
       }
     }
   }
 
-  // Generate contextual suggestions
-  if (response.products && response.products.length > 0) {
+  // Generate contextual suggestions based on cart action
+  if (response.cartAction) {
+    response.suggestions = ['🛒 شوف السلة', '➕ أضف حاجة تانية', '🏠 الرئيسية']
+    response.quickReplies = [
+      { title: '🛒 شوف السلة', payload: 'navigate:/ar/cart' },
+      { title: '➕ أضف حاجة تانية', payload: 'search_again' },
+      { title: '🏠 الرئيسية', payload: 'home' }
+    ]
+  } else if (response.products && response.products.length > 0) {
     response.suggestions = ['🛒 أضف للسلة', '📋 شوف تفاصيل أكتر', '🔍 بحث تاني']
     response.quickReplies = [
       { title: '🛒 أضف للسلة', payload: `add_to_cart:${response.products[0]?.id}` },

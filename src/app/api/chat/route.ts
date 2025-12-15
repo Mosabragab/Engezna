@@ -152,7 +152,8 @@ export async function POST(request: NextRequest) {
                     provider_id: p.providerId,
                     provider_name_ar: p.providerName
                   })) || [],
-                  navigate_to: response?.navigateTo
+                  navigate_to: response?.navigateTo,
+                  cart_action: response?.cartAction
                 }))
                 break
 

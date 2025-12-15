@@ -271,6 +271,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
                   reply: parsed.content || fullContent,
                   quick_replies: parsed.quick_replies,
                   navigate_to: parsed.navigate_to,
+                  cart_action: parsed.cart_action,
                 }
               } else if (currentEvent === 'error') {
                 throw new Error(parsed.error || 'حصل خطأ')
@@ -627,6 +628,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
                   reply: parsed.content || fullContent,
                   quick_replies: parsed.quick_replies,
                   navigate_to: parsed.navigate_to,
+                  cart_action: parsed.cart_action,
                 }
               } else if (currentEvent === 'error') {
                 throw new Error(parsed.error || 'حصل خطأ')
