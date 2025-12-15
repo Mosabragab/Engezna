@@ -187,7 +187,7 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
       })
 
       // Parse the response to extract structured data
-      finalResponse = parseAgentOutput(content, turns)
+      finalResponse = parseAgentOutput(content, turns, context.providerId || context.cartProviderId)
 
       // Stream done event
       onStream?.({
@@ -359,7 +359,7 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
       }
 
       // Final response
-      const finalResponse = parseAgentOutput(accumulatedContent, turns)
+      const finalResponse = parseAgentOutput(accumulatedContent, turns, context.providerId || context.cartProviderId)
 
       yield {
         type: 'done',
@@ -406,8 +406,14 @@ function generateDynamicQuickReplies(
   hasCartAction: boolean,
   hasProducts: boolean,
   productId?: string,
-  toolsUsed?: string[]
+  toolsUsed?: string[],
+  providerId?: string
 ): { suggestions: string[]; quickReplies: AgentResponse['quickReplies'] } {
+
+  // Helper: create menu navigation payload
+  const menuPayload = providerId
+    ? `navigate:/ar/providers/${providerId}`
+    : 'ورّيني المنيو'
 
   // After adding to cart
   if (hasCartAction) {
@@ -476,7 +482,7 @@ function generateDynamicQuickReplies(
       quickReplies: [
         { title: '✅ تمام، اطلب', payload: 'عايز أطلب' },
         { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة' },
-        { title: '📋 المنيو', payload: 'ورّيني المنيو' }
+        { title: '📋 المنيو', payload: menuPayload }
       ]
     }
   }
@@ -510,7 +516,7 @@ function generateDynamicQuickReplies(
   return {
     suggestions: ['🍽️ شوف المنيو', '🔥 العروض', '📦 طلباتي'],
     quickReplies: [
-      { title: '🍽️ شوف المنيو', payload: 'ورّيني المنيو' },
+      { title: '🍽️ شوف المنيو', payload: menuPayload },
       { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
       { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
     ]
@@ -520,7 +526,7 @@ function generateDynamicQuickReplies(
 /**
  * Parse agent output to extract structured response
  */
-function parseAgentOutput(content: string, turns: ConversationTurn[]): AgentResponse {
+function parseAgentOutput(content: string, turns: ConversationTurn[], providerId?: string): AgentResponse {
   const response: AgentResponse = {
     content: content.trim(),
     suggestions: [],
@@ -572,7 +578,8 @@ function parseAgentOutput(content: string, turns: ConversationTurn[]): AgentResp
     !!response.cartAction,
     !!(response.products && response.products.length > 0),
     response.products?.[0]?.id,
-    toolsUsed
+    toolsUsed,
+    providerId
   )
 
   response.suggestions = suggestions
