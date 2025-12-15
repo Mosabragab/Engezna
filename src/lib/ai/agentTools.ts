@@ -463,7 +463,7 @@ export async function executeAgentTool(
           .select(`
             id, name_ar, name_en, description_ar, price, original_price,
             image_url, is_available, has_stock, has_variants, pricing_type,
-            provider_categories!category_id(id, name_ar)
+            provider_categories!provider_category_id(id, name_ar)
           `)
           .eq('provider_id', provider_id)
           .eq('is_available', true)
@@ -516,7 +516,7 @@ export async function executeAgentTool(
             is_vegetarian, is_spicy, calories, preparation_time_min,
             combo_contents_ar, serves_count,
             provider_id,
-            provider_categories!category_id(id, name_ar)
+            provider_categories!provider_category_id(id, name_ar)
           `)
           .eq('id', item_id)
           .single()
@@ -573,7 +573,7 @@ export async function executeAgentTool(
             .from('menu_items')
             .select(`
               id, name_ar, price, image_url, has_variants,
-              provider_categories!category_id(name_ar)
+              provider_categories!provider_category_id(name_ar)
             `)
             .eq('provider_id', provider_id)
             .eq('is_available', true)
@@ -608,7 +608,7 @@ export async function executeAgentTool(
             .select(`
               id, name_ar, price, image_url, has_variants, provider_id,
               providers(id, name_ar),
-              provider_categories!category_id(name_ar)
+              provider_categories!provider_category_id(name_ar)
             `)
             .in('provider_id', providers.map(p => p.id))
             .eq('is_available', true)
