@@ -174,7 +174,8 @@ const getStorage = () => {
   if (typeof window === 'undefined') {
     return createNoopStorage()
   }
-  return sessionStorage
+  // Use localStorage to persist chat across browser sessions (like cart)
+  return localStorage
 }
 
 export const useChatStore = create<ChatState>()(

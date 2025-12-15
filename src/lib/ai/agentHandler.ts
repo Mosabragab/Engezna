@@ -573,13 +573,16 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
   }
 
   // Generate dynamic quick replies based on context
+  // Use provider ID from first product if available, otherwise fall back to context
+  const effectiveProviderId = response.products?.[0]?.providerId || providerId
+
   const { suggestions, quickReplies } = generateDynamicQuickReplies(
     content,
     !!response.cartAction,
     !!(response.products && response.products.length > 0),
     response.products?.[0]?.id,
     toolsUsed,
-    providerId
+    effectiveProviderId
   )
 
   response.suggestions = suggestions
