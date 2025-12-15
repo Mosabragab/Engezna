@@ -198,17 +198,18 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
     } catch (error) {
       console.error('[Agent Error]:', error)
 
-      const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع'
-
-      onStream?.({
-        type: 'error',
-        error: errorMessage
-      })
+      // Never expose technical errors to users - just show a friendly message
+      // Log the actual error for debugging but give user a positive experience
 
       finalResponse = {
-        content: 'عذراً، حدث خطأ. من فضلك حاول مرة تانية.',
-        suggestions: ['🔄 حاول مرة تانية']
+        content: 'مش لاقي نتائج دلوقتي. جرب تاني أو اسألني سؤال تاني 😊',
+        suggestions: ['🔄 جرب تاني', '🍽️ المنيو', '🏠 الرئيسية']
       }
+
+      onStream?.({
+        type: 'done',
+        response: finalResponse
+      })
 
       break
     }
@@ -365,9 +366,13 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
     } catch (error) {
       console.error('[Agent Stream Error]:', error)
 
+      // Never expose technical errors to users - just show a friendly message
       yield {
-        type: 'error',
-        error: error instanceof Error ? error.message : 'حدث خطأ غير متوقع'
+        type: 'done',
+        response: {
+          content: 'مش لاقي نتائج دلوقتي. جرب تاني أو اسألني سؤال تاني 😊',
+          suggestions: ['🔄 جرب تاني', '🍽️ المنيو', '🏠 الرئيسية']
+        }
       }
 
       return

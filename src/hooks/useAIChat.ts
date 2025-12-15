@@ -44,7 +44,7 @@ interface QuickReply {
 }
 
 interface CartAction {
-  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' | 'CLEAR_CART' | 'REMOVE_ITEM' // CLEAR_AND_ADD clears cart first, then adds; CLEAR_CART just clears; REMOVE_ITEM removes specific item
+  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' | 'CLEAR_CART' | 'REMOVE_ITEM' | 'UPDATE_QUANTITY'
   provider_id: string
   menu_item_id: string
   menu_item_name_ar: string
@@ -52,6 +52,7 @@ interface CartAction {
   unit_price: number
   variant_id?: string
   variant_name_ar?: string
+  quantity_change?: number // For UPDATE_QUANTITY: +2 to add, -1 to remove
 }
 
 interface ChatAPIResponse {
@@ -344,6 +345,35 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
             } else {
               // Remove completely
               cartRemoveItemCompletely(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
+            }
+          }
+          return
+        }
+
+        // Handle UPDATE_QUANTITY - update quantity of an item
+        if (action.type === 'UPDATE_QUANTITY') {
+          const itemToUpdate = cartItems.find(item =>
+            item.menuItem.name_ar === action.menu_item_name_ar ||
+            item.menuItem.name_ar.includes(action.menu_item_name_ar) ||
+            action.menu_item_name_ar.includes(item.menuItem.name_ar)
+          )
+          if (itemToUpdate) {
+            let newQty: number
+            if (action.quantity > 0) {
+              // Absolute quantity specified
+              newQty = action.quantity
+            } else if (action.quantity_change) {
+              // Relative change specified
+              newQty = itemToUpdate.quantity + action.quantity_change
+            } else {
+              return // No change specified
+            }
+
+            if (newQty <= 0) {
+              // Remove item if quantity becomes 0 or negative
+              cartRemoveItemCompletely(itemToUpdate.menuItem.id, itemToUpdate.selectedVariant?.id)
+            } else {
+              cartUpdateQuantity(itemToUpdate.menuItem.id, newQty, itemToUpdate.selectedVariant?.id)
             }
           }
           return
@@ -698,6 +728,32 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
               cartUpdateQuantity(itemToRemove.menuItem.id, newQty, itemToRemove.selectedVariant?.id)
             } else {
               cartRemoveItemCompletely(itemToRemove.menuItem.id, itemToRemove.selectedVariant?.id)
+            }
+          }
+          return
+        }
+
+        // Handle UPDATE_QUANTITY - update quantity of an item
+        if (action.type === 'UPDATE_QUANTITY') {
+          const itemToUpdate = cartItems.find(item =>
+            item.menuItem.name_ar === action.menu_item_name_ar ||
+            item.menuItem.name_ar.includes(action.menu_item_name_ar) ||
+            action.menu_item_name_ar.includes(item.menuItem.name_ar)
+          )
+          if (itemToUpdate) {
+            let newQty: number
+            if (action.quantity > 0) {
+              newQty = action.quantity
+            } else if (action.quantity_change) {
+              newQty = itemToUpdate.quantity + action.quantity_change
+            } else {
+              return
+            }
+
+            if (newQty <= 0) {
+              cartRemoveItemCompletely(itemToUpdate.menuItem.id, itemToUpdate.selectedVariant?.id)
+            } else {
+              cartUpdateQuantity(itemToUpdate.menuItem.id, newQty, itemToUpdate.selectedVariant?.id)
             }
           }
           return

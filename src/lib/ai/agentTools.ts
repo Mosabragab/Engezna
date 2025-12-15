@@ -38,6 +38,21 @@ export interface ToolContext {
   cityId?: string
   governorateId?: string
   locale?: string
+  // Cart context
+  cartProviderId?: string
+  cartItems?: Array<{
+    id: string
+    name: string
+    quantity: number
+    price: number
+  }>
+  cartTotal?: number
+}
+
+// Helper to get effective provider ID from context
+function getEffectiveProviderId(params: { provider_id?: string }, context: ToolContext): string | undefined {
+  // Priority: explicit param > cart provider > page context provider
+  return params.provider_id || context.cartProviderId || context.providerId
 }
 
 // =============================================================================
@@ -188,6 +203,64 @@ export const AGENT_TOOLS: ToolDefinition[] = [
         }
       },
       required: ['item_id', 'item_name', 'provider_id', 'price']
+    }
+  },
+  {
+    name: 'remove_from_cart',
+    description: 'إزالة منتج من السلة - استخدمها لما العميل يقول "شيل" أو "الغي" أو "امسح" منتج معين',
+    parameters: {
+      type: 'object',
+      properties: {
+        item_name: {
+          type: 'string',
+          description: 'اسم المنتج المطلوب إزالته'
+        },
+        quantity: {
+          type: 'number',
+          description: 'الكمية المطلوب إزالتها (اختياري - لو مش موجود يشيل كله)'
+        }
+      },
+      required: ['item_name']
+    }
+  },
+  {
+    name: 'update_cart_quantity',
+    description: 'تعديل كمية منتج في السلة - استخدمها لما العميل يقول "زود" أو "نقص" أو "خليهم X"',
+    parameters: {
+      type: 'object',
+      properties: {
+        item_name: {
+          type: 'string',
+          description: 'اسم المنتج'
+        },
+        new_quantity: {
+          type: 'number',
+          description: 'الكمية الجديدة المطلوبة'
+        },
+        change: {
+          type: 'number',
+          description: 'التغيير في الكمية (+2 للزيادة، -1 للنقص)'
+        }
+      },
+      required: ['item_name']
+    }
+  },
+  {
+    name: 'clear_cart',
+    description: 'تفريغ السلة بالكامل - استخدمها لما العميل يقول "امسح السلة" أو "فضي السلة"',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: 'get_cart_summary',
+    description: 'عرض محتويات السلة الحالية - استخدمها لما العميل يقول "ايه في السلة" أو "كام الحساب"',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
     }
   },
 
@@ -605,20 +678,33 @@ export async function executeAgentTool(
           city_id?: string
         }
 
-        if (provider_id) {
-          // Search within a specific provider
+        // Use effective provider ID from context if not explicitly provided
+        const effectiveProviderId = getEffectiveProviderId({ provider_id }, context)
+
+        if (effectiveProviderId) {
+          // Search within a specific provider (from param, cart, or page context)
           const { data, error } = await supabase
             .from('menu_items')
             .select(`
-              id, name_ar, price, image_url, has_variants,
+              id, name_ar, price, image_url, has_variants, provider_id,
+              providers(id, name_ar),
               provider_categories!provider_category_id(name_ar)
             `)
-            .eq('provider_id', provider_id)
+            .eq('provider_id', effectiveProviderId)
             .eq('is_available', true)
             .or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
             .limit(10)
 
           if (error) throw error
+
+          // If no results, include provider info for better response
+          if (!data || data.length === 0) {
+            return {
+              success: true,
+              data: [],
+              message: 'مش لاقي نتائج في المنيو الحالي'
+            }
+          }
           return { success: true, data }
         } else {
           // Search across all providers in the city
@@ -637,7 +723,11 @@ export async function executeAgentTool(
           const { data: providers } = await providersQuery.limit(50)
 
           if (!providers?.length) {
-            return { success: true, data: [] }
+            return {
+              success: true,
+              data: [],
+              message: 'مفيش تجار متاحين في المنطقة دي'
+            }
           }
 
           // Search items in those providers
@@ -654,6 +744,14 @@ export async function executeAgentTool(
             .limit(20)
 
           if (error) throw error
+
+          if (!data || data.length === 0) {
+            return {
+              success: true,
+              data: [],
+              message: 'مش لاقي نتائج لبحثك'
+            }
+          }
           return { success: true, data }
         }
       }
@@ -715,6 +813,129 @@ export async function executeAgentTool(
               variant_name_ar: variant_name
             },
             message: `تم إضافة ${quantity}x ${item_name} للسلة`
+          }
+        }
+      }
+
+      case 'remove_from_cart': {
+        const { item_name, quantity } = params as {
+          item_name: string
+          quantity?: number
+        }
+
+        // Return a cart action for the frontend to process
+        return {
+          success: true,
+          data: {
+            cart_action: {
+              type: 'REMOVE_ITEM',
+              provider_id: '',
+              menu_item_id: '',
+              menu_item_name_ar: item_name,
+              quantity: quantity || 0, // 0 means remove all
+              unit_price: 0
+            },
+            message: quantity
+              ? `تم إزالة ${quantity}x ${item_name} من السلة`
+              : `تم إزالة ${item_name} من السلة`
+          }
+        }
+      }
+
+      case 'update_cart_quantity': {
+        const { item_name, new_quantity, change } = params as {
+          item_name: string
+          new_quantity?: number
+          change?: number
+        }
+
+        // Determine the action type based on parameters
+        if (new_quantity !== undefined && new_quantity <= 0) {
+          // If new quantity is 0 or negative, remove the item
+          return {
+            success: true,
+            data: {
+              cart_action: {
+                type: 'REMOVE_ITEM',
+                provider_id: '',
+                menu_item_id: '',
+                menu_item_name_ar: item_name,
+                quantity: 0,
+                unit_price: 0
+              },
+              message: `تم إزالة ${item_name} من السلة`
+            }
+          }
+        }
+
+        return {
+          success: true,
+          data: {
+            cart_action: {
+              type: 'UPDATE_QUANTITY',
+              provider_id: '',
+              menu_item_id: '',
+              menu_item_name_ar: item_name,
+              quantity: new_quantity || 0,
+              quantity_change: change || 0,
+              unit_price: 0
+            },
+            message: new_quantity
+              ? `تم تعديل كمية ${item_name} إلى ${new_quantity}`
+              : change && change > 0
+                ? `تم زيادة ${item_name} بـ ${change}`
+                : `تم تقليل ${item_name} بـ ${Math.abs(change || 0)}`
+          }
+        }
+      }
+
+      case 'clear_cart': {
+        return {
+          success: true,
+          data: {
+            cart_action: {
+              type: 'CLEAR_CART',
+              provider_id: '',
+              menu_item_id: '',
+              menu_item_name_ar: '',
+              quantity: 0,
+              unit_price: 0
+            },
+            message: 'تم تفريغ السلة بالكامل'
+          }
+        }
+      }
+
+      case 'get_cart_summary': {
+        // Return actual cart data from context
+        const cartItems = context.cartItems || []
+        const cartTotal = context.cartTotal || 0
+
+        if (cartItems.length === 0) {
+          return {
+            success: true,
+            data: {
+              items: [],
+              total: 0,
+              count: 0,
+              message: 'السلة فاضية'
+            }
+          }
+        }
+
+        return {
+          success: true,
+          data: {
+            items: cartItems.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              subtotal: item.quantity * item.price
+            })),
+            total: cartTotal,
+            count: cartItems.length,
+            provider_id: context.cartProviderId,
+            message: `السلة فيها ${cartItems.length} صنف بإجمالي ${cartTotal} ج.م`
           }
         }
       }
@@ -792,11 +1013,20 @@ export async function executeAgentTool(
       }
 
       case 'get_delivery_info': {
-        const { provider_id } = params as { provider_id: string }
+        const { provider_id } = params as { provider_id?: string }
+        const effectiveProviderId = getEffectiveProviderId({ provider_id }, context)
+
+        if (!effectiveProviderId) {
+          return {
+            success: false,
+            error: 'محتاج أعرف المطعم الأول'
+          }
+        }
+
         const { data, error } = await supabase
           .from('providers')
           .select('id, name_ar, delivery_fee, min_order_amount, estimated_delivery_time_min, delivery_radius_km')
-          .eq('id', provider_id)
+          .eq('id', effectiveProviderId)
           .single()
 
         if (error) throw error
@@ -1191,13 +1421,16 @@ export async function executeAgentTool(
       }
 
       default:
-        return { success: false, error: `Unknown tool: ${toolName}` }
+        return { success: false, error: 'مش عارف أعمل الحاجة دي' }
     }
   } catch (error) {
     console.error(`[Agent Tool Error] ${toolName}:`, error)
+    // Never expose raw error messages to the AI - use friendly messages instead
+    // This prevents the AI from saying "حصل خطأ تقني" to users
     return {
-      success: false,
-      error: error instanceof Error ? error.message : 'حدث خطأ غير متوقع'
+      success: true, // Mark as success but with empty data so AI doesn't say "error"
+      data: null,
+      message: 'مش لاقي نتائج دلوقتي'
     }
   }
 }

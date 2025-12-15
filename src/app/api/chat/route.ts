@@ -24,11 +24,12 @@ interface ChatRequest {
   selected_provider_id?: string
   selected_provider_name?: string
   cart_provider_id?: string
+  cart_provider_name?: string
   cart_items?: Array<{
-    id: string
-    name: string
+    name_ar: string
     quantity: number
-    price: number
+    unit_price: number
+    variant_name_ar?: string
   }>
   cart_total?: number
 }
@@ -70,6 +71,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Calculate cart total if not provided
+    const cartTotal = body.cart_total || body.cart_items?.reduce(
+      (sum, item) => sum + (item.unit_price * item.quantity), 0
+    ) || 0
+
     // Build agent context
     const context: AgentContext = {
       customerId: body.customer_id,
@@ -81,9 +87,15 @@ export async function POST(request: NextRequest) {
       providerContext: body.selected_provider_id && body.selected_provider_name
         ? { id: body.selected_provider_id, name: body.selected_provider_name }
         : undefined,
-      cartItems: body.cart_items,
+      // Map cart items to context format
+      cartItems: body.cart_items?.map(item => ({
+        id: item.name_ar, // Use name as ID since we don't have the actual ID
+        name: item.name_ar,
+        quantity: item.quantity,
+        price: item.unit_price
+      })),
       cartProviderId: body.cart_provider_id,
-      cartTotal: body.cart_total
+      cartTotal: cartTotal
     }
 
     // Convert messages to agent format
@@ -211,6 +223,11 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // Calculate cart total if not provided
+    const cartTotal = body.cart_total || body.cart_items?.reduce(
+      (sum, item) => sum + (item.unit_price * item.quantity), 0
+    ) || 0
+
     // Build context
     const context: AgentContext = {
       customerId: body.customer_id,
@@ -222,9 +239,15 @@ export async function PUT(request: NextRequest) {
       providerContext: body.selected_provider_id && body.selected_provider_name
         ? { id: body.selected_provider_id, name: body.selected_provider_name }
         : undefined,
-      cartItems: body.cart_items,
+      // Map cart items to context format
+      cartItems: body.cart_items?.map(item => ({
+        id: item.name_ar,
+        name: item.name_ar,
+        quantity: item.quantity,
+        price: item.unit_price
+      })),
       cartProviderId: body.cart_provider_id,
-      cartTotal: body.cart_total
+      cartTotal: cartTotal
     }
 
     // Convert messages
