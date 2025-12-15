@@ -10,6 +10,38 @@ import { createClient } from '@/lib/supabase/server'
 import { SYSTEM_PROMPT, CATEGORY_MAPPING } from '@/lib/ai/systemPrompt'
 import { tools } from '@/lib/ai/tools'
 import { normalizeArabic, filterByNormalizedArabic, logNormalization } from '@/lib/ai/normalizeArabic'
+import {
+  getTimeBasedGreeting,
+  getProviderSelectedMessage,
+  getItemFoundMessage,
+  getItemNotFoundMessage,
+  getQuantityAskMessage,
+  getVariantAskMessage,
+  getAddedToCartMessage,
+  getCartEmptyMessage,
+  getCartClearedMessage,
+  getCancelResponse,
+  getRecommendationHeader,
+  getConfirmationHeader,
+  randomChoice,
+} from '@/lib/ai/responsePersonality'
+import {
+  classifyIntent,
+  isPayload,
+  type IntentType,
+  type ClassifiedIntent,
+} from '@/lib/ai/intentClassifier'
+import {
+  handleCartInquiry,
+  handleClearCart,
+  handleRemoveItem,
+  handleCancel,
+  handleDeliveryInfo,
+  handleGreeting,
+  handleThanks,
+  handleGoToCart,
+  type IntentContext,
+} from '@/lib/ai/intentHandlers'
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions'
 
 // Types
@@ -44,6 +76,14 @@ interface ChatMemory {
   [key: string]: unknown
 }
 
+// Cart item for inquiry
+interface CartItemInfo {
+  name_ar: string
+  quantity: number
+  unit_price: number
+  variant_name_ar?: string
+}
+
 interface ChatRequest {
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
   customer_id?: string
@@ -54,6 +94,7 @@ interface ChatRequest {
   memory?: ChatMemory
   cart_provider_id?: string // Provider ID of items currently in cart (for conflict detection)
   cart_provider_name?: string // Provider name for user-friendly messages
+  cart_items?: CartItemInfo[] // Cart contents for inquiry
 }
 
 // UUID validation regex
@@ -119,6 +160,76 @@ function parseArabicQuantity(message: string): number {
   }
 
   return 0
+}
+
+/**
+ * Extract quantity and product name from search queries like "عايز 2 بيتزا" or "عايز اتنين بيتزا"
+ * Returns { quantity: number, product: string }
+ */
+function extractQuantityFromSearch(searchText: string): { quantity: number; product: string } {
+  const trimmed = searchText.trim()
+
+  // Pattern 1: Number at the start "2 بيتزا" or "٢ بيتزا"
+  const numericStartMatch = trimmed.match(/^(\d+|[٠-٩]+)\s+(.+)$/)
+  if (numericStartMatch) {
+    const arabicNumerals = numericStartMatch[1]
+      .replace(/[٠]/g, '0')
+      .replace(/[١]/g, '1')
+      .replace(/[٢]/g, '2')
+      .replace(/[٣]/g, '3')
+      .replace(/[٤]/g, '4')
+      .replace(/[٥]/g, '5')
+      .replace(/[٦]/g, '6')
+      .replace(/[٧]/g, '7')
+      .replace(/[٨]/g, '8')
+      .replace(/[٩]/g, '9')
+    const qty = parseInt(arabicNumerals, 10)
+    if (qty > 0 && qty <= 99) {
+      return { quantity: qty, product: numericStartMatch[2].trim() }
+    }
+  }
+
+  // Pattern 2: Arabic word number at the start "اتنين بيتزا"
+  const words = trimmed.split(/\s+/)
+  if (words.length >= 2) {
+    const firstWord = words[0]
+    const qty = ARABIC_NUMBER_WORDS[firstWord]
+    if (qty && qty > 0) {
+      return { quantity: qty, product: words.slice(1).join(' ') }
+    }
+  }
+
+  // Pattern 3: Number after product "بيتزا 2" or "بيتزا اتنين"
+  const numericEndMatch = trimmed.match(/^(.+?)\s+(\d+|[٠-٩]+)$/)
+  if (numericEndMatch) {
+    const arabicNumerals = numericEndMatch[2]
+      .replace(/[٠]/g, '0')
+      .replace(/[١]/g, '1')
+      .replace(/[٢]/g, '2')
+      .replace(/[٣]/g, '3')
+      .replace(/[٤]/g, '4')
+      .replace(/[٥]/g, '5')
+      .replace(/[٦]/g, '6')
+      .replace(/[٧]/g, '7')
+      .replace(/[٨]/g, '8')
+      .replace(/[٩]/g, '9')
+    const qty = parseInt(arabicNumerals, 10)
+    if (qty > 0 && qty <= 99) {
+      return { quantity: qty, product: numericEndMatch[1].trim() }
+    }
+  }
+
+  // Pattern 4: Arabic word at end "بيتزا اتنين"
+  if (words.length >= 2) {
+    const lastWord = words[words.length - 1]
+    const qty = ARABIC_NUMBER_WORDS[lastWord]
+    if (qty && qty > 0) {
+      return { quantity: qty, product: words.slice(0, -1).join(' ') }
+    }
+  }
+
+  // No quantity found, return default
+  return { quantity: 1, product: trimmed }
 }
 
 // =============================================================================
@@ -258,8 +369,9 @@ async function handleProviderPayload(
   }
 
   // Conversational approach: Ask what they want instead of showing full menu
+  // Use personality-driven response
   return {
-    reply: `تمام! اخترت ${provider.name_ar} ⭐${provider.rating || ''} ${categoryEmoji}\n\nعايز تطلب إيه؟ اكتب اسم الصنف وهلاقيهولك...`,
+    reply: getProviderSelectedMessage(provider.name_ar, provider.rating),
     quick_replies: quickReplies,
     selected_provider_id: providerId,
     memory: {
@@ -628,13 +740,14 @@ function handleConfirmAdd(memory: ChatMemory): PayloadHandlerResult | null {
     variant_name_ar: pending_variant?.name_ar,
   }
 
-  // Include provider name in the response so user knows where the item is from
+  // Simple confirmation message without upselling
+  const baseReply = getAddedToCartMessage(pending_quantity, `${pending_item.name_ar}${variantText}`, totalPrice, providerName)
+
   return {
-    reply: `تمام! ✅ ضفت ${pending_quantity}x ${pending_item.name_ar}${variantText} للسلة من ${providerName} (${totalPrice} ج.م)\n\nتحب تضيف حاجة تانية من ${providerName}؟`,
+    reply: `${baseReply}\n\nتحب تضيف حاجة تانية؟`,
     quick_replies: [
       { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
       { title: '➕ أضف صنف آخر', payload: `add_more:${pending_item.provider_id}` },
-      { title: '📋 شوف المنيو', payload: `navigate:/ar/providers/${pending_item.provider_id}` },
     ],
     cart_action,
     selected_provider_id: pending_item.provider_id,
@@ -1113,7 +1226,7 @@ interface QuickReply {
 }
 
 interface CartAction {
-  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' // CLEAR_AND_ADD clears cart first, then adds item
+  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' | 'REMOVE_ITEM' | 'CLEAR_CART' // CLEAR_AND_ADD clears cart first, then adds item
   provider_id: string
   menu_item_id: string
   menu_item_name_ar: string
@@ -1796,7 +1909,7 @@ function parseAssistantResponse(content: string): {
 export async function POST(request: Request) {
   try {
     const body: ChatRequest = await request.json()
-    const { messages, customer_id, city_id, selected_provider_id, selected_provider_category, selected_category, memory, cart_provider_id, cart_provider_name } = body
+    const { messages, customer_id, city_id, selected_provider_id, selected_provider_category, selected_category, memory, cart_provider_id, cart_provider_name, cart_items } = body
 
     // Get the last user message (extracted early for pre-validation handlers)
     const lastUserMessage = messages[messages.length - 1]?.content || ''
@@ -1810,14 +1923,379 @@ export async function POST(request: Request) {
       selectedCategory: selected_category,
       cartProviderId: cart_provider_id,
       cartProviderName: cart_provider_name,
+      cartItemsCount: cart_items?.length || 0,
       messageCount: messages?.length,
       lastMessage: lastUserMessage?.slice(0, 100),
       memory: memory,
     })
 
     // =========================================================================
-    // 🚀 PRE-VALIDATION HANDLERS - These don't need city_id
+    // 🧠 GPT INTENT CLASSIFICATION - Replaces regex pattern matching
+    // Handles typos, dialects, and natural language variations
     // =========================================================================
+
+    // Skip intent classification for payloads (button clicks)
+    if (!isPayload(lastUserMessage)) {
+      // Build context for intent classification
+      const intentContext: IntentContext = {
+        city_id,
+        selected_provider_id,
+        cart_provider_id,
+        cart_provider_name,
+        cart_items,
+        memory,
+      }
+
+      // Classify user intent using GPT
+      const classifiedIntent = await classifyIntent(lastUserMessage, {
+        hasCartItems: cart_items && cart_items.length > 0,
+        hasSelectedProvider: !!selected_provider_id || !!cart_provider_id,
+        awaitingQuantity: !!memory?.awaiting_quantity,
+        awaitingConfirmation: !!memory?.awaiting_confirmation,
+      })
+
+      console.log('🧠 [INTENT]', classifiedIntent.intent, 'confidence:', classifiedIntent.confidence, 'entities:', classifiedIntent.entities)
+
+      // Handle intents with high confidence
+      if (classifiedIntent.confidence >= 0.7) {
+        let intentResult = null
+
+        switch (classifiedIntent.intent) {
+          case 'cart_inquiry':
+            intentResult = handleCartInquiry(intentContext)
+            break
+
+          case 'clear_cart':
+            intentResult = handleClearCart(intentContext)
+            break
+
+          case 'remove_item':
+            intentResult = handleRemoveItem(classifiedIntent.entities.product_name, intentContext)
+            break
+
+          case 'cancel':
+            intentResult = handleCancel(intentContext)
+            break
+
+          case 'delivery_info':
+            intentResult = await handleDeliveryInfo(intentContext)
+            break
+
+          case 'greeting':
+            intentResult = handleGreeting(intentContext)
+            break
+
+          case 'thanks':
+            intentResult = handleThanks(intentContext)
+            break
+
+          case 'go_to_cart':
+            intentResult = handleGoToCart(intentContext)
+            break
+
+          case 'quantity_response':
+            // Let it fall through to existing quantity handling
+            break
+
+          case 'confirm':
+            // Let it fall through to existing confirmation handling
+            break
+
+          case 'search_product':
+            // Let it fall through to GPT function calling for search
+            break
+
+          case 'unknown':
+          default:
+            // Let it fall through to GPT
+            break
+        }
+
+        // Return if intent was handled
+        if (intentResult) {
+          return Response.json({
+            reply: intentResult.reply,
+            quick_replies: intentResult.quick_replies,
+            cart_action: intentResult.cart_action,
+            selected_provider_id: intentResult.selected_provider_id !== undefined ? intentResult.selected_provider_id : selected_provider_id,
+            selected_category: intentResult.selected_category !== undefined ? intentResult.selected_category : selected_category,
+            memory: intentResult.memory || memory,
+          })
+        }
+      }
+    }
+
+    // =========================================================================
+    // 🚀 PAYLOAD HANDLERS - Handle button clicks and compound commands
+    // Note: Simple intents (cart_inquiry, clear_cart, etc.) are now handled by GPT above
+    // =========================================================================
+
+    // Handle compound commands - "كنسل الكشري وضيف 2 فته", "الغي البيتزا و اضف برجر"
+    // Pattern: (cancel item) + و/and + (add item with optional quantity)
+    const compoundCommandPatterns = [
+      /(?:الغ[يى]|كنسل|امسح|شيل)\s+(?:ال)?(.+?)\s+(?:و|وبعدين|ثم)\s*(?:ضيف|أضف|اضف|زود|هات)\s*(\d+|واحد|اتنين|تلاته|اربعه|خمسه)?\s*(.+)/i,
+      /(?:بدل|غير)\s+(?:ال)?(.+?)\s+(?:ب|الى|إلى)\s*(\d+|واحد|اتنين|تلاته|اربعه|خمسه)?\s*(.+)/i,
+    ]
+
+    for (const pattern of compoundCommandPatterns) {
+      const match = lastUserMessage.match(pattern)
+      if (match) {
+        const itemToRemove = match[1]?.trim()
+        const quantityWord = match[2]?.trim()
+        const itemToAdd = match[3]?.trim()
+
+        if (itemToRemove && itemToAdd) {
+          console.log('🚀 [PRE-VALIDATION HANDLER] compound_command:', itemToRemove, '->', quantityWord, 'x', itemToAdd)
+
+          // Parse quantity
+          let quantity = 1
+          if (quantityWord) {
+            const parsed = parseArabicQuantity(quantityWord)
+            if (parsed > 0) quantity = parsed
+          }
+
+          // Find the item to remove in cart
+          let removedItem: CartItemInfo | undefined
+          let cartAction: CartAction | undefined
+
+          if (cart_items && cart_items.length > 0) {
+            const normalizedSearch = normalizeArabic(itemToRemove)
+            removedItem = cart_items.find(item => {
+              const normalizedName = normalizeArabic(item.name_ar)
+              return normalizedName.includes(normalizedSearch) || normalizedSearch.includes(normalizedName)
+            })
+
+            if (removedItem) {
+              cartAction = {
+                type: 'REMOVE_ITEM' as const,
+                provider_id: cart_provider_id || '',
+                menu_item_id: '',
+                menu_item_name_ar: removedItem.name_ar,
+                quantity: 0,
+                unit_price: 0,
+              }
+            }
+          }
+
+          // Now search for the item to add
+          const providerId = cart_provider_id || selected_provider_id || memory?.current_provider?.id
+
+          if (providerId && isValidUUID(providerId)) {
+            const supabase = await createClient()
+
+            // Search for the new item
+            const { data: searchResults } = await supabase
+              .from('menu_items')
+              .select('id, name_ar, name_en, price, description_ar, has_variants, provider_id, providers!inner(name_ar)')
+              .eq('provider_id', providerId)
+              .eq('is_available', true)
+              .limit(20)
+
+            if (searchResults && searchResults.length > 0) {
+              const normalizedAddSearch = normalizeArabic(itemToAdd)
+              const filtered = filterByNormalizedArabic(searchResults, normalizedAddSearch, (item) => [item.name_ar || '', item.name_en || ''])
+
+              if (filtered.length > 0) {
+                const item = filtered[0] as unknown as { id: string; name_ar: string; price: number; has_variants?: boolean; provider_id: string; providers: { name_ar: string } }
+                const providerName = item.providers?.name_ar || 'المتجر'
+
+                let removeMessage = ''
+                if (removedItem) {
+                  removeMessage = `تمام! ✅ شلت ${removedItem.name_ar} من السلة.\n\n`
+                }
+
+                if (item.has_variants) {
+                  // Item has variants, need to show variants
+                  const { data: variants } = await supabase
+                    .from('menu_item_variants')
+                    .select('id, name_ar, price')
+                    .eq('menu_item_id', item.id)
+                    .eq('is_available', true)
+
+                  if (variants && variants.length > 0) {
+                    const variantButtons = variants.slice(0, 4).map((v: { id: string; name_ar: string; price: number }) => ({
+                      title: `${v.name_ar} - ${v.price} ج.م`,
+                      payload: `variant:${v.id}`,
+                    }))
+
+                    return Response.json({
+                      reply: `${removeMessage}${getVariantAskMessage(item.name_ar)}\n\nعايز كام؟ (${quantity} ${item.name_ar})`,
+                      quick_replies: variantButtons,
+                      cart_action: cartAction,
+                      selected_provider_id: providerId,
+                      selected_category,
+                      memory: {
+                        ...memory,
+                        pending_item: {
+                          id: item.id,
+                          name_ar: item.name_ar,
+                          price: item.price,
+                          provider_id: item.provider_id,
+                          provider_name_ar: providerName,
+                          has_variants: true,
+                        },
+                        pending_quantity: quantity,
+                        awaiting_quantity: false,
+                      },
+                    })
+                  }
+                }
+
+                // No variants - proceed with confirmation
+                const totalPrice = quantity * item.price
+
+                return Response.json({
+                  reply: `${removeMessage}لقيت ${item.name_ar} بـ ${item.price} ج.م 👇\n\n${quantity}x ${item.name_ar} = ${totalPrice} ج.م\n\nتأكيد الإضافة للسلة؟`,
+                  quick_replies: [
+                    { title: '✅ أيوه، أضف', payload: 'confirm_add' },
+                    { title: '🔢 غير الكمية', payload: `ask_quantity:${item.id}` },
+                    { title: '❌ لا', payload: 'cancel_item' },
+                  ],
+                  cart_action: cartAction,
+                  selected_provider_id: providerId,
+                  selected_category,
+                  memory: {
+                    ...memory,
+                    pending_item: {
+                      id: item.id,
+                      name_ar: item.name_ar,
+                      price: item.price,
+                      provider_id: item.provider_id,
+                      provider_name_ar: providerName,
+                      has_variants: false,
+                    },
+                    pending_quantity: quantity,
+                    awaiting_quantity: false,
+                    awaiting_confirmation: true,
+                  },
+                })
+              }
+            }
+          }
+
+          // Couldn't find the item to add
+          let reply = ''
+          if (removedItem) {
+            reply = `تمام! ✅ شلت ${removedItem.name_ar} من السلة.\n\nبس مش لاقي "${itemToAdd}" 🤔 جرب تكتبه بطريقة تانية`
+          } else if (cart_items && cart_items.length > 0) {
+            reply = `مش لاقي "${itemToRemove}" في السلة ومش لاقي "${itemToAdd}" 🤔\n\nتحب تشوف السلة؟`
+          } else {
+            reply = `السلة فاضية ومش لاقي "${itemToAdd}" 🤔 تحب تبحث بطريقة تانية؟`
+          }
+
+          return Response.json({
+            reply,
+            quick_replies: [
+              { title: '🛒 شوف السلة', payload: 'cart_inquiry' },
+              { title: '📋 شوف المنيو', payload: cart_provider_id ? `provider:${cart_provider_id}` : 'categories' },
+            ],
+            cart_action: cartAction,
+            selected_provider_id,
+            selected_category,
+            memory,
+          })
+        }
+      }
+    }
+
+    // Handle recommendations - "اقترح عليا", "ايه الحلو", "بترشح ايه"
+    const recommendationPatterns = [
+      /^(?:اقترح|قترح|رشح|رشحلي|اقترحلي)\s*(?:عليا?|لي)?/i,
+      /^(?:ايه|إيه|شو)\s*(?:ال)?(?:حلو|مميز|جميل|كويس|احسن|الأفضل)/i,
+      /^(?:بترشح|ترشح|تقترح)\s*(?:ايه|إيه|شو)/i,
+      /^(?:عندك|عندكم)\s*(?:ايه|إيه|شو)\s*(?:حلو|مميز)/i,
+    ]
+
+    if (recommendationPatterns.some(pattern => pattern.test(lastUserMessage))) {
+      console.log('🚀 [PRE-VALIDATION HANDLER] recommendations')
+
+      const supabase = await createClient()
+      const providerId = selected_provider_id || memory?.current_provider?.id
+
+      if (providerId && isValidUUID(providerId)) {
+        const { data: items } = await supabase
+          .from('menu_items')
+          .select('id, name_ar, price, is_featured')
+          .eq('provider_id', providerId)
+          .eq('is_available', true)
+          .order('is_featured', { ascending: false })
+          .order('price', { ascending: true })
+          .limit(8)
+
+        const { data: provider } = await supabase
+          .from('providers')
+          .select('name_ar')
+          .eq('id', providerId)
+          .single()
+
+        if (items && items.length > 0) {
+          return Response.json({
+            reply: getRecommendationHeader(provider?.name_ar),
+            quick_replies: items.slice(0, 6).map(item => ({
+              title: `${item.name_ar} (${item.price} ج.م)`,
+              payload: `item:${item.id}`,
+            })),
+            selected_provider_id: providerId,
+            selected_category,
+            memory,
+          })
+        }
+      }
+
+      // No provider context - show top providers
+      const { data: providers } = await supabase
+        .from('providers')
+        .select('id, name_ar, rating, is_featured')
+        .eq('city_id', city_id)
+        .eq('status', 'open')
+        .order('is_featured', { ascending: false })
+        .order('rating', { ascending: false })
+        .limit(6)
+
+      if (providers && providers.length > 0) {
+        return Response.json({
+          reply: getRecommendationHeader(),
+          quick_replies: providers.map(p => ({
+            title: `📍 ${p.name_ar}${p.rating ? ` ⭐${p.rating}` : ''}`,
+            payload: `provider:${p.id}`,
+          })),
+          selected_provider_id,
+          selected_category,
+          memory,
+        })
+      }
+    }
+
+    // Handle price inquiry - "البيتزا بكام", "سعر الكباب"
+    const priceInquiryPatterns = [
+      /^(.+?)\s*(?:بكام|بكم|سعره?[ا]?)\s*(?:\?|؟)?$/i,
+      /^(?:سعر|ثمن|تمن)\s+(.+?)(?:\?|؟)?$/i,
+      /^(?:بكام|بكم)\s+(.+?)(?:\?|؟)?$/i,
+    ]
+
+    for (const pattern of priceInquiryPatterns) {
+      const priceMatch = lastUserMessage.match(pattern)
+      if (priceMatch) {
+        const productName = priceMatch[1].trim()
+        if (productName.length < 2 || productName.includes(':')) continue
+
+        console.log('🚀 [PRE-VALIDATION HANDLER] price_inquiry:', productName)
+
+        const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
+        const searchResult = await performDirectSearch(productName, city_id, providerIdToSearch, memory)
+
+        if (searchResult.quick_replies.length > 0) {
+          return Response.json({
+            reply: `💰 أسعار ${productName}:\n\n` + searchResult.quick_replies.slice(0, 5).map(qr => `• ${qr.title}`).join('\n') + '\n\nاختار واحد عشان تضيفه للسلة 👇',
+            quick_replies: searchResult.quick_replies.slice(0, 5),
+            selected_provider_id: providerIdToSearch || selected_provider_id,
+            selected_category,
+            memory,
+          })
+        }
+        break
+      }
+    }
 
     // Handle provider_category:xxx payload - Show items from provider's menu category
     // This doesn't need city_id because it gets provider_id from the category itself
@@ -1993,6 +2471,41 @@ export async function POST(request: Request) {
       }
     }
 
+    // Handle remove_item:xxx payload - Remove specific item from cart by name
+    if (lastUserMessage.startsWith('remove_item:')) {
+      const itemName = lastUserMessage.replace('remove_item:', '')
+      console.log('🚀 [PRE-VALIDATION HANDLER] remove_item payload:', itemName)
+
+      if (cart_items && cart_items.length > 0) {
+        const normalizedSearch = normalizeArabic(itemName)
+        const matchedItem = cart_items.find(item => {
+          const normalizedName = normalizeArabic(item.name_ar)
+          return normalizedName.includes(normalizedSearch) || normalizedSearch.includes(normalizedName)
+        })
+
+        if (matchedItem) {
+          return Response.json({
+            reply: `تمام! ✅ شلت ${matchedItem.name_ar} من السلة.\n\nتحب تكمل طلبك ولا تضيف حاجة تانية؟`,
+            quick_replies: [
+              { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
+              { title: '➕ أضف صنف آخر', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
+            ],
+            cart_action: {
+              type: 'REMOVE_ITEM' as const,
+              provider_id: cart_provider_id || '',
+              menu_item_id: '',
+              menu_item_name_ar: matchedItem.name_ar,
+              quantity: 0,
+              unit_price: 0,
+            },
+            selected_provider_id,
+            selected_category,
+            memory,
+          })
+        }
+      }
+    }
+
     // Handle provider:xxx payload (doesn't need city_id - just looks up provider by ID)
     if (lastUserMessage.startsWith('provider:')) {
       const providerId = lastUserMessage.replace('provider:', '')
@@ -2162,13 +2675,72 @@ export async function POST(request: Request) {
 
     if (isGoToCart) {
       console.log('🚀 [DIRECT HANDLER] go_to_cart')
+
+      // Phase 6: Show order summary before checkout
+      if (cart_items && cart_items.length > 0) {
+        let summary = '📋 **ملخص طلبك:**\n\n'
+        let subtotal = 0
+
+        for (const item of cart_items) {
+          const variantText = item.variant_name_ar ? ` (${item.variant_name_ar})` : ''
+          const itemTotal = item.quantity * item.unit_price
+          subtotal += itemTotal
+          summary += `• ${item.quantity}x ${item.name_ar}${variantText} - ${itemTotal} ج.م\n`
+        }
+
+        summary += `\n💵 **المجموع: ${subtotal} ج.م**`
+
+        // Add delivery info if we have provider context
+        if (cart_provider_id && isValidUUID(cart_provider_id)) {
+          const supabase = await createClient()
+          const { data: provider } = await supabase
+            .from('providers')
+            .select('delivery_fee, free_delivery_threshold')
+            .eq('id', cart_provider_id)
+            .single()
+
+          if (provider) {
+            const deliveryFee = provider.delivery_fee || 0
+            const freeThreshold = provider.free_delivery_threshold
+
+            if (freeThreshold && subtotal >= freeThreshold) {
+              summary += '\n🚚 التوصيل: مجاني! 🎉'
+            } else if (deliveryFee > 0) {
+              summary += `\n🚚 التوصيل: ${deliveryFee} ج.م`
+              summary += `\n💰 **الإجمالي: ${subtotal + deliveryFee} ج.م**`
+              if (freeThreshold) {
+                const remaining = freeThreshold - subtotal
+                if (remaining > 0) {
+                  summary += `\n\n💡 ضيف ${remaining} ج.م كمان والتوصيل هيبقى مجاني!`
+                }
+              }
+            }
+          }
+        }
+
+        summary += '\n\n✅ جاهز تكمل الطلب؟'
+
+        return Response.json({
+          reply: summary,
+          quick_replies: [
+            { title: '✅ أكمل الطلب', payload: 'navigate:/ar/cart' },
+            { title: '➕ أضف حاجة كمان', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
+            { title: '🗑️ فضي السلة', payload: 'clear_cart' },
+          ],
+          navigate_to: '/ar/cart',
+          selected_provider_id,
+          selected_category,
+          memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false, awaiting_confirmation: false },
+        })
+      }
+
+      // Empty cart
       return Response.json({
-        reply: 'تمام! هفتحلك السلة عشان تكمل طلبك 🛒',
+        reply: getCartEmptyMessage(),
         quick_replies: [
-          { title: '🛒 فتح السلة', payload: 'navigate:/ar/cart' },
-          { title: '➕ أضف المزيد', payload: 'categories' },
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:supermarket' },
         ],
-        navigate_to: '/ar/cart', // Signal to frontend to navigate to cart (not checkout)
         selected_provider_id,
         selected_category,
         memory: { ...memory, pending_item: undefined, pending_variant: undefined, awaiting_quantity: false, awaiting_confirmation: false },
@@ -2837,18 +3409,32 @@ export async function POST(request: Request) {
 
     // Pattern 3: "عايز X" / "عاوز X" / "عايزين X" / "هطلب X" / "نفسي في X" (I want X / I'll order X)
     // Includes plural forms: عايزين, عاوزين
+    // Now supports quantity: "عايز 2 بيتزا" or "عايز اتنين بيتزا"
     // Uses current_provider from memory as fallback
     const ayezQueryMatch = lastUserMessage.match(/^(?:عايز|عايزين|عاوز|عاوزين|عاوزه|عايزه|هطلب|هنطلب|نفسي في|نفسي فى|ابي|أبي|ابغى|أبغى|نبي|نبغى)\s+(.+?)$/i)
     if (ayezQueryMatch) {
-      const searchQuery = ayezQueryMatch[1].trim()
+      const rawQuery = ayezQueryMatch[1].trim()
+      // Extract quantity from search query (e.g., "2 بيتزا" → quantity=2, product="بيتزا")
+      const { quantity, product: searchQuery } = extractQuantityFromSearch(rawQuery)
       const providerIdToSearch = selected_provider_id || memory?.current_provider?.id
-      console.log('🚀 [DIRECT HANDLER] "عايز X" query:', searchQuery, 'provider:', providerIdToSearch)
+      console.log('🚀 [DIRECT HANDLER] "عايز X" query:', searchQuery, 'quantity:', quantity, 'provider:', providerIdToSearch)
 
       const searchResult = await performDirectSearch(searchQuery, city_id, providerIdToSearch, memory)
+
+      // Store quantity in memory if > 1 so it's used when item is selected
+      const updatedMemory = {
+        ...searchResult.memory,
+        pending_quantity: quantity > 1 ? quantity : undefined,
+      }
+
       return Response.json({
         ...searchResult,
+        reply: quantity > 1
+          ? `${searchResult.reply}\n\n📝 هضيف ${quantity} من اللي تختاره`
+          : searchResult.reply,
         selected_provider_id: providerIdToSearch || selected_provider_id,
         selected_category,
+        memory: updatedMemory,
       })
     }
 

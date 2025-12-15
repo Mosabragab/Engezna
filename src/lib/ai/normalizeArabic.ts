@@ -76,10 +76,11 @@ export function normalizedIncludes(query: string, text: string): boolean {
 
 /**
  * Filter array of items by normalized Arabic search
+ * Supports multi-word queries - matches if ANY word matches the item
  * @param items - Array of items to filter
  * @param query - Search query
  * @param getSearchableText - Function to extract searchable text from item
- * @returns Filtered array of items
+ * @returns Filtered array of items (sorted by match score - best matches first)
  */
 export function filterByNormalizedArabic<T>(
   items: T[],
@@ -90,12 +91,41 @@ export function filterByNormalizedArabic<T>(
 
   if (!normalizedQuery) return items
 
-  return items.filter(item => {
+  // Split query into words for multi-word matching
+  const queryWords = normalizedQuery.split(/\s+/).filter(w => w.length > 1)
+
+  // Score items based on how well they match
+  const scoredItems = items.map(item => {
     const searchableTexts = getSearchableText(item)
-    return searchableTexts.some(text =>
-      normalizeArabic(text).includes(normalizedQuery)
-    )
+    let score = 0
+    let matched = false
+
+    for (const text of searchableTexts) {
+      const normalizedText = normalizeArabic(text)
+
+      // Full query match gets highest score
+      if (normalizedText.includes(normalizedQuery)) {
+        score += 100
+        matched = true
+      } else {
+        // Check individual words
+        for (const word of queryWords) {
+          if (normalizedText.includes(word)) {
+            score += 10
+            matched = true
+          }
+        }
+      }
+    }
+
+    return { item, score, matched }
   })
+
+  // Filter matched items and sort by score (highest first)
+  return scoredItems
+    .filter(({ matched }) => matched)
+    .sort((a, b) => b.score - a.score)
+    .map(({ item }) => item)
 }
 
 /**
