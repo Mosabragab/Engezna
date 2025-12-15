@@ -128,10 +128,12 @@ export function handleClearCart(context: IntentContext): IntentResult {
 /**
  * Handle remove item intent
  * "امسح البيتزا"، "شيل الكولا"، "الغي البرجر من السلة"
+ * "شيل واحدة بس"، "نقص 2 بيتزا" - supports partial removal with quantity
  */
 export function handleRemoveItem(
   productName: string | undefined,
-  context: IntentContext
+  context: IntentContext,
+  quantityToRemove?: number  // undefined = remove all, number = remove specific quantity
 ): IntentResult {
   const { cart_items, cart_provider_id, selected_provider_id, memory } = context
 
@@ -172,8 +174,22 @@ export function handleRemoveItem(
   })
 
   if (matchedItem) {
+    // Determine if partial or complete removal
+    const currentQty = matchedItem.quantity
+    const removeAll = !quantityToRemove || quantityToRemove >= currentQty
+    const actualRemoveQty = removeAll ? currentQty : quantityToRemove
+
+    // Build appropriate response message
+    let replyMessage: string
+    if (removeAll) {
+      replyMessage = `تمام! ✅ شلت ${matchedItem.name_ar} من السلة.\n\nتحب تكمل طلبك ولا تضيف حاجة تانية؟`
+    } else {
+      const remaining = currentQty - actualRemoveQty
+      replyMessage = `تمام! ✅ شلت ${actualRemoveQty} من ${matchedItem.name_ar} (فاضل ${remaining} في السلة).\n\nتحب تكمل طلبك ولا تضيف حاجة تانية؟`
+    }
+
     return {
-      reply: `تمام! ✅ شلت ${matchedItem.name_ar} من السلة.\n\nتحب تكمل طلبك ولا تضيف حاجة تانية؟`,
+      reply: replyMessage,
       quick_replies: [
         { title: '🛒 اذهب للسلة', payload: 'go_to_cart' },
         { title: '➕ أضف صنف آخر', payload: cart_provider_id ? `add_more:${cart_provider_id}` : 'categories' },
@@ -183,7 +199,7 @@ export function handleRemoveItem(
         provider_id: cart_provider_id || '',
         menu_item_id: '',
         menu_item_name_ar: matchedItem.name_ar,
-        quantity: 0,
+        quantity: actualRemoveQty, // How many to remove (0 or >= current = remove all)
         unit_price: 0,
       },
       selected_provider_id,

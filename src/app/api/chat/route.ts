@@ -1970,7 +1970,12 @@ export async function POST(request: Request) {
             break
 
           case 'remove_item':
-            intentResult = handleRemoveItem(classifiedIntent.entities.product_name, intentContext)
+            // Pass quantity if user specified one (e.g., "شيل واحدة بس")
+            intentResult = handleRemoveItem(
+              classifiedIntent.entities.product_name,
+              intentContext,
+              classifiedIntent.entities.quantity  // undefined = remove all
+            )
             break
 
           case 'cancel':
