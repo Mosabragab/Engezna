@@ -296,50 +296,73 @@ export function handleCancel(context: IntentContext): IntentResult {
  * "بكام التوصيل"، "الدليفري كام"، "في توصيل"
  */
 export async function handleDeliveryInfo(context: IntentContext): Promise<IntentResult> {
-  const { cart_provider_id, selected_provider_id, memory } = context
+  const { cart_provider_id, selected_provider_id, cart_provider_name, memory } = context
 
   // Check all possible provider contexts - cart_provider_id is most reliable
   const providerId = cart_provider_id || selected_provider_id || (memory?.current_provider as { id: string } | undefined)?.id
 
+  console.log('🚚 [DELIVERY_INFO] providerId:', providerId, 'cart_provider_id:', cart_provider_id, 'selected_provider_id:', selected_provider_id)
+
   if (providerId) {
-    const supabase = await createClient()
+    try {
+      const supabase = await createClient()
 
-    const { data: provider } = await supabase
-      .from('providers')
-      .select('name_ar, delivery_fee, min_order_amount, estimated_delivery_time, free_delivery_threshold')
-      .eq('id', providerId)
-      .single()
+      const { data: provider, error } = await supabase
+        .from('providers')
+        .select('name_ar, delivery_fee, min_order_amount, estimated_delivery_time_min, free_delivery_threshold')
+        .eq('id', providerId)
+        .single()
 
-    if (provider) {
-      let deliveryInfo = `🚚 **معلومات التوصيل من ${provider.name_ar}:**\n\n`
-
-      if (provider.delivery_fee === 0 || provider.delivery_fee === null) {
-        deliveryInfo += '✅ التوصيل مجاني!\n'
-      } else {
-        deliveryInfo += `💰 رسوم التوصيل: ${provider.delivery_fee} ج.م\n`
+      if (error) {
+        console.error('🚚 [DELIVERY_INFO] Supabase error:', error)
       }
 
-      if (provider.free_delivery_threshold) {
-        deliveryInfo += `🎁 توصيل مجاني للطلبات فوق ${provider.free_delivery_threshold} ج.م\n`
+      if (provider) {
+        let deliveryInfo = `🚚 **معلومات التوصيل من ${provider.name_ar}:**\n\n`
+
+        if (provider.delivery_fee === 0 || provider.delivery_fee === null) {
+          deliveryInfo += '✅ التوصيل مجاني!\n'
+        } else {
+          deliveryInfo += `💰 رسوم التوصيل: ${provider.delivery_fee} ج.م\n`
+        }
+
+        if (provider.free_delivery_threshold) {
+          deliveryInfo += `🎁 توصيل مجاني للطلبات فوق ${provider.free_delivery_threshold} ج.م\n`
+        }
+
+        if (provider.min_order_amount) {
+          deliveryInfo += `📦 الحد الأدنى للطلب: ${provider.min_order_amount} ج.م\n`
+        }
+
+        if (provider.estimated_delivery_time_min) {
+          deliveryInfo += `⏱️ وقت التوصيل المتوقع: ${provider.estimated_delivery_time_min} دقيقة\n`
+        }
+
+        return {
+          reply: deliveryInfo,
+          quick_replies: [
+            { title: '📋 شوف المنيو', payload: `provider:${providerId}` },
+            { title: '🛒 السلة', payload: 'cart_inquiry' },
+          ],
+          selected_provider_id: providerId,
+          memory,
+        }
       }
 
-      if (provider.min_order_amount) {
-        deliveryInfo += `📦 الحد الأدنى للطلب: ${provider.min_order_amount} ج.م\n`
+      // Provider ID exists but not found in database - use cart_provider_name if available
+      if (cart_provider_name) {
+        return {
+          reply: `🚚 للأسف مش لاقي تفاصيل التوصيل لـ ${cart_provider_name} دلوقتي.\n\nتحب تكمل طلبك أو تشوف السلة؟`,
+          quick_replies: [
+            { title: '🛒 السلة', payload: 'cart_inquiry' },
+            { title: '🏠 الأقسام', payload: 'categories' },
+          ],
+          selected_provider_id: providerId,
+          memory,
+        }
       }
-
-      if (provider.estimated_delivery_time) {
-        deliveryInfo += `⏱️ وقت التوصيل المتوقع: ${provider.estimated_delivery_time} دقيقة\n`
-      }
-
-      return {
-        reply: deliveryInfo,
-        quick_replies: [
-          { title: '📋 شوف المنيو', payload: `provider:${providerId}` },
-          { title: '🛒 السلة', payload: 'cart_inquiry' },
-        ],
-        selected_provider_id: providerId,
-        memory,
-      }
+    } catch (err) {
+      console.error('🚚 [DELIVERY_INFO] Error fetching provider:', err)
     }
   }
 

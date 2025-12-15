@@ -19,6 +19,12 @@
 - **🚚 Fixed Delivery Info**: استعلام التوصيل يستخدم `cart_provider_id` بشكل صحيح
 - **❌ Removed Upselling**: إزالة اقتراحات الإضافة غير المنطقية
 
+### إصلاحات (15 ديسمبر 2025 - متأخر)
+- **🔧 Fixed DB Column Name**: إصلاح اسم العمود `estimated_delivery_time` → `estimated_delivery_time_min`
+- **📝 Better Logging**: إضافة logging لـ `handleDeliveryInfo` لتسهيل التشخيص
+- **💬 Enhanced Intent Examples**: إضافة أمثلة أكثر للتوصيل ("التوصيل بكام"، "كام التوصيل"، "رسوم التوصيل")
+- **🔄 Error Handling**: معالجة أفضل عند عدم إيجاد المتجر في قاعدة البيانات
+
 ### الميزات السابقة (13 ديسمبر 2025)
 - **🚀 Direct Payload Handlers**: معالجة أزرار الاختيار (category, provider, item, variant) مباشرة بدون GPT
 - **💾 Memory System**: حفظ pending_item و pending_variant في الذاكرة لمتابعة السياق
@@ -296,8 +302,9 @@ interface ChatAPIResponse {
 ## Logging
 
 الـ Console يُظهر:
-- `🎯 [INTENT ROUTER]` - تحليل نية المستخدم
-- `🎯 [INTENT]` - النية المكتشفة
+- `🧠 [INTENT]` - نتيجة GPT Intent Classification (النية + confidence + entities)
+- `🚚 [DELIVERY_INFO]` - تشخيص معلومات التوصيل (providerId, cart_provider_id)
+- `🎯 [INTENT ROUTER]` - تحليل نية المستخدم (legacy)
 - `🔍 [AI TOOL CALL]` - بداية استدعاء tool
 - `📦 [AI RESULT]` - نتيجة الاستدعاء
 - `🔤 [NORM FILTER]` - فلترة التطبيع العربي
