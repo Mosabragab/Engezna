@@ -1,203 +1,273 @@
--- ============================================================================
--- Automatic Embedding Generation Migration
--- Engezna AI Agent Enhancement
--- ============================================================================
--- Version: 1.0.0
--- Created: 2025-12-15
--- Description: Adds triggers and scheduled jobs for auto-generating embeddings
--- ============================================================================
+-- Migration: Automatic Embedding Generation for Menu Items
+-- This migration adds:
+-- 1. Embedding columns to menu_items table
+-- 2. Trigger functions for automatic embedding generation
+-- 3. pg_cron job for catch-up processing
+-- 4. Helper functions for embedding statistics
 
--- 1. Enable pg_net extension for HTTP calls from database
-create extension if not exists pg_net with schema extensions;
+-- ============================================
+-- 1. ADD EMBEDDING COLUMNS TO MENU_ITEMS
+-- ============================================
 
--- 2. Enable pg_cron for scheduled jobs
-create extension if not exists pg_cron;
-
--- 3. Create function to call embedding Edge Function via webhook
-create or replace function notify_embedding_generation()
-returns trigger
-language plpgsql
-security definer
-as $$
-declare
-  edge_function_url text;
-  service_role_key text;
-  payload jsonb;
-begin
-  -- Get Edge Function URL from vault or use default
-  edge_function_url := current_setting('app.settings.supabase_url', true) || '/functions/v1/generate-embedding';
-
-  -- Build webhook payload
-  payload := jsonb_build_object(
-    'type', TG_OP,
-    'table', TG_TABLE_NAME,
-    'record', to_jsonb(NEW),
-    'old_record', case when TG_OP = 'UPDATE' then to_jsonb(OLD) else null end
-  );
-
-  -- Call Edge Function asynchronously (fire and forget)
-  perform net.http_post(
-    url := edge_function_url,
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true)
-    ),
-    body := payload
-  );
-
-  return NEW;
-exception
-  when others then
-    -- Log error but don't block the insert/update
-    raise notice 'Embedding webhook failed: %', SQLERRM;
-    return NEW;
-end;
+-- Add embedding column (using vector type if pg_vector is available, otherwise jsonb)
+DO $$
+BEGIN
+  -- Try to add as vector type first (if pg_vector extension is enabled)
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
+    ALTER TABLE public.menu_items
+      ADD COLUMN IF NOT EXISTS embedding vector(1536);
+  ELSE
+    -- Fall back to jsonb if pg_vector is not available
+    ALTER TABLE public.menu_items
+      ADD COLUMN IF NOT EXISTS embedding jsonb;
+  END IF;
+END
 $$;
 
--- 4. Create trigger on menu_items for INSERT
-drop trigger if exists trigger_generate_embedding_on_insert on menu_items;
-create trigger trigger_generate_embedding_on_insert
-  after insert on menu_items
-  for each row
-  when (NEW.is_available = true)
-  execute function notify_embedding_generation();
+-- Add metadata columns for embedding
+ALTER TABLE public.menu_items
+  ADD COLUMN IF NOT EXISTS embedding_text text,
+  ADD COLUMN IF NOT EXISTS embedding_updated_at timestamp with time zone;
 
--- 5. Create trigger on menu_items for UPDATE (only relevant fields)
-drop trigger if exists trigger_generate_embedding_on_update on menu_items;
-create trigger trigger_generate_embedding_on_update
-  after update on menu_items
-  for each row
-  when (
-    NEW.is_available = true AND (
-      OLD.name_ar IS DISTINCT FROM NEW.name_ar OR
-      OLD.name_en IS DISTINCT FROM NEW.name_en OR
-      OLD.description_ar IS DISTINCT FROM NEW.description_ar OR
-      OLD.description_en IS DISTINCT FROM NEW.description_en OR
-      OLD.is_spicy IS DISTINCT FROM NEW.is_spicy OR
-      OLD.is_vegetarian IS DISTINCT FROM NEW.is_vegetarian OR
-      OLD.provider_category_id IS DISTINCT FROM NEW.provider_category_id
-    )
-  )
-  execute function notify_embedding_generation();
+-- Index for finding items without embeddings
+CREATE INDEX IF NOT EXISTS idx_menu_items_embedding_null
+  ON public.menu_items(id)
+  WHERE embedding IS NULL;
 
--- 6. Create function for catch-up job (processes items without embeddings)
-create or replace function process_missing_embeddings()
-returns void
-language plpgsql
-security definer
-as $$
-declare
-  edge_function_url text;
-  items_without_embedding uuid[];
-begin
-  edge_function_url := current_setting('app.settings.supabase_url', true) || '/functions/v1/generate-embedding';
+-- Index for embedding updated timestamp
+CREATE INDEX IF NOT EXISTS idx_menu_items_embedding_updated
+  ON public.menu_items(embedding_updated_at);
 
-  -- Get IDs of items without embeddings (max 50 per run)
-  select array_agg(id)
-  into items_without_embedding
-  from (
-    select id
-    from menu_items
-    where embedding is null
-      and is_available = true
-    order by created_at desc
-    limit 50
-  ) sub;
+-- ============================================
+-- 2. CREATE EMBEDDING QUEUE TABLE
+-- For async processing of embedding requests
+-- ============================================
 
-  -- Skip if no items need processing
-  if items_without_embedding is null or array_length(items_without_embedding, 1) is null then
-    raise notice 'No items need embedding generation';
-    return;
-  end if;
-
-  raise notice 'Processing % items for embeddings', array_length(items_without_embedding, 1);
-
-  -- Call Edge Function with catch-up mode
-  perform net.http_post(
-    url := edge_function_url,
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true)
-    ),
-    body := jsonb_build_object(
-      'mode', 'catchup',
-      'limit', 50
-    )
-  );
-end;
-$$;
-
--- 7. Schedule catch-up job to run every 5 minutes
--- This ensures any missed items get processed
-select cron.schedule(
-  'process-missing-embeddings',
-  '*/5 * * * *',  -- Every 5 minutes
-  $$select process_missing_embeddings()$$
+CREATE TABLE IF NOT EXISTS public.embedding_queue (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  menu_item_id uuid NOT NULL REFERENCES public.menu_items(id) ON DELETE CASCADE,
+  status varchar(20) NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed
+  priority int DEFAULT 0, -- Higher = more urgent
+  error_message text,
+  retry_count int DEFAULT 0,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  processed_at timestamp with time zone,
+  UNIQUE(menu_item_id, status) -- Prevent duplicate pending entries
 );
 
--- 8. Create helper function to manually trigger embedding for a specific item
-create or replace function regenerate_embedding(item_id uuid)
-returns void
-language plpgsql
-security definer
-as $$
-declare
-  edge_function_url text;
-begin
-  edge_function_url := current_setting('app.settings.supabase_url', true) || '/functions/v1/generate-embedding';
+CREATE INDEX IF NOT EXISTS idx_embedding_queue_status ON public.embedding_queue(status);
+CREATE INDEX IF NOT EXISTS idx_embedding_queue_priority ON public.embedding_queue(priority DESC, created_at ASC);
 
-  -- Clear existing embedding
-  update menu_items set embedding = null where id = item_id;
+-- Enable RLS
+ALTER TABLE public.embedding_queue ENABLE ROW LEVEL SECURITY;
 
-  -- Trigger regeneration
-  perform net.http_post(
-    url := edge_function_url,
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true)
-    ),
-    body := jsonb_build_object('item_id', item_id)
-  );
-end;
-$$;
+-- Only service role can access embedding queue
+CREATE POLICY "Service role only for embedding_queue"
+  ON public.embedding_queue FOR ALL
+  USING (false)
+  WITH CHECK (false);
 
--- 9. Create function to check embedding coverage
-create or replace function get_embedding_stats()
-returns table (
+-- ============================================
+-- 3. TRIGGER FUNCTION FOR NEW ITEMS
+-- Queues embedding generation when new item is created
+-- ============================================
+
+CREATE OR REPLACE FUNCTION queue_embedding_on_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Only queue if the item is available
+  IF NEW.is_available = true THEN
+    INSERT INTO public.embedding_queue (menu_item_id, priority)
+    VALUES (NEW.id, 10) -- High priority for new items
+    ON CONFLICT (menu_item_id, status) DO NOTHING;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger for inserts
+DROP TRIGGER IF EXISTS trigger_queue_embedding_on_insert ON public.menu_items;
+CREATE TRIGGER trigger_queue_embedding_on_insert
+  AFTER INSERT ON public.menu_items
+  FOR EACH ROW
+  EXECUTE FUNCTION queue_embedding_on_insert();
+
+-- ============================================
+-- 4. TRIGGER FUNCTION FOR UPDATED ITEMS
+-- Re-queues embedding when relevant fields change
+-- ============================================
+
+CREATE OR REPLACE FUNCTION queue_embedding_on_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Check if relevant fields changed
+  IF (
+    OLD.name_ar IS DISTINCT FROM NEW.name_ar OR
+    OLD.name_en IS DISTINCT FROM NEW.name_en OR
+    OLD.description_ar IS DISTINCT FROM NEW.description_ar OR
+    OLD.description_en IS DISTINCT FROM NEW.description_en OR
+    OLD.price IS DISTINCT FROM NEW.price OR
+    OLD.provider_category_id IS DISTINCT FROM NEW.provider_category_id
+  ) THEN
+    -- Clear old embedding since content changed
+    NEW.embedding := NULL;
+    NEW.embedding_text := NULL;
+    NEW.embedding_updated_at := NULL;
+
+    -- Queue for re-generation
+    IF NEW.is_available = true THEN
+      -- Delete any existing pending entry first
+      DELETE FROM public.embedding_queue
+      WHERE menu_item_id = NEW.id AND status = 'pending';
+
+      INSERT INTO public.embedding_queue (menu_item_id, priority)
+      VALUES (NEW.id, 5) -- Medium priority for updates
+      ON CONFLICT (menu_item_id, status) DO NOTHING;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger for updates
+DROP TRIGGER IF EXISTS trigger_queue_embedding_on_update ON public.menu_items;
+CREATE TRIGGER trigger_queue_embedding_on_update
+  BEFORE UPDATE ON public.menu_items
+  FOR EACH ROW
+  EXECUTE FUNCTION queue_embedding_on_update();
+
+-- ============================================
+-- 5. FUNCTION TO PROCESS EMBEDDING QUEUE
+-- Called by pg_cron or manually
+-- ============================================
+
+CREATE OR REPLACE FUNCTION process_embedding_queue(batch_size int DEFAULT 50)
+RETURNS TABLE (
+  processed int,
+  pending int,
+  failed int
+) AS $$
+DECLARE
+  v_processed int := 0;
+  v_pending int := 0;
+  v_failed int := 0;
+BEGIN
+  -- Count pending items
+  SELECT COUNT(*) INTO v_pending
+  FROM public.embedding_queue
+  WHERE status = 'pending';
+
+  -- Return stats (actual processing is done by Edge Function)
+  RETURN QUERY SELECT v_processed, v_pending, v_failed;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- 6. FUNCTION TO GET EMBEDDING STATISTICS
+-- ============================================
+
+CREATE OR REPLACE FUNCTION get_embedding_stats()
+RETURNS TABLE (
   total_items bigint,
   items_with_embedding bigint,
   items_without_embedding bigint,
-  coverage_percentage numeric
-)
-language sql
-security definer
-as $$
-  select
-    count(*) as total_items,
-    count(*) filter (where embedding is not null) as items_with_embedding,
-    count(*) filter (where embedding is null) as items_without_embedding,
-    round(
-      (count(*) filter (where embedding is not null)::numeric / nullif(count(*), 0)) * 100,
+  coverage_percentage numeric,
+  pending_in_queue bigint,
+  failed_in_queue bigint,
+  oldest_without_embedding timestamp with time zone
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    (SELECT COUNT(*) FROM public.menu_items WHERE is_available = true)::bigint as total_items,
+    (SELECT COUNT(*) FROM public.menu_items WHERE embedding IS NOT NULL AND is_available = true)::bigint as items_with_embedding,
+    (SELECT COUNT(*) FROM public.menu_items WHERE embedding IS NULL AND is_available = true)::bigint as items_without_embedding,
+    ROUND(
+      (SELECT COUNT(*) FROM public.menu_items WHERE embedding IS NOT NULL AND is_available = true)::numeric /
+      NULLIF((SELECT COUNT(*) FROM public.menu_items WHERE is_available = true), 0) * 100,
       2
-    ) as coverage_percentage
-  from menu_items
-  where is_available = true;
+    ) as coverage_percentage,
+    (SELECT COUNT(*) FROM public.embedding_queue WHERE status = 'pending')::bigint as pending_in_queue,
+    (SELECT COUNT(*) FROM public.embedding_queue WHERE status = 'failed')::bigint as failed_in_queue,
+    (SELECT MIN(created_at) FROM public.menu_items WHERE embedding IS NULL AND is_available = true) as oldest_without_embedding;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION get_embedding_stats() TO authenticated;
+GRANT EXECUTE ON FUNCTION get_embedding_stats() TO anon;
+
+-- ============================================
+-- 7. FUNCTION TO BULK QUEUE ITEMS WITHOUT EMBEDDINGS
+-- For initial setup or catch-up
+-- ============================================
+
+CREATE OR REPLACE FUNCTION queue_missing_embeddings(batch_limit int DEFAULT 1000)
+RETURNS int AS $$
+DECLARE
+  queued_count int;
+BEGIN
+  WITH items_to_queue AS (
+    SELECT id
+    FROM public.menu_items
+    WHERE embedding IS NULL
+      AND is_available = true
+    LIMIT batch_limit
+  )
+  INSERT INTO public.embedding_queue (menu_item_id, priority)
+  SELECT id, 1 FROM items_to_queue
+  ON CONFLICT (menu_item_id, status) DO NOTHING;
+
+  GET DIAGNOSTICS queued_count = ROW_COUNT;
+  RETURN queued_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- 8. PG_CRON JOB FOR AUTOMATIC CATCH-UP
+-- Runs every 5 minutes to process queue
+-- Note: Requires pg_cron extension to be enabled
+-- ============================================
+
+-- Check if pg_cron is available and create job
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    -- Remove existing job if any
+    PERFORM cron.unschedule('process-embedding-queue');
+
+    -- Schedule new job to run every 5 minutes
+    -- This job calls the Edge Function to process the queue
+    PERFORM cron.schedule(
+      'process-embedding-queue',
+      '*/5 * * * *',
+      $$
+      SELECT net.http_post(
+        url := current_setting('app.settings.supabase_url') || '/functions/v1/generate-embedding',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
+        ),
+        body := jsonb_build_object('mode', 'catchup', 'limit', 50)
+      );
+      $$
+    );
+
+    RAISE NOTICE 'pg_cron job created for embedding queue processing';
+  ELSE
+    RAISE NOTICE 'pg_cron extension not available. Set up external scheduler or manual processing.';
+  END IF;
+END
 $$;
 
--- 10. Grant permissions
-grant execute on function regenerate_embedding to service_role;
-grant execute on function get_embedding_stats to authenticated, service_role;
-grant execute on function process_missing_embeddings to service_role;
+-- ============================================
+-- 9. COMMENTS FOR DOCUMENTATION
+-- ============================================
 
--- 11. Add comment
-comment on function notify_embedding_generation is
-  'Trigger function that calls Edge Function to generate embeddings for new/updated menu items';
-
-comment on function process_missing_embeddings is
-  'Scheduled function that processes menu items without embeddings (catch-up job)';
-
-comment on function regenerate_embedding is
-  'Manually trigger embedding regeneration for a specific menu item';
-
-comment on function get_embedding_stats is
-  'Returns statistics about embedding coverage across menu items';
+COMMENT ON COLUMN public.menu_items.embedding IS 'Vector embedding for semantic search (1536 dimensions from text-embedding-3-small)';
+COMMENT ON COLUMN public.menu_items.embedding_text IS 'The text that was used to generate the embedding';
+COMMENT ON COLUMN public.menu_items.embedding_updated_at IS 'When the embedding was last updated';
+COMMENT ON TABLE public.embedding_queue IS 'Queue for async embedding generation';
+COMMENT ON FUNCTION get_embedding_stats() IS 'Returns statistics about embedding coverage';
+COMMENT ON FUNCTION queue_missing_embeddings(int) IS 'Queues items without embeddings for processing';
