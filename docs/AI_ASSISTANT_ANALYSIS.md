@@ -1,14 +1,121 @@
 # AI Smart Assistant - Analysis & Improvement Plan
 
-**Date:** 2025-12-13
-**Version:** 2.1
-**Status:** Fixes Applied
+**Date:** 2025-12-16
+**Version:** 2.3
+**Status:** Major Fixes Applied - Embedding & Data Access Fixed
 
 ---
 
 ## Overview
 
 This document analyzes the AI Smart Assistant chat flow and identifies issues for improvement.
+
+---
+
+## Session Analysis (December 16, 2025)
+
+### Issues Fixed Today
+
+#### 1. AI Agent Data Access Issues ✅ FIXED
+
+**Problem:**
+The AI Agent wasn't receiving the correct provider ID when operating on provider pages, causing:
+- Empty search results
+- "محتاج أعرف المطعم" responses when provider context was available
+- Promotions tool returning empty results
+
+**Root Cause:**
+The `useAIChat.ts` hook wasn't passing the `providerContext.id` as a fallback when no `selectedProviderId` was available.
+
+**Fix Applied:**
+```typescript
+// useAIChat.ts - Now passes effectiveProviderId
+const effectiveProviderId = selectedProviderId || providerContext?.id
+```
+
+#### 2. Promotions Tool Showing Empty Results ✅ FIXED
+
+**Problem:**
+`get_provider_promotions` was only querying the `promotions` table, missing products that have discounts (where `original_price > price`).
+
+**Fix Applied:**
+The tool now returns BOTH:
+- Promotional campaigns from `promotions` table
+- Discounted products from `menu_items` where `original_price > price`
+
+```typescript
+// Returns both campaigns AND discounted products
+{
+  promotions: [...],
+  discounted_products: [
+    {
+      id, name_ar, price, original_price, image_url, has_variants,
+      discount_percentage: Math.round(((original_price - price) / original_price) * 100)
+    }
+  ]
+}
+```
+
+#### 3. Variant Details Missing in Search ✅ FIXED
+
+**Problem:**
+When `search_menu` found items with `has_variants=true`, it wasn't fetching the actual variants, so the AI couldn't show size options.
+
+**Fix Applied:**
+Added inline variant fetching in `search_menu`:
+```typescript
+// For items with has_variants=true, fetch variants inline
+const fetchVariantsForItems = async (items) => {
+  const itemsWithVariants = items.filter(i => i.has_variants)
+  if (itemsWithVariants.length > 0) {
+    const { data: variants } = await supabase
+      .from('menu_item_variants')
+      .select('id, menu_item_id, name_ar, price')
+      .in('menu_item_id', itemsWithVariants.map(i => i.id))
+    // Merge variants into items
+  }
+  return items
+}
+```
+
+#### 4. Automatic Embedding Generation ✅ ADDED
+
+**New Feature:**
+Added automatic embedding generation for menu items using:
+- Supabase Edge Function (`generate-embedding`)
+- Queue-based processing with `embedding_queue` table
+- Database triggers on INSERT/UPDATE
+- pg_cron job for catch-up processing (every 5 minutes)
+
+**Files Added/Modified:**
+- `supabase/functions/generate-embedding/index.ts`
+- `supabase/migrations/20251215000002_embedding_auto_generation.sql`
+- `src/app/api/embeddings/route.ts`
+- `src/app/api/webhooks/menu-item/route.ts`
+
+### Architecture Improvements
+
+| Component | Before | After |
+|-----------|--------|-------|
+| Provider ID | Manual selection only | Fallback to providerContext |
+| Promotions | promotions table only | campaigns + discounted_products |
+| Variants | Separate API call | Inline with search results |
+| Embeddings | Manual generation | Auto on INSERT/UPDATE |
+
+### Files Modified
+
+- `src/hooks/useAIChat.ts` - Added effectiveProviderId fallback
+- `src/lib/ai/agentTools.ts` - Enhanced promotions + variant handling
+- `src/lib/ai/agentPrompt.ts` - Added cart operation rules
+- `supabase/functions/generate-embedding/index.ts` - New Edge Function
+- `supabase/migrations/20251215000002_embedding_auto_generation.sql` - New migration
+
+### Next Steps (Tomorrow)
+
+1. **Test AI Agent Performance** - Verify all fixes work in production
+2. **Monitor Embedding Coverage** - Use `get_embedding_stats()` to track progress
+3. **Semantic Search Integration** - Use embeddings for better search results
+4. **Performance Optimization** - Review API response times
 
 ---
 
