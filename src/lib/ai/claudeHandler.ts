@@ -53,11 +53,13 @@ let anthropicClient: Anthropic | null = null
 
 function getAnthropicClient(): Anthropic {
   if (!anthropicClient) {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      throw new Error('ANTHROPIC_API_KEY environment variable is not set')
+    // Support both ANTHROPIC_API_KEY and CLAUDE_API_KEY
+    const apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY
+    if (!apiKey) {
+      throw new Error('ANTHROPIC_API_KEY or CLAUDE_API_KEY environment variable is not set')
     }
     anthropicClient = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY
+      apiKey
     })
   }
   return anthropicClient
