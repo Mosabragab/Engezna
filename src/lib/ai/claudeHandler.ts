@@ -120,7 +120,8 @@ export async function* runClaudeAgentStream(options: AgentHandlerOptions): Async
         temperature: 0.7,  // Slightly lower for faster, more focused responses
         system: systemPrompt,
         messages: anthropicMessages,
-        tools: tools.length > 0 ? tools : undefined
+        tools: tools.length > 0 ? tools : undefined,
+        tool_choice: tools.length > 0 ? { type: 'auto' } : undefined
       })
 
       let accumulatedContent = ''
@@ -139,10 +140,18 @@ export async function* runClaudeAgentStream(options: AgentHandlerOptions): Async
 
           // Handle text content
           if (delta.type === 'text_delta') {
-            accumulatedContent += delta.text
-            yield {
-              type: 'content',
-              content: delta.text
+            // Filter out tool intention text that shouldn't be shown to user
+            const text = delta.text
+            if (!text.includes('[سأنفذ') &&
+                !text.includes('[سأستخدم') &&
+                !text.includes('[سأقوم') &&
+                !text.includes('add_to_cart') &&
+                !text.includes('search_menu')) {
+              accumulatedContent += text
+              yield {
+                type: 'content',
+                content: text
+              }
             }
           }
 
