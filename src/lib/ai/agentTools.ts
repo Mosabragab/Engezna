@@ -752,7 +752,7 @@ export async function executeAgentTool(
 
             // Check if results are from a different provider
             const fromDifferentProvider = effectiveProviderId &&
-              formattedResults.every(item => item.provider_id !== effectiveProviderId)
+              formattedResults.every((item: { provider_id: string }) => item.provider_id !== effectiveProviderId)
 
             return {
               success: true,
