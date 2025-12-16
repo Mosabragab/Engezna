@@ -825,15 +825,16 @@ function generateDynamicQuickReplies(
     }
   }
 
-  // Greeting/welcome context - guide to provider selection or other options
+  // Greeting/welcome context - guide to provider selection
   if (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
-      contentLower.includes('صباح') || contentLower.includes('مساء')) {
+      contentLower.includes('صباح') || contentLower.includes('مساء') ||
+      contentLower.includes('حابب تطلب منين')) {
     return {
-      suggestions: ['🔍 ساعدني أختار مطعم', '🔥 العروض', '📦 طلباتي'],
+      suggestions: ['🏪 عندي مكان معين', '🔍 ساعدني أختار', '🔥 اللي عندهم عروض'],
       quickReplies: [
-        { title: '🔍 ساعدني أختار', payload: 'ساعدني ألاقي مطعم' },
-        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
-        { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
+        { title: '🏪 عندي مكان معين', payload: 'عايز أطلب من مكان معين' },
+        { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار مكان' },
+        { title: '🔥 اللي عندهم عروض', payload: 'ورّيني الأماكن اللي عندها عروض' }
       ]
     }
   }
@@ -853,11 +854,11 @@ function generateDynamicQuickReplies(
 
   // No provider selected - guide to selection
   return {
-    suggestions: ['🔍 ساعدني أختار مطعم', '🔥 العروض', '📦 طلباتي'],
+    suggestions: ['🏪 عندي مكان معين', '🔍 ساعدني أختار', '🔥 اللي عندهم عروض'],
     quickReplies: [
-      { title: '🔍 ساعدني أختار', payload: 'ساعدني ألاقي مطعم' },
-      { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
-      { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
+      { title: '🏪 عندي مكان معين', payload: 'عايز أطلب من مكان معين' },
+      { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار مكان' },
+      { title: '🔥 اللي عندهم عروض', payload: 'ورّيني الأماكن اللي عندها عروض' }
     ]
   }
 }

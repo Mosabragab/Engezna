@@ -171,7 +171,7 @@ export function getPersonalizedGreeting(memory: CustomerMemory | null, customerN
  */
 export function getSmartSuggestions(memory: CustomerMemory | null): string[] {
   if (!memory) {
-    return ['🔍 ساعدني أختار مطعم', '🔥 العروض', '📦 طلباتي']
+    return ['🏪 عندي مكان معين', '🔍 ساعدني أختار', '🔥 اللي عندهم عروض']
   }
 
   const suggestions: string[] = []
