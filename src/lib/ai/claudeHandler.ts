@@ -452,7 +452,7 @@ function generateDynamicQuickReplies(
 
   // Greeting - guide to provider selection
   if (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
-      contentLower.includes('حابب تطلب منين')) {
+      contentLower.includes('عايز تطلب منين') || contentLower.includes('عايزة تطلبي منين')) {
     return {
       suggestions: ['🏪 عندي مكان معين', '🔍 ساعدني أختار', '🔥 اللي عندهم عروض'],
       quickReplies: [
