@@ -931,10 +931,10 @@ export async function executeAgentTool(
         // PRE-EXECUTION GUARDS: Validate before adding to cart
         // ═══════════════════════════════════════════════════════════════
 
-        // 1. Check item availability and stock
+        // 1. Check item availability and stock (also check has_variants)
         const { data: item, error: itemError } = await supabase
           .from('menu_items')
-          .select('id, name_ar, is_available, has_stock, stock_notes, price, provider_id')
+          .select('id, name_ar, is_available, has_stock, stock_notes, price, provider_id, has_variants')
           .eq('id', item_id)
           .single()
 
@@ -959,6 +959,25 @@ export async function executeAgentTool(
             success: false,
             error: 'المنتج نفذ من المخزون',
             message: item.stock_notes || `للأسف ${item.name_ar} خلص 😕 عايز حاجة تانية؟`
+          }
+        }
+
+        // 1.5 CRITICAL: If product has variants but no variant_id provided, fetch available variants
+        if (item.has_variants && !variant_id) {
+          // Fetch available variants to show to the agent
+          const { data: variants } = await supabase
+            .from('product_variants')
+            .select('id, name_ar, price')
+            .eq('product_id', item_id)
+            .eq('is_available', true)
+            .order('display_order')
+
+          const variantsList = variants?.map(v => `• ${v.name_ar}: ${v.price} ج.م (id: ${v.id})`).join('\n') || ''
+
+          return {
+            success: false,
+            error: 'variant_required',
+            message: `المنتج ده عنده أحجام مختلفة! اسأل العميل يختار:\n${variantsList}\n\nلازم تستخدم variant_id من القائمة دي.`
           }
         }
 
@@ -1529,15 +1548,26 @@ export async function executeAgentTool(
         }> = []
 
         if (effectiveProviderId) {
+          // Query active promotions - handle NULL dates gracefully
+          // NULL start_date means "always valid", NULL end_date means "never expires"
           const { data } = await supabase
             .from('promotions')
             .select('id, name_ar, name_en, type, discount_value, min_order_amount, max_discount, start_date, end_date')
             .eq('provider_id', effectiveProviderId)
             .eq('is_active', true)
-            .lte('start_date', now)
-            .gte('end_date', now)
 
-          promotions = data || []
+          // Filter by dates manually to handle NULL values
+          promotions = (data || []).filter(promo => {
+            // If start_date is set, check it's not in the future
+            if (promo.start_date && promo.start_date > now) {
+              return false
+            }
+            // If end_date is set, check it hasn't passed
+            if (promo.end_date && promo.end_date < now) {
+              return false
+            }
+            return true
+          })
         }
 
         // ═══════════════════════════════════════════════════════════════════
