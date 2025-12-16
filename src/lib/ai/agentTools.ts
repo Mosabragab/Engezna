@@ -1043,16 +1043,24 @@ export async function executeAgentTool(
           // Log the search filter
           console.log('[search_menu] Fallback - searching with filter:', {
             searchFilter,
+            query,
             providerCount: providers.length
           })
 
-          // Count items per provider
+          // Try simpler approach - use ilike directly instead of .or()
           const { data: itemCounts, error: itemsError } = await supabase
             .from('menu_items')
-            .select('provider_id')
+            .select('provider_id, name_ar')
             .in('provider_id', providers.map(p => p.id))
             .eq('is_available', true)
-            .or(searchFilter)
+            .ilike('name_ar', `%${query}%`)
+
+          // Log what we found
+          console.log('[search_menu] Fallback - ilike result:', {
+            itemCount: itemCounts?.length || 0,
+            itemsError: itemsError?.message,
+            sampleItems: itemCounts?.slice(0, 3).map(i => i.name_ar)
+          })
 
           // Log items result
           console.log('[search_menu] Fallback - items result:', {
