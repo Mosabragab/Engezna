@@ -1573,14 +1573,21 @@ export async function executeAgentTool(
 
         productsWithDiscount = discountedProducts?.filter(p =>
           p.original_price && p.price && p.original_price > p.price
-        ).map(p => ({
-          id: p.id,
-          name_ar: p.name_ar,
-          price: p.price,
-          original_price: p.original_price!,
-          discount_percentage: Math.round(((p.original_price! - p.price) / p.original_price!) * 100),
-          provider_name: (p.providers as { name_ar: string } | null)?.name_ar
-        })) || []
+        ).map(p => {
+          // Extract provider name - handle both object and array types from Supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const providers = p.providers as any
+          const providerName = providers?.name_ar || (Array.isArray(providers) ? providers[0]?.name_ar : undefined)
+
+          return {
+            id: p.id,
+            name_ar: p.name_ar,
+            price: p.price,
+            original_price: p.original_price!,
+            discount_percentage: Math.round(((p.original_price! - p.price) / p.original_price!) * 100),
+            provider_name: providerName
+          }
+        }) || []
 
         // ═══════════════════════════════════════════════════════════════════
         // 4. Build response with all three sources
