@@ -193,7 +193,7 @@ BEGIN
   FROM combined c
   JOIN menu_items mi ON c.item_id = mi.id
   JOIN providers p ON mi.provider_id = p.id
-  LEFT JOIN provider_categories pc ON mi.provider_category_id = pc.id
+  LEFT JOIN provider_categories pc ON mi.category_id = pc.id
   ORDER BY c.total_rrf DESC, c.best_base_score DESC
   LIMIT p_limit;
 END;
@@ -244,7 +244,7 @@ BEGIN
     )::float8 as match_score
   FROM menu_items mi
   JOIN providers p ON mi.provider_id = p.id
-  LEFT JOIN provider_categories pc ON mi.provider_category_id = pc.id
+  LEFT JOIN provider_categories pc ON mi.category_id = pc.id
   WHERE mi.is_available = true
     AND p.status IN ('open', 'closed', 'temporarily_paused')
     AND (p_provider_id IS NULL OR mi.provider_id = p_provider_id)
