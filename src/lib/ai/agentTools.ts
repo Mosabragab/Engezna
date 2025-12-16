@@ -1536,6 +1536,8 @@ export async function executeAgentTool(
 
         // ═══════════════════════════════════════════════════════════════════
         // 2. Get PROVIDER PROMOTIONS (campaigns from the provider)
+        // If provider_id exists: get from that provider
+        // If no provider_id: get from ALL providers (show what's available!)
         // ═══════════════════════════════════════════════════════════════════
         let promotions: Array<{
           id: string
@@ -1545,30 +1547,50 @@ export async function executeAgentTool(
           discount_value: number
           min_order_amount: number | null
           max_discount: number | null
+          provider_name?: string
         }> = []
 
-        if (effectiveProviderId) {
-          // Query active promotions - handle NULL dates gracefully
-          // NULL start_date means "always valid", NULL end_date means "never expires"
-          const { data } = await supabase
-            .from('promotions')
-            .select('id, name_ar, name_en, type, discount_value, min_order_amount, max_discount, start_date, end_date')
-            .eq('provider_id', effectiveProviderId)
-            .eq('is_active', true)
+        // Build promotions query - with or without provider filter
+        let promotionsQuery = supabase
+          .from('promotions')
+          .select('id, name_ar, name_en, type, discount_value, min_order_amount, max_discount, start_date, end_date, provider_id, providers(name_ar)')
+          .eq('is_active', true)
+          .limit(effectiveProviderId ? 10 : 5)
 
-          // Filter by dates manually to handle NULL values
-          promotions = (data || []).filter(promo => {
-            // If start_date is set, check it's not in the future
-            if (promo.start_date && promo.start_date > now) {
-              return false
-            }
-            // If end_date is set, check it hasn't passed
-            if (promo.end_date && promo.end_date < now) {
-              return false
-            }
-            return true
-          })
+        if (effectiveProviderId) {
+          promotionsQuery = promotionsQuery.eq('provider_id', effectiveProviderId)
         }
+
+        const { data: promotionsData } = await promotionsQuery
+
+        // Filter by dates manually to handle NULL values
+        promotions = (promotionsData || []).filter(promo => {
+          // If start_date is set, check it's not in the future
+          if (promo.start_date && promo.start_date > now) {
+            return false
+          }
+          // If end_date is set, check it hasn't passed
+          if (promo.end_date && promo.end_date < now) {
+            return false
+          }
+          return true
+        }).map(promo => {
+          // Extract provider name
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const providers = promo.providers as any
+          const providerName = providers?.name_ar || (Array.isArray(providers) ? providers[0]?.name_ar : undefined)
+
+          return {
+            id: promo.id,
+            name_ar: promo.name_ar,
+            name_en: promo.name_en,
+            type: promo.type,
+            discount_value: promo.discount_value,
+            min_order_amount: promo.min_order_amount,
+            max_discount: promo.max_discount,
+            provider_name: providerName
+          }
+        })
 
         // ═══════════════════════════════════════════════════════════════════
         // 3. Get DISCOUNTED PRODUCTS (original_price > price)
