@@ -312,12 +312,11 @@ GRANT SELECT ON arabic_synonyms TO authenticated, anon, service_role;
 
 -- ============================================================================
 -- Add index for faster trigram searches
--- Note: idx_menu_items_name_ar_trgm already exists from previous migration
+-- Note: Both indexes already exist from previous migration:
+--   - idx_menu_items_name_ar_trgm
+--   - idx_menu_items_desc_ar_trgm (same as description_ar)
+-- No need to create new indexes
 -- ============================================================================
-
--- Only create description index (name index already exists)
-CREATE INDEX IF NOT EXISTS idx_menu_items_description_ar_trgm
-ON menu_items USING gin (description_ar gin_trgm_ops);
 
 COMMENT ON FUNCTION hybrid_search_menu IS 'Hybrid search combining keyword, semantic, and fuzzy matching with RRF fusion';
 COMMENT ON FUNCTION simple_search_menu IS 'Simple search using keyword and fuzzy matching (no embedding required)';
