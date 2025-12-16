@@ -1111,11 +1111,14 @@ export async function executeAgentTool(
           }
         }
 
-        // 3. Validate variant if specified
-        if (variant_id) {
+        // 3. Validate variant if specified - AND SMART CORRECTION
+        let corrected_variant_id = variant_id
+        let corrected_variant_price = price
+
+        if (variant_id && item.has_variants) {
           const { data: variant, error: variantError } = await supabase
             .from('product_variants')
-            .select('id, is_available, price')
+            .select('id, name_ar, is_available, price')
             .eq('id', variant_id)
             .single()
 
@@ -1133,6 +1136,41 @@ export async function executeAgentTool(
               error: 'الحجم غير متاح',
               message: 'الحجم ده مش متاح دلوقتي، اختار حجم تاني'
             }
+          }
+
+          // ═══════════════════════════════════════════════════════════════
+          // SMART CORRECTION: If variant_name doesn't match variant_id, find correct one
+          // This fixes AI mistakes where it confirms "عادي" but passes "سوبر" variant_id
+          // ═══════════════════════════════════════════════════════════════
+          if (variant_name && variant.name_ar !== variant_name) {
+            console.log('[add_to_cart] Variant mismatch detected!', {
+              requested_name: variant_name,
+              actual_name: variant.name_ar,
+              variant_id
+            })
+
+            // Find the correct variant by name
+            const { data: correctVariant } = await supabase
+              .from('product_variants')
+              .select('id, name_ar, price, is_available')
+              .eq('product_id', item_id)
+              .eq('is_available', true)
+              .ilike('name_ar', `%${variant_name}%`)
+              .single()
+
+            if (correctVariant) {
+              console.log('[add_to_cart] Auto-corrected variant:', {
+                from: { id: variant_id, name: variant.name_ar, price: variant.price },
+                to: { id: correctVariant.id, name: correctVariant.name_ar, price: correctVariant.price }
+              })
+              corrected_variant_id = correctVariant.id
+              corrected_variant_price = correctVariant.price
+            } else {
+              console.log('[add_to_cart] Could not find variant matching name:', variant_name)
+            }
+          } else {
+            // Use the correct price from the variant (in case AI passed wrong price)
+            corrected_variant_price = variant.price
           }
         }
 
@@ -1158,8 +1196,8 @@ export async function executeAgentTool(
               menu_item_id: item_id,
               menu_item_name_ar: item_name,
               quantity,
-              unit_price: price,
-              variant_id,
+              unit_price: corrected_variant_price,  // Use corrected price
+              variant_id: corrected_variant_id,      // Use corrected variant
               variant_name_ar: variant_name
             },
             message: `تم إضافة ${quantity}x ${item_name} للسلة`
