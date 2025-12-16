@@ -1026,10 +1026,23 @@ export async function executeAgentTool(
             ? `name_ar.ilike.%${query}%,description_ar.ilike.%${query}%,provider_category_id.in.(${allCategoryIds.join(',')})`
             : `name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`
 
+          // DEBUG: First check if ANY items exist for these providers (no filters)
+          const { data: allItemsCheck } = await supabase
+            .from('menu_items')
+            .select('id, name_ar, is_available')
+            .in('provider_id', providers.map(p => p.id))
+            .limit(5)
+
+          console.log('[search_menu] DEBUG - Raw items check (no filter):', {
+            query,
+            foundAnyItems: allItemsCheck?.length || 0,
+            samples: allItemsCheck?.map(i => `${i.name_ar}(${i.is_available})`)
+          })
+
           // Log the search filter
-          console.log('[search_menu] Fallback - searching items:', {
+          console.log('[search_menu] Fallback - searching with filter:', {
             searchFilter,
-            providerIds: providers.map(p => p.id).slice(0, 3) // First 3 for brevity
+            providerCount: providers.length
           })
 
           // Count items per provider
