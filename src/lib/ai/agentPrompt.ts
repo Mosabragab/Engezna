@@ -22,6 +22,7 @@ export interface AgentContext extends ToolContext {
     name: string
     quantity: number
     price: number
+    variant_id?: string  // For deduplication
   }>
   cartProviderId?: string
   cartTotal?: number
