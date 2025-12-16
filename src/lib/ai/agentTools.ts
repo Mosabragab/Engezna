@@ -735,6 +735,16 @@ export async function executeAgentTool(
           city_id?: string
         }
 
+        // CRITICAL: Log search parameters at entry point
+        console.log('[search_menu] === SEARCH STARTED ===', {
+          query,
+          provider_id_param: provider_id,
+          city_id_param: city_id,
+          context_cityId: context.cityId,
+          context_providerId: context.providerId,
+          context_cartProviderId: context.cartProviderId
+        })
+
         // NOTE: Arabic normalization is handled by the DB function (normalize_arabic)
         // Don't normalize here as fallback ILIKE queries need the original text
 
@@ -796,12 +806,18 @@ export async function executeAgentTool(
               p_limit: 15
             })
 
-          // Log for debugging
-          console.log('[search_menu] Hybrid search result:', {
+          // Log for debugging - ENHANCED
+          console.log('[search_menu] === HYBRID SEARCH RESULT ===', {
             query,
             hybridError: hybridError?.message,
             resultCount: hybridResults?.length || 0,
-            effectiveCityId
+            effectiveCityId,
+            contextCityId: context.cityId,
+            cityIdParam: city_id,
+            firstResults: hybridResults?.slice(0, 3).map((r: { name_ar: string; provider_name: string }) => ({
+              item: r.name_ar,
+              provider: r.provider_name
+            }))
           })
 
           if (!hybridError && hybridResults && hybridResults.length > 0) {
@@ -991,7 +1007,9 @@ export async function executeAgentTool(
           console.log('[search_menu] === FALLBACK START ===', {
             query,
             effectiveCityId,
-            effectiveProviderId
+            effectiveProviderId,
+            contextCityId: context.cityId,
+            cityIdParam: city_id
           })
 
           // First get active providers in the city with full details for smart suggestions
@@ -1000,10 +1018,13 @@ export async function executeAgentTool(
             .select('id, name_ar, logo_url, rating, total_reviews, delivery_fee, estimated_delivery_time_min, category, status')
             .in('status', ['open', 'closed', 'temporarily_paused'])
 
-          // TEMPORARILY DISABLE city filter to test
-          // if (effectiveCityId) {
-          //   providersQuery = providersQuery.eq('city_id', effectiveCityId)
-          // }
+          // RE-ENABLED city filter - was causing issues when disabled
+          if (effectiveCityId) {
+            providersQuery = providersQuery.eq('city_id', effectiveCityId)
+            console.log('[search_menu] City filter ENABLED:', effectiveCityId)
+          } else {
+            console.log('[search_menu] ⚠️ No city_id - searching ALL cities!')
+          }
 
           const { data: providers, error: providersError } = await providersQuery.limit(50)
 
