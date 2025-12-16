@@ -464,7 +464,7 @@ function generateDynamicQuickReplies(
   }
 
   // Default - context-aware
-  if (providerName) {
+  if (providerId) {
     return {
       suggestions: ['🍽️ شوف المنيو', '🔥 العروض', '📦 طلباتي'],
       quickReplies: [
