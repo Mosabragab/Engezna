@@ -621,8 +621,21 @@ function generateDynamicQuickReplies(
     contentLower.includes('عرض') || contentLower.includes('خصم')
 
   // =================================================================
-  // CONTEXTUAL QUICK REPLIES
+  // CONTEXTUAL QUICK REPLIES (Order matters! Most decisive checks first)
   // =================================================================
+
+  // 🔴 HIGHEST PRIORITY: After adding to cart - always show cart buttons
+  // This MUST come first because cart action is the most decisive signal
+  if (hasCartAction) {
+    return {
+      suggestions: ['🛒 شوف السلة', '➕ أضف حاجة تانية', '✅ كمل للدفع'],
+      quickReplies: [
+        { title: '🛒 شوف السلة', payload: 'ايه في السلة؟' },
+        { title: '➕ أضف حاجة تانية', payload: 'عايز أضيف حاجة تانية' },
+        { title: '✅ كمل للدفع', payload: 'navigate:/ar/checkout' }
+      ]
+    }
+  }
 
   // Size/Variant selection needed
   // Only show size buttons if the content explicitly mentions these standard sizes
@@ -674,18 +687,6 @@ function generateDynamicQuickReplies(
         { title: '✅ أيوه تمام', payload: 'أيوه ضيف للسلة' },
         { title: '❌ لأ غير', payload: 'لأ عايز أغير' },
         { title: '🔄 عدل الكمية', payload: 'عايز أغير الكمية' }
-      ]
-    }
-  }
-
-  // After adding to cart
-  if (hasCartAction) {
-    return {
-      suggestions: ['🛒 شوف السلة', '➕ أضف حاجة تانية', '✅ كمل للدفع'],
-      quickReplies: [
-        { title: '🛒 شوف السلة', payload: 'ايه في السلة؟' },
-        { title: '➕ أضف حاجة تانية', payload: 'عايز أضيف حاجة تانية' },
-        { title: '✅ كمل للدفع', payload: 'navigate:/ar/checkout' }
       ]
     }
   }
@@ -918,9 +919,12 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
   // Use provider ID from first product if available, otherwise fall back to context
   const effectiveProviderId = response.products?.[0]?.providerId || providerId
 
+  // Check for cart actions (both singular and plural)
+  const hasAnyCartAction = !!(response.cartAction || (response.cartActions && response.cartActions.length > 0))
+
   const { suggestions, quickReplies } = generateDynamicQuickReplies(
     content,
-    !!response.cartAction,
+    hasAnyCartAction,
     !!(response.products && response.products.length > 0),
     response.products?.[0]?.id,
     toolsUsed,
