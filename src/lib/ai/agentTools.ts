@@ -6,7 +6,6 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-import { getEmbeddingCached, expandQueryWithSynonyms } from './embeddings'
 
 // =============================================================================
 // TYPES
@@ -299,16 +298,16 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'get_delivery_info',
-    description: 'الحصول على معلومات التوصيل (رسوم التوصيل، الحد الأدنى، الوقت المتوقع)',
+    description: 'الحصول على معلومات التوصيل (رسوم التوصيل، الحد الأدنى، الوقت المتوقع) - لو مفيش provider_id هيستخدم تاجر السلة',
     parameters: {
       type: 'object',
       properties: {
         provider_id: {
           type: 'string',
-          description: 'معرف التاجر'
+          description: 'معرف التاجر (اختياري - لو مش موجود هيستخدم تاجر السلة)'
         }
       },
-      required: ['provider_id']
+      required: []
     }
   },
   {
@@ -430,14 +429,14 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   // 🎁 PROMOTIONS TOOLS
   // ─────────────────────────────────────────────────────────────────────────
   {
-    name: 'get_promotions',
-    description: 'الحصول على العروض الحالية - لو مفيش provider_id هيجيب كل العروض المتاحة',
+    name: 'get_provider_promotions',
+    description: 'الحصول على العروض والمنتجات المخفضة - يرجع كمباين والمنتجات اللي عليها خصم (original_price > price). لو مفيش provider_id هيستخدم تاجر السلة أو التاجر الحالي',
     parameters: {
       type: 'object',
       properties: {
         provider_id: {
           type: 'string',
-          description: 'معرف التاجر (اختياري - لو مش موجود هيجيب كل العروض)'
+          description: 'معرف التاجر (اختياري - لو مش موجود هيستخدم تاجر السلة)'
         }
       },
       required: []
@@ -680,122 +679,40 @@ export async function executeAgentTool(
           city_id?: string
         }
 
+        // Helper function to fetch variants for items
+        const fetchVariantsForItems = async (items: Array<{ id: string; has_variants: boolean | null }>) => {
+          const itemsWithVariants = items.filter(item => item.has_variants)
+          if (itemsWithVariants.length === 0) return items
+
+          const { data: variants } = await supabase
+            .from('product_variants')
+            .select('id, product_id, name_ar, price, original_price, is_default, variant_type')
+            .in('product_id', itemsWithVariants.map(i => i.id))
+            .eq('is_available', true)
+            .order('display_order')
+
+          // Attach variants to items
+          const itemsMap = new Map(items.map(item => [item.id, { ...item, variants: [] as typeof variants }]))
+          variants?.forEach(variant => {
+            const item = itemsMap.get(variant.product_id)
+            if (item) {
+              item.variants?.push(variant)
+            }
+          })
+          return Array.from(itemsMap.values())
+        }
+
         // Use effective provider ID from context if not explicitly provided
         const effectiveProviderId = getEffectiveProviderId({ provider_id }, context)
-        const effectiveCityId = city_id || context.cityId
 
-        // Expand query with synonyms for better dialect handling
-        const expandedQuery = expandQueryWithSynonyms(query)
-
-        // =================================================================
-        // HYBRID SEARCH STRATEGY:
-        // 1. Try Semantic Search (Vector) - understands meaning
-        // 2. Fallback to Fuzzy Search - handles typos
-        // 3. Final fallback to Keyword Search - exact matches
-        // =================================================================
-
-        // STEP 1: Try Semantic Search (if embeddings are available)
-        try {
-          const queryEmbedding = await getEmbeddingCached(expandedQuery)
-
-          // Call the semantic search function
-          const { data: semanticResults, error: semanticError } = await supabase.rpc(
-            'match_menu_items',
-            {
-              query_embedding: queryEmbedding,
-              match_threshold: 0.60, // Lower threshold for better recall
-              match_count: 10,
-              provider_filter: effectiveProviderId || null,
-              city_filter: effectiveCityId || null
-            }
-          )
-
-          if (!semanticError && semanticResults && semanticResults.length > 0) {
-            // Transform results to expected format
-            const formattedResults = semanticResults.map((item: {
-              id: string
-              name_ar: string
-              price: number
-              image_url: string
-              has_variants: boolean
-              provider_id: string
-              provider_name_ar: string
-              category_name_ar: string
-              similarity: number
-            }) => ({
-              id: item.id,
-              name_ar: item.name_ar,
-              price: item.price,
-              image_url: item.image_url,
-              has_variants: item.has_variants,
-              provider_id: item.provider_id,
-              providers: { id: item.provider_id, name_ar: item.provider_name_ar },
-              provider_categories: { name_ar: item.category_name_ar },
-              _similarity: item.similarity // For debugging
-            }))
-
-            return {
-              success: true,
-              data: formattedResults,
-              message: `لقيت ${formattedResults.length} نتيجة`
-            }
-          }
-        } catch (embeddingError) {
-          // Semantic search failed (maybe embeddings not ready), continue to fallback
-          console.log('[Search] Semantic search unavailable, falling back to keyword search')
-        }
-
-        // STEP 2: Try Fuzzy Search (handles typos and similar spellings)
-        try {
-          const { data: fuzzyResults, error: fuzzyError } = await supabase.rpc(
-            'fuzzy_search_menu_items',
-            {
-              search_query: query,
-              provider_filter: effectiveProviderId || null,
-              result_limit: 10
-            }
-          )
-
-          if (!fuzzyError && fuzzyResults && fuzzyResults.length > 0) {
-            // Transform results to expected format
-            const formattedResults = fuzzyResults.map((item: {
-              id: string
-              name_ar: string
-              price: number
-              image_url: string
-              has_variants: boolean
-              provider_id: string
-              provider_name_ar: string
-            }) => ({
-              id: item.id,
-              name_ar: item.name_ar,
-              price: item.price,
-              image_url: item.image_url,
-              has_variants: item.has_variants,
-              provider_id: item.provider_id,
-              providers: { id: item.provider_id, name_ar: item.provider_name_ar }
-            }))
-
-            return {
-              success: true,
-              data: formattedResults,
-              message: `لقيت ${formattedResults.length} نتيجة`
-            }
-          }
-        } catch (fuzzyError) {
-          // Fuzzy search failed, continue to keyword fallback
-          console.log('[Search] Fuzzy search unavailable, falling back to keyword search')
-        }
-
-        // STEP 3: Keyword Search Fallback (original logic)
         if (effectiveProviderId) {
-          // Search within a specific provider
+          // Search within a specific provider (from param, cart, or page context)
           const { data, error } = await supabase
             .from('menu_items')
             .select(`
-              id, name_ar, price, image_url, has_variants, provider_id,
+              id, name_ar, price, original_price, image_url, has_variants, provider_id,
               providers(id, name_ar),
-              provider_categories!provider_category_id(id, name_ar)
+              provider_categories!provider_category_id(name_ar)
             `)
             .eq('provider_id', effectiveProviderId)
             .eq('is_available', true)
@@ -804,43 +721,61 @@ export async function executeAgentTool(
 
           if (error) throw error
 
-          // If no results by product name, try searching by category name
-          if (!data || data.length === 0) {
-            const { data: categories } = await supabase
-              .from('provider_categories')
-              .select('id')
-              .eq('provider_id', effectiveProviderId)
-              .eq('is_active', true)
-              .ilike('name_ar', `%${query}%`)
+          // If found results in current provider, fetch variants and return
+          if (data && data.length > 0) {
+            const itemsWithVariants = await fetchVariantsForItems(data)
+            return { success: true, data: itemsWithVariants }
+          }
 
-            if (categories && categories.length > 0) {
-              const categoryIds = categories.map(c => c.id)
-              const { data: categoryProducts } = await supabase
-                .from('menu_items')
-                .select(`
-                  id, name_ar, price, image_url, has_variants, provider_id,
-                  providers(id, name_ar),
-                  provider_categories!provider_category_id(id, name_ar)
-                `)
-                .eq('provider_id', effectiveProviderId)
-                .eq('is_available', true)
-                .in('provider_category_id', categoryIds)
-                .limit(10)
+          // FALLBACK: No results in current provider, search globally
+          const effectiveCityId = city_id || context.cityId
 
-              if (categoryProducts && categoryProducts.length > 0) {
-                return { success: true, data: categoryProducts }
+          // Get active providers in the city
+          let providersQuery = supabase
+            .from('providers')
+            .select('id, name_ar')
+            .in('status', ['open', 'closed', 'temporarily_paused'])
+            .neq('id', effectiveProviderId) // Exclude current provider (already searched)
+
+          if (effectiveCityId) {
+            providersQuery = providersQuery.eq('city_id', effectiveCityId)
+          }
+
+          const { data: otherProviders } = await providersQuery.limit(50)
+
+          if (otherProviders?.length) {
+            const { data: globalData, error: globalError } = await supabase
+              .from('menu_items')
+              .select(`
+                id, name_ar, price, original_price, image_url, has_variants, provider_id,
+                providers(id, name_ar),
+                provider_categories!provider_category_id(name_ar)
+              `)
+              .in('provider_id', otherProviders.map(p => p.id))
+              .eq('is_available', true)
+              .or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
+              .limit(10)
+
+            if (!globalError && globalData && globalData.length > 0) {
+              const itemsWithVariants = await fetchVariantsForItems(globalData)
+              return {
+                success: true,
+                data: itemsWithVariants,
+                message: 'مش لاقي في التاجر الحالي، بس لقيت في تجار تانيين'
               }
             }
-
-            return {
-              success: true,
-              data: [],
-              message: 'مش لاقي نتائج في المنيو الحالي'
-            }
           }
-          return { success: true, data }
+
+          return {
+            success: true,
+            data: [],
+            message: 'مش لاقي نتائج للمنتج ده'
+          }
         } else {
           // Search across all providers in the city
+          const effectiveCityId = city_id || context.cityId
+
+          // First get active providers in the city
           let providersQuery = supabase
             .from('providers')
             .select('id, name_ar')
@@ -860,55 +795,31 @@ export async function executeAgentTool(
             }
           }
 
-          const providerIds = providers.map(p => p.id)
+          // Search items in those providers
           const { data, error } = await supabase
             .from('menu_items')
             .select(`
-              id, name_ar, price, image_url, has_variants, provider_id,
+              id, name_ar, price, original_price, image_url, has_variants, provider_id,
               providers(id, name_ar),
-              provider_categories!provider_category_id(id, name_ar)
+              provider_categories!provider_category_id(name_ar)
             `)
-            .in('provider_id', providerIds)
+            .in('provider_id', providers.map(p => p.id))
             .eq('is_available', true)
             .or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
             .limit(20)
 
           if (error) throw error
 
-          // If no results by product name, try searching by category name
           if (!data || data.length === 0) {
-            const { data: categories } = await supabase
-              .from('provider_categories')
-              .select('id, provider_id')
-              .in('provider_id', providerIds)
-              .eq('is_active', true)
-              .ilike('name_ar', `%${query}%`)
-
-            if (categories && categories.length > 0) {
-              const categoryIds = categories.map(c => c.id)
-              const { data: categoryProducts } = await supabase
-                .from('menu_items')
-                .select(`
-                  id, name_ar, price, image_url, has_variants, provider_id,
-                  providers(id, name_ar),
-                  provider_categories!provider_category_id(id, name_ar)
-                `)
-                .in('provider_category_id', categoryIds)
-                .eq('is_available', true)
-                .limit(20)
-
-              if (categoryProducts && categoryProducts.length > 0) {
-                return { success: true, data: categoryProducts }
-              }
-            }
-
             return {
               success: true,
               data: [],
               message: 'مش لاقي نتائج لبحثك'
             }
           }
-          return { success: true, data }
+
+          const itemsWithVariants = await fetchVariantsForItems(data)
+          return { success: true, data: itemsWithVariants }
         }
       }
 
@@ -954,71 +865,7 @@ export async function executeAgentTool(
           variant_name?: string
         }
 
-        // =================================================================
-        // VALIDATION LAYER: Verify item exists, is available, and in stock
-        // =================================================================
-
-        // 1. Verify item exists and belongs to the specified provider
-        const { data: itemData, error: itemError } = await supabase
-          .from('menu_items')
-          .select('id, name_ar, is_available, has_stock, stock_notes, provider_id, has_variants')
-          .eq('id', item_id)
-          .single()
-
-        if (itemError || !itemData) {
-          return {
-            success: false,
-            message: 'المنتج ده مش موجود في السيستم حالياً. ممكن تختار منتج تاني؟'
-          }
-        }
-
-        // 2. Verify item belongs to the correct provider (prevent cross-provider bugs)
-        if (itemData.provider_id !== provider_id) {
-          return {
-            success: false,
-            message: 'حصل خطأ في اختيار المنتج. ممكن تحاول تاني؟'
-          }
-        }
-
-        // 3. Check availability
-        if (!itemData.is_available) {
-          return {
-            success: false,
-            message: `للأسف "${itemData.name_ar}" مش متاح دلوقتي. تحب تختار حاجة تانية؟`
-          }
-        }
-
-        // 4. Check stock status
-        if (itemData.has_stock === false) {
-          const stockMessage = itemData.stock_notes
-            ? `للأسف "${itemData.name_ar}" خلص. ${itemData.stock_notes}`
-            : `للأسف "${itemData.name_ar}" خلص دلوقتي. تحب تختار حاجة تانية؟`
-          return {
-            success: false,
-            message: stockMessage
-          }
-        }
-
-        // 5. If item has variants but none specified, warn (don't block - let prompt handle)
-        if (itemData.has_variants && !variant_id) {
-          // Get available variants
-          const { data: variants } = await supabase
-            .from('product_variants')
-            .select('id, name_ar, price')
-            .eq('product_id', item_id)
-            .eq('is_available', true)
-            .order('display_order')
-
-          if (variants && variants.length > 0) {
-            return {
-              success: false,
-              message: `"${itemData.name_ar}" عنده أحجام مختلفة. اختار الحجم الأول:\n${variants.map(v => `• ${v.name_ar} - ${v.price} ج.م`).join('\n')}`,
-              data: { variants, requires_variant: true }
-            }
-          }
-        }
-
-        // 6. All validations passed - return cart action
+        // Return a cart action that the frontend will process
         return {
           success: true,
           data: {
@@ -1032,7 +879,7 @@ export async function executeAgentTool(
               variant_id,
               variant_name_ar: variant_name
             },
-            message: `تم إضافة ${quantity}x ${item_name}${variant_name ? ` (${variant_name})` : ''} للسلة ✅`
+            message: `تم إضافة ${quantity}x ${item_name} للسلة`
           }
         }
       }
@@ -1473,57 +1320,71 @@ export async function executeAgentTool(
       // ─────────────────────────────────────────────────────────────────────
       // 🎁 PROMOTIONS TOOLS
       // ─────────────────────────────────────────────────────────────────────
-      case 'get_promotions': {
+      case 'get_provider_promotions': {
         const { provider_id } = params as { provider_id?: string }
         const effectiveProviderId = getEffectiveProviderId({ provider_id }, context)
-        const now = new Date().toISOString()
 
-        // If we have a provider (from param, cart, or page context), get their promotions + general promotions
-        if (effectiveProviderId) {
-          const { data, error } = await supabase
-            .from('promotions')
-            .select(`
-              id, name_ar, name_en, type, discount_value, discount_type,
-              min_order_amount, max_discount, start_date, end_date,
-              provider_id, providers(name_ar)
-            `)
-            .eq('is_active', true)
-            .lte('start_date', now)
-            .gte('end_date', now)
-            .or(`provider_id.eq.${effectiveProviderId},provider_id.is.null`)
-            .order('discount_value', { ascending: false })
-
-          if (error) throw error
+        if (!effectiveProviderId) {
           return {
             success: true,
-            data,
-            message: data?.length
-              ? `لقيت ${data.length} عرض متاح`
-              : 'مفيش عروض متاحة دلوقتي'
+            data: [],
+            message: 'محتاج أعرف المطعم الأول عشان أجيب العروض'
           }
         }
 
-        // No provider context - get all active promotions
-        const { data, error } = await supabase
+        const now = new Date().toISOString()
+
+        // Get promotional campaigns
+        const { data: promotions } = await supabase
           .from('promotions')
-          .select(`
-            id, name_ar, name_en, type, discount_value, discount_type,
-            min_order_amount, max_discount, start_date, end_date,
-            provider_id, providers(name_ar)
-          `)
+          .select('id, name_ar, name_en, type, discount_value, min_order_amount, max_discount, start_date, end_date')
+          .eq('provider_id', effectiveProviderId)
           .eq('is_active', true)
           .lte('start_date', now)
           .gte('end_date', now)
-          .order('discount_value', { ascending: false })
-          .limit(20)
 
-        if (error) throw error
+        // Get discounted products (where original_price > price)
+        const { data: discountedProducts } = await supabase
+          .from('menu_items')
+          .select(`
+            id, name_ar, price, original_price, image_url, has_variants,
+            provider_categories!provider_category_id(name_ar)
+          `)
+          .eq('provider_id', effectiveProviderId)
+          .eq('is_available', true)
+          .not('original_price', 'is', null)
+          .gt('original_price', 0)
+          .order('original_price', { ascending: false })
+          .limit(10)
+
+        // Filter products where there's actually a discount (original_price > price)
+        const productsWithDiscount = discountedProducts?.filter(p =>
+          p.original_price && p.price && p.original_price > p.price
+        ).map(p => ({
+          ...p,
+          discount_percentage: Math.round(((p.original_price! - p.price) / p.original_price!) * 100)
+        })) || []
+
+        const hasPromotions = promotions && promotions.length > 0
+        const hasDiscountedProducts = productsWithDiscount.length > 0
+
+        if (!hasPromotions && !hasDiscountedProducts) {
+          return {
+            success: true,
+            data: { promotions: [], discounted_products: [] },
+            message: 'مفيش عروض متاحة حالياً من التاجر ده'
+          }
+        }
+
         return {
           success: true,
-          data,
-          message: data?.length
-            ? `لقيت ${data.length} عرض متاح`
-            : 'مفيش عروض متاحة دلوقتي'
+          data: {
+            promotions: promotions || [],
+            discounted_products: productsWithDiscount
+          },
+          message: hasDiscountedProducts
+            ? `لقيت ${productsWithDiscount.length} منتج عليهم خصم!`
+            : undefined
         }
       }
 

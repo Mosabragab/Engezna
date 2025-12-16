@@ -1,25 +1,42 @@
 /**
- * Menu Item Webhook Handler
+ * Webhook Handler for Menu Item Changes
  *
- * Receives webhook calls from Supabase Database Webhooks
- * when menu items are inserted or updated.
+ * This endpoint receives webhooks from Supabase Database Webhooks
+ * when menu_items are inserted or updated, and triggers embedding generation.
  *
  * Setup in Supabase Dashboard:
- *   1. Go to Database > Webhooks
- *   2. Create new webhook
- *   3. Name: "Generate Embedding on Menu Item Change"
- *   4. Table: menu_items
- *   5. Events: INSERT, UPDATE
- *   6. URL: https://your-domain.com/api/webhooks/menu-item
- *   7. HTTP Headers: { "x-webhook-secret": "your-secret" }
+ * 1. Go to Database > Webhooks
+ * 2. Create a new webhook
+ * 3. Table: menu_items
+ * 4. Events: INSERT, UPDATE
+ * 5. URL: https://your-domain.com/api/webhooks/menu-item
+ * 6. Add a secret header for verification
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { generateEmbedding, createMenuItemEmbeddingText } from '@/lib/ai/embeddings'
 
-// Webhook secret for verification
-const WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET
+// Verify webhook signature (if configured)
+function verifyWebhookSignature(request: NextRequest): boolean {
+  const signature = request.headers.get('x-webhook-signature')
+  const secret = process.env.SUPABASE_WEBHOOK_SECRET
+
+  // If no secret is configured, skip verification (not recommended for production)
+  if (!secret) {
+    console.warn('SUPABASE_WEBHOOK_SECRET not configured - skipping signature verification')
+    return true
+  }
+
+  // Verify signature matches
+  return signature === secret
+}
+
+// Helper to get the Supabase config
+function getSupabaseConfig() {
+  return {
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  }
+}
 
 interface WebhookPayload {
   type: 'INSERT' | 'UPDATE' | 'DELETE'
@@ -28,134 +45,135 @@ interface WebhookPayload {
   record: {
     id: string
     name_ar: string
-    name_en: string | null
-    description_ar: string | null
-    description_en: string | null
-    is_spicy: boolean | null
-    is_vegetarian: boolean | null
+    name_en?: string
+    description_ar?: string
+    description_en?: string
+    price: number
     is_available: boolean
-    provider_category_id: string | null
-    embedding: number[] | null
+    provider_id: string
+    provider_category_id?: string
+    embedding?: unknown
   }
   old_record?: {
+    id: string
     name_ar: string
-    name_en: string | null
-    description_ar: string | null
-    description_en: string | null
-    is_spicy: boolean | null
-    is_vegetarian: boolean | null
-    provider_category_id: string | null
+    name_en?: string
+    description_ar?: string
+    description_en?: string
+    price: number
+    provider_category_id?: string
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    // Verify webhook secret if configured
-    if (WEBHOOK_SECRET) {
-      const secret = req.headers.get('x-webhook-secret')
-      if (secret !== WEBHOOK_SECRET) {
-        console.error('[Webhook] Invalid secret')
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        )
-      }
+    // Verify webhook signature
+    if (!verifyWebhookSignature(request)) {
+      console.error('Invalid webhook signature')
+      return NextResponse.json(
+        { error: 'Invalid signature' },
+        { status: 401 }
+      )
     }
 
-    const payload: WebhookPayload = await req.json()
+    const payload: WebhookPayload = await request.json()
 
-    console.log(`[Webhook] Received ${payload.type} for menu_items`)
+    console.log(`[Webhook] Received ${payload.type} event for menu_items`)
+
+    // Only process INSERT and UPDATE events
+    if (payload.type === 'DELETE') {
+      return NextResponse.json({ success: true, message: 'DELETE event ignored' })
+    }
+
+    const record = payload.record
+    const oldRecord = payload.old_record
 
     // Skip if item is not available
-    if (!payload.record.is_available) {
+    if (!record.is_available) {
       return NextResponse.json({
         success: true,
-        message: 'Skipped - item not available',
-        skipped: true
+        message: 'Item not available, skipping embedding generation'
       })
     }
 
-    // Skip if no embedding-relevant changes on UPDATE
-    if (payload.type === 'UPDATE' && payload.old_record) {
+    // For UPDATE, check if relevant fields changed
+    if (payload.type === 'UPDATE' && oldRecord) {
       const relevantFieldsChanged =
-        payload.record.name_ar !== payload.old_record.name_ar ||
-        payload.record.name_en !== payload.old_record.name_en ||
-        payload.record.description_ar !== payload.old_record.description_ar ||
-        payload.record.description_en !== payload.old_record.description_en ||
-        payload.record.is_spicy !== payload.old_record.is_spicy ||
-        payload.record.is_vegetarian !== payload.old_record.is_vegetarian ||
-        payload.record.provider_category_id !== payload.old_record.provider_category_id
+        record.name_ar !== oldRecord.name_ar ||
+        record.name_en !== oldRecord.name_en ||
+        record.description_ar !== oldRecord.description_ar ||
+        record.description_en !== oldRecord.description_en ||
+        record.price !== oldRecord.price ||
+        record.provider_category_id !== oldRecord.provider_category_id
 
       if (!relevantFieldsChanged) {
         return NextResponse.json({
           success: true,
-          message: 'Skipped - no embedding-relevant changes',
-          skipped: true
+          message: 'No relevant fields changed, skipping embedding generation'
         })
       }
     }
 
-    // Create Supabase client with service role
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    // Trigger embedding generation
+    const { url, serviceKey } = getSupabaseConfig()
 
-    // Fetch category name
-    let categoryName: string | undefined
-
-    if (payload.record.provider_category_id) {
-      const { data: category } = await supabase
-        .from('provider_categories')
-        .select('name_ar')
-        .eq('id', payload.record.provider_category_id)
-        .single()
-
-      categoryName = category?.name_ar
+    if (!url || !serviceKey) {
+      console.error('Supabase configuration missing')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
     }
 
-    // Create embedding text
-    const embeddingText = createMenuItemEmbeddingText({
-      name_ar: payload.record.name_ar,
-      name_en: payload.record.name_en || undefined,
-      description_ar: payload.record.description_ar || undefined,
-      category_name_ar: categoryName,
-      is_spicy: payload.record.is_spicy || false,
-      is_vegetarian: payload.record.is_vegetarian || false
+    console.log(`[Webhook] Triggering embedding generation for item ${record.id}`)
+
+    const response = await fetch(`${url}/functions/v1/generate-embedding`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        item_id: record.id,
+        mode: 'single',
+      }),
     })
 
-    console.log(`[Webhook] Generating embedding for: ${payload.record.name_ar}`)
+    const result = await response.json()
 
-    // Generate embedding
-    const embedding = await generateEmbedding(embeddingText)
-
-    // Update menu item with embedding
-    const { error: updateError } = await supabase
-      .from('menu_items')
-      .update({ embedding })
-      .eq('id', payload.record.id)
-
-    if (updateError) {
-      throw updateError
+    if (!result.success) {
+      console.error(`[Webhook] Embedding generation failed:`, result.error)
+      // Don't return error - webhook should always return 200 to prevent retries
+      return NextResponse.json({
+        success: false,
+        message: 'Embedding generation queued for retry',
+        error: result.error
+      })
     }
 
-    console.log(`[Webhook] Successfully updated embedding for: ${payload.record.id}`)
+    console.log(`[Webhook] Embedding generated successfully for item ${record.id}`)
 
     return NextResponse.json({
       success: true,
-      message: 'Embedding generated and saved',
-      item_id: payload.record.id
+      message: 'Embedding generated',
+      item_id: record.id,
     })
 
   } catch (error) {
-    console.error('[Webhook] Error:', error)
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: (error as Error).message
-      },
-      { status: 500 }
-    )
+    console.error('[Webhook] Error processing menu item webhook:', error)
+    // Return 200 to prevent Supabase from retrying
+    return NextResponse.json({
+      success: false,
+      error: (error as Error).message,
+    })
   }
+}
+
+// Handle GET for health check
+export async function GET() {
+  return NextResponse.json({
+    status: 'ok',
+    endpoint: 'menu-item webhook',
+    description: 'Receives INSERT/UPDATE events from menu_items table',
+  })
 }
