@@ -141,24 +141,27 @@ function createWelcomeMessage(customerName?: string, providerContext?: ProviderC
     }
   }
 
-  // Default welcome message (no provider context) - Ahmad personality
+  // Default welcome message (no provider context) - Ahmad personality + PROVIDER FIRST strategy
   const nameGreeting = customerName ? ` يا ${customerName}` : ''
+  const orderQuestion = customerName
+    ? `عايز تطلب منين انهارده يا ${customerName}؟`
+    : 'عايز تطلب منين انهارده؟'
 
   return {
     id: 'welcome',
     role: 'assistant',
-    content: `${timeGreeting} أهلاً بيك${nameGreeting} في إنجزنا! 😊\n\nأنا أحمد، ${timeSuggestion}\nقولي عايز تطلب ايه وأنا تحت أمرك!`,
+    content: `${timeGreeting} أهلاً بيك${nameGreeting} في إنجزنا! 😊\n\nأنا أحمد، ${orderQuestion}`,
     timestamp: new Date(),
     suggestions: [
-      '🍔 عايز آكل',
-      '📦 طلباتي',
-      '🔥 العروض',
+      '🏪 عندي مكان معين',
+      '🔍 ساعدني أختار',
+      '🔥 اللي عندهم عروض',
     ],
-    // Quick replies with natural language payloads
+    // Quick replies - PROVIDER FIRST (guide user to select where to order)
     quickReplies: [
-      { title: '🍔 عايز آكل', payload: 'عايز أطلب أكل' },
-      { title: '📦 طلباتي', payload: 'فين طلباتي؟' },
-      { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
+      { title: '🏪 عندي مكان معين', payload: 'عايز أطلب من مكان معين' },
+      { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار مكان' },
+      { title: '🔥 اللي عندهم عروض', payload: 'ورّيني الأماكن اللي عندها عروض' },
     ],
   }
 }
