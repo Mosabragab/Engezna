@@ -630,8 +630,7 @@ export async function executeAgentTool(
           .from('menu_items')
           .select(`
             id, name_ar, name_en, description_ar, price, original_price,
-            image_url, is_available, has_stock, has_variants, pricing_type,
-            provider_categories!provider_category_id(id, name_ar)
+            image_url, is_available, has_stock, has_variants, pricing_type, provider_category_id
           `)
           .eq('provider_id', provider_id)
           .eq('is_available', true)
@@ -683,8 +682,7 @@ export async function executeAgentTool(
             image_url, is_available, has_stock, has_variants, pricing_type,
             is_vegetarian, is_spicy, calories, preparation_time_min,
             combo_contents_ar, serves_count,
-            provider_id,
-            provider_categories!provider_category_id(id, name_ar)
+            provider_id, provider_category_id
           `)
           .eq('id', item_id)
           .single()
@@ -920,9 +918,8 @@ export async function executeAgentTool(
           let searchQuery = supabase
             .from('menu_items')
             .select(`
-              id, name_ar, price, original_price, image_url, has_variants, provider_id,
-              providers(id, name_ar),
-              provider_categories!provider_category_id(name_ar)
+              id, name_ar, price, original_price, image_url, has_variants, provider_id, provider_category_id,
+              providers(id, name_ar)
             `)
             .eq('provider_id', effectiveProviderId)
             .eq('is_available', true)
@@ -967,9 +964,8 @@ export async function executeAgentTool(
             let globalSearchQuery = supabase
               .from('menu_items')
               .select(`
-                id, name_ar, price, original_price, image_url, has_variants, provider_id,
-                providers(id, name_ar),
-                provider_categories!provider_category_id(name_ar)
+                id, name_ar, price, original_price, image_url, has_variants, provider_id, provider_category_id,
+                providers(id, name_ar)
               `)
               .in('provider_id', otherProviders.map(p => p.id))
               .eq('is_available', true)
