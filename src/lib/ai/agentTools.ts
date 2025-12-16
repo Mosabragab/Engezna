@@ -430,7 +430,7 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   // ─────────────────────────────────────────────────────────────────────────
   {
     name: 'get_provider_promotions',
-    description: 'الحصول على العروض والمنتجات المخفضة - يرجع كمباين والمنتجات اللي عليها خصم (original_price > price). لو مفيش provider_id هيستخدم تاجر السلة أو التاجر الحالي',
+    description: 'الحصول على كل العروض المتاحة - يرجع 3 أنواع: (1) أكواد الخصم promo_codes زي WELCOME30, SAVE20 (2) عروض التاجر promotions زي خصم نهاية الأسبوع (3) المنتجات المخفضة discounted_products. لو مفيش provider_id هيجيب أكواد الخصم العامة بس',
     parameters: {
       type: 'object',
       properties: {
@@ -1486,67 +1486,128 @@ export async function executeAgentTool(
         const { provider_id } = params as { provider_id?: string }
         const effectiveProviderId = getEffectiveProviderId({ provider_id }, context)
 
-        if (!effectiveProviderId) {
+        const now = new Date().toISOString()
+
+        // ═══════════════════════════════════════════════════════════════════
+        // 1. Get PROMO CODES (admin-issued discount codes)
+        // Fetch codes that are either global OR applicable to this provider
+        // ═══════════════════════════════════════════════════════════════════
+        const { data: promoCodes } = await supabase
+          .from('promo_codes')
+          .select('id, code, description_ar, discount_type, discount_value, min_order_amount, max_discount_amount, first_order_only, applicable_providers')
+          .eq('is_active', true)
+          .lte('valid_from', now)
+          .gte('valid_until', now)
+
+        // Filter promo codes: global (no providers specified) OR includes this provider
+        const applicablePromoCodes = promoCodes?.filter(code => {
+          if (!code.applicable_providers || code.applicable_providers.length === 0) {
+            return true // Global code
+          }
+          return effectiveProviderId && code.applicable_providers.includes(effectiveProviderId)
+        }).map(code => ({
+          code: code.code,
+          description: code.description_ar,
+          discount_type: code.discount_type,
+          discount_value: code.discount_value,
+          min_order: code.min_order_amount,
+          max_discount: code.max_discount_amount,
+          first_order_only: code.first_order_only
+        })) || []
+
+        // ═══════════════════════════════════════════════════════════════════
+        // 2. Get PROVIDER PROMOTIONS (campaigns from the provider)
+        // ═══════════════════════════════════════════════════════════════════
+        let promotions: Array<{
+          id: string
+          name_ar: string
+          name_en: string
+          type: string
+          discount_value: number
+          min_order_amount: number | null
+          max_discount: number | null
+        }> = []
+
+        if (effectiveProviderId) {
+          const { data } = await supabase
+            .from('promotions')
+            .select('id, name_ar, name_en, type, discount_value, min_order_amount, max_discount, start_date, end_date')
+            .eq('provider_id', effectiveProviderId)
+            .eq('is_active', true)
+            .lte('start_date', now)
+            .gte('end_date', now)
+
+          promotions = data || []
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // 3. Get DISCOUNTED PRODUCTS (original_price > price)
+        // ═══════════════════════════════════════════════════════════════════
+        let productsWithDiscount: Array<{
+          id: string
+          name_ar: string
+          price: number
+          original_price: number
+          discount_percentage: number
+        }> = []
+
+        if (effectiveProviderId) {
+          const { data: discountedProducts } = await supabase
+            .from('menu_items')
+            .select('id, name_ar, price, original_price, image_url, has_variants')
+            .eq('provider_id', effectiveProviderId)
+            .eq('is_available', true)
+            .not('original_price', 'is', null)
+            .gt('original_price', 0)
+            .order('original_price', { ascending: false })
+            .limit(10)
+
+          productsWithDiscount = discountedProducts?.filter(p =>
+            p.original_price && p.price && p.original_price > p.price
+          ).map(p => ({
+            id: p.id,
+            name_ar: p.name_ar,
+            price: p.price,
+            original_price: p.original_price!,
+            discount_percentage: Math.round(((p.original_price! - p.price) / p.original_price!) * 100)
+          })) || []
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // 4. Build response with all three sources
+        // ═══════════════════════════════════════════════════════════════════
+        const hasPromoCodes = applicablePromoCodes.length > 0
+        const hasPromotions = promotions.length > 0
+        const hasDiscountedProducts = productsWithDiscount.length > 0
+
+        if (!hasPromoCodes && !hasPromotions && !hasDiscountedProducts) {
           return {
             success: true,
-            data: [],
-            message: 'محتاج أعرف المطعم الأول عشان أجيب العروض'
+            data: { promo_codes: [], promotions: [], discounted_products: [] },
+            message: 'مفيش عروض متاحة حالياً 😕'
           }
         }
 
-        const now = new Date().toISOString()
-
-        // Get promotional campaigns
-        const { data: promotions } = await supabase
-          .from('promotions')
-          .select('id, name_ar, name_en, type, discount_value, min_order_amount, max_discount, start_date, end_date')
-          .eq('provider_id', effectiveProviderId)
-          .eq('is_active', true)
-          .lte('start_date', now)
-          .gte('end_date', now)
-
-        // Get discounted products (where original_price > price)
-        const { data: discountedProducts } = await supabase
-          .from('menu_items')
-          .select(`
-            id, name_ar, price, original_price, image_url, has_variants,
-            provider_categories!provider_category_id(name_ar)
-          `)
-          .eq('provider_id', effectiveProviderId)
-          .eq('is_available', true)
-          .not('original_price', 'is', null)
-          .gt('original_price', 0)
-          .order('original_price', { ascending: false })
-          .limit(10)
-
-        // Filter products where there's actually a discount (original_price > price)
-        const productsWithDiscount = discountedProducts?.filter(p =>
-          p.original_price && p.price && p.original_price > p.price
-        ).map(p => ({
-          ...p,
-          discount_percentage: Math.round(((p.original_price! - p.price) / p.original_price!) * 100)
-        })) || []
-
-        const hasPromotions = promotions && promotions.length > 0
-        const hasDiscountedProducts = productsWithDiscount.length > 0
-
-        if (!hasPromotions && !hasDiscountedProducts) {
-          return {
-            success: true,
-            data: { promotions: [], discounted_products: [] },
-            message: 'مفيش عروض متاحة حالياً من التاجر ده'
-          }
+        // Build message
+        const messageParts: string[] = []
+        if (hasPromoCodes) {
+          messageParts.push(`🎟️ ${applicablePromoCodes.length} كود خصم متاح`)
+        }
+        if (hasPromotions) {
+          messageParts.push(`🎁 ${promotions.length} عرض من التاجر`)
+        }
+        if (hasDiscountedProducts) {
+          messageParts.push(`💰 ${productsWithDiscount.length} منتج عليه خصم`)
         }
 
         return {
           success: true,
           data: {
-            promotions: promotions || [],
+            promo_codes: applicablePromoCodes,
+            promotions: promotions,
             discounted_products: productsWithDiscount
           },
-          message: hasDiscountedProducts
-            ? `لقيت ${productsWithDiscount.length} منتج عليهم خصم!`
-            : undefined
+          message: `لقيتلك عروض! ${messageParts.join(' • ')}`
         }
       }
 
