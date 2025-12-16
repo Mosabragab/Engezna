@@ -8,6 +8,25 @@
 import { createClient } from '@/lib/supabase/server'
 
 // =============================================================================
+// ARABIC TEXT NORMALIZATION (Client-side fallback)
+// =============================================================================
+
+/**
+ * Normalize Arabic text for consistent search results
+ * Handles common variations: ه↔ة, ى↔ي, أ/إ/آ→ا
+ */
+function normalizeArabic(text: string): string {
+  return text
+    .replace(/ة/g, 'ه')    // ta marbuta to heh
+    .replace(/ى/g, 'ي')    // alef maqsura to ya
+    .replace(/أ/g, 'ا')    // alef with hamza above
+    .replace(/إ/g, 'ا')    // alef with hamza below
+    .replace(/آ/g, 'ا')    // alef with madda
+    .replace(/ؤ/g, 'و')    // waw with hamza
+    .replace(/ئ/g, 'ي')    // ya with hamza
+}
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -710,11 +729,14 @@ export async function executeAgentTool(
       }
 
       case 'search_menu': {
-        const { provider_id, query, city_id } = params as {
+        const { provider_id, query: rawQuery, city_id } = params as {
           provider_id?: string
           query: string
           city_id?: string
         }
+
+        // Normalize Arabic text for consistent search (handles ه↔ة, ى↔ي, etc.)
+        const query = normalizeArabic(rawQuery)
 
         // Helper function to fetch variants for items
         const fetchVariantsForItems = async (items: Array<{ id: string; has_variants: boolean | null }>) => {
@@ -801,6 +823,44 @@ export async function executeAgentTool(
               provider_categories: { name_ar: item.category_name }
             }))
 
+            // ═══════════════════════════════════════════════════════════════════
+            // PROVIDER FIRST: If no provider selected, guide user to select first
+            // ═══════════════════════════════════════════════════════════════════
+            if (!effectiveProviderId) {
+              // Group by provider
+              const providerMap = new Map<string, { name: string; count: number }>()
+              formattedResults.forEach((item: { provider_id: string; providers: { name_ar: string } }) => {
+                const existing = providerMap.get(item.provider_id)
+                if (existing) {
+                  existing.count++
+                } else {
+                  providerMap.set(item.provider_id, { name: item.providers.name_ar, count: 1 })
+                }
+              })
+
+              const uniqueProviders = Array.from(providerMap.entries()).map(([id, info]) => ({
+                id,
+                name_ar: info.name,
+                item_count: info.count
+              }))
+
+              // ALWAYS do PROVIDER FIRST - even with 1 provider
+              const message = uniqueProviders.length === 1
+                ? `لقيت "${query}" في ${uniqueProviders[0].name_ar}! تحب تشوف المنيو بتاعهم؟`
+                : `لقيت "${query}" في ${uniqueProviders.length} مكان! تفضل تطلب من مين؟`
+
+              return {
+                success: true,
+                disambiguation_needed: true,
+                query: query,
+                message,
+                providers: uniqueProviders,
+                total_providers: uniqueProviders.length,
+                total_items: formattedResults.length
+              }
+            }
+
+            // If provider is selected, return items directly
             const itemsWithVariants = await fetchVariantsForItems(formattedResults)
 
             // Check if results are from a different provider
