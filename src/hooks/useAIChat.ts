@@ -279,6 +279,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
                   quick_replies: parsed.quick_replies,
                   navigate_to: parsed.navigate_to,
                   cart_action: parsed.cart_action,
+                  cart_actions: parsed.cart_actions,  // Multiple cart actions support
                 }
               } else if (currentEvent === 'error') {
                 throw new Error(parsed.error || 'حصل خطأ')
@@ -671,6 +672,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
                   quick_replies: parsed.quick_replies,
                   navigate_to: parsed.navigate_to,
                   cart_action: parsed.cart_action,
+                  cart_actions: parsed.cart_actions,  // Multiple cart actions support
                 }
               } else if (currentEvent === 'error') {
                 throw new Error(parsed.error || 'حصل خطأ')
