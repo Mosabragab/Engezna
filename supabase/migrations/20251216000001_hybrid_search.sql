@@ -312,11 +312,10 @@ GRANT SELECT ON arabic_synonyms TO authenticated, anon, service_role;
 
 -- ============================================================================
 -- Add index for faster trigram searches
+-- Note: idx_menu_items_name_ar_trgm already exists from previous migration
 -- ============================================================================
 
-CREATE INDEX IF NOT EXISTS idx_menu_items_name_ar_trgm
-ON menu_items USING gin (name_ar gin_trgm_ops);
-
+-- Only create description index (name index already exists)
 CREATE INDEX IF NOT EXISTS idx_menu_items_description_ar_trgm
 ON menu_items USING gin (description_ar gin_trgm_ops);
 
