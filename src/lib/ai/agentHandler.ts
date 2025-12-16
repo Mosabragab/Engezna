@@ -637,6 +637,22 @@ function generateDynamicQuickReplies(
     }
   }
 
+  // AI asking about provider preference (من مطعم معين؟ ولا أساعدك؟)
+  const isAskingProviderPreference =
+    (contentLower.includes('مطعم معين') || contentLower.includes('مكان معين')) &&
+    (contentLower.includes('أساعدك') || contentLower.includes('اختيار') || contentLower.includes('ولا'))
+
+  if (isAskingProviderPreference) {
+    return {
+      suggestions: ['🔍 ساعدني أختار', '🏪 عندي مطعم معين', '🔥 شوف العروض'],
+      quickReplies: [
+        { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار أحسن مكان' },
+        { title: '🏪 عندي مطعم معين', payload: 'أيوه عندي مطعم معين' },
+        { title: '🔥 شوف العروض', payload: 'ورّيني العروض الأول' }
+      ]
+    }
+  }
+
   // Size/Variant selection needed
   // Only show size buttons if the content explicitly mentions these standard sizes
   // Don't show for other variants like "عادي/سوبر" or "ربع كيلو/نص كيلو"
