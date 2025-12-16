@@ -588,13 +588,31 @@ function generateDynamicQuickReplies(
   // =================================================================
 
   // Size/Variant selection needed
-  if (isAskingVariant && hasProducts) {
+  // Only show size buttons if the content explicitly mentions these standard sizes
+  // Don't show for other variants like "عادي/سوبر" or "ربع كيلو/نص كيلو"
+  const hasStandardSizes = contentLower.includes('صغير') &&
+    contentLower.includes('وسط') &&
+    contentLower.includes('كبير')
+
+  if (isAskingVariant && hasProducts && hasStandardSizes) {
     return {
       suggestions: ['صغير', 'وسط', 'كبير'],
       quickReplies: [
         { title: '📏 صغير', payload: 'عايز الحجم الصغير' },
         { title: '📏 وسط', payload: 'عايز الحجم الوسط' },
         { title: '📏 كبير', payload: 'عايز الحجم الكبير' }
+      ]
+    }
+  }
+
+  // For other variant types (عادي/سوبر, ربع/نص كيلو), show generic add button
+  if (isAskingVariant && hasProducts && !hasStandardSizes) {
+    return {
+      suggestions: ['ضيف للسلة', 'تفاصيل أكتر'],
+      quickReplies: [
+        { title: '✅ ضيف للسلة', payload: 'ضيفه للسلة' },
+        { title: '📋 تفاصيل أكتر', payload: 'عايز تفاصيل أكتر' },
+        { title: '🔍 حاجة تانية', payload: 'عايز حاجة تانية' }
       ]
     }
   }
