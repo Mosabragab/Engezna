@@ -912,11 +912,12 @@ export async function executeAgentTool(
             .eq('is_available', true)
 
           // Search by name/description OR by matching category
+          // NOTE: Use * instead of % for Supabase JS client wildcards
           if (matchingCategoryIds.length > 0) {
             // Use raw filter to combine OR conditions across different columns
-            searchQuery = searchQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%,provider_category_id.in.(${matchingCategoryIds.join(',')})`)
+            searchQuery = searchQuery.or(`name_ar.ilike.*${query}*,description_ar.ilike.*${query}*,provider_category_id.in.(${matchingCategoryIds.join(',')})`)
           } else {
-            searchQuery = searchQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
+            searchQuery = searchQuery.or(`name_ar.ilike.*${query}*,description_ar.ilike.*${query}*`)
           }
 
           const { data, error } = await searchQuery.limit(15)
@@ -958,9 +959,9 @@ export async function executeAgentTool(
               .eq('is_available', true)
 
             if (globalCategoryIds.length > 0) {
-              globalSearchQuery = globalSearchQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%,provider_category_id.in.(${globalCategoryIds.join(',')})`)
+              globalSearchQuery = globalSearchQuery.or(`name_ar.ilike.*${query}*,description_ar.ilike.*${query}*,provider_category_id.in.(${globalCategoryIds.join(',')})`)
             } else {
-              globalSearchQuery = globalSearchQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
+              globalSearchQuery = globalSearchQuery.or(`name_ar.ilike.*${query}*,description_ar.ilike.*${query}*`)
             }
 
             const { data: globalData, error: globalError } = await globalSearchQuery.limit(15)
@@ -1021,10 +1022,10 @@ export async function executeAgentTool(
           // PHASE 1: Count items per provider to decide disambiguation
           // ═══════════════════════════════════════════════════════════════════
 
-          // Build the search filter
+          // Build the search filter - NOTE: Use * instead of % for Supabase JS client wildcards
           const searchFilter = allCategoryIds.length > 0
-            ? `name_ar.ilike.%${query}%,description_ar.ilike.%${query}%,provider_category_id.in.(${allCategoryIds.join(',')})`
-            : `name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`
+            ? `name_ar.ilike.*${query}*,description_ar.ilike.*${query}*,provider_category_id.in.(${allCategoryIds.join(',')})`
+            : `name_ar.ilike.*${query}*,description_ar.ilike.*${query}*`
 
           // DEBUG: First check if ANY items exist for these providers (no filters)
           const { data: allItemsCheck } = await supabase
