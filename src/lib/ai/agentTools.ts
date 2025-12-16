@@ -987,23 +987,30 @@ export async function executeAgentTool(
           // If query matches items in 3+ providers, ask user to choose provider first
           // ═══════════════════════════════════════════════════════════════════
 
+          // CRITICAL DEBUG: Log at very start of fallback
+          console.log('[search_menu] === FALLBACK START ===', {
+            query,
+            effectiveCityId,
+            effectiveProviderId
+          })
+
           // First get active providers in the city with full details for smart suggestions
           let providersQuery = supabase
             .from('providers')
             .select('id, name_ar, logo_url, rating, total_reviews, delivery_fee, estimated_delivery_time_min, category, status')
             .in('status', ['open', 'closed', 'temporarily_paused'])
 
-          if (effectiveCityId) {
-            providersQuery = providersQuery.eq('city_id', effectiveCityId)
-          }
+          // TEMPORARILY DISABLE city filter to test
+          // if (effectiveCityId) {
+          //   providersQuery = providersQuery.eq('city_id', effectiveCityId)
+          // }
 
           const { data: providers, error: providersError } = await providersQuery.limit(50)
 
           // Log for debugging
-          console.log('[search_menu] Fallback - providers:', {
-            query,
-            effectiveCityId,
+          console.log('[search_menu] Fallback - providers found:', {
             providerCount: providers?.length || 0,
+            providerIds: providers?.slice(0, 3).map(p => p.id),
             providersError: providersError?.message
           })
 
