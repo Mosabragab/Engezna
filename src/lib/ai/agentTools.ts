@@ -796,6 +796,14 @@ export async function executeAgentTool(
               p_limit: 15
             })
 
+          // Log for debugging
+          console.log('[search_menu] Hybrid search result:', {
+            query,
+            hybridError: hybridError?.message,
+            resultCount: hybridResults?.length || 0,
+            effectiveCityId
+          })
+
           if (!hybridError && hybridResults && hybridResults.length > 0) {
             // Transform results to expected format
             const formattedResults = hybridResults.map((item: {
@@ -988,7 +996,15 @@ export async function executeAgentTool(
             providersQuery = providersQuery.eq('city_id', effectiveCityId)
           }
 
-          const { data: providers } = await providersQuery.limit(50)
+          const { data: providers, error: providersError } = await providersQuery.limit(50)
+
+          // Log for debugging
+          console.log('[search_menu] Fallback - providers:', {
+            query,
+            effectiveCityId,
+            providerCount: providers?.length || 0,
+            providersError: providersError?.message
+          })
 
           if (!providers?.length) {
             return {
@@ -1010,13 +1026,25 @@ export async function executeAgentTool(
             ? `name_ar.ilike.%${query}%,description_ar.ilike.%${query}%,provider_category_id.in.(${allCategoryIds.join(',')})`
             : `name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`
 
+          // Log the search filter
+          console.log('[search_menu] Fallback - searching items:', {
+            searchFilter,
+            providerIds: providers.map(p => p.id).slice(0, 3) // First 3 for brevity
+          })
+
           // Count items per provider
-          const { data: itemCounts } = await supabase
+          const { data: itemCounts, error: itemsError } = await supabase
             .from('menu_items')
             .select('provider_id')
             .in('provider_id', providers.map(p => p.id))
             .eq('is_available', true)
             .or(searchFilter)
+
+          // Log items result
+          console.log('[search_menu] Fallback - items result:', {
+            itemCount: itemCounts?.length || 0,
+            itemsError: itemsError?.message
+          })
 
           // Group by provider and count
           const providerItemCounts = new Map<string, number>()
@@ -1028,6 +1056,11 @@ export async function executeAgentTool(
           // Get providers that have matching items
           const providersWithItems = providers.filter(p => providerItemCounts.has(p.id))
           const totalItems = itemCounts?.length || 0
+
+          console.log('[search_menu] Fallback - final result:', {
+            providersWithItems: providersWithItems.length,
+            totalItems
+          })
 
           // ═══════════════════════════════════════════════════════════════════
           // DECISION: ALWAYS guide user to provider first!
