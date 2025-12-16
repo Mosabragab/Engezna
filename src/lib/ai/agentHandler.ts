@@ -1,7 +1,10 @@
 /**
  * AI Agent Handler for Engezna Smart Assistant
  *
- * This file handles the AI agent conversation loop using OpenAI with function calling.
+ * This file handles the AI agent conversation loop.
+ * Supports both OpenAI (GPT-4o-mini) and Anthropic (Claude 3.5 Haiku).
+ *
+ * Set AI_PROVIDER=claude in .env to use Claude, otherwise defaults to OpenAI.
  */
 
 import OpenAI from 'openai'
@@ -19,6 +22,21 @@ import {
   type AgentResponse,
   type ConversationTurn
 } from './agentPrompt'
+import { runClaudeAgentStream, runClaudeAgent } from './claudeHandler'
+
+// =============================================================================
+// AI PROVIDER CONFIGURATION
+// =============================================================================
+
+type AIProvider = 'openai' | 'claude'
+
+function getAIProvider(): AIProvider {
+  const provider = process.env.AI_PROVIDER?.toLowerCase()
+  if (provider === 'claude' || provider === 'anthropic') {
+    return 'claude'
+  }
+  return 'openai'
+}
 
 // =============================================================================
 // TYPES
@@ -81,10 +99,19 @@ function convertToolsToOpenAI(context: ToolContext): OpenAI.Chat.Completions.Cha
 }
 
 // =============================================================================
-// MAIN AGENT HANDLER
+// MAIN AGENT HANDLER (Provider-agnostic)
 // =============================================================================
 
 export async function runAgent(options: AgentHandlerOptions): Promise<AgentResponse> {
+  // Check which AI provider to use
+  const provider = getAIProvider()
+
+  if (provider === 'claude') {
+    // Delegate to Claude handler
+    return runClaudeAgent(options)
+  }
+
+  // OpenAI implementation below
   const { context, messages, onStream } = options
 
   // Build system prompt
@@ -288,10 +315,20 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
 }
 
 // =============================================================================
-// STREAMING AGENT HANDLER
+// STREAMING AGENT HANDLER (Provider-agnostic)
 // =============================================================================
 
 export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenerator<AgentStreamEvent> {
+  // Check which AI provider to use
+  const provider = getAIProvider()
+
+  if (provider === 'claude') {
+    // Delegate to Claude handler
+    yield* runClaudeAgentStream(options)
+    return
+  }
+
+  // OpenAI implementation below
   const { context, messages } = options
 
   // Build system prompt

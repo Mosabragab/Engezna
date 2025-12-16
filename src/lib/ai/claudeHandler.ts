@@ -1,0 +1,551 @@
+/**
+ * Claude AI Agent Handler for Engezna Smart Assistant
+ *
+ * Uses Anthropic Claude 3.5 Haiku with Tool Use for the AI Agent.
+ * Drop-in replacement for OpenAI handler.
+ */
+
+import Anthropic from '@anthropic-ai/sdk'
+import {
+  executeAgentTool,
+  getAvailableTools,
+  type ToolContext,
+  type ToolResult
+} from './agentTools'
+import { validateToolParams, checkRateLimit } from './toolValidation'
+import {
+  buildSystemPrompt,
+  type AgentContext,
+  type AgentResponse,
+  type ConversationTurn
+} from './agentPrompt'
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+export interface AgentMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface AgentStreamEvent {
+  type: 'content' | 'tool_call' | 'tool_result' | 'done' | 'error'
+  content?: string
+  toolName?: string
+  toolArgs?: Record<string, unknown>
+  toolResult?: ToolResult
+  error?: string
+  response?: AgentResponse
+}
+
+export interface AgentHandlerOptions {
+  context: AgentContext
+  messages: AgentMessage[]
+  onStream?: (event: AgentStreamEvent) => void
+}
+
+// =============================================================================
+// ANTHROPIC CLIENT (Lazy initialization)
+// =============================================================================
+
+let anthropicClient: Anthropic | null = null
+
+function getAnthropicClient(): Anthropic {
+  if (!anthropicClient) {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY environment variable is not set')
+    }
+    anthropicClient = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY
+    })
+  }
+  return anthropicClient
+}
+
+// =============================================================================
+// CONVERT TOOLS TO ANTHROPIC FORMAT
+// =============================================================================
+
+function convertToolsToAnthropic(context: ToolContext): Anthropic.Tool[] {
+  const availableTools = getAvailableTools(context)
+
+  return availableTools.map(tool => ({
+    name: tool.name,
+    description: tool.description,
+    input_schema: tool.parameters as Anthropic.Tool['input_schema']
+  }))
+}
+
+// =============================================================================
+// CONVERT MESSAGES FOR ANTHROPIC
+// =============================================================================
+
+type AnthropicMessage = Anthropic.MessageParam
+
+function convertMessagesToAnthropic(messages: AgentMessage[]): AnthropicMessage[] {
+  return messages.map(msg => ({
+    role: msg.role,
+    content: msg.content
+  }))
+}
+
+// =============================================================================
+// STREAMING AGENT HANDLER (Claude)
+// =============================================================================
+
+export async function* runClaudeAgentStream(options: AgentHandlerOptions): AsyncGenerator<AgentStreamEvent> {
+  const { context, messages } = options
+
+  // Build system prompt
+  const systemPrompt = buildSystemPrompt(context)
+
+  // Convert tools to Anthropic format
+  const tools = convertToolsToAnthropic(context)
+
+  // Convert messages to Anthropic format
+  let anthropicMessages: AnthropicMessage[] = convertMessagesToAnthropic(messages)
+
+  const turns: ConversationTurn[] = []
+
+  // Run the agent loop (max 5 iterations)
+  for (let iteration = 0; iteration < 5; iteration++) {
+    try {
+      // Create streaming message with Claude
+      const stream = getAnthropicClient().messages.stream({
+        model: 'claude-3-5-haiku-20241022',
+        max_tokens: 1500,
+        system: systemPrompt,
+        messages: anthropicMessages,
+        tools: tools.length > 0 ? tools : undefined
+      })
+
+      let accumulatedContent = ''
+      const toolUses: Array<{
+        id: string
+        name: string
+        input: Record<string, unknown>
+      }> = []
+
+      // Process the stream
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta') {
+          const delta = event.delta
+
+          // Handle text content
+          if (delta.type === 'text_delta') {
+            accumulatedContent += delta.text
+            yield {
+              type: 'content',
+              content: delta.text
+            }
+          }
+
+          // Handle tool input (partial JSON)
+          if (delta.type === 'input_json_delta') {
+            // Tool input is being built up - we'll get the final in content_block_stop
+          }
+        }
+
+        // Handle content block start (for tool use)
+        if (event.type === 'content_block_start') {
+          if (event.content_block.type === 'tool_use') {
+            toolUses.push({
+              id: event.content_block.id,
+              name: event.content_block.name,
+              input: {}
+            })
+          }
+        }
+      }
+
+      // Get the final message to extract complete tool uses
+      const finalMessage = await stream.finalMessage()
+
+      // Extract tool uses from final message
+      for (const block of finalMessage.content) {
+        if (block.type === 'tool_use') {
+          const existingTool = toolUses.find(t => t.id === block.id)
+          if (existingTool) {
+            existingTool.input = block.input as Record<string, unknown>
+          } else {
+            toolUses.push({
+              id: block.id,
+              name: block.name,
+              input: block.input as Record<string, unknown>
+            })
+          }
+        }
+      }
+
+      // Process tool uses if any
+      if (toolUses.length > 0 && finalMessage.stop_reason === 'tool_use') {
+        // Add assistant message with tool uses
+        anthropicMessages.push({
+          role: 'assistant',
+          content: finalMessage.content
+        })
+
+        // Prepare tool results for the next message
+        const toolResults: Anthropic.ToolResultBlockParam[] = []
+
+        // Execute each tool
+        for (const toolUse of toolUses) {
+          const toolName = toolUse.name
+          const toolArgs = toolUse.input
+
+          yield {
+            type: 'tool_call',
+            toolName,
+            toolArgs
+          }
+
+          // Validate tool parameters
+          const validation = validateToolParams(toolName, toolArgs, context)
+          if (!validation.valid) {
+            const validationResult: ToolResult = {
+              success: false,
+              error: validation.error,
+              message: validation.message
+            }
+
+            yield {
+              type: 'tool_result',
+              toolName,
+              toolResult: validationResult
+            }
+
+            turns.push({
+              role: 'tool',
+              content: JSON.stringify(validationResult),
+              toolName,
+              toolResult: validationResult,
+              timestamp: new Date()
+            })
+
+            toolResults.push({
+              type: 'tool_result',
+              tool_use_id: toolUse.id,
+              content: JSON.stringify(validationResult)
+            })
+
+            continue
+          }
+
+          // Check rate limits
+          const conversationId = context.customerId || 'anonymous'
+          const rateLimit = checkRateLimit(toolName, conversationId)
+          if (!rateLimit.allowed) {
+            const rateLimitResult: ToolResult = {
+              success: false,
+              error: 'rate_limited',
+              message: rateLimit.message
+            }
+
+            yield {
+              type: 'tool_result',
+              toolName,
+              toolResult: rateLimitResult
+            }
+
+            turns.push({
+              role: 'tool',
+              content: JSON.stringify(rateLimitResult),
+              toolName,
+              toolResult: rateLimitResult,
+              timestamp: new Date()
+            })
+
+            toolResults.push({
+              type: 'tool_result',
+              tool_use_id: toolUse.id,
+              content: JSON.stringify(rateLimitResult)
+            })
+
+            continue
+          }
+
+          // Execute the tool
+          const result = await executeAgentTool(toolName, toolArgs, context)
+
+          yield {
+            type: 'tool_result',
+            toolName,
+            toolResult: result
+          }
+
+          turns.push({
+            role: 'tool',
+            content: JSON.stringify(result),
+            toolName,
+            toolResult: result,
+            timestamp: new Date()
+          })
+
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: toolUse.id,
+            content: JSON.stringify(result)
+          })
+        }
+
+        // Add tool results as user message (Anthropic format)
+        anthropicMessages.push({
+          role: 'user',
+          content: toolResults
+        })
+
+        // Continue loop to get final response
+        continue
+      }
+
+      // No tool uses or end_turn - this is the final response
+      const finalResponse = parseAgentOutput(accumulatedContent, turns, context.providerId || context.cartProviderId)
+
+      yield {
+        type: 'done',
+        response: finalResponse
+      }
+
+      return
+
+    } catch (error) {
+      console.error('[Claude Agent Stream Error]:', error)
+
+      yield {
+        type: 'done',
+        response: {
+          content: 'مش لاقي نتائج دلوقتي. جرب تاني أو اسألني سؤال تاني',
+          suggestions: ['جرب تاني', 'المنيو', 'الرئيسية']
+        }
+      }
+
+      return
+    }
+  }
+
+  // Max iterations reached
+  yield {
+    type: 'done',
+    response: {
+      content: 'عذرا، مش قادر أكمل الطلب دلوقتي. حاول مرة تانية.',
+      suggestions: ['حاول مرة تانية']
+    }
+  }
+}
+
+// =============================================================================
+// NON-STREAMING AGENT HANDLER (Claude)
+// =============================================================================
+
+export async function runClaudeAgent(options: AgentHandlerOptions): Promise<AgentResponse> {
+  let finalResponse: AgentResponse = { content: '' }
+
+  for await (const event of runClaudeAgentStream(options)) {
+    if (event.type === 'done' && event.response) {
+      finalResponse = event.response
+    }
+  }
+
+  return finalResponse
+}
+
+// =============================================================================
+// HELPER FUNCTIONS (same as OpenAI handler)
+// =============================================================================
+
+function generateDynamicQuickReplies(
+  content: string,
+  hasCartAction: boolean,
+  hasProducts: boolean,
+  productId?: string,
+  toolsUsed?: string[],
+  providerId?: string
+): { suggestions: string[]; quickReplies: AgentResponse['quickReplies'] } {
+
+  const menuPayload = providerId
+    ? `navigate:/ar/providers/${providerId}`
+    : 'ورّيني المنيو'
+
+  const contentLower = content.toLowerCase()
+
+  // Size/Variant selection
+  const isAskingVariant = contentLower.includes('حجم') ||
+    contentLower.includes('أي حجم') ||
+    contentLower.includes('صغير') && contentLower.includes('كبير')
+
+  const hasStandardSizes = contentLower.includes('صغير') &&
+    contentLower.includes('وسط') &&
+    contentLower.includes('كبير')
+
+  if (isAskingVariant && hasProducts && hasStandardSizes) {
+    return {
+      suggestions: ['صغير', 'وسط', 'كبير'],
+      quickReplies: [
+        { title: 'صغير', payload: 'عايز الحجم الصغير' },
+        { title: 'وسط', payload: 'عايز الحجم الوسط' },
+        { title: 'كبير', payload: 'عايز الحجم الكبير' }
+      ]
+    }
+  }
+
+  // After adding to cart
+  if (hasCartAction) {
+    return {
+      suggestions: ['شوف السلة', 'أضف حاجة تانية', 'كمل للدفع'],
+      quickReplies: [
+        { title: 'شوف السلة', payload: 'ايه في السلة؟' },
+        { title: 'أضف حاجة تانية', payload: 'عايز أضيف حاجة تانية' },
+        { title: 'كمل للدفع', payload: 'navigate:/ar/checkout' }
+      ]
+    }
+  }
+
+  // Products found
+  if (hasProducts && productId) {
+    return {
+      suggestions: ['ضيف للسلة', 'تفاصيل أكتر', 'حاجة تانية'],
+      quickReplies: [
+        { title: 'ضيف للسلة', payload: 'ضيف الأول للسلة' },
+        { title: 'تفاصيل أكتر', payload: 'عايز تفاصيل أكتر' },
+        { title: 'حاجة تانية', payload: 'عايز أبحث عن حاجة تانية' }
+      ]
+    }
+  }
+
+  // Promotions
+  if (toolsUsed?.includes('get_promotions') ||
+      contentLower.includes('عرض') || contentLower.includes('خصم')) {
+    return {
+      suggestions: ['استخدم العرض', 'شوف المنيو', 'بحث'],
+      quickReplies: [
+        { title: 'استخدم العرض', payload: 'عايز أستخدم العرض ده' },
+        { title: 'شوف المنيو', payload: menuPayload },
+        { title: 'بحث', payload: 'عايز أبحث عن حاجة' }
+      ]
+    }
+  }
+
+  // Greeting
+  if (contentLower.includes('أهلاً') || contentLower.includes('أهلا')) {
+    return {
+      suggestions: ['عايز آكل', 'طلباتي', 'العروض'],
+      quickReplies: [
+        { title: 'عايز آكل', payload: 'عايز أطلب أكل' },
+        { title: 'طلباتي', payload: 'فين طلباتي؟' },
+        { title: 'العروض', payload: 'فيه عروض ايه؟' }
+      ]
+    }
+  }
+
+  // Default
+  return {
+    suggestions: ['شوف المنيو', 'العروض', 'طلباتي'],
+    quickReplies: [
+      { title: 'شوف المنيو', payload: menuPayload },
+      { title: 'العروض', payload: 'فيه عروض ايه؟' },
+      { title: 'طلباتي', payload: 'فين طلباتي؟' }
+    ]
+  }
+}
+
+function sanitizeAgentResponse(content: string): string {
+  let sanitized = content
+
+  // Remove markdown images
+  sanitized = sanitized.replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
+  // Remove links but keep text
+  sanitized = sanitized.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+  // Remove URLs
+  sanitized = sanitized.replace(/https?:\/\/[^\s<>"\)]+/gi, '')
+  // Remove markdown formatting
+  sanitized = sanitized.replace(/\*\*([^*]+)\*\*/g, '$1')
+  sanitized = sanitized.replace(/\*([^*]+)\*/g, '$1')
+  // Remove code blocks
+  sanitized = sanitized.replace(/```[\s\S]*?```/g, '')
+  sanitized = sanitized.replace(/`([^`]+)`/g, '$1')
+  // Remove HTML tags
+  sanitized = sanitized.replace(/<[^>]+>/g, '')
+  // Clean whitespace
+  sanitized = sanitized.replace(/\n{3,}/g, '\n\n')
+  sanitized = sanitized.replace(/  +/g, ' ')
+
+  return sanitized.trim()
+}
+
+function parseAgentOutput(content: string, turns: ConversationTurn[], providerId?: string): AgentResponse {
+  const sanitizedContent = sanitizeAgentResponse(content)
+
+  const response: AgentResponse = {
+    content: sanitizedContent,
+    suggestions: [],
+    quickReplies: [],
+    products: [],
+    cartActions: []
+  }
+
+  const toolsUsed: string[] = []
+
+  for (const turn of turns) {
+    if (turn.role === 'tool' && turn.toolResult) {
+      if (turn.toolName) {
+        toolsUsed.push(turn.toolName)
+      }
+
+      const result = turn.toolResult as ToolResult
+      if (result.success && result.data) {
+        const data = result.data as Record<string, unknown>
+
+        if (data.cart_action) {
+          const cartAction = data.cart_action as AgentResponse['cartAction']
+          response.cartActions!.push(cartAction!)
+          response.cartAction = cartAction
+        }
+
+        if (Array.isArray(result.data)) {
+          const items = result.data as Array<Record<string, unknown>>
+          if (items.length > 0 && items[0].name_ar && items[0].price) {
+            response.products = items.slice(0, 5).map(item => ({
+              id: item.id as string,
+              name: item.name_ar as string,
+              price: item.price as number,
+              image: item.image_url as string | undefined,
+              hasVariants: item.has_variants as boolean | undefined,
+              providerId: item.provider_id as string | undefined,
+              providerName: (item.providers as { name_ar?: string })?.name_ar
+            }))
+          }
+        }
+      }
+    }
+  }
+
+  const effectiveProviderId = response.products?.[0]?.providerId || providerId
+
+  const { suggestions, quickReplies } = generateDynamicQuickReplies(
+    content,
+    !!response.cartAction,
+    !!(response.products && response.products.length > 0),
+    response.products?.[0]?.id,
+    toolsUsed,
+    effectiveProviderId
+  )
+
+  response.suggestions = suggestions
+  response.quickReplies = quickReplies
+
+  return response
+}
+
+/**
+ * Quick agent response (non-streaming)
+ */
+export async function quickClaudeAgentResponse(
+  userMessage: string,
+  context: AgentContext
+): Promise<AgentResponse> {
+  return runClaudeAgent({
+    context,
+    messages: [{ role: 'user', content: userMessage }]
+  })
+}
