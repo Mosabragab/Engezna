@@ -1542,6 +1542,8 @@ export async function executeAgentTool(
 
         // ═══════════════════════════════════════════════════════════════════
         // 3. Get DISCOUNTED PRODUCTS (original_price > price)
+        // If provider_id exists: get from that provider only
+        // If no provider_id: get from ALL providers (global discounts)
         // ═══════════════════════════════════════════════════════════════════
         let productsWithDiscount: Array<{
           id: string
@@ -1549,29 +1551,36 @@ export async function executeAgentTool(
           price: number
           original_price: number
           discount_percentage: number
+          provider_name?: string
         }> = []
 
-        if (effectiveProviderId) {
-          const { data: discountedProducts } = await supabase
-            .from('menu_items')
-            .select('id, name_ar, price, original_price, image_url, has_variants')
-            .eq('provider_id', effectiveProviderId)
-            .eq('is_available', true)
-            .not('original_price', 'is', null)
-            .gt('original_price', 0)
-            .order('original_price', { ascending: false })
-            .limit(10)
+        // Build query for discounted products
+        let discountQuery = supabase
+          .from('menu_items')
+          .select('id, name_ar, price, original_price, image_url, has_variants, provider_id, providers(name_ar)')
+          .eq('is_available', true)
+          .not('original_price', 'is', null)
+          .gt('original_price', 0)
+          .order('original_price', { ascending: false })
+          .limit(effectiveProviderId ? 10 : 5) // Limit to 5 if global search
 
-          productsWithDiscount = discountedProducts?.filter(p =>
-            p.original_price && p.price && p.original_price > p.price
-          ).map(p => ({
-            id: p.id,
-            name_ar: p.name_ar,
-            price: p.price,
-            original_price: p.original_price!,
-            discount_percentage: Math.round(((p.original_price! - p.price) / p.original_price!) * 100)
-          })) || []
+        // Filter by provider if specified
+        if (effectiveProviderId) {
+          discountQuery = discountQuery.eq('provider_id', effectiveProviderId)
         }
+
+        const { data: discountedProducts } = await discountQuery
+
+        productsWithDiscount = discountedProducts?.filter(p =>
+          p.original_price && p.price && p.original_price > p.price
+        ).map(p => ({
+          id: p.id,
+          name_ar: p.name_ar,
+          price: p.price,
+          original_price: p.original_price!,
+          discount_percentage: Math.round(((p.original_price! - p.price) / p.original_price!) * 100),
+          provider_name: (p.providers as { name_ar: string } | null)?.name_ar
+        })) || []
 
         // ═══════════════════════════════════════════════════════════════════
         // 4. Build response with all three sources
