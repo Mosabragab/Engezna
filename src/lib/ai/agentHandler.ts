@@ -813,7 +813,8 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
     content: sanitizedContent,
     suggestions: [],
     quickReplies: [],
-    products: []
+    products: [],
+    cartActions: []  // Collect ALL cart actions from multiple tool calls
   }
 
   // Track which tools were used
@@ -831,8 +832,12 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
         const data = result.data as Record<string, unknown>
 
         // Check for cart_action (from add_to_cart tool)
+        // Collect ALL cart actions instead of overwriting
         if (data.cart_action) {
-          response.cartAction = data.cart_action as AgentResponse['cartAction']
+          const cartAction = data.cart_action as AgentResponse['cartAction']
+          response.cartActions!.push(cartAction!)
+          // Also set single cartAction for backward compatibility (last one)
+          response.cartAction = cartAction
         }
 
         // Check if it's an array of menu items

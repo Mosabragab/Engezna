@@ -589,6 +589,7 @@ export interface AgentResponse {
   }>
   navigateTo?: string
   cartAction?: CartAction
+  cartActions?: CartAction[]  // Multiple cart actions (for adding multiple items at once)
 }
 
 /**

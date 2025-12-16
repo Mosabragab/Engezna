@@ -173,7 +173,10 @@ export async function POST(request: NextRequest) {
                     provider_name_ar: p.providerName
                   })) || [],
                   navigate_to: response?.navigateTo,
-                  cart_action: response?.cartAction
+                  cart_action: response?.cartAction,
+                  cart_actions: response?.cartActions && response.cartActions.length > 0
+                    ? response.cartActions
+                    : undefined  // Send array of cart actions for multiple items
                 }))
                 break
 
