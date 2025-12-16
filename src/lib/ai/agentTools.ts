@@ -841,7 +841,8 @@ export async function executeAgentTool(
               const uniqueProviders = Array.from(providerMap.entries()).map(([id, info]) => ({
                 id,
                 name_ar: info.name,
-                item_count: info.count
+                item_count: info.count,
+                status: 'open' as const  // Default status for hybrid search results
               }))
 
               // ALWAYS do PROVIDER FIRST - even with 1 provider
