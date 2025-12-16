@@ -212,9 +212,9 @@ BEGIN
     p.name_ar as provider_name,
     pc.name_ar as category_name,
     GREATEST(
-      COALESCE(similarity(mi.name_ar, p_query), 0),
-      CASE WHEN mi.name_ar ILIKE '%' || p_query || '%' THEN 0.8 ELSE 0 END
-    ) as match_score
+      COALESCE(similarity(mi.name_ar, p_query)::float8, 0::float8),
+      CASE WHEN mi.name_ar ILIKE '%' || p_query || '%' THEN 0.8::float8 ELSE 0::float8 END
+    )::float8 as match_score
   FROM menu_items mi
   JOIN providers p ON mi.provider_id = p.id
   LEFT JOIN provider_categories pc ON mi.provider_category_id = pc.id
