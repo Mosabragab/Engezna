@@ -969,102 +969,12 @@ export async function executeAgentTool(
           const totalItems = itemCounts?.length || 0
 
           // ═══════════════════════════════════════════════════════════════════
-          // DECISION: Too many providers? Ask user to choose!
-          // Threshold: 3+ providers OR 15+ total items
+          // DECISION: ALWAYS guide user to provider first!
+          // Even with 1 provider - confirm before showing all items
           // ═══════════════════════════════════════════════════════════════════
 
-          if (providersWithItems.length >= 3 || totalItems > 15) {
-            // Get promotions for these providers (to highlight deals)
-            const { data: promotions } = await supabase
-              .from('provider_promotions')
-              .select('provider_id, title_ar, discount_percentage')
-              .in('provider_id', providersWithItems.map(p => p.id))
-              .eq('is_active', true)
-              .gte('end_date', new Date().toISOString())
-              .limit(20)
-
-            // Map promotions to providers
-            const providerPromotions = new Map<string, { title: string; discount: number }>()
-            promotions?.forEach(promo => {
-              if (!providerPromotions.has(promo.provider_id)) {
-                providerPromotions.set(promo.provider_id, {
-                  title: promo.title_ar,
-                  discount: promo.discount_percentage
-                })
-              }
-            })
-
-            // Check customer memory for previous orders (prioritize familiar providers)
-            const previousProviderIds = context.customerMemory?.lastOrders?.map(o => o.providerId) || []
-
-            // Sort providers by: previous orders > rating > item count
-            const sortedProviders = providersWithItems
-              .map(p => ({
-                ...p,
-                item_count: providerItemCounts.get(p.id) || 0,
-                has_promotion: providerPromotions.has(p.id),
-                promotion: providerPromotions.get(p.id),
-                previously_ordered: previousProviderIds.includes(p.id)
-              }))
-              .sort((a, b) => {
-                // Previous orders first
-                if (a.previously_ordered && !b.previously_ordered) return -1
-                if (!a.previously_ordered && b.previously_ordered) return 1
-                // Then by rating
-                return (b.rating || 0) - (a.rating || 0)
-              })
-              .slice(0, 5) // Top 5 providers
-
-            // Return disambiguation response
-            return {
-              success: true,
-              disambiguation_needed: true,
-              query: query, // Save original query for context
-              message: `لقيت "${query}" في ${providersWithItems.length} مكان! تفضل تطلب من مين؟`,
-              providers: sortedProviders.map(p => ({
-                id: p.id,
-                name_ar: p.name_ar,
-                logo_url: p.logo_url,
-                rating: p.rating,
-                total_reviews: p.total_reviews,
-                delivery_fee: p.delivery_fee,
-                estimated_delivery_time_min: p.estimated_delivery_time_min,
-                item_count: p.item_count,
-                status: p.status,
-                previously_ordered: p.previously_ordered,
-                has_promotion: p.has_promotion,
-                promotion_discount: p.promotion?.discount
-              })),
-              total_providers: providersWithItems.length,
-              total_items: totalItems
-            }
-          }
-
-          // ═══════════════════════════════════════════════════════════════════
-          // Few providers (1-2) - Return items directly with provider info
-          // ═══════════════════════════════════════════════════════════════════
-
-          let allProvidersQuery = supabase
-            .from('menu_items')
-            .select(`
-              id, name_ar, price, original_price, image_url, has_variants, provider_id,
-              providers(id, name_ar),
-              provider_categories!provider_category_id(name_ar)
-            `)
-            .in('provider_id', providers.map(p => p.id))
-            .eq('is_available', true)
-
-          if (allCategoryIds.length > 0) {
-            allProvidersQuery = allProvidersQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%,provider_category_id.in.(${allCategoryIds.join(',')})`)
-          } else {
-            allProvidersQuery = allProvidersQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
-          }
-
-          const { data, error } = await allProvidersQuery.limit(20)
-
-          if (error) throw error
-
-          if (!data || data.length === 0) {
+          if (providersWithItems.length === 0) {
+            // No providers have this item
             return {
               success: true,
               data: [],
@@ -1072,8 +982,80 @@ export async function executeAgentTool(
             }
           }
 
-          const itemsWithVariants = await fetchVariantsForItems(data)
-          return { success: true, data: itemsWithVariants }
+          // Always do provider selection when no provider context
+          // Get promotions for these providers (to highlight deals)
+          const { data: promotions } = await supabase
+            .from('provider_promotions')
+            .select('provider_id, title_ar, discount_percentage')
+            .in('provider_id', providersWithItems.map(p => p.id))
+            .eq('is_active', true)
+            .gte('end_date', new Date().toISOString())
+            .limit(20)
+
+          // Map promotions to providers
+          const providerPromotions = new Map<string, { title: string; discount: number }>()
+          promotions?.forEach(promo => {
+            if (!providerPromotions.has(promo.provider_id)) {
+              providerPromotions.set(promo.provider_id, {
+                title: promo.title_ar,
+                discount: promo.discount_percentage
+              })
+            }
+          })
+
+          // Check customer memory for previous orders (prioritize familiar providers)
+          const previousProviderIds = context.customerMemory?.lastOrders?.map(o => o.providerId) || []
+
+          // Sort providers by: previous orders > rating > item count
+          const sortedProviders = providersWithItems
+            .map(p => ({
+              ...p,
+              item_count: providerItemCounts.get(p.id) || 0,
+              has_promotion: providerPromotions.has(p.id),
+              promotion: providerPromotions.get(p.id),
+              previously_ordered: previousProviderIds.includes(p.id)
+            }))
+            .sort((a, b) => {
+              // Previous orders first
+              if (a.previously_ordered && !b.previously_ordered) return -1
+              if (!a.previously_ordered && b.previously_ordered) return 1
+              // Then by rating
+              return (b.rating || 0) - (a.rating || 0)
+            })
+            .slice(0, 5) // Top 5 providers
+
+          // ═══════════════════════════════════════════════════════════════════
+          // ALWAYS return disambiguation - guide user to provider first!
+          // Special case: 1 provider gets a simpler message
+          // ═══════════════════════════════════════════════════════════════════
+
+          const message = providersWithItems.length === 1
+            ? `لقيت "${query}" في ${sortedProviders[0].name_ar}! تحب تشوف المنيو بتاعهم؟`
+            : `لقيت "${query}" في ${providersWithItems.length} مكان! تفضل تطلب من مين؟`
+
+          // Return disambiguation response
+          return {
+            success: true,
+            disambiguation_needed: true,
+            query: query, // Save original query for context
+            message,
+            providers: sortedProviders.map(p => ({
+              id: p.id,
+              name_ar: p.name_ar,
+              logo_url: p.logo_url,
+              rating: p.rating,
+              total_reviews: p.total_reviews,
+              delivery_fee: p.delivery_fee,
+              estimated_delivery_time_min: p.estimated_delivery_time_min,
+              item_count: p.item_count,
+              status: p.status,
+              previously_ordered: p.previously_ordered,
+              has_promotion: p.has_promotion,
+              promotion_discount: p.promotion?.discount
+            })),
+            total_providers: providersWithItems.length,
+            total_items: totalItems
+          }
         }
       }
 
