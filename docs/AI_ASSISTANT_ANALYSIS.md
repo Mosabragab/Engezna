@@ -4,6 +4,8 @@
 **Version:** 2.3
 **Status:** Major Fixes Applied - Embedding & Data Access Fixed
 
+> 📋 **خطة التحسين الشاملة:** راجع [AI_AGENT_IMPROVEMENT_PLAN.md](./AI_AGENT_IMPROVEMENT_PLAN.md) للخطة التفصيلية
+
 ---
 
 ## Overview
