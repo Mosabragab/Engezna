@@ -16,6 +16,25 @@ export interface ToolResult {
   data?: unknown
   error?: string
   message?: string // Friendly message for the AI to use in response
+  // Disambiguation for provider selection
+  disambiguation_needed?: boolean
+  query?: string
+  providers?: Array<{
+    id: string
+    name_ar: string
+    logo_url?: string
+    rating?: number
+    total_reviews?: number
+    delivery_fee?: number
+    estimated_delivery_time_min?: number
+    item_count: number
+    status: string
+    previously_ordered?: boolean
+    has_promotion?: boolean
+    promotion_discount?: number
+  }>
+  total_providers?: number
+  total_items?: number
 }
 
 export interface ToolDefinition {
@@ -46,8 +65,26 @@ export interface ToolContext {
     name: string
     quantity: number
     price: number
+    variant_id?: string
   }>
   cartTotal?: number
+  // Customer memory for personalization
+  customerMemory?: {
+    lastOrders?: Array<{
+      providerId: string
+      providerName: string
+      items: string[]
+      date: string
+    }>
+    favoriteItems?: string[]
+    preferences?: {
+      spicy?: boolean
+      vegetarian?: boolean
+      notes?: string[]
+    }
+    orderCount?: number
+    lastVisit?: string
+  }
 }
 
 // Helper to get effective provider ID from context
@@ -875,11 +912,15 @@ export async function executeAgentTool(
             message: 'مش لاقي نتائج للمنتج ده'
           }
         } else {
-          // Search across all providers in the city
-          // First get active providers in the city
+          // ═══════════════════════════════════════════════════════════════════
+          // SMART PROVIDER SELECTION: Don't overwhelm with results from many providers
+          // If query matches items in 3+ providers, ask user to choose provider first
+          // ═══════════════════════════════════════════════════════════════════
+
+          // First get active providers in the city with full details for smart suggestions
           let providersQuery = supabase
             .from('providers')
-            .select('id, name_ar')
+            .select('id, name_ar, logo_url, rating, total_reviews, delivery_fee, estimated_delivery_time_min, category, status')
             .in('status', ['open', 'closed', 'temporarily_paused'])
 
           if (effectiveCityId) {
@@ -899,7 +940,110 @@ export async function executeAgentTool(
           // Find categories matching the query across all providers
           const allCategoryIds = await findMatchingCategoryIds(query, providers.map(p => p.id))
 
-          // Search items in those providers - by name/description OR by category
+          // ═══════════════════════════════════════════════════════════════════
+          // PHASE 1: Count items per provider to decide disambiguation
+          // ═══════════════════════════════════════════════════════════════════
+
+          // Build the search filter
+          const searchFilter = allCategoryIds.length > 0
+            ? `name_ar.ilike.%${query}%,description_ar.ilike.%${query}%,provider_category_id.in.(${allCategoryIds.join(',')})`
+            : `name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`
+
+          // Count items per provider
+          const { data: itemCounts } = await supabase
+            .from('menu_items')
+            .select('provider_id')
+            .in('provider_id', providers.map(p => p.id))
+            .eq('is_available', true)
+            .or(searchFilter)
+
+          // Group by provider and count
+          const providerItemCounts = new Map<string, number>()
+          itemCounts?.forEach(item => {
+            const count = providerItemCounts.get(item.provider_id) || 0
+            providerItemCounts.set(item.provider_id, count + 1)
+          })
+
+          // Get providers that have matching items
+          const providersWithItems = providers.filter(p => providerItemCounts.has(p.id))
+          const totalItems = itemCounts?.length || 0
+
+          // ═══════════════════════════════════════════════════════════════════
+          // DECISION: Too many providers? Ask user to choose!
+          // Threshold: 3+ providers OR 15+ total items
+          // ═══════════════════════════════════════════════════════════════════
+
+          if (providersWithItems.length >= 3 || totalItems > 15) {
+            // Get promotions for these providers (to highlight deals)
+            const { data: promotions } = await supabase
+              .from('provider_promotions')
+              .select('provider_id, title_ar, discount_percentage')
+              .in('provider_id', providersWithItems.map(p => p.id))
+              .eq('is_active', true)
+              .gte('end_date', new Date().toISOString())
+              .limit(20)
+
+            // Map promotions to providers
+            const providerPromotions = new Map<string, { title: string; discount: number }>()
+            promotions?.forEach(promo => {
+              if (!providerPromotions.has(promo.provider_id)) {
+                providerPromotions.set(promo.provider_id, {
+                  title: promo.title_ar,
+                  discount: promo.discount_percentage
+                })
+              }
+            })
+
+            // Check customer memory for previous orders (prioritize familiar providers)
+            const previousProviderIds = context.customerMemory?.lastOrders?.map(o => o.providerId) || []
+
+            // Sort providers by: previous orders > rating > item count
+            const sortedProviders = providersWithItems
+              .map(p => ({
+                ...p,
+                item_count: providerItemCounts.get(p.id) || 0,
+                has_promotion: providerPromotions.has(p.id),
+                promotion: providerPromotions.get(p.id),
+                previously_ordered: previousProviderIds.includes(p.id)
+              }))
+              .sort((a, b) => {
+                // Previous orders first
+                if (a.previously_ordered && !b.previously_ordered) return -1
+                if (!a.previously_ordered && b.previously_ordered) return 1
+                // Then by rating
+                return (b.rating || 0) - (a.rating || 0)
+              })
+              .slice(0, 5) // Top 5 providers
+
+            // Return disambiguation response
+            return {
+              success: true,
+              disambiguation_needed: true,
+              query: query, // Save original query for context
+              message: `لقيت "${query}" في ${providersWithItems.length} مكان! تفضل تطلب من مين؟`,
+              providers: sortedProviders.map(p => ({
+                id: p.id,
+                name_ar: p.name_ar,
+                logo_url: p.logo_url,
+                rating: p.rating,
+                total_reviews: p.total_reviews,
+                delivery_fee: p.delivery_fee,
+                estimated_delivery_time_min: p.estimated_delivery_time_min,
+                item_count: p.item_count,
+                status: p.status,
+                previously_ordered: p.previously_ordered,
+                has_promotion: p.has_promotion,
+                promotion_discount: p.promotion?.discount
+              })),
+              total_providers: providersWithItems.length,
+              total_items: totalItems
+            }
+          }
+
+          // ═══════════════════════════════════════════════════════════════════
+          // Few providers (1-2) - Return items directly with provider info
+          // ═══════════════════════════════════════════════════════════════════
+
           let allProvidersQuery = supabase
             .from('menu_items')
             .select(`

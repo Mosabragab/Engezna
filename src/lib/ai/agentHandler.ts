@@ -691,6 +691,24 @@ function generateDynamicQuickReplies(
     }
   }
 
+  // Provider selection/disambiguation - when asking user to choose a provider
+  const isProviderSelection = contentLower.includes('تفضل تطلب من مين') ||
+    contentLower.includes('اختار المطعم') ||
+    contentLower.includes('تفضل مين') ||
+    (contentLower.includes('لقيت') && contentLower.includes('مكان'))
+
+  if (isProviderSelection) {
+    return {
+      suggestions: ['🏆 الأعلى تقييماً', '💰 الأرخص', '🔥 اللي عنده عروض'],
+      quickReplies: [
+        { title: '🏆 الأعلى تقييماً', payload: 'عايز الأعلى تقييماً' },
+        { title: '💰 الأرخص', payload: 'عايز الأرخص' },
+        { title: '🔥 اللي عنده عروض', payload: 'عايز اللي عنده عروض' },
+        { title: '🔍 حاجة تانية', payload: 'عايز حاجة تانية خالص' }
+      ]
+    }
+  }
+
   // No results found - help user search differently
   if (noResults) {
     return {
