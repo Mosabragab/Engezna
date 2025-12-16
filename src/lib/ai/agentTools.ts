@@ -729,14 +729,14 @@ export async function executeAgentTool(
       }
 
       case 'search_menu': {
-        const { provider_id, query: rawQuery, city_id } = params as {
+        const { provider_id, query, city_id } = params as {
           provider_id?: string
           query: string
           city_id?: string
         }
 
-        // Normalize Arabic text for consistent search (handles ه↔ة, ى↔ي, etc.)
-        const query = normalizeArabic(rawQuery)
+        // NOTE: Arabic normalization is handled by the DB function (normalize_arabic)
+        // Don't normalize here as fallback ILIKE queries need the original text
 
         // Helper function to fetch variants for items
         const fetchVariantsForItems = async (items: Array<{ id: string; has_variants: boolean | null }>) => {
