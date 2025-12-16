@@ -841,7 +841,7 @@ function generateDynamicQuickReplies(
 
   // Default suggestions - context-aware
   // If user has selected a provider, show menu option; otherwise guide to provider selection
-  if (providerName) {
+  if (providerId) {
     return {
       suggestions: ['🍽️ شوف المنيو', '🔥 العروض', '📦 طلباتي'],
       quickReplies: [
