@@ -12,6 +12,7 @@ import {
   type ToolContext,
   type ToolResult
 } from './agentTools'
+import { validateToolParams, checkRateLimit } from './toolValidation'
 import {
   buildSystemPrompt,
   type AgentContext,
@@ -145,6 +146,72 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
             toolName,
             toolArgs
           })
+
+          // Validate tool parameters before execution
+          const validation = validateToolParams(toolName, toolArgs, context)
+          if (!validation.valid) {
+            // Return validation error as tool result
+            const validationResult: ToolResult = {
+              success: false,
+              error: validation.error,
+              message: validation.message
+            }
+
+            onStream?.({
+              type: 'tool_result',
+              toolName,
+              toolResult: validationResult
+            })
+
+            turns.push({
+              role: 'tool',
+              content: JSON.stringify(validationResult),
+              toolName,
+              toolResult: validationResult,
+              timestamp: new Date()
+            })
+
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(validationResult)
+            })
+
+            continue
+          }
+
+          // Check rate limits (using a simple conversation identifier)
+          const conversationId = context.customerId || 'anonymous'
+          const rateLimit = checkRateLimit(toolName, conversationId)
+          if (!rateLimit.allowed) {
+            const rateLimitResult: ToolResult = {
+              success: false,
+              error: 'rate_limited',
+              message: rateLimit.message
+            }
+
+            onStream?.({
+              type: 'tool_result',
+              toolName,
+              toolResult: rateLimitResult
+            })
+
+            turns.push({
+              role: 'tool',
+              content: JSON.stringify(rateLimitResult),
+              toolName,
+              toolResult: rateLimitResult,
+              timestamp: new Date()
+            })
+
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(rateLimitResult)
+            })
+
+            continue
+          }
 
           // Execute the tool
           const result = await executeAgentTool(toolName, toolArgs, context)
@@ -324,14 +391,80 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
         // Execute each tool
         for (const toolCall of toolCalls) {
           const toolArgs = JSON.parse(toolCall.arguments)
+          const toolName = toolCall.name
 
           yield {
             type: 'tool_call',
-            toolName: toolCall.name,
+            toolName,
             toolArgs
           }
 
-          const result = await executeAgentTool(toolCall.name, toolArgs, context)
+          // Validate tool parameters before execution
+          const validation = validateToolParams(toolName, toolArgs, context)
+          if (!validation.valid) {
+            const validationResult: ToolResult = {
+              success: false,
+              error: validation.error,
+              message: validation.message
+            }
+
+            yield {
+              type: 'tool_result',
+              toolName,
+              toolResult: validationResult
+            }
+
+            turns.push({
+              role: 'tool',
+              content: JSON.stringify(validationResult),
+              toolName,
+              toolResult: validationResult,
+              timestamp: new Date()
+            })
+
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(validationResult)
+            })
+
+            continue
+          }
+
+          // Check rate limits
+          const conversationId = context.customerId || 'anonymous'
+          const rateLimit = checkRateLimit(toolName, conversationId)
+          if (!rateLimit.allowed) {
+            const rateLimitResult: ToolResult = {
+              success: false,
+              error: 'rate_limited',
+              message: rateLimit.message
+            }
+
+            yield {
+              type: 'tool_result',
+              toolName,
+              toolResult: rateLimitResult
+            }
+
+            turns.push({
+              role: 'tool',
+              content: JSON.stringify(rateLimitResult),
+              toolName,
+              toolResult: rateLimitResult,
+              timestamp: new Date()
+            })
+
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(rateLimitResult)
+            })
+
+            continue
+          }
+
+          const result = await executeAgentTool(toolName, toolArgs, context)
 
           yield {
             type: 'tool_result',

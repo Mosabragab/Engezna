@@ -704,6 +704,72 @@ export async function executeAgentTool(
 
         // Use effective provider ID from context if not explicitly provided
         const effectiveProviderId = getEffectiveProviderId({ provider_id }, context)
+        const effectiveCityId = city_id || context.cityId
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Try Hybrid Search first (uses fuzzy matching + keyword matching)
+        // Falls back to simple search if function doesn't exist
+        // ═══════════════════════════════════════════════════════════════════
+
+        try {
+          // Use simple_search_menu for better results (fuzzy + keyword)
+          const { data: hybridResults, error: hybridError } = await supabase
+            .rpc('simple_search_menu', {
+              p_query: query,
+              p_provider_id: effectiveProviderId || null,
+              p_city_id: effectiveCityId || null,
+              p_limit: 15
+            })
+
+          if (!hybridError && hybridResults && hybridResults.length > 0) {
+            // Transform results to expected format
+            const formattedResults = hybridResults.map((item: {
+              id: string
+              name_ar: string
+              name_en: string
+              description_ar: string
+              price: number
+              original_price: number
+              image_url: string
+              has_variants: boolean
+              provider_id: string
+              provider_name: string
+              category_name: string
+              match_score: number
+            }) => ({
+              id: item.id,
+              name_ar: item.name_ar,
+              price: item.price,
+              original_price: item.original_price,
+              image_url: item.image_url,
+              has_variants: item.has_variants,
+              provider_id: item.provider_id,
+              providers: { id: item.provider_id, name_ar: item.provider_name },
+              provider_categories: { name_ar: item.category_name }
+            }))
+
+            const itemsWithVariants = await fetchVariantsForItems(formattedResults)
+
+            // Check if results are from a different provider
+            const fromDifferentProvider = effectiveProviderId &&
+              itemsWithVariants.every((item: { provider_id: string }) => item.provider_id !== effectiveProviderId)
+
+            return {
+              success: true,
+              data: itemsWithVariants,
+              message: fromDifferentProvider
+                ? 'مش لاقي في التاجر الحالي، بس لقيت في تجار تانيين'
+                : undefined
+            }
+          }
+        } catch {
+          // Hybrid search function might not exist yet, fall back to standard search
+          console.log('[search_menu] Hybrid search not available, using fallback')
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Fallback: Standard ilike search
+        // ═══════════════════════════════════════════════════════════════════
 
         if (effectiveProviderId) {
           // Search within a specific provider (from param, cart, or page context)
@@ -728,8 +794,6 @@ export async function executeAgentTool(
           }
 
           // FALLBACK: No results in current provider, search globally
-          const effectiveCityId = city_id || context.cityId
-
           // Get active providers in the city
           let providersQuery = supabase
             .from('providers')
@@ -773,8 +837,6 @@ export async function executeAgentTool(
           }
         } else {
           // Search across all providers in the city
-          const effectiveCityId = city_id || context.cityId
-
           // First get active providers in the city
           let providersQuery = supabase
             .from('providers')
@@ -865,7 +927,107 @@ export async function executeAgentTool(
           variant_name?: string
         }
 
-        // Return a cart action that the frontend will process
+        // ═══════════════════════════════════════════════════════════════
+        // PRE-EXECUTION GUARDS: Validate before adding to cart
+        // ═══════════════════════════════════════════════════════════════
+
+        // 1. Check item availability and stock
+        const { data: item, error: itemError } = await supabase
+          .from('menu_items')
+          .select('id, name_ar, is_available, has_stock, stock_notes, price, provider_id')
+          .eq('id', item_id)
+          .single()
+
+        if (itemError || !item) {
+          return {
+            success: false,
+            error: 'المنتج ده مش موجود',
+            message: 'مش لاقي المنتج ده، جرب تبحث تاني'
+          }
+        }
+
+        if (!item.is_available) {
+          return {
+            success: false,
+            error: 'المنتج غير متاح',
+            message: `للأسف ${item.name_ar} مش متاح دلوقتي 😕`
+          }
+        }
+
+        if (item.has_stock === false) {
+          return {
+            success: false,
+            error: 'المنتج نفذ من المخزون',
+            message: item.stock_notes || `للأسف ${item.name_ar} خلص 😕 عايز حاجة تانية؟`
+          }
+        }
+
+        // 2. Check provider status
+        const { data: provider, error: providerError } = await supabase
+          .from('providers')
+          .select('id, name_ar, status')
+          .eq('id', provider_id)
+          .single()
+
+        if (providerError || !provider) {
+          return {
+            success: false,
+            error: 'التاجر غير موجود',
+            message: 'مش لاقي المطعم ده'
+          }
+        }
+
+        if (provider.status !== 'open') {
+          const statusMessages: Record<string, string> = {
+            closed: `للأسف ${provider.name_ar} مغلق دلوقتي 😕`,
+            temporarily_paused: `${provider.name_ar} متوقف مؤقتاً، جرب بعدين`,
+            on_vacation: `${provider.name_ar} في إجازة حالياً`
+          }
+          return {
+            success: false,
+            error: 'المطعم مغلق',
+            message: statusMessages[provider.status] || 'المطعم مش متاح دلوقتي'
+          }
+        }
+
+        // 3. Validate variant if specified
+        if (variant_id) {
+          const { data: variant, error: variantError } = await supabase
+            .from('product_variants')
+            .select('id, is_available, price')
+            .eq('id', variant_id)
+            .single()
+
+          if (variantError || !variant) {
+            return {
+              success: false,
+              error: 'الحجم غير موجود',
+              message: 'الحجم ده مش موجود، اختار حجم تاني'
+            }
+          }
+
+          if (!variant.is_available) {
+            return {
+              success: false,
+              error: 'الحجم غير متاح',
+              message: 'الحجم ده مش متاح دلوقتي، اختار حجم تاني'
+            }
+          }
+        }
+
+        // 4. Check cart conflict (different provider)
+        if (context.cartProviderId && context.cartProviderId !== provider_id) {
+          return {
+            success: false,
+            error: 'cart_conflict',
+            message: `السلة فيها منتجات من تاجر تاني. عايز تفضي السلة وتبدأ من ${provider.name_ar}؟`
+          }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // All checks passed - Return cart action for frontend
+        // ═══════════════════════════════════════════════════════════════
+
         return {
           success: true,
           data: {
