@@ -65,6 +65,7 @@ BEGIN
       ) as rank
     FROM menu_items mi
     JOIN providers p ON mi.provider_id = p.id
+    LEFT JOIN provider_categories pc ON mi.provider_category_id = pc.id
     WHERE mi.is_available = true
       AND p.status IN ('open', 'closed', 'temporarily_paused')
       AND (p_provider_id IS NULL OR mi.provider_id = p_provider_id)
@@ -73,8 +74,30 @@ BEGIN
         mi.name_ar ILIKE '%' || p_query || '%'
         OR mi.description_ar ILIKE '%' || p_query || '%'
         OR mi.name_en ILIKE '%' || p_query || '%'
+        OR pc.name_ar ILIKE '%' || p_query || '%'  -- Search in category name
       )
     LIMIT 20
+  ),
+
+  -- ═══════════════════════════════════════════════════════════════════════
+  -- 1.5 CATEGORY MATCHES (items in matching category)
+  -- Finds all items in a category when query matches category name
+  -- ═══════════════════════════════════════════════════════════════════════
+  category_matches AS (
+    SELECT
+      mi.id,
+      'category' as match_type,
+      0.6 as base_score,  -- Category match score
+      ROW_NUMBER() OVER (ORDER BY mi.name_ar) as rank
+    FROM menu_items mi
+    JOIN providers p ON mi.provider_id = p.id
+    JOIN provider_categories pc ON mi.provider_category_id = pc.id
+    WHERE mi.is_available = true
+      AND p.status IN ('open', 'closed', 'temporarily_paused')
+      AND (p_provider_id IS NULL OR mi.provider_id = p_provider_id)
+      AND (p_city_id IS NULL OR p.city_id = p_city_id)
+      AND pc.name_ar ILIKE '%' || p_query || '%'  -- Category name matches query
+    LIMIT 30
   ),
 
   -- ═══════════════════════════════════════════════════════════════════════
@@ -136,6 +159,9 @@ BEGIN
     FROM (
       SELECT id as item_id, match_type, base_score, 1.0 / (60 + rank) as rrf_score
       FROM keyword_matches
+      UNION ALL
+      SELECT id as item_id, match_type, base_score, 1.0 / (60 + rank) as rrf_score
+      FROM category_matches
       UNION ALL
       SELECT id as item_id, match_type, base_score, 1.0 / (60 + rank) as rrf_score
       FROM semantic_matches
@@ -213,7 +239,8 @@ BEGIN
     pc.name_ar as category_name,
     GREATEST(
       COALESCE(similarity(mi.name_ar, p_query)::float8, 0::float8),
-      CASE WHEN mi.name_ar ILIKE '%' || p_query || '%' THEN 0.8::float8 ELSE 0::float8 END
+      CASE WHEN mi.name_ar ILIKE '%' || p_query || '%' THEN 0.8::float8 ELSE 0::float8 END,
+      CASE WHEN pc.name_ar ILIKE '%' || p_query || '%' THEN 0.6::float8 ELSE 0::float8 END  -- Category match score
     )::float8 as match_score
   FROM menu_items mi
   JOIN providers p ON mi.provider_id = p.id
@@ -226,11 +253,15 @@ BEGIN
       mi.name_ar ILIKE '%' || p_query || '%'
       OR mi.description_ar ILIKE '%' || p_query || '%'
       OR mi.name_en ILIKE '%' || p_query || '%'
+      OR pc.name_ar ILIKE '%' || p_query || '%'  -- Search in category name
       OR similarity(mi.name_ar, p_query) > 0.25
     )
   ORDER BY
+    -- Prioritize: exact name > name starts with > category match > fuzzy
     CASE WHEN mi.name_ar ILIKE p_query THEN 0 ELSE 1 END,
     CASE WHEN mi.name_ar ILIKE p_query || '%' THEN 0 ELSE 1 END,
+    CASE WHEN mi.name_ar ILIKE '%' || p_query || '%' THEN 0 ELSE 1 END,
+    CASE WHEN pc.name_ar ILIKE '%' || p_query || '%' THEN 0 ELSE 1 END,
     similarity(mi.name_ar, p_query) DESC,
     mi.name_ar
   LIMIT p_limit;
