@@ -113,10 +113,11 @@ export async function* runClaudeAgentStream(options: AgentHandlerOptions): Async
   // Run the agent loop (max 5 iterations)
   for (let iteration = 0; iteration < 5; iteration++) {
     try {
-      // Create streaming message with Claude
+      // Create streaming message with Claude (optimized for speed)
       const stream = getAnthropicClient().messages.stream({
         model: 'claude-3-5-haiku-20241022',
-        max_tokens: 1500,
+        max_tokens: 1024,  // Reduced for faster responses
+        temperature: 0.7,  // Slightly lower for faster, more focused responses
         system: systemPrompt,
         messages: anthropicMessages,
         tools: tools.length > 0 ? tools : undefined
@@ -127,7 +128,9 @@ export async function* runClaudeAgentStream(options: AgentHandlerOptions): Async
         id: string
         name: string
         input: Record<string, unknown>
+        inputJson: string  // Accumulate JSON string during streaming
       }> = []
+      let currentToolIndex = -1
 
       // Process the stream
       for await (const event of stream) {
@@ -143,45 +146,55 @@ export async function* runClaudeAgentStream(options: AgentHandlerOptions): Async
             }
           }
 
-          // Handle tool input (partial JSON)
-          if (delta.type === 'input_json_delta') {
-            // Tool input is being built up - we'll get the final in content_block_stop
+          // Handle tool input (collect JSON during streaming)
+          if (delta.type === 'input_json_delta' && currentToolIndex >= 0) {
+            toolUses[currentToolIndex].inputJson += delta.partial_json
           }
         }
 
         // Handle content block start (for tool use)
         if (event.type === 'content_block_start') {
           if (event.content_block.type === 'tool_use') {
+            currentToolIndex = toolUses.length
             toolUses.push({
               id: event.content_block.id,
               name: event.content_block.name,
-              input: {}
+              input: {},
+              inputJson: ''
             })
+          }
+        }
+
+        // Handle content block stop (parse accumulated JSON)
+        if (event.type === 'content_block_stop' && currentToolIndex >= 0) {
+          try {
+            if (toolUses[currentToolIndex].inputJson) {
+              toolUses[currentToolIndex].input = JSON.parse(toolUses[currentToolIndex].inputJson)
+            }
+          } catch {
+            // Will fallback to finalMessage
           }
         }
       }
 
-      // Get the final message to extract complete tool uses
-      const finalMessage = await stream.finalMessage()
+      // Only get finalMessage if we have tool uses (optimization)
+      const finalMessage = toolUses.length > 0 ? await stream.finalMessage() : null
 
-      // Extract tool uses from final message
-      for (const block of finalMessage.content) {
-        if (block.type === 'tool_use') {
-          const existingTool = toolUses.find(t => t.id === block.id)
-          if (existingTool) {
-            existingTool.input = block.input as Record<string, unknown>
-          } else {
-            toolUses.push({
-              id: block.id,
-              name: block.name,
-              input: block.input as Record<string, unknown>
-            })
+      // Extract tool uses from final message (fallback for any missed inputs)
+      if (finalMessage) {
+        for (const block of finalMessage.content) {
+          if (block.type === 'tool_use') {
+            const existingTool = toolUses.find(t => t.id === block.id)
+            if (existingTool && Object.keys(existingTool.input).length === 0) {
+              // Only update if we don't have input from streaming
+              existingTool.input = block.input as Record<string, unknown>
+            }
           }
         }
       }
 
       // Process tool uses if any
-      if (toolUses.length > 0 && finalMessage.stop_reason === 'tool_use') {
+      if (toolUses.length > 0 && finalMessage?.stop_reason === 'tool_use') {
         // Add assistant message with tool uses
         anthropicMessages.push({
           role: 'assistant',
