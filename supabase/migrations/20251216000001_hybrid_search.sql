@@ -65,7 +65,7 @@ BEGIN
       ) as rank
     FROM menu_items mi
     JOIN providers p ON mi.provider_id = p.id
-    LEFT JOIN provider_categories pc ON mi.provider_category_id = pc.id
+    LEFT JOIN provider_categories pc ON mi.category_id = pc.id
     WHERE mi.is_available = true
       AND p.status IN ('open', 'closed', 'temporarily_paused')
       AND (p_provider_id IS NULL OR mi.provider_id = p_provider_id)
@@ -91,7 +91,7 @@ BEGIN
       ROW_NUMBER() OVER (ORDER BY mi.name_ar) as rank
     FROM menu_items mi
     JOIN providers p ON mi.provider_id = p.id
-    JOIN provider_categories pc ON mi.provider_category_id = pc.id
+    JOIN provider_categories pc ON mi.category_id = pc.id
     WHERE mi.is_available = true
       AND p.status IN ('open', 'closed', 'temporarily_paused')
       AND (p_provider_id IS NULL OR mi.provider_id = p_provider_id)
