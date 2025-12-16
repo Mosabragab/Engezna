@@ -450,25 +450,36 @@ function generateDynamicQuickReplies(
     }
   }
 
-  // Greeting
+  // Greeting - guide to provider selection or other options
   if (contentLower.includes('أهلاً') || contentLower.includes('أهلا')) {
     return {
-      suggestions: ['عايز آكل', 'طلباتي', 'العروض'],
+      suggestions: ['🔍 ساعدني أختار', '🔥 العروض', '📦 طلباتي'],
       quickReplies: [
-        { title: 'عايز آكل', payload: 'عايز أطلب أكل' },
-        { title: 'طلباتي', payload: 'فين طلباتي؟' },
-        { title: 'العروض', payload: 'فيه عروض ايه؟' }
+        { title: '🔍 ساعدني أختار', payload: 'ساعدني ألاقي مطعم' },
+        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
+        { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
       ]
     }
   }
 
-  // Default
+  // Default - context-aware
+  if (providerName) {
+    return {
+      suggestions: ['🍽️ شوف المنيو', '🔥 العروض', '📦 طلباتي'],
+      quickReplies: [
+        { title: '🍽️ شوف المنيو', payload: menuPayload },
+        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
+        { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
+      ]
+    }
+  }
+
   return {
-    suggestions: ['شوف المنيو', 'العروض', 'طلباتي'],
+    suggestions: ['🔍 ساعدني أختار', '🔥 العروض', '📦 طلباتي'],
     quickReplies: [
-      { title: 'شوف المنيو', payload: menuPayload },
-      { title: 'العروض', payload: 'فيه عروض ايه؟' },
-      { title: 'طلباتي', payload: 'فين طلباتي؟' }
+      { title: '🔍 ساعدني أختار', payload: 'ساعدني ألاقي مطعم' },
+      { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
+      { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
     ]
   }
 }

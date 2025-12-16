@@ -825,24 +825,37 @@ function generateDynamicQuickReplies(
     }
   }
 
-  // Greeting/welcome context
+  // Greeting/welcome context - guide to provider selection or other options
   if (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
       contentLower.includes('صباح') || contentLower.includes('مساء')) {
     return {
-      suggestions: ['🍔 عايز آكل', '📦 طلباتي', '🔥 العروض'],
+      suggestions: ['🔍 ساعدني أختار مطعم', '🔥 العروض', '📦 طلباتي'],
       quickReplies: [
-        { title: '🍔 عايز آكل', payload: 'عايز أطلب أكل' },
-        { title: '📦 طلباتي', payload: 'فين طلباتي؟' },
-        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
+        { title: '🔍 ساعدني أختار', payload: 'ساعدني ألاقي مطعم' },
+        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
+        { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
       ]
     }
   }
 
-  // Default suggestions
+  // Default suggestions - context-aware
+  // If user has selected a provider, show menu option; otherwise guide to provider selection
+  if (providerName) {
+    return {
+      suggestions: ['🍽️ شوف المنيو', '🔥 العروض', '📦 طلباتي'],
+      quickReplies: [
+        { title: '🍽️ شوف المنيو', payload: menuPayload },
+        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
+        { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
+      ]
+    }
+  }
+
+  // No provider selected - guide to selection
   return {
-    suggestions: ['🍽️ شوف المنيو', '🔥 العروض', '📦 طلباتي'],
+    suggestions: ['🔍 ساعدني أختار مطعم', '🔥 العروض', '📦 طلباتي'],
     quickReplies: [
-      { title: '🍽️ شوف المنيو', payload: menuPayload },
+      { title: '🔍 ساعدني أختار', payload: 'ساعدني ألاقي مطعم' },
       { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
       { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
     ]
