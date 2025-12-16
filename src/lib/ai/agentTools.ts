@@ -134,7 +134,7 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'search_menu',
-    description: 'البحث في المنيو عن منتج معين بالاسم',
+    description: 'البحث في المنيو - يدور في اسم المنتج والوصف واسم القسم (مثال: "حلويات" هيجيب كل منتجات قسم الحلويات)',
     parameters: {
       type: 'object',
       properties: {
@@ -144,7 +144,7 @@ export const AGENT_TOOLS: ToolDefinition[] = [
         },
         query: {
           type: 'string',
-          description: 'كلمة البحث (اسم المنتج أو القسم)'
+          description: 'كلمة البحث (اسم المنتج أو اسم القسم مثل: بيتزا، حلويات، مشروبات)'
         },
         city_id: {
           type: 'string',
@@ -702,6 +702,22 @@ export async function executeAgentTool(
           return Array.from(itemsMap.values())
         }
 
+        // Helper function to find categories matching the query
+        const findMatchingCategoryIds = async (searchQuery: string, providerIds?: string[]): Promise<string[]> => {
+          let categoryQuery = supabase
+            .from('provider_categories')
+            .select('id')
+            .eq('is_active', true)
+            .ilike('name_ar', `%${searchQuery}%`)
+
+          if (providerIds && providerIds.length > 0) {
+            categoryQuery = categoryQuery.in('provider_id', providerIds)
+          }
+
+          const { data: categories } = await categoryQuery.limit(20)
+          return categories?.map(c => c.id) || []
+        }
+
         // Use effective provider ID from context if not explicitly provided
         const effectiveProviderId = getEffectiveProviderId({ provider_id }, context)
         const effectiveCityId = city_id || context.cityId
@@ -773,7 +789,13 @@ export async function executeAgentTool(
 
         if (effectiveProviderId) {
           // Search within a specific provider (from param, cart, or page context)
-          const { data, error } = await supabase
+          // IMPROVED: Search in name, description, AND category name
+
+          // First find categories matching the query
+          const matchingCategoryIds = await findMatchingCategoryIds(query, [effectiveProviderId])
+
+          // Build search query
+          let searchQuery = supabase
             .from('menu_items')
             .select(`
               id, name_ar, price, original_price, image_url, has_variants, provider_id,
@@ -782,8 +804,16 @@ export async function executeAgentTool(
             `)
             .eq('provider_id', effectiveProviderId)
             .eq('is_available', true)
-            .or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
-            .limit(10)
+
+          // Search by name/description OR by matching category
+          if (matchingCategoryIds.length > 0) {
+            // Use raw filter to combine OR conditions across different columns
+            searchQuery = searchQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%,provider_category_id.in.(${matchingCategoryIds.join(',')})`)
+          } else {
+            searchQuery = searchQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
+          }
+
+          const { data, error } = await searchQuery.limit(15)
 
           if (error) throw error
 
@@ -808,7 +838,10 @@ export async function executeAgentTool(
           const { data: otherProviders } = await providersQuery.limit(50)
 
           if (otherProviders?.length) {
-            const { data: globalData, error: globalError } = await supabase
+            // Find categories matching the query in other providers
+            const globalCategoryIds = await findMatchingCategoryIds(query, otherProviders.map(p => p.id))
+
+            let globalSearchQuery = supabase
               .from('menu_items')
               .select(`
                 id, name_ar, price, original_price, image_url, has_variants, provider_id,
@@ -817,8 +850,14 @@ export async function executeAgentTool(
               `)
               .in('provider_id', otherProviders.map(p => p.id))
               .eq('is_available', true)
-              .or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
-              .limit(10)
+
+            if (globalCategoryIds.length > 0) {
+              globalSearchQuery = globalSearchQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%,provider_category_id.in.(${globalCategoryIds.join(',')})`)
+            } else {
+              globalSearchQuery = globalSearchQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
+            }
+
+            const { data: globalData, error: globalError } = await globalSearchQuery.limit(15)
 
             if (!globalError && globalData && globalData.length > 0) {
               const itemsWithVariants = await fetchVariantsForItems(globalData)
@@ -857,8 +896,11 @@ export async function executeAgentTool(
             }
           }
 
-          // Search items in those providers
-          const { data, error } = await supabase
+          // Find categories matching the query across all providers
+          const allCategoryIds = await findMatchingCategoryIds(query, providers.map(p => p.id))
+
+          // Search items in those providers - by name/description OR by category
+          let allProvidersQuery = supabase
             .from('menu_items')
             .select(`
               id, name_ar, price, original_price, image_url, has_variants, provider_id,
@@ -867,8 +909,14 @@ export async function executeAgentTool(
             `)
             .in('provider_id', providers.map(p => p.id))
             .eq('is_available', true)
-            .or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
-            .limit(20)
+
+          if (allCategoryIds.length > 0) {
+            allProvidersQuery = allProvidersQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%,provider_category_id.in.(${allCategoryIds.join(',')})`)
+          } else {
+            allProvidersQuery = allProvidersQuery.or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
+          }
+
+          const { data, error } = await allProvidersQuery.limit(20)
 
           if (error) throw error
 
@@ -912,7 +960,7 @@ export async function executeAgentTool(
         const {
           item_id,
           item_name,
-          provider_id,
+          provider_id: param_provider_id,
           price,
           quantity = 1,
           variant_id,
@@ -928,6 +976,50 @@ export async function executeAgentTool(
         }
 
         // ═══════════════════════════════════════════════════════════════
+        // FALLBACK: Use context provider_id if AI forgot to pass it
+        // Priority: explicit param > cart provider > page context provider
+        // ═══════════════════════════════════════════════════════════════
+        const provider_id = param_provider_id || context.cartProviderId || context.providerId
+
+        // ═══════════════════════════════════════════════════════════════
+        // DETAILED LOGGING: Track why add_to_cart fails
+        // ═══════════════════════════════════════════════════════════════
+        console.log('[add_to_cart] Request:', {
+          item_id,
+          item_name,
+          param_provider_id,
+          provider_id,
+          price,
+          quantity,
+          variant_id,
+          variant_name,
+          contextProviderId: context.providerId,
+          contextCartProviderId: context.cartProviderId,
+          usedFallback: !param_provider_id && !!provider_id
+        })
+
+        // ═══════════════════════════════════════════════════════════════
+        // VALIDATE REQUIRED PARAMS
+        // ═══════════════════════════════════════════════════════════════
+        if (!item_id || item_id === 'undefined' || item_id === 'null') {
+          console.error('[add_to_cart] Missing item_id:', item_id)
+          return {
+            success: false,
+            error: 'missing_item_id',
+            message: `مش عارف أضيف "${item_name}" للسلة. ابحث عن المنتج تاني واستخدم الـ ID الصحيح.`
+          }
+        }
+
+        if (!provider_id || provider_id === 'undefined' || provider_id === 'null') {
+          console.error('[add_to_cart] Missing provider_id (no fallback available):', param_provider_id)
+          return {
+            success: false,
+            error: 'missing_provider_id',
+            message: `مش عارف أضيف "${item_name}" للسلة. ابحث عن المنتج تاني.`
+          }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // PRE-EXECUTION GUARDS: Validate before adding to cart
         // ═══════════════════════════════════════════════════════════════
 
@@ -938,11 +1030,21 @@ export async function executeAgentTool(
           .eq('id', item_id)
           .single()
 
-        if (itemError || !item) {
+        if (itemError) {
+          console.error('[add_to_cart] Database error:', itemError)
           return {
             success: false,
-            error: 'المنتج ده مش موجود',
-            message: 'مش لاقي المنتج ده، جرب تبحث تاني'
+            error: 'db_error',
+            message: `حصل مشكلة في قاعدة البيانات. جرب تاني.`
+          }
+        }
+
+        if (!item) {
+          console.error('[add_to_cart] Item not found:', item_id)
+          return {
+            success: false,
+            error: 'item_not_found',
+            message: `المنتج "${item_name}" مش موجود بالـ ID ده. ابحث عن المنتج تاني.`
           }
         }
 
