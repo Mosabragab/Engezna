@@ -1024,6 +1024,9 @@ export interface AgentResponse {
   navigateTo?: string
   cartAction?: CartAction
   cartActions?: CartAction[]  // Multiple cart actions (for adding multiple items at once)
+  // FIX: Provider discovered during search - frontend should store this for subsequent requests
+  discoveredProviderId?: string
+  discoveredProviderName?: string
 }
 
 /**

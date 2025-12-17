@@ -229,7 +229,10 @@ export async function POST(request: NextRequest) {
                   cart_action: response?.cartAction,
                   cart_actions: processedCartActions && processedCartActions.length > 0
                     ? processedCartActions
-                    : undefined  // Send array of cart actions for multiple items
+                    : undefined,  // Send array of cart actions for multiple items
+                  // FIX: Send discovered provider ID to frontend for context persistence
+                  selected_provider_id: response?.discoveredProviderId,
+                  selected_provider_name: response?.discoveredProviderName
                 }))
                 break
 

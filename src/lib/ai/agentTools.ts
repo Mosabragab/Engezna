@@ -703,7 +703,7 @@ export async function executeAgentTool(
           .from('menu_items')
           .select(`
             id, name_ar, name_en, description_ar, price, original_price,
-            image_url, is_available, has_stock, has_variants, pricing_type, provider_category_id
+            image_url, is_available, has_stock, has_variants, pricing_type, category_id
           `)
           .eq('provider_id', effectiveProviderId)
           .eq('is_available', true)
@@ -711,7 +711,7 @@ export async function executeAgentTool(
           .limit(limit)
 
         if (category_id) {
-          query = query.eq('provider_category_id', category_id)
+          query = query.eq('category_id', category_id)
         }
 
         if (search_query) {
@@ -755,7 +755,7 @@ export async function executeAgentTool(
             image_url, is_available, has_stock, has_variants, pricing_type,
             is_vegetarian, is_spicy, calories, preparation_time_min,
             combo_contents_ar, serves_count,
-            provider_id, provider_category_id
+            provider_id, category_id
           `)
           .eq('id', item_id)
           .single()
@@ -1050,7 +1050,7 @@ export async function executeAgentTool(
           let searchQuery = supabase
             .from('menu_items')
             .select(`
-              id, name_ar, price, original_price, image_url, has_variants, provider_id, provider_category_id,
+              id, name_ar, price, original_price, image_url, has_variants, provider_id, category_id,
               providers(id, name_ar)
             `)
             .eq('provider_id', effectiveProviderId)
@@ -1060,7 +1060,7 @@ export async function executeAgentTool(
           // NOTE: Use * instead of % for Supabase JS client wildcards
           if (matchingCategoryIds.length > 0) {
             // Use raw filter to combine OR conditions across different columns
-            searchQuery = searchQuery.or(`name_ar.ilike.*${query}*,description_ar.ilike.*${query}*,provider_category_id.in.(${matchingCategoryIds.join(',')})`)
+            searchQuery = searchQuery.or(`name_ar.ilike.*${query}*,description_ar.ilike.*${query}*,category_id.in.(${matchingCategoryIds.join(',')})`)
           } else {
             searchQuery = searchQuery.or(`name_ar.ilike.*${query}*,description_ar.ilike.*${query}*`)
           }
@@ -1096,14 +1096,14 @@ export async function executeAgentTool(
             let globalSearchQuery = supabase
               .from('menu_items')
               .select(`
-                id, name_ar, price, original_price, image_url, has_variants, provider_id, provider_category_id,
+                id, name_ar, price, original_price, image_url, has_variants, provider_id, category_id,
                 providers(id, name_ar)
               `)
               .in('provider_id', otherProviders.map(p => p.id))
               .eq('is_available', true)
 
             if (globalCategoryIds.length > 0) {
-              globalSearchQuery = globalSearchQuery.or(`name_ar.ilike.*${query}*,description_ar.ilike.*${query}*,provider_category_id.in.(${globalCategoryIds.join(',')})`)
+              globalSearchQuery = globalSearchQuery.or(`name_ar.ilike.*${query}*,description_ar.ilike.*${query}*,category_id.in.(${globalCategoryIds.join(',')})`)
             } else {
               globalSearchQuery = globalSearchQuery.or(`name_ar.ilike.*${query}*,description_ar.ilike.*${query}*`)
             }
@@ -1180,7 +1180,7 @@ export async function executeAgentTool(
 
           // Build the search filter - NOTE: Use * instead of % for Supabase JS client wildcards
           const searchFilter = allCategoryIds.length > 0
-            ? `name_ar.ilike.*${query}*,description_ar.ilike.*${query}*,provider_category_id.in.(${allCategoryIds.join(',')})`
+            ? `name_ar.ilike.*${query}*,description_ar.ilike.*${query}*,category_id.in.(${allCategoryIds.join(',')})`
             : `name_ar.ilike.*${query}*,description_ar.ilike.*${query}*`
 
           // DEBUG: First check if ANY items exist for these providers (no filters)

@@ -280,6 +280,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
                   navigate_to: parsed.navigate_to,
                   cart_action: parsed.cart_action,
                   cart_actions: parsed.cart_actions,  // Multiple cart actions support
+                  // FIX: Capture discovered provider ID from search results
+                  selected_provider_id: parsed.selected_provider_id,
                 }
               } else if (currentEvent === 'error') {
                 throw new Error(parsed.error || 'حصل خطأ')
@@ -673,6 +675,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
                   navigate_to: parsed.navigate_to,
                   cart_action: parsed.cart_action,
                   cart_actions: parsed.cart_actions,  // Multiple cart actions support
+                  // FIX: Capture discovered provider ID from search results
+                  selected_provider_id: parsed.selected_provider_id,
                 }
               } else if (currentEvent === 'error') {
                 throw new Error(parsed.error || 'حصل خطأ')

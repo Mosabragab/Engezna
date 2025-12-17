@@ -1008,6 +1008,17 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
       }
 
       const result = turn.toolResult as ToolResult
+
+      // ═══════════════════════════════════════════════════════════════════
+      // FIX: Extract discovered_provider_id from search_menu results
+      // This is at the root level of the result, not inside data
+      // ═══════════════════════════════════════════════════════════════════
+      if (result.discovered_provider_id && !response.discoveredProviderId) {
+        response.discoveredProviderId = result.discovered_provider_id
+        response.discoveredProviderName = result.discovered_provider_name
+        console.log('[parseAgentOutput] Discovered provider:', result.discovered_provider_id, result.discovered_provider_name)
+      }
+
       if (result.success && result.data) {
         const data = result.data as Record<string, unknown>
 
