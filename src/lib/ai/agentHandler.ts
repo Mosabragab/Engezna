@@ -1058,10 +1058,25 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
         }
 
         // Check for cart_action (from add_to_cart tool)
-        // Collect ALL cart actions instead of overwriting
+        // FIXED: Don't accumulate duplicate cart actions for the same item
+        // This prevents quantity multiplication when agent loop runs multiple times
         if (data.cart_action) {
           const cartAction = data.cart_action as AgentResponse['cartAction']
-          response.cartActions!.push(cartAction!)
+
+          // Check if we already have a cart action for this item+variant combination
+          const existingIndex = response.cartActions!.findIndex(
+            (a) => a?.menu_item_id === cartAction?.menu_item_id
+                && a?.variant_id === cartAction?.variant_id
+          )
+
+          if (existingIndex >= 0) {
+            // Replace existing action instead of accumulating
+            response.cartActions![existingIndex] = cartAction!
+          } else {
+            // New item - add to array
+            response.cartActions!.push(cartAction!)
+          }
+
           // Also set single cartAction for backward compatibility (last one)
           response.cartAction = cartAction
         }
