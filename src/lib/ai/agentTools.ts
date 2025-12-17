@@ -985,19 +985,6 @@ export async function executeAgentTool(
           context_selectedCategory: context.selectedCategory
         })
 
-        // ═══════════════════════════════════════════════════════════════════
-        // CATEGORY SELECTION REQUIRED: Don't search if no category selected
-        // This enforces the UX rule that users must choose a category first
-        // ═══════════════════════════════════════════════════════════════════
-        if (!context.selectedCategory && !context.providerId && !context.cartProviderId) {
-          console.log('[search_menu] No category selected - returning prompt to choose category')
-          return {
-            success: false,
-            error: 'category_required',
-            message: 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول:\n🍽️ مطاعم وكافيهات\n🛒 سوبر ماركت\n🥬 خضروات وفواكه\n☕ البن والحلويات'
-          }
-        }
-
         // NOTE: Arabic normalization is handled by the DB function (normalize_arabic)
         // Don't normalize here as fallback ILIKE queries need the original text
 
