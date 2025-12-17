@@ -660,9 +660,13 @@ function generateDynamicQuickReplies(
 ): { suggestions: string[]; quickReplies: AgentResponse['quickReplies'] } {
 
   // Helper: create products navigation payload
+  // ALWAYS use navigate: when we have a provider, otherwise guide user to select one first
   const menuPayload = providerId
     ? `navigate:/ar/providers/${providerId}`
-    : 'عايز أشوف المنتجات'
+    : null  // null means don't show the products button, show provider selection instead
+
+  // Alternative button when no provider is selected
+  const selectProviderPayload = 'عايز أطلب من مكان معين'
 
   // Analyze content for intent signals
   const contentLower = content.toLowerCase()
@@ -804,12 +808,20 @@ function generateDynamicQuickReplies(
   // No results found - help user search differently
   if (noResults) {
     return {
-      suggestions: ['🔍 بحث تاني', '🛒 شوف المنتجات', '🔥 العروض'],
-      quickReplies: [
-        { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة تانية' },
-        { title: '🛒 شوف المنتجات', payload: menuPayload },
-        { title: '🔥 العروض', payload: 'فيه عروض ايه دلوقتي؟' }
-      ]
+      suggestions: menuPayload
+        ? ['🔍 بحث تاني', '🛒 شوف المنتجات', '🔥 العروض']
+        : ['🔍 بحث تاني', '🏪 اختار مكان', '🔥 العروض'],
+      quickReplies: menuPayload
+        ? [
+            { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة تانية' },
+            { title: '🛒 شوف المنتجات', payload: menuPayload },
+            { title: '🔥 العروض', payload: 'فيه عروض ايه دلوقتي؟' }
+          ]
+        : [
+            { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة تانية' },
+            { title: '🏪 اختار مكان', payload: selectProviderPayload },
+            { title: '🔥 العروض', payload: 'فيه عروض ايه دلوقتي؟' }
+          ]
     }
   }
 
@@ -828,12 +840,20 @@ function generateDynamicQuickReplies(
   // Showing promotions
   if (showingPromotions) {
     return {
-      suggestions: ['🎁 استخدم العرض', '🛒 شوف المنتجات', '🔍 بحث'],
-      quickReplies: [
-        { title: '🎁 استخدم العرض', payload: 'عايز أستخدم العرض ده' },
-        { title: '🛒 شوف المنتجات', payload: menuPayload },
-        { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' }
-      ]
+      suggestions: menuPayload
+        ? ['🎁 استخدم العرض', '🛒 شوف المنتجات', '🔍 بحث']
+        : ['🎁 استخدم العرض', '🏪 اختار مكان', '🔍 بحث'],
+      quickReplies: menuPayload
+        ? [
+            { title: '🎁 استخدم العرض', payload: 'عايز أستخدم العرض ده' },
+            { title: '🛒 شوف المنتجات', payload: menuPayload },
+            { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' }
+          ]
+        : [
+            { title: '🎁 استخدم العرض', payload: 'عايز أستخدم العرض ده' },
+            { title: '🏪 اختار مكان', payload: selectProviderPayload },
+            { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' }
+          ]
     }
   }
 
@@ -875,16 +895,24 @@ function generateDynamicQuickReplies(
     }
   }
 
-  // Delivery info context - show products button instead of "تمام اطلب"
+  // Delivery info context - show products button (navigates to provider page)
   if (toolsUsed?.includes('get_delivery_info') ||
       contentLower.includes('توصيل') || contentLower.includes('رسوم')) {
     return {
-      suggestions: ['🛒 شوف المنتجات', '🔍 بحث تاني', '🔥 العروض'],
-      quickReplies: [
-        { title: '🛒 شوف المنتجات', payload: menuPayload },
-        { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة' },
-        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
-      ]
+      suggestions: menuPayload
+        ? ['🛒 شوف المنتجات', '🔍 بحث تاني', '🔥 العروض']
+        : ['🏪 اختار مكان', '🔍 بحث تاني', '🔥 العروض'],
+      quickReplies: menuPayload
+        ? [
+            { title: '🛒 شوف المنتجات', payload: menuPayload },
+            { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة' },
+            { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
+          ]
+        : [
+            { title: '🏪 اختار مكان', payload: selectProviderPayload },
+            { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة' },
+            { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
+          ]
     }
   }
 
@@ -916,8 +944,8 @@ function generateDynamicQuickReplies(
   }
 
   // Default suggestions - context-aware
-  // If user has selected a provider, show products button; otherwise guide to provider selection
-  if (providerId) {
+  // If user has selected a provider, show products button (navigates to provider page)
+  if (providerId && menuPayload) {
     return {
       suggestions: ['🛒 شوف المنتجات', '🔥 العروض', '📦 طلباتي'],
       quickReplies: [
@@ -1082,8 +1110,10 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
   }
 
   // Generate dynamic quick replies based on context
-  // Use provider ID from first product if available, otherwise fall back to context
-  const effectiveProviderId = response.products?.[0]?.providerId || providerId
+  // Use provider ID from first product if available, then discovered provider, then context
+  const effectiveProviderId = response.products?.[0]?.providerId
+    || response.discoveredProviderId
+    || providerId
 
   // Check for cart actions (both singular and plural)
   const hasAnyCartAction = !!(response.cartAction || (response.cartActions && response.cartActions.length > 0))
