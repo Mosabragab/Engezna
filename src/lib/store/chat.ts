@@ -141,27 +141,29 @@ function createWelcomeMessage(customerName?: string, providerContext?: ProviderC
     }
   }
 
-  // Default welcome message (no provider context) - Ahmad personality + PROVIDER FIRST strategy
+  // Default welcome message (no provider context) - Ahmad personality + CATEGORIES FIRST strategy
   const nameGreeting = customerName ? ` يا ${customerName}` : ''
   const orderQuestion = customerName
-    ? `عايز تطلب منين انهارده يا ${customerName}؟`
-    : 'عايز تطلب منين انهارده؟'
+    ? `عايز تطلب ايه انهارده يا ${customerName}؟`
+    : 'عايز تطلب ايه انهارده؟'
 
   return {
     id: 'welcome',
     role: 'assistant',
-    content: `${timeGreeting} أهلاً بيك${nameGreeting} في إنجزنا! 😊\n\nأنا أحمد، ${orderQuestion}`,
+    content: `${timeGreeting} أهلاً بيك${nameGreeting} في إنجزنا! 😊\n\nأنا أحمد، ${orderQuestion}\nعندنا مطاعم 🍽️، سوبر ماركت 🛒، خضار وفواكه 🥬، وبن وحلويات ☕`,
     timestamp: new Date(),
     suggestions: [
-      '🏪 عندي مكان معين',
-      '🔍 ساعدني أختار',
-      '🔥 اللي عندهم عروض',
+      '🍽️ مطاعم وكافيهات',
+      '🛒 سوبر ماركت',
+      '🥬 خضروات وفواكه',
+      '☕ البن والحلويات',
     ],
-    // Quick replies - PROVIDER FIRST (guide user to select where to order)
+    // Quick replies - CATEGORIES FIRST (let user choose which category they want)
     quickReplies: [
-      { title: '🏪 عندي مكان معين', payload: 'عايز أطلب من مكان معين' },
-      { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار مكان' },
-      { title: '🔥 اللي عندهم عروض', payload: 'ورّيني الأماكن اللي عندها عروض' },
+      { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+      { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+      { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+      { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' },
     ],
   }
 }

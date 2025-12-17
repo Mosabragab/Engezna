@@ -528,8 +528,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         // Category buttons (map to payloads)
         '🍽️ مطاعم وكافيهات': 'category:restaurant_cafe',
         '🛒 سوبر ماركت': 'category:grocery',
-        '🍰 البن والحلويات': 'category:coffee_patisserie',
-        '🥦 خضروات وفواكه': 'category:vegetables_fruits',
+        '☕ البن والحلويات': 'category:coffee_sweets',
+        '🥬 خضروات وفواكه': 'category:vegetables_fruits',
         // Legacy actions
         '🔥 العروض': 'show_promotions',
         // Use navigate: for menu view - handled on frontend, doesn't need city_id
