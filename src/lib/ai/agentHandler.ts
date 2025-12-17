@@ -322,7 +322,7 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
 
       finalResponse = {
         content: 'مش لاقي نتائج دلوقتي. جرب تاني أو اسألني سؤال تاني 😊',
-        suggestions: ['🔄 جرب تاني', '🍽️ المنيو', '🏠 الرئيسية']
+        suggestions: ['🔄 جرب تاني', '🛒 المنتجات', '🏠 الرئيسية']
       }
 
       onStream?.({
@@ -622,7 +622,7 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
         type: 'done',
         response: {
           content: 'مش لاقي نتائج دلوقتي. جرب تاني أو اسألني سؤال تاني 😊',
-          suggestions: ['🔄 جرب تاني', '🍽️ المنيو', '🏠 الرئيسية']
+          suggestions: ['🔄 جرب تاني', '🛒 المنتجات', '🏠 الرئيسية']
         }
       }
 
@@ -659,10 +659,10 @@ function generateDynamicQuickReplies(
   providerId?: string
 ): { suggestions: string[]; quickReplies: AgentResponse['quickReplies'] } {
 
-  // Helper: create menu navigation payload
+  // Helper: create products navigation payload
   const menuPayload = providerId
     ? `navigate:/ar/providers/${providerId}`
-    : 'ورّيني المنيو'
+    : 'عايز أشوف المنتجات'
 
   // Analyze content for intent signals
   const contentLower = content.toLowerCase()
@@ -804,10 +804,10 @@ function generateDynamicQuickReplies(
   // No results found - help user search differently
   if (noResults) {
     return {
-      suggestions: ['🔍 بحث تاني', '📋 شوف المنيو', '🔥 العروض'],
+      suggestions: ['🔍 بحث تاني', '🛒 شوف المنتجات', '🔥 العروض'],
       quickReplies: [
         { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة تانية' },
-        { title: '📋 شوف المنيو', payload: menuPayload },
+        { title: '🛒 شوف المنتجات', payload: menuPayload },
         { title: '🔥 العروض', payload: 'فيه عروض ايه دلوقتي؟' }
       ]
     }
@@ -828,10 +828,10 @@ function generateDynamicQuickReplies(
   // Showing promotions
   if (showingPromotions) {
     return {
-      suggestions: ['🎁 استخدم العرض', '🍽️ شوف المنيو', '🔍 بحث'],
+      suggestions: ['🎁 استخدم العرض', '🛒 شوف المنتجات', '🔍 بحث'],
       quickReplies: [
         { title: '🎁 استخدم العرض', payload: 'عايز أستخدم العرض ده' },
-        { title: '🍽️ شوف المنيو', payload: menuPayload },
+        { title: '🛒 شوف المنتجات', payload: menuPayload },
         { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' }
       ]
     }
@@ -875,15 +875,15 @@ function generateDynamicQuickReplies(
     }
   }
 
-  // Delivery info context
+  // Delivery info context - show products button instead of "تمام اطلب"
   if (toolsUsed?.includes('get_delivery_info') ||
       contentLower.includes('توصيل') || contentLower.includes('رسوم')) {
     return {
-      suggestions: ['✅ تمام، اطلب', '🔍 بحث تاني', '📋 المنيو'],
+      suggestions: ['🛒 شوف المنتجات', '🔍 بحث تاني', '🔥 العروض'],
       quickReplies: [
-        { title: '✅ تمام، اطلب', payload: 'عايز أطلب' },
+        { title: '🛒 شوف المنتجات', payload: menuPayload },
         { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة' },
-        { title: '📋 المنيو', payload: menuPayload }
+        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
       ]
     }
   }
@@ -901,32 +901,10 @@ function generateDynamicQuickReplies(
     }
   }
 
-  // Provider already selected - asking what user wants to order
-  // This should come BEFORE generic greeting detection
-  const isAskingWhatToOrder = (
-    contentLower.includes('عايز تطلب ايه') ||
-    contentLower.includes('عايز ايه') ||
-    contentLower.includes('حاضر') ||
-    contentLower.includes('عايز تاكل ايه') ||
-    contentLower.includes('تطلب ايه')
-  ) && providerId
-
-  if (isAskingWhatToOrder) {
-    return {
-      suggestions: ['🛒 شوف المنتجات', '🔍 بحث', '🔥 العروض'],
-      quickReplies: [
-        { title: '🛒 شوف المنتجات', payload: menuPayload },
-        { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' },
-        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
-      ]
-    }
-  }
-
   // Greeting/welcome context - guide to provider selection
-  // Only show this if NO provider is selected yet
-  if (!providerId && (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
+  if (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
       contentLower.includes('صباح') || contentLower.includes('مساء') ||
-      contentLower.includes('عايز تطلب منين') || contentLower.includes('عايزة تطلبي منين'))) {
+      contentLower.includes('عايز تطلب منين') || contentLower.includes('عايزة تطلبي منين')) {
     return {
       suggestions: ['🏪 عندي مكان معين', '🔍 ساعدني أختار', '🔥 اللي عندهم عروض'],
       quickReplies: [
@@ -938,12 +916,12 @@ function generateDynamicQuickReplies(
   }
 
   // Default suggestions - context-aware
-  // If user has selected a provider, show menu option; otherwise guide to provider selection
+  // If user has selected a provider, show products button; otherwise guide to provider selection
   if (providerId) {
     return {
-      suggestions: ['🍽️ شوف المنيو', '🔥 العروض', '📦 طلباتي'],
+      suggestions: ['🛒 شوف المنتجات', '🔥 العروض', '📦 طلباتي'],
       quickReplies: [
-        { title: '🍽️ شوف المنيو', payload: menuPayload },
+        { title: '🛒 شوف المنتجات', payload: menuPayload },
         { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
         { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
       ]
