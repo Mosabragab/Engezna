@@ -748,6 +748,23 @@ reviews (
    - Favorite restaurants
    - Payment methods
 
+6. **🤖 AI Smart Assistant (مساعد إنجزنا الذكي - أحمد)** ✅ IMPLEMENTED
+   - **Chat-based Ordering:** Natural language ordering in Egyptian Arabic
+   - **AI Agent Architecture:** GPT-4o-mini with Function Calling (22 tools)
+   - **Smart Search:** Arabic normalization + synonym expansion (كفتة↔كباب, حلويات↔شوكولاتة)
+   - **Provider Discovery:** Find restaurants by item, cuisine, or location
+   - **Menu Browsing:** View items, variants, prices, and promotions
+   - **Cart Management:** Add/remove items, select variants, apply promo codes
+   - **Order Tracking:** Check status, view timeline, cancel pending orders
+   - **Context-Aware:** Remembers selected provider and cart contents
+   - **Session Memory:** Maintains pending item info for seamless add-to-cart flow
+   - **Streaming Responses:** Real-time character-by-character response display
+   - **Quick Replies:** Contextual action buttons for common operations
+   - **Bilingual Support:** Arabic UI with English fallback
+   - **Files:** `src/lib/ai/agentTools.ts`, `src/lib/ai/agentPrompt.ts`, `src/lib/ai/agentHandler.ts`
+   - **API:** `POST /api/chat` (Streaming SSE)
+   - **Documentation:** `docs/AI_SMART_ASSISTANT.md`
+
 #### **Provider Dashboard**
 1. **Menu Management**
    - Add/edit/delete items
