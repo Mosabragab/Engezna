@@ -151,64 +151,44 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // CATEGORY SELECTION HANDLER (Handle category:xxx messages directly)
+  // CATEGORY SELECTION HANDLER - Transform payload to natural language
   // ═══════════════════════════════════════════════════════════════════════════
+  let effectiveMessages = messages
   if (isCategorySelection) {
     const categoryCode = lastUserMessage.replace('category:', '')
-    console.log('[runAgent] Category selected:', categoryCode)
+    console.log('[runAgent] Category selected:', categoryCode, '- transforming for AI')
 
     const categoryNames: Record<string, string> = {
-      'restaurant_cafe': '🍽️ مطاعم وكافيهات',
-      'coffee_sweets': '☕ البن والحلويات',
-      'grocery': '🛒 سوبر ماركت',
-      'vegetables_fruits': '🥬 خضروات وفواكه'
+      'restaurant_cafe': 'مطاعم وكافيهات',
+      'coffee_sweets': 'البن والحلويات',
+      'grocery': 'سوبر ماركت',
+      'vegetables_fruits': 'خضروات وفواكه'
     }
-
-    const result = await executeAgentTool('get_providers_by_category', {
-      category_code: categoryCode,
-      city_id: context.cityId
-    }, context)
 
     const categoryName = categoryNames[categoryCode] || categoryCode
 
-    if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
-      const providers = result.data as Array<{
-        id: string
-        name_ar: string
-        rating?: number
-        delivery_fee?: number
-        status?: string
-      }>
+    // Find the original ordering request from conversation history
+    const previousUserMessages = messages
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .slice(0, -1)
 
-      const providersList = providers.slice(0, 5).map((p, i) => {
-        const rating = p.rating ? `⭐ ${p.rating.toFixed(1)}` : ''
-        const fee = p.delivery_fee ? `🚚 ${p.delivery_fee} ج.م` : ''
-        const status = p.status === 'open' ? '🟢' : p.status === 'closed' ? '🔴' : '🟡'
-        return `${i + 1}. ${status} ${p.name_ar} ${rating} ${fee}`.trim()
-      }).join('\n')
+    const originalRequest = previousUserMessages.find(msg =>
+      orderingKeywords.some(kw => msg.toLowerCase().includes(kw))
+    )
 
-      const providerQuickReplies = providers.slice(0, 4).map(p => ({
-        title: p.name_ar,
-        payload: `provider:${p.id}:${p.name_ar}`
-      }))
+    const transformedMessage = originalRequest
+      ? `اخترت قسم ${categoryName}. طلبي الأصلي كان: "${originalRequest}"`
+      : `اخترت قسم ${categoryName}. عايز أشوف ايه متاح`
 
-      return {
-        content: `تمام! لقيت ${providers.length} ${categoryName} في منطقتك 😊\n\n${providersList}\n\nاختار المكان اللي عايز تطلب منه، أو قولي اسم المكان!`,
-        suggestions: providers.slice(0, 4).map(p => p.name_ar),
-        quickReplies: providerQuickReplies
+    console.log('[runAgent] Transformed message:', transformedMessage)
+
+    effectiveMessages = messages.map((m, i) => {
+      if (i === messages.length - 1 && m.role === 'user') {
+        return { ...m, content: transformedMessage }
       }
-    } else {
-      return {
-        content: `للأسف مفيش ${categoryName} متاح في منطقتك دلوقتي 😕\n\nجرب قسم تاني!`,
-        suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
-        quickReplies: [
-          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
-          { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
-          { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
-          { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
-        ]
-      }
-    }
+      return m
+    })
   }
 
   // Load customer insights if customer is logged in
@@ -237,10 +217,10 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
   // Convert tools to OpenAI format
   const tools = convertToolsToOpenAI(context)
 
-  // Build messages array for OpenAI
+  // Build messages array for OpenAI (use effectiveMessages which may be transformed)
   const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
-    ...messages.map(msg => ({
+    ...effectiveMessages.map(msg => ({
       role: msg.role as 'user' | 'assistant',
       content: msg.content
     }))
@@ -517,92 +497,49 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // CATEGORY SELECTION HANDLER (Handle category:xxx messages directly)
-  // When user selects a category, we fetch providers without calling AI.
-  // This is more reliable than relying on AI to understand the payload.
+  // CATEGORY SELECTION HANDLER - Transform payload to natural language
+  // Instead of showing provider list, transform the message and let AI handle it
   // ═══════════════════════════════════════════════════════════════════════════
+  let effectiveMessages = messages
   if (isCategorySelection) {
     const categoryCode = lastUserMessage.replace('category:', '')
-    console.log('[runAgentStream] Category selected:', categoryCode)
+    console.log('[runAgentStream] Category selected:', categoryCode, '- transforming for AI')
 
     // Category name mapping
     const categoryNames: Record<string, string> = {
-      'restaurant_cafe': '🍽️ مطاعم وكافيهات',
-      'coffee_sweets': '☕ البن والحلويات',
-      'grocery': '🛒 سوبر ماركت',
-      'vegetables_fruits': '🥬 خضروات وفواكه'
+      'restaurant_cafe': 'مطاعم وكافيهات',
+      'coffee_sweets': 'البن والحلويات',
+      'grocery': 'سوبر ماركت',
+      'vegetables_fruits': 'خضروات وفواكه'
     }
-
-    // Call the tool directly
-    const result = await executeAgentTool('get_providers_by_category', {
-      category_code: categoryCode,
-      city_id: context.cityId
-    }, context)
 
     const categoryName = categoryNames[categoryCode] || categoryCode
 
-    if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
-      // Format providers list
-      const providers = result.data as Array<{
-        id: string
-        name_ar: string
-        rating?: number
-        delivery_fee?: number
-        status?: string
-      }>
+    // Find the original ordering request from conversation history
+    const previousUserMessages = messages
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .slice(0, -1) // Exclude current category selection
 
-      const providersList = providers.slice(0, 5).map((p, i) => {
-        const rating = p.rating ? `⭐ ${p.rating.toFixed(1)}` : ''
-        const fee = p.delivery_fee ? `🚚 ${p.delivery_fee} ج.م` : ''
-        const status = p.status === 'open' ? '🟢' : p.status === 'closed' ? '🔴' : '🟡'
-        return `${i + 1}. ${status} ${p.name_ar} ${rating} ${fee}`.trim()
-      }).join('\n')
+    const originalRequest = previousUserMessages.find(msg =>
+      orderingKeywords.some(kw => msg.toLowerCase().includes(kw))
+    )
 
-      const responseContent = `تمام! لقيت ${providers.length} ${categoryName} في منطقتك 😊\n\n${providersList}\n\nاختار المكان اللي عايز تطلب منه، أو قولي اسم المكان!`
+    // Transform the message to natural language for the AI
+    // If there was an original request, remind AI about it
+    const transformedMessage = originalRequest
+      ? `اخترت قسم ${categoryName}. طلبي الأصلي كان: "${originalRequest}"`
+      : `اخترت قسم ${categoryName}. عايز أشوف ايه متاح`
 
-      // Generate quick replies for top providers
-      const providerQuickReplies = providers.slice(0, 4).map(p => ({
-        title: p.name_ar,
-        payload: `provider:${p.id}:${p.name_ar}`
-      }))
+    console.log('[runAgentStream] Transformed message:', transformedMessage)
 
-      yield {
-        type: 'content',
-        content: responseContent
+    // Replace the last user message with transformed version
+    effectiveMessages = messages.map((m, i) => {
+      if (i === messages.length - 1 && m.role === 'user') {
+        return { ...m, content: transformedMessage }
       }
-
-      yield {
-        type: 'done',
-        response: {
-          content: responseContent,
-          suggestions: providers.slice(0, 4).map(p => p.name_ar),
-          quickReplies: providerQuickReplies
-        }
-      }
-    } else {
-      // No providers found
-      const responseContent = `للأسف مفيش ${categoryName} متاح في منطقتك دلوقتي 😕\n\nجرب قسم تاني!`
-
-      yield {
-        type: 'content',
-        content: responseContent
-      }
-
-      yield {
-        type: 'done',
-        response: {
-          content: responseContent,
-          suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
-          quickReplies: [
-            { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
-            { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
-            { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
-            { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
-          ]
-        }
-      }
-    }
-    return
+      return m
+    })
   }
 
   // Load customer insights if customer is logged in
@@ -631,10 +568,10 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
   // Convert tools to OpenAI format
   const tools = convertToolsToOpenAI(context)
 
-  // Build messages array for OpenAI
+  // Build messages array for OpenAI (use effectiveMessages which may be transformed)
   const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
-    ...messages.map(msg => ({
+    ...effectiveMessages.map(msg => ({
       role: msg.role as 'user' | 'assistant',
       content: msg.content
     }))
