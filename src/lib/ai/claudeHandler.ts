@@ -172,8 +172,8 @@ export async function* runClaudeAgentStream(options: AgentHandlerOptions): Async
     )
 
     const transformedMessage = originalRequest
-      ? `اخترت قسم ${categoryName}. طلبي الأصلي كان: "${originalRequest}"`
-      : `اخترت قسم ${categoryName}. عايز أشوف ايه متاح`
+      ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
+      : `اخترت قسم ${categoryName}. ورّيني المتاح`
 
     console.log('[runClaudeAgentStream] Transformed message:', transformedMessage)
 

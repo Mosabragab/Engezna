@@ -178,8 +178,8 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
     )
 
     const transformedMessage = originalRequest
-      ? `اخترت قسم ${categoryName}. طلبي الأصلي كان: "${originalRequest}"`
-      : `اخترت قسم ${categoryName}. عايز أشوف ايه متاح`
+      ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
+      : `اخترت قسم ${categoryName}. ورّيني المتاح`
 
     console.log('[runAgent] Transformed message:', transformedMessage)
 
@@ -528,8 +528,8 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
     // Transform the message to natural language for the AI
     // If there was an original request, remind AI about it
     const transformedMessage = originalRequest
-      ? `اخترت قسم ${categoryName}. طلبي الأصلي كان: "${originalRequest}"`
-      : `اخترت قسم ${categoryName}. عايز أشوف ايه متاح`
+      ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
+      : `اخترت قسم ${categoryName}. ورّيني المتاح`
 
     console.log('[runAgentStream] Transformed message:', transformedMessage)
 
