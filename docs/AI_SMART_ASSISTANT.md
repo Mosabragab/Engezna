@@ -423,4 +423,257 @@ SELECT queue_missing_embeddings(100); -- يضيف 100 منتج للـ queue
 
 ---
 
-*آخر تحديث: 16 ديسمبر 2025*
+## 🎓 الدروس المستفادة والأخطاء الشائعة
+
+### ❌ خطأ 1: UUID "undefined" String
+**المشكلة:**
+```
+ERROR: invalid input syntax for type uuid: "undefined"
+```
+
+**السبب:**
+الـ AI أحياناً يبعت `"undefined"` كـ string بدلاً من UUID صحيح، والـ check العادي `if (!id)` مش بيمسكه لأن `"undefined"` string مش falsy.
+
+**الحل:**
+```typescript
+function isValidUUID(id: string | undefined | null): id is string {
+  if (!id || id === 'undefined' || id === 'null') return false
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(id)
+}
+
+// استخدمها في كل مكان بيستقبل UUID
+const effectiveProviderId = getValidUUID(param_provider_id, context.providerId)
+```
+
+**الملف:** `src/lib/ai/agentTools.ts`
+
+---
+
+### ❌ خطأ 2: عدم عثور البحث على النتائج (Synonyms)
+**المشكلة:**
+- المستخدم يقول "عايز حلويات" ← مش بيلاقي فطيرة نوتيلا، شوكولاتة
+- المستخدم يقول "عايز كفتة" ← بيلاقي 7 أنواع، بس لما يسأل عن التفاصيل بيلاقي 1 بس
+
+**السبب:**
+1. `search_menu` بيستخدم `simple_search_menu` مع synonym expansion
+2. `get_menu_items` كان بيستخدم `ilike` عادي بدون synonyms
+
+**الحل:**
+1. إضافة synonyms للحلويات في `arabic_synonyms` table:
+```sql
+INSERT INTO arabic_synonyms (term, synonyms, category) VALUES
+  ('حلويات', ARRAY['حلو', 'شوكولاتة', 'نوتيلا', 'لوتس', 'قشطة', 'عسل', 'سكر'], 'food'),
+  ('حلو', ARRAY['حلويات', 'شوكولاتة', 'نوتيلا', 'قشطة'], 'food')
+ON CONFLICT (term) DO UPDATE SET synonyms = EXCLUDED.synonyms;
+```
+
+2. تحديث `get_menu_items` ليستخدم `simple_search_menu` RPC عند وجود search_query
+
+**الملفات:**
+- `supabase/migrations/20251217000002_add_dessert_synonyms.sql`
+- `src/lib/ai/agentTools.ts` (get_menu_items)
+
+---
+
+### ❌ خطأ 3: normalize_arabic Function لا تعمل
+**المشكلة:**
+```
+ERROR: function normalize_arabic(text) does not exist
+```
+
+**السبب:**
+الـ migration file موجود بس الـ function مش مُنفَّذة على Supabase
+
+**الحل:**
+تشغيل الـ SQL يدوياً على Supabase:
+```sql
+CREATE OR REPLACE FUNCTION normalize_arabic(text_input text)
+RETURNS text AS $$
+BEGIN
+  RETURN translate(
+    text_input,
+    'ةىأإآؤئ',
+    'هياااوي'
+  );
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+```
+
+**الدرس:** دايماً تأكد إن الـ migrations اتنفذت بشكل صحيح على Supabase
+
+---
+
+### ❌ خطأ 4: Column Name خاطئ (provider_category_id vs category_id)
+**المشكلة:**
+```
+ERROR: column mi.provider_category_id does not exist
+```
+
+**السبب:**
+الـ column الصحيح في `menu_items` هو `category_id` مش `provider_category_id`
+
+**الحل:**
+تحديث الـ SQL functions:
+```sql
+-- خطأ
+LEFT JOIN provider_categories pc ON mi.provider_category_id = pc.id
+
+-- صح
+LEFT JOIN provider_categories pc ON mi.category_id = pc.id
+```
+
+**الملفات:** `simple_search_menu`, `hybrid_search_menu` SQL functions
+
+---
+
+### ❌ خطأ 5: AI لا يتذكر الـ Variant IDs (Tool-Context Disconnect)
+**المشكلة:**
+- المستخدم يقول "عايز كفتة" ← AI يعرض الـ variants (ربع كيلو، نص كيلو)
+- المستخدم يقول "ضيف ربعين" ← AI بيدور تاني بدل ما يستخدم الـ IDs
+
+**السبب:**
+نتائج الـ Tool Calls مش بترجع في conversation history للـ request التالي
+
+**الحل:**
+إنشاء Session Memory system:
+
+1. **agentPrompt.ts** - إضافة `sessionMemory` للـ context:
+```typescript
+sessionMemory?: {
+  pending_item?: {
+    id: string
+    name_ar: string
+    provider_id: string
+    variants?: Array<{ id: string; name_ar: string; price: number }>
+  }
+}
+```
+
+2. **agentHandler.ts** - حفظ المنتج المعلق من نتائج البحث:
+```typescript
+response.sessionMemory = {
+  pending_item: {
+    id: firstItem.id,
+    name_ar: firstItem.name_ar,
+    variants: firstItem.variants
+  }
+}
+```
+
+3. **route.ts** - تمرير الـ memory من/إلى Frontend:
+```typescript
+sessionMemory: body.memory as AgentContext['sessionMemory']
+// و
+memory: response?.sessionMemory
+```
+
+4. **agentPrompt.ts** - عرض المعلومات في System Prompt:
+```typescript
+${context.sessionMemory?.pending_item ? `
+🔴 منتج معلق - استخدم الـ IDs دي!
+📦 ${context.sessionMemory.pending_item.name_ar}
+   item_id: "${context.sessionMemory.pending_item.id}"
+` : ''}
+```
+
+**الملفات:**
+- `src/lib/ai/agentPrompt.ts`
+- `src/lib/ai/agentHandler.ts`
+- `src/app/api/chat/route.ts`
+- `src/hooks/useAIChat.ts`
+- `src/lib/store/chat.ts`
+
+---
+
+### ❌ خطأ 6: عدد الأنواع غير متطابق (7 vs 1)
+**المشكلة:**
+- البحث الأول: "سلطان بيتزا فيه 7 أنواع كفتة"
+- البحث الثاني داخل المطعم: "لقيت كفتة مشوية بس"
+
+**السبب:**
+- البحث الأول بيستخدم synonym expansion (كفتة + كباب = 7)
+- البحث الثاني (`get_menu_items` مع search_query) كان بيستخدم `ilike` بدون synonyms
+
+**الحل:**
+تحديث `get_menu_items` ليستخدم `simple_search_menu` RPC:
+```typescript
+if (search_query) {
+  const searchResult = await supabase.rpc('simple_search_menu', {
+    p_query: search_query,
+    p_provider_id: effectiveProviderId,
+    p_limit: limit
+  })
+  // ...
+}
+```
+
+---
+
+### ❌ خطأ 7: ON CONFLICT بدون Unique Constraint
+**المشكلة:**
+```
+ERROR: there is no unique or exclusion constraint matching the ON CONFLICT specification
+```
+
+**السبب:**
+محاولة استخدام `ON CONFLICT (term)` على table بدون unique constraint على `term`
+
+**الحل:**
+```sql
+-- أضف الـ constraint أولاً
+ALTER TABLE arabic_synonyms ADD CONSTRAINT arabic_synonyms_term_key UNIQUE (term);
+
+-- ثم استخدم ON CONFLICT
+INSERT INTO arabic_synonyms (term, synonyms, category) VALUES (...)
+ON CONFLICT (term) DO UPDATE SET synonyms = EXCLUDED.synonyms;
+```
+
+---
+
+## 📋 قائمة فحص قبل الـ Deployment
+
+```markdown
+### Database
+- [ ] تأكد من وجود `normalize_arabic` function
+- [ ] تأكد من وجود `simple_search_menu` function
+- [ ] تأكد من وجود `arabic_synonyms` table مع unique constraint
+- [ ] تأكد من إضافة الـ synonyms الشائعة (حلويات، كفتة، فراخ...)
+- [ ] تأكد من استخدام `category_id` (مش provider_category_id)
+
+### Code
+- [ ] استخدم `isValidUUID()` لكل UUID parameter
+- [ ] استخدم `getValidUUID()` للـ fallback chain
+- [ ] تأكد من تمرير `sessionMemory` في request/response
+- [ ] تأكد من عرض pending_item في System Prompt
+
+### Testing
+- [ ] اختبر: "عايز حلويات" → يلاقي فطير حلو
+- [ ] اختبر: "عايز كفتة" ثم "ضيف ربعين" → يضيف بدون بحث
+- [ ] اختبر: UUID undefined → يرجع رسالة خطأ مناسبة
+```
+
+---
+
+## 🔧 أوامر SQL للتشخيص
+
+```sql
+-- التحقق من وجود الـ functions
+SELECT proname FROM pg_proc WHERE proname IN ('normalize_arabic', 'simple_search_menu', 'hybrid_search_menu');
+
+-- التحقق من الـ synonyms
+SELECT * FROM arabic_synonyms WHERE term IN ('كفتة', 'حلويات', 'فراخ');
+
+-- اختبار normalize_arabic
+SELECT normalize_arabic('كفته'), normalize_arabic('كفتة');
+
+-- اختبار البحث
+SELECT * FROM simple_search_menu('كفتة', NULL, NULL, 10);
+
+-- التحقق من أعمدة menu_items
+SELECT column_name FROM information_schema.columns WHERE table_name = 'menu_items';
+```
+
+---
+
+*آخر تحديث: 17 ديسمبر 2025*
