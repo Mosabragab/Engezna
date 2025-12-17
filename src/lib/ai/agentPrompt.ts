@@ -26,8 +26,32 @@ export interface AgentContext extends ToolContext {
   }>
   cartProviderId?: string
   cartTotal?: number
-  // Customer Memory
+  // Customer Memory (long-term from database)
   customerMemory?: CustomerMemory
+  // Session Memory (short-term for current conversation)
+  sessionMemory?: {
+    pending_item?: {
+      id: string
+      name_ar: string
+      price: number
+      provider_id: string
+      provider_name_ar?: string
+      has_variants?: boolean
+      variants?: Array<{
+        id: string
+        name_ar: string
+        price: number
+      }>
+    }
+    pending_variant?: {
+      id: string
+      name_ar: string
+      price: number
+    }
+    pending_quantity?: number
+    awaiting_quantity?: boolean
+    awaiting_confirmation?: boolean
+  }
 }
 
 export interface CustomerMemory {
@@ -199,7 +223,19 @@ ${hasMemory && context.customerMemory?.lastOrders?.length ? `
 📝 آخر طلباته:
 ${context.customerMemory.lastOrders.slice(0, 3).map(o => `   • ${o.providerName}: ${o.items.slice(0, 2).join('، ')}`).join('\n')}
 ` : ''}
+${context.sessionMemory?.pending_item ? `
+🔴🔴🔴 منتج معلق من الرسالة السابقة (استخدم الـ IDs دي!) 🔴🔴🔴
+📦 المنتج: ${context.sessionMemory.pending_item.name_ar}
+   - item_id: "${context.sessionMemory.pending_item.id}"
+   - provider_id: "${context.sessionMemory.pending_item.provider_id}"
+   - provider_name: "${context.sessionMemory.pending_item.provider_name_ar || ''}"
+   - price: ${context.sessionMemory.pending_item.price} ج.م
+${context.sessionMemory.pending_item.variants?.length ? `   - variants:
+${context.sessionMemory.pending_item.variants.map(v => `     • "${v.name_ar}" (id: "${v.id}", price: ${v.price} ج.م)`).join('\n')}` : '   - has_variants: false'}
 
+⚠️ لما العميل يقول "ضيف" أو يختار حجم، استخدم الـ IDs دي مباشرة!
+⚠️ ماتبحثش تاني - عندك كل البيانات!
+` : ''}
 ═══════════════════════════════════════════════════════════════════════════════
 💬 سيناريوهات المحادثة (اتبعها بالظبط)
 ═══════════════════════════════════════════════════════════════════════════════
@@ -1068,6 +1104,30 @@ export interface AgentResponse {
   // FIX: Provider discovered during search - frontend should store this for subsequent requests
   discoveredProviderId?: string
   discoveredProviderName?: string
+  // Session memory for pending items - frontend should store and send back in next request
+  sessionMemory?: {
+    pending_item?: {
+      id: string
+      name_ar: string
+      price: number
+      provider_id: string
+      provider_name_ar?: string
+      has_variants?: boolean
+      variants?: Array<{
+        id: string
+        name_ar: string
+        price: number
+      }>
+    }
+    pending_variant?: {
+      id: string
+      name_ar: string
+      price: number
+    }
+    pending_quantity?: number
+    awaiting_quantity?: boolean
+    awaiting_confirmation?: boolean
+  }
 }
 
 /**

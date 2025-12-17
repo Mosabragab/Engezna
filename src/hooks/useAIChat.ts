@@ -282,6 +282,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
                   cart_actions: parsed.cart_actions,  // Multiple cart actions support
                   // FIX: Capture discovered provider ID from search results
                   selected_provider_id: parsed.selected_provider_id,
+                  // FIX: Capture session memory for pending items
+                  memory: parsed.memory,
                 }
               } else if (currentEvent === 'error') {
                 throw new Error(parsed.error || 'حصل خطأ')
@@ -677,6 +679,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
                   cart_actions: parsed.cart_actions,  // Multiple cart actions support
                   // FIX: Capture discovered provider ID from search results
                   selected_provider_id: parsed.selected_provider_id,
+                  // FIX: Capture session memory for pending items
+                  memory: parsed.memory,
                 }
               } else if (currentEvent === 'error') {
                 throw new Error(parsed.error || 'حصل خطأ')

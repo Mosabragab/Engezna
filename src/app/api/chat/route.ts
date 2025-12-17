@@ -40,6 +40,8 @@ interface ChatRequest {
     variant_name_ar?: string
   }>
   cart_total?: number
+  // Session memory for pending items from previous messages
+  memory?: Record<string, unknown>
 }
 
 // =============================================================================
@@ -111,7 +113,9 @@ export async function POST(request: NextRequest) {
       cartProviderId: body.cart_provider_id,
       cartTotal: cartTotal,
       // Customer memory for personalization
-      customerMemory: customerMemory || undefined
+      customerMemory: customerMemory || undefined,
+      // Session memory for pending items/variants from previous messages
+      sessionMemory: body.memory as AgentContext['sessionMemory']
     }
 
     // Convert messages to agent format
@@ -232,7 +236,9 @@ export async function POST(request: NextRequest) {
                     : undefined,  // Send array of cart actions for multiple items
                   // FIX: Send discovered provider ID to frontend for context persistence
                   selected_provider_id: response?.discoveredProviderId,
-                  selected_provider_name: response?.discoveredProviderName
+                  selected_provider_name: response?.discoveredProviderName,
+                  // FIX: Send session memory for pending items
+                  memory: response?.sessionMemory
                 }))
                 break
 
@@ -322,7 +328,9 @@ export async function PUT(request: NextRequest) {
       cartProviderId: body.cart_provider_id,
       cartTotal: cartTotal,
       // Customer memory for personalization
-      customerMemory: customerMemory || undefined
+      customerMemory: customerMemory || undefined,
+      // Session memory for pending items/variants from previous messages
+      sessionMemory: body.memory as AgentContext['sessionMemory']
     }
 
     // Convert messages

@@ -1051,6 +1051,30 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
               providerId: item.provider_id as string | undefined,
               providerName: (item.providers as { name_ar?: string })?.name_ar
             }))
+
+            // ═══════════════════════════════════════════════════════════════════
+            // FIX: Store pending item in sessionMemory for next request
+            // This allows the AI to remember the item IDs when user says "ضيف"
+            // ═══════════════════════════════════════════════════════════════════
+            const firstItem = items[0]
+            const variants = firstItem.variants as Array<{ id: string; name_ar: string; price: number }> | undefined
+
+            response.sessionMemory = {
+              pending_item: {
+                id: firstItem.id as string,
+                name_ar: firstItem.name_ar as string,
+                price: firstItem.price as number,
+                provider_id: firstItem.provider_id as string,
+                provider_name_ar: (firstItem.providers as { name_ar?: string })?.name_ar,
+                has_variants: firstItem.has_variants as boolean | undefined,
+                variants: variants?.map(v => ({
+                  id: v.id,
+                  name_ar: v.name_ar,
+                  price: v.price
+                }))
+              }
+            }
+            console.log('[parseAgentOutput] Stored pending item:', response.sessionMemory.pending_item?.name_ar, 'with', variants?.length || 0, 'variants')
           }
         }
       }
