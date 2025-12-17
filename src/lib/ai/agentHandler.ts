@@ -150,6 +150,67 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION HANDLER (Handle category:xxx messages directly)
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (isCategorySelection) {
+    const categoryCode = lastUserMessage.replace('category:', '')
+    console.log('[runAgent] Category selected:', categoryCode)
+
+    const categoryNames: Record<string, string> = {
+      'restaurant_cafe': '🍽️ مطاعم وكافيهات',
+      'coffee_sweets': '☕ البن والحلويات',
+      'grocery': '🛒 سوبر ماركت',
+      'vegetables_fruits': '🥬 خضروات وفواكه'
+    }
+
+    const result = await executeAgentTool('get_providers_by_category', {
+      category_code: categoryCode,
+      city_id: context.cityId
+    }, context)
+
+    const categoryName = categoryNames[categoryCode] || categoryCode
+
+    if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+      const providers = result.data as Array<{
+        id: string
+        name_ar: string
+        rating?: number
+        delivery_fee?: number
+        status?: string
+      }>
+
+      const providersList = providers.slice(0, 5).map((p, i) => {
+        const rating = p.rating ? `⭐ ${p.rating.toFixed(1)}` : ''
+        const fee = p.delivery_fee ? `🚚 ${p.delivery_fee} ج.م` : ''
+        const status = p.status === 'open' ? '🟢' : p.status === 'closed' ? '🔴' : '🟡'
+        return `${i + 1}. ${status} ${p.name_ar} ${rating} ${fee}`.trim()
+      }).join('\n')
+
+      const providerQuickReplies = providers.slice(0, 4).map(p => ({
+        title: p.name_ar,
+        payload: `provider:${p.id}:${p.name_ar}`
+      }))
+
+      return {
+        content: `تمام! لقيت ${providers.length} ${categoryName} في منطقتك 😊\n\n${providersList}\n\nاختار المكان اللي عايز تطلب منه، أو قولي اسم المكان!`,
+        suggestions: providers.slice(0, 4).map(p => p.name_ar),
+        quickReplies: providerQuickReplies
+      }
+    } else {
+      return {
+        content: `للأسف مفيش ${categoryName} متاح في منطقتك دلوقتي 😕\n\nجرب قسم تاني!`,
+        suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+        quickReplies: [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+          { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+          { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
+        ]
+      }
+    }
+  }
+
   // Load customer insights if customer is logged in
   let enrichedContext = { ...context }
   if (context.customerId) {
@@ -450,6 +511,95 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
           { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
           { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
         ]
+      }
+    }
+    return
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION HANDLER (Handle category:xxx messages directly)
+  // When user selects a category, we fetch providers without calling AI.
+  // This is more reliable than relying on AI to understand the payload.
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (isCategorySelection) {
+    const categoryCode = lastUserMessage.replace('category:', '')
+    console.log('[runAgentStream] Category selected:', categoryCode)
+
+    // Category name mapping
+    const categoryNames: Record<string, string> = {
+      'restaurant_cafe': '🍽️ مطاعم وكافيهات',
+      'coffee_sweets': '☕ البن والحلويات',
+      'grocery': '🛒 سوبر ماركت',
+      'vegetables_fruits': '🥬 خضروات وفواكه'
+    }
+
+    // Call the tool directly
+    const result = await executeAgentTool('get_providers_by_category', {
+      category_code: categoryCode,
+      city_id: context.cityId
+    }, context)
+
+    const categoryName = categoryNames[categoryCode] || categoryCode
+
+    if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+      // Format providers list
+      const providers = result.data as Array<{
+        id: string
+        name_ar: string
+        rating?: number
+        delivery_fee?: number
+        status?: string
+      }>
+
+      const providersList = providers.slice(0, 5).map((p, i) => {
+        const rating = p.rating ? `⭐ ${p.rating.toFixed(1)}` : ''
+        const fee = p.delivery_fee ? `🚚 ${p.delivery_fee} ج.م` : ''
+        const status = p.status === 'open' ? '🟢' : p.status === 'closed' ? '🔴' : '🟡'
+        return `${i + 1}. ${status} ${p.name_ar} ${rating} ${fee}`.trim()
+      }).join('\n')
+
+      const responseContent = `تمام! لقيت ${providers.length} ${categoryName} في منطقتك 😊\n\n${providersList}\n\nاختار المكان اللي عايز تطلب منه، أو قولي اسم المكان!`
+
+      // Generate quick replies for top providers
+      const providerQuickReplies = providers.slice(0, 4).map(p => ({
+        title: p.name_ar,
+        payload: `provider:${p.id}:${p.name_ar}`
+      }))
+
+      yield {
+        type: 'content',
+        content: responseContent
+      }
+
+      yield {
+        type: 'done',
+        response: {
+          content: responseContent,
+          suggestions: providers.slice(0, 4).map(p => p.name_ar),
+          quickReplies: providerQuickReplies
+        }
+      }
+    } else {
+      // No providers found
+      const responseContent = `للأسف مفيش ${categoryName} متاح في منطقتك دلوقتي 😕\n\nجرب قسم تاني!`
+
+      yield {
+        type: 'content',
+        content: responseContent
+      }
+
+      yield {
+        type: 'done',
+        response: {
+          content: responseContent,
+          suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+          quickReplies: [
+            { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+            { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+            { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+            { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
+          ]
+        }
       }
     }
     return
