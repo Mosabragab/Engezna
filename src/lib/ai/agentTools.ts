@@ -134,13 +134,42 @@ export interface ToolContext {
     orderCount?: number
     lastVisit?: string
   }
+  // Session memory for pending items from chat
+  sessionMemory?: {
+    pending_item?: {
+      id: string
+      name_ar: string
+      price: number
+      provider_id: string
+      provider_name_ar?: string
+      has_variants?: boolean
+      variants?: Array<{
+        id: string
+        name_ar: string
+        price: number
+      }>
+    }
+    pending_variant?: {
+      id: string
+      name_ar: string
+      price: number
+    }
+    pending_quantity?: number
+    awaiting_quantity?: boolean
+    awaiting_confirmation?: boolean
+  }
 }
 
 // Helper to get effective provider ID from context
 function getEffectiveProviderId(params: { provider_id?: string }, context: ToolContext): string | undefined {
-  // Priority: explicit param > cart provider > page context provider
+  // Priority: explicit param > pending_item > cart provider > page context provider
   // FIX: Use getValidUUID to reject "undefined" and "null" strings
-  return getValidUUID(params.provider_id, context.cartProviderId, context.providerId) || undefined
+  return getValidUUID(
+    params.provider_id,
+    context.sessionMemory?.pending_item?.provider_id,
+    context.cartProviderId,
+    context.providerId
+  ) || undefined
 }
 
 // =============================================================================
@@ -1512,9 +1541,12 @@ export async function executeAgentTool(
 
         // ═══════════════════════════════════════════════════════════════
         // FALLBACK: Use context provider_id if AI forgot to pass it
-        // Priority: explicit param > cart provider > page context provider
+        // Priority: explicit param > pending_item > cart provider > page context
         // ═══════════════════════════════════════════════════════════════
-        const provider_id = param_provider_id || context.cartProviderId || context.providerId
+        const provider_id = param_provider_id
+          || context.sessionMemory?.pending_item?.provider_id
+          || context.cartProviderId
+          || context.providerId
 
         // ═══════════════════════════════════════════════════════════════
         // DETAILED LOGGING: Track why add_to_cart fails
@@ -1530,6 +1562,7 @@ export async function executeAgentTool(
           variant_name,
           contextProviderId: context.providerId,
           contextCartProviderId: context.cartProviderId,
+          sessionMemoryProviderId: context.sessionMemory?.pending_item?.provider_id,
           usedFallback: !param_provider_id && !!provider_id
         })
 
@@ -2202,6 +2235,30 @@ export async function executeAgentTool(
             success: true,
             data: [],
             message: `للأسف مفيش ${categoryName} متاح في منطقتك دلوقتي 😕\nجرب قسم تاني أو ابحث عن منتج معين!`
+          }
+        }
+
+        // If only 1 provider, auto-select it for better UX
+        if (providers.length === 1) {
+          const provider = providers[0]
+          return {
+            success: true,
+            data: providers,
+            providers: providers.map(p => ({
+              id: p.id,
+              name_ar: p.name_ar,
+              logo_url: p.logo_url,
+              rating: p.rating,
+              total_reviews: p.total_reviews,
+              delivery_fee: p.delivery_fee,
+              estimated_delivery_time_min: p.estimated_delivery_time_min,
+              status: p.status,
+              item_count: 0
+            })),
+            // Auto-select single provider
+            discovered_provider_id: provider.id,
+            discovered_provider_name: provider.name_ar,
+            message: `لقيت ${categoryName} واحد في منطقتك! 🎉\n\n🏪 ${provider.name_ar}\n⭐ التقييم: ${provider.rating || 'جديد'} | عدد التقييمات: ${provider.total_reviews || 0}\n💰 رسوم التوصيل: ${provider.delivery_fee || 0} ج.م\n⏳ الوقت المتوقع للتوصيل: ${provider.estimated_delivery_time_min || 30} دقيقة\n\nاختار ${provider.name_ar}، وأنا جاهز أساعدك بالطلب! عايز تطلب إيه؟ 🛒`
           }
         }
 
