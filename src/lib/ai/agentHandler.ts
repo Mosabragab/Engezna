@@ -13,7 +13,10 @@ import {
   executeAgentTool,
   getAvailableTools,
   type ToolContext,
-  type ToolResult
+  type ToolResult,
+  loadCustomerInsights,
+  saveCustomerInsights,
+  analyzeConversationForInsights
 } from './agentTools'
 import { validateToolParams, checkRateLimit } from './toolValidation'
 import {
@@ -114,8 +117,28 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
   // OpenAI implementation below
   const { context, messages, onStream } = options
 
-  // Build system prompt
-  const systemPrompt = buildSystemPrompt(context)
+  // Load customer insights if customer is logged in
+  let enrichedContext = { ...context }
+  if (context.customerId) {
+    try {
+      const insights = await loadCustomerInsights(context.customerId)
+      if (insights) {
+        console.log('[runAgent] Loaded customer insights:', insights.conversation_style?.customer_type)
+        enrichedContext = {
+          ...context,
+          customerMemory: {
+            ...context.customerMemory,
+            preferences: insights.preferences as { spicy?: boolean; vegetarian?: boolean; notes?: string[] },
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[runAgent] Failed to load customer insights:', error)
+    }
+  }
+
+  // Build system prompt with enriched context
+  const systemPrompt = buildSystemPrompt(enrichedContext)
 
   // Convert tools to OpenAI format
   const tools = convertToolsToOpenAI(context)
@@ -311,6 +334,23 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
     }
   }
 
+  // Save customer insights after conversation (non-blocking)
+  if (context.customerId && turns.length > 0) {
+    const toolResults = turns
+      .filter(t => t.role === 'tool' && t.toolResult)
+      .map(t => ({ toolName: t.toolName || '', result: t.toolResult as ToolResult }))
+
+    const insights = analyzeConversationForInsights(
+      messages.map(m => ({ role: m.role, content: m.content })),
+      toolResults
+    )
+
+    // Save insights asynchronously (don't block the response)
+    saveCustomerInsights(context.customerId, insights).catch(err => {
+      console.error('[runAgent] Failed to save customer insights:', err)
+    })
+  }
+
   return finalResponse
 }
 
@@ -331,8 +371,28 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
   // OpenAI implementation below
   const { context, messages } = options
 
-  // Build system prompt
-  const systemPrompt = buildSystemPrompt(context)
+  // Load customer insights if customer is logged in
+  let enrichedContext = { ...context }
+  if (context.customerId) {
+    try {
+      const insights = await loadCustomerInsights(context.customerId)
+      if (insights) {
+        console.log('[runAgentStream] Loaded customer insights:', insights.conversation_style?.customer_type)
+        enrichedContext = {
+          ...context,
+          customerMemory: {
+            ...context.customerMemory,
+            preferences: insights.preferences as { spicy?: boolean; vegetarian?: boolean; notes?: string[] },
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[runAgentStream] Failed to load customer insights:', error)
+    }
+  }
+
+  // Build system prompt with enriched context
+  const systemPrompt = buildSystemPrompt(enrichedContext)
 
   // Convert tools to OpenAI format
   const tools = convertToolsToOpenAI(context)
@@ -530,6 +590,22 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
 
       // Final response
       const finalResponse = parseAgentOutput(accumulatedContent, turns, context.providerId || context.cartProviderId)
+
+      // Save customer insights after conversation (non-blocking)
+      if (context.customerId && turns.length > 0) {
+        const toolResults = turns
+          .filter(t => t.role === 'tool' && t.toolResult)
+          .map(t => ({ toolName: t.toolName || '', result: t.toolResult as ToolResult }))
+
+        const insights = analyzeConversationForInsights(
+          messages.map(m => ({ role: m.role, content: m.content })),
+          toolResults
+        )
+
+        saveCustomerInsights(context.customerId, insights).catch(err => {
+          console.error('[runAgentStream] Failed to save customer insights:', err)
+        })
+      }
 
       yield {
         type: 'done',

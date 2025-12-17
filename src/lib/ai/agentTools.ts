@@ -1322,6 +1322,29 @@ export async function executeAgentTool(
           }
         }
 
+        // SAFETY CHECK: Validate provider_id matches item's actual provider
+        if (item.provider_id !== provider_id) {
+          console.error('[add_to_cart] Provider mismatch!', {
+            item_provider: item.provider_id,
+            requested_provider: provider_id
+          })
+          return {
+            success: false,
+            error: 'provider_mismatch',
+            message: `المنتج "${item.name_ar}" مش من المطعم ده. ابحث عن المنتج تاني واستخدم الـ provider_id الصحيح.`
+          }
+        }
+
+        // SAFETY CHECK: Price sanity (prevent obviously wrong prices)
+        if (price <= 0 || price > 50000) {
+          console.error('[add_to_cart] Invalid price:', price)
+          return {
+            success: false,
+            error: 'invalid_price',
+            message: `السعر ${price} مش صحيح. ابحث عن المنتج تاني للحصول على السعر الصحيح.`
+          }
+        }
+
         if (item.has_stock === false) {
           return {
             success: false,
@@ -2283,4 +2306,205 @@ export function getAvailableTools(context: ToolContext): ToolDefinition[] {
   }
 
   return AGENT_TOOLS
+}
+
+// =============================================================================
+// CUSTOMER INSIGHTS FUNCTIONS
+// =============================================================================
+
+/**
+ * Customer Insights Interface
+ */
+export interface CustomerInsights {
+  preferences: {
+    spicy?: boolean
+    vegetarian?: boolean
+    preferred_cuisines?: string[]
+    delivery_notes?: string[]
+    favorite_items?: string[]
+    dietary_restrictions?: string[]
+  }
+  conversation_style: {
+    customer_type?: 'decisive' | 'indecisive' | 'deal_seeker' | 'detail_oriented'
+    communication_preference?: 'brief' | 'detailed'
+    language_style?: 'franco_arab' | 'arabic' | 'mixed'
+  }
+  insights_count: number
+  last_updated: string
+}
+
+/**
+ * Load customer insights from database
+ */
+export async function loadCustomerInsights(customerId: string): Promise<CustomerInsights | null> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('user_insights')
+    .select('preferences, conversation_style, insights_count, last_updated')
+    .eq('user_id', customerId)
+    .single()
+
+  if (error || !data) {
+    console.log('[loadCustomerInsights] No insights found for customer:', customerId)
+    return null
+  }
+
+  return {
+    preferences: data.preferences || {},
+    conversation_style: data.conversation_style || {},
+    insights_count: data.insights_count || 0,
+    last_updated: data.last_updated
+  }
+}
+
+/**
+ * Save or update customer insights
+ */
+export async function saveCustomerInsights(
+  customerId: string,
+  insights: Partial<CustomerInsights>
+): Promise<boolean> {
+  const supabase = await createClient()
+
+  // First, try to get existing insights
+  const { data: existing } = await supabase
+    .from('user_insights')
+    .select('id, preferences, conversation_style, insights_count')
+    .eq('user_id', customerId)
+    .single()
+
+  if (existing) {
+    // Merge with existing insights
+    const mergedPreferences = {
+      ...existing.preferences,
+      ...insights.preferences
+    }
+    const mergedConversationStyle = {
+      ...existing.conversation_style,
+      ...insights.conversation_style
+    }
+
+    const { error } = await supabase
+      .from('user_insights')
+      .update({
+        preferences: mergedPreferences,
+        conversation_style: mergedConversationStyle,
+        insights_count: (existing.insights_count || 0) + 1,
+        last_updated: new Date().toISOString()
+      })
+      .eq('user_id', customerId)
+
+    if (error) {
+      console.error('[saveCustomerInsights] Update error:', error)
+      return false
+    }
+  } else {
+    // Create new insights record
+    const { error } = await supabase
+      .from('user_insights')
+      .insert({
+        user_id: customerId,
+        preferences: insights.preferences || {},
+        conversation_style: insights.conversation_style || {},
+        insights_count: 1,
+        last_updated: new Date().toISOString()
+      })
+
+    if (error) {
+      console.error('[saveCustomerInsights] Insert error:', error)
+      return false
+    }
+  }
+
+  console.log('[saveCustomerInsights] Saved insights for customer:', customerId)
+  return true
+}
+
+/**
+ * Analyze conversation to extract customer insights
+ * This is called after each conversation to learn from the interaction
+ */
+export function analyzeConversationForInsights(
+  messages: Array<{ role: string; content: string }>,
+  toolResults: Array<{ toolName: string; result: ToolResult }>
+): Partial<CustomerInsights> {
+  const insights: Partial<CustomerInsights> = {
+    preferences: {},
+    conversation_style: {}
+  }
+
+  // Analyze messages for customer type
+  const userMessages = messages.filter(m => m.role === 'user').map(m => m.content.toLowerCase())
+  const allUserText = userMessages.join(' ')
+
+  // Detect customer type based on behavior
+  const changeCount = userMessages.filter(m =>
+    m.includes('غير') || m.includes('بدل') || m.includes('مش عايز')
+  ).length
+
+  const questionCount = userMessages.filter(m =>
+    m.includes('؟') || m.includes('ايه') || m.includes('كام')
+  ).length
+
+  const dealKeywords = ['عرض', 'خصم', 'أرخص', 'توفير']
+  const dealMentions = dealKeywords.filter(k => allUserText.includes(k)).length
+
+  if (changeCount >= 2) {
+    insights.conversation_style!.customer_type = 'indecisive'
+  } else if (dealMentions >= 2) {
+    insights.conversation_style!.customer_type = 'deal_seeker'
+  } else if (questionCount >= 3) {
+    insights.conversation_style!.customer_type = 'detail_oriented'
+  } else {
+    insights.conversation_style!.customer_type = 'decisive'
+  }
+
+  // Detect communication preference
+  const avgMessageLength = userMessages.length > 0
+    ? userMessages.reduce((acc, m) => acc + m.length, 0) / userMessages.length
+    : 0
+
+  if (avgMessageLength < 20) {
+    insights.conversation_style!.communication_preference = 'brief'
+  } else {
+    insights.conversation_style!.communication_preference = 'detailed'
+  }
+
+  // Detect Franco-Arab usage
+  const francoArabPattern = /[a-zA-Z].*[2357689]|[2357689].*[a-zA-Z]/
+  const usesFrancoArab = userMessages.some(m => francoArabPattern.test(m))
+  if (usesFrancoArab) {
+    insights.conversation_style!.language_style = 'franco_arab'
+  } else if (userMessages.some(m => /[a-zA-Z]/.test(m))) {
+    insights.conversation_style!.language_style = 'mixed'
+  } else {
+    insights.conversation_style!.language_style = 'arabic'
+  }
+
+  // Detect food preferences from search queries and orders
+  const spicyKeywords = ['حراق', 'شطة', 'حار', 'spicy']
+  const vegetarianKeywords = ['خضار', 'نباتي', 'سلطة', 'vegetarian']
+
+  if (spicyKeywords.some(k => allUserText.includes(k))) {
+    insights.preferences!.spicy = true
+  }
+  if (vegetarianKeywords.some(k => allUserText.includes(k))) {
+    insights.preferences!.vegetarian = true
+  }
+
+  // Extract favorite items from cart actions
+  const addedItems = toolResults
+    .filter(t => t.toolName === 'add_to_cart' && t.result.success)
+    .map(t => {
+      const data = t.result.data as { cart_action?: { menu_item_name_ar?: string } }
+      return data?.cart_action?.menu_item_name_ar
+    })
+    .filter(Boolean) as string[]
+
+  if (addedItems.length > 0) {
+    insights.preferences!.favorite_items = addedItems
+  }
+
+  return insights
 }
