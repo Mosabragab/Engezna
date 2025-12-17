@@ -741,29 +741,93 @@ export async function executeAgentTool(
           param: param_provider_id,
           context: context.providerId,
           cart: context.cartProviderId,
-          effective: effectiveProviderId
+          effective: effectiveProviderId,
+          search_query
         })
 
-        let query = supabase
-          .from('menu_items')
-          .select(`
-            id, name_ar, name_en, description_ar, price, original_price,
-            image_url, is_available, has_stock, has_variants, pricing_type, category_id
-          `)
-          .eq('provider_id', effectiveProviderId)
-          .eq('is_available', true)
-          .order('display_order')
-          .limit(limit)
-
-        if (category_id) {
-          query = query.eq('category_id', category_id)
+        // ═══════════════════════════════════════════════════════════════════
+        // FIX: Use simple_search_menu for search queries to get Arabic
+        // normalization and synonym expansion
+        // ═══════════════════════════════════════════════════════════════════
+        type MenuItem = {
+          id: string
+          name_ar: string
+          name_en?: string | null
+          description_ar?: string | null
+          price: number
+          original_price?: number | null
+          image_url?: string | null
+          is_available?: boolean
+          has_stock?: boolean
+          has_variants?: boolean
+          pricing_type?: string
+          category_id?: string | null
         }
+        let data: MenuItem[] | null = null
+        let error: Error | null = null
 
         if (search_query) {
-          query = query.ilike('name_ar', `%${search_query}%`)
-        }
+          // Use the search function with Arabic normalization + synonyms
+          const searchResult = await supabase
+            .rpc('simple_search_menu', {
+              p_query: search_query,
+              p_provider_id: effectiveProviderId,
+              p_city_id: context.cityId || null,
+              p_limit: limit
+            })
 
-        const { data, error } = await query
+          if (searchResult.error) {
+            console.log('[get_menu_items] Search function error, falling back:', searchResult.error)
+            // Fallback to basic search
+            const fallbackResult = await supabase
+              .from('menu_items')
+              .select('id, name_ar, name_en, description_ar, price, original_price, image_url, is_available, has_stock, has_variants, pricing_type, category_id')
+              .eq('provider_id', effectiveProviderId)
+              .eq('is_available', true)
+              .or(`name_ar.ilike.%${search_query}%,name_ar.ilike.%${normalizeArabic(search_query)}%`)
+              .order('display_order')
+              .limit(limit)
+
+            data = fallbackResult.data
+            error = fallbackResult.error
+          } else {
+            // Map search results to standard format
+            data = searchResult.data?.map((item: { id: string; name_ar: string; name_en: string; description_ar: string; price: number; original_price: number; image_url: string; has_variants: boolean }) => ({
+              id: item.id,
+              name_ar: item.name_ar,
+              name_en: item.name_en,
+              description_ar: item.description_ar,
+              price: item.price,
+              original_price: item.original_price,
+              image_url: item.image_url,
+              is_available: true,
+              has_stock: true,
+              has_variants: item.has_variants,
+              pricing_type: 'fixed'
+            }))
+            error = null
+          }
+        } else {
+          // No search query - get all items for provider
+          let query = supabase
+            .from('menu_items')
+            .select(`
+              id, name_ar, name_en, description_ar, price, original_price,
+              image_url, is_available, has_stock, has_variants, pricing_type, category_id
+            `)
+            .eq('provider_id', effectiveProviderId)
+            .eq('is_available', true)
+            .order('display_order')
+            .limit(limit)
+
+          if (category_id) {
+            query = query.eq('category_id', category_id)
+          }
+
+          const result = await query
+          data = result.data
+          error = result.error
+        }
         if (error) throw error
 
         // Fetch variants for items that have them
