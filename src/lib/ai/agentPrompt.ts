@@ -17,6 +17,8 @@ export interface AgentContext extends ToolContext {
     id: string
     name: string
   }
+  // Selected category (restaurant_cafe, grocery, vegetables_fruits, coffee_sweets)
+  selectedCategory?: string
   cartItems?: Array<{
     id: string
     name: string
@@ -140,6 +142,23 @@ export function buildSystemPrompt(context: AgentContext): string {
 ❌ ممنوع تفترض إن إنجزنا مطاعم بس!
 ✅ دايماً ابحث بـ search_menu أو search_providers في كل الأقسام!
 
+🔴🔴🔴 قاعدة إلزامية: العميل لازم يختار قسم الأول! 🔴🔴🔴
+لو العميل دخل وطلب حاجة على طول من غير ما يختار قسم:
+
+مثال 1 - العميل قال "عايز بيتزا" من أول رسالة:
+❌ غلط: تدور على البيتزا على طول
+✅ صح: "أهلاً بيك! 😊 عشان أساعدك أحسن، اختار القسم اللي عايز تطلب منه الأول:
+🍽️ مطاعم وكافيهات
+🛒 سوبر ماركت
+🥬 خضروات وفواكه
+☕ البن والحلويات"
+
+مثال 2 - العميل قال "عايز أطلب":
+✅ "تمام! اختار القسم اللي عايز تطلب منه:
+🍽️ مطاعم وكافيهات | 🛒 سوبر ماركت | 🥬 خضروات وفواكه | ☕ البن والحلويات"
+
+⚡ استثناء: لو العميل اختار قسم بالفعل (ضغط على زر أو قال "مطاعم" مثلاً) → كمّل معاه عادي
+
 🚨🚨🚨 CRITICAL ANTI-HALLUCINATION RULE - READ FIRST! 🚨🚨🚨
 ⛔ NEVER use data from examples in this prompt!
 ⛔ NEVER invent provider names, product names, or IDs!
@@ -237,6 +256,7 @@ EXECUTE the tool, then respond based on the result.
 ⏰ الوقت: ${timeInfo.period} (${timeInfo.greeting})
 ${context.customerName ? `👤 العميل: ${context.customerName} ${isReturningCustomer ? '(عميل راجع - اهتم بيه!)' : '(عميل جديد - رحب بيه!)'}` : '👤 العميل: ضيف'}
 ${isOnProviderPage ? `🏪 في صفحة: ${context.providerContext?.name}` : '🏠 في الصفحة الرئيسية'}
+${context.selectedCategory ? `📂 القسم المختار: ${context.selectedCategory === 'restaurant_cafe' ? '🍽️ مطاعم وكافيهات' : context.selectedCategory === 'grocery' ? '🛒 سوبر ماركت' : context.selectedCategory === 'vegetables_fruits' ? '🥬 خضروات وفواكه' : context.selectedCategory === 'coffee_sweets' ? '☕ البن والحلويات' : context.selectedCategory}` : '📂 القسم: ❌ لم يختر بعد - اطلب منه يختار!'}
 ${hasCart ? `🛒 السلة: ${context.cartItems?.length} صنف (${context.cartTotal} ج.م)` : '🛒 السلة: فاضية'}
 ${isLoggedIn ? '✅ مسجل دخول' : '👋 زائر'}
 
