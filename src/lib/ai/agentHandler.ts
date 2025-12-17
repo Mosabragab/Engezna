@@ -117,6 +117,39 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
   // OpenAI implementation below
   const { context, messages, onStream } = options
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION ENFORCEMENT (Pre-AI Check)
+  // Same logic as runAgentStream - check before calling OpenAI
+  // ═══════════════════════════════════════════════════════════════════════════
+  const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || ''
+  const isCategorySelection = lastUserMessage.startsWith('category:')
+  const hasProviderContext = !!(context.providerId || context.cartProviderId)
+  const hasCategorySelected = !!context.selectedCategory
+
+  const orderingKeywords = [
+    'عايز', 'عاوز', 'عايزة', 'عاوزة', 'محتاج', 'نفسي', 'ابغى', 'ابي',
+    'بيتزا', 'برجر', 'شاورما', 'فراخ', 'كفتة', 'فتة', 'رز', 'مكرونة',
+    'مشروب', 'عصير', 'قهوة', 'شاي', 'كولا', 'بيبسي',
+    'سوبر', 'ماركت', 'خضار', 'فاكهة', 'لبن', 'جبنة', 'بيض',
+    'حلو', 'حلويات', 'كيك', 'جاتوه', 'بسبوسة', 'كنافة',
+    'بن', 'نوتيلا', 'شوكولاتة'
+  ]
+  const seemsLikeOrdering = orderingKeywords.some(kw => lastUserMessage.includes(kw))
+
+  if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
+    console.log('[runAgent] No category selected - returning prompt BEFORE calling AI')
+    return {
+      content: 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇',
+      suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+      quickReplies: [
+        { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+        { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+        { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+        { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
+      ]
+    }
+  }
+
   // Load customer insights if customer is logged in
   let enrichedContext = { ...context }
   if (context.customerId) {
@@ -370,6 +403,57 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
 
   // OpenAI implementation below
   const { context, messages } = options
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION ENFORCEMENT (Pre-AI Check)
+  // If user hasn't selected a category yet and tries to order/search,
+  // return category prompt immediately WITHOUT calling OpenAI.
+  // This is more reliable than relying on AI to understand tool errors.
+  // ═══════════════════════════════════════════════════════════════════════════
+  const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || ''
+  const isCategorySelection = lastUserMessage.startsWith('category:')
+  const hasProviderContext = !!(context.providerId || context.cartProviderId)
+  const hasCategorySelected = !!context.selectedCategory
+
+  // Check if user seems to want to order/search (not just greeting)
+  const orderingKeywords = [
+    'عايز', 'عاوز', 'عايزة', 'عاوزة', 'محتاج', 'نفسي', 'ابغى', 'ابي',
+    'بيتزا', 'برجر', 'شاورما', 'فراخ', 'كفتة', 'فتة', 'رز', 'مكرونة',
+    'مشروب', 'عصير', 'قهوة', 'شاي', 'كولا', 'بيبسي',
+    'سوبر', 'ماركت', 'خضار', 'فاكهة', 'لبن', 'جبنة', 'بيض',
+    'حلو', 'حلويات', 'كيك', 'جاتوه', 'بسبوسة', 'كنافة',
+    'بن', 'نوتيلا', 'شوكولاتة'
+  ]
+  const seemsLikeOrdering = orderingKeywords.some(kw => lastUserMessage.includes(kw))
+
+  if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
+    console.log('[runAgentStream] No category selected - returning prompt BEFORE calling AI')
+    console.log('[runAgentStream] User message:', lastUserMessage)
+
+    const categoryPromptContent = 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇'
+
+    // Stream the content
+    yield {
+      type: 'content',
+      content: categoryPromptContent
+    }
+
+    // Return done with category selection quick replies
+    yield {
+      type: 'done',
+      response: {
+        content: categoryPromptContent,
+        suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+        quickReplies: [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+          { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+          { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
+        ]
+      }
+    }
+    return
+  }
 
   // Load customer insights if customer is logged in
   let enrichedContext = { ...context }

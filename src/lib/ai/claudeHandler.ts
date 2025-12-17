@@ -99,6 +99,51 @@ function convertMessagesToAnthropic(messages: AgentMessage[]): AnthropicMessage[
 export async function* runClaudeAgentStream(options: AgentHandlerOptions): AsyncGenerator<AgentStreamEvent> {
   const { context, messages } = options
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION ENFORCEMENT (Pre-AI Check)
+  // Same logic as OpenAI handler - check before calling Claude
+  // ═══════════════════════════════════════════════════════════════════════════
+  const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || ''
+  const isCategorySelection = lastUserMessage.startsWith('category:')
+  const hasProviderContext = !!(context.providerId || context.cartProviderId)
+  const hasCategorySelected = !!context.selectedCategory
+
+  const orderingKeywords = [
+    'عايز', 'عاوز', 'عايزة', 'عاوزة', 'محتاج', 'نفسي', 'ابغى', 'ابي',
+    'بيتزا', 'برجر', 'شاورما', 'فراخ', 'كفتة', 'فتة', 'رز', 'مكرونة',
+    'مشروب', 'عصير', 'قهوة', 'شاي', 'كولا', 'بيبسي',
+    'سوبر', 'ماركت', 'خضار', 'فاكهة', 'لبن', 'جبنة', 'بيض',
+    'حلو', 'حلويات', 'كيك', 'جاتوه', 'بسبوسة', 'كنافة',
+    'بن', 'نوتيلا', 'شوكولاتة'
+  ]
+  const seemsLikeOrdering = orderingKeywords.some(kw => lastUserMessage.includes(kw))
+
+  if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
+    console.log('[runClaudeAgentStream] No category selected - returning prompt BEFORE calling AI')
+
+    const categoryPromptContent = 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇'
+
+    yield {
+      type: 'content',
+      content: categoryPromptContent
+    }
+
+    yield {
+      type: 'done',
+      response: {
+        content: categoryPromptContent,
+        suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+        quickReplies: [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+          { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+          { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
+        ]
+      }
+    }
+    return
+  }
+
   // Build system prompt
   const systemPrompt = buildSystemPrompt(context)
 
