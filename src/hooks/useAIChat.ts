@@ -534,6 +534,9 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         '🔥 العروض': 'show_promotions',
         // Use navigate: for menu view - handled on frontend, doesn't need city_id
         '📋 شوف المنيو': selectedProviderId ? `navigate:/ar/providers/${selectedProviderId}` : 'مرحبا',
+        '🛒 شوف المنتجات': selectedProviderId ? `navigate:/ar/providers/${selectedProviderId}` : 'مرحبا',
+        // Also handle the text payload (when agentHandler didn't have providerId but useAIChat has selectedProviderId)
+        'عايز أشوف المنتجات': selectedProviderId ? `navigate:/ar/providers/${selectedProviderId}` : 'عايز أشوف المنتجات',
         '🔍 ابحث': 'search',
       }
 
