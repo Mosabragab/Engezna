@@ -204,14 +204,23 @@ BEGIN
     AND p.status IN ('open', 'closed', 'temporarily_paused')
     AND (p_provider_id IS NULL OR mi.provider_id = p_provider_id)
     AND (p_city_id IS NULL OR p.city_id = p_city_id)
-    -- EXCLUDE confusable terms
+    -- EXCLUDE confusable terms - More strict matching
     AND (
       v_confusables IS NULL
-      OR NOT (normalize_arabic(mi.name_ar) ILIKE ANY(
-        SELECT '%' || c || '%' FROM unnest(v_confusables) AS c WHERE c IS NOT NULL
-      ))
-      -- But INCLUDE if it's an exact match for what we're looking for
-      OR normalize_arabic(mi.name_ar) ILIKE '%' || v_normalized_query || '%'
+      -- Check if item name STARTS WITH a confusable (not contains)
+      OR NOT EXISTS (
+        SELECT 1 FROM unnest(v_confusables) AS c
+        WHERE c IS NOT NULL
+        AND (
+          -- Name starts with confusable term
+          normalize_arabic(mi.name_ar) LIKE c || '%'
+          -- OR first word is confusable term (word boundary)
+          OR normalize_arabic(mi.name_ar) ~ ('^' || c || '($|[[:space:]])')
+        )
+      )
+      -- INCLUDE if it STARTS WITH what we're looking for (not just contains)
+      OR normalize_arabic(mi.name_ar) LIKE v_normalized_query || '%'
+      OR normalize_arabic(mi.name_ar) ~ ('^' || v_normalized_query || '($|[[:space:]])')
     )
     AND (
       -- Exact matches
