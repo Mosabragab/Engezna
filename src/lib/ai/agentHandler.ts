@@ -1,7 +1,10 @@
 /**
  * AI Agent Handler for Engezna Smart Assistant
  *
- * This file handles the AI agent conversation loop using OpenAI with function calling.
+ * This file handles the AI agent conversation loop.
+ * Supports both OpenAI (GPT-4o-mini) and Anthropic (Claude 3.5 Haiku).
+ *
+ * Set AI_PROVIDER=claude in .env to use Claude, otherwise defaults to OpenAI.
  */
 
 import OpenAI from 'openai'
@@ -10,14 +13,33 @@ import {
   executeAgentTool,
   getAvailableTools,
   type ToolContext,
-  type ToolResult
+  type ToolResult,
+  loadCustomerInsights,
+  saveCustomerInsights,
+  analyzeConversationForInsights
 } from './agentTools'
+import { validateToolParams, checkRateLimit } from './toolValidation'
 import {
   buildSystemPrompt,
   type AgentContext,
   type AgentResponse,
   type ConversationTurn
 } from './agentPrompt'
+import { runClaudeAgentStream, runClaudeAgent } from './claudeHandler'
+
+// =============================================================================
+// AI PROVIDER CONFIGURATION
+// =============================================================================
+
+type AIProvider = 'openai' | 'claude'
+
+function getAIProvider(): AIProvider {
+  const provider = process.env.AI_PROVIDER?.toLowerCase()
+  if (provider === 'claude' || provider === 'anthropic') {
+    return 'claude'
+  }
+  return 'openai'
+}
 
 // =============================================================================
 // TYPES
@@ -80,14 +102,43 @@ function convertToolsToOpenAI(context: ToolContext): OpenAI.Chat.Completions.Cha
 }
 
 // =============================================================================
-// MAIN AGENT HANDLER
+// MAIN AGENT HANDLER (Provider-agnostic)
 // =============================================================================
 
 export async function runAgent(options: AgentHandlerOptions): Promise<AgentResponse> {
+  // Check which AI provider to use
+  const provider = getAIProvider()
+
+  if (provider === 'claude') {
+    // Delegate to Claude handler
+    return runClaudeAgent(options)
+  }
+
+  // OpenAI implementation below
   const { context, messages, onStream } = options
 
-  // Build system prompt
-  const systemPrompt = buildSystemPrompt(context)
+  // Load customer insights if customer is logged in
+  let enrichedContext = { ...context }
+  if (context.customerId) {
+    try {
+      const insights = await loadCustomerInsights(context.customerId)
+      if (insights) {
+        console.log('[runAgent] Loaded customer insights:', insights.conversation_style?.customer_type)
+        enrichedContext = {
+          ...context,
+          customerMemory: {
+            ...context.customerMemory,
+            preferences: insights.preferences as { spicy?: boolean; vegetarian?: boolean; notes?: string[] },
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[runAgent] Failed to load customer insights:', error)
+    }
+  }
+
+  // Build system prompt with enriched context
+  const systemPrompt = buildSystemPrompt(enrichedContext)
 
   // Convert tools to OpenAI format
   const tools = convertToolsToOpenAI(context)
@@ -145,6 +196,72 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
             toolName,
             toolArgs
           })
+
+          // Validate tool parameters before execution
+          const validation = validateToolParams(toolName, toolArgs, context)
+          if (!validation.valid) {
+            // Return validation error as tool result
+            const validationResult: ToolResult = {
+              success: false,
+              error: validation.error,
+              message: validation.message
+            }
+
+            onStream?.({
+              type: 'tool_result',
+              toolName,
+              toolResult: validationResult
+            })
+
+            turns.push({
+              role: 'tool',
+              content: JSON.stringify(validationResult),
+              toolName,
+              toolResult: validationResult,
+              timestamp: new Date()
+            })
+
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(validationResult)
+            })
+
+            continue
+          }
+
+          // Check rate limits (using a simple conversation identifier)
+          const conversationId = context.customerId || 'anonymous'
+          const rateLimit = checkRateLimit(toolName, conversationId)
+          if (!rateLimit.allowed) {
+            const rateLimitResult: ToolResult = {
+              success: false,
+              error: 'rate_limited',
+              message: rateLimit.message
+            }
+
+            onStream?.({
+              type: 'tool_result',
+              toolName,
+              toolResult: rateLimitResult
+            })
+
+            turns.push({
+              role: 'tool',
+              content: JSON.stringify(rateLimitResult),
+              toolName,
+              toolResult: rateLimitResult,
+              timestamp: new Date()
+            })
+
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(rateLimitResult)
+            })
+
+            continue
+          }
 
           // Execute the tool
           const result = await executeAgentTool(toolName, toolArgs, context)
@@ -217,18 +334,65 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
     }
   }
 
+  // Save customer insights after conversation (non-blocking)
+  if (context.customerId && turns.length > 0) {
+    const toolResults = turns
+      .filter(t => t.role === 'tool' && t.toolResult)
+      .map(t => ({ toolName: t.toolName || '', result: t.toolResult as ToolResult }))
+
+    const insights = analyzeConversationForInsights(
+      messages.map(m => ({ role: m.role, content: m.content })),
+      toolResults
+    )
+
+    // Save insights asynchronously (don't block the response)
+    saveCustomerInsights(context.customerId, insights).catch(err => {
+      console.error('[runAgent] Failed to save customer insights:', err)
+    })
+  }
+
   return finalResponse
 }
 
 // =============================================================================
-// STREAMING AGENT HANDLER
+// STREAMING AGENT HANDLER (Provider-agnostic)
 // =============================================================================
 
 export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenerator<AgentStreamEvent> {
+  // Check which AI provider to use
+  const provider = getAIProvider()
+
+  if (provider === 'claude') {
+    // Delegate to Claude handler
+    yield* runClaudeAgentStream(options)
+    return
+  }
+
+  // OpenAI implementation below
   const { context, messages } = options
 
-  // Build system prompt
-  const systemPrompt = buildSystemPrompt(context)
+  // Load customer insights if customer is logged in
+  let enrichedContext = { ...context }
+  if (context.customerId) {
+    try {
+      const insights = await loadCustomerInsights(context.customerId)
+      if (insights) {
+        console.log('[runAgentStream] Loaded customer insights:', insights.conversation_style?.customer_type)
+        enrichedContext = {
+          ...context,
+          customerMemory: {
+            ...context.customerMemory,
+            preferences: insights.preferences as { spicy?: boolean; vegetarian?: boolean; notes?: string[] },
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[runAgentStream] Failed to load customer insights:', error)
+    }
+  }
+
+  // Build system prompt with enriched context
+  const systemPrompt = buildSystemPrompt(enrichedContext)
 
   // Convert tools to OpenAI format
   const tools = convertToolsToOpenAI(context)
@@ -324,14 +488,80 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
         // Execute each tool
         for (const toolCall of toolCalls) {
           const toolArgs = JSON.parse(toolCall.arguments)
+          const toolName = toolCall.name
 
           yield {
             type: 'tool_call',
-            toolName: toolCall.name,
+            toolName,
             toolArgs
           }
 
-          const result = await executeAgentTool(toolCall.name, toolArgs, context)
+          // Validate tool parameters before execution
+          const validation = validateToolParams(toolName, toolArgs, context)
+          if (!validation.valid) {
+            const validationResult: ToolResult = {
+              success: false,
+              error: validation.error,
+              message: validation.message
+            }
+
+            yield {
+              type: 'tool_result',
+              toolName,
+              toolResult: validationResult
+            }
+
+            turns.push({
+              role: 'tool',
+              content: JSON.stringify(validationResult),
+              toolName,
+              toolResult: validationResult,
+              timestamp: new Date()
+            })
+
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(validationResult)
+            })
+
+            continue
+          }
+
+          // Check rate limits
+          const conversationId = context.customerId || 'anonymous'
+          const rateLimit = checkRateLimit(toolName, conversationId)
+          if (!rateLimit.allowed) {
+            const rateLimitResult: ToolResult = {
+              success: false,
+              error: 'rate_limited',
+              message: rateLimit.message
+            }
+
+            yield {
+              type: 'tool_result',
+              toolName,
+              toolResult: rateLimitResult
+            }
+
+            turns.push({
+              role: 'tool',
+              content: JSON.stringify(rateLimitResult),
+              toolName,
+              toolResult: rateLimitResult,
+              timestamp: new Date()
+            })
+
+            openaiMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(rateLimitResult)
+            })
+
+            continue
+          }
+
+          const result = await executeAgentTool(toolName, toolArgs, context)
 
           yield {
             type: 'tool_result',
@@ -360,6 +590,22 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
 
       // Final response
       const finalResponse = parseAgentOutput(accumulatedContent, turns, context.providerId || context.cartProviderId)
+
+      // Save customer insights after conversation (non-blocking)
+      if (context.customerId && turns.length > 0) {
+        const toolResults = turns
+          .filter(t => t.role === 'tool' && t.toolResult)
+          .map(t => ({ toolName: t.toolName || '', result: t.toolResult as ToolResult }))
+
+        const insights = analyzeConversationForInsights(
+          messages.map(m => ({ role: m.role, content: m.content })),
+          toolResults
+        )
+
+        saveCustomerInsights(context.customerId, insights).catch(err => {
+          console.error('[runAgentStream] Failed to save customer insights:', err)
+        })
+      }
 
       yield {
         type: 'done',
@@ -451,17 +697,64 @@ function generateDynamicQuickReplies(
     contentLower.includes('عرض') || contentLower.includes('خصم')
 
   // =================================================================
-  // CONTEXTUAL QUICK REPLIES
+  // CONTEXTUAL QUICK REPLIES (Order matters! Most decisive checks first)
   // =================================================================
 
+  // 🔴 HIGHEST PRIORITY: After adding to cart - always show cart buttons
+  // This MUST come first because cart action is the most decisive signal
+  if (hasCartAction) {
+    return {
+      suggestions: ['🛒 شوف السلة', '➕ أضف حاجة تانية', '✅ كمل للدفع'],
+      quickReplies: [
+        { title: '🛒 شوف السلة', payload: 'ايه في السلة؟' },
+        { title: '➕ أضف حاجة تانية', payload: 'عايز أضيف حاجة تانية' },
+        { title: '✅ كمل للدفع', payload: 'navigate:/ar/checkout' }
+      ]
+    }
+  }
+
+  // AI asking about provider preference (من مطعم معين؟ ولا أساعدك؟)
+  const isAskingProviderPreference =
+    (contentLower.includes('مطعم معين') || contentLower.includes('مكان معين')) &&
+    (contentLower.includes('أساعدك') || contentLower.includes('اختيار') || contentLower.includes('ولا'))
+
+  if (isAskingProviderPreference) {
+    return {
+      suggestions: ['🔍 ساعدني أختار', '🏪 عندي مطعم معين', '🔥 شوف العروض'],
+      quickReplies: [
+        { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار أحسن مكان' },
+        { title: '🏪 عندي مطعم معين', payload: 'أيوه عندي مطعم معين' },
+        { title: '🔥 شوف العروض', payload: 'ورّيني العروض الأول' }
+      ]
+    }
+  }
+
   // Size/Variant selection needed
-  if (isAskingVariant && hasProducts) {
+  // Only show size buttons if the content explicitly mentions these standard sizes
+  // Don't show for other variants like "عادي/سوبر" or "ربع كيلو/نص كيلو"
+  const hasStandardSizes = contentLower.includes('صغير') &&
+    contentLower.includes('وسط') &&
+    contentLower.includes('كبير')
+
+  if (isAskingVariant && hasProducts && hasStandardSizes) {
     return {
       suggestions: ['صغير', 'وسط', 'كبير'],
       quickReplies: [
         { title: '📏 صغير', payload: 'عايز الحجم الصغير' },
         { title: '📏 وسط', payload: 'عايز الحجم الوسط' },
         { title: '📏 كبير', payload: 'عايز الحجم الكبير' }
+      ]
+    }
+  }
+
+  // For other variant types (عادي/سوبر, ربع/نص كيلو), show generic add button
+  if (isAskingVariant && hasProducts && !hasStandardSizes) {
+    return {
+      suggestions: ['ضيف للسلة', 'تفاصيل أكتر'],
+      quickReplies: [
+        { title: '✅ ضيف للسلة', payload: 'ضيفه للسلة' },
+        { title: '📋 تفاصيل أكتر', payload: 'عايز تفاصيل أكتر' },
+        { title: '🔍 حاجة تانية', payload: 'عايز حاجة تانية' }
       ]
     }
   }
@@ -490,14 +783,20 @@ function generateDynamicQuickReplies(
     }
   }
 
-  // After adding to cart
-  if (hasCartAction) {
+  // Provider selection/disambiguation - when asking user to choose a provider
+  const isProviderSelection = contentLower.includes('تفضل تطلب من مين') ||
+    contentLower.includes('اختار المطعم') ||
+    contentLower.includes('تفضل مين') ||
+    (contentLower.includes('لقيت') && contentLower.includes('مكان'))
+
+  if (isProviderSelection) {
     return {
-      suggestions: ['🛒 شوف السلة', '➕ أضف حاجة تانية', '✅ كمل للدفع'],
+      suggestions: ['🏆 الأعلى تقييماً', '💰 الأرخص', '🔥 اللي عنده عروض'],
       quickReplies: [
-        { title: '🛒 شوف السلة', payload: 'ايه في السلة؟' },
-        { title: '➕ أضف حاجة تانية', payload: 'عايز أضيف حاجة تانية' },
-        { title: '✅ كمل للدفع', payload: 'navigate:/ar/checkout' }
+        { title: '🏆 الأعلى تقييماً', payload: 'عايز الأعلى تقييماً' },
+        { title: '💰 الأرخص', payload: 'عايز الأرخص' },
+        { title: '🔥 اللي عنده عروض', payload: 'عايز اللي عنده عروض' },
+        { title: '🔍 حاجة تانية', payload: 'عايز حاجة تانية خالص' }
       ]
     }
   }
@@ -602,26 +901,40 @@ function generateDynamicQuickReplies(
     }
   }
 
-  // Greeting/welcome context
+  // Greeting/welcome context - guide to provider selection
   if (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
-      contentLower.includes('صباح') || contentLower.includes('مساء')) {
+      contentLower.includes('صباح') || contentLower.includes('مساء') ||
+      contentLower.includes('عايز تطلب منين') || contentLower.includes('عايزة تطلبي منين')) {
     return {
-      suggestions: ['🍔 عايز آكل', '📦 طلباتي', '🔥 العروض'],
+      suggestions: ['🏪 عندي مكان معين', '🔍 ساعدني أختار', '🔥 اللي عندهم عروض'],
       quickReplies: [
-        { title: '🍔 عايز آكل', payload: 'عايز أطلب أكل' },
-        { title: '📦 طلباتي', payload: 'فين طلباتي؟' },
-        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
+        { title: '🏪 عندي مكان معين', payload: 'عايز أطلب من مكان معين' },
+        { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار مكان' },
+        { title: '🔥 اللي عندهم عروض', payload: 'ورّيني الأماكن اللي عندها عروض' }
       ]
     }
   }
 
-  // Default suggestions
+  // Default suggestions - context-aware
+  // If user has selected a provider, show menu option; otherwise guide to provider selection
+  if (providerId) {
+    return {
+      suggestions: ['🍽️ شوف المنيو', '🔥 العروض', '📦 طلباتي'],
+      quickReplies: [
+        { title: '🍽️ شوف المنيو', payload: menuPayload },
+        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
+        { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
+      ]
+    }
+  }
+
+  // No provider selected - guide to selection
   return {
-    suggestions: ['🍽️ شوف المنيو', '🔥 العروض', '📦 طلباتي'],
+    suggestions: ['🏪 عندي مكان معين', '🔍 ساعدني أختار', '🔥 اللي عندهم عروض'],
     quickReplies: [
-      { title: '🍽️ شوف المنيو', payload: menuPayload },
-      { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
-      { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
+      { title: '🏪 عندي مكان معين', payload: 'عايز أطلب من مكان معين' },
+      { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار مكان' },
+      { title: '🔥 اللي عندهم عروض', payload: 'ورّيني الأماكن اللي عندها عروض' }
     ]
   }
 }
@@ -680,7 +993,8 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
     content: sanitizedContent,
     suggestions: [],
     quickReplies: [],
-    products: []
+    products: [],
+    cartActions: []  // Collect ALL cart actions from multiple tool calls
   }
 
   // Track which tools were used
@@ -694,12 +1008,34 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
       }
 
       const result = turn.toolResult as ToolResult
+
+      // ═══════════════════════════════════════════════════════════════════
+      // FIX: Extract discovered_provider_id from tool results
+      // Check BOTH root level (lookup_provider) AND inside data (search_menu)
+      // ═══════════════════════════════════════════════════════════════════
+      if (result.discovered_provider_id && !response.discoveredProviderId) {
+        response.discoveredProviderId = result.discovered_provider_id
+        response.discoveredProviderName = result.discovered_provider_name
+        console.log('[parseAgentOutput] Discovered provider (root):', result.discovered_provider_id, result.discovered_provider_name)
+      }
+
       if (result.success && result.data) {
         const data = result.data as Record<string, unknown>
 
+        // Also check inside data (for search_menu)
+        if (data.discovered_provider_id && !response.discoveredProviderId) {
+          response.discoveredProviderId = data.discovered_provider_id as string
+          response.discoveredProviderName = data.discovered_provider_name as string | undefined
+          console.log('[parseAgentOutput] Discovered provider (data):', data.discovered_provider_id, data.discovered_provider_name)
+        }
+
         // Check for cart_action (from add_to_cart tool)
+        // Collect ALL cart actions instead of overwriting
         if (data.cart_action) {
-          response.cartAction = data.cart_action as AgentResponse['cartAction']
+          const cartAction = data.cart_action as AgentResponse['cartAction']
+          response.cartActions!.push(cartAction!)
+          // Also set single cartAction for backward compatibility (last one)
+          response.cartAction = cartAction
         }
 
         // Check if it's an array of menu items
@@ -715,6 +1051,30 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
               providerId: item.provider_id as string | undefined,
               providerName: (item.providers as { name_ar?: string })?.name_ar
             }))
+
+            // ═══════════════════════════════════════════════════════════════════
+            // FIX: Store pending item in sessionMemory for next request
+            // This allows the AI to remember the item IDs when user says "ضيف"
+            // ═══════════════════════════════════════════════════════════════════
+            const firstItem = items[0]
+            const variants = firstItem.variants as Array<{ id: string; name_ar: string; price: number }> | undefined
+
+            response.sessionMemory = {
+              pending_item: {
+                id: firstItem.id as string,
+                name_ar: firstItem.name_ar as string,
+                price: firstItem.price as number,
+                provider_id: firstItem.provider_id as string,
+                provider_name_ar: (firstItem.providers as { name_ar?: string })?.name_ar,
+                has_variants: firstItem.has_variants as boolean | undefined,
+                variants: variants?.map(v => ({
+                  id: v.id,
+                  name_ar: v.name_ar,
+                  price: v.price
+                }))
+              }
+            }
+            console.log('[parseAgentOutput] Stored pending item:', response.sessionMemory.pending_item?.name_ar, 'with', variants?.length || 0, 'variants')
           }
         }
       }
@@ -725,9 +1085,12 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
   // Use provider ID from first product if available, otherwise fall back to context
   const effectiveProviderId = response.products?.[0]?.providerId || providerId
 
+  // Check for cart actions (both singular and plural)
+  const hasAnyCartAction = !!(response.cartAction || (response.cartActions && response.cartActions.length > 0))
+
   const { suggestions, quickReplies } = generateDynamicQuickReplies(
     content,
-    !!response.cartAction,
+    hasAnyCartAction,
     !!(response.products && response.products.length > 0),
     response.products?.[0]?.id,
     toolsUsed,

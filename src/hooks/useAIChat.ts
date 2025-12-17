@@ -279,6 +279,11 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
                   quick_replies: parsed.quick_replies,
                   navigate_to: parsed.navigate_to,
                   cart_action: parsed.cart_action,
+                  cart_actions: parsed.cart_actions,  // Multiple cart actions support
+                  // FIX: Capture discovered provider ID from search results
+                  selected_provider_id: parsed.selected_provider_id,
+                  // FIX: Capture session memory for pending items
+                  memory: parsed.memory,
                 }
               } else if (currentEvent === 'error') {
                 throw new Error(parsed.error || 'حصل خطأ')
@@ -442,7 +447,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         })
       }
       // Handle single cart action (backward compatibility)
-      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD' || data.cart_action.type === 'CLEAR_CART' || data.cart_action.type === 'REMOVE_ITEM')) {
+      // Supports: ADD_ITEM, CLEAR_AND_ADD, CLEAR_CART, REMOVE_ITEM, UPDATE_QUANTITY
+      else if (data.cart_action && ['ADD_ITEM', 'CLEAR_AND_ADD', 'CLEAR_CART', 'REMOVE_ITEM', 'UPDATE_QUANTITY'].includes(data.cart_action.type)) {
         processCartAction(data.cart_action)
       }
 
@@ -670,6 +676,11 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
                   quick_replies: parsed.quick_replies,
                   navigate_to: parsed.navigate_to,
                   cart_action: parsed.cart_action,
+                  cart_actions: parsed.cart_actions,  // Multiple cart actions support
+                  // FIX: Capture discovered provider ID from search results
+                  selected_provider_id: parsed.selected_provider_id,
+                  // FIX: Capture session memory for pending items
+                  memory: parsed.memory,
                 }
               } else if (currentEvent === 'error') {
                 throw new Error(parsed.error || 'حصل خطأ')
@@ -824,7 +835,8 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         })
       }
       // Handle single cart action (backward compatibility)
-      else if (data.cart_action && (data.cart_action.type === 'ADD_ITEM' || data.cart_action.type === 'CLEAR_AND_ADD' || data.cart_action.type === 'CLEAR_CART' || data.cart_action.type === 'REMOVE_ITEM')) {
+      // Supports: ADD_ITEM, CLEAR_AND_ADD, CLEAR_CART, REMOVE_ITEM, UPDATE_QUANTITY
+      else if (data.cart_action && ['ADD_ITEM', 'CLEAR_AND_ADD', 'CLEAR_CART', 'REMOVE_ITEM', 'UPDATE_QUANTITY'].includes(data.cart_action.type)) {
         processCartAction(data.cart_action)
       }
 

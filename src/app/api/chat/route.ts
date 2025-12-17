@@ -11,6 +11,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { runAgentStream, type AgentStreamEvent, type AgentMessage } from '@/lib/ai/agentHandler'
 import type { AgentContext } from '@/lib/ai/agentPrompt'
 import { getCustomerMemory } from '@/lib/ai/customerMemory'
+import {
+  postProcessCartActions,
+  type CartAction,
+  type CartItem
+} from '@/lib/ai/chatProcessor'
 
 // =============================================================================
 // TYPES
@@ -27,12 +32,16 @@ interface ChatRequest {
   cart_provider_id?: string
   cart_provider_name?: string
   cart_items?: Array<{
+    menu_item_id: string  // For deduplication
     name_ar: string
     quantity: number
     unit_price: number
+    variant_id?: string   // For deduplication
     variant_name_ar?: string
   }>
   cart_total?: number
+  // Session memory for pending items from previous messages
+  memory?: Record<string, unknown>
 }
 
 // =============================================================================
@@ -93,17 +102,20 @@ export async function POST(request: NextRequest) {
       providerContext: body.selected_provider_id && body.selected_provider_name
         ? { id: body.selected_provider_id, name: body.selected_provider_name }
         : undefined,
-      // Map cart items to context format
+      // Map cart items to context format (with proper IDs for deduplication)
       cartItems: body.cart_items?.map(item => ({
-        id: item.name_ar, // Use name as ID since we don't have the actual ID
+        id: item.menu_item_id,
         name: item.name_ar,
         quantity: item.quantity,
-        price: item.unit_price
+        price: item.unit_price,
+        variant_id: item.variant_id
       })),
       cartProviderId: body.cart_provider_id,
       cartTotal: cartTotal,
       // Customer memory for personalization
-      customerMemory: customerMemory || undefined
+      customerMemory: customerMemory || undefined,
+      // Session memory for pending items/variants from previous messages
+      sessionMemory: body.memory as AgentContext['sessionMemory']
     }
 
     // Convert messages to agent format
@@ -156,8 +168,53 @@ export async function POST(request: NextRequest) {
               case 'done':
                 // Final response with all data
                 const response = event.response
+
+                // 🔄 POST-PROCESS: Deduplicate cart actions against existing cart
+                let processedCartActions = response?.cartActions
+                let cartWarnings: string[] = []
+                let cartErrors: string[] = []
+
+                if (response?.cartActions && response.cartActions.length > 0) {
+                  // Map existing cart items for deduplication check
+                  const existingCartItems: CartItem[] = (context.cartItems || []).map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    variant_id: item.variant_id
+                  }))
+
+                  // Post-process: merge duplicates within response + dedupe against cart
+                  const postProcessed = postProcessCartActions(
+                    response.cartActions as CartAction[],
+                    existingCartItems
+                  )
+
+                  processedCartActions = postProcessed.cartActions
+                  cartWarnings = postProcessed.warnings
+                  cartErrors = postProcessed.errors
+
+                  // Log skipped actions for debugging
+                  if (postProcessed.skippedActions.length > 0) {
+                    console.log('[Cart Dedup] Skipped duplicate actions:', postProcessed.skippedActions.map(a => a.menu_item_name_ar))
+                  }
+                  if (cartWarnings.length > 0) {
+                    console.log('[Cart Warnings]:', cartWarnings)
+                  }
+                }
+
+                // Build response content (append warnings if any)
+                let responseContent = response?.content || fullContent
+                if (cartWarnings.length > 0 && !cartErrors.length) {
+                  // Add warnings as hints to the user
+                  responseContent += '\n\n⚠️ ' + cartWarnings.join('\n⚠️ ')
+                }
+                if (cartErrors.length > 0) {
+                  responseContent += '\n\n❌ ' + cartErrors.join('\n❌ ')
+                }
+
                 controller.enqueue(sse.encode('message', {
-                  content: response?.content || fullContent,
+                  content: responseContent,
                   suggestions: response?.suggestions || [],
                   quick_replies: response?.quickReplies?.map(qr => ({
                     title: qr.title,
@@ -173,7 +230,15 @@ export async function POST(request: NextRequest) {
                     provider_name_ar: p.providerName
                   })) || [],
                   navigate_to: response?.navigateTo,
-                  cart_action: response?.cartAction
+                  cart_action: response?.cartAction,
+                  cart_actions: processedCartActions && processedCartActions.length > 0
+                    ? processedCartActions
+                    : undefined,  // Send array of cart actions for multiple items
+                  // FIX: Send discovered provider ID to frontend for context persistence
+                  selected_provider_id: response?.discoveredProviderId,
+                  selected_provider_name: response?.discoveredProviderName,
+                  // FIX: Send session memory for pending items
+                  memory: response?.sessionMemory
                 }))
                 break
 
@@ -252,17 +317,20 @@ export async function PUT(request: NextRequest) {
       providerContext: body.selected_provider_id && body.selected_provider_name
         ? { id: body.selected_provider_id, name: body.selected_provider_name }
         : undefined,
-      // Map cart items to context format
+      // Map cart items to context format (with proper IDs for deduplication)
       cartItems: body.cart_items?.map(item => ({
-        id: item.name_ar,
+        id: item.menu_item_id,
         name: item.name_ar,
         quantity: item.quantity,
-        price: item.unit_price
+        price: item.unit_price,
+        variant_id: item.variant_id
       })),
       cartProviderId: body.cart_provider_id,
       cartTotal: cartTotal,
       // Customer memory for personalization
-      customerMemory: customerMemory || undefined
+      customerMemory: customerMemory || undefined,
+      // Session memory for pending items/variants from previous messages
+      sessionMemory: body.memory as AgentContext['sessionMemory']
     }
 
     // Convert messages
@@ -289,11 +357,31 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // 🔄 POST-PROCESS: Deduplicate cart actions against existing cart
+    let processedCartActions = finalResponse?.cartActions
+    if (finalResponse?.cartActions && finalResponse.cartActions.length > 0) {
+      const existingCartItems: CartItem[] = (context.cartItems || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        variant_id: item.variant_id
+      }))
+
+      const postProcessed = postProcessCartActions(
+        finalResponse.cartActions as CartAction[],
+        existingCartItems
+      )
+
+      processedCartActions = postProcessed.cartActions
+    }
+
     return NextResponse.json({
       content: finalResponse?.content || fullContent,
       suggestions: finalResponse?.suggestions || [],
       quick_replies: finalResponse?.quickReplies || [],
-      products: finalResponse?.products || []
+      products: finalResponse?.products || [],
+      cart_actions: processedCartActions
     })
 
   } catch (error) {
