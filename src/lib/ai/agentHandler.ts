@@ -1010,17 +1010,24 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
       const result = turn.toolResult as ToolResult
 
       // ═══════════════════════════════════════════════════════════════════
-      // FIX: Extract discovered_provider_id from search_menu results
-      // This is at the root level of the result, not inside data
+      // FIX: Extract discovered_provider_id from tool results
+      // Check BOTH root level (lookup_provider) AND inside data (search_menu)
       // ═══════════════════════════════════════════════════════════════════
       if (result.discovered_provider_id && !response.discoveredProviderId) {
         response.discoveredProviderId = result.discovered_provider_id
         response.discoveredProviderName = result.discovered_provider_name
-        console.log('[parseAgentOutput] Discovered provider:', result.discovered_provider_id, result.discovered_provider_name)
+        console.log('[parseAgentOutput] Discovered provider (root):', result.discovered_provider_id, result.discovered_provider_name)
       }
 
       if (result.success && result.data) {
         const data = result.data as Record<string, unknown>
+
+        // Also check inside data (for search_menu)
+        if (data.discovered_provider_id && !response.discoveredProviderId) {
+          response.discoveredProviderId = data.discovered_provider_id as string
+          response.discoveredProviderName = data.discovered_provider_name as string | undefined
+          console.log('[parseAgentOutput] Discovered provider (data):', data.discovered_provider_id, data.discovered_provider_name)
+        }
 
         // Check for cart_action (from add_to_cart tool)
         // Collect ALL cart actions instead of overwriting

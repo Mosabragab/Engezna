@@ -395,6 +395,24 @@ export const AGENT_TOOLS: ToolDefinition[] = [
       required: ['city_id']
     }
   },
+  {
+    name: 'lookup_provider',
+    description: 'البحث عن تاجر بالاسم والحصول على معرفه - استخدمها لما العميل يختار تاجر معين بالاسم (مثال: "الصفا", "سلطان بيتزا")',
+    parameters: {
+      type: 'object',
+      properties: {
+        provider_name: {
+          type: 'string',
+          description: 'اسم التاجر المطلوب البحث عنه'
+        },
+        city_id: {
+          type: 'string',
+          description: 'معرف المدينة (اختياري)'
+        }
+      },
+      required: ['provider_name']
+    }
+  },
 
   // ─────────────────────────────────────────────────────────────────────────
   // 🛒 ORDER TOOLS
@@ -1877,6 +1895,120 @@ export async function executeAgentTool(
         const { data, error } = await query
         if (error) throw error
         return { success: true, data }
+      }
+
+      case 'lookup_provider': {
+        const { provider_name, city_id } = params as {
+          provider_name: string
+          city_id?: string
+        }
+
+        // Use context city_id as fallback
+        const effectiveCityId = city_id || context.cityId
+
+        // Normalize the search name for better matching
+        const normalizedSearchName = normalizeArabic(provider_name.trim().toLowerCase())
+
+        // Build query - search by name with fuzzy matching
+        let query = supabase
+          .from('providers')
+          .select('id, name_ar, name_en, logo_url, rating, category, status, city_id')
+          .in('status', ['open', 'closed', 'temporarily_paused'])
+
+        // Add city filter if available
+        if (effectiveCityId) {
+          query = query.eq('city_id', effectiveCityId)
+        }
+
+        const { data: providers, error } = await query
+
+        if (error) {
+          console.error('[lookup_provider] Error:', error)
+          return { success: false, error: error.message }
+        }
+
+        if (!providers || providers.length === 0) {
+          return {
+            success: false,
+            message: `مش لاقي تاجر باسم "${provider_name}"`
+          }
+        }
+
+        // Find best match using normalized comparison
+        const matches = providers.filter(p => {
+          const normalizedProviderName = normalizeArabic(p.name_ar?.toLowerCase() || '')
+          return normalizedProviderName.includes(normalizedSearchName) ||
+                 normalizedSearchName.includes(normalizedProviderName) ||
+                 p.name_ar?.toLowerCase().includes(provider_name.toLowerCase()) ||
+                 provider_name.toLowerCase().includes(p.name_ar?.toLowerCase() || '')
+        })
+
+        if (matches.length === 0) {
+          // Try partial match
+          const partialMatches = providers.filter(p => {
+            const words = provider_name.split(/\s+/)
+            return words.some(word =>
+              normalizeArabic(p.name_ar?.toLowerCase() || '').includes(normalizeArabic(word.toLowerCase()))
+            )
+          })
+
+          if (partialMatches.length === 1) {
+            const provider = partialMatches[0]
+            console.log('[lookup_provider] Found by partial match:', provider.name_ar, provider.id)
+            return {
+              success: true,
+              data: {
+                provider_id: provider.id,
+                provider_name: provider.name_ar,
+                category: provider.category,
+                status: provider.status
+              },
+              // Return as discovered provider for context persistence
+              discovered_provider_id: provider.id,
+              discovered_provider_name: provider.name_ar,
+              message: `لقيت "${provider.name_ar}"`
+            }
+          } else if (partialMatches.length > 1) {
+            return {
+              success: true,
+              disambiguation_needed: true,
+              providers: partialMatches.map(p => ({
+                id: p.id,
+                name_ar: p.name_ar,
+                logo_url: p.logo_url,
+                rating: p.rating,
+                item_count: 0,
+                status: p.status
+              })),
+              message: `لقيت ${partialMatches.length} تجار ممكن يكونوا اللي تقصدهم`
+            }
+          }
+
+          return {
+            success: false,
+            message: `مش لاقي تاجر باسم "${provider_name}". ممكن تقولي الاسم تاني؟`
+          }
+        }
+
+        // Return the best match (first one, or only one if exact)
+        const provider = matches[0]
+        console.log('[lookup_provider] Found:', provider.name_ar, provider.id)
+
+        return {
+          success: true,
+          data: {
+            provider_id: provider.id,
+            provider_name: provider.name_ar,
+            category: provider.category,
+            status: provider.status
+          },
+          // Return as discovered provider for context persistence
+          discovered_provider_id: provider.id,
+          discovered_provider_name: provider.name_ar,
+          message: matches.length === 1
+            ? `لقيت "${provider.name_ar}"`
+            : `لقيت "${provider.name_ar}" - لو مش ده تقصده قولي`
+        }
       }
 
       // ─────────────────────────────────────────────────────────────────────
