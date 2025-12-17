@@ -901,10 +901,32 @@ function generateDynamicQuickReplies(
     }
   }
 
+  // Provider already selected - asking what user wants to order
+  // This should come BEFORE generic greeting detection
+  const isAskingWhatToOrder = (
+    contentLower.includes('عايز تطلب ايه') ||
+    contentLower.includes('عايز ايه') ||
+    contentLower.includes('حاضر') ||
+    contentLower.includes('عايز تاكل ايه') ||
+    contentLower.includes('تطلب ايه')
+  ) && providerId
+
+  if (isAskingWhatToOrder) {
+    return {
+      suggestions: ['🛒 شوف المنتجات', '🔍 بحث', '🔥 العروض'],
+      quickReplies: [
+        { title: '🛒 شوف المنتجات', payload: menuPayload },
+        { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' },
+        { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
+      ]
+    }
+  }
+
   // Greeting/welcome context - guide to provider selection
-  if (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
+  // Only show this if NO provider is selected yet
+  if (!providerId && (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
       contentLower.includes('صباح') || contentLower.includes('مساء') ||
-      contentLower.includes('عايز تطلب منين') || contentLower.includes('عايزة تطلبي منين')) {
+      contentLower.includes('عايز تطلب منين') || contentLower.includes('عايزة تطلبي منين'))) {
     return {
       suggestions: ['🏪 عندي مكان معين', '🔍 ساعدني أختار', '🔥 اللي عندهم عروض'],
       quickReplies: [
