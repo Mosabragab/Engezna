@@ -134,13 +134,42 @@ export interface ToolContext {
     orderCount?: number
     lastVisit?: string
   }
+  // Session memory for pending items from chat
+  sessionMemory?: {
+    pending_item?: {
+      id: string
+      name_ar: string
+      price: number
+      provider_id: string
+      provider_name_ar?: string
+      has_variants?: boolean
+      variants?: Array<{
+        id: string
+        name_ar: string
+        price: number
+      }>
+    }
+    pending_variant?: {
+      id: string
+      name_ar: string
+      price: number
+    }
+    pending_quantity?: number
+    awaiting_quantity?: boolean
+    awaiting_confirmation?: boolean
+  }
 }
 
 // Helper to get effective provider ID from context
 function getEffectiveProviderId(params: { provider_id?: string }, context: ToolContext): string | undefined {
-  // Priority: explicit param > cart provider > page context provider
+  // Priority: explicit param > pending_item > cart provider > page context provider
   // FIX: Use getValidUUID to reject "undefined" and "null" strings
-  return getValidUUID(params.provider_id, context.cartProviderId, context.providerId) || undefined
+  return getValidUUID(
+    params.provider_id,
+    context.sessionMemory?.pending_item?.provider_id,
+    context.cartProviderId,
+    context.providerId
+  ) || undefined
 }
 
 // =============================================================================
@@ -410,7 +439,7 @@ export const AGENT_TOOLS: ToolDefinition[] = [
         category: {
           type: 'string',
           description: 'نوع التاجر (مطعم، كافيه، سوبر ماركت، إلخ)',
-          enum: ['restaurant_cafe', 'coffee_patisserie', 'grocery', 'vegetables_fruits']
+          enum: ['restaurant_cafe', 'coffee_sweets', 'grocery', 'vegetables_fruits']
         },
         search_query: {
           type: 'string',
@@ -436,6 +465,34 @@ export const AGENT_TOOLS: ToolDefinition[] = [
         }
       },
       required: ['provider_name']
+    }
+  },
+  {
+    name: 'get_business_categories',
+    description: 'الحصول على أقسام البيزنس المتاحة (مطاعم، سوبر ماركت، خضار، بن) - استخدمها لما العميل يسأل عن الأقسام أو يختار قسم',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: 'get_providers_by_category',
+    description: 'الحصول على مقدمي الخدمات في قسم معين (مثال: كل السوبر ماركت، كل مطاعم الأكل)',
+    parameters: {
+      type: 'object',
+      properties: {
+        category_code: {
+          type: 'string',
+          description: 'كود القسم',
+          enum: ['restaurant_cafe', 'coffee_sweets', 'grocery', 'vegetables_fruits']
+        },
+        city_id: {
+          type: 'string',
+          description: 'معرف المدينة (اختياري)'
+        }
+      },
+      required: ['category_code']
     }
   },
 
@@ -1484,9 +1541,12 @@ export async function executeAgentTool(
 
         // ═══════════════════════════════════════════════════════════════
         // FALLBACK: Use context provider_id if AI forgot to pass it
-        // Priority: explicit param > cart provider > page context provider
+        // Priority: explicit param > pending_item > cart provider > page context
         // ═══════════════════════════════════════════════════════════════
-        const provider_id = param_provider_id || context.cartProviderId || context.providerId
+        const provider_id = param_provider_id
+          || context.sessionMemory?.pending_item?.provider_id
+          || context.cartProviderId
+          || context.providerId
 
         // ═══════════════════════════════════════════════════════════════
         // DETAILED LOGGING: Track why add_to_cart fails
@@ -1502,6 +1562,7 @@ export async function executeAgentTool(
           variant_name,
           contextProviderId: context.providerId,
           contextCartProviderId: context.cartProviderId,
+          sessionMemoryProviderId: context.sessionMemory?.pending_item?.provider_id,
           usedFallback: !param_provider_id && !!provider_id
         })
 
@@ -2099,6 +2160,123 @@ export async function executeAgentTool(
           message: matches.length === 1
             ? `لقيت "${provider.name_ar}"`
             : `لقيت "${provider.name_ar}" - لو مش ده تقصده قولي`
+        }
+      }
+
+      case 'get_business_categories': {
+        // Get all active business categories
+        const { data: categories, error } = await supabase
+          .from('business_categories')
+          .select('id, code, name_ar, name_en, description_ar, icon, color, display_order')
+          .eq('is_active', true)
+          .order('display_order', { ascending: true })
+
+        if (error) {
+          console.error('[get_business_categories] Error:', error)
+          // Fallback to hardcoded categories if table doesn't exist
+          return {
+            success: true,
+            data: [
+              { code: 'restaurant_cafe', name_ar: 'مطاعم وكافيهات', icon: '🍽️' },
+              { code: 'coffee_sweets', name_ar: 'البن والحلويات', icon: '☕' },
+              { code: 'grocery', name_ar: 'سوبر ماركت', icon: '🛒' },
+              { code: 'vegetables_fruits', name_ar: 'خضروات وفواكه', icon: '🥬' },
+            ],
+            message: 'إنجزنا عندها 4 أقسام:\n🍽️ مطاعم وكافيهات\n☕ البن والحلويات\n🛒 سوبر ماركت\n🥬 خضروات وفواكه\nاختار القسم اللي عايز تطلب منه!'
+          }
+        }
+
+        return {
+          success: true,
+          data: categories,
+          message: `إنجزنا عندها ${categories?.length || 4} أقسام:\n${categories?.map(c => `${c.icon || ''} ${c.name_ar}`).join('\n') || ''}\nاختار القسم اللي عايز تطلب منه!`
+        }
+      }
+
+      case 'get_providers_by_category': {
+        const { category_code, city_id: param_city_id } = params as {
+          category_code: string
+          city_id?: string
+        }
+
+        const effectiveCityId = param_city_id || context.cityId
+
+        // Category name mapping for user-friendly messages
+        const categoryNames: Record<string, string> = {
+          'restaurant_cafe': 'مطاعم وكافيهات',
+          'coffee_sweets': 'البن والحلويات',
+          'grocery': 'سوبر ماركت',
+          'vegetables_fruits': 'خضروات وفواكه'
+        }
+
+        let query = supabase
+          .from('providers')
+          .select('id, name_ar, logo_url, rating, total_reviews, delivery_fee, estimated_delivery_time_min, category, status')
+          .eq('category', category_code)
+          .in('status', ['open', 'closed', 'temporarily_paused'])
+          .order('rating', { ascending: false })
+          .limit(20)
+
+        if (effectiveCityId) {
+          query = query.eq('city_id', effectiveCityId)
+        }
+
+        const { data: providers, error } = await query
+
+        if (error) {
+          console.error('[get_providers_by_category] Error:', error)
+          return { success: false, error: error.message }
+        }
+
+        const categoryName = categoryNames[category_code] || category_code
+
+        if (!providers || providers.length === 0) {
+          return {
+            success: true,
+            data: [],
+            message: `للأسف مفيش ${categoryName} متاح في منطقتك دلوقتي 😕\nجرب قسم تاني أو ابحث عن منتج معين!`
+          }
+        }
+
+        // If only 1 provider, auto-select it for better UX
+        if (providers.length === 1) {
+          const provider = providers[0]
+          return {
+            success: true,
+            data: providers,
+            providers: providers.map(p => ({
+              id: p.id,
+              name_ar: p.name_ar,
+              logo_url: p.logo_url,
+              rating: p.rating,
+              total_reviews: p.total_reviews,
+              delivery_fee: p.delivery_fee,
+              estimated_delivery_time_min: p.estimated_delivery_time_min,
+              status: p.status,
+              item_count: 0
+            })),
+            // Auto-select single provider
+            discovered_provider_id: provider.id,
+            discovered_provider_name: provider.name_ar,
+            message: `لقيت ${categoryName} واحد في منطقتك! 🎉\n\n🏪 ${provider.name_ar}\n⭐ التقييم: ${provider.rating || 'جديد'} | عدد التقييمات: ${provider.total_reviews || 0}\n💰 رسوم التوصيل: ${provider.delivery_fee || 0} ج.م\n⏳ الوقت المتوقع للتوصيل: ${provider.estimated_delivery_time_min || 30} دقيقة\n\nاختار ${provider.name_ar}، وأنا جاهز أساعدك بالطلب! عايز تطلب إيه؟ 🛒`
+          }
+        }
+
+        return {
+          success: true,
+          data: providers,
+          providers: providers.map(p => ({
+            id: p.id,
+            name_ar: p.name_ar,
+            logo_url: p.logo_url,
+            rating: p.rating,
+            total_reviews: p.total_reviews,
+            delivery_fee: p.delivery_fee,
+            estimated_delivery_time_min: p.estimated_delivery_time_min,
+            status: p.status,
+            item_count: 0
+          })),
+          message: `لقيت ${providers.length} ${categoryName} في منطقتك! 🎉\nاختار المكان اللي عايز تطلب منه:`
         }
       }
 
