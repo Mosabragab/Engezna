@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { CustomerLayout } from '@/components/customer/layout'
@@ -13,7 +13,6 @@ import {
   NearbySection,
 } from '@/components/customer/home'
 import { ChatFAB, SmartAssistant } from '@/components/customer/chat'
-import { useGuestLocation } from '@/lib/hooks/useGuestLocation'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
@@ -69,14 +68,12 @@ export default function HomePage() {
   const locale = useLocale()
   const router = useRouter()
   const { addItem, clearCart } = useCart()
-  const { location: guestLocation } = useGuestLocation()
-  const guestCityId = guestLocation.cityId
-  const guestGovernorateId = guestLocation.governorateId
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [lastOrder, setLastOrder] = useState<LastOrderDisplay | null>(null)
   const [nearbyProviders, setNearbyProviders] = useState<any[]>([])
   const [topRatedProviders, setTopRatedProviders] = useState<any[]>([])
   const [userCityId, setUserCityId] = useState<string | null>(null)
+  const [userGovernorateId, setUserGovernorateId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | undefined>()
   const [isReordering, setIsReordering] = useState(false)
   const [isCheckingLocation, setIsCheckingLocation] = useState(true)
@@ -111,7 +108,13 @@ export default function HomePage() {
           router.replace(`/${locale}/welcome`)
           return
         }
-        // Guest has location, proceed
+        // Guest has location, store it and proceed
+        if (guestLocation.cityId) {
+          setUserCityId(guestLocation.cityId)
+        }
+        if (guestLocation.governorateId) {
+          setUserGovernorateId(guestLocation.governorateId)
+        }
         setIsCheckingLocation(false)
       }
     }
@@ -129,7 +132,15 @@ export default function HomePage() {
 
   // Listen for guest location changes
   useEffect(() => {
-    const handleLocationChange = () => {
+    const handleLocationChange = (event: Event) => {
+      const customEvent = event as CustomEvent
+      const newLocation = customEvent.detail
+      if (newLocation?.cityId) {
+        setUserCityId(newLocation.cityId)
+      }
+      if (newLocation?.governorateId) {
+        setUserGovernorateId(newLocation.governorateId)
+      }
       loadUserCityAndProviders()
     }
     window.addEventListener('guestLocationChanged', handleLocationChange)
@@ -460,8 +471,8 @@ export default function HomePage() {
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         userId={userId}
-        cityId={userCityId || guestCityId || undefined}
-        governorateId={guestGovernorateId || undefined}
+        cityId={userCityId || undefined}
+        governorateId={userGovernorateId || undefined}
       />
     </CustomerLayout>
   )
