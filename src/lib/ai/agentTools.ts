@@ -6,6 +6,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
+import { getEmbeddingCached } from './embeddings'
 
 // =============================================================================
 // ARABIC TEXT NORMALIZATION (Client-side fallback)
@@ -54,6 +55,11 @@ export interface ToolResult {
   }>
   total_providers?: number
   total_items?: number
+  // FIX: Additional properties for enhanced search results
+  sample_items?: unknown[] // Sample items when single provider found
+  fallback_items?: unknown[] // Fallback items when no categories exist
+  discovered_provider_id?: string // Provider ID discovered during search
+  discovered_provider_name?: string // Provider name discovered during search
 }
 
 export interface ToolDefinition {
@@ -606,25 +612,92 @@ export async function executeAgentTool(
       // 🍽️ MENU TOOLS
       // ─────────────────────────────────────────────────────────────────────
       case 'get_provider_categories': {
-        const { provider_id } = params as { provider_id: string }
+        const { provider_id: param_provider_id } = params as { provider_id?: string }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // FIX #3: Use context provider_id as fallback
+        // This enables "show menu categories" after provider discovery
+        // ═══════════════════════════════════════════════════════════════════
+        const effectiveProviderId = param_provider_id || context.providerId || context.cartProviderId
+
+        if (!effectiveProviderId) {
+          return {
+            success: false,
+            error: 'missing_provider_id',
+            message: 'محتاج أعرف انت في أي مطعم عشان أجيب الأقسام. اختار مطعم الأول!'
+          }
+        }
+
+        console.log('[get_provider_categories] Using provider:', effectiveProviderId)
+
         const { data, error } = await supabase
           .from('provider_categories')
           .select('id, name_ar, name_en, description_ar, icon, display_order')
-          .eq('provider_id', provider_id)
+          .eq('provider_id', effectiveProviderId)
           .eq('is_active', true)
           .order('display_order')
 
         if (error) throw error
+
+        // ═══════════════════════════════════════════════════════════════════
+        // FIX #3 CONTINUED: Fallback to showing items if no categories exist
+        // Some providers don't have categories, so show items directly
+        // ═══════════════════════════════════════════════════════════════════
+        if (!data || data.length === 0) {
+          console.log('[get_provider_categories] No categories found, fetching items directly')
+
+          const { data: items, error: itemsError } = await supabase
+            .from('menu_items')
+            .select(`
+              id, name_ar, name_en, description_ar, price, original_price,
+              image_url, is_available, has_stock, has_variants, pricing_type
+            `)
+            .eq('provider_id', effectiveProviderId)
+            .eq('is_available', true)
+            .order('display_order')
+            .limit(15)
+
+          if (itemsError) throw itemsError
+
+          return {
+            success: true,
+            data: [],
+            message: 'المطعم ده مش عنده أقسام، بس لقيتلك أصناف مباشرة:',
+            fallback_items: items
+          }
+        }
+
         return { success: true, data }
       }
 
       case 'get_menu_items': {
-        const { provider_id, category_id, search_query, limit = 20 } = params as {
-          provider_id: string
+        const { provider_id: param_provider_id, category_id, search_query, limit = 20 } = params as {
+          provider_id?: string
           category_id?: string
           search_query?: string
           limit?: number
         }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // FIX #2: Use context provider_id as fallback
+        // This enables "show menu" after provider discovery without explicit ID
+        // ═══════════════════════════════════════════════════════════════════
+        const effectiveProviderId = param_provider_id || context.providerId || context.cartProviderId
+
+        if (!effectiveProviderId) {
+          return {
+            success: false,
+            error: 'missing_provider_id',
+            message: 'محتاج أعرف انت في أي مطعم عشان أجيب المنيو. اختار مطعم الأول!'
+          }
+        }
+
+        console.log('[get_menu_items] Using provider:', {
+          param: param_provider_id,
+          context: context.providerId,
+          cart: context.cartProviderId,
+          effective: effectiveProviderId
+        })
 
         let query = supabase
           .from('menu_items')
@@ -632,7 +705,7 @@ export async function executeAgentTool(
             id, name_ar, name_en, description_ar, price, original_price,
             image_url, is_available, has_stock, has_variants, pricing_type, provider_category_id
           `)
-          .eq('provider_id', provider_id)
+          .eq('provider_id', effectiveProviderId)
           .eq('is_available', true)
           .order('display_order')
           .limit(limit)
@@ -746,6 +819,23 @@ export async function executeAgentTool(
         // NOTE: Arabic normalization is handled by the DB function (normalize_arabic)
         // Don't normalize here as fallback ILIKE queries need the original text
 
+        // ═══════════════════════════════════════════════════════════════════
+        // FIX #4: Detect English/Latin text and use vector search
+        // This helps with queries like "quatro formag" → "بيتزا فور تشيز"
+        // ═══════════════════════════════════════════════════════════════════
+        const isLatinText = /^[a-zA-Z0-9\s]+$/.test(query.trim())
+        let queryEmbedding: number[] | null = null
+
+        if (isLatinText) {
+          console.log('[search_menu] Latin text detected, generating embedding for semantic search')
+          try {
+            queryEmbedding = await getEmbeddingCached(query)
+          } catch (embeddingError) {
+            console.error('[search_menu] Failed to generate embedding:', embeddingError)
+            // Continue with text search as fallback
+          }
+        }
+
         // Helper function to fetch variants for items
         const fetchVariantsForItems = async (items: Array<{ id: string; has_variants: boolean | null }>) => {
           const itemsWithVariants = items.filter(item => item.has_variants)
@@ -790,19 +880,41 @@ export async function executeAgentTool(
         const effectiveCityId = city_id || context.cityId
 
         // ═══════════════════════════════════════════════════════════════════
-        // Try Hybrid Search first (uses fuzzy matching + keyword matching)
+        // Try Hybrid Search first (uses fuzzy matching + keyword matching + semantic)
         // Falls back to simple search if function doesn't exist
         // ═══════════════════════════════════════════════════════════════════
 
         try {
-          // Use simple_search_menu for better results (fuzzy + keyword)
-          const { data: hybridResults, error: hybridError } = await supabase
-            .rpc('simple_search_menu', {
-              p_query: query,
-              p_provider_id: effectiveProviderId || null,
-              p_city_id: effectiveCityId || null,
-              p_limit: 15
-            })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let hybridResults: any[] | null = null
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let hybridError: any = null
+
+          // FIX #4 CONTINUED: Use hybrid_search_menu with embedding for Latin text
+          if (queryEmbedding) {
+            console.log('[search_menu] Using hybrid_search_menu with embedding')
+            const result = await supabase
+              .rpc('hybrid_search_menu', {
+                p_query: query,
+                p_query_embedding: JSON.stringify(queryEmbedding),
+                p_provider_id: effectiveProviderId || null,
+                p_city_id: effectiveCityId || null,
+                p_limit: 15
+              })
+            hybridResults = result.data
+            hybridError = result.error
+          } else {
+            // Use simple_search_menu for Arabic text (fuzzy + keyword)
+            const result = await supabase
+              .rpc('simple_search_menu', {
+                p_query: query,
+                p_provider_id: effectiveProviderId || null,
+                p_city_id: effectiveCityId || null,
+                p_limit: 15
+              })
+            hybridResults = result.data
+            hybridError = result.error
+          }
 
           // Log for debugging - ENHANCED
           console.log('[search_menu] === HYBRID SEARCH RESULT ===', {
@@ -868,9 +980,25 @@ export async function executeAgentTool(
               }))
 
               // ALWAYS do PROVIDER FIRST - even with 1 provider
+              // BUT also include sample items so AI can show them immediately
               const message = uniqueProviders.length === 1
                 ? `لقيت "${query}" في ${uniqueProviders[0].name_ar}! تحب تشوف المنيو بتاعهم؟`
                 : `لقيت "${query}" في ${uniqueProviders.length} مكان! تفضل تطلب من مين؟`
+
+              // ═══════════════════════════════════════════════════════════════════
+              // FIX #1: Include sample items when single provider found
+              // This allows AI to show items immediately without another search
+              // ═══════════════════════════════════════════════════════════════════
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              let sampleItems: any[] = []
+              if (uniqueProviders.length === 1) {
+                // Get top 5 items from this provider for immediate display
+                const providerId = uniqueProviders[0].id
+                const providerItems = formattedResults.filter(
+                  (item: { provider_id: string }) => item.provider_id === providerId
+                ).slice(0, 5)
+                sampleItems = await fetchVariantsForItems(providerItems) as any[]
+              }
 
               return {
                 success: true,
@@ -879,7 +1007,11 @@ export async function executeAgentTool(
                 message,
                 providers: uniqueProviders,
                 total_providers: uniqueProviders.length,
-                total_items: formattedResults.length
+                total_items: formattedResults.length,
+                // FIX #1 CONTINUED: Include sample items and discovered provider
+                sample_items: sampleItems.length > 0 ? sampleItems : undefined,
+                discovered_provider_id: uniqueProviders.length === 1 ? uniqueProviders[0].id : undefined,
+                discovered_provider_name: uniqueProviders.length === 1 ? uniqueProviders[0].name_ar : undefined
               }
             }
 
