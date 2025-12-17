@@ -28,6 +28,30 @@ function normalizeArabic(text: string): string {
 }
 
 // =============================================================================
+// UUID VALIDATION HELPER
+// =============================================================================
+
+/**
+ * Validate UUID format - prevents "undefined" and "null" strings from being
+ * passed to Supabase queries which causes PostgreSQL errors
+ */
+function isValidUUID(id: string | undefined | null): id is string {
+  if (!id || id === 'undefined' || id === 'null') return false
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(id)
+}
+
+/**
+ * Get first valid UUID from multiple options
+ */
+function getValidUUID(...ids: (string | undefined | null)[]): string | null {
+  for (const id of ids) {
+    if (isValidUUID(id)) return id
+  }
+  return null
+}
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -115,7 +139,8 @@ export interface ToolContext {
 // Helper to get effective provider ID from context
 function getEffectiveProviderId(params: { provider_id?: string }, context: ToolContext): string | undefined {
   // Priority: explicit param > cart provider > page context provider
-  return params.provider_id || context.cartProviderId || context.providerId
+  // FIX: Use getValidUUID to reject "undefined" and "null" strings
+  return getValidUUID(params.provider_id, context.cartProviderId, context.providerId) || undefined
 }
 
 // =============================================================================
@@ -635,8 +660,9 @@ export async function executeAgentTool(
         // ═══════════════════════════════════════════════════════════════════
         // FIX #3: Use context provider_id as fallback
         // This enables "show menu categories" after provider discovery
+        // FIX: Use getValidUUID helper to reject "undefined" string
         // ═══════════════════════════════════════════════════════════════════
-        const effectiveProviderId = param_provider_id || context.providerId || context.cartProviderId
+        const effectiveProviderId = getValidUUID(param_provider_id, context.providerId, context.cartProviderId)
 
         if (!effectiveProviderId) {
           return {
@@ -699,8 +725,9 @@ export async function executeAgentTool(
         // ═══════════════════════════════════════════════════════════════════
         // FIX #2: Use context provider_id as fallback
         // This enables "show menu" after provider discovery without explicit ID
+        // FIX: Use getValidUUID helper to reject "undefined" string
         // ═══════════════════════════════════════════════════════════════════
-        const effectiveProviderId = param_provider_id || context.providerId || context.cartProviderId
+        const effectiveProviderId = getValidUUID(param_provider_id, context.providerId, context.cartProviderId)
 
         if (!effectiveProviderId) {
           return {
