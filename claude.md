@@ -72,7 +72,7 @@
 ### Phase 1: Security Fixes
 | Fix | File | Description |
 |-----|------|-------------|
-| API Authentication | `src/app/api/voice-order/process/route.ts` | Added user authentication check |
+| API Authentication | `src/app/api/chat/route.ts` | Added user authentication check |
 | Route Protection | `src/lib/supabase/middleware.ts` | Enabled protection for admin/provider/checkout |
 | Variant Price Fix | `src/app/[locale]/checkout/page.tsx` | Fixed variant price calculation in orders |
 | Dynamic Commission | `src/app/[locale]/provider/finance/page.tsx` | Commission rate from database per provider |
@@ -1111,12 +1111,15 @@ const categories = await supabase.from('provider_categories').select('*')
   - Updated `fetchNearbyProviders` and `fetchTopRatedProviders` to filter by city
   - Updated `useProviders` hook to support `cityId` option
   - Display user's city name with link to change location
-- ✅ **Chat & Order Feature** (تحويل من الصوت للدردشة - Session 15):
-  - تم تحويل VoiceOrderFAB إلى ChatFAB (زر دردشة بدل ميكروفون)
-  - تم إنشاء TextChat بدلاً من VoiceOrderChat (نص فقط بدون صوت)
-  - إزالة زر الميكروفون من HeroSection و SearchBar
-  - الإبقاء على OpenAI للمعالجة الذكية
-  - حذف Deepgram transcribe API
+- ✅ **🤖 AI Smart Assistant - أحمد (مساعد إنجزنا الذكي)**:
+  - مساعد ذكي للطلب بالدردشة الطبيعية بالعربية المصرية
+  - **AI Agent Architecture:** GPT-4o-mini + Function Calling (22 أداة)
+  - **Smart Search:** Arabic normalization + synonym expansion (كفتة↔كباب, حلويات↔شوكولاتة)
+  - **Session Memory:** يتذكر المنتج المعلق والـ variants لسهولة الإضافة للسلة
+  - **Context-Aware:** يتذكر التاجر المختار ومحتويات السلة
+  - **Files:** `src/lib/ai/agentTools.ts`, `src/lib/ai/agentPrompt.ts`, `src/lib/ai/agentHandler.ts`
+  - **API:** `POST /api/chat` (Streaming SSE)
+  - **Docs:** `docs/AI_SMART_ASSISTANT.md`
 - ✅ **Header Component Improvements**:
   - Added `hideAuth` prop to hide auth section for internal pages
   - Added RTL-aware arrow icons (ArrowLeft/ArrowRight) to back button
@@ -1611,12 +1614,12 @@ The Supabase Storage bucket is now configured:
 - ✅ مؤشر جاهزية التوسع لكل محافظة (0-100%)
 - ✅ توصيات ذكية للتوسع
 
-**🎉 Session 15 (Part 1): Voice to Chat Transition (دردش واطلب)!**
+**🎉 Session 15 (Part 1): AI Chat to Order - مساعد أحمد الذكي!**
 - ✅ إصلاح وميض شارة الإشعارات
-- ✅ تحويل ميزة الطلب الصوتي إلى الدردشة النصية
-- ✅ ChatFAB بدلاً من VoiceOrderFAB
-- ✅ TextChat بدلاً من VoiceOrderChat
-- ✅ إزالة Deepgram والإبقاء على OpenAI
+- ✅ 🤖 **AI Smart Assistant (أحمد)** - مساعد ذكي للطلب بالدردشة
+- ✅ AI Agent Architecture: GPT-4o-mini + Function Calling
+- ✅ 22 أداة للبحث والطلب وتتبع الطلبات
+- ✅ ChatFAB للوصول السريع للمساعد الذكي
 
 **🎉 Session 14: Financial UX & Security Updates!**
 - ✅ Security Update: Patched CVE-2025-55182 & CVE-2025-66478 (RCE vulnerabilities)
@@ -1795,7 +1798,7 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 
 ---
 
-## 📋 Session 15 Part 1: Voice to Chat Transition (December 7, 2025)
+## 📋 Session 15 Part 1: AI Chat to Order - مساعد أحمد الذكي (December 7, 2025)
 
 ### ✅ المهام المكتملة
 
@@ -1805,17 +1808,24 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 - **الحل:** إزالة كلاس `animate-pulse` من شارة العدد
 - **الملف:** `src/components/customer/layout/CustomerHeader.tsx`
 
-#### 2. تحويل ميزة الطلب الصوتي إلى الدردشة النصية
+#### 2. 🤖 AI Smart Assistant - مساعد إنجزنا الذكي (أحمد)
 - **الحالة:** ✅ مكتمل
-- **المفهوم الجديد:** "دردش واطلب" بدلاً من "اطلب بصوتك"
-- **التغييرات:**
-  - تحويل `VoiceOrderFAB` إلى `ChatFAB` (أيقونة رسالة بدل ميكروفون)
-  - إنشاء `TextChat.tsx` بدلاً من `VoiceOrderChat.tsx` (إدخال نص فقط)
-  - تحديث `HeroSection.tsx` (إزالة زر الميكروفون الكبير + تغيير النصوص)
-  - تحديث `SearchBar.tsx` (إزالة أيقونة الميكروفون)
-  - حذف `VoiceOrderButton.tsx` (لم يعد مطلوباً)
-  - حذف Deepgram transcribe API route
-  - الإبقاء على OpenAI للمعالجة الذكية للطلبات
+- **المفهوم:** "دردش واطلب" - مساعد ذكي للطلب بالدردشة الطبيعية
+- **المميزات:**
+  - **AI Agent Architecture:** GPT-4o-mini + Function Calling (22 أداة)
+  - **Smart Search:** Arabic normalization + synonym expansion (كفتة↔كباب, حلويات↔شوكولاتة)
+  - **Session Memory:** يتذكر المنتج المعلق والـ variants لسهولة الإضافة للسلة
+  - **Context-Aware:** يتذكر التاجر المختار ومحتويات السلة
+  - **Streaming:** ردود مباشرة حرف بحرف
+  - **Quick Replies:** أزرار سريعة للإجراءات الشائعة
+- **الملفات الرئيسية:**
+  - `src/lib/ai/agentTools.ts` - 22 أداة للتعامل مع قاعدة البيانات
+  - `src/lib/ai/agentPrompt.ts` - System Prompt بالعربية المصرية
+  - `src/lib/ai/agentHandler.ts` - محرك الـ Agent Loop
+  - `src/hooks/useAIChat.ts` - React Hook للتفاعل
+  - `src/lib/store/chat.ts` - Zustand Store للمحادثات
+- **API:** `POST /api/chat` (Streaming SSE)
+- **Documentation:** `docs/AI_SMART_ASSISTANT.md`
 
 #### 3. تحديث الصفحات الرئيسية
 - تحديث `/[locale]/page.tsx` لاستخدام ChatFAB و onChatClick

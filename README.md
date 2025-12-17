@@ -386,7 +386,7 @@ npm run type-check   # TypeScript type checking
 ### 🔐 Security & Performance Fixes (Session 17 - December 11, 2025)
 
 **Phase 1: Security Fixes**
-- ✅ **API Authentication**: Added authentication to Voice/Chat Order API
+- ✅ **API Authentication**: Added authentication to AI Chat Order API
 - ✅ **Route Protection**: Enabled middleware protection for admin/provider/checkout routes
 - ✅ **Variant Price Fix**: Fixed variant price calculation in order creation
 - ✅ **Dynamic Commission**: Commission rate now fetched from database per provider
@@ -495,11 +495,12 @@ npm run type-check   # TypeScript type checking
   - **CRITICAL**: Only includes orders with BOTH `status='delivered'` AND `payment_status='completed'`
   - Up to 7% platform commission rate (0% for first 6 months grace period)
   - Payment methods: cash, bank_transfer, instapay, vodafone_cash
-- ✅ **Voice to Chat Transition**
-  - Converted voice ordering to text chat ("دردش واطلب" / "Chat & Order")
-  - ChatFAB replaces VoiceOrderFAB (message icon instead of microphone)
-  - TextChat component for text-based AI ordering
-  - Removed Deepgram, kept OpenAI for smart processing
+- ✅ **🤖 AI Chat to Order (مساعد إنجزنا الذكي - أحمد)**
+  - Smart AI assistant for natural language ordering ("دردش واطلب" / "Chat & Order")
+  - ChatFAB floating button with message icon
+  - GPT-4o-mini AI Agent with 22 tools for menu search, cart management, order tracking
+  - Arabic normalization + synonym expansion (كفتة↔كباب, حلويات↔شوكولاتة)
+  - Context-aware: remembers selected provider and pending items
 - ✅ **Dynamic Footer & Expansion Analytics**
   - Footer dynamically fetches active governorates from database
   - Added Expansion Analytics tab to Admin Locations page (Super Admin only)
@@ -582,7 +583,7 @@ npm run type-check   # TypeScript type checking
 - ✅ Categories synced with database provider types
 - ✅ 83+ new translation keys (AR/EN)
 - ✅ **City-based provider filtering** (customers see only providers in their city)
-- ✅ **AI Chat button** for smart ordering assistant (replaced voice)
+- ✅ **🤖 AI Chat Assistant (أحمد)** - Smart ordering assistant with natural language processing
 - ✅ **Header component improvements** (hideAuth prop, RTL-aware back arrow)
 - ✅ **Offer cards blue gradient** (#009DE0, #0088CC, #0077B6)
 
@@ -792,7 +793,7 @@ npm run dev
   - صفحة تسويات المتجر (`/provider/settlements`)
   - يشمل فقط الطلبات المسلمة والمدفوعة
   - نسبة عمولة حتى 7% للمنصة (0% أول 6 شهور)
-- ✅ **تحويل الصوت للدردشة** - "دردش واطلب" بدلاً من الميكروفون
+- ✅ **🤖 المساعد الذكي أحمد** - مساعد ذكي للطلب بالدردشة ("دردش واطلب")
 - ✅ **تحليلات التوسع** - مؤشر جاهزية التوسع للمحافظات
 - ✅ **اختيار المحافظة عند التسجيل** - إلزامي للمستخدمين الجدد
 
@@ -835,7 +836,7 @@ npm run dev
 - ✅ اختيار الموقع مرتبط بقاعدة البيانات
 - ✅ الأقسام متوافقة مع أنواع المتاجر في قاعدة البيانات
 - ✅ **تصفية المتاجر حسب المدينة** (يرى العميل فقط المتاجر في مدينته)
-- ✅ **زر الدردشة الذكية** للمساعد الذكي (بديل عن الصوت)
+- ✅ **🤖 المساعد الذكي أحمد** للطلب بالدردشة الذكية
 - ✅ **تحسينات مكون الهيدر** (إخفاء القسم للصفحات الداخلية)
 
 **ما يعمل ✅**
