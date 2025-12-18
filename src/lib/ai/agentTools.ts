@@ -1613,6 +1613,15 @@ export async function executeAgentTool(
           .single()
 
         if (itemError) {
+          // PGRST116 means "no rows found" - item_id doesn't exist
+          if (itemError.code === 'PGRST116') {
+            console.error('[add_to_cart] Item not found (PGRST116):', { item_id, item_name })
+            return {
+              success: false,
+              error: 'item_not_found',
+              message: `المنتج "${item_name}" مش موجود بالـ ID ده (${item_id}). لازم تستخدم item_id الصحيح من نتائج search_menu. ابحث عن المنتج تاني واستخدم الـ UUID الصحيح.`
+            }
+          }
           console.error('[add_to_cart] Database error:', itemError)
           return {
             success: false,
@@ -2914,54 +2923,41 @@ export async function saveCustomerInsights(
 ): Promise<boolean> {
   const supabase = await createClient()
 
-  // First, try to get existing insights
+  // Use upsert to avoid race conditions with duplicate key errors
+  // First, try to get existing insights to merge (non-blocking)
   const { data: existing } = await supabase
     .from('user_insights')
-    .select('id, preferences, conversation_style, insights_count')
+    .select('preferences, conversation_style, insights_count')
     .eq('user_id', customerId)
     .single()
 
-  if (existing) {
-    // Merge with existing insights
-    const mergedPreferences = {
-      ...existing.preferences,
-      ...insights.preferences
-    }
-    const mergedConversationStyle = {
-      ...existing.conversation_style,
-      ...insights.conversation_style
-    }
+  // Merge with existing insights if they exist
+  const mergedPreferences = {
+    ...(existing?.preferences || {}),
+    ...insights.preferences
+  }
+  const mergedConversationStyle = {
+    ...(existing?.conversation_style || {}),
+    ...insights.conversation_style
+  }
+  const newInsightsCount = (existing?.insights_count || 0) + 1
 
-    const { error } = await supabase
-      .from('user_insights')
-      .update({
-        preferences: mergedPreferences,
-        conversation_style: mergedConversationStyle,
-        insights_count: (existing.insights_count || 0) + 1,
-        last_updated: new Date().toISOString()
-      })
-      .eq('user_id', customerId)
+  // Use upsert to handle both insert and update in one atomic operation
+  const { error } = await supabase
+    .from('user_insights')
+    .upsert({
+      user_id: customerId,
+      preferences: mergedPreferences,
+      conversation_style: mergedConversationStyle,
+      insights_count: newInsightsCount,
+      last_updated: new Date().toISOString()
+    }, {
+      onConflict: 'user_id'  // Use user_id as the conflict key
+    })
 
-    if (error) {
-      console.error('[saveCustomerInsights] Update error:', error)
-      return false
-    }
-  } else {
-    // Create new insights record
-    const { error } = await supabase
-      .from('user_insights')
-      .insert({
-        user_id: customerId,
-        preferences: insights.preferences || {},
-        conversation_style: insights.conversation_style || {},
-        insights_count: 1,
-        last_updated: new Date().toISOString()
-      })
-
-    if (error) {
-      console.error('[saveCustomerInsights] Insert error:', error)
-      return false
-    }
+  if (error) {
+    console.error('[saveCustomerInsights] Upsert error:', error)
+    return false
   }
 
   console.log('[saveCustomerInsights] Saved insights for customer:', customerId)
