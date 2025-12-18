@@ -4,10 +4,19 @@ import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Minus, ShoppingBag, Store, Percent, Tag, Gift } from 'lucide-react'
+import { Plus, Minus, ShoppingBag, Store, Percent, Tag, Gift, Sparkles } from 'lucide-react'
 import { useCart, CartItem } from '@/lib/store/cart'
 import { CustomerLayout } from '@/components/customer/layout'
 import { createClient } from '@/lib/supabase/client'
+
+type ExtrasItem = {
+  id: string
+  name_ar: string
+  name_en: string
+  price: number
+  image_url: string | null
+  provider_id: string
+}
 
 type Promotion = {
   id: string
@@ -37,10 +46,13 @@ export default function CartPage() {
     getSubtotal,
     getTotal,
     getItemCount,
+    addItem,
   } = useCart()
 
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [loadingPromotions, setLoadingPromotions] = useState(false)
+  const [extrasItems, setExtrasItems] = useState<ExtrasItem[]>([])
+  const [loadingExtras, setLoadingExtras] = useState(false)
 
   // Fetch active promotions for the provider
   useEffect(() => {
@@ -70,6 +82,56 @@ export default function CartPage() {
 
     fetchPromotions()
   }, [provider?.id])
+
+  // Fetch extras items from provider's "extras" category
+  useEffect(() => {
+    async function fetchExtras() {
+      if (!provider?.id) {
+        setExtrasItems([])
+        return
+      }
+
+      setLoadingExtras(true)
+      const supabase = createClient()
+
+      // First, find the extras category for this provider
+      const { data: extrasCategory } = await supabase
+        .from('provider_categories')
+        .select('id')
+        .eq('provider_id', provider.id)
+        .eq('is_extras', true)
+        .eq('is_active', true)
+        .limit(1)
+        .single()
+
+      if (!extrasCategory) {
+        setExtrasItems([])
+        setLoadingExtras(false)
+        return
+      }
+
+      // Get items from the extras category that aren't already in cart
+      const cartItemIds = items.map(item => item.menuItem.id)
+
+      const { data: extras } = await supabase
+        .from('menu_items')
+        .select('id, name_ar, name_en, price, image_url, provider_id')
+        .eq('provider_id', provider.id)
+        .eq('category_id', extrasCategory.id)
+        .eq('is_available', true)
+        .order('display_order', { ascending: true })
+        .limit(6)
+
+      if (extras) {
+        // Filter out items already in cart
+        const filteredExtras = extras.filter(item => !cartItemIds.includes(item.id))
+        setExtrasItems(filteredExtras.slice(0, 4)) // Show max 4 items
+      }
+      setLoadingExtras(false)
+    }
+
+    fetchExtras()
+  }, [provider?.id, items])
 
   // Get applicable promotion for a product
   const getProductPromotion = (productId: string): Promotion | null => {
@@ -165,6 +227,28 @@ export default function CartPage() {
 
   const getName = (item: { name_ar: string; name_en: string }) => {
     return locale === 'ar' ? item.name_ar : item.name_en
+  }
+
+  // Handle adding an extras item to cart
+  const handleAddExtras = (extrasItem: ExtrasItem) => {
+    if (!provider) return
+
+    // Create a complete menu item object for the cart
+    addItem({
+      id: extrasItem.id,
+      name_ar: extrasItem.name_ar,
+      name_en: extrasItem.name_en,
+      price: extrasItem.price,
+      image_url: extrasItem.image_url,
+      provider_id: extrasItem.provider_id,
+      // Required fields with defaults for extras
+      description_ar: null,
+      description_en: null,
+      is_available: true,
+      is_vegetarian: false,
+      is_spicy: false,
+      preparation_time_min: 0,
+    }, provider)
   }
 
   if (items.length === 0) {
@@ -346,6 +430,58 @@ export default function CartPage() {
           >
             + {t('addMore')} {getName(provider)}
           </Link>
+        )}
+
+        {/* Cross-sell Extras Section */}
+        {extrasItems.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-slate-900">
+                {locale === 'ar' ? 'أضف إضافات لطلبك' : 'Add extras to your order'}
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {extrasItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-xl border border-slate-100 overflow-hidden hover:border-primary/30 transition-colors"
+                >
+                  {/* Image */}
+                  <div className="h-20 bg-slate-100 relative">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={getName(item)}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl">
+                        🍽️
+                      </div>
+                    )}
+                  </div>
+                  {/* Details */}
+                  <div className="p-3">
+                    <h4 className="font-medium text-slate-900 text-sm truncate mb-1">
+                      {getName(item)}
+                    </h4>
+                    <div className="flex items-center justify-between">
+                      <span className="text-primary font-bold text-sm">
+                        {item.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                      </span>
+                      <button
+                        onClick={() => handleAddExtras(item)}
+                        className="w-7 h-7 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Order Summary */}

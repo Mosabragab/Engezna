@@ -428,6 +428,7 @@ export default function EditProductPage() {
       .eq('id', productId)
 
     if (error) {
+      console.error('[EditProduct] Update error:', error)
       // If category_id column doesn't exist, retry without it
       if (error.message?.includes('category_id')) {
         delete productData.category_id
@@ -437,12 +438,13 @@ export default function EditProductPage() {
           .eq('id', productId)
 
         if (retryError) {
-          setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل تحديث المنتج' : 'Failed to update product' }))
+          console.error('[EditProduct] Retry error:', retryError)
+          setErrors(prev => ({ ...prev, submit: locale === 'ar' ? `فشل تحديث المنتج: ${retryError.message}` : `Failed to update product: ${retryError.message}` }))
           setSaving(false)
           return
         }
       } else {
-        setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل تحديث المنتج' : 'Failed to update product' }))
+        setErrors(prev => ({ ...prev, submit: locale === 'ar' ? `فشل تحديث المنتج: ${error.message}` : `Failed to update product: ${error.message}` }))
         setSaving(false)
         return
       }
