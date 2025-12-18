@@ -119,8 +119,8 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
     : currentLocation || (locale === 'ar' ? 'اختر موقعك' : 'Select location')
 
   return (
-    <header className={`sticky top-0 z-40 ${transparent ? 'bg-transparent' : 'bg-white border-b border-slate-100 shadow-sm'}`}>
-      <div className="container mx-auto px-4">
+    <header className={`sticky top-0 z-40 pt-[env(safe-area-inset-top,0px)] ${transparent ? 'bg-transparent' : 'bg-white border-b border-slate-100 shadow-sm'}`}>
+      <div className="container mx-auto px-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
         <div className="flex items-center justify-between h-14">
           {/* Left Section - Location (only on home page without title) */}
           <div className="flex items-center gap-3">

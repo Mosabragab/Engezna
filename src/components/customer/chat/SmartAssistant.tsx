@@ -249,11 +249,17 @@ export function SmartAssistant({
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className={cn(
               'fixed z-[70] bg-white flex flex-col',
-              // MOBILE: Full screen overlay (Sandwich Layout)
+              // MOBILE: Full screen overlay with safe areas
               'inset-0 h-[100dvh]',
-              // DESKTOP: Floating modal with rounded corners
+              // Safe area insets for all sides (notch, home indicator, curved edges)
+              'pt-[env(safe-area-inset-top,0px)]',
+              'pb-[env(safe-area-inset-bottom,0px)]',
+              'pl-[env(safe-area-inset-left,0px)]',
+              'pr-[env(safe-area-inset-right,0px)]',
+              // DESKTOP: Floating modal with rounded corners (no safe areas needed)
               'md:inset-auto md:bottom-24 md:left-6 md:w-[400px] md:h-[600px] md:max-h-[80vh]',
-              'md:rounded-2xl md:shadow-2xl'
+              'md:rounded-2xl md:shadow-2xl',
+              'md:pt-0 md:pb-0 md:pl-0 md:pr-0'
             )}
           >
             {/* ===== HEADER (Fixed at Top) ===== */}
@@ -261,8 +267,6 @@ export function SmartAssistant({
               className={cn(
                 'shrink-0 flex items-center justify-between bg-primary text-white',
                 'px-4 py-3',
-                // Safe area for notch on mobile
-                'pt-[max(0.75rem,env(safe-area-inset-top))]',
                 // Minimize header when keyboard is open
                 isKeyboardOpen && 'py-2 md:py-3'
               )}
@@ -389,13 +393,8 @@ export function SmartAssistant({
             </div>
 
             {/* ===== INPUT (Fixed at Bottom) ===== */}
-            <div
-              className={cn(
-                'shrink-0 border-t bg-white p-3',
-                // Safe area for home indicator (only when keyboard is closed)
-                !isKeyboardOpen && 'pb-[max(0.75rem,env(safe-area-inset-bottom))]'
-              )}
-            >
+            {/* Safe area is now handled by the container */}
+            <div className="shrink-0 border-t bg-white p-3">
               <div className="flex items-center gap-2">
                 <input
                   ref={inputRef}
