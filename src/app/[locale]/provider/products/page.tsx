@@ -94,6 +94,7 @@ export default function ProviderProductsPage() {
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [newCategoryNameAr, setNewCategoryNameAr] = useState('')
   const [newCategoryNameEn, setNewCategoryNameEn] = useState('')
+  const [newCategoryIsExtras, setNewCategoryIsExtras] = useState(false)
   const [categoryLoading, setCategoryLoading] = useState(false)
 
   useEffect(() => {
@@ -248,7 +249,8 @@ export default function ProviderProductsPage() {
         name_ar: newCategoryNameAr.trim(),
         name_en: newCategoryNameEn.trim() || newCategoryNameAr.trim(),
         display_order: categories.length,
-        is_active: true
+        is_active: true,
+        is_extras: newCategoryIsExtras
       })
 
     if (!error) {
@@ -256,6 +258,7 @@ export default function ProviderProductsPage() {
       setShowCategoryModal(false)
       setNewCategoryNameAr('')
       setNewCategoryNameEn('')
+      setNewCategoryIsExtras(false)
     }
     setCategoryLoading(false)
   }
@@ -757,6 +760,26 @@ export default function ProviderProductsPage() {
                   className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
                   dir="ltr"
                 />
+              </div>
+              {/* Is Extras Checkbox */}
+              <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="is_extras"
+                  checked={newCategoryIsExtras}
+                  onChange={(e) => setNewCategoryIsExtras(e.target.checked)}
+                  className="w-5 h-5 mt-0.5 text-primary border-slate-300 rounded focus:ring-primary"
+                />
+                <label htmlFor="is_extras" className="flex-1 cursor-pointer">
+                  <span className="block font-medium text-slate-900 text-sm">
+                    {locale === 'ar' ? 'هذا تصنيف إضافات' : 'This is an extras category'}
+                  </span>
+                  <span className="block text-xs text-slate-500 mt-0.5">
+                    {locale === 'ar'
+                      ? 'محتوى هذا التصنيف سيظهر كاقتراحات للعميل في صفحة السلة'
+                      : 'Items in this category will appear as suggestions in the cart page'}
+                  </span>
+                </label>
               </div>
             </div>
 

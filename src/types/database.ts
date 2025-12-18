@@ -537,6 +537,7 @@ export interface Database {
           name_en: string | null;
           display_order: number;
           is_active: boolean;
+          is_extras: boolean; // When true, items show as cross-sell in cart
           created_at: string;
           updated_at: string;
         };
@@ -547,6 +548,7 @@ export interface Database {
           name_en?: string | null;
           display_order?: number;
           is_active?: boolean;
+          is_extras?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -557,6 +559,7 @@ export interface Database {
           name_en?: string | null;
           display_order?: number;
           is_active?: boolean;
+          is_extras?: boolean;
           created_at?: string;
           updated_at?: string;
         };
