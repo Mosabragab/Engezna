@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
@@ -16,137 +16,90 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { MapPinned, Loader2, Check, User, ArrowRight, ArrowLeft } from 'lucide-react'
-import { useGuestLocation, type GuestLocation } from '@/lib/hooks/useGuestLocation'
-
-type Governorate = {
-  id: string
-  name_ar: string
-  name_en: string
-}
-
-type City = {
-  id: string
-  governorate_id: string
-  name_ar: string
-  name_en: string
-}
+import { useLocation, useUserLocation } from '@/lib/contexts'
 
 export default function GovernoratePage() {
   const locale = useLocale()
   const t = useTranslations('settings.governorate')
   const router = useRouter()
 
-  // Guest location hook
-  const { location: guestLocation, setLocation: setGuestLocation, isLoaded: guestLocationLoaded } = useGuestLocation()
+  // Get location data from context (no redundant queries!)
+  const {
+    governorates,
+    getCitiesByGovernorate,
+    getGovernorateById,
+    getCityById,
+    isDataLoading: locationDataLoading,
+    isDataLoaded: locationDataLoaded,
+    setUserLocation,
+  } = useLocation()
+
+  // Get current user location from context
+  const {
+    governorateId: currentGovernorateId,
+    cityId: currentCityId,
+    isLoading: userLocationLoading,
+    hasLocation: hasUserLocation,
+  } = useUserLocation()
 
   const [userId, setUserId] = useState<string | null>(null)
   const [isGuest, setIsGuest] = useState(false)
   const [isNewVisitor, setIsNewVisitor] = useState(false) // Guest without location
   const [authLoading, setAuthLoading] = useState(true)
 
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [cities, setCities] = useState<City[]>([])
-
+  // Selected values (may differ from current saved values)
   const [governorateId, setGovernorateId] = useState('')
   const [cityId, setCityId] = useState('')
 
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    checkAuthAndLoadData()
-  }, [guestLocationLoaded])
+  // Filter cities based on selected governorate using context helper
+  const cities = useMemo(() => {
+    if (!governorateId) return []
+    return getCitiesByGovernorate(governorateId)
+  }, [governorateId, getCitiesByGovernorate])
 
+  // Check auth state on mount
   useEffect(() => {
-    if (governorateId) {
-      loadCities(governorateId)
-    } else {
-      setCities([])
+    checkAuth()
+  }, [])
+
+  // Initialize selections when user location loads
+  useEffect(() => {
+    if (!userLocationLoading && locationDataLoaded) {
+      if (currentGovernorateId) {
+        setGovernorateId(currentGovernorateId)
+        if (currentCityId) {
+          setCityId(currentCityId)
+        }
+      } else if (!userId) {
+        // Guest without location
+        setIsNewVisitor(true)
+      }
+    }
+  }, [userLocationLoading, locationDataLoaded, currentGovernorateId, currentCityId, userId])
+
+  // Reset city when governorate changes
+  useEffect(() => {
+    // Only reset if user changed governorate (not on initial load)
+    if (governorateId && governorateId !== currentGovernorateId) {
       setCityId('')
     }
   }, [governorateId])
 
-  async function checkAuthAndLoadData() {
-    if (!guestLocationLoaded) return
-
+  async function checkAuth() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-      // Logged in user
       setUserId(user.id)
       setIsGuest(false)
-      await loadGovernorates()
-      await loadCurrentSelection(user.id)
     } else {
-      // Guest user - allow browsing without login
       setIsGuest(true)
-      await loadGovernorates()
-
-      // Load from localStorage
-      if (guestLocation.governorateId) {
-        setGovernorateId(guestLocation.governorateId)
-        if (guestLocation.cityId) {
-          setCityId(guestLocation.cityId)
-        }
-      } else {
-        // New visitor without any location set
-        setIsNewVisitor(true)
-      }
-      setLoading(false)
     }
 
     setAuthLoading(false)
-  }
-
-  async function loadGovernorates() {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('governorates')
-      .select('*')
-      .eq('is_active', true)
-      .order('name_ar')
-
-    if (data) {
-      setGovernorates(data)
-    }
-  }
-
-  async function loadCities(govId: string) {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('cities')
-      .select('*')
-      .eq('governorate_id', govId)
-      .eq('is_active', true)
-      .order('name_ar')
-
-    if (data) {
-      setCities(data)
-    }
-  }
-
-  async function loadCurrentSelection(uid: string) {
-    setLoading(true)
-    const supabase = createClient()
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('governorate_id, city_id')
-      .eq('id', uid)
-      .single()
-
-    if (!error && data) {
-      if (data.governorate_id) {
-        setGovernorateId(data.governorate_id)
-      }
-      if (data.city_id) {
-        setCityId(data.city_id)
-      }
-    }
-
-    setLoading(false)
   }
 
   async function handleSave() {
@@ -158,57 +111,43 @@ export default function GovernoratePage() {
     setSaving(true)
     setMessage(null)
 
-    // Get names for display
-    const selectedGov = governorates.find(g => g.id === governorateId)
-    const selectedCity = cities.find(c => c.id === cityId)
+    try {
+      // Get names for display using context helpers
+      const selectedGov = getGovernorateById(governorateId)
+      const selectedCity = cityId ? getCityById(cityId) : null
 
-    if (isGuest) {
-      // Save to localStorage for guests
-      const newLocation: GuestLocation = {
+      // Use context's setUserLocation which handles both guests and logged-in users
+      await setUserLocation({
         governorateId,
         governorateName: selectedGov ? { ar: selectedGov.name_ar, en: selectedGov.name_en } : null,
         cityId: cityId || null,
         cityName: selectedCity ? { ar: selectedCity.name_ar, en: selectedCity.name_en } : null,
-      }
-      setGuestLocation(newLocation)
-      setMessage({ type: 'success', text: locale === 'ar' ? 'تم حفظ الموقع' : 'Location saved' })
+      })
 
-      // Redirect to home after short delay
-      setTimeout(() => {
-        router.push(`/${locale}`)
-      }, 1000)
-    } else if (userId) {
-      // Save to profile for logged-in users
-      const supabase = createClient()
+      setMessage({ type: 'success', text: isGuest ? (locale === 'ar' ? 'تم حفظ الموقع' : 'Location saved') : t('saved') })
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          governorate_id: governorateId,
-          city_id: cityId || null,
-          district_id: null, // DEPRECATED - always null
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId)
-
-      if (error) {
-        console.error('Error saving location:', error)
-        setMessage({
-          type: 'error',
-          text: locale === 'ar'
-            ? `حدث خطأ: ${error.message}`
-            : `Error: ${error.message}`
-        })
+      if (isGuest) {
+        // Redirect guests to home after short delay
+        setTimeout(() => {
+          router.push(`/${locale}`)
+        }, 1000)
       } else {
-        setMessage({ type: 'success', text: t('saved') })
         setTimeout(() => setMessage(null), 3000)
       }
+    } catch {
+      setMessage({
+        type: 'error',
+        text: locale === 'ar'
+          ? 'حدث خطأ أثناء حفظ الموقع'
+          : 'Error saving location'
+      })
     }
 
     setSaving(false)
   }
 
-  if (authLoading) {
+  // Show loading while auth or location data is loading
+  if (authLoading || locationDataLoading || userLocationLoading) {
     return (
       <CustomerLayout headerTitle={t('title')} showBottomNav={true}>
         <div className="flex items-center justify-center h-[60vh]">
@@ -259,91 +198,83 @@ export default function GovernoratePage() {
 
         <Card>
           <CardContent className="pt-6 space-y-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <>
-                {/* Governorate */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <MapPinned className="w-4 h-4 text-muted-foreground" />
-                    {locale === 'ar' ? 'المحافظة' : 'Governorate'}
-                  </Label>
-                  <Select
-                    value={governorateId}
-                    onValueChange={(value) => {
-                      if (value === '_welcome_') {
-                        // Navigate to welcome page
-                        router.push(`/${locale}/welcome`)
-                      } else {
-                        setGovernorateId(value)
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder={locale === 'ar' ? 'اختر المحافظة' : 'Select governorate'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {/* Welcome page option - always first */}
-                      <SelectItem value="_welcome_" className="text-primary border-b border-slate-100 mb-1">
-                        {locale === 'ar' ? '← العودة لصفحة الترحيب' : '← Back to Welcome Page'}
+            {/* Governorate */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <MapPinned className="w-4 h-4 text-muted-foreground" />
+                {locale === 'ar' ? 'المحافظة' : 'Governorate'}
+              </Label>
+              <Select
+                value={governorateId}
+                onValueChange={(value) => {
+                  if (value === '_welcome_') {
+                    // Navigate to welcome page
+                    router.push(`/${locale}/welcome`)
+                  } else {
+                    setGovernorateId(value)
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={locale === 'ar' ? 'اختر المحافظة' : 'Select governorate'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {/* Welcome page option - always first */}
+                  <SelectItem value="_welcome_" className="text-primary border-b border-slate-100 mb-1">
+                    {locale === 'ar' ? '← العودة لصفحة الترحيب' : '← Back to Welcome Page'}
+                  </SelectItem>
+                  {governorates.map((gov) => (
+                    <SelectItem key={gov.id} value={gov.id}>
+                      {locale === 'ar' ? gov.name_ar : gov.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* City */}
+            {governorateId && cities.length > 0 && (
+              <div className="space-y-2">
+                <Label>{locale === 'ar' ? 'المدينة/المركز' : 'City/Center'}</Label>
+                <Select value={cityId} onValueChange={setCityId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={locale === 'ar' ? 'اختر المدينة' : 'Select city'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cities.map((city) => (
+                      <SelectItem key={city.id} value={city.id}>
+                        {locale === 'ar' ? city.name_ar : city.name_en}
                       </SelectItem>
-                      {governorates.map((gov) => (
-                        <SelectItem key={gov.id} value={gov.id}>
-                          {locale === 'ar' ? gov.name_ar : gov.name_en}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-                {/* City */}
-                {governorateId && cities.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>{locale === 'ar' ? 'المدينة/المركز' : 'City/Center'}</Label>
-                    <Select value={cityId} onValueChange={setCityId}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder={locale === 'ar' ? 'اختر المدينة' : 'Select city'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cities.map((city) => (
-                          <SelectItem key={city.id} value={city.id}>
-                            {locale === 'ar' ? city.name_ar : city.name_en}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+            {/* Save Button */}
+            <div className="flex items-center gap-3 pt-2">
+              <Button
+                onClick={handleSave}
+                disabled={saving || !governorateId}
+                className="flex-1"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
+                  </>
+                ) : (
+                  locale === 'ar' ? 'حفظ الموقع' : 'Save Location'
                 )}
+              </Button>
+            </div>
 
-                {/* Save Button */}
-                <div className="flex items-center gap-3 pt-2">
-                  <Button
-                    onClick={handleSave}
-                    disabled={saving || !governorateId}
-                    className="flex-1"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
-                      </>
-                    ) : (
-                      locale === 'ar' ? 'حفظ الموقع' : 'Save Location'
-                    )}
-                  </Button>
-                </div>
-
-                {/* Message */}
-                {message && (
-                  <div className={`flex items-center gap-2 text-sm ${message.type === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'} p-3 rounded-lg`}>
-                    {message.type === 'success' && <Check className="w-4 h-4" />}
-                    <span>{message.text}</span>
-                  </div>
-                )}
-              </>
+            {/* Message */}
+            {message && (
+              <div className={`flex items-center gap-2 text-sm ${message.type === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'} p-3 rounded-lg`}>
+                {message.type === 'success' && <Check className="w-4 h-4" />}
+                <span>{message.text}</span>
+              </div>
             )}
           </CardContent>
         </Card>

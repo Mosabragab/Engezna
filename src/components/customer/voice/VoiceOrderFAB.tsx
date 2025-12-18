@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
-import { MessageCircle, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SmartAssistant } from '@/components/customer/chat/SmartAssistant'
 import { createClient } from '@/lib/supabase/client'
-import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
+import { useUserLocation } from '@/lib/contexts'
 
 interface ChatFABProps {
   className?: string
@@ -25,11 +25,12 @@ export function ChatFAB({
   const [internalIsOpen, setInternalIsOpen] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
   const [userId, setUserId] = useState<string | undefined>()
-  const [cityId, setCityId] = useState<string | undefined>()
-  const [governorateId, setGovernorateId] = useState<string | undefined>()
   const [customerName, setCustomerName] = useState<string | undefined>()
 
-  // Fetch user data
+  // Get location from context (no Supabase query needed!)
+  const { cityId, governorateId } = useUserLocation()
+
+  // Fetch only user auth data (not location)
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -39,29 +40,18 @@ export function ChatFAB({
         if (user) {
           setUserId(user.id)
 
-          // Fetch profile for name and city
+          // Fetch profile for name only
           const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name, city_id, governorate_id')
+            .select('full_name')
             .eq('id', user.id)
             .single()
 
           if (profile) {
             setCustomerName(profile.full_name?.split(' ')[0])
-            setCityId(profile.city_id)
-            setGovernorateId(profile.governorate_id)
-          }
-        } else {
-          // Guest user - check localStorage for selected city
-          const guestLocation = guestLocationStorage.get()
-          if (guestLocation?.cityId) {
-            setCityId(guestLocation.cityId)
-          }
-          if (guestLocation?.governorateId) {
-            setGovernorateId(guestLocation.governorateId)
           }
         }
-      } catch (error) {
+      } catch {
         // Error handled silently
       }
     }
@@ -128,8 +118,8 @@ export function ChatFAB({
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         userId={userId}
-        cityId={cityId}
-        governorateId={governorateId}
+        cityId={cityId || undefined}
+        governorateId={governorateId || undefined}
         customerName={customerName}
       />
     </>
