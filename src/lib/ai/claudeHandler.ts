@@ -99,14 +99,100 @@ function convertMessagesToAnthropic(messages: AgentMessage[]): AnthropicMessage[
 export async function* runClaudeAgentStream(options: AgentHandlerOptions): AsyncGenerator<AgentStreamEvent> {
   const { context, messages } = options
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION ENFORCEMENT (Pre-AI Check)
+  // Same logic as OpenAI handler - check before calling Claude
+  // ═══════════════════════════════════════════════════════════════════════════
+  const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || ''
+  const isCategorySelection = lastUserMessage.startsWith('category:')
+  const hasProviderContext = !!(context.providerId || context.cartProviderId)
+  const hasCategorySelected = !!context.selectedCategory
+
+  const orderingKeywords = [
+    'عايز', 'عاوز', 'عايزة', 'عاوزة', 'محتاج', 'نفسي', 'ابغى', 'ابي',
+    'بيتزا', 'برجر', 'شاورما', 'فراخ', 'كفتة', 'فتة', 'رز', 'مكرونة',
+    'مشروب', 'عصير', 'قهوة', 'شاي', 'كولا', 'بيبسي',
+    'سوبر', 'ماركت', 'خضار', 'فاكهة', 'لبن', 'جبنة', 'بيض',
+    'حلو', 'حلويات', 'كيك', 'جاتوه', 'بسبوسة', 'كنافة',
+    'بن', 'نوتيلا', 'شوكولاتة'
+  ]
+  const seemsLikeOrdering = orderingKeywords.some(kw => lastUserMessage.includes(kw))
+
+  if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
+    console.log('[runClaudeAgentStream] No category selected - returning prompt BEFORE calling AI')
+
+    const categoryPromptContent = 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇'
+
+    yield {
+      type: 'content',
+      content: categoryPromptContent
+    }
+
+    yield {
+      type: 'done',
+      response: {
+        content: categoryPromptContent,
+        suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+        quickReplies: [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+          { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+          { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
+        ]
+      }
+    }
+    return
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION HANDLER - Transform payload to natural language
+  // ═══════════════════════════════════════════════════════════════════════════
+  let effectiveMessages = messages
+  if (isCategorySelection) {
+    const categoryCode = lastUserMessage.replace('category:', '')
+    console.log('[runClaudeAgentStream] Category selected:', categoryCode, '- transforming for AI')
+
+    const categoryNames: Record<string, string> = {
+      'restaurant_cafe': 'مطاعم وكافيهات',
+      'coffee_sweets': 'البن والحلويات',
+      'grocery': 'سوبر ماركت',
+      'vegetables_fruits': 'خضروات وفواكه'
+    }
+
+    const categoryName = categoryNames[categoryCode] || categoryCode
+
+    // Find the original ordering request from conversation history
+    const previousUserMessages = messages
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .slice(0, -1)
+
+    const originalRequest = previousUserMessages.find(msg =>
+      orderingKeywords.some(kw => msg.toLowerCase().includes(kw))
+    )
+
+    const transformedMessage = originalRequest
+      ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
+      : `اخترت قسم ${categoryName}. ورّيني المتاح`
+
+    console.log('[runClaudeAgentStream] Transformed message:', transformedMessage)
+
+    effectiveMessages = messages.map((m, i) => {
+      if (i === messages.length - 1 && m.role === 'user') {
+        return { ...m, content: transformedMessage }
+      }
+      return m
+    })
+  }
+
   // Build system prompt
   const systemPrompt = buildSystemPrompt(context)
 
   // Convert tools to Anthropic format
   const tools = convertToolsToAnthropic(context)
 
-  // Convert messages to Anthropic format
-  let anthropicMessages: AnthropicMessage[] = convertMessagesToAnthropic(messages)
+  // Convert messages to Anthropic format (use effectiveMessages which may be transformed)
+  let anthropicMessages: AnthropicMessage[] = convertMessagesToAnthropic(effectiveMessages)
 
   const turns: ConversationTurn[] = []
 

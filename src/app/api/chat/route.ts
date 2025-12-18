@@ -29,6 +29,7 @@ interface ChatRequest {
   customer_name?: string
   selected_provider_id?: string
   selected_provider_name?: string
+  selected_category?: string  // User's chosen category (restaurant_cafe, grocery, etc.)
   cart_provider_id?: string
   cart_provider_name?: string
   cart_items?: Array<{
@@ -102,6 +103,8 @@ export async function POST(request: NextRequest) {
       providerContext: body.selected_provider_id && body.selected_provider_name
         ? { id: body.selected_provider_id, name: body.selected_provider_name }
         : undefined,
+      // Selected category (required before ordering)
+      selectedCategory: body.selected_category,
       // Map cart items to context format (with proper IDs for deduplication)
       cartItems: body.cart_items?.map(item => ({
         id: item.menu_item_id,
@@ -317,6 +320,8 @@ export async function PUT(request: NextRequest) {
       providerContext: body.selected_provider_id && body.selected_provider_name
         ? { id: body.selected_provider_id, name: body.selected_provider_name }
         : undefined,
+      // Selected category (required before ordering)
+      selectedCategory: body.selected_category,
       // Map cart items to context format (with proper IDs for deduplication)
       cartItems: body.cart_items?.map(item => ({
         id: item.menu_item_id,

@@ -107,6 +107,8 @@ export interface ToolContext {
   cityId?: string
   governorateId?: string
   locale?: string
+  // Selected category (required before searching)
+  selectedCategory?: string
   // Cart context
   cartProviderId?: string
   cartItems?: Array<{
@@ -979,7 +981,8 @@ export async function executeAgentTool(
           city_id_param: city_id,
           context_cityId: context.cityId,
           context_providerId: context.providerId,
-          context_cartProviderId: context.cartProviderId
+          context_cartProviderId: context.cartProviderId,
+          context_selectedCategory: context.selectedCategory
         })
 
         // NOTE: Arabic normalization is handled by the DB function (normalize_arabic)
@@ -1014,9 +1017,20 @@ export async function executeAgentTool(
             .eq('is_available', true)
             .order('display_order')
 
+          // ═══════════════════════════════════════════════════════════════════
+          // FIX: Deduplicate variants by name per product
+          // This prevents duplicate cart entries when DB has duplicate variants
+          // ═══════════════════════════════════════════════════════════════════
+          const deduplicatedVariants = variants?.filter((variant, index, arr) => {
+            // Keep only the first occurrence of each name per product
+            return arr.findIndex(v =>
+              v.product_id === variant.product_id && v.name_ar === variant.name_ar
+            ) === index
+          })
+
           // Attach variants to items
-          const itemsMap = new Map(items.map(item => [item.id, { ...item, variants: [] as typeof variants }]))
-          variants?.forEach(variant => {
+          const itemsMap = new Map(items.map(item => [item.id, { ...item, variants: [] as typeof deduplicatedVariants }]))
+          deduplicatedVariants?.forEach(variant => {
             const item = itemsMap.get(variant.product_id)
             if (item) {
               item.variants?.push(variant)

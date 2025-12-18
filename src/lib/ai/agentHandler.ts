@@ -117,6 +117,80 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
   // OpenAI implementation below
   const { context, messages, onStream } = options
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION ENFORCEMENT (Pre-AI Check)
+  // Same logic as runAgentStream - check before calling OpenAI
+  // ═══════════════════════════════════════════════════════════════════════════
+  const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || ''
+  const isCategorySelection = lastUserMessage.startsWith('category:')
+  const hasProviderContext = !!(context.providerId || context.cartProviderId)
+  const hasCategorySelected = !!context.selectedCategory
+
+  const orderingKeywords = [
+    'عايز', 'عاوز', 'عايزة', 'عاوزة', 'محتاج', 'نفسي', 'ابغى', 'ابي',
+    'بيتزا', 'برجر', 'شاورما', 'فراخ', 'كفتة', 'فتة', 'رز', 'مكرونة',
+    'مشروب', 'عصير', 'قهوة', 'شاي', 'كولا', 'بيبسي',
+    'سوبر', 'ماركت', 'خضار', 'فاكهة', 'لبن', 'جبنة', 'بيض',
+    'حلو', 'حلويات', 'كيك', 'جاتوه', 'بسبوسة', 'كنافة',
+    'بن', 'نوتيلا', 'شوكولاتة'
+  ]
+  const seemsLikeOrdering = orderingKeywords.some(kw => lastUserMessage.includes(kw))
+
+  if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
+    console.log('[runAgent] No category selected - returning prompt BEFORE calling AI')
+    return {
+      content: 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇',
+      suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+      quickReplies: [
+        { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+        { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+        { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+        { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
+      ]
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION HANDLER - Transform payload to natural language
+  // ═══════════════════════════════════════════════════════════════════════════
+  let effectiveMessages = messages
+  if (isCategorySelection) {
+    const categoryCode = lastUserMessage.replace('category:', '')
+    console.log('[runAgent] Category selected:', categoryCode, '- transforming for AI')
+
+    const categoryNames: Record<string, string> = {
+      'restaurant_cafe': 'مطاعم وكافيهات',
+      'coffee_sweets': 'البن والحلويات',
+      'grocery': 'سوبر ماركت',
+      'vegetables_fruits': 'خضروات وفواكه'
+    }
+
+    const categoryName = categoryNames[categoryCode] || categoryCode
+
+    // Find the original ordering request from conversation history
+    const previousUserMessages = messages
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .slice(0, -1)
+
+    const originalRequest = previousUserMessages.find(msg =>
+      orderingKeywords.some(kw => msg.toLowerCase().includes(kw))
+    )
+
+    const transformedMessage = originalRequest
+      ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
+      : `اخترت قسم ${categoryName}. ورّيني المتاح`
+
+    console.log('[runAgent] Transformed message:', transformedMessage)
+
+    effectiveMessages = messages.map((m, i) => {
+      if (i === messages.length - 1 && m.role === 'user') {
+        return { ...m, content: transformedMessage }
+      }
+      return m
+    })
+  }
+
   // Load customer insights if customer is logged in
   let enrichedContext = { ...context }
   if (context.customerId) {
@@ -143,10 +217,10 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
   // Convert tools to OpenAI format
   const tools = convertToolsToOpenAI(context)
 
-  // Build messages array for OpenAI
+  // Build messages array for OpenAI (use effectiveMessages which may be transformed)
   const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
-    ...messages.map(msg => ({
+    ...effectiveMessages.map(msg => ({
       role: msg.role as 'user' | 'assistant',
       content: msg.content
     }))
@@ -371,6 +445,103 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
   // OpenAI implementation below
   const { context, messages } = options
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION ENFORCEMENT (Pre-AI Check)
+  // If user hasn't selected a category yet and tries to order/search,
+  // return category prompt immediately WITHOUT calling OpenAI.
+  // This is more reliable than relying on AI to understand tool errors.
+  // ═══════════════════════════════════════════════════════════════════════════
+  const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || ''
+  const isCategorySelection = lastUserMessage.startsWith('category:')
+  const hasProviderContext = !!(context.providerId || context.cartProviderId)
+  const hasCategorySelected = !!context.selectedCategory
+
+  // Check if user seems to want to order/search (not just greeting)
+  const orderingKeywords = [
+    'عايز', 'عاوز', 'عايزة', 'عاوزة', 'محتاج', 'نفسي', 'ابغى', 'ابي',
+    'بيتزا', 'برجر', 'شاورما', 'فراخ', 'كفتة', 'فتة', 'رز', 'مكرونة',
+    'مشروب', 'عصير', 'قهوة', 'شاي', 'كولا', 'بيبسي',
+    'سوبر', 'ماركت', 'خضار', 'فاكهة', 'لبن', 'جبنة', 'بيض',
+    'حلو', 'حلويات', 'كيك', 'جاتوه', 'بسبوسة', 'كنافة',
+    'بن', 'نوتيلا', 'شوكولاتة'
+  ]
+  const seemsLikeOrdering = orderingKeywords.some(kw => lastUserMessage.includes(kw))
+
+  if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
+    console.log('[runAgentStream] No category selected - returning prompt BEFORE calling AI')
+    console.log('[runAgentStream] User message:', lastUserMessage)
+
+    const categoryPromptContent = 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇'
+
+    // Stream the content
+    yield {
+      type: 'content',
+      content: categoryPromptContent
+    }
+
+    // Return done with category selection quick replies
+    yield {
+      type: 'done',
+      response: {
+        content: categoryPromptContent,
+        suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+        quickReplies: [
+          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
+          { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+          { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
+        ]
+      }
+    }
+    return
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CATEGORY SELECTION HANDLER - Transform payload to natural language
+  // Instead of showing provider list, transform the message and let AI handle it
+  // ═══════════════════════════════════════════════════════════════════════════
+  let effectiveMessages = messages
+  if (isCategorySelection) {
+    const categoryCode = lastUserMessage.replace('category:', '')
+    console.log('[runAgentStream] Category selected:', categoryCode, '- transforming for AI')
+
+    // Category name mapping
+    const categoryNames: Record<string, string> = {
+      'restaurant_cafe': 'مطاعم وكافيهات',
+      'coffee_sweets': 'البن والحلويات',
+      'grocery': 'سوبر ماركت',
+      'vegetables_fruits': 'خضروات وفواكه'
+    }
+
+    const categoryName = categoryNames[categoryCode] || categoryCode
+
+    // Find the original ordering request from conversation history
+    const previousUserMessages = messages
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .slice(0, -1) // Exclude current category selection
+
+    const originalRequest = previousUserMessages.find(msg =>
+      orderingKeywords.some(kw => msg.toLowerCase().includes(kw))
+    )
+
+    // Transform the message to natural language for the AI
+    // If there was an original request, remind AI about it
+    const transformedMessage = originalRequest
+      ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
+      : `اخترت قسم ${categoryName}. ورّيني المتاح`
+
+    console.log('[runAgentStream] Transformed message:', transformedMessage)
+
+    // Replace the last user message with transformed version
+    effectiveMessages = messages.map((m, i) => {
+      if (i === messages.length - 1 && m.role === 'user') {
+        return { ...m, content: transformedMessage }
+      }
+      return m
+    })
+  }
+
   // Load customer insights if customer is logged in
   let enrichedContext = { ...context }
   if (context.customerId) {
@@ -397,10 +568,10 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
   // Convert tools to OpenAI format
   const tools = convertToolsToOpenAI(context)
 
-  // Build messages array for OpenAI
+  // Build messages array for OpenAI (use effectiveMessages which may be transformed)
   const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
-    ...messages.map(msg => ({
+    ...effectiveMessages.map(msg => ({
       role: msg.role as 'user' | 'assistant',
       content: msg.content
     }))
@@ -1058,10 +1229,25 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
         }
 
         // Check for cart_action (from add_to_cart tool)
-        // Collect ALL cart actions instead of overwriting
+        // FIXED: Don't accumulate duplicate cart actions for the same item
+        // This prevents quantity multiplication when agent loop runs multiple times
         if (data.cart_action) {
           const cartAction = data.cart_action as AgentResponse['cartAction']
-          response.cartActions!.push(cartAction!)
+
+          // Check if we already have a cart action for this item+variant combination
+          const existingIndex = response.cartActions!.findIndex(
+            (a) => a?.menu_item_id === cartAction?.menu_item_id
+                && a?.variant_id === cartAction?.variant_id
+          )
+
+          if (existingIndex >= 0) {
+            // Replace existing action instead of accumulating
+            response.cartActions![existingIndex] = cartAction!
+          } else {
+            // New item - add to array
+            response.cartActions!.push(cartAction!)
+          }
+
           // Also set single cartAction for backward compatibility (last one)
           response.cartAction = cartAction
         }
@@ -1081,28 +1267,32 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
             }))
 
             // ═══════════════════════════════════════════════════════════════════
-            // FIX: Store pending item in sessionMemory for next request
-            // This allows the AI to remember the item IDs when user says "ضيف"
+            // FIX: Store ALL items in sessionMemory for multi-item orders
+            // This allows AI to use correct IDs when user says "ضيف ٢ كفتة و٣ داوود باشا"
             // ═══════════════════════════════════════════════════════════════════
-            const firstItem = items[0]
-            const variants = firstItem.variants as Array<{ id: string; name_ar: string; price: number }> | undefined
-
-            response.sessionMemory = {
-              pending_item: {
-                id: firstItem.id as string,
-                name_ar: firstItem.name_ar as string,
-                price: firstItem.price as number,
-                provider_id: firstItem.provider_id as string,
-                provider_name_ar: (firstItem.providers as { name_ar?: string })?.name_ar,
-                has_variants: firstItem.has_variants as boolean | undefined,
+            const pendingItems = items.slice(0, 10).map(item => {
+              const variants = item.variants as Array<{ id: string; name_ar: string; price: number }> | undefined
+              return {
+                id: item.id as string,
+                name_ar: item.name_ar as string,
+                price: item.price as number,
+                provider_id: item.provider_id as string,
+                provider_name_ar: (item.providers as { name_ar?: string })?.name_ar,
+                has_variants: item.has_variants as boolean | undefined,
                 variants: variants?.map(v => ({
                   id: v.id,
                   name_ar: v.name_ar,
                   price: v.price
                 }))
               }
+            })
+
+            // Store both pending_items (all) and pending_item (first) for backward compatibility
+            response.sessionMemory = {
+              pending_items: pendingItems,
+              pending_item: pendingItems[0]
             }
-            console.log('[parseAgentOutput] Stored pending item:', response.sessionMemory.pending_item?.name_ar, 'with', variants?.length || 0, 'variants')
+            console.log('[parseAgentOutput] Stored', pendingItems.length, 'pending items:', pendingItems.map(i => i.name_ar).join(', '))
           }
         }
       }
