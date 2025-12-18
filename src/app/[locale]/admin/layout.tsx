@@ -54,9 +54,8 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
       if (!ticketsError) {
         setOpenTickets(ticketsCount || 0)
       }
-    } catch (error) {
+    } catch {
       // Silently fail for badge counts - not critical
-      console.error('Error loading badge counts:', error)
     }
   }
 

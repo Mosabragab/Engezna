@@ -98,20 +98,11 @@ export default function SettlementGroupsPage() {
       .select('*')
       .order('created_at', { ascending: true })
 
-    if (groupsError) {
-      console.error('Error loading settlement groups:', groupsError)
-    }
-
     // Fetch all providers for assignment
-    const { data: providersData, error: providersError } = await supabase
+    const { data: providersData } = await supabase
       .from('providers')
       .select('id, name_ar, name_en, logo_url, settlement_group_id')
       .order('name_ar')
-
-    if (providersError) {
-      console.error('Error loading providers:', providersError)
-    }
-    console.log('Groups page - Loaded providers:', providersData?.length || 0, providersData)
 
     if (groupsData) {
       const groupsWithCount = groupsData.map(group => ({

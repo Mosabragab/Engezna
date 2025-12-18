@@ -302,7 +302,6 @@ export default function EscalationRulesPage() {
       await loadData(supabase)
       setShowModal(false)
     } catch (error: any) {
-      console.error('Error saving rule:', error)
       setFormError(error.message || (locale === 'ar' ? 'حدث خطأ' : 'An error occurred'))
     }
 

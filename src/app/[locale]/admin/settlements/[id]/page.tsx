@@ -149,10 +149,7 @@ export default function SettlementDetailPage() {
       .eq('id', settlementId)
       .single()
 
-    if (error) {
-      console.error('Error loading settlement:', error)
-      return
-    }
+    if (error) return
 
     setSettlement(settlementData as unknown as Settlement)
 
@@ -172,10 +169,6 @@ export default function SettlementDetailPage() {
         `)
         .in('id', settlementData.orders_included)
         .order('created_at', { ascending: false })
-
-      if (ordersError) {
-        console.error('Error loading orders:', ordersError)
-      }
 
       if (ordersData) {
         setOrders(ordersData as unknown as Order[])
@@ -212,7 +205,6 @@ export default function SettlementDetailPage() {
         .eq('id', settlement.id)
 
       if (error) {
-        console.error('Error recording payment:', error)
         alert(locale === 'ar' ? 'حدث خطأ أثناء تسجيل الدفع' : 'Error recording payment')
       } else {
         alert(locale === 'ar' ? 'تم تسجيل الدفع بنجاح' : 'Payment recorded successfully')
@@ -241,7 +233,6 @@ export default function SettlementDetailPage() {
       .eq('id', settlement.id)
 
     if (error) {
-      console.error('Error marking as disputed:', error)
       alert(locale === 'ar' ? 'حدث خطأ' : 'Error occurred')
     } else {
       await loadSettlement(supabase)
@@ -265,7 +256,6 @@ export default function SettlementDetailPage() {
       .eq('id', settlement.id)
 
     if (error) {
-      console.error('Error deleting settlement:', error)
       alert(locale === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting settlement')
     } else {
       alert(locale === 'ar' ? 'تم حذف التسوية بنجاح' : 'Settlement deleted successfully')

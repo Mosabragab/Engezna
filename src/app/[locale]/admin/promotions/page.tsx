@@ -128,7 +128,6 @@ export default function AdminPromotionsPage() {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error loading promo codes:', error)
         // Table might not exist, show empty state
         setPromoCodes([])
         return
@@ -148,8 +147,7 @@ export default function AdminPromotionsPage() {
         expired,
         totalUsage,
       })
-    } catch (error) {
-      console.error('Error loading promo codes:', error)
+    } catch {
       setPromoCodes([])
     }
   }
@@ -219,8 +217,7 @@ export default function AdminPromotionsPage() {
       setShowCreateModal(false)
       resetForm()
       await loadPromoCodes()
-    } catch (error) {
-      console.error('Error creating promo code:', error)
+    } catch {
       alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء كود الخصم' : 'Error creating promo code')
     }
   }
@@ -237,8 +234,8 @@ export default function AdminPromotionsPage() {
       if (error) throw error
 
       await loadPromoCodes()
-    } catch (error) {
-      console.error('Error toggling promo code:', error)
+    } catch {
+      // Error handled silently
     }
   }
 
@@ -258,8 +255,8 @@ export default function AdminPromotionsPage() {
       if (error) throw error
 
       await loadPromoCodes()
-    } catch (error) {
-      console.error('Error deleting promo code:', error)
+    } catch {
+      // Error handled silently
     }
   }
 

@@ -136,10 +136,7 @@ export default function AdminCustomerDetailsPage() {
       .eq('id', customerId)
       .single()
 
-    if (error || !profileData) {
-      console.error('Error loading customer:', error)
-      return
-    }
+    if (error || !profileData) return
 
     // Load customer orders
     const { data: ordersData } = await supabase
@@ -232,9 +229,6 @@ export default function AdminCustomerDetailsPage() {
           .eq('customer_id', customer.id)
           .in('status', activeStatuses)
 
-        if (cancelError) {
-          console.error('Error cancelling orders:', cancelError)
-        }
       }
     }
 

@@ -168,7 +168,6 @@ export default function ProviderOrderDetailPage() {
       .single()
 
     if (orderError || !orderData) {
-      console.error('Error fetching order:', orderError)
       router.push(`/${locale}/provider/orders`)
       return
     }

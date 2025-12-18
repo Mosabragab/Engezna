@@ -145,7 +145,6 @@ export default function ProviderDashboard() {
             .single()
 
           if (orderData?.provider_id === provider.id) {
-            console.log('New message from customer:', newMessage)
             // Increment unread messages count
             setStats(prev => ({ ...prev, unreadMessages: prev.unreadMessages + 1 }))
             // Play notification sound using shared audio instance
@@ -168,9 +167,7 @@ export default function ProviderDashboard() {
           }
         }
       )
-      .subscribe((status) => {
-        console.log('Provider messages subscription status:', status)
-      })
+      .subscribe(() => {})
 
     return () => {
       supabase.removeChannel(channel)

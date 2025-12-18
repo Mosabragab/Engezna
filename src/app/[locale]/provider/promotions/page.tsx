@@ -245,9 +245,7 @@ export default function PromotionsPage() {
       error = result.error
     }
 
-    if (error) {
-      console.error('Error saving promotion:', error)
-    } else {
+    if (!error) {
       await loadPromotions(providerId)
       setShowForm(false)
       resetForm()

@@ -150,8 +150,8 @@ export default function ProviderDetailPage() {
         await loadProviderStats()
         await loadRecentOrders()
       }
-    } catch (error) {
-      console.error('Error loading provider:', error)
+    } catch {
+      // Error handled silently
     }
   }
 
@@ -231,11 +231,9 @@ export default function ProviderDetailPage() {
         await loadProvider()
         setShowActionModal(false)
         setCurrentAction(null)
-      } else {
-        console.error('Action failed:', result.error)
       }
-    } catch (error) {
-      console.error('Error executing action:', error)
+    } catch {
+      // Error handled silently
     }
 
     setActionLoading(false)
@@ -260,11 +258,9 @@ export default function ProviderDetailPage() {
       if (result.success) {
         await loadProvider()
         setShowCommissionModal(false)
-      } else {
-        console.error('Update failed:', result.error)
       }
-    } catch (error) {
-      console.error('Error updating commission:', error)
+    } catch {
+      // Error handled silently
     }
 
     setCommissionLoading(false)
@@ -287,8 +283,8 @@ export default function ProviderDetailPage() {
       if (result.success) {
         await loadProvider()
       }
-    } catch (error) {
-      console.error('Error toggling featured:', error)
+    } catch {
+      // Error handled silently
     }
   }
 

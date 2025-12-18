@@ -156,10 +156,6 @@ export default function ReportsPage() {
     const { data: orders, error: ordersError } = ordersResult
     const { data: orderItems, error: orderItemsError } = orderItemsResult
 
-    if (ordersError) {
-      console.error('Error fetching orders:', ordersError)
-    }
-
     if (orders) {
       // Store all orders for filtering
       setAllOrders(orders)
@@ -238,10 +234,6 @@ export default function ReportsPage() {
     }
 
     // Process top products from the parallel query result
-    if (orderItemsError) {
-      console.error('Error fetching order items:', orderItemsError)
-    }
-
     if (orderItems && orderItems.length > 0) {
       const productStats: { [key: string]: TopProduct } = {}
       orderItems.forEach((item: any) => {

@@ -262,7 +262,6 @@ export default function CompleteProfilePage() {
         })
 
       if (uploadError) {
-        console.error('Upload error:', uploadError)
         // If bucket doesn't exist, try creating it or use a fallback
         setError('Failed to upload logo. Please try again.')
         return null
@@ -276,8 +275,7 @@ export default function CompleteProfilePage() {
       setLogoUrl(publicUrl)
       return publicUrl
 
-    } catch (err) {
-      console.error('Logo upload error:', err)
+    } catch {
       setError('Failed to upload logo')
       return null
     } finally {

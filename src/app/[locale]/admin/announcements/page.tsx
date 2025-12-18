@@ -171,10 +171,7 @@ export default function AdminAnnouncementsPage() {
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error loading announcements:', error)
-      return
-    }
+    if (error) return
 
     // Load creator names
     const announcementsWithCreators = await Promise.all(
@@ -354,7 +351,6 @@ export default function AdminAnnouncementsPage() {
         .eq('id', editingAnnouncement.id)
 
       if (error) {
-        console.error('Error updating announcement:', error)
         setFormError(locale === 'ar' ? 'حدث خطأ أثناء التحديث' : 'Error updating')
         setFormLoading(false)
         return
@@ -370,7 +366,6 @@ export default function AdminAnnouncementsPage() {
         })
 
       if (error) {
-        console.error('Error creating announcement:', error)
         setFormError(locale === 'ar' ? 'حدث خطأ أثناء الإنشاء' : 'Error creating')
         setFormLoading(false)
         return
@@ -394,7 +389,6 @@ export default function AdminAnnouncementsPage() {
       .eq('id', announcementToDelete.id)
 
     if (error) {
-      console.error('Error deleting announcement:', error)
       setFormLoading(false)
       return
     }
