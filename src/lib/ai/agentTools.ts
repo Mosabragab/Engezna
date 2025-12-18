@@ -1172,12 +1172,13 @@ export async function executeAgentTool(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               let sampleItems: any[] = []
               if (uniqueProviders.length === 1) {
-                // Get top 5 items from this provider for immediate display
+                // Get top 10 items from this provider for immediate display
+                // NOTE: Don't fetch variants here - AI should show names first, then ask about sizes
                 const providerId = uniqueProviders[0].id
                 const providerItems = formattedResults.filter(
                   (item: { provider_id: string }) => item.provider_id === providerId
-                ).slice(0, 5)
-                sampleItems = await fetchVariantsForItems(providerItems) as any[]
+                ).slice(0, 10)
+                sampleItems = providerItems // Return items WITHOUT variants for cleaner initial display
               }
 
               return {
@@ -1581,7 +1582,7 @@ export async function executeAgentTool(
         })
 
         // ═══════════════════════════════════════════════════════════════
-        // VALIDATE REQUIRED PARAMS
+        // VALIDATE REQUIRED PARAMS & UUID FORMAT
         // ═══════════════════════════════════════════════════════════════
         if (!item_id || item_id === 'undefined' || item_id === 'null') {
           console.error('[add_to_cart] Missing item_id:', item_id)
@@ -1592,12 +1593,32 @@ export async function executeAgentTool(
           }
         }
 
+        // Validate item_id is a valid UUID format (not made up!)
+        if (!isValidUUID(item_id)) {
+          console.error('[add_to_cart] Invalid item_id UUID format:', item_id)
+          return {
+            success: false,
+            error: 'invalid_item_id_format',
+            message: `الـ item_id "${item_id}" مش UUID صحيح! ⚠️ لازم تستخدم الـ ID الحقيقي من نتائج search_menu. ماتختلقش IDs من خيالك! ابحث عن "${item_name}" تاني واستخدم الـ UUID اللي هيرجعلك.`
+          }
+        }
+
         if (!provider_id || provider_id === 'undefined' || provider_id === 'null') {
           console.error('[add_to_cart] Missing provider_id (no fallback available):', param_provider_id)
           return {
             success: false,
             error: 'missing_provider_id',
             message: `مش عارف أضيف "${item_name}" للسلة. ابحث عن المنتج تاني.`
+          }
+        }
+
+        // Validate provider_id is a valid UUID format
+        if (!isValidUUID(provider_id)) {
+          console.error('[add_to_cart] Invalid provider_id UUID format:', provider_id)
+          return {
+            success: false,
+            error: 'invalid_provider_id_format',
+            message: `الـ provider_id "${provider_id}" مش UUID صحيح! ⚠️ لازم تستخدم الـ ID الحقيقي من نتائج البحث. ماتختلقش IDs من خيالك!`
           }
         }
 
@@ -1613,6 +1634,15 @@ export async function executeAgentTool(
           .single()
 
         if (itemError) {
+          // PGRST116 means "no rows found" - item_id doesn't exist
+          if (itemError.code === 'PGRST116') {
+            console.error('[add_to_cart] Item not found (PGRST116):', { item_id, item_name })
+            return {
+              success: false,
+              error: 'item_not_found',
+              message: `المنتج "${item_name}" مش موجود بالـ ID ده (${item_id}). لازم تستخدم item_id الصحيح من نتائج search_menu. ابحث عن المنتج تاني واستخدم الـ UUID الصحيح.`
+            }
+          }
           console.error('[add_to_cart] Database error:', itemError)
           return {
             success: false,
@@ -1666,6 +1696,16 @@ export async function executeAgentTool(
             success: false,
             error: 'المنتج نفذ من المخزون',
             message: item.stock_notes || `للأسف ${item.name_ar} خلص 😕 عايز حاجة تانية؟`
+          }
+        }
+
+        // Validate variant_id UUID format if provided
+        if (variant_id && !isValidUUID(variant_id)) {
+          console.error('[add_to_cart] Invalid variant_id UUID format:', variant_id)
+          return {
+            success: false,
+            error: 'invalid_variant_id_format',
+            message: `الـ variant_id "${variant_id}" مش UUID صحيح! ⚠️ لازم تستخدم الـ variant ID من نتائج البحث. ماتختلقش IDs من خيالك! ابحث عن المنتج تاني واختار الحجم الصح.`
           }
         }
 
@@ -2914,54 +2954,41 @@ export async function saveCustomerInsights(
 ): Promise<boolean> {
   const supabase = await createClient()
 
-  // First, try to get existing insights
+  // Use upsert to avoid race conditions with duplicate key errors
+  // First, try to get existing insights to merge (non-blocking)
   const { data: existing } = await supabase
     .from('user_insights')
-    .select('id, preferences, conversation_style, insights_count')
+    .select('preferences, conversation_style, insights_count')
     .eq('user_id', customerId)
     .single()
 
-  if (existing) {
-    // Merge with existing insights
-    const mergedPreferences = {
-      ...existing.preferences,
-      ...insights.preferences
-    }
-    const mergedConversationStyle = {
-      ...existing.conversation_style,
-      ...insights.conversation_style
-    }
+  // Merge with existing insights if they exist
+  const mergedPreferences = {
+    ...(existing?.preferences || {}),
+    ...insights.preferences
+  }
+  const mergedConversationStyle = {
+    ...(existing?.conversation_style || {}),
+    ...insights.conversation_style
+  }
+  const newInsightsCount = (existing?.insights_count || 0) + 1
 
-    const { error } = await supabase
-      .from('user_insights')
-      .update({
-        preferences: mergedPreferences,
-        conversation_style: mergedConversationStyle,
-        insights_count: (existing.insights_count || 0) + 1,
-        last_updated: new Date().toISOString()
-      })
-      .eq('user_id', customerId)
+  // Use upsert to handle both insert and update in one atomic operation
+  const { error } = await supabase
+    .from('user_insights')
+    .upsert({
+      user_id: customerId,
+      preferences: mergedPreferences,
+      conversation_style: mergedConversationStyle,
+      insights_count: newInsightsCount,
+      last_updated: new Date().toISOString()
+    }, {
+      onConflict: 'user_id'  // Use user_id as the conflict key
+    })
 
-    if (error) {
-      console.error('[saveCustomerInsights] Update error:', error)
-      return false
-    }
-  } else {
-    // Create new insights record
-    const { error } = await supabase
-      .from('user_insights')
-      .insert({
-        user_id: customerId,
-        preferences: insights.preferences || {},
-        conversation_style: insights.conversation_style || {},
-        insights_count: 1,
-        last_updated: new Date().toISOString()
-      })
-
-    if (error) {
-      console.error('[saveCustomerInsights] Insert error:', error)
-      return false
-    }
+  if (error) {
+    console.error('[saveCustomerInsights] Upsert error:', error)
+    return false
   }
 
   console.log('[saveCustomerInsights] Saved insights for customer:', customerId)

@@ -56,7 +56,7 @@ export async function getCustomerMemory(customerId: string): Promise<CustomerMem
         )
       `)
       .eq('customer_id', customerId)
-      .in('status', ['delivered', 'completed'])
+      .eq('status', 'delivered')  // Only use 'delivered' - 'completed' not in DB enum yet
       .order('created_at', { ascending: false })
       .limit(5)
 
@@ -97,7 +97,7 @@ export async function getCustomerMemory(customerId: string): Promise<CustomerMem
       .from('orders')
       .select('*', { count: 'exact', head: true })
       .eq('customer_id', customerId)
-      .in('status', ['delivered', 'completed'])
+      .eq('status', 'delivered')  // Only use 'delivered' - 'completed' not in DB enum yet
 
     // Get last visit
     const { data: lastActivity } = await supabase
