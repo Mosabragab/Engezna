@@ -1,11 +1,13 @@
 /**
  * SmartAssistant - Main AI Chat Modal Component
  *
- * Features:
- * - Dynamic Viewport Height (dvh) for proper mobile keyboard handling
- * - Visual Viewport API for keyboard-aware positioning
- * - Auto-scroll to latest message
- * - Minimized header when input is focused (mobile)
+ * Architecture: "Sandwich Layout" for mobile
+ * - Full-screen overlay (fixed inset-0) on mobile
+ * - Fixed header at top
+ * - Fixed input at bottom with safe-area-inset
+ * - Message list as only scrollable area
+ * - Uses 100dvh for proper mobile browser handling
+ * - Disables body scroll when open
  */
 
 'use client'
@@ -25,9 +27,35 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/store/cart'
 import { createClient } from '@/lib/supabase/client'
 
+// Custom hook to disable body scroll when chat is open
+function useBodyScrollLock(isLocked: boolean) {
+  useEffect(() => {
+    if (!isLocked) return
+
+    // Save current scroll position and body style
+    const scrollY = window.scrollY
+    const originalStyle = window.getComputedStyle(document.body).overflow
+
+    // Lock body scroll
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+
+    return () => {
+      // Restore body scroll
+      document.body.style.overflow = originalStyle
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      window.scrollTo(0, scrollY)
+    }
+  }, [isLocked])
+}
+
 // Custom hook for Visual Viewport API - handles mobile keyboard
 function useVisualViewport() {
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null)
+  const [keyboardHeight, setKeyboardHeight] = useState(0)
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
 
   useEffect(() => {
@@ -35,13 +63,12 @@ function useVisualViewport() {
     if (!viewport) return
 
     const handleResize = () => {
-      const newHeight = viewport.height
-      setViewportHeight(newHeight)
+      // Calculate keyboard height from visual viewport
+      const heightDiff = window.innerHeight - viewport.height
+      const keyboardOpen = heightDiff > 150 // 150px threshold
 
-      // Detect keyboard by comparing visual viewport to window height
-      // Keyboard is open if visual viewport is significantly smaller
-      const heightDiff = window.innerHeight - newHeight
-      setIsKeyboardOpen(heightDiff > 150) // 150px threshold for keyboard
+      setKeyboardHeight(keyboardOpen ? heightDiff : 0)
+      setIsKeyboardOpen(keyboardOpen)
     }
 
     // Initial measurement
@@ -56,7 +83,7 @@ function useVisualViewport() {
     }
   }, [])
 
-  return { viewportHeight, isKeyboardOpen }
+  return { keyboardHeight, isKeyboardOpen }
 }
 
 interface SmartAssistantProps {
@@ -83,14 +110,16 @@ export function SmartAssistant({
 }: SmartAssistantProps) {
   const [inputValue, setInputValue] = useState('')
   const [customerName, setCustomerName] = useState<string | undefined>(propCustomerName)
-  const [isInputFocused, setIsInputFocused] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
+  // Lock body scroll when chat is open (mobile)
+  useBodyScrollLock(isOpen)
+
   // Visual Viewport API for keyboard handling
-  const { viewportHeight, isKeyboardOpen } = useVisualViewport()
+  const { keyboardHeight, isKeyboardOpen } = useVisualViewport()
 
   // Fetch customer name if userId is available and customerName not provided
   useEffect(() => {
@@ -146,7 +175,7 @@ export function SmartAssistant({
   const { getItemCount } = useCart()
   const cartCount = getItemCount()
 
-  // Scroll to bottom on new messages or keyboard state change
+  // Scroll to bottom on new messages
   useEffect(() => {
     // Use requestAnimationFrame for smoother scroll timing
     requestAnimationFrame(() => {
@@ -154,15 +183,15 @@ export function SmartAssistant({
     })
   }, [messages, streamingContent])
 
-  // Scroll to bottom when keyboard opens (ensures input stays visible)
+  // Scroll to bottom when keyboard opens
   useEffect(() => {
-    if (isKeyboardOpen && isInputFocused) {
+    if (isKeyboardOpen) {
       // Small delay to let the viewport settle
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
       }, 100)
     }
-  }, [isKeyboardOpen, isInputFocused])
+  }, [isKeyboardOpen])
 
   // Focus input when opened
   useEffect(() => {
@@ -202,88 +231,72 @@ export function SmartAssistant({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - desktop only (mobile uses full screen) */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/20 z-40 md:hidden"
+            className="fixed inset-0 bg-black/30 z-40 hidden md:block"
           />
 
-          {/* Chat Modal */}
+          {/* Chat Modal - Sandwich Layout on Mobile */}
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            initial={{ opacity: 0, y: '100%' }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className={cn(
-              'fixed z-50 bg-white rounded-2xl shadow-2xl',
-              'flex flex-col overflow-hidden',
-              // Mobile: use dvh for proper keyboard handling
-              'inset-x-2 bottom-20 top-20',
-              // When keyboard is open on mobile, adjust positioning
-              isKeyboardOpen && 'bottom-2 top-2',
-              // Desktop: positioned bottom-left
-              'md:inset-auto md:bottom-24 md:left-6 md:w-[400px] md:h-[600px] md:max-h-[80vh]'
+              'fixed z-50 bg-white flex flex-col',
+              // MOBILE: Full screen overlay (Sandwich Layout)
+              'inset-0 h-[100dvh]',
+              // DESKTOP: Floating modal with rounded corners
+              'md:inset-auto md:bottom-24 md:left-6 md:w-[400px] md:h-[600px] md:max-h-[80vh]',
+              'md:rounded-2xl md:shadow-2xl'
             )}
-            style={{
-              // Use Visual Viewport height on mobile when keyboard is open
-              ...(isKeyboardOpen && viewportHeight && typeof window !== 'undefined' && window.innerWidth < 768
-                ? { height: `${viewportHeight - 16}px`, top: '8px', bottom: 'auto' }
-                : {})
-            }}
           >
-            {/* Header - minimized when keyboard is open on mobile */}
-            <div
+            {/* ===== HEADER (Fixed at Top) ===== */}
+            <header
               className={cn(
-                'flex items-center justify-between bg-primary text-white transition-all duration-200',
-                // Normal state
+                'shrink-0 flex items-center justify-between bg-primary text-white',
                 'px-4 py-3',
-                // Minimized state when keyboard is open (mobile only)
-                isKeyboardOpen && isInputFocused && 'py-2 md:py-3'
+                // Safe area for notch on mobile
+                'pt-[max(0.75rem,env(safe-area-inset-top))]',
+                // Minimize header when keyboard is open
+                isKeyboardOpen && 'py-2 md:py-3'
               )}
             >
               <div className="flex items-center gap-3">
                 <div
                   className={cn(
                     'bg-white/20 rounded-full flex items-center justify-center transition-all duration-200',
-                    // Normal size
-                    'w-10 h-10',
-                    // Minimized when keyboard is open
-                    isKeyboardOpen && isInputFocused && 'w-8 h-8 md:w-10 md:h-10'
+                    isKeyboardOpen ? 'w-8 h-8 md:w-10 md:h-10' : 'w-10 h-10'
                   )}
                 >
                   <Sparkles className={cn(
                     'transition-all duration-200',
-                    'w-5 h-5',
-                    isKeyboardOpen && isInputFocused && 'w-4 h-4 md:w-5 md:h-5'
+                    isKeyboardOpen ? 'w-4 h-4 md:w-5 md:h-5' : 'w-5 h-5'
                   )} />
                 </div>
                 <div>
-                  <h3
-                    className={cn(
-                      'font-bold transition-all duration-200',
-                      'text-sm',
-                      isKeyboardOpen && isInputFocused && 'text-xs md:text-sm'
-                    )}
-                  >
+                  <h3 className={cn(
+                    'font-bold transition-all duration-200',
+                    isKeyboardOpen ? 'text-xs md:text-sm' : 'text-sm'
+                  )}>
                     مساعد إنجزنا الذكي
                   </h3>
-                  {/* Hide subtitle when minimized */}
-                  <p
-                    className={cn(
-                      'text-xs text-white/80 transition-all duration-200',
-                      isKeyboardOpen && isInputFocused && 'hidden md:block'
-                    )}
-                  >
+                  {/* Hide subtitle when keyboard is open */}
+                  <p className={cn(
+                    'text-xs text-white/80 transition-all duration-200',
+                    isKeyboardOpen && 'hidden md:block'
+                  )}>
                     دردش واطلب
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-1">
-                {/* Cart button - navigates to cart page, not checkout */}
+                {/* Cart button */}
                 {cartCount > 0 && (
                   <Link href="/ar/cart">
                     <Button
@@ -320,7 +333,7 @@ export function SmartAssistant({
                   <X className="w-5 h-5" />
                 </Button>
               </div>
-            </div>
+            </header>
 
             {/* Quick Actions */}
             <QuickActionsBar
@@ -329,10 +342,10 @@ export function SmartAssistant({
               disabled={isLoading}
             />
 
-            {/* Messages */}
+            {/* ===== MESSAGES (Scrollable Area - Only This Section Scrolls) ===== */}
             <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 scroll-smooth"
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 scroll-smooth overscroll-contain"
             >
               {messages.map((message, index) => (
                 <MessageBubble
@@ -374,8 +387,16 @@ export function SmartAssistant({
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="border-t bg-white p-3 shrink-0">
+            {/* ===== INPUT (Fixed at Bottom) ===== */}
+            <div
+              className="shrink-0 border-t bg-white p-3 transition-all duration-200"
+              style={{
+                // On mobile, adjust for keyboard using Visual Viewport
+                paddingBottom: isKeyboardOpen
+                  ? `calc(0.75rem + ${keyboardHeight}px)`
+                  : 'max(0.75rem, env(safe-area-inset-bottom))',
+              }}
+            >
               <div className="flex items-center gap-2">
                 <input
                   ref={inputRef}
@@ -383,8 +404,6 @@ export function SmartAssistant({
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  onFocus={() => setIsInputFocused(true)}
-                  onBlur={() => setIsInputFocused(false)}
                   placeholder="اكتب طلبك هنا... مثال: عايز 2 برجر و بيبسي"
                   className={cn(
                     'flex-1 px-4 py-3 bg-gray-100 rounded-full text-sm',
