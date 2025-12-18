@@ -34,7 +34,7 @@ export default async function WelcomePage({ params }: PageProps) {
     {
       id: 'restaurant_cafe',
       name_ar: 'مطاعم',
-      name_en: 'Restaurants & Cafes',
+      name_en: 'Restaurants',
       icon: UtensilsCrossed,
       color: 'bg-orange-50 text-orange-600',
     },

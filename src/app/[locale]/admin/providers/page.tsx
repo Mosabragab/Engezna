@@ -334,7 +334,7 @@ export default function AdminProvidersPage() {
   // Updated December 2025 - New categories
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
-      restaurant_cafe: { ar: 'مطاعم', en: 'Restaurants & Cafes' },
+      restaurant_cafe: { ar: 'مطاعم', en: 'Restaurants' },
       coffee_patisserie: { ar: 'البن والحلويات', en: 'Coffee & Patisserie' },
       grocery: { ar: 'سوبر ماركت', en: 'Supermarket' },
       vegetables_fruits: { ar: 'خضروات وفواكه', en: 'Fruits & Vegetables' },
@@ -470,7 +470,7 @@ export default function AdminProvidersPage() {
                 className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
               >
                 <option value="all">{locale === 'ar' ? 'كل الفئات' : 'All Categories'}</option>
-                <option value="restaurant_cafe">{locale === 'ar' ? 'مطاعم' : 'Restaurants & Cafes'}</option>
+                <option value="restaurant_cafe">{locale === 'ar' ? 'مطاعم' : 'Restaurants'}</option>
                 <option value="coffee_patisserie">{locale === 'ar' ? 'البن والحلويات' : 'Coffee & Patisserie'}</option>
                 <option value="grocery">{locale === 'ar' ? 'سوبر ماركت' : 'Supermarket'}</option>
                 <option value="vegetables_fruits">{locale === 'ar' ? 'خضروات وفواكه' : 'Fruits & Vegetables'}</option>
