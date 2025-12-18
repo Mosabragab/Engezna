@@ -460,6 +460,26 @@ html.no-transition * {
   bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ========================================
+ * iOS Auto-Zoom Prevention
+ * iOS Safari zooms when input font-size < 16px
+ * ======================================== */
+
+/* Prevent iOS zoom on input focus - use 16px minimum on mobile */
+@media screen and (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  input[type="url"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* Partner Landing Page Animations */
 @keyframes fade-in {
   from {

@@ -404,7 +404,9 @@ export function SmartAssistant({
                   onKeyPress={handleKeyPress}
                   placeholder="اكتب طلبك هنا... مثال: عايز 2 برجر و بيبسي"
                   className={cn(
-                    'flex-1 px-4 py-3 bg-gray-100 rounded-full text-sm',
+                    'flex-1 px-4 py-3 bg-gray-100 rounded-full',
+                    // IMPORTANT: text-base (16px) prevents iOS auto-zoom on focus
+                    'text-base md:text-sm',
                     'placeholder:text-gray-400',
                     'focus:outline-none focus:ring-2 focus:ring-primary/30',
                     'disabled:opacity-50'
