@@ -133,7 +133,6 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
 
       onComplete(result.combined.categories, [], importData.id)
     } catch (err) {
-      console.error('Import error:', err)
       setError(
         err instanceof Error
           ? err.message

@@ -149,10 +149,6 @@ export default function InviteSupervisorPage() {
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
 
-    if (rolesError) {
-      console.error('Error loading roles:', rolesError)
-    }
-
     if (roles && roles.length > 0) {
       setDbRoles(roles)
       // Set default selected role to first non-super_admin role
@@ -177,8 +173,6 @@ export default function InviteSupervisorPage() {
         }
       }
       setRolePermissions(permissionsMap)
-    } else {
-      console.log('No roles found in database, check if migration was run')
     }
   }
 
@@ -363,7 +357,6 @@ export default function InviteSupervisorPage() {
         .single()
 
       if (createError) {
-        console.error('Error creating invitation:', createError)
         setFormError(locale === 'ar' ? 'حدث خطأ أثناء إنشاء الدعوة' : 'Error creating invitation')
         setFormLoading(false)
         return
@@ -379,8 +372,7 @@ export default function InviteSupervisorPage() {
         url: invitationUrl,
       })
 
-    } catch (error) {
-      console.error('Error:', error)
+    } catch {
       setFormError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     }
 
@@ -394,8 +386,8 @@ export default function InviteSupervisorPage() {
       await navigator.clipboard.writeText(invitationResult.url)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy:', err)
+    } catch {
+      // Error handled silently
     }
   }
 

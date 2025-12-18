@@ -223,32 +223,23 @@ export default function OrderTrackingPage() {
         },
         (payload) => {
           if (isSubscribed) {
-            console.log('Order updated via realtime:', payload.new)
-            // Update order state with new data
             setOrder(payload.new as Order)
           }
         }
       )
       .subscribe((status, err) => {
-        console.log('Realtime subscription status:', status)
         if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to order updates')
-          retryCount = 0 // Reset retry count on success
+          retryCount = 0
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error('Subscription error:', err)
-          // Attempt to reconnect with exponential backoff
           if (retryCount < maxRetries && isSubscribed) {
             retryCount++
-            const delay = Math.pow(2, retryCount) * 1000 // 2s, 4s, 8s
-            console.log(`Retrying subscription in ${delay}ms (attempt ${retryCount}/${maxRetries})`)
+            const delay = Math.pow(2, retryCount) * 1000
             setTimeout(() => {
               if (isSubscribed) {
                 channel.subscribe()
               }
             }, delay)
           }
-        } else if (status === 'CLOSED') {
-          console.log('Subscription closed')
         }
       })
 
@@ -263,9 +254,7 @@ export default function OrderTrackingPage() {
 
       if (data && isSubscribed) {
         setOrder(prev => {
-          // Only update if status actually changed
           if (prev?.status !== data.status) {
-            console.log('Order status changed via polling:', prev?.status, '->', data.status)
             return data
           }
           return prev
@@ -293,7 +282,6 @@ export default function OrderTrackingPage() {
       .single()
 
     if (orderError) {
-      console.error('Error fetching order:', orderError)
       router.push(`/${locale}/orders`)
       return
     }
@@ -365,7 +353,6 @@ export default function OrderTrackingPage() {
         .single()
 
       if (fetchError) {
-        console.error('Error fetching order:', fetchError)
         setCancelError(
           locale === 'ar'
             ? 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.'
@@ -401,7 +388,6 @@ export default function OrderTrackingPage() {
         .single()
 
       if (error) {
-        console.error('Error cancelling order:', error)
         setCancelError(
           locale === 'ar'
             ? `حدث خطأ أثناء إلغاء الطلب: ${error.message}`
@@ -416,7 +402,6 @@ export default function OrderTrackingPage() {
         setCancelError(null)
       }
     } catch (err) {
-      console.error('Error:', err)
       setCancelError(
         locale === 'ar'
           ? 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.'
@@ -449,7 +434,6 @@ export default function OrderTrackingPage() {
           .eq('id', existingReview.id)
 
         if (error) {
-          console.error('Error updating review:', error)
           alert(locale === 'ar' ? 'حدث خطأ أثناء تحديث التقييم' : 'Error updating review')
         } else {
           setExistingReview({
@@ -462,14 +446,6 @@ export default function OrderTrackingPage() {
         }
       } else {
         // Create new review
-        console.log('Submitting review:', {
-          order_id: order.id,
-          customer_id: user.id,
-          provider_id: order.provider_id,
-          rating: reviewRating,
-          order_status: order.status
-        })
-
         const { data, error } = await supabase
           .from('reviews')
           .insert({
@@ -483,8 +459,6 @@ export default function OrderTrackingPage() {
           .single()
 
         if (error) {
-          console.error('Error submitting review:', error)
-          // Show more detailed error for debugging
           const errorMsg = locale === 'ar'
             ? `حدث خطأ أثناء إرسال التقييم: ${error.message || error.code || 'خطأ غير معروف'}`
             : `Error submitting review: ${error.message || error.code || 'Unknown error'}`
@@ -495,7 +469,7 @@ export default function OrderTrackingPage() {
         }
       }
     } catch (err) {
-      console.error('Error:', err)
+      // Error handled silently
     } finally {
       setSubmittingReview(false)
     }

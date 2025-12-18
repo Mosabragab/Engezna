@@ -261,8 +261,7 @@ export default function AdminLoginPage() {
       // Redirect to admin dashboard
       router.push(`/${locale}/admin`)
 
-    } catch (err) {
-      console.error('Login error:', err)
+    } catch {
       setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     }
 

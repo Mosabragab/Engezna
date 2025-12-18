@@ -69,7 +69,7 @@ export default function OffersPage() {
         setPromoCodes(promos)
       }
     } catch (error) {
-      console.log('promo_codes table may not exist yet')
+      // promo_codes table may not exist yet
     }
 
     // Fetch providers with free delivery
@@ -86,7 +86,7 @@ export default function OffersPage() {
         setFreeDeliveryProviders(providers)
       }
     } catch (error) {
-      console.log('Error fetching providers:', error)
+      // Error handled silently
     }
 
     setIsLoading(false)

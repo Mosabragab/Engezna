@@ -205,10 +205,7 @@ export default function AdminTasksPage() {
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error loading tasks:', error)
-      return
-    }
+    if (error) return
 
     // Load creator and assignee names
     const tasksWithUsers = await Promise.all(
@@ -388,7 +385,6 @@ export default function AdminTasksPage() {
       })
 
     if (error) {
-      console.error('Error creating task:', error)
       setFormError(locale === 'ar' ? 'حدث خطأ أثناء إنشاء المهمة' : 'Error creating task')
       setFormLoading(false)
       return
@@ -482,7 +478,6 @@ export default function AdminTasksPage() {
         .eq('id', selectedTask.id)
 
       if (error) {
-        console.error('Error updating task:', error)
         setFormError(locale === 'ar' ? 'حدث خطأ أثناء تحديث المهمة' : 'Error updating task')
         setFormLoading(false)
         return

@@ -177,7 +177,6 @@ export default function AddProductPage() {
         .upload(fileName, file, { upsert: true })
 
       if (error) {
-        console.error('Upload error:', error)
         setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image' }))
         return
       }
@@ -188,8 +187,7 @@ export default function AddProductPage() {
 
       setFormData(prev => ({ ...prev, image_url: publicUrl }))
       setImagePreview(publicUrl)
-    } catch (err) {
-      console.error('Upload error:', err)
+    } catch {
       setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image' }))
     } finally {
       setUploading(false)
@@ -256,7 +254,6 @@ export default function AddProductPage() {
       .insert(productData)
 
     if (error) {
-      console.error('Error creating product:', error)
       // If category_id column doesn't exist, retry without it
       if (error.message?.includes('category_id')) {
         delete productData.category_id
@@ -265,7 +262,6 @@ export default function AddProductPage() {
           .insert(productData)
 
         if (retryError) {
-          console.error('Retry error:', retryError)
           setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل إضافة المنتج' : 'Failed to add product' }))
           setSaving(false)
           return

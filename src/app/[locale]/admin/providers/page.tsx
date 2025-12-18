@@ -261,11 +261,9 @@ export default function AdminProvidersPage() {
       if (result.success) {
         const supabase = createClient()
         await loadProviders(supabase)
-      } else {
-        console.error('Operation failed:', result.error)
       }
-    } catch (error) {
-      console.error('Error executing status change:', error)
+    } catch {
+      // Error handled silently
     }
 
     setActionLoading(false)

@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
-import Link from 'next/link'
 import { useCart } from '@/lib/store/cart'
 import { useAuth } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/client'
@@ -13,15 +12,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { useLocation, type Governorate, type City, type District } from '@/lib/contexts'
 import {
   MapPin,
-  Phone,
   User,
   ShoppingCart,
   CreditCard,
   Wallet,
   Home,
-  Building2,
   ChevronDown,
   Plus,
   Check,
@@ -30,21 +28,8 @@ import {
   Loader2,
 } from 'lucide-react'
 
-interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
-}
-
-interface City {
-  id: string
-  governorate_id: string
-  name_ar: string
-  name_en: string
-}
-
-// District interface kept for backward compatibility with saved addresses
-interface District {
+// Simplified district interface for saved addresses (backward compatibility)
+interface SavedAddressDistrict {
   id: string
   city_id: string | null
   name_ar: string
@@ -68,9 +53,9 @@ interface SavedAddress {
   phone: string | null
   delivery_instructions: string | null
   is_default: boolean
-  governorate?: Governorate | null
-  city_ref?: City | null
-  district?: District | null
+  governorate?: { id: string; name_ar: string; name_en: string } | null
+  city_ref?: { id: string; name_ar: string; name_en: string } | null
+  district?: SavedAddressDistrict | null
 }
 
 interface PromoCode {
@@ -99,6 +84,16 @@ export default function CheckoutPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth()
   const { cart, provider, getSubtotal, getTotal, clearCart, _hasHydrated } = useCart()
 
+  // Get location data from context (no redundant queries!)
+  const {
+    governorates,
+    getCitiesByGovernorate,
+    getDistrictsByCity,
+    getGovernorateById,
+    getCityById,
+    isDataLoading: locationDataLoading,
+  } = useLocation()
+
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [orderPlaced, setOrderPlaced] = useState(false) // Prevent redirect after order is placed
@@ -124,14 +119,21 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [loadingAddresses, setLoadingAddresses] = useState(true)
 
-  // New address fields
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [cities, setCities] = useState<City[]>([])
-  const [districts, setDistricts] = useState<District[]>([])
-
+  // New address selections
   const [selectedGovernorateId, setSelectedGovernorateId] = useState<string>('')
   const [selectedCityId, setSelectedCityId] = useState<string>('')
   const [selectedDistrictId, setSelectedDistrictId] = useState<string>('')
+
+  // Filter cities and districts based on selection using context helpers
+  const cities = useMemo(() => {
+    if (!selectedGovernorateId) return []
+    return getCitiesByGovernorate(selectedGovernorateId)
+  }, [selectedGovernorateId, getCitiesByGovernorate])
+
+  const districts = useMemo(() => {
+    if (!selectedCityId) return []
+    return getDistrictsByCity(selectedCityId)
+  }, [selectedCityId, getDistrictsByCity])
 
   const [addressLine1, setAddressLine1] = useState('')
   const [building, setBuilding] = useState('')
@@ -154,36 +156,22 @@ export default function CheckoutPage() {
     if (user && isAuthenticated) {
       loadUserData()
       loadSavedAddresses()
-      loadGovernorates()
     } else if (!authLoading && !isAuthenticated) {
-      // Load governorates for guest users too
-      loadGovernorates()
+      // Guest users use new address mode
       setAddressMode('new')
       setLoadingAddresses(false)
     }
   }, [authLoading, isAuthenticated, cart, user])
 
-  // Load cities when governorate changes
+  // Reset city and district when governorate changes
   useEffect(() => {
-    if (selectedGovernorateId) {
-      loadCities(selectedGovernorateId)
-      setSelectedCityId('')
-      setSelectedDistrictId('')
-      setDistricts([])
-    } else {
-      setCities([])
-      setDistricts([])
-    }
+    setSelectedCityId('')
+    setSelectedDistrictId('')
   }, [selectedGovernorateId])
 
-  // Load districts when city changes
+  // Reset district when city changes
   useEffect(() => {
-    if (selectedCityId) {
-      loadDistricts(selectedCityId)
-      setSelectedDistrictId('')
-    } else {
-      setDistricts([])
-    }
+    setSelectedDistrictId('')
   }, [selectedCityId])
 
   const loadUserData = async () => {
@@ -236,47 +224,6 @@ export default function CheckoutPage() {
     setLoadingAddresses(false)
   }
 
-  const loadGovernorates = async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('governorates')
-      .select('id, name_ar, name_en')
-      .eq('is_active', true)
-      .order('name_ar')
-
-    if (data) {
-      setGovernorates(data)
-    }
-  }
-
-  const loadCities = async (governorateId: string) => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('cities')
-      .select('id, governorate_id, name_ar, name_en')
-      .eq('governorate_id', governorateId)
-      .eq('is_active', true)
-      .order('name_ar')
-
-    if (data) {
-      setCities(data)
-    }
-  }
-
-  const loadDistricts = async (cityId: string) => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('districts')
-      .select('id, city_id, name_ar, name_en')
-      .eq('city_id', cityId)
-      .eq('is_active', true)
-      .order('name_ar')
-
-    if (data) {
-      setDistricts(data)
-    }
-  }
-
   const getSelectedAddress = (): SavedAddress | null => {
     if (addressMode === 'saved' && selectedAddressId) {
       return savedAddresses.find(a => a.id === selectedAddressId) || null
@@ -286,16 +233,6 @@ export default function CheckoutPage() {
 
   // Promo code validation
   const handleApplyPromoCode = async () => {
-    // Debug logging for mobile troubleshooting
-    console.log('handleApplyPromoCode called', {
-      promoCodeInput,
-      hasUser: !!user,
-      hasProvider: !!provider,
-      hasHydrated: _hasHydrated,
-      userId: user?.id,
-      providerId: provider?.id
-    })
-
     if (!promoCodeInput.trim()) {
       setPromoCodeError(locale === 'ar' ? 'يرجى إدخال كود الخصم' : 'Please enter a promo code')
       return
@@ -325,8 +262,6 @@ export default function CheckoutPage() {
       const code = promoCodeInput.trim().toUpperCase()
       const now = new Date()
 
-      console.log('Attempting to fetch promo code:', code, 'at', now.toISOString())
-
       // Fetch the promo code using ilike for case-insensitive match
       const { data: promoCode, error } = await supabase
         .from('promo_codes')
@@ -334,10 +269,7 @@ export default function CheckoutPage() {
         .ilike('code', code)
         .maybeSingle()
 
-      console.log('Promo code fetch result:', { promoCode, error })
-
       if (error) {
-        console.error('Supabase error:', error)
         setPromoCodeError(
           locale === 'ar'
             ? `خطأ في الاستعلام: ${error.message}`
@@ -485,7 +417,6 @@ export default function CheckoutPage() {
       setDiscountAmount(discount)
       setPromoCodeInput('')
     } catch (err) {
-      console.error('Error applying promo code:', err)
       setPromoCodeError(
         locale === 'ar'
           ? 'حدث خطأ أثناء التحقق من الكود'
@@ -535,9 +466,9 @@ export default function CheckoutPage() {
         address_id: addr.id,
       }
     } else {
-      // New address - districts deprecated, using GPS instead
-      const selectedGov = governorates.find(g => g.id === selectedGovernorateId)
-      const selectedCity = cities.find(c => c.id === selectedCityId)
+      // New address - use context helpers
+      const selectedGov = getGovernorateById(selectedGovernorateId)
+      const selectedCity = getCityById(selectedCityId)
 
       return {
         // Geographic hierarchy with IDs and names
@@ -676,7 +607,6 @@ export default function CheckoutPage() {
         .single()
 
       if (orderError) {
-        console.error('Order creation error:', orderError)
         throw orderError
       }
 
@@ -726,7 +656,6 @@ export default function CheckoutPage() {
         .insert(orderItems)
 
       if (itemsError) {
-        console.error('Order items error:', itemsError)
         throw itemsError
       }
 
@@ -737,8 +666,6 @@ export default function CheckoutPage() {
       clearCart()
       router.push(`/${locale}/orders/${order.id}/confirmation`)
     } catch (err) {
-      console.error('Order placement error:', err)
-
       // Check if error is due to RLS policy (banned customer)
       const errorMessage = err instanceof Error ? err.message : String(err)
       const isRLSError = errorMessage.includes('row-level security') ||

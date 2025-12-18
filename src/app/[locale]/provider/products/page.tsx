@@ -140,10 +140,7 @@ export default function ProviderProductsPage() {
       .order('display_order', { ascending: true })
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error fetching products:', error)
-      return
-    }
+    if (error) return
 
     // Then get categories for this provider
     const { data: categoriesData } = await supabase

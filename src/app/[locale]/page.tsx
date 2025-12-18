@@ -340,7 +340,6 @@ export default function HomePage() {
         .eq('order_id', orderId)
 
       if (itemsError || !orderItems || orderItems.length === 0) {
-        console.error('Failed to fetch order items:', itemsError)
         router.push(`/${locale}/orders/${orderId}`)
         return
       }
@@ -353,7 +352,6 @@ export default function HomePage() {
         .single()
 
       if (providerError || !provider) {
-        console.error('Failed to fetch provider:', providerError)
         router.push(`/${locale}/orders/${orderId}`)
         return
       }
@@ -395,7 +393,6 @@ export default function HomePage() {
       // Navigate to checkout
       router.push(`/${locale}/checkout`)
     } catch (error) {
-      console.error('Reorder error:', error)
       router.push(`/${locale}/orders/${orderId}`)
     } finally {
       setIsReordering(false)

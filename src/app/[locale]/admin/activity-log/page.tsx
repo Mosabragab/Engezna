@@ -133,8 +133,7 @@ export default function AdminActivityLogPage() {
         }))
         setLogs(transformedLogs as ActivityLog[])
       }
-    } catch (error) {
-      console.error('Error loading activity logs:', error)
+    } catch {
       // Fallback to direct Supabase call if API fails
       const supabase = createClient()
       const { data } = await supabase

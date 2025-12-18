@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { useTranslations, useLocale } from 'next-intl'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { CustomerLayout } from '@/components/customer/layout'
 import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared'
 import { ChatFAB } from '@/components/customer/voice'
 import { useFavorites } from '@/hooks/customer'
 import { Star, Clock, Percent, ArrowUpDown, MapPin } from 'lucide-react'
-import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
+import { useUserLocation } from '@/lib/contexts'
 
 type Provider = {
   id: string
@@ -33,7 +33,6 @@ type Provider = {
 type SortOption = 'rating' | 'delivery_time' | 'delivery_fee'
 
 export default function ProvidersPage() {
-  const t = useTranslations('providers')
   const locale = useLocale()
   const [providers, setProviders] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,79 +41,33 @@ export default function ProvidersPage() {
   const [sortBy, setSortBy] = useState<SortOption | null>(null)
   const [showOpenOnly, setShowOpenOnly] = useState(false)
   const [showOffersOnly, setShowOffersOnly] = useState(false)
-  const [userCityId, setUserCityId] = useState<string | null>(null)
-  const [userGovernorateId, setUserGovernorateId] = useState<string | null>(null)
-  const [userCityName, setUserCityName] = useState<string | null>(null)
   const [isChatOpen, setIsChatOpen] = useState(false)
+
+  // Get location from context (no Supabase queries needed!)
+  const {
+    cityId: userCityId,
+    governorateId: userGovernorateId,
+    cityName: userCityNameObj,
+    governorateName: userGovernorateNameObj,
+    isLoading: isLocationLoading,
+  } = useUserLocation()
+
+  // Get display name based on locale
+  const userCityName = userCityNameObj
+    ? (locale === 'ar' ? userCityNameObj.ar : userCityNameObj.en)
+    : userGovernorateNameObj
+      ? (locale === 'ar' ? userGovernorateNameObj.ar : userGovernorateNameObj.en)
+      : null
 
   // Favorites hook
   const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites()
 
-  // Load user's city on mount
+  // Fetch providers when location or category changes
   useEffect(() => {
-    loadUserCity()
-
-    // Listen for guest location changes
-    const handleLocationChange = () => {
-      loadUserCity()
+    if (!isLocationLoading) {
+      fetchProviders()
     }
-    window.addEventListener('guestLocationChanged', handleLocationChange)
-    return () => {
-      window.removeEventListener('guestLocationChanged', handleLocationChange)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchProviders()
-  }, [selectedCategory, userCityId, userGovernorateId])
-
-  async function loadUserCity() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (user) {
-      // Logged-in user - get city and governorate from profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('city_id, governorate_id')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.city_id) {
-        setUserCityId(profile.city_id)
-
-        // Get city name for display
-        const { data: city } = await supabase
-          .from('cities')
-          .select('name_ar, name_en')
-          .eq('id', profile.city_id)
-          .single()
-
-        if (city) {
-          setUserCityName(locale === 'ar' ? city.name_ar : city.name_en)
-        }
-      }
-      if (profile?.governorate_id) {
-        setUserGovernorateId(profile.governorate_id)
-      }
-    } else {
-      // Guest user - get city and governorate from localStorage
-      const guestLocation = guestLocationStorage.get()
-      if (guestLocation?.cityId) {
-        setUserCityId(guestLocation.cityId)
-        if (guestLocation.cityName) {
-          setUserCityName(locale === 'ar' ? guestLocation.cityName.ar : guestLocation.cityName.en)
-        }
-      }
-      if (guestLocation?.governorateId) {
-        setUserGovernorateId(guestLocation.governorateId)
-        // Show governorate name if no city name
-        if (!guestLocation.cityId && guestLocation.governorateName) {
-          setUserCityName(locale === 'ar' ? guestLocation.governorateName.ar : guestLocation.governorateName.en)
-        }
-      }
-    }
-  }
+  }, [selectedCategory, userCityId, userGovernorateId, isLocationLoading])
 
   // Smart Arabic text normalization for search
   const normalizeArabicText = (text: string): string => {
@@ -208,14 +161,13 @@ export default function ProvidersPage() {
       const { data, error } = await query
 
       if (error) {
-        console.error('Error fetching providers:', error.message, error.details, error.hint)
         setProviders([])
       } else {
         // No fallback - only show providers from user's location
         setProviders(data || [])
       }
     } catch (err) {
-      console.error('Unexpected error fetching providers:', err)
+      // Error handled silently
     } finally {
       setLoading(false)
     }

@@ -145,7 +145,6 @@ export default function EditProductPage() {
       .single()
 
     if (error || !product) {
-      console.error('Error loading product:', error)
       router.push(`/${locale}/provider/products`)
       return
     }
@@ -345,7 +344,6 @@ export default function EditProductPage() {
         .upload(fileName, file, { upsert: true })
 
       if (error) {
-        console.error('Upload error:', error)
         setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image' }))
         return
       }
@@ -356,8 +354,7 @@ export default function EditProductPage() {
 
       setFormData(prev => ({ ...prev, image_url: publicUrl }))
       setImagePreview(publicUrl)
-    } catch (err) {
-      console.error('Upload error:', err)
+    } catch {
       setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image' }))
     } finally {
       setUploading(false)
@@ -431,7 +428,6 @@ export default function EditProductPage() {
       .eq('id', productId)
 
     if (error) {
-      console.error('Error updating product:', error)
       // If category_id column doesn't exist, retry without it
       if (error.message?.includes('category_id')) {
         delete productData.category_id
@@ -441,7 +437,6 @@ export default function EditProductPage() {
           .eq('id', productId)
 
         if (retryError) {
-          console.error('Retry error:', retryError)
           setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل تحديث المنتج' : 'Failed to update product' }))
           setSaving(false)
           return
@@ -520,7 +515,6 @@ export default function EditProductPage() {
       .eq('id', productId)
 
     if (error) {
-      console.error('Error deleting product:', error)
       setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل حذف المنتج' : 'Failed to delete product' }))
       setDeleting(false)
       return

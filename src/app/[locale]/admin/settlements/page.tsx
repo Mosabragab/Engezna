@@ -178,11 +178,6 @@ export default function AdminSettlementsPage() {
       .select('id, name_ar, name_en, governorate_id, city_id')
       .order('name_ar')
 
-    if (providersError) {
-      console.error('Error loading providers:', providersError)
-    }
-    console.log('Loaded providers:', providersData?.length || 0)
-
     setProviders((providersData || []) as Provider[])
 
     // Calculate stats - use net_amount_due if available, otherwise fall back to platform_commission
@@ -262,11 +257,6 @@ export default function AdminSettlementsPage() {
         .from('providers')
         .select('id')
 
-      if (provError) {
-        console.error('Error loading providers for settlements:', provError)
-      }
-      console.log('Found providers for settlements:', activeProviders?.length || 0)
-
       if (!activeProviders || activeProviders.length === 0) {
         alert(locale === 'ar' ? 'لا يوجد مزودين نشطين' : 'No active providers found')
         return
@@ -289,7 +279,6 @@ export default function AdminSettlementsPage() {
           }
         }
       }
-      console.log('Already settled orders count:', settledOrderIds.size)
 
       let createdCount = 0
       const COMMISSION_RATE = 0.07 // 7% max
@@ -375,8 +364,7 @@ export default function AdminSettlementsPage() {
 
       alert(locale === 'ar' ? `تم إنشاء ${createdCount} تسوية جديدة` : `Generated ${createdCount} new settlements`)
       await handleRefresh()
-    } catch (error) {
-      console.error('Error generating settlements:', error)
+    } catch {
       alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء التسويات' : 'Error generating settlements')
     } finally {
       setIsGenerating(false)
@@ -494,7 +482,6 @@ export default function AdminSettlementsPage() {
         })
 
       if (insertError) {
-        console.error('Error creating settlement:', insertError)
         alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء التسوية' : 'Error creating settlement')
       } else {
         alert(locale === 'ar' ? 'تم إنشاء التسوية بنجاح' : 'Settlement generated successfully')
@@ -502,8 +489,7 @@ export default function AdminSettlementsPage() {
         setGenerateForm({ providerId: '', periodStart: '', periodEnd: '' })
         await handleRefresh()
       }
-    } catch (error) {
-      console.error('Error generating settlement:', error)
+    } catch {
       alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء التسوية' : 'Error generating settlement')
     } finally {
       setIsGenerating(false)
@@ -532,7 +518,6 @@ export default function AdminSettlementsPage() {
         .eq('id', selectedSettlement.id)
 
       if (error) {
-        console.error('Error recording payment:', error)
         alert(locale === 'ar' ? 'حدث خطأ أثناء تسجيل الدفع' : 'Error recording payment')
       } else {
         alert(locale === 'ar' ? 'تم تسجيل الدفع بنجاح' : 'Payment recorded successfully')

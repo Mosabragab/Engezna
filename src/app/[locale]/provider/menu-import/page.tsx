@@ -67,8 +67,7 @@ export default function MenuImportPage() {
       }
 
       setProvider(providerData as Provider)
-    } catch (err) {
-      console.error('Error loading provider:', err)
+    } catch {
       setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     } finally {
       setLoading(false)

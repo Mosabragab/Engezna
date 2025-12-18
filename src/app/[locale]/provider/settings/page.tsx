@@ -183,9 +183,7 @@ export default function ProviderSettingsPage() {
       })
       .eq('id', provider.id)
 
-    if (error) {
-      console.error('Error saving:', error)
-    } else {
+    if (!error) {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
       setProvider(prev => prev ? { ...prev, logo_url: logoUrl } : null)
@@ -211,9 +209,7 @@ export default function ProviderSettingsPage() {
       })
       .eq('id', provider.id)
 
-    if (error) {
-      console.error('Error saving:', error)
-    } else {
+    if (!error) {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     }
@@ -235,9 +231,7 @@ export default function ProviderSettingsPage() {
       })
       .eq('id', provider.id)
 
-    if (error) {
-      console.error('Error updating status:', error)
-    } else {
+    if (!error) {
       setProvider(prev => prev ? { ...prev, status: newStatus } : null)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)

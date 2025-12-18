@@ -128,23 +128,14 @@ export default function AdminMessagesPage() {
           .eq('user_id', user.id)
           .single()
 
-        if (adminError) {
-          console.error('Error fetching admin user:', adminError)
-        }
-
         if (adminUser) {
-          console.log('Admin user found:', { id: adminUser.id, role: adminUser.role, is_active: adminUser.is_active })
           setAdminStatus({
             hasAdminRecord: true,
             isActive: adminUser.is_active,
             adminId: adminUser.id,
           })
-          if (!adminUser.is_active) {
-            console.warn('Admin user is not active - messaging may be restricted')
-          }
           setCurrentAdminId(adminUser.id)
         } else {
-          console.warn('No admin_users entry found for this user - messaging will not work')
           setAdminStatus({
             hasAdminRecord: false,
             isActive: false,
@@ -161,23 +152,12 @@ export default function AdminMessagesPage() {
   }
 
   async function loadMessages(supabase: ReturnType<typeof createClient>) {
-    console.log('Loading messages for admin:', currentAdminId)
-
     const { data: messagesData, error } = await supabase
       .from('internal_messages')
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error loading messages:', error)
-      console.error('Error details - code:', error.code, 'message:', error.message)
-      return
-    }
-
-    console.log('Messages loaded from database:', messagesData?.length || 0, 'messages')
-    if (messagesData && messagesData.length > 0) {
-      console.log('First message recipient_ids:', messagesData[0].recipient_ids)
-    }
+    if (error) return
 
     // Load sender names
     const messagesWithSenders = await Promise.all(
@@ -332,8 +312,6 @@ export default function AdminMessagesPage() {
       return
     }
 
-    console.log('Sending message with:', { sender_id: currentAdminId, recipients, is_broadcast: formData.is_broadcast })
-
     const messageId = crypto.randomUUID()
     const { error } = await supabase
       .from('internal_messages')
@@ -350,9 +328,6 @@ export default function AdminMessagesPage() {
       })
 
     if (error) {
-      console.error('Error sending message:', error)
-      console.error('Error details:', { code: error.code, message: error.message, details: error.details, hint: error.hint })
-
       // Show more detailed error message for debugging
       let errorMessage = locale === 'ar' ? 'حدث خطأ أثناء إرسال الرسالة' : 'Error sending message'
 
@@ -395,10 +370,6 @@ export default function AdminMessagesPage() {
         .from('admin_notifications')
         .insert(notifications)
 
-      if (notifError) {
-        console.error('Error creating notifications:', notifError)
-        // Don't fail the whole operation if notifications fail
-      }
     }
 
     await loadMessages(supabase)
@@ -424,11 +395,7 @@ export default function AdminMessagesPage() {
       .update({ read_by: newReadBy })
       .eq('id', message.id)
 
-    if (error) {
-      console.error('Error marking message as read:', error)
-      // Don't show error to user for read status - it's not critical
-      return
-    }
+    if (error) return
 
     // Update local state
     setMessages(prev => prev.map(m =>

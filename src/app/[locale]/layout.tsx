@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { NextIntlClientProvider } from 'next-intl'
 import { notoSans, notoSansArabic } from '@/lib/fonts'
 import { ThemeProvider } from '@/components/shared/ThemeProvider'
+import { LocationProvider } from '@/lib/contexts'
 import { locales } from '@/i18n/config'
 import '../globals.css'
 
@@ -77,7 +78,9 @@ export default async function LocaleLayout({
           storageKey="engezna-theme"
         >
           <NextIntlClientProvider locale={locale} messages={messages}>
-            {children}
+            <LocationProvider>
+              {children}
+            </LocationProvider>
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

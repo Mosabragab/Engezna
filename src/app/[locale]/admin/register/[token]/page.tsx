@@ -238,8 +238,7 @@ export default function AdminRegisterPage() {
         setFullName(invitationData.full_name)
       }
 
-    } catch (err) {
-      console.error('Error validating invitation:', err)
+    } catch {
       setError(locale === 'ar' ? 'حدث خطأ أثناء التحقق من الدعوة' : 'Error validating invitation')
     }
 
@@ -335,14 +334,12 @@ export default function AdminRegisterPage() {
         })
 
       if (registerError) {
-        console.error('Register error:', registerError)
         setFormError(locale === 'ar' ? 'خطأ في إنشاء حساب المشرف' : 'Error creating admin account')
         setFormLoading(false)
         return
       }
 
       if (registerResult && !registerResult.success) {
-        console.error('Register failed:', registerResult.error)
         setFormError(locale === 'ar' ? 'خطأ في إنشاء حساب المشرف' : 'Error creating admin account')
         setFormLoading(false)
         return
@@ -355,8 +352,7 @@ export default function AdminRegisterPage() {
         router.push(`/${locale}/admin/login`)
       }, 3000)
 
-    } catch (err) {
-      console.error('Registration error:', err)
+    } catch {
       setFormError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     }
 

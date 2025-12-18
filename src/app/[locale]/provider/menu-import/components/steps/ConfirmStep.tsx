@@ -133,7 +133,6 @@ export function ConfirmStep({
         variantsCreated: data.variantsCreated,
       })
     } catch (err) {
-      console.error('Save error:', err)
       setStatus('error')
       setErrorMessage(
         err instanceof Error

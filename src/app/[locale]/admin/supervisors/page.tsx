@@ -330,17 +330,13 @@ export default function AdminSupervisorsPage() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error loading supervisors:', error)
       // Try alternative query without join
       const { data: adminUsersAlt, error: altError } = await supabase
         .from('admin_users')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (altError) {
-        console.error('Alternative query also failed:', altError)
-        return
-      }
+      if (altError) return
 
       // Manually fetch profiles
       const supervisorsWithProfiles: Supervisor[] = await Promise.all(
@@ -494,7 +490,6 @@ export default function AdminSupervisorsPage() {
       })
 
     if (createError) {
-      console.error('Error creating supervisor:', createError)
       setFormError(locale === 'ar' ? 'حدث خطأ أثناء إضافة المشرف' : 'Error adding supervisor')
       setFormLoading(false)
       return
@@ -525,7 +520,6 @@ export default function AdminSupervisorsPage() {
       .eq('id', selectedSupervisor.id)
 
     if (error) {
-      console.error('Error updating supervisor:', error)
       setFormError(locale === 'ar' ? 'حدث خطأ أثناء تحديث المشرف' : 'Error updating supervisor')
       setFormLoading(false)
       return
@@ -551,7 +545,6 @@ export default function AdminSupervisorsPage() {
       .eq('id', selectedSupervisor.id)
 
     if (error) {
-      console.error('Error deleting supervisor:', error)
       setFormLoading(false)
       return
     }

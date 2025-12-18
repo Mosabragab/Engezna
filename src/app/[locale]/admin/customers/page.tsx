@@ -113,7 +113,6 @@ export default function AdminCustomersPage() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error loading customers:', error)
       setDataLoading(false)
       return
     }
@@ -242,11 +241,9 @@ export default function AdminCustomersPage() {
           c.id === customerId ? { ...c, is_active: !ban } : c
         ))
       } else {
-        console.error('Ban/unban failed:', result.error)
         alert(locale === 'ar' ? `فشل: ${result.error}` : `Failed: ${result.error}`)
       }
-    } catch (error) {
-      console.error('Error banning/unbanning user:', error)
+    } catch {
       alert(locale === 'ar' ? 'حدث خطأ أثناء العملية' : 'An error occurred')
     }
 

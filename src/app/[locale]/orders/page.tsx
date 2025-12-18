@@ -21,6 +21,7 @@ import {
   RefreshCw,
   ChevronRight,
   ChevronLeft,
+  type LucideIcon,
 } from 'lucide-react'
 
 type Order = {
@@ -40,7 +41,7 @@ type Order = {
   }
 }
 
-const STATUS_CONFIG: Record<string, { icon: any; color: string; label_ar: string; label_en: string }> = {
+const STATUS_CONFIG: Record<string, { icon: LucideIcon; color: string; label_ar: string; label_en: string }> = {
   pending: { icon: Clock, color: 'text-warning bg-card-bg-warning', label_ar: 'في الانتظار', label_en: 'Pending' },
   accepted: { icon: CheckCircle2, color: 'text-blue-600 bg-blue-100', label_ar: 'تم القبول', label_en: 'Accepted' },
   preparing: { icon: ChefHat, color: 'text-warning bg-card-bg-warning', label_ar: 'جاري التحضير', label_en: 'Preparing' },
@@ -95,9 +96,7 @@ export default function OrderHistoryPage() {
       .eq('customer_id', user?.id)
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error fetching orders:', error)
-    } else {
+    if (!error) {
       // Transform provider from array to object
       const transformedOrders = data?.map(order => ({
         ...order,

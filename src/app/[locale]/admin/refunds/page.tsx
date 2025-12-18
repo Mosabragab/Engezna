@@ -123,7 +123,6 @@ export default function AdminRefundsPage() {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error loading refunds:', error)
         setRefunds([])
         return
       }
@@ -145,8 +144,7 @@ export default function AdminRefundsPage() {
         processed,
         totalAmount,
       })
-    } catch (error) {
-      console.error('Error loading refunds:', error)
+    } catch {
       setRefunds([])
     }
   }
@@ -193,8 +191,7 @@ export default function AdminRefundsPage() {
       setShowDetailModal(false)
       setReviewNotes('')
       await loadRefunds()
-    } catch (error) {
-      console.error('Error approving refund:', error)
+    } catch {
       alert(locale === 'ar' ? 'حدث خطأ' : 'An error occurred')
     } finally {
       setProcessingAction(false)
@@ -226,8 +223,7 @@ export default function AdminRefundsPage() {
       setShowDetailModal(false)
       setReviewNotes('')
       await loadRefunds()
-    } catch (error) {
-      console.error('Error rejecting refund:', error)
+    } catch {
       alert(locale === 'ar' ? 'حدث خطأ' : 'An error occurred')
     } finally {
       setProcessingAction(false)
@@ -263,8 +259,7 @@ export default function AdminRefundsPage() {
       setShowDetailModal(false)
       setReviewNotes('')
       await loadRefunds()
-    } catch (error) {
-      console.error('Error processing refund:', error)
+    } catch {
       alert(locale === 'ar' ? 'حدث خطأ' : 'An error occurred')
     } finally {
       setProcessingAction(false)

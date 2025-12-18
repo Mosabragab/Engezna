@@ -116,10 +116,7 @@ export default function ProviderReviewsPage() {
       .eq('provider_id', provId)
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error fetching reviews:', error)
-      return
-    }
+    if (error) return
 
     if (reviewsData) {
       setReviews(reviewsData as Review[])
@@ -163,7 +160,6 @@ export default function ProviderReviewsPage() {
       .eq('id', selectedReview.id)
 
     if (error) {
-      console.error('Error submitting response:', error)
       alert(locale === 'ar' ? 'حدث خطأ أثناء إرسال الرد' : 'Error submitting response')
     } else {
       // Update local state

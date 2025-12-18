@@ -307,10 +307,6 @@ export default function AdminRolesPage() {
       `)
       .eq('role_id', role.id)
 
-    if (error) {
-      console.error('Error loading role permissions:', error)
-    }
-
     setRolePermissions(rolePerms || [])
     setViewLoading(false)
   }
@@ -436,7 +432,6 @@ export default function AdminRolesPage() {
       await loadData(supabase)
       setShowModal(false)
     } catch (error: any) {
-      console.error('Error saving role:', error)
       setFormError(error.message || (locale === 'ar' ? 'حدث خطأ' : 'An error occurred'))
     }
 

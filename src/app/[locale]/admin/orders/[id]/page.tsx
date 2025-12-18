@@ -180,8 +180,8 @@ export default function AdminOrderDetailsPage() {
       if (result.success && result.data) {
         setOrder(result.data as OrderDetails)
       }
-    } catch (error) {
-      console.error('Error loading order:', error)
+    } catch {
+      // Error handled silently
     }
   }
 
@@ -217,11 +217,10 @@ export default function AdminOrderDetailsPage() {
       if (result.success) {
         await loadOrder()
       } else {
-        console.error('Status update failed:', result.error)
         alert(result.error || (locale === 'ar' ? 'فشل تحديث الحالة' : 'Failed to update status'))
       }
-    } catch (error) {
-      console.error('Error updating status:', error)
+    } catch {
+      // Error handled silently
     }
 
     setActionLoading(false)

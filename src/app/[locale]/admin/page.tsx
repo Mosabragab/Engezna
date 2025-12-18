@@ -179,8 +179,7 @@ export default function AdminDashboard() {
         customer: Array.isArray(order.customer) ? order.customer[0] || null : order.customer,
       }))
       setRecentOrders(transformedOrders as RecentOrder[])
-    } catch (error) {
-      console.error('Error loading dashboard data:', error)
+    } catch {
       setDataError(locale === 'ar' ? 'خطأ في تحميل بيانات لوحة التحكم' : 'Error loading dashboard data')
     }
   }

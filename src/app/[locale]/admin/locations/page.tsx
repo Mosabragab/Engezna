@@ -353,8 +353,8 @@ export default function AdminLocationsPage() {
       // Sort by readiness score descending
       analytics.sort((a, b) => b.readiness_score - a.readiness_score)
       setAnalyticsData(analytics)
-    } catch (error) {
-      console.error('Error loading analytics:', error)
+    } catch {
+      // Error handled silently
     }
 
     setAnalyticsLoading(false)
@@ -564,7 +564,6 @@ export default function AdminLocationsPage() {
       await loadLocations(supabase)
       setModalType(null)
     } catch (error: any) {
-      console.error('Error saving:', error)
       const errorMsg = error?.message || error?.code || 'Unknown error'
       setFormError(locale === 'ar' ? 'حدث خطأ أثناء الحفظ: ' + errorMsg : 'Error saving: ' + errorMsg)
     }
@@ -590,8 +589,7 @@ export default function AdminLocationsPage() {
       await loadLocations(supabase)
       setShowDeleteModal(false)
       setDeleteItem(null)
-    } catch (error: any) {
-      console.error('Error deleting:', error)
+    } catch {
       setFormError(locale === 'ar' ? 'لا يمكن حذف هذا العنصر - قد يكون مرتبطاً ببيانات أخرى' : 'Cannot delete - may be linked to other data')
     }
 
@@ -609,14 +607,12 @@ export default function AdminLocationsPage() {
         .eq('id', item.id)
 
       if (error) {
-        console.error('Toggle error:', error)
         alert(locale === 'ar' ? 'حدث خطأ أثناء تغيير الحالة: ' + error.message : 'Error changing status: ' + error.message)
         return
       }
 
       await loadLocations(supabase)
-    } catch (err) {
-      console.error('Toggle exception:', err)
+    } catch {
       alert(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     }
   }

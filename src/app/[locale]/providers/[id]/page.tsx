@@ -188,9 +188,7 @@ export default function ProviderDetailPage() {
       .eq('id', providerId)
       .single()
 
-    if (providerError) {
-      console.error('Error fetching provider:', providerError)
-    } else {
+    if (!providerError) {
       setProvider(providerData)
     }
 
@@ -226,9 +224,7 @@ export default function ProviderDetailPage() {
       .eq('provider_id', providerId)
       .order('display_order')
 
-    if (menuError) {
-      console.error('Error fetching menu items:', menuError)
-    } else {
+    if (!menuError) {
       // Map product_variants to variants for each menu item
       const itemsWithVariants = (menuData || []).map(item => ({
         ...item,

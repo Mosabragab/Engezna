@@ -192,9 +192,7 @@ export default function StoreHoursPage() {
       })
       .eq('id', providerId)
 
-    if (error) {
-      console.error('Error saving hours:', error)
-    } else {
+    if (!error) {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     }

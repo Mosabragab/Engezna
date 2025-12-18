@@ -210,7 +210,6 @@ export default function AdminApprovalsPage() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error loading approvals:', error)
       alert(locale === 'ar' ? 'خطأ في تحميل طلبات الموافقة' : 'Error loading approval requests')
       return
     }
@@ -368,7 +367,6 @@ export default function AdminApprovalsPage() {
       .eq('id', selectedApproval.id)
 
     if (error) {
-      console.error('Error updating approval:', error)
       alert(locale === 'ar' ? 'خطأ في تحديث حالة الطلب: ' + error.message : 'Error updating approval status: ' + error.message)
       setFormLoading(false)
       return
@@ -473,7 +471,6 @@ export default function AdminApprovalsPage() {
       })
 
     if (error) {
-      console.error('Error creating approval request:', error)
       setFormError(locale === 'ar' ? 'حدث خطأ أثناء إنشاء الطلب' : 'Error creating request')
       setFormLoading(false)
       return
@@ -555,8 +552,8 @@ export default function AdminApprovalsPage() {
       if (providersData) {
         setProviders(providersData)
       }
-    } catch (error) {
-      console.error('Error loading entities:', error)
+    } catch {
+      // Error handled silently
     }
 
     setLoadingEntities(false)

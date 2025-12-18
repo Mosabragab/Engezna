@@ -191,7 +191,7 @@ export function OffersCarousel({
                   <div className="absolute bottom-4 end-4 w-24 h-24">
                     <img
                       src={offer.image_url}
-                      alt=""
+                      alt={locale === 'ar' ? offer.title_ar : offer.title_en}
                       className="w-full h-full object-contain"
                     />
                   </div>

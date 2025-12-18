@@ -25,6 +25,7 @@ import {
   User,
   Check,
   X,
+  type LucideIcon,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -91,7 +92,7 @@ type Order = {
  * - Delivered (Success): #22C55E → hsl(142 71% 45%)
  * - Cancelled/Error: #EF4444 → hsl(0 84% 60%)
  */
-const STATUS_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label_ar: string; label_en: string }> = {
+const STATUS_CONFIG: Record<string, { icon: LucideIcon; color: string; bgColor: string; label_ar: string; label_en: string }> = {
   pending: { icon: Clock, color: 'text-[hsl(48_97%_40%)]', bgColor: 'bg-[hsl(48_100%_95%)]', label_ar: 'طلب جديد', label_en: 'New Order' },
   accepted: { icon: CheckCircle2, color: 'text-[hsl(217_91%_60%)]', bgColor: 'bg-[hsl(217_91%_60%/0.1)]', label_ar: 'تم القبول', label_en: 'Accepted' },
   preparing: { icon: ChefHat, color: 'text-[hsl(217_91%_60%)]', bgColor: 'bg-[hsl(217_91%_60%/0.1)]', label_ar: 'جاري التحضير', label_en: 'Preparing' },
@@ -167,7 +168,6 @@ export default function ProviderOrdersPage() {
         },
         async () => {
           // Reload orders when new order comes in
-          console.log('New order received - reloading orders')
           await loadOrders(providerId)
           setLastRefresh(new Date())
           // Play notification sound
@@ -190,14 +190,11 @@ export default function ProviderOrdersPage() {
         },
         async () => {
           // Reload orders when any order is updated
-          console.log('Order updated - reloading orders')
           await loadOrders(providerId)
           setLastRefresh(new Date())
         }
       )
-      .subscribe((status) => {
-        console.log('Provider orders subscription status:', status)
-      })
+      .subscribe(() => {})
 
     return () => {
       supabase.removeChannel(channel)
@@ -259,7 +256,6 @@ export default function ProviderOrdersPage() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching orders:', error)
       return
     }
 
@@ -381,7 +377,6 @@ export default function ProviderOrdersPage() {
         .single()
 
       if (fetchError || !existingOrder) {
-        console.error('Error fetching order:', fetchError)
         alert(locale === 'ar' ? 'خطأ: لم يتم العثور على الطلب' : 'Error: Order not found')
         setActionLoading(null)
         return
@@ -389,7 +384,6 @@ export default function ProviderOrdersPage() {
 
       // Verify provider ownership
       if (existingOrder.provider_id !== providerId) {
-        console.error('Provider mismatch')
         alert(locale === 'ar' ? 'خطأ: ليس لديك صلاحية تحديث هذا الطلب' : 'Error: You do not have permission to update this order')
         setActionLoading(null)
         return
@@ -406,7 +400,6 @@ export default function ProviderOrdersPage() {
         .eq('provider_id', providerId) // Extra safety check
 
       if (updateError) {
-        console.error('Error updating payment status:', updateError)
         alert(locale === 'ar' ? 'خطأ في تحديث حالة الدفع: ' + updateError.message : 'Error updating payment status: ' + updateError.message)
         setActionLoading(null)
         return
@@ -416,8 +409,7 @@ export default function ProviderOrdersPage() {
       if (providerId) {
         await loadOrders(providerId)
       }
-    } catch (err) {
-      console.error('Unexpected error in handleConfirmPayment:', err)
+    } catch {
       alert(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
     }
 
