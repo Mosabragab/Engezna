@@ -38,8 +38,8 @@ export function BottomNavigation() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] md:hidden">
-      {/* Safe area padding for iOS */}
-      <div className="pb-[env(safe-area-inset-bottom)]">
+      {/* Safe area padding for iOS - bottom, left, and right */}
+      <div className="pb-[env(safe-area-inset-bottom,0px)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
         <div className="flex items-center justify-around h-16">
           {navItems.map((item) => {
             const Icon = item.icon

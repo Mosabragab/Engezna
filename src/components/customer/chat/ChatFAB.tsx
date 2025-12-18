@@ -21,13 +21,15 @@ export function ChatFAB({ onClick, isOpen, hasUnread = false, className }: ChatF
     <motion.button
       onClick={onClick}
       className={cn(
-        'fixed z-50 flex items-center justify-center',
+        'fixed flex items-center justify-center',
         'w-14 h-14 rounded-full shadow-lg',
         'bg-primary hover:bg-primary/90',
         'text-white transition-colors',
         'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2',
         // Position: bottom-left for RTL, above bottom nav on mobile
         'bottom-20 left-4 md:bottom-6 md:left-6',
+        // z-index: above BottomNav (z-50), and above chat overlay (z-70) when open
+        isOpen ? 'z-[80]' : 'z-50',
         className
       )}
       whileHover={{ scale: 1.05 }}

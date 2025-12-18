@@ -350,6 +350,136 @@ html.no-transition * {
   @apply animate-shimmer rounded-md bg-muted;
 }
 
+/* Interactive Cards & Elements - Physical Feedback */
+.interactive-card {
+  @apply transition-transform duration-150 ease-out;
+}
+
+.interactive-card:active {
+  transform: scale(0.98);
+}
+
+/* Interactive press effect for buttons and cards */
+.press-effect {
+  @apply transition-transform duration-100 ease-out active:scale-[0.96];
+}
+
+/* Smooth scroll snap carousel */
+.snap-carousel {
+  @apply overflow-x-auto flex gap-4;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.snap-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.snap-carousel > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Spring animation for carousels */
+@keyframes spring-snap {
+  0% {
+    transform: scale(0.98);
+  }
+  50% {
+    transform: scale(1.01);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.snap-spring {
+  animation: spring-snap 0.3s ease-out;
+}
+
+/* ========================================
+ * PWA Safe Area Utilities
+ * For handling notches, home indicators, and curved edges
+ * ======================================== */
+
+/* Full safe area container - applies padding for all safe areas */
+.safe-area-container {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Individual safe area utilities */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Safe area with minimum values (for elements that need minimum spacing) */
+.safe-top-min {
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+}
+
+.safe-bottom-min {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+
+/* Margin variants for safe areas */
+.m-safe-top {
+  margin-top: env(safe-area-inset-top, 0px);
+}
+
+.m-safe-bottom {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Full height with safe areas - for full-screen modals */
+.h-screen-safe {
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Fixed bottom element with safe area - for bottom navigation, FABs */
+.fixed-bottom-safe {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ========================================
+ * iOS Auto-Zoom Prevention
+ * iOS Safari zooms when input font-size < 16px
+ * ======================================== */
+
+/* Prevent iOS zoom on input focus - use 16px minimum on mobile */
+@media screen and (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  input[type="url"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* Partner Landing Page Animations */
 @keyframes fade-in {
   from {

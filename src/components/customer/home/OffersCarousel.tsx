@@ -154,8 +154,12 @@ export function OffersCarousel({
         onMouseLeave={handleInteractionEnd}
       >
         <div
-          className="flex gap-4 transition-transform duration-500 ease-in-out"
-          style={{ transform: getTransform() }}
+          className="flex gap-4 will-change-transform"
+          style={{
+            transform: getTransform(),
+            // Spring-like transition for smooth carousel movement
+            transition: 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          }}
         >
           {offers.map((offer) => {
             const OfferContent = (
@@ -192,6 +196,7 @@ export function OffersCarousel({
                     <img
                       src={offer.image_url}
                       alt={locale === 'ar' ? offer.title_ar : offer.title_en}
+                      loading="lazy"
                       className="w-full h-full object-contain"
                     />
                   </div>
