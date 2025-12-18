@@ -287,7 +287,7 @@ export default function CartPage() {
                     </div>
                     {/* Show message if promo exists but min order not met */}
                     {hasUnmetMinOrder && (
-                      <p className="text-[10px] text-amber-600 mt-1">
+                      <p className="text-[10px] text-warning mt-1">
                         {locale === 'ar'
                           ? `أضف ${(promo.min_order_amount! - subtotal).toFixed(0)} ج.م للحصول على الخصم`
                           : `Add ${(promo.min_order_amount! - subtotal).toFixed(0)} EGP to get discount`}
@@ -386,7 +386,7 @@ export default function CartPage() {
 
             {/* Checkout Button - Inside card */}
             {provider && provider.min_order_amount > subtotal && (
-              <div className="bg-amber-50 text-amber-700 text-xs rounded-lg px-3 py-1.5 text-center">
+              <div className="bg-card-bg-warning text-warning text-xs rounded-lg px-3 py-1.5 text-center">
                 {locale === 'ar'
                   ? `أضف ${(provider.min_order_amount - subtotal).toFixed(0)} ج.م للوصول للحد الأدنى`
                   : `Add ${(provider.min_order_amount - subtotal).toFixed(0)} EGP to reach minimum order`

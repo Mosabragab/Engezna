@@ -158,7 +158,7 @@ export default function OrderConfirmationPage() {
     switch (status) {
       case 'pending':
         return {
-          color: 'bg-amber-100 text-amber-800 border-amber-200',
+          color: 'bg-card-bg-warning text-warning border-warning',
           icon: Clock,
           label: locale === 'ar' ? 'في انتظار موافقة التاجر' : 'Waiting for Provider Approval',
           description: locale === 'ar'
@@ -303,9 +303,9 @@ export default function OrderConfirmationPage() {
           <Card className={`mb-4 border-2 ${statusInfo.color}`}>
             <CardContent className="py-5">
               <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center ${order.status === 'pending' ? 'bg-amber-200' : 'bg-blue-200'}`}>
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center ${order.status === 'pending' ? 'bg-card-bg-warning' : 'bg-blue-200'}`}>
                   {order.status === 'pending' ? (
-                    <Loader2 className="w-8 h-8 text-amber-700 animate-spin" />
+                    <Loader2 className="w-8 h-8 text-warning animate-spin" />
                   ) : (
                     <StatusIcon className="w-8 h-8" />
                   )}
