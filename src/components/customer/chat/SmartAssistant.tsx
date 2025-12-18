@@ -231,23 +231,24 @@ export function SmartAssistant({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop - desktop only (mobile uses full screen) */}
+          {/* Backdrop - covers everything including BottomNav */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/30 z-40 hidden md:block"
+            className="fixed inset-0 bg-black/30 z-[60]"
           />
 
           {/* Chat Modal - Sandwich Layout on Mobile */}
+          {/* z-[70] to appear above BottomNavigation (z-50) */}
           <motion.div
             initial={{ opacity: 0, y: '100%' }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className={cn(
-              'fixed z-50 bg-white flex flex-col',
+              'fixed z-[70] bg-white flex flex-col',
               // MOBILE: Full screen overlay (Sandwich Layout)
               'inset-0 h-[100dvh]',
               // DESKTOP: Floating modal with rounded corners
