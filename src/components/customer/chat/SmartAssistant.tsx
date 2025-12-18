@@ -390,13 +390,11 @@ export function SmartAssistant({
 
             {/* ===== INPUT (Fixed at Bottom) ===== */}
             <div
-              className="shrink-0 border-t bg-white p-3 transition-all duration-200"
-              style={{
-                // On mobile, adjust for keyboard using Visual Viewport
-                paddingBottom: isKeyboardOpen
-                  ? `calc(0.75rem + ${keyboardHeight}px)`
-                  : 'max(0.75rem, env(safe-area-inset-bottom))',
-              }}
+              className={cn(
+                'shrink-0 border-t bg-white p-3',
+                // Safe area for home indicator (only when keyboard is closed)
+                !isKeyboardOpen && 'pb-[max(0.75rem,env(safe-area-inset-bottom))]'
+              )}
             >
               <div className="flex items-center gap-2">
                 <input
