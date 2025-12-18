@@ -33,7 +33,7 @@ export default async function WelcomePage({ params }: PageProps) {
   const categories = [
     {
       id: 'restaurant_cafe',
-      name_ar: 'مطاعم وكافيهات',
+      name_ar: 'مطاعم',
       name_en: 'Restaurants & Cafes',
       icon: UtensilsCrossed,
       color: 'bg-orange-50 text-orange-600',

@@ -526,7 +526,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         '🏠 الرئيسية': 'مرحبا',
         '🏠 الأقسام': 'categories',
         // Category buttons (map to payloads)
-        '🍽️ مطاعم وكافيهات': 'category:restaurant_cafe',
+        '🍽️ مطاعم': 'category:restaurant_cafe',
         '🛒 سوبر ماركت': 'category:grocery',
         '☕ البن والحلويات': 'category:coffee_sweets',
         '🥬 خضروات وفواكه': 'category:vegetables_fruits',

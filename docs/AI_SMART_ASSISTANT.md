@@ -14,7 +14,7 @@
 
 | القسم | الـ ID | الوصف |
 |-------|--------|-------|
-| 🍽️ مطاعم وكافيهات | `restaurant_cafe` | المطاعم والكافيهات |
+| 🍽️ مطاعم | `restaurant_cafe` | المطاعم والكافيهات |
 | ☕ البن والحلويات | `coffee_sweets` | محلات القهوة والحلويات |
 | 🛒 سوبر ماركت | `grocery` | السوبر ماركت والبقالة |
 | 🥬 خضروات وفواكه | `vegetables_fruits` | الخضار والفاكهة |
@@ -364,7 +364,7 @@ case 'my_new_tool': {
 ```typescript
 // src/lib/store/chat.ts
 quickReplies: [
-  { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+  { title: '🍽️ مطاعم', payload: 'category:restaurant_cafe' },
   { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
   { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
   { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' },

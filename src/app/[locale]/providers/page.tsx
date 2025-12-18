@@ -176,7 +176,7 @@ export default function ProvidersPage() {
   // Updated December 2025 - New categories
   const categories = [
     { id: 'all', name_ar: 'الكل', name_en: 'All' },
-    { id: 'restaurant_cafe', name_ar: 'مطاعم وكافيهات', name_en: 'Restaurants & Cafes' },
+    { id: 'restaurant_cafe', name_ar: 'مطاعم', name_en: 'Restaurants & Cafes' },
     { id: 'coffee_patisserie', name_ar: 'البن والحلويات', name_en: 'Coffee & Patisserie' },
     { id: 'grocery', name_ar: 'سوبر ماركت', name_en: 'Supermarket' },
     { id: 'vegetables_fruits', name_ar: 'خضروات وفواكه', name_en: 'Fruits & Vegetables' },

@@ -141,7 +141,7 @@ export function buildSystemPrompt(context: AgentContext): string {
 
 ⚠️ إنجزنا مش مطاعم بس! إنجزنا عندها 4 أقسام رئيسية:
 
-1️⃣ 🍽️ مطاعم وكافيهات - بيتزا، شاورما، مشويات، قهوة، إلخ
+1️⃣ 🍽️ مطاعم - بيتزا، شاورما، مشويات، قهوة، إلخ
 2️⃣ ☕ البن والحلويات - قهوة، شاي، حلويات شرقية وغربية
 3️⃣ 🛒 سوبر ماركت - بقالة، منتجات غذائية، مشروبات، منظفات
 4️⃣ 🥬 خضروات وفواكه - خضار طازج، فواكه، عصائر طبيعية
@@ -285,7 +285,7 @@ EXECUTE the tool, then respond based on the result.
 ⏰ الوقت: ${timeInfo.period} (${timeInfo.greeting})
 ${context.customerName ? `👤 العميل: ${context.customerName} ${isReturningCustomer ? '(عميل راجع - اهتم بيه!)' : '(عميل جديد - رحب بيه!)'}` : '👤 العميل: ضيف'}
 ${isOnProviderPage ? `🏪 في صفحة: ${context.providerContext?.name}` : '🏠 في الصفحة الرئيسية'}
-${context.selectedCategory ? `📂 القسم: ${context.selectedCategory === 'restaurant_cafe' ? '🍽️ مطاعم وكافيهات' : context.selectedCategory === 'grocery' ? '🛒 سوبر ماركت' : context.selectedCategory === 'vegetables_fruits' ? '🥬 خضروات وفواكه' : context.selectedCategory === 'coffee_sweets' ? '☕ البن والحلويات' : context.selectedCategory} ✅ (ابحث عادي!)` : '📂 القسم: ❌ لم يختر بعد - اطلب منه يختار!'}
+${context.selectedCategory ? `📂 القسم: ${context.selectedCategory === 'restaurant_cafe' ? '🍽️ مطاعم' : context.selectedCategory === 'grocery' ? '🛒 سوبر ماركت' : context.selectedCategory === 'vegetables_fruits' ? '🥬 خضروات وفواكه' : context.selectedCategory === 'coffee_sweets' ? '☕ البن والحلويات' : context.selectedCategory} ✅ (ابحث عادي!)` : '📂 القسم: ❌ لم يختر بعد - اطلب منه يختار!'}
 ${hasCart ? `🛒 السلة: ${context.cartItems?.length} صنف (${context.cartTotal} ج.م)` : '🛒 السلة: فاضية'}
 ${isLoggedIn ? '✅ مسجل دخول' : '👋 زائر'}
 
@@ -333,7 +333,7 @@ ${context.sessionMemory.pending_item.variants.map(v => `     • "${v.name_ar}" 
 استخدم get_providers_by_category فوراً مع category_code المطلوب!
 
 أكواد الأقسام:
-• category:restaurant_cafe → مطاعم وكافيهات
+• category:restaurant_cafe → مطاعم
 • category:coffee_sweets → البن والحلويات
 • category:grocery → سوبر ماركت
 • category:vegetables_fruits → خضروات وفواكه

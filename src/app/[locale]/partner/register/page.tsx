@@ -53,7 +53,7 @@ interface City {
 // Business category options with icons
 // Updated December 2025 - New categories: restaurant_cafe, coffee_patisserie, grocery, vegetables_fruits
 const businessCategories = [
-  { value: 'restaurant_cafe', icon: UtensilsCrossed, labelAr: 'مطاعم وكافيهات', labelEn: 'Restaurants & Cafes' },
+  { value: 'restaurant_cafe', icon: UtensilsCrossed, labelAr: 'مطاعم', labelEn: 'Restaurants & Cafes' },
   { value: 'coffee_patisserie', icon: Coffee, labelAr: 'البن والحلويات', labelEn: 'Coffee & Patisserie' },
   { value: 'grocery', icon: ShoppingCart, labelAr: 'سوبر ماركت', labelEn: 'Supermarket' },
   { value: 'vegetables_fruits', icon: Apple, labelAr: 'خضروات وفواكه', labelEn: 'Fruits & Vegetables' },

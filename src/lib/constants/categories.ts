@@ -13,7 +13,7 @@ import type { LucideIcon } from 'lucide-react'
 export const BUSINESS_CATEGORIES = {
   restaurant_cafe: {
     code: 'restaurant_cafe' as const,
-    name_ar: 'مطاعم وكافيهات',
+    name_ar: 'مطاعم',
     name_en: 'Restaurants & Cafes',
     description_ar: 'مطاعم، كافيهات، عصائر، وجميع خدمات الطعام',
     description_en: 'Restaurants, cafes, juice shops, and all food services',
@@ -75,7 +75,7 @@ export const CATEGORY_ICONS: Record<BusinessCategoryCode, LucideIcon> = {
 
 // For forms and selectors
 export const BUSINESS_CATEGORY_OPTIONS = [
-  { value: 'restaurant_cafe', labelAr: 'مطاعم وكافيهات', labelEn: 'Restaurants & Cafes' },
+  { value: 'restaurant_cafe', labelAr: 'مطاعم', labelEn: 'Restaurants & Cafes' },
   { value: 'coffee_patisserie', labelAr: 'البن والحلويات', labelEn: 'Coffee & Patisserie' },
   { value: 'grocery', labelAr: 'سوبر ماركت', labelEn: 'Supermarket' },
   { value: 'vegetables_fruits', labelAr: 'خضروات وفواكه', labelEn: 'Fruits & Vegetables' },
@@ -84,7 +84,7 @@ export const BUSINESS_CATEGORY_OPTIONS = [
 // Filter categories for provider browsing
 export const PROVIDER_FILTER_CATEGORIES = [
   { id: 'all', name_ar: 'الكل', name_en: 'All' },
-  { id: 'restaurant_cafe', name_ar: 'مطاعم وكافيهات', name_en: 'Restaurants & Cafes' },
+  { id: 'restaurant_cafe', name_ar: 'مطاعم', name_en: 'Restaurants & Cafes' },
   { id: 'coffee_patisserie', name_ar: 'البن والحلويات', name_en: 'Coffee & Patisserie' },
   { id: 'grocery', name_ar: 'سوبر ماركت', name_en: 'Supermarket' },
   { id: 'vegetables_fruits', name_ar: 'خضروات وفواكه', name_en: 'Fruits & Vegetables' },

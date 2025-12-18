@@ -24,7 +24,7 @@ interface Category {
 const defaultCategories: Category[] = [
   {
     id: 'restaurant_cafe',
-    name_ar: 'مطاعم وكافيهات',
+    name_ar: 'مطاعم',
     name_en: 'Restaurants & Cafes',
     icon: <UtensilsCrossed className="w-6 h-6" />,
     color: 'text-primary',
