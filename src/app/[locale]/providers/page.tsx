@@ -208,14 +208,13 @@ export default function ProvidersPage() {
       const { data, error } = await query
 
       if (error) {
-        console.error('Error fetching providers:', error.message, error.details, error.hint)
         setProviders([])
       } else {
         // No fallback - only show providers from user's location
         setProviders(data || [])
       }
     } catch (err) {
-      console.error('Unexpected error fetching providers:', err)
+      // Error handled silently
     } finally {
       setLoading(false)
     }

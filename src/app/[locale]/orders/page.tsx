@@ -95,9 +95,7 @@ export default function OrderHistoryPage() {
       .eq('customer_id', user?.id)
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error fetching orders:', error)
-    } else {
+    if (!error) {
       // Transform provider from array to object
       const transformedOrders = data?.map(order => ({
         ...order,

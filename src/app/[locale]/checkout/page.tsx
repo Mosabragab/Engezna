@@ -286,16 +286,6 @@ export default function CheckoutPage() {
 
   // Promo code validation
   const handleApplyPromoCode = async () => {
-    // Debug logging for mobile troubleshooting
-    console.log('handleApplyPromoCode called', {
-      promoCodeInput,
-      hasUser: !!user,
-      hasProvider: !!provider,
-      hasHydrated: _hasHydrated,
-      userId: user?.id,
-      providerId: provider?.id
-    })
-
     if (!promoCodeInput.trim()) {
       setPromoCodeError(locale === 'ar' ? 'يرجى إدخال كود الخصم' : 'Please enter a promo code')
       return
@@ -325,8 +315,6 @@ export default function CheckoutPage() {
       const code = promoCodeInput.trim().toUpperCase()
       const now = new Date()
 
-      console.log('Attempting to fetch promo code:', code, 'at', now.toISOString())
-
       // Fetch the promo code using ilike for case-insensitive match
       const { data: promoCode, error } = await supabase
         .from('promo_codes')
@@ -334,10 +322,7 @@ export default function CheckoutPage() {
         .ilike('code', code)
         .maybeSingle()
 
-      console.log('Promo code fetch result:', { promoCode, error })
-
       if (error) {
-        console.error('Supabase error:', error)
         setPromoCodeError(
           locale === 'ar'
             ? `خطأ في الاستعلام: ${error.message}`
@@ -485,7 +470,6 @@ export default function CheckoutPage() {
       setDiscountAmount(discount)
       setPromoCodeInput('')
     } catch (err) {
-      console.error('Error applying promo code:', err)
       setPromoCodeError(
         locale === 'ar'
           ? 'حدث خطأ أثناء التحقق من الكود'
@@ -676,7 +660,6 @@ export default function CheckoutPage() {
         .single()
 
       if (orderError) {
-        console.error('Order creation error:', orderError)
         throw orderError
       }
 
@@ -726,7 +709,6 @@ export default function CheckoutPage() {
         .insert(orderItems)
 
       if (itemsError) {
-        console.error('Order items error:', itemsError)
         throw itemsError
       }
 
@@ -737,8 +719,6 @@ export default function CheckoutPage() {
       clearCart()
       router.push(`/${locale}/orders/${order.id}/confirmation`)
     } catch (err) {
-      console.error('Order placement error:', err)
-
       // Check if error is due to RLS policy (banned customer)
       const errorMessage = err instanceof Error ? err.message : String(err)
       const isRLSError = errorMessage.includes('row-level security') ||

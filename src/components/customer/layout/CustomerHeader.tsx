@@ -84,9 +84,7 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             .eq('id', user.id)
             .single()
 
-          if (error) {
-            console.log('Error fetching profile location:', error.message)
-          } else if (profile) {
+          if (!error && profile) {
             // Supabase returns joined data as the object directly
             const govData = profile.governorates as unknown as { name_ar: string; name_en: string } | null
             const cityData = profile.cities as unknown as { name_ar: string; name_en: string } | null
@@ -98,7 +96,7 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             }
           }
         } catch (error) {
-          console.log('Error fetching location:', error)
+          // Error handled silently
         }
       } else {
         // Guest user - get location from localStorage
@@ -109,7 +107,7 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
         }
       }
     } catch (error) {
-      console.error('Error checking auth:', error)
+      // Error handled silently
     }
 
     setLocationLoading(false)

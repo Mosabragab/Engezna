@@ -65,7 +65,7 @@ export function SmartAssistant({
             setCustomerName(firstName)
           }
         } catch (error) {
-          console.error('Error fetching customer name:', error)
+          // Error handled silently
         }
       }
       fetchCustomerName()

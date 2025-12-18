@@ -111,7 +111,6 @@ export default function OrderConfirmationPage() {
       .single()
 
     if (orderError) {
-      console.error('Error fetching order:', orderError)
       // Retry once if order not found (might be a timing issue)
       if (retryCount < 2) {
         setTimeout(() => setRetryCount(prev => prev + 1), 1000)
@@ -123,7 +122,6 @@ export default function OrderConfirmationPage() {
 
     // Verify order belongs to current user
     if (orderData.customer_id !== user.id) {
-      console.error('Order does not belong to current user')
       router.push(`/${locale}`)
       return
     }

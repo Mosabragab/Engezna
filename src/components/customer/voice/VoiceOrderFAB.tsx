@@ -62,7 +62,7 @@ export function ChatFAB({
           }
         }
       } catch (error) {
-        console.error('Error fetching user data:', error)
+        // Error handled silently
       }
     }
 
