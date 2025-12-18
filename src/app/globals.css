@@ -350,6 +350,56 @@ html.no-transition * {
   @apply animate-shimmer rounded-md bg-muted;
 }
 
+/* Interactive Cards & Elements - Physical Feedback */
+.interactive-card {
+  @apply transition-transform duration-150 ease-out;
+}
+
+.interactive-card:active {
+  transform: scale(0.98);
+}
+
+/* Interactive press effect for buttons and cards */
+.press-effect {
+  @apply transition-transform duration-100 ease-out active:scale-[0.96];
+}
+
+/* Smooth scroll snap carousel */
+.snap-carousel {
+  @apply overflow-x-auto flex gap-4;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.snap-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.snap-carousel > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Spring animation for carousels */
+@keyframes spring-snap {
+  0% {
+    transform: scale(0.98);
+  }
+  50% {
+    transform: scale(1.01);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.snap-spring {
+  animation: spring-snap 0.3s ease-out;
+}
+
 /* Partner Landing Page Animations */
 @keyframes fade-in {
   from {

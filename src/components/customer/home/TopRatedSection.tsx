@@ -68,13 +68,14 @@ export function TopRatedSection({
         )}
       </div>
 
-      {/* Horizontal Scroll Cards */}
-      <div className="overflow-x-auto scrollbar-hide">
-        <div className="flex gap-3 px-4 pb-2">
-          {providers.map((provider) => (
-            <ProviderMiniCard key={provider.id} provider={provider} locale={locale} />
-          ))}
-        </div>
+      {/* Horizontal Scroll Cards - CSS Scroll Snap */}
+      <div
+        className="snap-carousel px-4 pb-2 gap-3"
+        style={{ scrollPaddingInlineStart: '16px' }}
+      >
+        {providers.map((provider) => (
+          <ProviderMiniCard key={provider.id} provider={provider} locale={locale} />
+        ))}
       </div>
     </section>
   )
@@ -88,14 +89,21 @@ function ProviderMiniCard({ provider, locale }: { provider: Provider; locale: st
   return (
     <Link
       href={`/${locale}/providers/${provider.id}`}
-      className="flex-shrink-0 w-36 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+      className={cn(
+        'w-36 bg-white rounded-2xl overflow-hidden',
+        'border border-[#E2E8F0] shadow-sm',
+        'hover:shadow-md transition-all duration-200',
+        'active:scale-[0.98]', // Press feedback
+        'will-change-transform' // GPU acceleration
+      )}
     >
-      {/* Image */}
-      <div className="relative h-20 bg-slate-100">
+      {/* Image - 16:9 aspect ratio */}
+      <div className="relative aspect-[16/10] bg-slate-100">
         {provider.cover_image_url || provider.logo_url ? (
           <img
             src={provider.cover_image_url || provider.logo_url || undefined}
             alt={name}
+            loading="lazy" // Lazy loading for performance
             className="w-full h-full object-cover"
           />
         ) : (

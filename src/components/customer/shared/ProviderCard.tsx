@@ -63,12 +63,14 @@ export function ProviderCard({
   if (variant === 'compact') {
     return (
       <Link href={`/${locale}/providers/${provider.id}`} className="block">
-        <div className="bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-md transition-shadow">
-          <div className="relative aspect-[4/3] bg-slate-100">
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden hover:shadow-md transition-all duration-200 active:scale-[0.98]">
+          {/* 16:9 aspect ratio */}
+          <div className="relative aspect-[16/9] bg-slate-100">
             {provider.cover_image_url ? (
               <img
                 src={provider.cover_image_url}
                 alt={name}
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -76,6 +78,8 @@ export function ProviderCard({
                 <span className="text-4xl">🏪</span>
               </div>
             )}
+            {/* Gradient overlay for text clarity */}
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
             {/* Closed Overlay */}
             {isClosed && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -99,13 +103,14 @@ export function ProviderCard({
 
   return (
     <Link href={`/${locale}/providers/${provider.id}`} className="block group">
-      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-lg transition-all duration-300">
-        {/* Cover Image - Compact height */}
-        <div className="relative h-32 bg-slate-100">
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden hover:shadow-lg transition-all duration-300 active:scale-[0.98]">
+        {/* Cover Image - 16:9 aspect ratio */}
+        <div className="relative aspect-[16/9] bg-slate-100">
           {provider.cover_image_url ? (
             <img
               src={provider.cover_image_url}
               alt={name}
+              loading="lazy"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
@@ -113,6 +118,9 @@ export function ProviderCard({
               <span className="text-5xl">🏪</span>
             </div>
           )}
+
+          {/* Gradient overlay for text clarity on images */}
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
 
           {/* Discount Badge */}
           {hasDiscount && (
@@ -125,7 +133,7 @@ export function ProviderCard({
           {onFavoriteToggle && (
             <button
               onClick={handleFavoriteClick}
-              className="absolute top-3 end-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors"
+              className="absolute top-3 end-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors active:scale-[0.95]"
             >
               <Heart
                 className={`w-4 h-4 transition-colors ${
@@ -135,7 +143,7 @@ export function ProviderCard({
             </button>
           )}
 
-          {/* Status Badge */}
+          {/* Status Badge - positioned on gradient */}
           <div className={`absolute bottom-3 start-3 px-2 py-1 rounded-full text-xs font-medium ${
             isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
           }`}>
@@ -148,6 +156,7 @@ export function ProviderCard({
               <img
                 src={provider.logo_url}
                 alt={name}
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
             </div>
