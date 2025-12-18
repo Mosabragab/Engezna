@@ -70,7 +70,7 @@
       "customer": {
         "step1": {
           "title": "Choose Your Restaurant",
-          "description": "Browse available restaurants and cafes"
+          "description": "Browse available restaurants"
         },
         "step2": {
           "title": "Order Your Food",
