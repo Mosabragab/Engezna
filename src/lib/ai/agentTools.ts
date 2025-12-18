@@ -1581,7 +1581,7 @@ export async function executeAgentTool(
         })
 
         // ═══════════════════════════════════════════════════════════════
-        // VALIDATE REQUIRED PARAMS
+        // VALIDATE REQUIRED PARAMS & UUID FORMAT
         // ═══════════════════════════════════════════════════════════════
         if (!item_id || item_id === 'undefined' || item_id === 'null') {
           console.error('[add_to_cart] Missing item_id:', item_id)
@@ -1592,12 +1592,32 @@ export async function executeAgentTool(
           }
         }
 
+        // Validate item_id is a valid UUID format (not made up!)
+        if (!isValidUUID(item_id)) {
+          console.error('[add_to_cart] Invalid item_id UUID format:', item_id)
+          return {
+            success: false,
+            error: 'invalid_item_id_format',
+            message: `الـ item_id "${item_id}" مش UUID صحيح! ⚠️ لازم تستخدم الـ ID الحقيقي من نتائج search_menu. ماتختلقش IDs من خيالك! ابحث عن "${item_name}" تاني واستخدم الـ UUID اللي هيرجعلك.`
+          }
+        }
+
         if (!provider_id || provider_id === 'undefined' || provider_id === 'null') {
           console.error('[add_to_cart] Missing provider_id (no fallback available):', param_provider_id)
           return {
             success: false,
             error: 'missing_provider_id',
             message: `مش عارف أضيف "${item_name}" للسلة. ابحث عن المنتج تاني.`
+          }
+        }
+
+        // Validate provider_id is a valid UUID format
+        if (!isValidUUID(provider_id)) {
+          console.error('[add_to_cart] Invalid provider_id UUID format:', provider_id)
+          return {
+            success: false,
+            error: 'invalid_provider_id_format',
+            message: `الـ provider_id "${provider_id}" مش UUID صحيح! ⚠️ لازم تستخدم الـ ID الحقيقي من نتائج البحث. ماتختلقش IDs من خيالك!`
           }
         }
 
@@ -1675,6 +1695,16 @@ export async function executeAgentTool(
             success: false,
             error: 'المنتج نفذ من المخزون',
             message: item.stock_notes || `للأسف ${item.name_ar} خلص 😕 عايز حاجة تانية؟`
+          }
+        }
+
+        // Validate variant_id UUID format if provided
+        if (variant_id && !isValidUUID(variant_id)) {
+          console.error('[add_to_cart] Invalid variant_id UUID format:', variant_id)
+          return {
+            success: false,
+            error: 'invalid_variant_id_format',
+            message: `الـ variant_id "${variant_id}" مش UUID صحيح! ⚠️ لازم تستخدم الـ variant ID من نتائج البحث. ماتختلقش IDs من خيالك! ابحث عن المنتج تاني واختار الحجم الصح.`
           }
         }
 
