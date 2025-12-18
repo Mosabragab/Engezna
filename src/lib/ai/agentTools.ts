@@ -1172,12 +1172,13 @@ export async function executeAgentTool(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               let sampleItems: any[] = []
               if (uniqueProviders.length === 1) {
-                // Get top 5 items from this provider for immediate display
+                // Get top 10 items from this provider for immediate display
+                // NOTE: Don't fetch variants here - AI should show names first, then ask about sizes
                 const providerId = uniqueProviders[0].id
                 const providerItems = formattedResults.filter(
                   (item: { provider_id: string }) => item.provider_id === providerId
-                ).slice(0, 5)
-                sampleItems = await fetchVariantsForItems(providerItems) as any[]
+                ).slice(0, 10)
+                sampleItems = providerItems // Return items WITHOUT variants for cleaner initial display
               }
 
               return {
