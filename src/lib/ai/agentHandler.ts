@@ -140,9 +140,9 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
     console.log('[runAgent] No category selected - returning prompt BEFORE calling AI')
     return {
       content: 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇',
-      suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+      suggestions: ['🍽️ مطاعم', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
       quickReplies: [
-        { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+        { title: '🍽️ مطاعم', payload: 'category:restaurant_cafe' },
         { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
         { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
         { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
@@ -159,7 +159,7 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
     console.log('[runAgent] Category selected:', categoryCode, '- transforming for AI')
 
     const categoryNames: Record<string, string> = {
-      'restaurant_cafe': 'مطاعم وكافيهات',
+      'restaurant_cafe': 'مطاعم',
       'coffee_sweets': 'البن والحلويات',
       'grocery': 'سوبر ماركت',
       'vegetables_fruits': 'خضروات وفواكه'
@@ -484,9 +484,9 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
       type: 'done',
       response: {
         content: categoryPromptContent,
-        suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+        suggestions: ['🍽️ مطاعم', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
         quickReplies: [
-          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🍽️ مطاعم', payload: 'category:restaurant_cafe' },
           { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
           { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
           { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
@@ -507,7 +507,7 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
 
     // Category name mapping
     const categoryNames: Record<string, string> = {
-      'restaurant_cafe': 'مطاعم وكافيهات',
+      'restaurant_cafe': 'مطاعم',
       'coffee_sweets': 'البن والحلويات',
       'grocery': 'سوبر ماركت',
       'vegetables_fruits': 'خضروات وفواكه'

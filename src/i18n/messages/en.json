@@ -70,7 +70,7 @@
       "customer": {
         "step1": {
           "title": "Choose Your Restaurant",
-          "description": "Browse available restaurants and cafes"
+          "description": "Browse available restaurants"
         },
         "step2": {
           "title": "Order Your Food",
@@ -866,7 +866,7 @@
     "title": "Stores",
     "searchPlaceholder": "Search for a restaurant or food...",
     "all": "All",
-    "restaurant_cafe": "Restaurants & Cafes",
+    "restaurant_cafe": "Restaurants",
     "coffee_patisserie": "Coffee & Patisserie",
     "grocery": "Supermarket",
     "vegetables_fruits": "Fruits & Vegetables",

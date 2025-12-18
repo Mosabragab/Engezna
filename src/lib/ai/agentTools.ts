@@ -2231,12 +2231,12 @@ export async function executeAgentTool(
           return {
             success: true,
             data: [
-              { code: 'restaurant_cafe', name_ar: 'مطاعم وكافيهات', icon: '🍽️' },
+              { code: 'restaurant_cafe', name_ar: 'مطاعم', icon: '🍽️' },
               { code: 'coffee_sweets', name_ar: 'البن والحلويات', icon: '☕' },
               { code: 'grocery', name_ar: 'سوبر ماركت', icon: '🛒' },
               { code: 'vegetables_fruits', name_ar: 'خضروات وفواكه', icon: '🥬' },
             ],
-            message: 'إنجزنا عندها 4 أقسام:\n🍽️ مطاعم وكافيهات\n☕ البن والحلويات\n🛒 سوبر ماركت\n🥬 خضروات وفواكه\nاختار القسم اللي عايز تطلب منه!'
+            message: 'إنجزنا عندها 4 أقسام:\n🍽️ مطاعم\n☕ البن والحلويات\n🛒 سوبر ماركت\n🥬 خضروات وفواكه\nاختار القسم اللي عايز تطلب منه!'
           }
         }
 
@@ -2257,7 +2257,7 @@ export async function executeAgentTool(
 
         // Category name mapping for user-friendly messages
         const categoryNames: Record<string, string> = {
-          'restaurant_cafe': 'مطاعم وكافيهات',
+          'restaurant_cafe': 'مطاعم',
           'coffee_sweets': 'البن والحلويات',
           'grocery': 'سوبر ماركت',
           'vegetables_fruits': 'خضروات وفواكه'

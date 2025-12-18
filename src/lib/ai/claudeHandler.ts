@@ -132,9 +132,9 @@ export async function* runClaudeAgentStream(options: AgentHandlerOptions): Async
       type: 'done',
       response: {
         content: categoryPromptContent,
-        suggestions: ['🍽️ مطاعم وكافيهات', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+        suggestions: ['🍽️ مطاعم', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
         quickReplies: [
-          { title: '🍽️ مطاعم وكافيهات', payload: 'category:restaurant_cafe' },
+          { title: '🍽️ مطاعم', payload: 'category:restaurant_cafe' },
           { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
           { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
           { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
@@ -153,7 +153,7 @@ export async function* runClaudeAgentStream(options: AgentHandlerOptions): Async
     console.log('[runClaudeAgentStream] Category selected:', categoryCode, '- transforming for AI')
 
     const categoryNames: Record<string, string> = {
-      'restaurant_cafe': 'مطاعم وكافيهات',
+      'restaurant_cafe': 'مطاعم',
       'coffee_sweets': 'البن والحلويات',
       'grocery': 'سوبر ماركت',
       'vegetables_fruits': 'خضروات وفواكه'
