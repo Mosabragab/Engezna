@@ -1267,28 +1267,32 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
             }))
 
             // ═══════════════════════════════════════════════════════════════════
-            // FIX: Store pending item in sessionMemory for next request
-            // This allows the AI to remember the item IDs when user says "ضيف"
+            // FIX: Store ALL items in sessionMemory for multi-item orders
+            // This allows AI to use correct IDs when user says "ضيف ٢ كفتة و٣ داوود باشا"
             // ═══════════════════════════════════════════════════════════════════
-            const firstItem = items[0]
-            const variants = firstItem.variants as Array<{ id: string; name_ar: string; price: number }> | undefined
-
-            response.sessionMemory = {
-              pending_item: {
-                id: firstItem.id as string,
-                name_ar: firstItem.name_ar as string,
-                price: firstItem.price as number,
-                provider_id: firstItem.provider_id as string,
-                provider_name_ar: (firstItem.providers as { name_ar?: string })?.name_ar,
-                has_variants: firstItem.has_variants as boolean | undefined,
+            const pendingItems = items.slice(0, 10).map(item => {
+              const variants = item.variants as Array<{ id: string; name_ar: string; price: number }> | undefined
+              return {
+                id: item.id as string,
+                name_ar: item.name_ar as string,
+                price: item.price as number,
+                provider_id: item.provider_id as string,
+                provider_name_ar: (item.providers as { name_ar?: string })?.name_ar,
+                has_variants: item.has_variants as boolean | undefined,
                 variants: variants?.map(v => ({
                   id: v.id,
                   name_ar: v.name_ar,
                   price: v.price
                 }))
               }
+            })
+
+            // Store both pending_items (all) and pending_item (first) for backward compatibility
+            response.sessionMemory = {
+              pending_items: pendingItems,
+              pending_item: pendingItems[0]
             }
-            console.log('[parseAgentOutput] Stored pending item:', response.sessionMemory.pending_item?.name_ar, 'with', variants?.length || 0, 'variants')
+            console.log('[parseAgentOutput] Stored', pendingItems.length, 'pending items:', pendingItems.map(i => i.name_ar).join(', '))
           }
         }
       }

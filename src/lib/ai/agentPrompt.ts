@@ -45,6 +45,20 @@ export interface AgentContext extends ToolContext {
         price: number
       }>
     }
+    // NEW: Store ALL items from search results for multi-item orders
+    pending_items?: Array<{
+      id: string
+      name_ar: string
+      price: number
+      provider_id: string
+      provider_name_ar?: string
+      has_variants?: boolean
+      variants?: Array<{
+        id: string
+        name_ar: string
+        price: number
+      }>
+    }>
     pending_variant?: {
       id: string
       name_ar: string
@@ -259,7 +273,20 @@ ${hasMemory && context.customerMemory?.lastOrders?.length ? `
 📝 آخر طلباته:
 ${context.customerMemory.lastOrders.slice(0, 3).map(o => `   • ${o.providerName}: ${o.items.slice(0, 2).join('، ')}`).join('\n')}
 ` : ''}
-${context.sessionMemory?.pending_item ? `
+${context.sessionMemory?.pending_items?.length ? `
+🔴🔴🔴 منتجات معلقة من البحث السابق (استخدم الـ IDs دي!) 🔴🔴🔴
+${context.sessionMemory.pending_items.map((item, i) => `
+${i + 1}️⃣ ${item.name_ar}
+   - item_id: "${item.id}"
+   - provider_id: "${item.provider_id}"
+   - price: ${item.price} ج.م
+${item.variants?.length ? `   - variants:
+${item.variants.map(v => `     • "${v.name_ar}" (id: "${v.id}", price: ${v.price} ج.م)`).join('\n')}` : '   - has_variants: false'}`).join('\n')}
+
+⚠️ لما العميل يقول "ضيف" أو يختار منتج/حجم، استخدم الـ IDs من القائمة أعلاه!
+⚠️ ماتبحثش تاني - عندك كل البيانات!
+⚠️ لو العميل طلب أكتر من منتج، استخدم الـ item_id الصح لكل منتج!
+` : context.sessionMemory?.pending_item ? `
 🔴🔴🔴 منتج معلق من الرسالة السابقة (استخدم الـ IDs دي!) 🔴🔴🔴
 📦 المنتج: ${context.sessionMemory.pending_item.name_ar}
    - item_id: "${context.sessionMemory.pending_item.id}"
@@ -1235,6 +1262,20 @@ export interface AgentResponse {
         price: number
       }>
     }
+    // NEW: Store ALL items from search results for multi-item orders
+    pending_items?: Array<{
+      id: string
+      name_ar: string
+      price: number
+      provider_id: string
+      provider_name_ar?: string
+      has_variants?: boolean
+      variants?: Array<{
+        id: string
+        name_ar: string
+        price: number
+      }>
+    }>
     pending_variant?: {
       id: string
       name_ar: string
