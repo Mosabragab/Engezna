@@ -48,7 +48,7 @@ Version: 2.1
 | State | Color | Usage |
 |-------|-------|-------|
 | **Success** | `#22C55E` | Completed, delivered |
-| **Warning** | `#FACC15` | Pending, alerts |
+| **Warning** | `#CA8A04` | Pending, alerts (yellow-600) |
 | **Error** | `#EF4444` | Cancelled, errors |
 | **In Progress** | `#3B82F6` | Active orders |
 | **Info** | `#009DE0` | Same as Primary |

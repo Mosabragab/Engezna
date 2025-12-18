@@ -209,7 +209,7 @@ Key positioning pillars:
 | State | HEX | HSL | Usage |
 |-------|-----|-----|-------|
 | **Success** | `#22C55E` | `142, 71%, 45%` | Completed orders, delivered, positive states |
-| **Warning** | `#FACC15` | `48, 97%, 53%` | Pending orders, temporary closures, alerts |
+| **Warning** | `#CA8A04` | `45, 93%, 47%` | Pending orders, temporary closures, alerts (yellow-600) |
 | **Error** | `#EF4444` | `0, 84%, 60%` | Cancelled orders, errors, rejections |
 | **In Progress** | `#3B82F6` | `217, 91%, 60%` | Active orders, processing states |
 | **Info** | `#009DE0` | `198, 100%, 44%` | Same as Primary (brand consistency) |

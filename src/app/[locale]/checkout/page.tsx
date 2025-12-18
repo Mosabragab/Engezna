@@ -1279,7 +1279,7 @@ export default function CheckoutPage() {
                   </button>
 
                   {provider && subtotal < provider.min_order_amount && (
-                    <div className="bg-amber-50 text-amber-700 text-xs rounded-lg px-3 py-1.5 mt-2 text-center">
+                    <div className="bg-card-bg-warning text-warning text-xs rounded-lg px-3 py-1.5 mt-2 text-center">
                       {locale === 'ar'
                         ? `أضف ${(provider.min_order_amount - subtotal).toFixed(0)} ج.م للوصول للحد الأدنى`
                         : `Add ${(provider.min_order_amount - subtotal).toFixed(0)} EGP to reach minimum order`}

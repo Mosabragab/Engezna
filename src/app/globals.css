@@ -30,7 +30,7 @@
     /* SEMANTIC COLORS - Professional Dashboard Standards */
     --success: 142 71% 45%;             /* #22C55E Green - Completed/Success */
     --error: 0 84% 60%;                 /* #EF4444 Red - Errors/Cancelled */
-    --warning: 48 97% 53%;              /* #FACC15 Yellow - Warnings/Pending */
+    --warning: 45 93% 47%;              /* #CA8A04 yellow-600 - Warnings/Pending */
 
     /* EXTENDED SEMANTIC COLORS - Additional Dashboard States */
     --amber: 38 92% 50%;                /* #F59E0B Amber - Pending/Attention */
@@ -56,7 +56,7 @@
     --card-bg-primary: 198 100% 97%;    /* Blue 10% - #E0F4FF */
     --card-bg-success: 142 76% 95%;     /* Green 10% - #DCFCE7 */
     --card-bg-info: 198 100% 97%;       /* Cyan 10% - #E0F4FF */
-    --card-bg-warning: 48 100% 95%;     /* Yellow 10% - #FEF9C3 */
+    --card-bg-warning: 55 97% 88%;      /* yellow-100 - #FEF9C3 */
     --card-bg-error: 0 86% 97%;         /* Red 10% - #FEF2F2 */
     --card-bg-amber: 38 100% 95%;       /* Amber 10% - #FFFBEB */
     --card-bg-purple: 271 91% 97%;      /* Purple 10% - #F5F3FF */

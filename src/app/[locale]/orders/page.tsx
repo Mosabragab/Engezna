@@ -41,7 +41,7 @@ type Order = {
 }
 
 const STATUS_CONFIG: Record<string, { icon: any; color: string; label_ar: string; label_en: string }> = {
-  pending: { icon: Clock, color: 'text-yellow-600 bg-yellow-100', label_ar: 'في الانتظار', label_en: 'Pending' },
+  pending: { icon: Clock, color: 'text-warning bg-card-bg-warning', label_ar: 'في الانتظار', label_en: 'Pending' },
   accepted: { icon: CheckCircle2, color: 'text-blue-600 bg-blue-100', label_ar: 'تم القبول', label_en: 'Accepted' },
   preparing: { icon: ChefHat, color: 'text-warning bg-card-bg-warning', label_ar: 'جاري التحضير', label_en: 'Preparing' },
   ready: { icon: Package, color: 'text-purple-600 bg-purple-100', label_ar: 'جاهز', label_en: 'Ready' },

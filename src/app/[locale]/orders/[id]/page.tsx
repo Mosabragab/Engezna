@@ -773,7 +773,7 @@ export default function OrderTrackingPage() {
           </p>
 
           {order.delivery_address?.delivery_instructions && (
-            <div className="mt-2 p-2 bg-amber-50 rounded text-xs text-amber-800">
+            <div className="mt-2 p-2 bg-card-bg-warning rounded text-xs text-warning">
               <strong>{locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}</strong> {order.delivery_address.delivery_instructions}
             </div>
           )}
@@ -947,7 +947,7 @@ export default function OrderTrackingPage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <AlertTriangle className="w-5 h-5 text-warning" />
                 {locale === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}
               </h3>
               <button

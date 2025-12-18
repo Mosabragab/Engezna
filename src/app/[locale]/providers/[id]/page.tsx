@@ -862,9 +862,9 @@ export default function ProviderDetailPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl">
             <div className="text-center mb-4">
-              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-card-bg-warning rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
-                  className="w-8 h-8 text-amber-600"
+                  className="w-8 h-8 text-warning"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -885,7 +885,7 @@ export default function ProviderDetailPage() {
                   ? `سلتك تحتوي على منتجات من "${providerSwitchInfo.currentProvider}". هل تريد مسح السلة والطلب من "${providerSwitchInfo.newProvider}"؟`
                   : `Your cart contains items from "${providerSwitchInfo.currentProvider}". Do you want to clear your cart and order from "${providerSwitchInfo.newProvider}"?`}
               </p>
-              <p className="text-amber-600 text-xs mt-2">
+              <p className="text-warning text-xs mt-2">
                 {locale === 'ar'
                   ? 'ملاحظة: لا يمكن الطلب من أكثر من مطعم في نفس الطلب'
                   : 'Note: You cannot order from multiple restaurants in the same order'}
