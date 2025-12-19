@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engezna Logo Exporter | مُصدّر شعار إنجزنا</title>
+  <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&family=Noto+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --engezna-blue: #009DE0;
+      --dark-blue: #0077B6;
+      --charcoal: #0F172A;
+      --white: #FFFFFF;
+      --light-gray: #F8FAFC;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans Arabic', sans-serif;
+      background: var(--light-gray);
+      padding: 20px;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    h1 { text-align: center; margin-bottom: 10px; color: var(--charcoal); }
+    .subtitle { text-align: center; color: #64748B; margin-bottom: 30px; }
+
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .export-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .export-card h3 {
+      font-size: 0.85rem;
+      color: #64748B;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .export-card h3 span {
+      background: var(--engezna-blue);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.65rem;
+    }
+
+    .export-card h3 span.size-badge {
+      background: #64748B;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      overflow: hidden;
+    }
+
+    .logo-container.light { background: var(--white); border: 1px solid #E2E8F0; }
+    .logo-container.dark { background: var(--charcoal); }
+    .logo-container.blue { background: var(--engezna-blue); }
+    .logo-container.gradient { background: linear-gradient(135deg, var(--engezna-blue), var(--dark-blue)); }
+
+    /* Logo Styles */
+    .logo-text {
+      font-family: 'Aref Ruqaa', serif;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .logo-text.charcoal { color: var(--charcoal); }
+    .logo-text.white { color: var(--white); }
+    .logo-text.blue { color: var(--engezna-blue); }
+
+    .logo-text.size-xl { font-size: 64px; }
+    .logo-text.size-lg { font-size: 48px; }
+    .logo-text.size-md { font-size: 36px; }
+    .logo-text.size-sm { font-size: 24px; }
+
+    /* Icon Styles */
+    .app-icon {
+      border-radius: 22%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Aref Ruqaa', serif;
+      font-weight: bold;
+    }
+
+    .app-icon.circle { border-radius: 50%; }
+
+    .app-icon.blue-bg { background: var(--engezna-blue); color: white; }
+    .app-icon.dark-bg { background: var(--charcoal); color: white; }
+    .app-icon.white-bg { background: var(--white); color: var(--engezna-blue); border: 1px solid #E2E8F0; }
+    .app-icon.gradient-bg { background: linear-gradient(135deg, var(--engezna-blue), var(--dark-blue)); color: white; }
+
+    /* Cover Photo Styles */
+    .cover-container {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      overflow: hidden;
+    }
+
+    .cover-content {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    /* Download Button */
+    .download-btn {
+      width: 100%;
+      padding: 10px;
+      background: var(--engezna-blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Noto Sans Arabic', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .download-btn:hover { background: var(--dark-blue); }
+    .download-btn:disabled { background: #94A3B8; cursor: not-allowed; }
+
+    .size-info {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #94A3B8;
+      margin-top: 8px;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      color: var(--charcoal);
+      margin: 40px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--engezna-blue);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title .platform-icon {
+      font-size: 1.2rem;
+    }
+
+    .instructions {
+      background: #FEF3C7;
+      border: 1px solid #F59E0B;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 30px;
+      color: #64748B;
+    }
+
+    .platform-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin-left: 10px;
+    }
+
+    .platform-badge.facebook { background: #1877F2; color: white; }
+    .platform-badge.instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; }
+    .platform-badge.twitter { background: #000000; color: white; }
+    .platform-badge.linkedin { background: #0A66C2; color: white; }
+    .platform-badge.youtube { background: #FF0000; color: white; }
+    .platform-badge.tiktok { background: #000000; color: white; }
+    .platform-badge.whatsapp { background: #25D366; color: white; }
+    .platform-badge.appstore { background: #000000; color: white; }
+    .platform-badge.playstore { background: #34A853; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>مُصدّر شعار إنجزنا الشامل</h1>
+    <p class="subtitle">جميع أصول السوشيال ميديا ومتاجر التطبيقات</p>
+
+    <div class="instructions">
+      <strong>تعليمات:</strong> انتظر حتى يتم تحميل الخطوط بالكامل (3-5 ثواني) ثم اضغط على زر التحميل
+    </div>
+
+    <!-- ==================== APP STORE ICONS ==================== -->
+    <h2 class="section-title">
+      📱 أيقونات متاجر التطبيقات - App Store Icons
+    </h2>
+    <div class="export-grid">
+
+      <!-- iOS App Store - Blue -->
+      <div class="export-card">
+        <h3>iOS - خلفية زرقاء <span class="size-badge">1024×1024</span> <span class="platform-badge appstore">Apple</span></h3>
+        <div class="logo-container light" id="appstore-ios-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 128px; height: 128px; font-size: 36px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('appstore-ios-blue', 'engezna-appstore-ios-blue', 1024)">تحميل PNG - 1024px</button>
+      </div>
+
+      <!-- iOS App Store - Dark -->
+      <div class="export-card">
+        <h3>iOS - خلفية سوداء <span class="size-badge">1024×1024</span> <span class="platform-badge appstore">Apple</span></h3>
+        <div class="logo-container light" id="appstore-ios-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 128px; height: 128px; font-size: 36px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('appstore-ios-dark', 'engezna-appstore-ios-dark', 1024)">تحميل PNG - 1024px</button>
+      </div>
+
+      <!-- iOS App Store - White -->
+      <div class="export-card">
+        <h3>iOS - خلفية بيضاء <span class="size-badge">1024×1024</span> <span class="platform-badge appstore">Apple</span></h3>
+        <div class="logo-container" id="appstore-ios-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 128px; height: 128px; font-size: 36px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('appstore-ios-white', 'engezna-appstore-ios-white', 1024)">تحميل PNG - 1024px</button>
+      </div>
+
+      <!-- Google Play - Blue -->
+      <div class="export-card">
+        <h3>Android - خلفية زرقاء <span class="size-badge">512×512</span> <span class="platform-badge playstore">Android</span></h3>
+        <div class="logo-container light" id="appstore-android-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 128px; height: 128px; font-size: 36px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('appstore-android-blue', 'engezna-playstore-android-blue', 512)">تحميل PNG - 512px</button>
+      </div>
+
+      <!-- Google Play - Dark -->
+      <div class="export-card">
+        <h3>Android - خلفية سوداء <span class="size-badge">512×512</span> <span class="platform-badge playstore">Android</span></h3>
+        <div class="logo-container light" id="appstore-android-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 128px; height: 128px; font-size: 36px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('appstore-android-dark', 'engezna-playstore-android-dark', 512)">تحميل PNG - 512px</button>
+      </div>
+
+      <!-- Google Play - White -->
+      <div class="export-card">
+        <h3>Android - خلفية بيضاء <span class="size-badge">512×512</span> <span class="platform-badge playstore">Android</span></h3>
+        <div class="logo-container" id="appstore-android-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 128px; height: 128px; font-size: 36px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('appstore-android-white', 'engezna-playstore-android-white', 512)">تحميل PNG - 512px</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== FACEBOOK ==================== -->
+    <h2 class="section-title">
+      <span class="platform-icon">📘</span> Facebook
+    </h2>
+    <div class="export-grid">
+
+      <!-- Profile - Blue -->
+      <div class="export-card">
+        <h3>Profile - أزرق <span class="size-badge">180×180</span></h3>
+        <div class="logo-container light" id="fb-profile-blue" style="padding: 20px;">
+          <div class="app-icon circle blue-bg" style="width: 90px; height: 90px; font-size: 24px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('fb-profile-blue', 'engezna-facebook-profile-blue', 180)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - Dark -->
+      <div class="export-card">
+        <h3>Profile - أسود <span class="size-badge">180×180</span></h3>
+        <div class="logo-container light" id="fb-profile-dark" style="padding: 20px;">
+          <div class="app-icon circle dark-bg" style="width: 90px; height: 90px; font-size: 24px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('fb-profile-dark', 'engezna-facebook-profile-dark', 180)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - White -->
+      <div class="export-card">
+        <h3>Profile - أبيض <span class="size-badge">180×180</span></h3>
+        <div class="logo-container" id="fb-profile-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon circle white-bg" style="width: 90px; height: 90px; font-size: 24px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('fb-profile-white', 'engezna-facebook-profile-white', 180)">تحميل PNG</button>
+      </div>
+
+      <!-- Cover - Blue -->
+      <div class="export-card" style="grid-column: span 1;">
+        <h3>Cover - أزرق <span class="size-badge">820×312</span></h3>
+        <div class="logo-container blue" id="fb-cover-blue" style="height: 100px; min-height: 100px;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-lg">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-family: 'Noto Sans Arabic'; font-size: 14px; margin-top: 5px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('fb-cover-blue', 'engezna-facebook-cover-blue', 820, 312)">تحميل PNG</button>
+      </div>
+
+      <!-- Cover - Dark -->
+      <div class="export-card" style="grid-column: span 1;">
+        <h3>Cover - أسود <span class="size-badge">820×312</span></h3>
+        <div class="logo-container dark" id="fb-cover-dark" style="height: 100px; min-height: 100px;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-lg">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-family: 'Noto Sans Arabic'; font-size: 14px; margin-top: 5px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('fb-cover-dark', 'engezna-facebook-cover-dark', 820, 312)">تحميل PNG</button>
+      </div>
+
+      <!-- Cover - White -->
+      <div class="export-card" style="grid-column: span 1;">
+        <h3>Cover - أبيض <span class="size-badge">820×312</span></h3>
+        <div class="logo-container light" id="fb-cover-white" style="height: 100px; min-height: 100px;">
+          <div style="text-align: center;">
+            <span class="logo-text blue size-lg">إنجزنا</span>
+            <div style="color: #64748B; font-family: 'Noto Sans Arabic'; font-size: 14px; margin-top: 5px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('fb-cover-white', 'engezna-facebook-cover-white', 820, 312)">تحميل PNG</button>
+      </div>
+
+      <!-- Post Square - Blue -->
+      <div class="export-card">
+        <h3>Post Square - أزرق <span class="size-badge">1200×1200</span></h3>
+        <div class="logo-container blue" id="fb-post-blue" style="height: 150px; aspect-ratio: 1;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-xl">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 10px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportSquare('fb-post-blue', 'engezna-facebook-post-blue', 1200)">تحميل PNG</button>
+      </div>
+
+      <!-- Post Square - Dark -->
+      <div class="export-card">
+        <h3>Post Square - أسود <span class="size-badge">1200×1200</span></h3>
+        <div class="logo-container dark" id="fb-post-dark" style="height: 150px; aspect-ratio: 1;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-xl">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 10px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportSquare('fb-post-dark', 'engezna-facebook-post-dark', 1200)">تحميل PNG</button>
+      </div>
+
+      <!-- Post Square - White -->
+      <div class="export-card">
+        <h3>Post Square - أبيض <span class="size-badge">1200×1200</span></h3>
+        <div class="logo-container light" id="fb-post-white" style="height: 150px; aspect-ratio: 1;">
+          <div style="text-align: center;">
+            <span class="logo-text blue size-xl">إنجزنا</span>
+            <div style="color: #64748B; font-size: 14px; margin-top: 10px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportSquare('fb-post-white', 'engezna-facebook-post-white', 1200)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== INSTAGRAM ==================== -->
+    <h2 class="section-title">
+      <span class="platform-icon">📸</span> Instagram
+    </h2>
+    <div class="export-grid">
+
+      <!-- Profile - Blue -->
+      <div class="export-card">
+        <h3>Profile - أزرق <span class="size-badge">320×320</span></h3>
+        <div class="logo-container light" id="ig-profile-blue" style="padding: 20px;">
+          <div class="app-icon circle blue-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('ig-profile-blue', 'engezna-instagram-profile-blue', 320)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - Dark -->
+      <div class="export-card">
+        <h3>Profile - أسود <span class="size-badge">320×320</span></h3>
+        <div class="logo-container light" id="ig-profile-dark" style="padding: 20px;">
+          <div class="app-icon circle dark-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('ig-profile-dark', 'engezna-instagram-profile-dark', 320)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - White -->
+      <div class="export-card">
+        <h3>Profile - أبيض <span class="size-badge">320×320</span></h3>
+        <div class="logo-container" id="ig-profile-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon circle white-bg" style="width: 100px; height: 100px; font-size: 28px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('ig-profile-white', 'engezna-instagram-profile-white', 320)">تحميل PNG</button>
+      </div>
+
+      <!-- Post Square - Blue -->
+      <div class="export-card">
+        <h3>Post Square - أزرق <span class="size-badge">1080×1080</span></h3>
+        <div class="logo-container blue" id="ig-post-blue" style="height: 150px; aspect-ratio: 1;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-xl">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 10px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportSquare('ig-post-blue', 'engezna-instagram-post-blue', 1080)">تحميل PNG</button>
+      </div>
+
+      <!-- Post Square - Dark -->
+      <div class="export-card">
+        <h3>Post Square - أسود <span class="size-badge">1080×1080</span></h3>
+        <div class="logo-container dark" id="ig-post-dark" style="height: 150px; aspect-ratio: 1;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-xl">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 10px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportSquare('ig-post-dark', 'engezna-instagram-post-dark', 1080)">تحميل PNG</button>
+      </div>
+
+      <!-- Post Square - White -->
+      <div class="export-card">
+        <h3>Post Square - أبيض <span class="size-badge">1080×1080</span></h3>
+        <div class="logo-container light" id="ig-post-white" style="height: 150px; aspect-ratio: 1;">
+          <div style="text-align: center;">
+            <span class="logo-text blue size-xl">إنجزنا</span>
+            <div style="color: #64748B; font-size: 14px; margin-top: 10px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportSquare('ig-post-white', 'engezna-instagram-post-white', 1080)">تحميل PNG</button>
+      </div>
+
+      <!-- Story - Blue -->
+      <div class="export-card">
+        <h3>Story - أزرق <span class="size-badge">1080×1920</span></h3>
+        <div class="logo-container blue" id="ig-story-blue" style="height: 200px; aspect-ratio: 9/16;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-lg">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 8px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportStory('ig-story-blue', 'engezna-instagram-story-blue', 1080, 1920)">تحميل PNG</button>
+      </div>
+
+      <!-- Story - Dark -->
+      <div class="export-card">
+        <h3>Story - أسود <span class="size-badge">1080×1920</span></h3>
+        <div class="logo-container dark" id="ig-story-dark" style="height: 200px; aspect-ratio: 9/16;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-lg">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 8px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportStory('ig-story-dark', 'engezna-instagram-story-dark', 1080, 1920)">تحميل PNG</button>
+      </div>
+
+      <!-- Story - White -->
+      <div class="export-card">
+        <h3>Story - أبيض <span class="size-badge">1080×1920</span></h3>
+        <div class="logo-container light" id="ig-story-white" style="height: 200px; aspect-ratio: 9/16;">
+          <div style="text-align: center;">
+            <span class="logo-text blue size-lg">إنجزنا</span>
+            <div style="color: #64748B; font-size: 12px; margin-top: 8px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportStory('ig-story-white', 'engezna-instagram-story-white', 1080, 1920)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== TWITTER/X ==================== -->
+    <h2 class="section-title">
+      <span class="platform-icon">🐦</span> Twitter / X
+    </h2>
+    <div class="export-grid">
+
+      <!-- Profile - Blue -->
+      <div class="export-card">
+        <h3>Profile - أزرق <span class="size-badge">400×400</span></h3>
+        <div class="logo-container light" id="tw-profile-blue" style="padding: 20px;">
+          <div class="app-icon circle blue-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('tw-profile-blue', 'engezna-twitter-profile-blue', 400)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - Dark -->
+      <div class="export-card">
+        <h3>Profile - أسود <span class="size-badge">400×400</span></h3>
+        <div class="logo-container light" id="tw-profile-dark" style="padding: 20px;">
+          <div class="app-icon circle dark-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('tw-profile-dark', 'engezna-twitter-profile-dark', 400)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - White -->
+      <div class="export-card">
+        <h3>Profile - أبيض <span class="size-badge">400×400</span></h3>
+        <div class="logo-container" id="tw-profile-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon circle white-bg" style="width: 100px; height: 100px; font-size: 28px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('tw-profile-white', 'engezna-twitter-profile-white', 400)">تحميل PNG</button>
+      </div>
+
+      <!-- Header - Blue -->
+      <div class="export-card">
+        <h3>Header - أزرق <span class="size-badge">1500×500</span></h3>
+        <div class="logo-container blue" id="tw-header-blue" style="height: 80px; min-height: 80px; aspect-ratio: 3/1; overflow: hidden;">
+          <div style="text-align: center;">
+            <span class="logo-text white" style="font-size: 32px;">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-family: 'Noto Sans Arabic'; font-size: 10px; margin-top: 2px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('tw-header-blue', 'engezna-twitter-header-blue', 1500, 500)">تحميل PNG</button>
+      </div>
+
+      <!-- Header - Dark -->
+      <div class="export-card">
+        <h3>Header - أسود <span class="size-badge">1500×500</span></h3>
+        <div class="logo-container dark" id="tw-header-dark" style="height: 80px; min-height: 80px; aspect-ratio: 3/1; overflow: hidden;">
+          <div style="text-align: center;">
+            <span class="logo-text white" style="font-size: 32px;">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-family: 'Noto Sans Arabic'; font-size: 10px; margin-top: 2px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('tw-header-dark', 'engezna-twitter-header-dark', 1500, 500)">تحميل PNG</button>
+      </div>
+
+      <!-- Header - White -->
+      <div class="export-card">
+        <h3>Header - أبيض <span class="size-badge">1500×500</span></h3>
+        <div class="logo-container light" id="tw-header-white" style="height: 80px; min-height: 80px; aspect-ratio: 3/1; overflow: hidden;">
+          <div style="text-align: center;">
+            <span class="logo-text blue" style="font-size: 32px;">إنجزنا</span>
+            <div style="color: #64748B; font-family: 'Noto Sans Arabic'; font-size: 10px; margin-top: 2px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('tw-header-white', 'engezna-twitter-header-white', 1500, 500)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== LINKEDIN ==================== -->
+    <h2 class="section-title">
+      <span class="platform-icon">💼</span> LinkedIn
+    </h2>
+    <div class="export-grid">
+
+      <!-- Profile - Blue -->
+      <div class="export-card">
+        <h3>Profile - أزرق <span class="size-badge">400×400</span></h3>
+        <div class="logo-container light" id="li-profile-blue" style="padding: 20px;">
+          <div class="app-icon circle blue-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('li-profile-blue', 'engezna-linkedin-profile-blue', 400)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - Dark -->
+      <div class="export-card">
+        <h3>Profile - أسود <span class="size-badge">400×400</span></h3>
+        <div class="logo-container light" id="li-profile-dark" style="padding: 20px;">
+          <div class="app-icon circle dark-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('li-profile-dark', 'engezna-linkedin-profile-dark', 400)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - White -->
+      <div class="export-card">
+        <h3>Profile - أبيض <span class="size-badge">400×400</span></h3>
+        <div class="logo-container" id="li-profile-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon circle white-bg" style="width: 100px; height: 100px; font-size: 28px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('li-profile-white', 'engezna-linkedin-profile-white', 400)">تحميل PNG</button>
+      </div>
+
+      <!-- Company Logo - Blue -->
+      <div class="export-card">
+        <h3>Company Logo - أزرق <span class="size-badge">300×300</span></h3>
+        <div class="logo-container light" id="li-company-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('li-company-blue', 'engezna-linkedin-company-blue', 300)">تحميل PNG</button>
+      </div>
+
+      <!-- Company Logo - Dark -->
+      <div class="export-card">
+        <h3>Company Logo - أسود <span class="size-badge">300×300</span></h3>
+        <div class="logo-container light" id="li-company-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('li-company-dark', 'engezna-linkedin-company-dark', 300)">تحميل PNG</button>
+      </div>
+
+      <!-- Company Logo - White -->
+      <div class="export-card">
+        <h3>Company Logo - أبيض <span class="size-badge">300×300</span></h3>
+        <div class="logo-container" id="li-company-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 100px; height: 100px; font-size: 28px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('li-company-white', 'engezna-linkedin-company-white', 300)">تحميل PNG</button>
+      </div>
+
+      <!-- Cover - Blue -->
+      <div class="export-card">
+        <h3>Cover - أزرق <span class="size-badge">1128×191</span></h3>
+        <div class="logo-container blue" id="li-cover-blue" style="height: 60px; min-height: 60px; overflow: hidden;">
+          <div style="text-align: center;">
+            <span class="logo-text white" style="font-size: 24px;">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-family: 'Noto Sans Arabic'; font-size: 8px; margin-top: 2px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('li-cover-blue', 'engezna-linkedin-cover-blue', 1128, 191)">تحميل PNG</button>
+      </div>
+
+      <!-- Cover - Dark -->
+      <div class="export-card">
+        <h3>Cover - أسود <span class="size-badge">1128×191</span></h3>
+        <div class="logo-container dark" id="li-cover-dark" style="height: 60px; min-height: 60px; overflow: hidden;">
+          <div style="text-align: center;">
+            <span class="logo-text white" style="font-size: 24px;">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-family: 'Noto Sans Arabic'; font-size: 8px; margin-top: 2px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('li-cover-dark', 'engezna-linkedin-cover-dark', 1128, 191)">تحميل PNG</button>
+      </div>
+
+      <!-- Cover - White -->
+      <div class="export-card">
+        <h3>Cover - أبيض <span class="size-badge">1128×191</span></h3>
+        <div class="logo-container light" id="li-cover-white" style="height: 60px; min-height: 60px; overflow: hidden;">
+          <div style="text-align: center;">
+            <span class="logo-text blue" style="font-size: 24px;">إنجزنا</span>
+            <div style="color: #64748B; font-family: 'Noto Sans Arabic'; font-size: 8px; margin-top: 2px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('li-cover-white', 'engezna-linkedin-cover-white', 1128, 191)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== YOUTUBE ==================== -->
+    <h2 class="section-title">
+      <span class="platform-icon">🎬</span> YouTube
+    </h2>
+    <div class="export-grid">
+
+      <!-- Profile - Blue -->
+      <div class="export-card">
+        <h3>Profile - أزرق <span class="size-badge">800×800</span></h3>
+        <div class="logo-container light" id="yt-profile-blue" style="padding: 20px;">
+          <div class="app-icon circle blue-bg" style="width: 120px; height: 120px; font-size: 32px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('yt-profile-blue', 'engezna-youtube-profile-blue', 800)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - Dark -->
+      <div class="export-card">
+        <h3>Profile - أسود <span class="size-badge">800×800</span></h3>
+        <div class="logo-container light" id="yt-profile-dark" style="padding: 20px;">
+          <div class="app-icon circle dark-bg" style="width: 120px; height: 120px; font-size: 32px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('yt-profile-dark', 'engezna-youtube-profile-dark', 800)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - White -->
+      <div class="export-card">
+        <h3>Profile - أبيض <span class="size-badge">800×800</span></h3>
+        <div class="logo-container" id="yt-profile-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon circle white-bg" style="width: 120px; height: 120px; font-size: 32px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('yt-profile-white', 'engezna-youtube-profile-white', 800)">تحميل PNG</button>
+      </div>
+
+      <!-- Watermark - Blue -->
+      <div class="export-card">
+        <h3>Watermark - أزرق <span class="size-badge">150×150</span></h3>
+        <div class="logo-container light" id="yt-watermark-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 75px; height: 75px; font-size: 20px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('yt-watermark-blue', 'engezna-youtube-watermark-blue', 150)">تحميل PNG</button>
+      </div>
+
+      <!-- Watermark - Dark -->
+      <div class="export-card">
+        <h3>Watermark - أسود <span class="size-badge">150×150</span></h3>
+        <div class="logo-container light" id="yt-watermark-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 75px; height: 75px; font-size: 20px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('yt-watermark-dark', 'engezna-youtube-watermark-dark', 150)">تحميل PNG</button>
+      </div>
+
+      <!-- Watermark - White -->
+      <div class="export-card">
+        <h3>Watermark - أبيض <span class="size-badge">150×150</span></h3>
+        <div class="logo-container" id="yt-watermark-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 75px; height: 75px; font-size: 20px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('yt-watermark-white', 'engezna-youtube-watermark-white', 150)">تحميل PNG</button>
+      </div>
+
+      <!-- Thumbnail - Blue -->
+      <div class="export-card">
+        <h3>Thumbnail - أزرق <span class="size-badge">1280×720</span></h3>
+        <div class="logo-container blue" id="yt-thumb-blue" style="height: 100px; aspect-ratio: 16/9;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-lg">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 5px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('yt-thumb-blue', 'engezna-youtube-thumbnail-blue', 1280, 720)">تحميل PNG</button>
+      </div>
+
+      <!-- Thumbnail - Dark -->
+      <div class="export-card">
+        <h3>Thumbnail - أسود <span class="size-badge">1280×720</span></h3>
+        <div class="logo-container dark" id="yt-thumb-dark" style="height: 100px; aspect-ratio: 16/9;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-lg">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 5px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('yt-thumb-dark', 'engezna-youtube-thumbnail-dark', 1280, 720)">تحميل PNG</button>
+      </div>
+
+      <!-- Thumbnail - White -->
+      <div class="export-card">
+        <h3>Thumbnail - أبيض <span class="size-badge">1280×720</span></h3>
+        <div class="logo-container light" id="yt-thumb-white" style="height: 100px; aspect-ratio: 16/9;">
+          <div style="text-align: center;">
+            <span class="logo-text blue size-lg">إنجزنا</span>
+            <div style="color: #64748B; font-size: 12px; margin-top: 5px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('yt-thumb-white', 'engezna-youtube-thumbnail-white', 1280, 720)">تحميل PNG</button>
+      </div>
+
+      <!-- Channel Art - Blue -->
+      <div class="export-card">
+        <h3>Channel Art - أزرق <span class="size-badge">2560×1440</span></h3>
+        <div class="logo-container blue" id="yt-banner-blue" style="height: 80px; aspect-ratio: 16/9;">
+          <div class="cover-content">
+            <span class="logo-text white size-md">إنجزنا</span>
+            <span style="color: rgba(255,255,255,0.7); font-size: 10px;">عايز تطلب؟ إنجزنا</span>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('yt-banner-blue', 'engezna-youtube-channel-art-blue', 2560, 1440)">تحميل PNG</button>
+      </div>
+
+      <!-- Channel Art - Dark -->
+      <div class="export-card">
+        <h3>Channel Art - أسود <span class="size-badge">2560×1440</span></h3>
+        <div class="logo-container dark" id="yt-banner-dark" style="height: 80px; aspect-ratio: 16/9;">
+          <div class="cover-content">
+            <span class="logo-text white size-md">إنجزنا</span>
+            <span style="color: rgba(255,255,255,0.7); font-size: 10px;">عايز تطلب؟ إنجزنا</span>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('yt-banner-dark', 'engezna-youtube-channel-art-dark', 2560, 1440)">تحميل PNG</button>
+      </div>
+
+      <!-- Channel Art - White -->
+      <div class="export-card">
+        <h3>Channel Art - أبيض <span class="size-badge">2560×1440</span></h3>
+        <div class="logo-container light" id="yt-banner-white" style="height: 80px; aspect-ratio: 16/9;">
+          <div class="cover-content">
+            <span class="logo-text blue size-md">إنجزنا</span>
+            <span style="color: #64748B; font-size: 10px;">عايز تطلب؟ إنجزنا</span>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportCover('yt-banner-white', 'engezna-youtube-channel-art-white', 2560, 1440)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== TIKTOK ==================== -->
+    <h2 class="section-title">
+      <span class="platform-icon">🎵</span> TikTok
+    </h2>
+    <div class="export-grid">
+
+      <!-- Profile - Blue -->
+      <div class="export-card">
+        <h3>Profile - أزرق <span class="size-badge">200×200</span></h3>
+        <div class="logo-container light" id="tt-profile-blue" style="padding: 20px;">
+          <div class="app-icon circle blue-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('tt-profile-blue', 'engezna-tiktok-profile-blue', 200)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - Dark -->
+      <div class="export-card">
+        <h3>Profile - أسود <span class="size-badge">200×200</span></h3>
+        <div class="logo-container light" id="tt-profile-dark" style="padding: 20px;">
+          <div class="app-icon circle dark-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('tt-profile-dark', 'engezna-tiktok-profile-dark', 200)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - White -->
+      <div class="export-card">
+        <h3>Profile - أبيض <span class="size-badge">200×200</span></h3>
+        <div class="logo-container" id="tt-profile-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon circle white-bg" style="width: 100px; height: 100px; font-size: 28px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('tt-profile-white', 'engezna-tiktok-profile-white', 200)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== WHATSAPP ==================== -->
+    <h2 class="section-title">
+      <span class="platform-icon">💬</span> WhatsApp
+    </h2>
+    <div class="export-grid">
+
+      <!-- Profile - Blue -->
+      <div class="export-card">
+        <h3>Profile - أزرق <span class="size-badge">500×500</span></h3>
+        <div class="logo-container light" id="wa-profile-blue" style="padding: 20px;">
+          <div class="app-icon circle blue-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('wa-profile-blue', 'engezna-whatsapp-profile-blue', 500)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - Dark -->
+      <div class="export-card">
+        <h3>Profile - أسود <span class="size-badge">500×500</span></h3>
+        <div class="logo-container light" id="wa-profile-dark" style="padding: 20px;">
+          <div class="app-icon circle dark-bg" style="width: 100px; height: 100px; font-size: 28px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('wa-profile-dark', 'engezna-whatsapp-profile-dark', 500)">تحميل PNG</button>
+      </div>
+
+      <!-- Profile - White -->
+      <div class="export-card">
+        <h3>Profile - أبيض <span class="size-badge">500×500</span></h3>
+        <div class="logo-container" id="wa-profile-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon circle white-bg" style="width: 100px; height: 100px; font-size: 28px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('wa-profile-white', 'engezna-whatsapp-profile-white', 500)">تحميل PNG</button>
+      </div>
+
+      <!-- Status - Blue -->
+      <div class="export-card">
+        <h3>Status - أزرق <span class="size-badge">1080×1920</span></h3>
+        <div class="logo-container blue" id="wa-status-blue" style="height: 200px; aspect-ratio: 9/16;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-lg">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 8px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportStory('wa-status-blue', 'engezna-whatsapp-status-blue', 1080, 1920)">تحميل PNG</button>
+      </div>
+
+      <!-- Status - Dark -->
+      <div class="export-card">
+        <h3>Status - أسود <span class="size-badge">1080×1920</span></h3>
+        <div class="logo-container dark" id="wa-status-dark" style="height: 200px; aspect-ratio: 9/16;">
+          <div style="text-align: center;">
+            <span class="logo-text white size-lg">إنجزنا</span>
+            <div style="color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 8px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportStory('wa-status-dark', 'engezna-whatsapp-status-dark', 1080, 1920)">تحميل PNG</button>
+      </div>
+
+      <!-- Status - White -->
+      <div class="export-card">
+        <h3>Status - أبيض <span class="size-badge">1080×1920</span></h3>
+        <div class="logo-container light" id="wa-status-white" style="height: 200px; aspect-ratio: 9/16;">
+          <div style="text-align: center;">
+            <span class="logo-text blue size-lg">إنجزنا</span>
+            <div style="color: #64748B; font-size: 12px; margin-top: 8px;">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportStory('wa-status-white', 'engezna-whatsapp-status-white', 1080, 1920)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== FAVICON ==================== -->
+    <h2 class="section-title">
+      <span class="platform-icon">🌐</span> Favicon & Web Icons
+    </h2>
+    <div class="export-grid">
+
+      <!-- Favicon 32 - Blue -->
+      <div class="export-card">
+        <h3>Favicon - أزرق <span class="size-badge">32×32</span></h3>
+        <div class="logo-container light" id="fav-32-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 32px; height: 32px; font-size: 10px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportFavicon('fav-32-blue', 'favicon-32-blue', 32)">تحميل PNG</button>
+      </div>
+
+      <!-- Favicon 32 - Dark -->
+      <div class="export-card">
+        <h3>Favicon - أسود <span class="size-badge">32×32</span></h3>
+        <div class="logo-container light" id="fav-32-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 32px; height: 32px; font-size: 10px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportFavicon('fav-32-dark', 'favicon-32-dark', 32)">تحميل PNG</button>
+      </div>
+
+      <!-- Favicon 32 - White -->
+      <div class="export-card">
+        <h3>Favicon - أبيض <span class="size-badge">32×32</span></h3>
+        <div class="logo-container" id="fav-32-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 32px; height: 32px; font-size: 10px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportFavicon('fav-32-white', 'favicon-32-white', 32)">تحميل PNG</button>
+      </div>
+
+      <!-- Favicon 64 - Blue -->
+      <div class="export-card">
+        <h3>Favicon - أزرق <span class="size-badge">64×64</span></h3>
+        <div class="logo-container light" id="fav-64-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 64px; height: 64px; font-size: 18px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportFavicon('fav-64-blue', 'favicon-64-blue', 64)">تحميل PNG</button>
+      </div>
+
+      <!-- Favicon 64 - Dark -->
+      <div class="export-card">
+        <h3>Favicon - أسود <span class="size-badge">64×64</span></h3>
+        <div class="logo-container light" id="fav-64-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 64px; height: 64px; font-size: 18px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportFavicon('fav-64-dark', 'favicon-64-dark', 64)">تحميل PNG</button>
+      </div>
+
+      <!-- Favicon 64 - White -->
+      <div class="export-card">
+        <h3>Favicon - أبيض <span class="size-badge">64×64</span></h3>
+        <div class="logo-container" id="fav-64-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 64px; height: 64px; font-size: 18px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportFavicon('fav-64-white', 'favicon-64-white', 64)">تحميل PNG</button>
+      </div>
+
+      <!-- Apple Touch - Blue -->
+      <div class="export-card">
+        <h3>Apple Touch - أزرق <span class="size-badge">180×180</span></h3>
+        <div class="logo-container light" id="apple-touch-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 90px; height: 90px; font-size: 24px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('apple-touch-blue', 'apple-touch-icon-blue', 180)">تحميل PNG</button>
+      </div>
+
+      <!-- Apple Touch - Dark -->
+      <div class="export-card">
+        <h3>Apple Touch - أسود <span class="size-badge">180×180</span></h3>
+        <div class="logo-container light" id="apple-touch-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 90px; height: 90px; font-size: 24px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('apple-touch-dark', 'apple-touch-icon-dark', 180)">تحميل PNG</button>
+      </div>
+
+      <!-- Apple Touch - White -->
+      <div class="export-card">
+        <h3>Apple Touch - أبيض <span class="size-badge">180×180</span></h3>
+        <div class="logo-container" id="apple-touch-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 90px; height: 90px; font-size: 24px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('apple-touch-white', 'apple-touch-icon-white', 180)">تحميل PNG</button>
+      </div>
+
+      <!-- Android Chrome 192 - Blue -->
+      <div class="export-card">
+        <h3>Android Chrome - أزرق <span class="size-badge">192×192</span></h3>
+        <div class="logo-container light" id="android-192-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 96px; height: 96px; font-size: 26px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('android-192-blue', 'android-chrome-192-blue', 192)">تحميل PNG</button>
+      </div>
+
+      <!-- Android Chrome 192 - Dark -->
+      <div class="export-card">
+        <h3>Android Chrome - أسود <span class="size-badge">192×192</span></h3>
+        <div class="logo-container light" id="android-192-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 96px; height: 96px; font-size: 26px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('android-192-dark', 'android-chrome-192-dark', 192)">تحميل PNG</button>
+      </div>
+
+      <!-- Android Chrome 192 - White -->
+      <div class="export-card">
+        <h3>Android Chrome - أبيض <span class="size-badge">192×192</span></h3>
+        <div class="logo-container" id="android-192-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 96px; height: 96px; font-size: 26px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('android-192-white', 'android-chrome-192-white', 192)">تحميل PNG</button>
+      </div>
+
+      <!-- Android Chrome 512 - Blue -->
+      <div class="export-card">
+        <h3>Android Chrome - أزرق <span class="size-badge">512×512</span></h3>
+        <div class="logo-container light" id="android-512-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 128px; height: 128px; font-size: 36px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('android-512-blue', 'android-chrome-512-blue', 512)">تحميل PNG</button>
+      </div>
+
+      <!-- Android Chrome 512 - Dark -->
+      <div class="export-card">
+        <h3>Android Chrome - أسود <span class="size-badge">512×512</span></h3>
+        <div class="logo-container light" id="android-512-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 128px; height: 128px; font-size: 36px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('android-512-dark', 'android-chrome-512-dark', 512)">تحميل PNG</button>
+      </div>
+
+      <!-- Android Chrome 512 - White -->
+      <div class="export-card">
+        <h3>Android Chrome - أبيض <span class="size-badge">512×512</span></h3>
+        <div class="logo-container" id="android-512-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 128px; height: 128px; font-size: 36px; color: #009DE0;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('android-512-white', 'android-chrome-512-white', 512)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== LETTER ICON إ ==================== -->
+    <h2 class="section-title">🔤 أيقونة حرف إ - Letter Icon</h2>
+    <div class="export-grid">
+
+      <!-- Square Icons -->
+      <div class="export-card">
+        <h3>حرف إ - خلفية زرقاء <span class="size-badge">512×512</span></h3>
+        <div class="logo-container light" id="letter-icon-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 128px; height: 128px; font-size: 72px;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('letter-icon-blue', 'engezna-letter-icon-blue', 512)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>حرف إ - خلفية سوداء <span class="size-badge">512×512</span></h3>
+        <div class="logo-container light" id="letter-icon-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 128px; height: 128px; font-size: 72px;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('letter-icon-dark', 'engezna-letter-icon-dark', 512)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>حرف إ - خلفية بيضاء <span class="size-badge">512×512</span></h3>
+        <div class="logo-container" id="letter-icon-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 128px; height: 128px; font-size: 72px; color: #009DE0;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('letter-icon-white', 'engezna-letter-icon-white', 512)">تحميل PNG</button>
+      </div>
+
+      <!-- Circle Icons -->
+      <div class="export-card">
+        <h3>حرف إ دائري - أزرق <span class="size-badge">512×512</span></h3>
+        <div class="logo-container light" id="letter-icon-circle-blue" style="padding: 20px;">
+          <div class="app-icon circle blue-bg" style="width: 128px; height: 128px; font-size: 72px;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('letter-icon-circle-blue', 'engezna-letter-icon-circle-blue', 512)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>حرف إ دائري - أسود <span class="size-badge">512×512</span></h3>
+        <div class="logo-container light" id="letter-icon-circle-dark" style="padding: 20px;">
+          <div class="app-icon circle dark-bg" style="width: 128px; height: 128px; font-size: 72px;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('letter-icon-circle-dark', 'engezna-letter-icon-circle-dark', 512)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>حرف إ دائري - أبيض <span class="size-badge">512×512</span></h3>
+        <div class="logo-container" id="letter-icon-circle-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon circle white-bg" style="width: 128px; height: 128px; font-size: 72px; color: #009DE0;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIconCircle('letter-icon-circle-white', 'engezna-letter-icon-circle-white', 512)">تحميل PNG</button>
+      </div>
+
+      <!-- App Store Size Icons -->
+      <div class="export-card">
+        <h3>حرف إ - iOS <span class="size-badge">1024×1024</span></h3>
+        <div class="logo-container light" id="letter-icon-ios" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 128px; height: 128px; font-size: 72px;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('letter-icon-ios', 'engezna-letter-icon-ios', 1024)">تحميل PNG - 1024px</button>
+      </div>
+
+      <div class="export-card">
+        <h3>حرف إ - Android <span class="size-badge">512×512</span></h3>
+        <div class="logo-container light" id="letter-icon-android" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 128px; height: 128px; font-size: 72px;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('letter-icon-android', 'engezna-letter-icon-android', 512)">تحميل PNG - 512px</button>
+      </div>
+
+      <div class="export-card">
+        <h3>حرف إ - Favicon <span class="size-badge">64×64</span></h3>
+        <div class="logo-container light" id="letter-icon-favicon" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 64px; height: 64px; font-size: 36px;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportFavicon('letter-icon-favicon', 'engezna-letter-favicon', 64)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== TEXT LOGOS ==================== -->
+    <h2 class="section-title">📝 الشعار النصي - Text Logo</h2>
+    <div class="export-grid">
+
+      <div class="export-card">
+        <h3>نص أزرق على خلفية بيضاء <span>PNG</span></h3>
+        <div class="logo-container light" id="text-blue-on-white">
+          <span class="logo-text blue size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportPNG('text-blue-on-white', 'engezna-text-blue-on-white', 2)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>نص أسود على خلفية بيضاء <span>PNG</span></h3>
+        <div class="logo-container light" id="text-black-on-white">
+          <span class="logo-text charcoal size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportPNG('text-black-on-white', 'engezna-text-black-on-white', 2)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>نص أبيض على خلفية زرقاء <span>PNG</span></h3>
+        <div class="logo-container blue" id="text-white-on-blue">
+          <span class="logo-text white size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportPNG('text-white-on-blue', 'engezna-text-white-on-blue', 2)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>نص أبيض على خلفية سوداء <span>PNG</span></h3>
+        <div class="logo-container dark" id="text-white-on-black">
+          <span class="logo-text white size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportPNG('text-white-on-black', 'engezna-text-white-on-black', 2)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== TRANSPARENT PNG ==================== -->
+    <h2 class="section-title">🔲 نسخ مفرغة (شفافة) - Transparent PNG</h2>
+    <div class="export-grid">
+
+      <!-- Transparent Text - Blue -->
+      <div class="export-card">
+        <h3>إنجزنا - أزرق مفرغ <span>PNG</span></h3>
+        <div class="logo-container" id="trans-text-blue" style="background: repeating-conic-gradient(#E2E8F0 0% 25%, #fff 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text blue size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportTransparent('trans-text-blue', 'engezna-transparent-blue', 2)">تحميل PNG شفاف</button>
+      </div>
+
+      <!-- Transparent Text - Black -->
+      <div class="export-card">
+        <h3>إنجزنا - أسود مفرغ <span>PNG</span></h3>
+        <div class="logo-container" id="trans-text-black" style="background: repeating-conic-gradient(#E2E8F0 0% 25%, #fff 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text charcoal size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportTransparent('trans-text-black', 'engezna-transparent-black', 2)">تحميل PNG شفاف</button>
+      </div>
+
+      <!-- Transparent Text - White -->
+      <div class="export-card">
+        <h3>إنجزنا - أبيض مفرغ <span>PNG</span></h3>
+        <div class="logo-container" id="trans-text-white" style="background: repeating-conic-gradient(#64748B 0% 25%, #475569 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text white size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportTransparent('trans-text-white', 'engezna-transparent-white', 2)">تحميل PNG شفاف</button>
+      </div>
+
+      <!-- Transparent Letter إ - Blue -->
+      <div class="export-card">
+        <h3>حرف إ - أزرق مفرغ <span>PNG</span></h3>
+        <div class="logo-container" id="trans-letter-blue" style="background: repeating-conic-gradient(#E2E8F0 0% 25%, #fff 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text blue" style="font-size: 80px;">إ</span>
+        </div>
+        <button class="download-btn" onclick="exportTransparent('trans-letter-blue', 'engezna-letter-transparent-blue', 2)">تحميل PNG شفاف</button>
+      </div>
+
+      <!-- Transparent Letter إ - Black -->
+      <div class="export-card">
+        <h3>حرف إ - أسود مفرغ <span>PNG</span></h3>
+        <div class="logo-container" id="trans-letter-black" style="background: repeating-conic-gradient(#E2E8F0 0% 25%, #fff 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text charcoal" style="font-size: 80px;">إ</span>
+        </div>
+        <button class="download-btn" onclick="exportTransparent('trans-letter-black', 'engezna-letter-transparent-black', 2)">تحميل PNG شفاف</button>
+      </div>
+
+      <!-- Transparent Letter إ - White -->
+      <div class="export-card">
+        <h3>حرف إ - أبيض مفرغ <span>PNG</span></h3>
+        <div class="logo-container" id="trans-letter-white" style="background: repeating-conic-gradient(#64748B 0% 25%, #475569 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text white" style="font-size: 80px;">إ</span>
+        </div>
+        <button class="download-btn" onclick="exportTransparent('trans-letter-white', 'engezna-letter-transparent-white', 2)">تحميل PNG شفاف</button>
+      </div>
+
+    </div>
+
+    <!-- ==================== SVG VECTOR ==================== -->
+    <h2 class="section-title">📐 نسخ فيكتور SVG - Vector Files</h2>
+    <div class="export-grid">
+
+      <!-- SVG Text - Blue -->
+      <div class="export-card">
+        <h3>إنجزنا - SVG أزرق <span>SVG</span></h3>
+        <div class="logo-container" id="svg-text-blue" style="background: repeating-conic-gradient(#E2E8F0 0% 25%, #fff 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text blue size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportSVG('إنجزنا', '#009DE0', 'engezna-vector-blue')">تحميل SVG</button>
+      </div>
+
+      <!-- SVG Text - Black -->
+      <div class="export-card">
+        <h3>إنجزنا - SVG أسود <span>SVG</span></h3>
+        <div class="logo-container" id="svg-text-black" style="background: repeating-conic-gradient(#E2E8F0 0% 25%, #fff 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text charcoal size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportSVG('إنجزنا', '#0F172A', 'engezna-vector-black')">تحميل SVG</button>
+      </div>
+
+      <!-- SVG Text - White -->
+      <div class="export-card">
+        <h3>إنجزنا - SVG أبيض <span>SVG</span></h3>
+        <div class="logo-container" id="svg-text-white" style="background: repeating-conic-gradient(#64748B 0% 25%, #475569 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text white size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportSVG('إنجزنا', '#FFFFFF', 'engezna-vector-white')">تحميل SVG</button>
+      </div>
+
+      <!-- SVG Letter إ - Blue -->
+      <div class="export-card">
+        <h3>حرف إ - SVG أزرق <span>SVG</span></h3>
+        <div class="logo-container" id="svg-letter-blue" style="background: repeating-conic-gradient(#E2E8F0 0% 25%, #fff 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text blue" style="font-size: 80px;">إ</span>
+        </div>
+        <button class="download-btn" onclick="exportSVG('إ', '#009DE0', 'engezna-letter-vector-blue')">تحميل SVG</button>
+      </div>
+
+      <!-- SVG Letter إ - Black -->
+      <div class="export-card">
+        <h3>حرف إ - SVG أسود <span>SVG</span></h3>
+        <div class="logo-container" id="svg-letter-black" style="background: repeating-conic-gradient(#E2E8F0 0% 25%, #fff 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text charcoal" style="font-size: 80px;">إ</span>
+        </div>
+        <button class="download-btn" onclick="exportSVG('إ', '#0F172A', 'engezna-letter-vector-black')">تحميل SVG</button>
+      </div>
+
+      <!-- SVG Letter إ - White -->
+      <div class="export-card">
+        <h3>حرف إ - SVG أبيض <span>SVG</span></h3>
+        <div class="logo-container" id="svg-letter-white" style="background: repeating-conic-gradient(#64748B 0% 25%, #475569 0% 50%) 50%/20px 20px; min-height: 120px;">
+          <span class="logo-text white" style="font-size: 80px;">إ</span>
+        </div>
+        <button class="download-btn" onclick="exportSVG('إ', '#FFFFFF', 'engezna-letter-vector-white')">تحميل SVG</button>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      <p>© 2025 Engezna. All rights reserved.</p>
+      <p style="margin-top: 10px; font-size: 0.8rem;">Logo Exporter v3.2 - with Transparent & SVG</p>
+    </div>
+  </div>
+
+  <script>
+    // Wait for fonts to load
+    document.fonts.ready.then(() => {
+      console.log('Fonts loaded!');
+    });
+
+    async function exportPNG(elementId, filename, scale = 2) {
+      const element = document.getElementById(elementId);
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        const canvas = await html2canvas(element, {
+          scale: scale,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل PNG';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+
+    async function exportIcon(elementId, filename, size = 512) {
+      const element = document.getElementById(elementId);
+      const iconElement = element.querySelector('.app-icon');
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        const currentSize = iconElement.offsetWidth;
+        const scale = size / currentSize;
+        const canvas = await html2canvas(iconElement, {
+          scale: scale,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `${filename}-${size}px.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل PNG';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+
+    async function exportIconCircle(elementId, filename, size = 512) {
+      const element = document.getElementById(elementId);
+      const iconElement = element.querySelector('.app-icon');
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        const currentSize = iconElement.offsetWidth;
+        const scale = size / currentSize;
+        const canvas = await html2canvas(iconElement, {
+          scale: scale,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `${filename}-${size}px.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل PNG';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+
+    async function exportCover(elementId, filename, width, height) {
+      const element = document.getElementById(elementId);
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        const currentWidth = element.offsetWidth;
+        const scale = width / currentWidth;
+
+        const canvas = await html2canvas(element, {
+          scale: scale,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false,
+          width: element.offsetWidth,
+          height: element.offsetHeight
+        });
+
+        // Create final canvas with exact dimensions
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = width;
+        finalCanvas.height = height;
+        const ctx = finalCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, 0, width, height);
+
+        const link = document.createElement('a');
+        link.download = `${filename}-${width}x${height}.png`;
+        link.href = finalCanvas.toDataURL('image/png');
+        link.click();
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل PNG';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+
+    async function exportSquare(elementId, filename, size) {
+      const element = document.getElementById(elementId);
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        const currentSize = Math.min(element.offsetWidth, element.offsetHeight);
+        const scale = size / currentSize;
+
+        const canvas = await html2canvas(element, {
+          scale: scale,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        // Create square canvas
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = size;
+        finalCanvas.height = size;
+        const ctx = finalCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, 0, size, size);
+
+        const link = document.createElement('a');
+        link.download = `${filename}-${size}px.png`;
+        link.href = finalCanvas.toDataURL('image/png');
+        link.click();
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل PNG';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+
+    async function exportStory(elementId, filename, width, height) {
+      const element = document.getElementById(elementId);
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        const currentHeight = element.offsetHeight;
+        const scale = height / currentHeight;
+
+        const canvas = await html2canvas(element, {
+          scale: scale,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        // Create final canvas with exact dimensions
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = width;
+        finalCanvas.height = height;
+        const ctx = finalCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, 0, width, height);
+
+        const link = document.createElement('a');
+        link.download = `${filename}-${width}x${height}.png`;
+        link.href = finalCanvas.toDataURL('image/png');
+        link.click();
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل PNG';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+
+    async function exportFavicon(elementId, filename, size) {
+      const element = document.getElementById(elementId);
+      const iconElement = element.querySelector('.app-icon');
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        const currentSize = iconElement.offsetWidth;
+        const scale = size / currentSize;
+        const canvas = await html2canvas(iconElement, {
+          scale: scale,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل PNG';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+
+    // Export transparent PNG (text only, no background)
+    async function exportTransparent(elementId, filename, scale = 2) {
+      const element = document.getElementById(elementId);
+      const textElement = element.querySelector('.logo-text');
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        const canvas = await html2canvas(textElement, {
+          scale: scale,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `${filename}-transparent.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل PNG شفاف';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+
+    // Export SVG vector file
+    function exportSVG(text, color, filename) {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        // Create SVG with embedded Google Font
+        const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100" width="300" height="100">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&amp;display=swap');
+      .logo-text {
+        font-family: 'Aref Ruqaa', serif;
+        font-weight: 700;
+        font-size: 48px;
+        fill: ${color};
+      }
+    </style>
+  </defs>
+  <text x="150" y="65" text-anchor="middle" class="logo-text">${text}</text>
+</svg>`;
+
+        const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.download = `${filename}.svg`;
+        link.href = url;
+        link.click();
+
+        URL.revokeObjectURL(url);
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل SVG';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
