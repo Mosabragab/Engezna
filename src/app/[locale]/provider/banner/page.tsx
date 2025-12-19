@@ -53,6 +53,7 @@ const IMAGE_SIZE_CONFIG: Record<ImageSize, { label_ar: string; label_en: string;
 type BannerStatus = {
   has_active_banner: boolean
   has_pending_banner: boolean
+  has_rejected_banner: boolean
   current_banner_id: string | null
   current_banner_status: 'pending' | 'approved' | 'rejected' | 'cancelled' | null
   current_banner_starts_at: string | null
@@ -379,7 +380,11 @@ export default function ProviderBannerPage() {
     }
   }
 
+  // Provider can create banner if:
+  // - No active banner AND no pending banner
+  // - OR has a rejected/cancelled banner (can try again)
   const canCreateBanner = !bannerStatus?.has_active_banner && !bannerStatus?.has_pending_banner
+  const hasRejectedBanner = currentBanner?.approval_status === 'rejected' || currentBanner?.approval_status === 'cancelled'
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -461,6 +466,12 @@ export default function ProviderBannerPage() {
                     {locale === 'ar' ? 'مرفوض' : 'Rejected'}
                   </span>
                 )}
+                {currentBanner.approval_status === 'cancelled' && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-sm font-medium">
+                    <XCircle className="w-4 h-4" />
+                    {locale === 'ar' ? 'ملغي' : 'Cancelled'}
+                  </span>
+                )}
               </div>
 
               {/* Banner Preview */}
@@ -523,11 +534,14 @@ export default function ProviderBannerPage() {
                 </div>
               </div>
 
-              {/* Rejection Reason */}
-              {currentBanner.approval_status === 'rejected' && currentBanner.rejection_reason && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700">
-                    <strong>{locale === 'ar' ? 'سبب الرفض:' : 'Rejection Reason:'}</strong> {currentBanner.rejection_reason}
+              {/* Rejection/Cancellation Reason */}
+              {(currentBanner.approval_status === 'rejected' || currentBanner.approval_status === 'cancelled') && currentBanner.rejection_reason && (
+                <div className={`p-3 ${currentBanner.approval_status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'} border rounded-lg`}>
+                  <p className={`text-sm ${currentBanner.approval_status === 'rejected' ? 'text-red-700' : 'text-slate-700'}`}>
+                    <strong>{locale === 'ar'
+                      ? (currentBanner.approval_status === 'rejected' ? 'سبب الرفض:' : 'سبب الإلغاء:')
+                      : (currentBanner.approval_status === 'rejected' ? 'Rejection Reason:' : 'Cancellation Reason:')
+                    }</strong> {currentBanner.rejection_reason}
                   </p>
                 </div>
               )}
@@ -542,6 +556,19 @@ export default function ProviderBannerPage() {
                   <Trash2 className="w-4 h-4 me-2" />
                   {locale === 'ar' ? 'إلغاء الطلب' : 'Cancel Request'}
                 </Button>
+              )}
+
+              {/* Create New Banner Button (for rejected/cancelled) */}
+              {hasRejectedBanner && (
+                <div className="pt-2 border-t border-slate-200">
+                  <Button
+                    onClick={() => setShowForm(true)}
+                    className="w-full"
+                  >
+                    <Sparkles className="w-4 h-4 me-2" />
+                    {locale === 'ar' ? 'إنشاء بانر جديد' : 'Create New Banner'}
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
