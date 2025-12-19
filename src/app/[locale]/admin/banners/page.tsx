@@ -111,6 +111,9 @@ interface HomepageBanner {
   governorate_id: string | null
   city_id: string | null
   banner_type: 'customer' | 'partner'
+  approval_status?: 'pending' | 'approved' | 'rejected' | 'cancelled' | null
+  rejection_reason?: string | null
+  provider_id?: string | null
 }
 
 interface Governorate {
