@@ -54,19 +54,29 @@ function getGradientTextColor(startColor: string, endColor: string): 'light' | '
   return 'light'
 }
 
-// Pastel Color Presets from Brand Guidelines (no emojis)
+// Import banner color palette
+import {
+  BANNER_GRADIENTS,
+  ADMIN_COLOR_OPTIONS_GROUPED,
+  COLOR_CATEGORY_LABELS,
+  getBannerGradient,
+  findGradientByColors,
+} from '@/constants/colors'
+
+// Pastel Color Presets (Soft colors for light backgrounds)
 const PASTEL_PRESETS = [
   { name: { ar: 'كريمي دافئ', en: 'Warm Cream' }, start: '#FEF3C7', end: '#FEF9C3' },
   { name: { ar: 'بيج ناعم', en: 'Soft Beige' }, start: '#F5EBDC', end: '#EDE0CD' },
-  { name: { ar: 'أزرق إنجزنا', en: 'Engezna Blue' }, start: '#009DE0', end: '#0077B6' },
-  { name: { ar: 'نعناعي', en: 'Soft Mint' }, start: '#D1FAE5', end: '#A7F3D0' },
+  { name: { ar: 'نعناعي ناعم', en: 'Soft Mint' }, start: '#D1FAE5', end: '#A7F3D0' },
   { name: { ar: 'وردي ناعم', en: 'Soft Rose' }, start: '#FFE4E6', end: '#FECDD3' },
   { name: { ar: 'خوخي', en: 'Soft Peach' }, start: '#FFEDD5', end: '#FED7AA' },
-  { name: { ar: 'زهري', en: 'Soft Pink' }, start: '#FCE7F3', end: '#FBCFE8' },
-  { name: { ar: 'لافندر', en: 'Soft Lavender' }, start: '#EDE9FE', end: '#DDD6FE' },
-  { name: { ar: 'فيروزي', en: 'Soft Teal' }, start: '#CCFBF1', end: '#99F6E4' },
-  { name: { ar: 'عنبري', en: 'Soft Amber' }, start: '#FEF3C7', end: '#FDE68A' },
+  { name: { ar: 'زهري ناعم', en: 'Soft Pink' }, start: '#FCE7F3', end: '#FBCFE8' },
+  { name: { ar: 'لافندر ناعم', en: 'Soft Lavender' }, start: '#EDE9FE', end: '#DDD6FE' },
+  { name: { ar: 'فيروزي ناعم', en: 'Soft Teal' }, start: '#CCFBF1', end: '#99F6E4' },
+  { name: { ar: 'عنبري ناعم', en: 'Soft Amber' }, start: '#FEF3C7', end: '#FDE68A' },
+  { name: { ar: 'سماوي ناعم', en: 'Soft Sky' }, start: '#E0F2FE', end: '#BAE6FD' },
 ]
+
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
@@ -1349,10 +1359,10 @@ export default function AdminBannersPage() {
                         {locale === 'ar' ? 'ألوان التدرج' : 'Gradient Colors'}
                       </label>
 
-                      {/* Pastel Presets */}
-                      <div className="mb-3">
-                        <p className="text-xs text-slate-500 mb-2">
-                          {locale === 'ar' ? 'ألوان الباستيل الموصى بها:' : 'Recommended Pastel Colors:'}
+                      {/* Pastel Colors Section */}
+                      <div className="mb-4 p-3 bg-slate-50 rounded-xl">
+                        <p className="text-xs font-medium text-slate-600 mb-2">
+                          {locale === 'ar' ? 'ألوان الباستيل (خلفيات فاتحة)' : 'Pastel Colors (Light backgrounds)'}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {PASTEL_PRESETS.map((preset, idx) => (
@@ -1382,6 +1392,48 @@ export default function AdminBannersPage() {
                             </button>
                           ))}
                         </div>
+                      </div>
+
+                      {/* Vibrant Colors Section */}
+                      <div className="space-y-3 mb-4">
+                        <p className="text-xs font-medium text-slate-600">
+                          {locale === 'ar' ? 'الألوان الزاهية (للعروض والترويج)' : 'Vibrant Colors (For offers & promotions)'}
+                        </p>
+                        {(['primary', 'accent', 'cool', 'special'] as const).map((category) => (
+                          <div key={category}>
+                            <p className="text-xs text-slate-500 mb-1.5">
+                              {locale === 'ar' ? COLOR_CATEGORY_LABELS[category].ar : COLOR_CATEGORY_LABELS[category].en}
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {ADMIN_COLOR_OPTIONS_GROUPED[category].map((color) => (
+                                <button
+                                  key={color.id}
+                                  type="button"
+                                  onClick={() => setFormData({
+                                    ...formData,
+                                    gradient_start: color.start,
+                                    gradient_end: color.end,
+                                  })}
+                                  className={`
+                                    group relative px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                                    hover:scale-105 shadow-sm
+                                    ${formData.gradient_start === color.start && formData.gradient_end === color.end
+                                      ? 'ring-2 ring-offset-2 ring-primary scale-105'
+                                      : ''
+                                    }
+                                  `}
+                                  style={{
+                                    background: `linear-gradient(135deg, ${color.start} 0%, ${color.end} 100%)`,
+                                  }}
+                                >
+                                  <span className="relative z-10 text-white drop-shadow-md font-semibold">
+                                    {locale === 'ar' ? color.nameAr : color.nameEn}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
                       </div>
 
                       {/* Custom Color Pickers */}
