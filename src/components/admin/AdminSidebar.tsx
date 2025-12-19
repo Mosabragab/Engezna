@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   Key,
   Receipt,
+  Image,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { usePermissions } from '@/lib/permissions/use-permissions'
@@ -139,6 +140,12 @@ export function AdminSidebar({
       icon: Tag,
       label: { ar: 'العروض', en: 'Promotions' },
       path: `/${locale}/admin/promotions`,
+      resource: 'promotions',
+    },
+    {
+      icon: Image,
+      label: { ar: 'بانرات الرئيسية', en: 'Homepage Banners' },
+      path: `/${locale}/admin/banners`,
       resource: 'promotions',
     },
   ]

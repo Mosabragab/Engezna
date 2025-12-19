@@ -6,47 +6,33 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
-import { useUserLocation } from '@/lib/contexts/LocationContext'
 
-// Helper function to calculate color luminance and determine if text should be dark or light
+// Helper function to calculate color luminance
 function getContrastTextColor(hexColor: string): 'light' | 'dark' {
-  // Remove # if present
   const hex = hexColor.replace('#', '')
-
-  // Parse RGB values
   const r = parseInt(hex.substring(0, 2), 16)
   const g = parseInt(hex.substring(2, 4), 16)
   const b = parseInt(hex.substring(4, 6), 16)
-
-  // Calculate relative luminance using the formula
-  // Higher values = lighter color
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-
-  // If luminance > 0.6, background is light, so use dark text
   return luminance > 0.6 ? 'dark' : 'light'
 }
 
-// Get average luminance of gradient (checks both start and end colors)
 function getGradientTextColor(startColor: string, endColor: string): 'light' | 'dark' {
   const startLuminance = getContrastTextColor(startColor)
   const endLuminance = getContrastTextColor(endColor)
-
-  // If either color is light, use dark text for safety
   if (startLuminance === 'dark' || endLuminance === 'dark') {
     return 'dark'
   }
   return 'light'
 }
 
-// Types
-interface HomepageBanner {
+interface PartnerBanner {
   id: string
   title_ar: string
   title_en: string
   description_ar?: string | null
   description_en?: string | null
   image_url?: string | null
-  background_color?: string | null
   gradient_start?: string | null
   gradient_end?: string | null
   badge_text_ar?: string | null
@@ -55,131 +41,76 @@ interface HomepageBanner {
   cta_text_ar?: string | null
   cta_text_en?: string | null
   link_url?: string | null
-  link_type?: string | null
-  link_id?: string | null
   image_position?: 'start' | 'end' | 'background'
   is_countdown_active?: boolean
   countdown_end_time?: string | null
-  display_order?: number
 }
 
-// Fallback demo offers (used when no database banners exist)
-const fallbackOffers: HomepageBanner[] = [
+// Fallback partner banners
+const fallbackPartnerBanners: PartnerBanner[] = [
   {
-    id: '1',
-    title_ar: 'عرض بيتزا السلطان',
-    title_en: 'Sultan Pizza Offer',
-    description_ar: 'خصم ٣٠٪ على جميع البيتزا',
-    description_en: '30% off all pizzas',
-    badge_text_ar: 'خصم ٣٠٪',
-    badge_text_en: '30% OFF',
+    id: 'p1',
+    title_ar: 'انضم لأكبر منصة توصيل',
+    title_en: 'Join the Largest Delivery Platform',
+    description_ar: 'سجل متجرك الآن واحصل على شهر مجاني',
+    description_en: 'Register your store and get one month free',
+    badge_text_ar: 'شهر مجاني',
+    badge_text_en: 'Free Month',
     gradient_start: '#009DE0',
     gradient_end: '#0077B6',
-    cta_text_ar: 'اطلب الآن',
-    cta_text_en: 'Order Now',
-    link_url: '/providers?category=restaurants',
+    cta_text_ar: 'سجل الآن',
+    cta_text_en: 'Register Now',
+    link_url: '/partner/register',
     image_position: 'end',
     has_glassmorphism: true,
   },
   {
-    id: '2',
-    title_ar: 'توصيل مجاني',
-    title_en: 'Free Delivery',
-    description_ar: 'على الطلبات فوق ١٠٠ ج.م',
-    description_en: 'On orders over 100 EGP',
-    badge_text_ar: 'توصيل مجاني',
-    badge_text_en: 'Free Delivery',
-    gradient_start: '#0088CC',
-    gradient_end: '#005A8C',
-    cta_text_ar: 'اطلب الآن',
-    cta_text_en: 'Order Now',
-    link_url: '/providers?category=coffee_desserts',
+    id: 'p2',
+    title_ar: 'وصّل لعملاء جدد',
+    title_en: 'Reach New Customers',
+    description_ar: 'أكثر من 10,000 عميل نشط في انتظار خدماتك',
+    description_en: 'More than 10,000 active customers waiting',
+    badge_text_ar: '+10K عميل',
+    badge_text_en: '+10K Customers',
+    gradient_start: '#00C27A',
+    gradient_end: '#00A066',
+    cta_text_ar: 'ابدأ البيع',
+    cta_text_en: 'Start Selling',
+    link_url: '/partner/register',
     image_position: 'end',
     has_glassmorphism: true,
   },
   {
-    id: '3',
-    title_ar: 'عصائر الشفا',
-    title_en: 'Al-Shifa Juices',
-    description_ar: 'اشتري ١ واحصل على ١ مجاناً',
-    description_en: 'Buy 1 Get 1 Free',
-    badge_text_ar: 'اشتري ١ واحصل ١',
-    badge_text_en: 'Buy 1 Get 1',
-    gradient_start: '#0077B6',
-    gradient_end: '#005580',
-    cta_text_ar: 'اطلب الآن',
-    cta_text_en: 'Order Now',
-    link_url: '/providers?category=vegetables_fruits',
+    id: 'p3',
+    title_ar: 'لوحة تحكم متكاملة',
+    title_en: 'Complete Dashboard',
+    description_ar: 'تتبع طلباتك وأرباحك في مكان واحد',
+    description_en: 'Track orders and earnings in one place',
+    badge_text_ar: 'مجاني 100%',
+    badge_text_en: '100% Free',
+    gradient_start: '#8B5CF6',
+    gradient_end: '#7C3AED',
+    cta_text_ar: 'اكتشف المزيد',
+    cta_text_en: 'Learn More',
+    link_url: '/partner/register',
     image_position: 'end',
     has_glassmorphism: true,
   },
 ]
 
-interface OffersCarouselProps {
-  banners?: HomepageBanner[]
+interface PartnerBannersCarouselProps {
   autoPlay?: boolean
   autoPlayInterval?: number
-  title?: string
-  showViewAll?: boolean
-  onViewAll?: () => void
   className?: string
 }
 
-// Countdown Timer Component
-function CountdownTimer({ endTime, isDarkText = false }: { endTime: string; isDarkText?: boolean }) {
-  const locale = useLocale()
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 })
-
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const difference = new Date(endTime).getTime() - new Date().getTime()
-      if (difference > 0) {
-        setTimeLeft({
-          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((difference / (1000 * 60)) % 60),
-          seconds: Math.floor((difference / 1000) % 60),
-        })
-      }
-    }
-
-    calculateTimeLeft()
-    const timer = setInterval(calculateTimeLeft, 1000)
-    return () => clearInterval(timer)
-  }, [endTime])
-
-  const formatNum = (n: number) => n.toString().padStart(2, '0')
-
-  const textColor = isDarkText ? 'text-slate-700' : 'text-white/90'
-  const bgColor = isDarkText ? 'bg-slate-800/10' : 'bg-white/20'
-
-  return (
-    <div className={`flex items-center gap-1 ${textColor} text-xs font-medium`}>
-      <span className={`${bgColor} backdrop-blur-sm rounded px-1.5 py-0.5`}>
-        {formatNum(timeLeft.hours)}
-      </span>
-      <span>:</span>
-      <span className={`${bgColor} backdrop-blur-sm rounded px-1.5 py-0.5`}>
-        {formatNum(timeLeft.minutes)}
-      </span>
-      <span>:</span>
-      <span className={`${bgColor} backdrop-blur-sm rounded px-1.5 py-0.5`}>
-        {formatNum(timeLeft.seconds)}
-      </span>
-      <span className="ms-1 opacity-75">
-        {locale === 'ar' ? 'متبقي' : 'left'}
-      </span>
-    </div>
-  )
-}
-
-// Single Banner Card Component
-function BannerCard({
+function PartnerBannerCard({
   banner,
   isActive,
   locale,
   isDesktop,
 }: {
-  banner: HomepageBanner
+  banner: PartnerBanner
   isActive: boolean
   locale: string
   isDesktop: boolean
@@ -196,11 +127,9 @@ function BannerCard({
     background: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`,
   }
 
-  // Determine text color based on background brightness
   const textMode = getGradientTextColor(gradientStart, gradientEnd)
   const isDarkText = textMode === 'dark'
 
-  // Text color classes
   const textColorClass = isDarkText ? 'text-slate-800' : 'text-white'
   const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white/85'
   const badgeBgClass = isDarkText
@@ -226,7 +155,6 @@ function BannerCard({
       whileHover={isDesktop ? { scale: 1.01 } : undefined}
       transition={{ type: 'tween', duration: 0.4, ease: 'easeOut' }}
     >
-      {/* Background Image (if image_position is 'background') */}
       {imageOnBackground && banner.image_url && (
         <div className="absolute inset-0">
           <img
@@ -238,19 +166,15 @@ function BannerCard({
         </div>
       )}
 
-      {/* Decorative Circles */}
       <div className={`absolute -top-12 -end-12 w-40 h-40 ${decorativeCircleClass} rounded-full blur-sm`} />
       <div className={`absolute -bottom-8 -start-8 w-32 h-32 ${decorativeCircleClass} rounded-full blur-sm`} />
 
-      {/* Content Container */}
       <div className={`
         relative z-10 h-full p-5 md:p-6
         flex ${imageOnStart ? 'flex-row-reverse' : 'flex-row'}
         items-center justify-between gap-4
       `}>
-        {/* Text Content */}
         <div className={`flex-1 ${imageOnStart ? 'text-end' : 'text-start'}`}>
-          {/* Badge */}
           {badgeText && (
             <div className={`
               inline-block mb-3
@@ -263,26 +187,16 @@ function BannerCard({
             </div>
           )}
 
-          {/* Title */}
           <h3 className={`${textColorClass} font-bold text-lg md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight`}>
             {title}
           </h3>
 
-          {/* Description */}
           {description && (
             <p className={`${textColorSecondary} text-sm md:text-base mb-3 md:mb-4 line-clamp-2`}>
               {description}
             </p>
           )}
 
-          {/* Countdown Timer */}
-          {banner.is_countdown_active && banner.countdown_end_time && (
-            <div className="mb-3">
-              <CountdownTimer endTime={banner.countdown_end_time} isDarkText={isDarkText} />
-            </div>
-          )}
-
-          {/* CTA Button */}
           {ctaText && (
             <motion.button
               className={`
@@ -302,7 +216,6 @@ function BannerCard({
           )}
         </div>
 
-        {/* Product Image (Subtle 3D Effect) */}
         {!imageOnBackground && banner.image_url && (
           <div className={`
             relative
@@ -326,7 +239,6 @@ function BannerCard({
     </motion.div>
   )
 
-  // Wrap with Link if link_url exists
   if (banner.link_url) {
     return (
       <Link href={`/${locale}${banner.link_url}`} className="block">
@@ -338,8 +250,7 @@ function BannerCard({
   return CardContent
 }
 
-// Liquid Progress Indicator Component
-function LiquidProgressIndicator({
+function ProgressIndicator({
   totalItems,
   currentIndex,
   scrollProgress,
@@ -359,18 +270,15 @@ function LiquidProgressIndicator({
   return (
     <div className="flex items-center justify-center gap-1.5 mt-4">
       {Array.from({ length: totalItems }).map((_, index) => {
-        // Calculate distance for liquid effect
         const distance = Math.abs(scrollProgress - index)
         const isActive = index === currentIndex
-
-        // Width based on distance (liquid stretch effect)
         const width = isActive ? 24 : Math.max(8, 16 - distance * 8)
 
         return (
           <motion.button
             key={index}
             onClick={() => onSelect(index)}
-            className="relative h-1.5 rounded-full overflow-hidden bg-slate-200"
+            className="relative h-1.5 rounded-full overflow-hidden bg-[#009DE0]/20"
             animate={{
               width,
               opacity: isActive ? 1 : 0.5 + (1 - Math.min(distance, 1)) * 0.3
@@ -379,31 +287,19 @@ function LiquidProgressIndicator({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
-            {/* Active fill */}
             <motion.div
-              className="absolute inset-0 bg-primary rounded-full"
+              className="absolute inset-0 bg-[#009DE0] rounded-full"
               initial={false}
-              animate={{
-                scaleX: isActive ? 1 : 0,
-              }}
-              transition={{
-                type: 'tween',
-                duration: 0.4,
-                ease: 'easeInOut',
-              }}
+              animate={{ scaleX: isActive ? 1 : 0 }}
+              transition={{ type: 'tween', duration: 0.4, ease: 'easeInOut' }}
               style={{ originX: isRTL ? 1 : 0 }}
             />
-
-            {/* Auto-play progress fill */}
             {isActive && autoPlay && (
               <motion.div
-                className="absolute inset-0 bg-primary/60 rounded-full"
+                className="absolute inset-0 bg-[#009DE0]/60 rounded-full"
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
-                transition={{
-                  duration: autoPlayInterval / 1000,
-                  ease: 'linear',
-                }}
+                transition={{ duration: autoPlayInterval / 1000, ease: 'linear' }}
                 style={{ originX: isRTL ? 1 : 0 }}
                 key={`progress-${currentIndex}`}
               />
@@ -415,23 +311,16 @@ function LiquidProgressIndicator({
   )
 }
 
-export function OffersCarousel({
-  banners: propBanners,
+export function PartnerBannersCarousel({
   autoPlay = true,
   autoPlayInterval = 5000,
-  title,
-  showViewAll = true,
-  onViewAll,
   className = '',
-}: OffersCarouselProps) {
+}: PartnerBannersCarouselProps) {
   const locale = useLocale()
   const isRTL = locale === 'ar'
 
-  // Get user's location for banner targeting
-  const { governorateId, cityId, isLoading: isLocationLoading } = useUserLocation()
-
-  const [banners, setBanners] = useState<HomepageBanner[]>(propBanners || [])
-  const [isLoading, setIsLoading] = useState(!propBanners)
+  const [banners, setBanners] = useState<PartnerBanner[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
@@ -441,8 +330,6 @@ export function OffersCarousel({
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const sectionTitle = title || (locale === 'ar' ? 'العروض' : 'Offers')
-
   // Detect desktop
   useEffect(() => {
     const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024)
@@ -451,79 +338,39 @@ export function OffersCarousel({
     return () => window.removeEventListener('resize', checkDesktop)
   }, [])
 
-  // Fetch banners from database - filtered by user's location
+  // Fetch partner banners from database
   useEffect(() => {
-    if (propBanners) {
-      setBanners(propBanners)
-      setIsLoading(false)
-      return
-    }
-
-    // Wait for location to load before fetching banners
-    if (isLocationLoading) return
-
     async function fetchBanners() {
       try {
         const supabase = createClient()
 
-        // Try to use the RPC function if available (more efficient)
-        const { data: rpcData, error: rpcError } = await supabase
-          .rpc('get_banners_for_location', {
-            p_governorate_id: governorateId || null,
-            p_city_id: cityId || null,
-          })
-
-        if (!rpcError && rpcData && rpcData.length > 0) {
-          setBanners(rpcData)
-          setIsLoading(false)
-          return
-        }
-
-        // Fallback: manual filtering if RPC not available
         const { data, error } = await supabase
           .from('homepage_banners')
           .select('*')
           .eq('is_active', true)
-          .eq('banner_type', 'customer')
+          .eq('banner_type', 'partner')
           .lte('starts_at', new Date().toISOString())
           .or(`ends_at.is.null,ends_at.gte.${new Date().toISOString()}`)
           .order('display_order', { ascending: true })
 
         if (error) throw error
 
-        // Filter by location on client side
-        const filteredData = (data || []).filter(banner => {
-          // National banners (no location restriction)
-          if (!banner.governorate_id && !banner.city_id) return true
-
-          // User has no location set - only show national banners
-          if (!governorateId) return false
-
-          // Governorate-level banners
-          if (banner.governorate_id === governorateId && !banner.city_id) return true
-
-          // City-level banners
-          if (banner.governorate_id === governorateId && banner.city_id === cityId) return true
-
-          return false
-        })
-
-        if (filteredData.length > 0) {
-          setBanners(filteredData)
+        if (data && data.length > 0) {
+          setBanners(data)
         } else {
-          setBanners(fallbackOffers)
+          setBanners(fallbackPartnerBanners)
         }
       } catch (error) {
-        setBanners(fallbackOffers)
+        setBanners(fallbackPartnerBanners)
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchBanners()
-  }, [propBanners, isLocationLoading, governorateId, cityId])
+  }, [])
 
-  // Auto-play logic - SIMPLIFIED
+  // Auto-play logic
   useEffect(() => {
     if (!autoPlay || banners.length <= 1 || isPaused || (isDesktop && isHovered)) {
       return
@@ -536,31 +383,27 @@ export function OffersCarousel({
     return () => clearInterval(timer)
   }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered])
 
-  // Scroll to current index (auto-play and programmatic navigation)
+  // Scroll to current index
   useEffect(() => {
     if (isDesktop || !scrollContainerRef.current || banners.length === 0) return
 
     const container = scrollContainerRef.current
-    const cards = container.querySelectorAll('[data-banner-card]')
+    const cards = container.querySelectorAll('[data-partner-banner-card]')
     if (cards.length === 0) return
 
     const card = cards[currentIndex] as HTMLElement
     if (!card) return
 
-    // Set flag to prevent handleScroll from interfering
     setIsAutoScrolling(true)
 
-    // Use scrollIntoView for better cross-browser and RTL support
     card.scrollIntoView({
       behavior: 'smooth',
       block: 'nearest',
       inline: 'center',
     })
 
-    // Update scroll progress
     setScrollProgress(currentIndex)
 
-    // Reset flag after animation completes
     const resetTimer = setTimeout(() => {
       setIsAutoScrolling(false)
     }, 500)
@@ -568,21 +411,18 @@ export function OffersCarousel({
     return () => clearTimeout(resetTimer)
   }, [currentIndex, isDesktop, banners.length])
 
-  // Handle scroll events for snap detection
+  // Handle scroll events
   const handleScroll = useCallback(() => {
-    // Skip if we're auto-scrolling or on desktop
     if (!scrollContainerRef.current || isDesktop || isAutoScrolling) return
 
     const container = scrollContainerRef.current
     const containerWidth = container.offsetWidth
     const scrollLeft = container.scrollLeft
-    const cardWidth = containerWidth * 0.85 + 16 // 85% width + gap
+    const cardWidth = containerWidth * 0.85 + 16
 
-    // Calculate current card based on scroll position
     const newIndex = Math.round(scrollLeft / cardWidth)
     const clampedIndex = Math.max(0, Math.min(newIndex, banners.length - 1))
 
-    // Update scroll progress for liquid effect
     const progress = scrollLeft / (cardWidth * (banners.length - 1))
     setScrollProgress(progress * (banners.length - 1))
 
@@ -599,7 +439,6 @@ export function OffersCarousel({
     setCurrentIndex((prev) => (prev + 1) % banners.length)
   }
 
-  // Pause handlers
   const handleTouchStart = () => setIsPaused(true)
   const handleTouchEnd = () => {
     setTimeout(() => setIsPaused(false), 2000)
@@ -607,10 +446,7 @@ export function OffersCarousel({
 
   if (isLoading) {
     return (
-      <section className={`bg-slate-50 px-4 py-6 ${className}`}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="h-6 w-24 bg-slate-200 rounded animate-pulse" />
-        </div>
+      <div className={`px-4 py-6 ${className}`}>
         <div className="flex gap-4 overflow-hidden">
           {[1, 2, 3].map((i) => (
             <div
@@ -623,13 +459,12 @@ export function OffersCarousel({
             />
           ))}
         </div>
-      </section>
+      </div>
     )
   }
 
   if (banners.length === 0) return null
 
-  // Desktop: Show 3 cards
   const visibleBanners = isDesktop
     ? (() => {
         const result = []
@@ -642,48 +477,7 @@ export function OffersCarousel({
     : banners
 
   return (
-    <section className={`bg-slate-50 px-4 py-6 ${className}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-slate-900">{sectionTitle}</h2>
-        <div className="flex items-center gap-2">
-          {showViewAll && onViewAll && (
-            <button
-              onClick={onViewAll}
-              className="text-sm text-primary font-medium hover:underline"
-            >
-              {locale === 'ar' ? 'عرض الكل' : 'View All'}
-            </button>
-          )}
-
-          {/* Desktop Navigation Arrows */}
-          {isDesktop && banners.length > 3 && (
-            <motion.div
-              className="flex items-center gap-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isHovered ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <button
-                onClick={handlePrev}
-                className="w-11 h-11 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm group"
-                aria-label={locale === 'ar' ? 'السابق' : 'Previous'}
-              >
-                <ChevronLeft className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              </button>
-              <button
-                onClick={handleNext}
-                className="w-11 h-11 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm group"
-                aria-label={locale === 'ar' ? 'التالي' : 'Next'}
-              >
-                <ChevronRight className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              </button>
-            </motion.div>
-          )}
-        </div>
-      </div>
-
-      {/* Carousel Container */}
+    <div className={`${className}`}>
       <div
         className="relative"
         onMouseEnter={() => {
@@ -718,10 +512,10 @@ export function OffersCarousel({
             {banners.map((banner, index) => (
               <div
                 key={banner.id}
-                data-banner-card
+                data-partner-banner-card
                 className="flex-shrink-0 w-[85%] snap-center"
               >
-                <BannerCard
+                <PartnerBannerCard
                   banner={banner}
                   isActive={index === currentIndex}
                   locale={locale}
@@ -734,39 +528,66 @@ export function OffersCarousel({
 
         {/* Desktop: 3-Card Grid with Animation */}
         {isDesktop && (
-          <div className="grid grid-cols-3 gap-4">
-            <AnimatePresence mode="popLayout">
-              {visibleBanners.map((banner, idx) => (
-                <motion.div
-                  key={`${banner.id}-${(banner as any)._index}`}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{
-                    opacity: 1,
-                    scale: idx === 0 ? 1 : 0.99,
-                  }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{
-                    type: 'tween',
-                    duration: 0.6,
-                    ease: [0.25, 0.1, 0.25, 1],
-                  }}
+          <div className="relative">
+            <div className="grid grid-cols-3 gap-4">
+              <AnimatePresence mode="popLayout">
+                {visibleBanners.map((banner, idx) => (
+                  <motion.div
+                    key={`${banner.id}-${(banner as any)._index}`}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{
+                      opacity: 1,
+                      scale: idx === 0 ? 1 : 0.99,
+                    }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{
+                      type: 'tween',
+                      duration: 0.6,
+                      ease: [0.25, 0.1, 0.25, 1],
+                    }}
+                  >
+                    <PartnerBannerCard
+                      banner={banner}
+                      isActive={idx === 0}
+                      locale={locale}
+                      isDesktop={true}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {/* Desktop Navigation Arrows */}
+            {banners.length > 3 && (
+              <motion.div
+                className="absolute top-1/2 -translate-y-1/2 left-0 right-0 flex justify-between pointer-events-none px-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: isHovered ? 1 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <button
+                  onClick={handlePrev}
+                  className="w-11 h-11 rounded-full bg-white/90 border border-slate-200 flex items-center justify-center hover:border-[#009DE0] hover:text-[#009DE0] transition-colors shadow-lg pointer-events-auto"
+                  aria-label={locale === 'ar' ? 'السابق' : 'Previous'}
                 >
-                  <BannerCard
-                    banner={banner}
-                    isActive={idx === 0}
-                    locale={locale}
-                    isDesktop={true}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="w-11 h-11 rounded-full bg-white/90 border border-slate-200 flex items-center justify-center hover:border-[#009DE0] hover:text-[#009DE0] transition-colors shadow-lg pointer-events-auto"
+                  aria-label={locale === 'ar' ? 'التالي' : 'Next'}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </motion.div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Liquid Progress Indicator */}
+      {/* Progress Indicator */}
       {banners.length > 1 && (
-        <LiquidProgressIndicator
+        <ProgressIndicator
           totalItems={banners.length}
           currentIndex={currentIndex}
           scrollProgress={scrollProgress}
@@ -776,6 +597,6 @@ export function OffersCarousel({
           isRTL={isRTL}
         />
       )}
-    </section>
+    </div>
   )
 }

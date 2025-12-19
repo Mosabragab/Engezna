@@ -26,6 +26,7 @@ import {
   Home,
 } from 'lucide-react'
 import { useState } from 'react'
+import { PartnerBannersCarousel } from '@/components/partner/PartnerBannersCarousel'
 
 export default function PartnerLandingPage() {
   const locale = useLocale()
@@ -171,7 +172,7 @@ export default function PartnerLandingPage() {
                   </Button>
                 </Link>
                 <Link href={`/${locale}/provider/login`}>
-                  <Button variant="outline" size="lg" className="px-8 py-6 text-lg rounded-xl border-[#E2E8F0] hover:bg-[#F8FAFC]">
+                  <Button variant="outline" size="lg" className="px-8 py-6 text-lg rounded-xl border-[#009DE0] text-[#009DE0] hover:bg-[#009DE0] hover:text-white transition-all duration-200">
                     {t('login')}
                   </Button>
                 </Link>
@@ -197,6 +198,13 @@ export default function PartnerLandingPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Partner Banners Carousel */}
+      <section className="py-8 md:py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <PartnerBannersCarousel autoPlayInterval={6000} />
         </div>
       </section>
 

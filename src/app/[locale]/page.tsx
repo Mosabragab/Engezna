@@ -18,38 +18,6 @@ import { useCart } from '@/lib/store/cart'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 import { Loader2 } from 'lucide-react'
 
-// Demo offers data - Unified blue gradient colors per brand guidelines
-const demoOffers = [
-  {
-    id: '1',
-    title_ar: 'خصم ٣٠٪',
-    title_en: '30% Off',
-    description_ar: 'على جميع البيتزا من سلطان بيتزا',
-    description_en: 'On all pizzas from Sultan Pizza',
-    background_color: '#009DE0',
-    discount_percentage: 30,
-    image_url: '/images/offers/pizza.jpg',
-  },
-  {
-    id: '2',
-    title_ar: 'توصيل مجاني',
-    title_en: 'Free Delivery',
-    description_ar: 'على الطلبات فوق ١٠٠ ج.م من لافندر كافيه',
-    description_en: 'On orders over 100 EGP from Lavender Cafe',
-    background_color: '#0088CC',
-    image_url: '/images/offers/coffee.jpg',
-  },
-  {
-    id: '3',
-    title_ar: 'اشتري ١ واحصل ١',
-    title_en: 'Buy 1 Get 1',
-    description_ar: 'على جميع العصائر من عصائر الشفا',
-    description_en: 'On all juices from Al-Shifa Juices',
-    background_color: '#0077B6',
-    discount_percentage: 50,
-    image_url: '/images/offers/juice.jpg',
-  },
-]
 
 // Type for last order display
 interface LastOrderDisplay {
@@ -429,9 +397,8 @@ export default function HomePage() {
           className="mt-4"
         />
 
-        {/* Offers Carousel */}
+        {/* Offers Carousel - Fetches from database automatically */}
         <OffersCarousel
-          offers={demoOffers}
           onViewAll={handleViewAllOffers}
           className="mt-6"
         />
