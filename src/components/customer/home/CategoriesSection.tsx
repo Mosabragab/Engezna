@@ -13,8 +13,8 @@ interface Category {
   gradient: string
 }
 
-// Categories with gradient backgrounds and emojis
-// Updated December 2024 - New design with 9 categories
+// Active categories - 4 categories currently available
+// Updated December 2024 - New design with emoji and gradient backgrounds
 const categories: Category[] = [
   {
     id: '1',
@@ -26,14 +26,6 @@ const categories: Category[] = [
   },
   {
     id: '2',
-    key: 'supermarket',
-    nameAr: 'سوبر ماركت',
-    nameEn: 'Supermarket',
-    emoji: '🛒',
-    gradient: 'linear-gradient(145deg, rgba(224,244,255,0.9) 0%, rgba(186,230,253,0.75) 100%)'
-  },
-  {
-    id: '3',
     key: 'coffee-sweets',
     nameAr: 'البن والحلويات',
     nameEn: 'Coffee & Sweets',
@@ -41,53 +33,21 @@ const categories: Category[] = [
     gradient: 'linear-gradient(145deg, rgba(245,235,220,0.9) 0%, rgba(237,224,205,0.75) 100%)'
   },
   {
+    id: '3',
+    key: 'supermarket',
+    nameAr: 'سوبر ماركت',
+    nameEn: 'Supermarket',
+    emoji: '🛒',
+    gradient: 'linear-gradient(145deg, rgba(224,244,255,0.9) 0%, rgba(186,230,253,0.75) 100%)'
+  },
+  {
     id: '4',
     key: 'vegetables-fruits',
     nameAr: 'خضروات وفواكه',
     nameEn: 'Vegetables & Fruits',
-    emoji: '🍌',
+    emoji: '🥬',
     gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)'
   },
-  {
-    id: '5',
-    key: 'pharmacy',
-    nameAr: 'صيدليات',
-    nameEn: 'Pharmacy',
-    emoji: '💊',
-    gradient: 'linear-gradient(145deg, rgba(255,228,230,0.85) 0%, rgba(254,205,211,0.7) 100%)'
-  },
-  {
-    id: '6',
-    key: 'drinks',
-    nameAr: 'مشروبات',
-    nameEn: 'Drinks',
-    emoji: '🥤',
-    gradient: 'linear-gradient(145deg, rgba(255,237,213,0.85) 0%, rgba(254,215,170,0.7) 100%)'
-  },
-  {
-    id: '7',
-    key: 'homefood',
-    nameAr: 'أكل بيتي',
-    nameEn: 'Home Food',
-    emoji: '🍲',
-    gradient: 'linear-gradient(145deg, rgba(255,237,213,0.9) 0%, rgba(254,215,170,0.75) 100%)'
-  },
-  {
-    id: '8',
-    key: 'gifts-flowers',
-    nameAr: 'هدايا وورود',
-    nameEn: 'Gifts & Flowers',
-    emoji: '💐',
-    gradient: 'linear-gradient(145deg, rgba(252,231,243,0.85) 0%, rgba(251,207,232,0.7) 100%)'
-  },
-  {
-    id: '9',
-    key: 'other',
-    nameAr: 'أخرى',
-    nameEn: 'Other',
-    emoji: '🛍️',
-    gradient: 'linear-gradient(145deg, rgba(237,233,254,0.85) 0%, rgba(221,214,254,0.7) 100%)'
-  }
 ]
 
 interface CategoriesSectionProps {
@@ -124,29 +84,21 @@ export function CategoriesSection({
         )}
       </div>
 
-      {/* Categories Horizontal Scroll */}
-      <div
-        className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
-        style={{
-          scrollSnapType: 'x mandatory',
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
+      {/* Categories Grid - Responsive: 4 columns on all screens */}
+      <div className="grid grid-cols-4 gap-3 md:gap-4">
         {categories.map((category) => {
           const isSelected = selectedCategory === category.key
 
           const cardContent = (
-            <div
-              className="flex flex-col items-center flex-shrink-0"
-              style={{ scrollSnapAlign: 'start' }}
-            >
-              {/* Card */}
+            <div className="flex flex-col items-center">
+              {/* Card - Responsive sizes */}
               <div
                 className={cn(
-                  'w-[76px] h-[76px] rounded-[18px] flex items-center justify-center',
+                  'w-16 h-16 sm:w-[72px] sm:h-[72px] md:w-20 md:h-20 lg:w-[88px] lg:h-[88px]',
+                  'rounded-2xl md:rounded-[18px] flex items-center justify-center',
                   'transition-all duration-300 cursor-pointer',
-                  'hover:scale-[1.08] hover:-translate-y-0.5',
-                  isSelected && 'scale-[1.08]'
+                  'hover:scale-105 hover:-translate-y-0.5',
+                  isSelected && 'scale-105'
                 )}
                 style={{
                   background: category.gradient,
@@ -166,15 +118,15 @@ export function CategoriesSection({
                 }}
               >
                 <span
-                  className="text-[34px] leading-none select-none"
+                  className="text-2xl sm:text-[28px] md:text-[32px] lg:text-[36px] leading-none select-none"
                   style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
                 >
                   {category.emoji}
                 </span>
               </div>
 
-              {/* Label */}
-              <span className="mt-2.5 text-xs font-medium text-slate-600 text-center max-w-[76px] leading-tight line-clamp-2">
+              {/* Label - Responsive text */}
+              <span className="mt-2 text-[10px] sm:text-xs md:text-sm font-medium text-slate-600 text-center leading-tight line-clamp-2">
                 {locale === 'ar' ? category.nameAr : category.nameEn}
               </span>
             </div>
@@ -185,7 +137,7 @@ export function CategoriesSection({
               <button
                 key={category.id}
                 onClick={() => onCategoryClick(category.key)}
-                className="flex-shrink-0 focus:outline-none"
+                className="focus:outline-none"
               >
                 {cardContent}
               </button>
@@ -196,7 +148,6 @@ export function CategoriesSection({
             <Link
               key={category.id}
               href={`/${locale}/providers?category=${category.key}`}
-              className="flex-shrink-0"
             >
               {cardContent}
             </Link>
