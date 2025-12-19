@@ -134,11 +134,11 @@ type ImagePosition = 'start' | 'end' | 'center'
 type ImageSize = 'small' | 'medium' | 'large'
 
 // Image sizes based on percentage of banner height
-// Large: 75%, Medium: 65%, Small: 50%
+// Large: 60%, Medium: 50%, Small: 40%
 const IMAGE_SIZE_CONFIG: Record<ImageSize, { label_ar: string; label_en: string; containerClass: string; imgClass: string }> = {
-  small: { label_ar: 'صغير', label_en: 'Small', containerClass: 'h-[50%] max-h-[50%]', imgClass: 'h-full w-auto object-contain' },
-  medium: { label_ar: 'وسط', label_en: 'Medium', containerClass: 'h-[65%] max-h-[65%]', imgClass: 'h-full w-auto object-contain' },
-  large: { label_ar: 'كبير', label_en: 'Large', containerClass: 'h-[75%] max-h-[75%]', imgClass: 'h-full w-auto object-contain' },
+  small: { label_ar: 'صغير', label_en: 'Small', containerClass: 'h-[40%] max-h-[40%]', imgClass: 'h-full w-auto object-contain' },
+  medium: { label_ar: 'وسط', label_en: 'Medium', containerClass: 'h-[50%] max-h-[50%]', imgClass: 'h-full w-auto object-contain' },
+  large: { label_ar: 'كبير', label_en: 'Large', containerClass: 'h-[60%] max-h-[60%]', imgClass: 'h-full w-auto object-contain' },
 }
 
 const defaultFormData = {
