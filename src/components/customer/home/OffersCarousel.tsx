@@ -7,6 +7,36 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 
+// Helper function to calculate color luminance and determine if text should be dark or light
+function getContrastTextColor(hexColor: string): 'light' | 'dark' {
+  // Remove # if present
+  const hex = hexColor.replace('#', '')
+
+  // Parse RGB values
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+
+  // Calculate relative luminance using the formula
+  // Higher values = lighter color
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // If luminance > 0.6, background is light, so use dark text
+  return luminance > 0.6 ? 'dark' : 'light'
+}
+
+// Get average luminance of gradient (checks both start and end colors)
+function getGradientTextColor(startColor: string, endColor: string): 'light' | 'dark' {
+  const startLuminance = getContrastTextColor(startColor)
+  const endLuminance = getContrastTextColor(endColor)
+
+  // If either color is light, use dark text for safety
+  if (startLuminance === 'dark' || endLuminance === 'dark') {
+    return 'dark'
+  }
+  return 'light'
+}
+
 // Types
 interface HomepageBanner {
   id: string
@@ -95,7 +125,7 @@ interface OffersCarouselProps {
 }
 
 // Countdown Timer Component
-function CountdownTimer({ endTime }: { endTime: string }) {
+function CountdownTimer({ endTime, isDarkText = false }: { endTime: string; isDarkText?: boolean }) {
   const locale = useLocale()
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 })
 
@@ -118,17 +148,20 @@ function CountdownTimer({ endTime }: { endTime: string }) {
 
   const formatNum = (n: number) => n.toString().padStart(2, '0')
 
+  const textColor = isDarkText ? 'text-slate-700' : 'text-white/90'
+  const bgColor = isDarkText ? 'bg-slate-800/10' : 'bg-white/20'
+
   return (
-    <div className="flex items-center gap-1 text-white/90 text-xs font-medium">
-      <span className="bg-white/20 backdrop-blur-sm rounded px-1.5 py-0.5">
+    <div className={`flex items-center gap-1 ${textColor} text-xs font-medium`}>
+      <span className={`${bgColor} backdrop-blur-sm rounded px-1.5 py-0.5`}>
         {formatNum(timeLeft.hours)}
       </span>
       <span>:</span>
-      <span className="bg-white/20 backdrop-blur-sm rounded px-1.5 py-0.5">
+      <span className={`${bgColor} backdrop-blur-sm rounded px-1.5 py-0.5`}>
         {formatNum(timeLeft.minutes)}
       </span>
       <span>:</span>
-      <span className="bg-white/20 backdrop-blur-sm rounded px-1.5 py-0.5">
+      <span className={`${bgColor} backdrop-blur-sm rounded px-1.5 py-0.5`}>
         {formatNum(timeLeft.seconds)}
       </span>
       <span className="ms-1 opacity-75">
@@ -155,9 +188,28 @@ function BannerCard({
   const badgeText = locale === 'ar' ? banner.badge_text_ar : banner.badge_text_en
   const ctaText = locale === 'ar' ? banner.cta_text_ar : banner.cta_text_en
 
+  const gradientStart = banner.gradient_start || '#009DE0'
+  const gradientEnd = banner.gradient_end || '#0077B6'
+
   const gradientStyle = {
-    background: `linear-gradient(135deg, ${banner.gradient_start || '#009DE0'} 0%, ${banner.gradient_end || '#0077B6'} 100%)`,
+    background: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`,
   }
+
+  // Determine text color based on background brightness
+  const textMode = getGradientTextColor(gradientStart, gradientEnd)
+  const isDarkText = textMode === 'dark'
+
+  // Text color classes
+  const textColorClass = isDarkText ? 'text-slate-800' : 'text-white'
+  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white/85'
+  const badgeBgClass = isDarkText
+    ? (banner.has_glassmorphism ? 'bg-slate-800/15 backdrop-blur-md border border-slate-800/20' : 'bg-slate-800/20')
+    : (banner.has_glassmorphism ? 'bg-white/20 backdrop-blur-md border border-white/30' : 'bg-white/25')
+  const badgeTextClass = isDarkText ? 'text-slate-800' : 'text-white'
+  const decorativeCircleClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10'
+  const ctaButtonClass = isDarkText
+    ? 'bg-slate-800 text-white hover:bg-slate-700'
+    : 'bg-white text-slate-900 hover:bg-white/95'
 
   const imageOnStart = banner.image_position === 'start'
   const imageOnBackground = banner.image_position === 'background'
@@ -186,8 +238,8 @@ function BannerCard({
       )}
 
       {/* Decorative Circles */}
-      <div className="absolute -top-12 -end-12 w-40 h-40 bg-white/10 rounded-full blur-sm" />
-      <div className="absolute -bottom-8 -start-8 w-32 h-32 bg-white/10 rounded-full blur-sm" />
+      <div className={`absolute -top-12 -end-12 w-40 h-40 ${decorativeCircleClass} rounded-full blur-sm`} />
+      <div className={`absolute -bottom-8 -start-8 w-32 h-32 ${decorativeCircleClass} rounded-full blur-sm`} />
 
       {/* Content Container */}
       <div className={`
@@ -201,26 +253,23 @@ function BannerCard({
           {badgeText && (
             <div className={`
               inline-block mb-3
-              ${banner.has_glassmorphism
-                ? 'bg-white/20 backdrop-blur-md border border-white/30'
-                : 'bg-white/25'
-              }
+              ${badgeBgClass}
               rounded-xl px-3 py-1.5 md:px-4 md:py-2
             `}>
-              <span className="text-white font-bold text-sm md:text-base">
+              <span className={`${badgeTextClass} font-bold text-sm md:text-base`}>
                 {badgeText}
               </span>
             </div>
           )}
 
           {/* Title */}
-          <h3 className="text-white font-bold text-lg md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight">
+          <h3 className={`${textColorClass} font-bold text-lg md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight`}>
             {title}
           </h3>
 
           {/* Description */}
           {description && (
-            <p className="text-white/85 text-sm md:text-base mb-3 md:mb-4 line-clamp-2">
+            <p className={`${textColorSecondary} text-sm md:text-base mb-3 md:mb-4 line-clamp-2`}>
               {description}
             </p>
           )}
@@ -228,21 +277,21 @@ function BannerCard({
           {/* Countdown Timer */}
           {banner.is_countdown_active && banner.countdown_end_time && (
             <div className="mb-3">
-              <CountdownTimer endTime={banner.countdown_end_time} />
+              <CountdownTimer endTime={banner.countdown_end_time} isDarkText={isDarkText} />
             </div>
           )}
 
           {/* CTA Button */}
           {ctaText && (
             <motion.button
-              className="
-                bg-white text-slate-900 font-semibold
+              className={`
+                ${ctaButtonClass} font-semibold
                 px-4 py-2 md:px-6 md:py-2.5
                 rounded-xl text-sm md:text-base
                 shadow-lg shadow-black/10
-                hover:bg-white/95 hover:shadow-xl
+                hover:shadow-xl
                 transition-all duration-200
-              "
+              `}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -445,27 +494,22 @@ export function OffersCarousel({
     return () => clearInterval(timer)
   }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered])
 
-  // Scroll to current index
+  // Scroll to current index (auto-play and programmatic navigation)
   useEffect(() => {
-    if (isDesktop || !scrollContainerRef.current) return
+    if (isDesktop || !scrollContainerRef.current || banners.length === 0) return
 
     const container = scrollContainerRef.current
-    const cards = container.children
+    const cards = container.querySelectorAll('[data-banner-card]')
     if (cards.length === 0) return
 
     const card = cards[currentIndex] as HTMLElement
     if (!card) return
 
-    // Calculate scroll position
-    const cardRect = card.getBoundingClientRect()
-    const containerRect = container.getBoundingClientRect()
-
-    // Scroll the card to center
-    const scrollLeft = card.offsetLeft - (containerRect.width - cardRect.width) / 2
-
-    container.scrollTo({
-      left: scrollLeft,
+    // Use scrollIntoView for better cross-browser and RTL support
+    card.scrollIntoView({
       behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
     })
 
     // Update scroll progress
@@ -621,6 +665,7 @@ export function OffersCarousel({
             {banners.map((banner, index) => (
               <div
                 key={banner.id}
+                data-banner-card
                 className="flex-shrink-0 w-[85%] snap-center"
               >
                 <BannerCard

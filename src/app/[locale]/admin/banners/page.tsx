@@ -31,6 +31,25 @@ import {
   Link as LinkIcon,
 } from 'lucide-react'
 
+// Helper function to calculate color luminance and determine if text should be dark or light
+function getContrastTextColor(hexColor: string): 'light' | 'dark' {
+  const hex = hexColor.replace('#', '')
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.6 ? 'dark' : 'light'
+}
+
+function getGradientTextColor(startColor: string, endColor: string): 'light' | 'dark' {
+  const startLuminance = getContrastTextColor(startColor)
+  const endLuminance = getContrastTextColor(endColor)
+  if (startLuminance === 'dark' || endLuminance === 'dark') {
+    return 'dark'
+  }
+  return 'light'
+}
+
 // Pastel Color Presets from Brand Guidelines (no emojis)
 const PASTEL_PRESETS = [
   { name: { ar: 'كريمي دافئ', en: 'Warm Cream' }, start: '#FEF3C7', end: '#FEF9C3' },
@@ -122,6 +141,26 @@ function BannerPreview({
     background: `linear-gradient(135deg, ${data.gradient_start} 0%, ${data.gradient_end} 100%)`,
   }
 
+  // Determine text color based on background brightness
+  const textMode = getGradientTextColor(data.gradient_start, data.gradient_end)
+  const isDarkText = textMode === 'dark'
+
+  // Dynamic text color classes
+  const textColorClass = isDarkText ? 'text-slate-800' : 'text-white'
+  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white/85'
+  const badgeBgClass = isDarkText
+    ? (data.has_glassmorphism ? 'bg-slate-800/15 backdrop-blur-md border border-slate-800/20' : 'bg-slate-800/20')
+    : (data.has_glassmorphism ? 'bg-white/20 backdrop-blur-md border border-white/30' : 'bg-white/25')
+  const badgeTextClass = isDarkText ? 'text-slate-800' : 'text-white'
+  const decorativeCircleClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10'
+  const ctaButtonClass = isDarkText
+    ? 'bg-slate-800 text-white hover:bg-slate-700'
+    : 'bg-white text-slate-900 hover:bg-white/95'
+  const countdownBgClass = isDarkText ? 'bg-slate-800/10' : 'bg-white/20'
+  const countdownTextClass = isDarkText ? 'text-slate-700' : 'text-white/90'
+  const placeholderIconClass = isDarkText ? 'text-slate-800/30' : 'text-white/50'
+  const placeholderBgClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10'
+
   const imageOnStart = data.image_position === 'start'
   const imageOnBackground = data.image_position === 'background'
 
@@ -149,8 +188,8 @@ function BannerPreview({
         )}
 
         {/* Decorative Circles */}
-        <div className="absolute -top-10 -end-10 w-32 h-32 bg-white/10 rounded-full blur-sm" />
-        <div className="absolute -bottom-6 -start-6 w-24 h-24 bg-white/10 rounded-full blur-sm" />
+        <div className={`absolute -top-10 -end-10 w-32 h-32 ${decorativeCircleClass} rounded-full blur-sm`} />
+        <div className={`absolute -bottom-6 -start-6 w-24 h-24 ${decorativeCircleClass} rounded-full blur-sm`} />
 
         {/* Content */}
         <div className={`
@@ -163,43 +202,40 @@ function BannerPreview({
             {badgeText && (
               <div className={`
                 inline-block mb-2
-                ${data.has_glassmorphism
-                  ? 'bg-white/20 backdrop-blur-md border border-white/30'
-                  : 'bg-white/25'
-                }
+                ${badgeBgClass}
                 rounded-lg px-2.5 py-1
               `}>
-                <span className="text-white font-bold text-xs">
+                <span className={`${badgeTextClass} font-bold text-xs`}>
                   {badgeText || (locale === 'ar' ? 'شارة' : 'Badge')}
                 </span>
               </div>
             )}
 
             {/* Title */}
-            <h3 className="text-white font-bold text-base mb-1 leading-tight">
+            <h3 className={`${textColorClass} font-bold text-base mb-1 leading-tight`}>
               {title || (locale === 'ar' ? 'عنوان العرض' : 'Offer Title')}
             </h3>
 
             {/* Description */}
             {description && (
-              <p className="text-white/85 text-xs mb-2 line-clamp-2">
+              <p className={`${textColorSecondary} text-xs mb-2 line-clamp-2`}>
                 {description}
               </p>
             )}
 
             {/* Countdown */}
             {data.is_countdown_active && (
-              <div className="flex items-center gap-1 text-white/90 text-xs mb-2">
+              <div className={`flex items-center gap-1 ${countdownTextClass} text-xs mb-2`}>
                 <Clock className="w-3 h-3" />
-                <span className="bg-white/20 rounded px-1">00</span>:
-                <span className="bg-white/20 rounded px-1">00</span>:
-                <span className="bg-white/20 rounded px-1">00</span>
+                <span className={`${countdownBgClass} rounded px-1`}>00</span>:
+                <span className={`${countdownBgClass} rounded px-1`}>00</span>:
+                <span className={`${countdownBgClass} rounded px-1`}>00</span>
               </div>
             )}
 
             {/* CTA Button */}
             {ctaText && (
-              <button className="bg-white text-slate-900 font-semibold px-3 py-1.5 rounded-lg text-xs">
+              <button className={`${ctaButtonClass} font-semibold px-3 py-1.5 rounded-lg text-xs`}>
                 {ctaText}
               </button>
             )}
@@ -218,8 +254,8 @@ function BannerPreview({
 
           {/* Placeholder when no image */}
           {!imageOnBackground && !data.image_url && (
-            <div className="w-20 h-20 flex-shrink-0 bg-white/10 rounded-xl flex items-center justify-center">
-              <ImageIcon className="w-8 h-8 text-white/50" />
+            <div className={`w-20 h-20 flex-shrink-0 ${placeholderBgClass} rounded-xl flex items-center justify-center`}>
+              <ImageIcon className={`w-8 h-8 ${placeholderIconClass}`} />
             </div>
           )}
         </div>
