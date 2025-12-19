@@ -882,6 +882,35 @@ export default function AdminBannersPage() {
           </div>
         </div>
 
+        {/* Provider Banners Approvals Link */}
+        <Link
+          href={`/${locale}/admin/banners/approvals`}
+          className="block mb-6"
+        >
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200 hover:border-amber-300 transition-colors group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-amber-900">
+                    {locale === 'ar' ? 'طلبات بانرات التجار' : 'Provider Banner Requests'}
+                  </h3>
+                  <p className="text-sm text-amber-700">
+                    {locale === 'ar' ? 'مراجعة طلبات البانرات من التجار' : 'Review banner requests from providers'}
+                  </p>
+                </div>
+              </div>
+              <div className={`p-2 rounded-lg bg-amber-100 group-hover:bg-amber-200 transition-colors ${isRTL ? 'rotate-180' : ''}`}>
+                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </Link>
+
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
