@@ -523,18 +523,23 @@ export function OffersCarousel({
     fetchBanners()
   }, [propBanners, isLocationLoading, governorateId, cityId])
 
-  // Auto-play logic - SIMPLIFIED
+  // Auto-play logic - RTL aware
   useEffect(() => {
     if (!autoPlay || banners.length <= 1 || isPaused || (isDesktop && isHovered)) {
       return
     }
 
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % banners.length)
+      // In RTL, move in reverse direction for natural feel
+      if (isRTL) {
+        setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
+      } else {
+        setCurrentIndex((prev) => (prev + 1) % banners.length)
+      }
     }, autoPlayInterval)
 
     return () => clearInterval(timer)
-  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered])
+  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered, isRTL])
 
   // Scroll to current index (auto-play and programmatic navigation)
   useEffect(() => {
