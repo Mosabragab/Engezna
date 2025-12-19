@@ -1,6 +1,6 @@
 # Engezna Logo Kit | كيت شعار إنجزنا
 
-> **Version:** 1.0.0
+> **Version:** 2.0.0
 > **Last Updated:** December 2025
 > **Brand Color:** #009DE0 (Engezna Blue)
 
@@ -10,44 +10,19 @@
 
 ```
 logo-kit/
-├── logo-primary/          # الشعار الكامل (نص + أيقونة + سلوجان)
-│   ├── primary-full-color.svg        # EN icon - خلفية فاتحة
-│   ├── primary-reversed.svg          # EN icon - خلفية داكنة
-│   ├── primary-ar-full-color.svg     # AR icon (إ) - خلفية فاتحة
-│   └── primary-ar-reversed.svg       # AR icon (إ) - خلفية داكنة
-│
-├── logo-icon-en/          # الأيقونة الإنجليزية (E)
-│   ├── icon-blue-bg.svg
-│   ├── icon-white-bg.svg
-│   ├── icon-dark-bg.svg
-│   └── icon-transparent.svg
-│
-├── logo-icon-ar/          # الأيقونة العربية (إ)
-│   ├── icon-blue-bg.svg
-│   ├── icon-white-bg.svg
-│   ├── icon-dark-bg.svg
-│   └── icon-transparent.svg
-│
-├── logo-icon-text/        # أيقونة بالاسم الكامل "إنجزنا"
-│   ├── icon-text-blue-bg.svg
-│   ├── icon-text-dark-bg.svg
-│   └── icon-text-white-bg.svg
-│
-├── logo-text/             # النص فقط "إنجزنا"
-│   ├── text-color.svg     # نص غامق
-│   ├── text-white.svg     # نص أبيض
-│   └── text-blue.svg      # نص أزرق
-│
-├── logo-combined-en/      # الشعار المدمج (أيقونة E + نص)
-│   ├── combined-horizontal-color.svg
-│   └── combined-horizontal-white.svg
-│
-├── logo-combined-ar/      # الشعار المدمج (أيقونة إ + نص)
-│   ├── combined-horizontal-color.svg
-│   └── combined-horizontal-white.svg
-│
-└── logo-preview.html      # معاينة جميع الأصول
+├── logo-exporter.html    # أداة تصدير PNG التفاعلية (الأداة الرئيسية)
+├── logo-preview.html     # معاينة جميع الأصول
+└── README.md             # هذا الملف
 ```
+
+---
+
+## 🚀 How to Export Logos | كيفية تصدير الشعارات
+
+1. افتح `logo-exporter.html` في المتصفح
+2. انتظر 3-5 ثواني حتى يتم تحميل الخطوط
+3. اضغط على زر "تحميل PNG" لأي شعار تريده
+4. سيتم تحميل الملف بالمقاس الصحيح تلقائياً
 
 ---
 
@@ -68,78 +43,71 @@ logo-kit/
 |------|---------|-------|
 | **English Icon** | E | International markets, English UI |
 | **Arabic Icon** | إ | Arabic markets, Arabic UI |
-| **Full Name Icon** | إنجزنا | Brand-focused, social media profiles |
+| **Full Name Icon** | إنجزنا | Brand-focused, social media profiles, app stores |
 
 ---
 
-## 📐 Size Specifications | مواصفات الأحجام
+## 📐 Available Exports | الأصول المتاحة للتصدير
 
-### App Icon Sizes | أحجام أيقونة التطبيق
+### 📱 App Store Icons
+| Platform | Size |
+|----------|------|
+| iOS App Store | 1024 × 1024 |
+| Google Play | 512 × 512 |
 
-| Size | Usage |
-|------|-------|
-| 1024 × 1024 | App Store |
-| 512 × 512 | Google Play |
-| 180 × 180 | Apple Touch Icon |
-| 192 × 192 | Android Chrome |
-| 128 × 128 | Web app |
-| 96 × 96 | Windows |
-| 64 × 64 | Desktop |
-| 48 × 48 | Small desktop |
-| 32 × 32 | Favicon retina |
-| 16 × 16 | Favicon |
-
-### Social Media Sizes | مقاسات السوشيال ميديا
-
-#### Facebook
-| Asset | Size (px) |
-|-------|-----------|
+### 📘 Facebook
+| Asset | Size |
+|-------|------|
 | Profile Picture | 180 × 180 |
 | Cover Photo | 820 × 312 |
 | Post Square | 1200 × 1200 |
 | Post Landscape | 1200 × 630 |
-| Story | 1080 × 1920 |
 
-#### Instagram
-| Asset | Size (px) |
-|-------|-----------|
+### 📸 Instagram
+| Asset | Size |
+|-------|------|
 | Profile Picture | 320 × 320 |
 | Post Square | 1080 × 1080 |
-| Post Portrait | 1080 × 1350 |
 | Story/Reels | 1080 × 1920 |
 
-#### Twitter/X
-| Asset | Size (px) |
-|-------|-----------|
+### 🐦 Twitter/X
+| Asset | Size |
+|-------|------|
 | Profile Picture | 400 × 400 |
-| Header | 1500 × 500 |
-| Post | 1200 × 675 |
+| Header Banner | 1500 × 500 |
 
-#### LinkedIn
-| Asset | Size (px) |
-|-------|-----------|
+### 💼 LinkedIn
+| Asset | Size |
+|-------|------|
 | Profile Picture | 400 × 400 |
 | Company Logo | 300 × 300 |
-| Cover | 1128 × 191 |
+| Cover Photo | 1128 × 191 |
 
-#### YouTube
-| Asset | Size (px) |
-|-------|-----------|
+### 🎬 YouTube
+| Asset | Size |
+|-------|------|
 | Profile Picture | 800 × 800 |
-| Channel Art | 2560 × 1440 |
+| Watermark | 150 × 150 |
 | Thumbnail | 1280 × 720 |
+| Channel Art | 2560 × 1440 |
 
-#### TikTok
-| Asset | Size (px) |
-|-------|-----------|
+### 🎵 TikTok
+| Asset | Size |
+|-------|------|
 | Profile Picture | 200 × 200 |
-| Video | 1080 × 1920 |
 
-#### WhatsApp
-| Asset | Size (px) |
-|-------|-----------|
+### 💬 WhatsApp
+| Asset | Size |
+|-------|------|
 | Profile Picture | 500 × 500 |
 | Status | 1080 × 1920 |
+
+### 🌐 Favicon & Web
+| Asset | Size |
+|-------|------|
+| Favicon | 32 × 32, 64 × 64 |
+| Apple Touch Icon | 180 × 180 |
+| Android Chrome | 192 × 192, 512 × 512 |
 
 ---
 
@@ -149,8 +117,8 @@ logo-kit/
 - ✅ Use the logo with adequate clear space around it
 - ✅ Use approved color variations only
 - ✅ Maintain the original aspect ratio
-- ✅ Use high-resolution files for print
-- ✅ Use SVG for digital applications when possible
+- ✅ Use high-resolution PNG exports
+- ✅ Use the logo-exporter.html for consistent exports
 
 ### Don'ts | الخطأ ✗
 - ❌ Don't stretch or distort the logo
