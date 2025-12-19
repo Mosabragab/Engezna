@@ -40,6 +40,7 @@ import {
 export const dynamic = 'force-dynamic'
 
 type DurationType = '1_day' | '3_days' | '1_week' | '1_month'
+type ImagePosition = 'start' | 'end' | 'background'
 
 type BannerStatus = {
   has_active_banner: boolean
@@ -118,6 +119,7 @@ const defaultFormData = {
   gradient_end: '#0077B6',
   duration_type: '1_week' as DurationType,
   starts_at: '',
+  image_position: 'end' as ImagePosition,
 }
 
 export default function ProviderBannerPage() {
@@ -324,7 +326,7 @@ export default function ProviderBannerPage() {
         is_active: false, // Will be activated when approved
         banner_type: 'customer',
         has_glassmorphism: true,
-        image_position: 'end',
+        image_position: formData.image_position,
         display_order: 999, // Will be ordered by duration priority
       }
 
@@ -736,6 +738,37 @@ export default function ProviderBannerPage() {
                 </div>
               </div>
 
+              {/* Image Position */}
+              {formData.image_url && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {locale === 'ar' ? 'موقع الصورة' : 'Image Position'}
+                  </label>
+                  <div className="flex gap-2">
+                    {[
+                      { value: 'end', label_ar: 'يسار', label_en: 'Left' },
+                      { value: 'start', label_ar: 'يمين', label_en: 'Right' },
+                      { value: 'background', label_ar: 'خلفية كاملة', label_en: 'Full Background' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, image_position: option.value as ImagePosition })}
+                        className={`
+                          flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all
+                          ${formData.image_position === option.value
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-slate-200 hover:border-slate-300'
+                          }
+                        `}
+                      >
+                        {locale === 'ar' ? option.label_ar : option.label_en}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Gradient Colors */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -839,11 +872,26 @@ export default function ProviderBannerPage() {
                     background: `linear-gradient(135deg, ${formData.gradient_start} 0%, ${formData.gradient_end} 100%)`,
                   }}
                 >
+                  {/* Background Image */}
+                  {formData.image_position === 'background' && formData.image_url && (
+                    <div className="absolute inset-0">
+                      <img
+                        src={formData.image_url}
+                        alt=""
+                        className="w-full h-full object-cover opacity-30"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    </div>
+                  )}
+
                   <div className="absolute -top-10 -end-10 w-32 h-32 bg-white/10 rounded-full blur-sm" />
                   <div className="absolute -bottom-6 -start-6 w-24 h-24 bg-white/10 rounded-full blur-sm" />
 
-                  <div className="relative z-10 h-full p-4 flex items-center justify-between gap-3">
-                    <div className="flex-1">
+                  <div className={`
+                    relative z-10 h-full p-4 flex items-center justify-between gap-3
+                    ${formData.image_position === 'start' ? 'flex-row-reverse' : 'flex-row'}
+                  `}>
+                    <div className={`flex-1 ${formData.image_position === 'start' ? 'text-end' : 'text-start'}`}>
                       {formData.badge_text_ar && (
                         <div className="inline-block mb-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-2.5 py-1">
                           <span className="text-white font-bold text-xs">
@@ -866,18 +914,20 @@ export default function ProviderBannerPage() {
                       )}
                     </div>
 
-                    {formData.image_url ? (
-                      <div className="w-20 h-20 flex-shrink-0">
-                        <img
-                          src={formData.image_url}
-                          alt=""
-                          className="w-full h-full object-contain drop-shadow-xl"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-20 h-20 flex-shrink-0 bg-white/10 rounded-xl flex items-center justify-center">
-                        <ImageIcon className="w-8 h-8 text-white/50" />
-                      </div>
+                    {formData.image_position !== 'background' && (
+                      formData.image_url ? (
+                        <div className="w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0">
+                          <img
+                            src={formData.image_url}
+                            alt=""
+                            className="w-full h-full object-contain drop-shadow-xl"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0 bg-white/10 rounded-xl flex items-center justify-center">
+                          <ImageIcon className="w-10 h-10 text-white/50" />
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
