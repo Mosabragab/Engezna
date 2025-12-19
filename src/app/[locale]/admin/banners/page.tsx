@@ -111,6 +111,9 @@ interface HomepageBanner {
   governorate_id: string | null
   city_id: string | null
   banner_type: 'customer' | 'partner'
+  approval_status?: 'pending' | 'approved' | 'rejected' | 'cancelled' | null
+  rejection_reason?: string | null
+  provider_id?: string | null
 }
 
 interface Governorate {
@@ -128,7 +131,7 @@ interface City {
   is_active: boolean
 }
 
-type FilterStatus = 'all' | 'active' | 'inactive' | 'expired' | 'scheduled'
+type FilterStatus = 'all' | 'active' | 'inactive' | 'expired' | 'scheduled' | 'pending' | 'rejected'
 
 type ImagePosition = 'start' | 'end' | 'center'
 type ImageSize = 'small' | 'medium' | 'large'
@@ -493,13 +496,19 @@ export default function AdminBannersPage() {
         )
         break
       case 'inactive':
-        filtered = filtered.filter(b => !b.is_active)
+        filtered = filtered.filter(b => !b.is_active && b.approval_status !== 'rejected' && b.approval_status !== 'pending')
         break
       case 'expired':
         filtered = filtered.filter(b => b.ends_at && new Date(b.ends_at) < now)
         break
       case 'scheduled':
         filtered = filtered.filter(b => b.is_active && new Date(b.starts_at) > now)
+        break
+      case 'pending':
+        filtered = filtered.filter(b => b.approval_status === 'pending')
+        break
+      case 'rejected':
+        filtered = filtered.filter(b => b.approval_status === 'rejected' || b.approval_status === 'cancelled')
         break
     }
 
@@ -996,6 +1005,8 @@ export default function AdminBannersPage() {
               <option value="inactive">{locale === 'ar' ? 'غير مفعل' : 'Inactive'}</option>
               <option value="scheduled">{locale === 'ar' ? 'مجدول' : 'Scheduled'}</option>
               <option value="expired">{locale === 'ar' ? 'منتهي' : 'Expired'}</option>
+              <option value="pending">{locale === 'ar' ? 'في انتظار الموافقة' : 'Pending Approval'}</option>
+              <option value="rejected">{locale === 'ar' ? 'مرفوض/ملغي' : 'Rejected/Cancelled'}</option>
             </select>
 
             <Button

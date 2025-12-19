@@ -35,6 +35,7 @@ import {
   XCircle,
   HourglassIcon,
   Trash2,
+  Edit2,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -43,16 +44,38 @@ type DurationType = '1_day' | '3_days' | '1_week' | '1_month'
 type ImagePosition = 'start' | 'end' | 'center'
 type ImageSize = 'small' | 'medium' | 'large'
 
-// Image sizes using fixed pixel values for consistent display
-const IMAGE_SIZE_CONFIG: Record<ImageSize, { label_ar: string; label_en: string; containerClass: string; imgClass: string }> = {
-  small: { label_ar: 'صغير', label_en: 'Small', containerClass: 'w-20 h-20 sm:w-24 sm:h-24', imgClass: 'max-w-full max-h-full object-contain' },
-  medium: { label_ar: 'وسط', label_en: 'Medium', containerClass: 'w-28 h-28 sm:w-32 sm:h-32', imgClass: 'max-w-full max-h-full object-contain' },
-  large: { label_ar: 'كبير', label_en: 'Large', containerClass: 'w-36 h-36 sm:w-40 sm:h-40', imgClass: 'max-w-full max-h-full object-contain' },
+// Unified image size configuration - relative to banner height for consistency
+// These settings match the customer-facing carousel for accurate preview
+const IMAGE_SIZE_CONFIG: Record<ImageSize, {
+  label_ar: string
+  label_en: string
+  maxHeight: string
+  maxWidth: string
+}> = {
+  small: {
+    label_ar: 'صغير',
+    label_en: 'Small',
+    maxHeight: '45%',
+    maxWidth: '25%'
+  },
+  medium: {
+    label_ar: 'وسط',
+    label_en: 'Medium',
+    maxHeight: '55%',
+    maxWidth: '30%'
+  },
+  large: {
+    label_ar: 'كبير',
+    label_en: 'Large',
+    maxHeight: '65%',
+    maxWidth: '35%'
+  },
 }
 
 type BannerStatus = {
   has_active_banner: boolean
   has_pending_banner: boolean
+  has_rejected_banner: boolean
   current_banner_id: string | null
   current_banner_status: 'pending' | 'approved' | 'rejected' | 'cancelled' | null
   current_banner_starts_at: string | null
@@ -146,6 +169,8 @@ export default function ProviderBannerPage() {
   const [formData, setFormData] = useState(defaultFormData)
   const [isUploading, setIsUploading] = useState(false)
   const [dateWarning, setDateWarning] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editingBannerId, setEditingBannerId] = useState<string | null>(null)
 
   useEffect(() => {
     checkAuthAndLoad()
@@ -340,16 +365,34 @@ export default function ProviderBannerPage() {
         display_order: 999, // Will be ordered by duration priority
       }
 
-      const { error } = await supabase
-        .from('homepage_banners')
-        .insert(bannerData)
+      if (isEditing && editingBannerId) {
+        // Update existing rejected banner and reset to pending
+        const { error } = await supabase
+          .from('homepage_banners')
+          .update({
+            ...bannerData,
+            rejection_reason: null, // Clear rejection reason
+            reviewed_at: null, // Clear reviewed timestamp
+            reviewed_by: null, // Clear reviewer
+          })
+          .eq('id', editingBannerId)
 
-      if (error) throw error
+        if (error) throw error
+      } else {
+        // Create new banner
+        const { error } = await supabase
+          .from('homepage_banners')
+          .insert(bannerData)
+
+        if (error) throw error
+      }
 
       // Reload status
       await checkAuthAndLoad()
       setShowForm(false)
       setFormData(defaultFormData)
+      setIsEditing(false)
+      setEditingBannerId(null)
     } catch (error) {
       console.error('Save error:', error)
       alert(locale === 'ar' ? 'حدث خطأ أثناء حفظ البانر' : 'Error saving banner')
@@ -379,7 +422,41 @@ export default function ProviderBannerPage() {
     }
   }
 
+  // Load rejected banner data into form for editing
+  const loadBannerForEditing = () => {
+    if (!currentBanner) return
+
+    // Set default start date to 3 days from now for resubmission
+    const defaultDate = new Date()
+    defaultDate.setDate(defaultDate.getDate() + 3)
+
+    setFormData({
+      title_ar: currentBanner.title_ar || '',
+      title_en: currentBanner.title_en || '',
+      description_ar: currentBanner.description_ar || '',
+      description_en: currentBanner.description_en || '',
+      badge_text_ar: currentBanner.badge_text_ar || '',
+      badge_text_en: currentBanner.badge_text_en || '',
+      cta_text_ar: currentBanner.cta_text_ar || 'اطلب الآن',
+      cta_text_en: currentBanner.cta_text_en || 'Order Now',
+      image_url: currentBanner.image_url || '',
+      gradient_start: currentBanner.gradient_start || '#009DE0',
+      gradient_end: currentBanner.gradient_end || '#0077B6',
+      duration_type: currentBanner.duration_type || '1_week',
+      starts_at: defaultDate.toISOString().split('T')[0],
+      image_position: (currentBanner as any).image_position || 'end',
+      image_size: (currentBanner as any).image_size || 'medium',
+    })
+    setIsEditing(true)
+    setEditingBannerId(currentBanner.id)
+    setShowForm(true)
+  }
+
+  // Provider can create banner if:
+  // - No active banner AND no pending banner
+  // - OR has a rejected/cancelled banner (can try again)
   const canCreateBanner = !bannerStatus?.has_active_banner && !bannerStatus?.has_pending_banner
+  const hasRejectedBanner = currentBanner?.approval_status === 'rejected' || currentBanner?.approval_status === 'cancelled'
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -461,6 +538,12 @@ export default function ProviderBannerPage() {
                     {locale === 'ar' ? 'مرفوض' : 'Rejected'}
                   </span>
                 )}
+                {currentBanner.approval_status === 'cancelled' && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-sm font-medium">
+                    <XCircle className="w-4 h-4" />
+                    {locale === 'ar' ? 'ملغي' : 'Cancelled'}
+                  </span>
+                )}
               </div>
 
               {/* Banner Preview */}
@@ -523,11 +606,14 @@ export default function ProviderBannerPage() {
                 </div>
               </div>
 
-              {/* Rejection Reason */}
-              {currentBanner.approval_status === 'rejected' && currentBanner.rejection_reason && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700">
-                    <strong>{locale === 'ar' ? 'سبب الرفض:' : 'Rejection Reason:'}</strong> {currentBanner.rejection_reason}
+              {/* Rejection/Cancellation Reason */}
+              {(currentBanner.approval_status === 'rejected' || currentBanner.approval_status === 'cancelled') && currentBanner.rejection_reason && (
+                <div className={`p-3 ${currentBanner.approval_status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'} border rounded-lg`}>
+                  <p className={`text-sm ${currentBanner.approval_status === 'rejected' ? 'text-red-700' : 'text-slate-700'}`}>
+                    <strong>{locale === 'ar'
+                      ? (currentBanner.approval_status === 'rejected' ? 'سبب الرفض:' : 'سبب الإلغاء:')
+                      : (currentBanner.approval_status === 'rejected' ? 'Rejection Reason:' : 'Cancellation Reason:')
+                    }</strong> {currentBanner.rejection_reason}
                   </p>
                 </div>
               )}
@@ -542,6 +628,39 @@ export default function ProviderBannerPage() {
                   <Trash2 className="w-4 h-4 me-2" />
                   {locale === 'ar' ? 'إلغاء الطلب' : 'Cancel Request'}
                 </Button>
+              )}
+
+              {/* Edit or Create New Banner Button (for rejected/cancelled) */}
+              {hasRejectedBanner && (
+                <div className="pt-2 border-t border-slate-200 space-y-2">
+                  <Button
+                    onClick={loadBannerForEditing}
+                    className="w-full"
+                  >
+                    <Edit2 className="w-4 h-4 me-2" />
+                    {locale === 'ar' ? 'تعديل وإعادة الإرسال' : 'Edit and Resubmit'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false)
+                      setEditingBannerId(null)
+                      setFormData(defaultFormData)
+                      // Reset start date to 3 days from now
+                      const defaultDate = new Date()
+                      defaultDate.setDate(defaultDate.getDate() + 3)
+                      setFormData(prev => ({
+                        ...prev,
+                        starts_at: defaultDate.toISOString().split('T')[0],
+                      }))
+                      setShowForm(true)
+                    }}
+                    className="w-full border-slate-300"
+                  >
+                    <Sparkles className="w-4 h-4 me-2" />
+                    {locale === 'ar' ? 'إنشاء بانر جديد' : 'Create New Banner'}
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -575,11 +694,34 @@ export default function ProviderBannerPage() {
           <Card className="bg-white border-slate-200">
             <CardHeader className="border-b border-slate-200">
               <CardTitle className="text-slate-900 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                {locale === 'ar' ? 'بانر جديد' : 'New Banner'}
+                {isEditing
+                  ? <Edit2 className="w-5 h-5 text-primary" />
+                  : <Sparkles className="w-5 h-5 text-primary" />
+                }
+                {isEditing
+                  ? (locale === 'ar' ? 'تعديل البانر' : 'Edit Banner')
+                  : (locale === 'ar' ? 'بانر جديد' : 'New Banner')
+                }
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
+              {/* Edit Mode Notice */}
+              {isEditing && (
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-700">
+                  <Edit2 className="w-5 h-5 shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium mb-1">
+                      {locale === 'ar' ? 'تعديل البانر المرفوض' : 'Editing Rejected Banner'}
+                    </p>
+                    <p>
+                      {locale === 'ar'
+                        ? 'يمكنك تعديل البانر وإعادة إرساله للمراجعة. سيتم إرسال البانر للإدارة للموافقة عليه مرة أخرى.'
+                        : 'You can edit the banner and resubmit it for review. The banner will be sent to admin for approval again.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Title AR/EN */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -916,11 +1058,17 @@ export default function ProviderBannerPage() {
                   {formData.image_position === 'center' ? (
                     <div className="relative z-10 h-full p-4 flex flex-col items-center justify-center text-center">
                       {formData.image_url && (
-                        <div className={`${IMAGE_SIZE_CONFIG[formData.image_size].containerClass} flex-shrink-0 mb-2`}>
+                        <div
+                          className="flex-shrink-0 mb-2 flex items-center justify-center"
+                          style={{
+                            height: IMAGE_SIZE_CONFIG[formData.image_size].maxHeight,
+                            maxWidth: '40%'
+                          }}
+                        >
                           <img
                             src={formData.image_url}
                             alt=""
-                            className={`${IMAGE_SIZE_CONFIG[formData.image_size].imgClass} object-contain drop-shadow-xl`}
+                            className="w-auto h-full max-w-full object-contain drop-shadow-xl"
                           />
                         </div>
                       )}
@@ -975,11 +1123,17 @@ export default function ProviderBannerPage() {
                       </div>
 
                       {formData.image_url ? (
-                        <div className={`${IMAGE_SIZE_CONFIG[formData.image_size].containerClass} flex-shrink-0`}>
+                        <div
+                          className="flex-shrink-0 flex items-center justify-center"
+                          style={{
+                            height: IMAGE_SIZE_CONFIG[formData.image_size].maxHeight,
+                            maxWidth: IMAGE_SIZE_CONFIG[formData.image_size].maxWidth
+                          }}
+                        >
                           <img
                             src={formData.image_url}
                             alt=""
-                            className={`${IMAGE_SIZE_CONFIG[formData.image_size].imgClass} object-contain drop-shadow-xl`}
+                            className="w-auto h-full max-w-full object-contain drop-shadow-xl"
                           />
                         </div>
                       ) : (
@@ -1022,7 +1176,10 @@ export default function ProviderBannerPage() {
                   ) : (
                     <>
                       <Check className="w-4 h-4 me-2" />
-                      {locale === 'ar' ? 'إرسال للمراجعة' : 'Submit for Review'}
+                      {isEditing
+                        ? (locale === 'ar' ? 'إعادة الإرسال للمراجعة' : 'Resubmit for Review')
+                        : (locale === 'ar' ? 'إرسال للمراجعة' : 'Submit for Review')
+                      }
                     </>
                   )}
                 </Button>
@@ -1031,6 +1188,8 @@ export default function ProviderBannerPage() {
                   onClick={() => {
                     setShowForm(false)
                     setFormData(defaultFormData)
+                    setIsEditing(false)
+                    setEditingBannerId(null)
                   }}
                   className="border-slate-300"
                 >

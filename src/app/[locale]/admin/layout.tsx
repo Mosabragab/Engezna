@@ -56,11 +56,11 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
         setOpenTickets(ticketsCount || 0)
       }
 
-      // Get pending banner approvals count
+      // Get pending banner approvals count (banners created by providers)
       const { count: bannerApprovalsCount, error: bannerApprovalsError } = await supabase
         .from('homepage_banners')
         .select('*', { count: 'exact', head: true })
-        .eq('banner_type', 'provider')
+        .not('provider_id', 'is', null)
         .eq('approval_status', 'pending')
 
       if (!bannerApprovalsError) {

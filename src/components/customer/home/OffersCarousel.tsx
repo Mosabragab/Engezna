@@ -67,19 +67,31 @@ interface HomepageBanner {
   display_order?: number
 }
 
-// Image size configuration - uses fixed sizes with max constraints
-const IMAGE_SIZE_CONFIG: Record<ImageSize, { desktopClass: string; mobileClass: string }> = {
+// Unified image size configuration - relative to banner height for consistency
+// All sizes are designed to work harmoniously within the 16:9 aspect ratio
+const IMAGE_SIZE_CONFIG: Record<ImageSize, {
+  containerClass: string
+  maxHeight: string
+  label_ar: string
+  label_en: string
+}> = {
   small: {
-    desktopClass: 'w-24 h-24 md:w-28 md:h-28 max-h-[50%]',
-    mobileClass: 'w-16 h-16 sm:w-20 sm:h-20 max-h-[45%]'
+    containerClass: 'w-auto h-[45%] max-w-[25%]',
+    maxHeight: '45%',
+    label_ar: 'صغير',
+    label_en: 'Small'
   },
   medium: {
-    desktopClass: 'w-32 h-32 md:w-36 md:h-36 max-h-[65%]',
-    mobileClass: 'w-24 h-24 sm:w-28 sm:h-28 max-h-[60%]'
+    containerClass: 'w-auto h-[55%] max-w-[30%]',
+    maxHeight: '55%',
+    label_ar: 'وسط',
+    label_en: 'Medium'
   },
   large: {
-    desktopClass: 'w-40 h-40 md:w-44 md:h-44 max-h-[80%]',
-    mobileClass: 'w-32 h-32 sm:w-36 sm:h-36 max-h-[75%]'
+    containerClass: 'w-auto h-[65%] max-w-[35%]',
+    maxHeight: '65%',
+    label_ar: 'كبير',
+    label_en: 'Large'
   },
 }
 
@@ -330,16 +342,19 @@ function BannerCard({
           )}
         </div>
 
-        {/* Product Image (Subtle 3D Effect) */}
+        {/* Product Image (Unified sizing system) */}
         {!imageOnBackground && banner.image_url && (
-          <div className={`
-            relative flex-shrink-0 flex items-center justify-center
-            ${isDesktop ? sizeConfig.desktopClass : sizeConfig.mobileClass}
-          `}>
+          <div
+            className="relative flex-shrink-0 flex items-center justify-center"
+            style={{
+              height: sizeConfig.maxHeight,
+              maxWidth: imageOnCenter ? '40%' : '35%',
+            }}
+          >
             <motion.img
               src={banner.image_url}
               alt={title}
-              className="max-w-full max-h-full object-contain"
+              className="w-auto h-full max-w-full object-contain"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.3 }}
@@ -761,6 +776,8 @@ export function OffersCarousel({
                 />
               </div>
             ))}
+            {/* Spacer for last banner padding */}
+            <div className="flex-shrink-0 w-4" aria-hidden="true" />
           </div>
         )}
 
