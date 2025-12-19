@@ -29,6 +29,8 @@ import {
   Clock,
   Upload,
   Link as LinkIcon,
+  Users,
+  Store,
 } from 'lucide-react'
 
 // Helper function to calculate color luminance and determine if text should be dark or light
@@ -95,6 +97,7 @@ interface HomepageBanner {
   created_at: string
   governorate_id: string | null
   city_id: string | null
+  banner_type: 'customer' | 'partner'
 }
 
 interface Governorate {
@@ -292,6 +295,9 @@ export default function AdminBannersPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
 
+  // Banner type selector
+  const [bannerType, setBannerType] = useState<'customer' | 'partner'>('customer')
+
   const [banners, setBanners] = useState<HomepageBanner[]>([])
   const [filteredBanners, setFilteredBanners] = useState<HomepageBanner[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -326,6 +332,13 @@ export default function AdminBannersPage() {
   useEffect(() => {
     filterBanners()
   }, [banners, searchQuery, statusFilter])
+
+  // Reload banners when banner type changes
+  useEffect(() => {
+    if (isAdmin) {
+      loadBanners()
+    }
+  }, [bannerType, isAdmin])
 
   // Filter cities when governorate changes
   useEffect(() => {
@@ -383,6 +396,7 @@ export default function AdminBannersPage() {
       const { data, error } = await supabase
         .from('homepage_banners')
         .select('*')
+        .eq('banner_type', bannerType)
         .order('display_order', { ascending: true })
 
       if (error) {
@@ -483,6 +497,7 @@ export default function AdminBannersPage() {
         ends_at: formData.ends_at ? new Date(formData.ends_at).toISOString() : null,
         governorate_id: formData.governorate_id || null,
         city_id: formData.city_id || null,
+        banner_type: bannerType,
       }
 
       if (editingBanner) {
@@ -812,6 +827,49 @@ export default function AdminBannersPage() {
       </AnimatePresence>
 
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
+        {/* Banner Type Selector Tabs */}
+        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-600 me-2">
+              {locale === 'ar' ? 'نوع البانر:' : 'Banner Type:'}
+            </span>
+            <div className="flex items-center bg-slate-100 rounded-lg p-1">
+              <button
+                onClick={() => setBannerType('customer')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+                  ${bannerType === 'customer'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                  }
+                `}
+              >
+                <Users className="w-4 h-4" />
+                {locale === 'ar' ? 'بانرات العملاء' : 'Customer Banners'}
+              </button>
+              <button
+                onClick={() => setBannerType('partner')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+                  ${bannerType === 'partner'
+                    ? 'bg-[#00C27A] text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                  }
+                `}
+              >
+                <Store className="w-4 h-4" />
+                {locale === 'ar' ? 'بانرات الشركاء' : 'Partner Banners'}
+              </button>
+            </div>
+            <span className="text-xs text-slate-500 ms-auto">
+              {bannerType === 'customer'
+                ? (locale === 'ar' ? 'تظهر في الصفحة الرئيسية للعملاء' : 'Shown on customer homepage')
+                : (locale === 'ar' ? 'تظهر في صفحة الشركاء' : 'Shown on partner landing page')
+              }
+            </span>
+          </div>
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
