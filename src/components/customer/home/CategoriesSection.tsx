@@ -84,18 +84,18 @@ export function CategoriesSection({
         )}
       </div>
 
-      {/* Categories Grid - Responsive: 4 columns on all screens */}
-      <div className="grid grid-cols-4 gap-3 md:gap-4">
+      {/* Categories Grid - Responsive: 4 columns, larger cards */}
+      <div className="grid grid-cols-4 gap-2 sm:gap-3">
         {categories.map((category) => {
           const isSelected = selectedCategory === category.key
 
           const cardContent = (
             <div className="flex flex-col items-center">
-              {/* Card - Responsive sizes */}
+              {/* Card - Larger responsive sizes */}
               <div
                 className={cn(
-                  'w-16 h-16 sm:w-[72px] sm:h-[72px] md:w-20 md:h-20 lg:w-[88px] lg:h-[88px]',
-                  'rounded-2xl md:rounded-[18px] flex items-center justify-center',
+                  'w-[72px] h-[72px] sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28',
+                  'rounded-2xl md:rounded-[20px] flex items-center justify-center',
                   'transition-all duration-300 cursor-pointer',
                   'hover:scale-105 hover:-translate-y-0.5',
                   isSelected && 'scale-105'
@@ -118,7 +118,7 @@ export function CategoriesSection({
                 }}
               >
                 <span
-                  className="text-2xl sm:text-[28px] md:text-[32px] lg:text-[36px] leading-none select-none"
+                  className="text-[28px] sm:text-[32px] md:text-[38px] lg:text-[44px] leading-none select-none"
                   style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
                 >
                   {category.emoji}
@@ -126,7 +126,7 @@ export function CategoriesSection({
               </div>
 
               {/* Label - Responsive text */}
-              <span className="mt-2 text-[10px] sm:text-xs md:text-sm font-medium text-slate-600 text-center leading-tight line-clamp-2">
+              <span className="mt-2 text-[11px] sm:text-xs md:text-sm font-medium text-slate-600 text-center leading-tight line-clamp-2">
                 {locale === 'ar' ? category.nameAr : category.nameEn}
               </span>
             </div>
