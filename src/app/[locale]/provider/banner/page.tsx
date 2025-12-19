@@ -35,6 +35,7 @@ import {
   XCircle,
   HourglassIcon,
   Trash2,
+  Edit2,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -147,6 +148,8 @@ export default function ProviderBannerPage() {
   const [formData, setFormData] = useState(defaultFormData)
   const [isUploading, setIsUploading] = useState(false)
   const [dateWarning, setDateWarning] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editingBannerId, setEditingBannerId] = useState<string | null>(null)
 
   useEffect(() => {
     checkAuthAndLoad()
@@ -341,16 +344,34 @@ export default function ProviderBannerPage() {
         display_order: 999, // Will be ordered by duration priority
       }
 
-      const { error } = await supabase
-        .from('homepage_banners')
-        .insert(bannerData)
+      if (isEditing && editingBannerId) {
+        // Update existing rejected banner and reset to pending
+        const { error } = await supabase
+          .from('homepage_banners')
+          .update({
+            ...bannerData,
+            rejection_reason: null, // Clear rejection reason
+            reviewed_at: null, // Clear reviewed timestamp
+            reviewed_by: null, // Clear reviewer
+          })
+          .eq('id', editingBannerId)
 
-      if (error) throw error
+        if (error) throw error
+      } else {
+        // Create new banner
+        const { error } = await supabase
+          .from('homepage_banners')
+          .insert(bannerData)
+
+        if (error) throw error
+      }
 
       // Reload status
       await checkAuthAndLoad()
       setShowForm(false)
       setFormData(defaultFormData)
+      setIsEditing(false)
+      setEditingBannerId(null)
     } catch (error) {
       console.error('Save error:', error)
       alert(locale === 'ar' ? 'حدث خطأ أثناء حفظ البانر' : 'Error saving banner')
@@ -378,6 +399,36 @@ export default function ProviderBannerPage() {
     } catch (error) {
       console.error('Cancel error:', error)
     }
+  }
+
+  // Load rejected banner data into form for editing
+  const loadBannerForEditing = () => {
+    if (!currentBanner) return
+
+    // Set default start date to 3 days from now for resubmission
+    const defaultDate = new Date()
+    defaultDate.setDate(defaultDate.getDate() + 3)
+
+    setFormData({
+      title_ar: currentBanner.title_ar || '',
+      title_en: currentBanner.title_en || '',
+      description_ar: currentBanner.description_ar || '',
+      description_en: currentBanner.description_en || '',
+      badge_text_ar: currentBanner.badge_text_ar || '',
+      badge_text_en: currentBanner.badge_text_en || '',
+      cta_text_ar: currentBanner.cta_text_ar || 'اطلب الآن',
+      cta_text_en: currentBanner.cta_text_en || 'Order Now',
+      image_url: currentBanner.image_url || '',
+      gradient_start: currentBanner.gradient_start || '#009DE0',
+      gradient_end: currentBanner.gradient_end || '#0077B6',
+      duration_type: currentBanner.duration_type || '1_week',
+      starts_at: defaultDate.toISOString().split('T')[0],
+      image_position: (currentBanner as any).image_position || 'end',
+      image_size: (currentBanner as any).image_size || 'medium',
+    })
+    setIsEditing(true)
+    setEditingBannerId(currentBanner.id)
+    setShowForm(true)
   }
 
   // Provider can create banner if:
@@ -558,12 +609,32 @@ export default function ProviderBannerPage() {
                 </Button>
               )}
 
-              {/* Create New Banner Button (for rejected/cancelled) */}
+              {/* Edit or Create New Banner Button (for rejected/cancelled) */}
               {hasRejectedBanner && (
-                <div className="pt-2 border-t border-slate-200">
+                <div className="pt-2 border-t border-slate-200 space-y-2">
                   <Button
-                    onClick={() => setShowForm(true)}
+                    onClick={loadBannerForEditing}
                     className="w-full"
+                  >
+                    <Edit2 className="w-4 h-4 me-2" />
+                    {locale === 'ar' ? 'تعديل وإعادة الإرسال' : 'Edit and Resubmit'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false)
+                      setEditingBannerId(null)
+                      setFormData(defaultFormData)
+                      // Reset start date to 3 days from now
+                      const defaultDate = new Date()
+                      defaultDate.setDate(defaultDate.getDate() + 3)
+                      setFormData(prev => ({
+                        ...prev,
+                        starts_at: defaultDate.toISOString().split('T')[0],
+                      }))
+                      setShowForm(true)
+                    }}
+                    className="w-full border-slate-300"
                   >
                     <Sparkles className="w-4 h-4 me-2" />
                     {locale === 'ar' ? 'إنشاء بانر جديد' : 'Create New Banner'}
@@ -602,11 +673,34 @@ export default function ProviderBannerPage() {
           <Card className="bg-white border-slate-200">
             <CardHeader className="border-b border-slate-200">
               <CardTitle className="text-slate-900 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                {locale === 'ar' ? 'بانر جديد' : 'New Banner'}
+                {isEditing
+                  ? <Edit2 className="w-5 h-5 text-primary" />
+                  : <Sparkles className="w-5 h-5 text-primary" />
+                }
+                {isEditing
+                  ? (locale === 'ar' ? 'تعديل البانر' : 'Edit Banner')
+                  : (locale === 'ar' ? 'بانر جديد' : 'New Banner')
+                }
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
+              {/* Edit Mode Notice */}
+              {isEditing && (
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-700">
+                  <Edit2 className="w-5 h-5 shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium mb-1">
+                      {locale === 'ar' ? 'تعديل البانر المرفوض' : 'Editing Rejected Banner'}
+                    </p>
+                    <p>
+                      {locale === 'ar'
+                        ? 'يمكنك تعديل البانر وإعادة إرساله للمراجعة. سيتم إرسال البانر للإدارة للموافقة عليه مرة أخرى.'
+                        : 'You can edit the banner and resubmit it for review. The banner will be sent to admin for approval again.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Title AR/EN */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1049,7 +1143,10 @@ export default function ProviderBannerPage() {
                   ) : (
                     <>
                       <Check className="w-4 h-4 me-2" />
-                      {locale === 'ar' ? 'إرسال للمراجعة' : 'Submit for Review'}
+                      {isEditing
+                        ? (locale === 'ar' ? 'إعادة الإرسال للمراجعة' : 'Resubmit for Review')
+                        : (locale === 'ar' ? 'إرسال للمراجعة' : 'Submit for Review')
+                      }
                     </>
                   )}
                 </Button>
@@ -1058,6 +1155,8 @@ export default function ProviderBannerPage() {
                   onClick={() => {
                     setShowForm(false)
                     setFormData(defaultFormData)
+                    setIsEditing(false)
+                    setEditingBannerId(null)
                   }}
                   className="border-slate-300"
                 >
