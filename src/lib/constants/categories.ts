@@ -17,7 +17,7 @@ export const BUSINESS_CATEGORIES = {
     name_en: 'Restaurants',
     description_ar: 'مطاعم، عصائر، وجميع خدمات الطعام',
     description_en: 'Restaurants, cafes, juice shops, and all food services',
-    icon: '🍽️',
+    icon: '🍔',
     color: '#FF6B35',
   },
   coffee_patisserie: {
@@ -44,7 +44,7 @@ export const BUSINESS_CATEGORIES = {
     name_en: 'Fruits & Vegetables',
     description_ar: 'خضروات طازجة، فواكه موسمية ومستوردة',
     description_en: 'Fresh vegetables, seasonal and imported fruits',
-    icon: '🥬',
+    icon: '🍌',
     color: '#8BC34A',
   },
 } as const

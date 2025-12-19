@@ -140,11 +140,11 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
     console.log('[runAgent] No category selected - returning prompt BEFORE calling AI')
     return {
       content: 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇',
-      suggestions: ['🍽️ مطاعم', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+      suggestions: ['🍔 مطاعم', '🛒 سوبر ماركت', '🍌 خضروات وفواكه', '☕ البن والحلويات'],
       quickReplies: [
-        { title: '🍽️ مطاعم', payload: 'category:restaurant_cafe' },
+        { title: '🍔 مطاعم', payload: 'category:restaurant_cafe' },
         { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
-        { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+        { title: '🍌 خضروات وفواكه', payload: 'category:vegetables_fruits' },
         { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
       ]
     }
@@ -484,11 +484,11 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
       type: 'done',
       response: {
         content: categoryPromptContent,
-        suggestions: ['🍽️ مطاعم', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+        suggestions: ['🍔 مطاعم', '🛒 سوبر ماركت', '🍌 خضروات وفواكه', '☕ البن والحلويات'],
         quickReplies: [
-          { title: '🍽️ مطاعم', payload: 'category:restaurant_cafe' },
+          { title: '🍔 مطاعم', payload: 'category:restaurant_cafe' },
           { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
-          { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+          { title: '🍌 خضروات وفواكه', payload: 'category:vegetables_fruits' },
           { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
         ]
       }

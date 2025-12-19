@@ -150,19 +150,19 @@ function createWelcomeMessage(customerName?: string, providerContext?: ProviderC
   return {
     id: 'welcome',
     role: 'assistant',
-    content: `${timeGreeting} أهلاً بيك${nameGreeting} في إنجزنا! 😊\n\nأنا أحمد، ${orderQuestion}\nعندنا مطاعم 🍽️، سوبر ماركت 🛒، خضار وفواكه 🥬، وبن وحلويات ☕`,
+    content: `${timeGreeting} أهلاً بيك${nameGreeting} في إنجزنا! 😊\n\nأنا أحمد، ${orderQuestion}\nعندنا مطاعم 🍔، سوبر ماركت 🛒، خضار وفواكه 🍌، وبن وحلويات ☕`,
     timestamp: new Date(),
     suggestions: [
-      '🍽️ مطاعم',
+      '🍔 مطاعم',
       '🛒 سوبر ماركت',
-      '🥬 خضروات وفواكه',
+      '🍌 خضروات وفواكه',
       '☕ البن والحلويات',
     ],
     // Quick replies - CATEGORIES FIRST (let user choose which category they want)
     quickReplies: [
-      { title: '🍽️ مطاعم', payload: 'category:restaurant_cafe' },
+      { title: '🍔 مطاعم', payload: 'category:restaurant_cafe' },
       { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
-      { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+      { title: '🍌 خضروات وفواكه', payload: 'category:vegetables_fruits' },
       { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' },
     ],
   }
