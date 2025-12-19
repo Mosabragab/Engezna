@@ -31,6 +31,8 @@ import {
   Link as LinkIcon,
   Users,
   Store,
+  Info,
+  FileImage,
 } from 'lucide-react'
 
 // Helper function to calculate color luminance and determine if text should be dark or light
@@ -1286,6 +1288,59 @@ export default function AdminBannersPage() {
                           placeholder="https://example.com/pizza.png"
                         />
                       )}
+
+                      {/* Image Specifications Guide */}
+                      <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FileImage className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                              <Info className="w-4 h-4" />
+                              {locale === 'ar' ? 'مواصفات الصورة المثالية' : 'Optimal Image Specifications'}
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                              <div className="space-y-1.5">
+                                <p className="text-blue-800">
+                                  <span className="font-medium">{locale === 'ar' ? 'النوع:' : 'Type:'}</span>{' '}
+                                  <span className="text-blue-600">PNG {locale === 'ar' ? '(مفرغ الخلفية)' : '(transparent background)'}</span>
+                                </p>
+                                <p className="text-blue-800">
+                                  <span className="font-medium">{locale === 'ar' ? 'الأبعاد:' : 'Dimensions:'}</span>{' '}
+                                  <span className="text-blue-600">400x400 px {locale === 'ar' ? 'أو أكبر' : 'or larger'}</span>
+                                </p>
+                                <p className="text-blue-800">
+                                  <span className="font-medium">{locale === 'ar' ? 'الحجم:' : 'Size:'}</span>{' '}
+                                  <span className="text-blue-600">{locale === 'ar' ? 'أقل من 2MB' : 'Less than 2MB'}</span>
+                                </p>
+                              </div>
+                              <div className="space-y-1.5">
+                                <p className="text-blue-800">
+                                  <span className="font-medium">{locale === 'ar' ? 'النسبة:' : 'Aspect Ratio:'}</span>{' '}
+                                  <span className="text-blue-600">1:1 {locale === 'ar' ? '(مربع)' : '(square)'}</span>
+                                </p>
+                                <p className="text-blue-800">
+                                  <span className="font-medium">{locale === 'ar' ? 'الصيغ:' : 'Formats:'}</span>{' '}
+                                  <span className="text-blue-600">PNG, JPG, WebP, GIF</span>
+                                </p>
+                                <p className="text-blue-800">
+                                  <span className="font-medium">{locale === 'ar' ? 'الدقة:' : 'Resolution:'}</span>{' '}
+                                  <span className="text-blue-600">72-150 DPI</span>
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-blue-200">
+                              <p className="text-xs text-blue-700">
+                                {locale === 'ar'
+                                  ? 'نصيحة: استخدم صور منتجات بخلفية شفافة (PNG) للحصول على أفضل نتيجة. يمكنك استخدام أدوات مثل remove.bg لإزالة الخلفية.'
+                                  : 'Tip: Use product images with transparent background (PNG) for best results. You can use tools like remove.bg to remove backgrounds.'
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Gradient Colors */}

@@ -21,6 +21,59 @@ CREATE INDEX IF NOT EXISTS idx_homepage_banners_type ON public.homepage_banners(
 COMMENT ON COLUMN public.homepage_banners.banner_type IS 'Type of banner: customer (homepage) or partner (partner landing page)';
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- Create Storage Bucket for Banner Images
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- Create the public-assets bucket if it doesn't exist
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'public-assets',
+  'public-assets',
+  true,
+  2097152, -- 2MB limit
+  ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif']::text[]
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 2097152,
+  allowed_mime_types = ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif']::text[];
+
+-- Allow public read access to the bucket
+DO $$ BEGIN
+  CREATE POLICY "Public read access for public-assets"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'public-assets');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Allow authenticated users (admins) to upload to the bucket
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can upload to public-assets"
+  ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (bucket_id = 'public-assets');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Allow authenticated users (admins) to update files in the bucket
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can update public-assets"
+  ON storage.objects FOR UPDATE
+  TO authenticated
+  USING (bucket_id = 'public-assets');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Allow authenticated users (admins) to delete files from the bucket
+DO $$ BEGIN
+  CREATE POLICY "Authenticated users can delete from public-assets"
+  ON storage.objects FOR DELETE
+  TO authenticated
+  USING (bucket_id = 'public-assets');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- Update RPC function to support banner_type
 -- ═══════════════════════════════════════════════════════════════════════════
 CREATE OR REPLACE FUNCTION get_banners_for_location(
