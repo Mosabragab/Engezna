@@ -776,6 +776,8 @@ export function OffersCarousel({
                 />
               </div>
             ))}
+            {/* Spacer for last banner padding */}
+            <div className="flex-shrink-0 w-4" aria-hidden="true" />
           </div>
         )}
 
