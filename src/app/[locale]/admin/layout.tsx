@@ -17,6 +17,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const { isOpen, close, hasMounted } = useAdminSidebar()
   const [pendingProviders, setPendingProviders] = useState(0)
   const [openTickets, setOpenTickets] = useState(0)
+  const [pendingBannerApprovals, setPendingBannerApprovals] = useState(0)
 
   // Check if current page is login page - don't show sidebar
   const isLoginPage = pathname?.includes('/admin/login')
@@ -54,6 +55,17 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
       if (!ticketsError) {
         setOpenTickets(ticketsCount || 0)
       }
+
+      // Get pending banner approvals count
+      const { count: bannerApprovalsCount, error: bannerApprovalsError } = await supabase
+        .from('homepage_banners')
+        .select('*', { count: 'exact', head: true })
+        .eq('banner_type', 'provider')
+        .eq('approval_status', 'pending')
+
+      if (!bannerApprovalsError) {
+        setPendingBannerApprovals(bannerApprovalsCount || 0)
+      }
     } catch {
       // Silently fail for badge counts - not critical
     }
@@ -72,6 +84,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
         onClose={close}
         pendingProviders={pendingProviders}
         openTickets={openTickets}
+        pendingBannerApprovals={pendingBannerApprovals}
         hasMounted={hasMounted}
       />
 

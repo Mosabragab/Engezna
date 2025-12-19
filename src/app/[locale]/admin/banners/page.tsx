@@ -133,12 +133,11 @@ type FilterStatus = 'all' | 'active' | 'inactive' | 'expired' | 'scheduled'
 type ImagePosition = 'start' | 'end' | 'center'
 type ImageSize = 'small' | 'medium' | 'large'
 
-// Image sizes based on percentage of banner height
-// Large: 60%, Medium: 50%, Small: 40%
+// Image sizes using fixed pixel values for consistent display
 const IMAGE_SIZE_CONFIG: Record<ImageSize, { label_ar: string; label_en: string; containerClass: string; imgClass: string }> = {
-  small: { label_ar: 'صغير', label_en: 'Small', containerClass: 'h-[40%] max-h-[40%]', imgClass: 'h-full w-auto object-contain' },
-  medium: { label_ar: 'وسط', label_en: 'Medium', containerClass: 'h-[50%] max-h-[50%]', imgClass: 'h-full w-auto object-contain' },
-  large: { label_ar: 'كبير', label_en: 'Large', containerClass: 'h-[60%] max-h-[60%]', imgClass: 'h-full w-auto object-contain' },
+  small: { label_ar: 'صغير', label_en: 'Small', containerClass: 'w-20 h-20 sm:w-24 sm:h-24', imgClass: 'max-w-full max-h-full object-contain' },
+  medium: { label_ar: 'وسط', label_en: 'Medium', containerClass: 'w-28 h-28 sm:w-32 sm:h-32', imgClass: 'max-w-full max-h-full object-contain' },
+  large: { label_ar: 'كبير', label_en: 'Large', containerClass: 'w-36 h-36 sm:w-40 sm:h-40', imgClass: 'max-w-full max-h-full object-contain' },
 }
 
 const defaultFormData = {
