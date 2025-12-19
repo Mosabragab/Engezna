@@ -1,137 +1,162 @@
 'use client'
 
-import { useLocale, useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 import Link from 'next/link'
-import {
-  UtensilsCrossed,
-  Coffee,
-  ShoppingBasket,
-  Apple,
-} from 'lucide-react'
-import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 interface Category {
   id: string
-  name_ar: string
-  name_en: string
-  icon: ReactNode
-  color: string
-  bgColor: string
+  key: string
+  nameAr: string
+  nameEn: string
+  emoji: string
+  gradient: string
 }
 
-// Categories with unified brand colors (primary blue)
-// Updated December 2025 - New categories: restaurant_cafe, coffee_patisserie, grocery, vegetables_fruits
-const defaultCategories: Category[] = [
+// Active categories - 4 categories currently available
+// Updated December 2024 - New design with emoji and gradient backgrounds
+const categories: Category[] = [
   {
-    id: 'restaurant_cafe',
-    name_ar: 'مطاعم',
-    name_en: 'Restaurants',
-    icon: <UtensilsCrossed className="w-6 h-6" />,
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
+    id: '1',
+    key: 'restaurants',
+    nameAr: 'مطاعم',
+    nameEn: 'Restaurants',
+    emoji: '🍔',
+    gradient: 'linear-gradient(145deg, rgba(254,243,199,0.85) 0%, rgba(254,249,195,0.7) 100%)'
   },
   {
-    id: 'coffee_patisserie',
-    name_ar: 'البن والحلويات',
-    name_en: 'Coffee & Patisserie',
-    icon: <Coffee className="w-6 h-6" />,
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
+    id: '2',
+    key: 'coffee-sweets',
+    nameAr: 'البن والحلويات',
+    nameEn: 'Coffee & Sweets',
+    emoji: '☕',
+    gradient: 'linear-gradient(145deg, rgba(245,235,220,0.9) 0%, rgba(237,224,205,0.75) 100%)'
   },
   {
-    id: 'grocery',
-    name_ar: 'سوبر ماركت',
-    name_en: 'Supermarket',
-    icon: <ShoppingBasket className="w-6 h-6" />,
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
+    id: '3',
+    key: 'supermarket',
+    nameAr: 'سوبر ماركت',
+    nameEn: 'Supermarket',
+    emoji: '🛒',
+    gradient: 'linear-gradient(145deg, rgba(224,244,255,0.9) 0%, rgba(186,230,253,0.75) 100%)'
   },
   {
-    id: 'vegetables_fruits',
-    name_ar: 'خضروات وفواكه',
-    name_en: 'Fruits & Vegetables',
-    icon: <Apple className="w-6 h-6" />,
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
+    id: '4',
+    key: 'vegetables-fruits',
+    nameAr: 'خضروات وفواكه',
+    nameEn: 'Vegetables & Fruits',
+    emoji: '🍌',
+    gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)'
   },
 ]
 
 interface CategoriesSectionProps {
-  categories?: Category[]
-  title?: string
+  selectedCategory?: string
+  onCategoryClick?: (categoryKey: string) => void
   showViewAll?: boolean
   onViewAll?: () => void
-  onCategoryClick?: (categoryId: string) => void
   className?: string
 }
 
 export function CategoriesSection({
-  categories = defaultCategories,
-  title,
+  selectedCategory,
+  onCategoryClick,
   showViewAll = true,
   onViewAll,
-  onCategoryClick,
   className = '',
 }: CategoriesSectionProps) {
   const locale = useLocale()
-  const t = useTranslations('home')
 
-  const sectionTitle = title || (locale === 'ar' ? 'الأقسام' : 'Categories')
+  const sectionTitle = locale === 'ar' ? 'الأقسام' : 'Categories'
 
   return (
-    <section className={`bg-slate-50 px-4 py-6 ${className}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+    <section className={cn('py-5 px-4 bg-slate-50', className)}>
+      {/* Section Header */}
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-bold text-slate-900">{sectionTitle}</h2>
         {showViewAll && (
           <button
             onClick={onViewAll}
-            className="text-sm text-primary font-medium"
+            className="text-sm font-medium text-[#009DE0] hover:underline"
           >
             {locale === 'ar' ? 'عرض الكل' : 'View All'}
           </button>
         )}
       </div>
 
-      {/* Categories Grid - Horizontal Scroll on Mobile */}
-      <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
-        <div className="flex gap-3 md:grid md:grid-cols-4 lg:grid-cols-8">
-          {categories.map((category) => {
-            const content = (
-              <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl border border-slate-100 hover:border-primary/30 hover:shadow-md transition-all">
-                <div className={`w-12 h-12 rounded-full ${category.bgColor} ${category.color} flex items-center justify-center`}>
-                  {category.icon}
-                </div>
-                <span className="text-xs font-medium text-slate-700 text-center line-clamp-1">
-                  {locale === 'ar' ? category.name_ar : category.name_en}
+      {/* Categories Grid - Responsive: 4 columns, larger cards */}
+      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        {categories.map((category) => {
+          const isSelected = selectedCategory === category.key
+
+          const cardContent = (
+            <div className="flex flex-col items-center">
+              {/* Card - Larger responsive sizes */}
+              <div
+                className={cn(
+                  'w-[72px] h-[72px] sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28',
+                  'rounded-2xl md:rounded-[20px] flex items-center justify-center',
+                  'transition-all duration-300 cursor-pointer',
+                  'hover:scale-105 hover:-translate-y-0.5',
+                  isSelected && 'scale-105'
+                )}
+                style={{
+                  background: category.gradient,
+                  boxShadow: isSelected
+                    ? '0 0 0 2.5px #009DE0, 0 8px 25px rgba(0,157,224,0.2)'
+                    : '0 2px 8px rgba(0,0,0,0.04)',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'
+                  }
+                }}
+              >
+                <span
+                  className="text-[28px] sm:text-[32px] md:text-[38px] lg:text-[44px] leading-none select-none"
+                  style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
+                >
+                  {category.emoji}
                 </span>
               </div>
-            )
 
-            if (onCategoryClick) {
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => onCategoryClick(category.id)}
-                  className="flex-shrink-0 w-[88px] md:w-auto text-start"
-                >
-                  {content}
-                </button>
-              )
-            }
+              {/* Label - Responsive text */}
+              <span className="mt-2 text-[11px] sm:text-xs md:text-sm font-medium text-slate-600 text-center leading-tight line-clamp-2">
+                {locale === 'ar' ? category.nameAr : category.nameEn}
+              </span>
+            </div>
+          )
 
+          if (onCategoryClick) {
             return (
-              <Link
+              <button
                 key={category.id}
-                href={`/${locale}/providers?category=${category.id}`}
-                className="flex-shrink-0 w-[88px] md:w-auto"
+                onClick={() => onCategoryClick(category.key)}
+                className="focus:outline-none"
               >
-                {content}
-              </Link>
+                {cardContent}
+              </button>
             )
-          })}
-        </div>
+          }
+
+          return (
+            <Link
+              key={category.id}
+              href={`/${locale}/providers?category=${category.key}`}
+            >
+              {cardContent}
+            </Link>
+          )
+        })}
       </div>
     </section>
   )
 }
+
+export { categories }
+export type { Category }

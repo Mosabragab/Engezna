@@ -132,11 +132,11 @@ export async function* runClaudeAgentStream(options: AgentHandlerOptions): Async
       type: 'done',
       response: {
         content: categoryPromptContent,
-        suggestions: ['🍽️ مطاعم', '🛒 سوبر ماركت', '🥬 خضروات وفواكه', '☕ البن والحلويات'],
+        suggestions: ['🍔 مطاعم', '🛒 سوبر ماركت', '🍌 خضروات وفواكه', '☕ البن والحلويات'],
         quickReplies: [
-          { title: '🍽️ مطاعم', payload: 'category:restaurant_cafe' },
+          { title: '🍔 مطاعم', payload: 'category:restaurant_cafe' },
           { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
-          { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
+          { title: '🍌 خضروات وفواكه', payload: 'category:vegetables_fruits' },
           { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
         ]
       }

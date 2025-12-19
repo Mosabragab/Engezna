@@ -12,10 +12,6 @@ import {
   ShieldCheck,
   Truck,
   MapPin,
-  UtensilsCrossed,
-  Coffee,
-  ShoppingBasket,
-  Apple,
   ChevronLeft,
   ChevronRight,
   MessagesSquare,
@@ -30,34 +26,35 @@ export default async function WelcomePage({ params }: PageProps) {
   const { locale } = await params
   const isRTL = locale === 'ar'
 
+  // Categories with emoji and gradient backgrounds
   const categories = [
     {
       id: 'restaurant_cafe',
       name_ar: 'مطاعم',
       name_en: 'Restaurants',
-      icon: UtensilsCrossed,
-      color: 'bg-orange-50 text-orange-600',
+      emoji: '🍔',
+      gradient: 'linear-gradient(145deg, rgba(254,243,199,0.85) 0%, rgba(254,249,195,0.7) 100%)',
     },
     {
       id: 'coffee_patisserie',
       name_ar: 'البن والحلويات',
-      name_en: 'Coffee & Patisserie',
-      icon: Coffee,
-      color: 'bg-amber-50 text-amber-700',
+      name_en: 'Coffee & Sweets',
+      emoji: '☕',
+      gradient: 'linear-gradient(145deg, rgba(245,235,220,0.9) 0%, rgba(237,224,205,0.75) 100%)',
     },
     {
       id: 'grocery',
       name_ar: 'سوبر ماركت',
       name_en: 'Supermarket',
-      icon: ShoppingBasket,
-      color: 'bg-green-50 text-green-600',
+      emoji: '🛒',
+      gradient: 'linear-gradient(145deg, rgba(224,244,255,0.9) 0%, rgba(186,230,253,0.75) 100%)',
     },
     {
       id: 'vegetables_fruits',
       name_ar: 'خضروات وفواكه',
-      name_en: 'Fruits & Vegetables',
-      icon: Apple,
-      color: 'bg-red-50 text-red-500',
+      name_en: 'Vegetables & Fruits',
+      emoji: '🍌',
+      gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)',
     },
   ]
 
@@ -200,16 +197,27 @@ export default async function WelcomePage({ params }: PageProps) {
               {isRTL ? 'ماذا نقدم؟' : 'What We Offer'}
             </h2>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
               {categories.map((category) => (
                 <div
                   key={category.id}
-                  className="bg-white rounded-xl p-6 text-center shadow-sm border border-slate-100 hover:border-primary/30 hover:shadow-md transition-all"
+                  className="flex flex-col items-center p-4 text-center"
                 >
-                  <div className={`w-14 h-14 rounded-full ${category.color} flex items-center justify-center mx-auto mb-3`}>
-                    <category.icon className="w-7 h-7" />
+                  <div
+                    className="w-20 h-20 md:w-24 md:h-24 rounded-2xl flex items-center justify-center mb-3 transition-all duration-300 hover:scale-105 hover:-translate-y-1"
+                    style={{
+                      background: category.gradient,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    }}
+                  >
+                    <span
+                      className="text-4xl md:text-5xl"
+                      style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
+                    >
+                      {category.emoji}
+                    </span>
                   </div>
-                  <h3 className="font-semibold text-slate-900">
+                  <h3 className="font-semibold text-slate-900 text-sm md:text-base">
                     {isRTL ? category.name_ar : category.name_en}
                   </h3>
                 </div>
