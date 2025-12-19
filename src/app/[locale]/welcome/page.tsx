@@ -53,7 +53,7 @@ export default async function WelcomePage({ params }: PageProps) {
       id: 'vegetables_fruits',
       name_ar: 'خضروات وفواكه',
       name_en: 'Vegetables & Fruits',
-      emoji: '🥬',
+      emoji: '🍌',
       gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)',
     },
   ]

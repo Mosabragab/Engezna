@@ -45,7 +45,7 @@ const categories: Category[] = [
     key: 'vegetables-fruits',
     nameAr: 'خضروات وفواكه',
     nameEn: 'Vegetables & Fruits',
-    emoji: '🥬',
+    emoji: '🍌',
     gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)'
   },
 ]
