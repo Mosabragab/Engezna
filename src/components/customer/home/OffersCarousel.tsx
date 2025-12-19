@@ -39,6 +39,9 @@ function getGradientTextColor(startColor: string, endColor: string): 'light' | '
 }
 
 // Types
+type ImagePosition = 'start' | 'end' | 'center' | 'background'
+type ImageSize = 'small' | 'medium' | 'large'
+
 interface HomepageBanner {
   id: string
   title_ar: string
@@ -57,10 +60,27 @@ interface HomepageBanner {
   link_url?: string | null
   link_type?: string | null
   link_id?: string | null
-  image_position?: 'start' | 'end' | 'background'
+  image_position?: ImagePosition
+  image_size?: ImageSize
   is_countdown_active?: boolean
   countdown_end_time?: string | null
   display_order?: number
+}
+
+// Image size configuration - matches admin/provider pages
+const IMAGE_SIZE_CONFIG: Record<ImageSize, { containerClass: string; mobileClass: string }> = {
+  small: {
+    containerClass: 'h-[40%] max-h-[40%]',
+    mobileClass: 'h-[35%] max-h-[35%]'
+  },
+  medium: {
+    containerClass: 'h-[50%] max-h-[50%]',
+    mobileClass: 'h-[45%] max-h-[45%]'
+  },
+  large: {
+    containerClass: 'h-[60%] max-h-[60%]',
+    mobileClass: 'h-[55%] max-h-[55%]'
+  },
 }
 
 // Fallback demo offers (used when no database banners exist)
@@ -79,6 +99,7 @@ const fallbackOffers: HomepageBanner[] = [
     cta_text_en: 'Order Now',
     link_url: '/providers?category=restaurants',
     image_position: 'end',
+    image_size: 'medium',
     has_glassmorphism: true,
   },
   {
@@ -95,6 +116,7 @@ const fallbackOffers: HomepageBanner[] = [
     cta_text_en: 'Order Now',
     link_url: '/providers?category=coffee_desserts',
     image_position: 'end',
+    image_size: 'medium',
     has_glassmorphism: true,
   },
   {
@@ -111,6 +133,7 @@ const fallbackOffers: HomepageBanner[] = [
     cta_text_en: 'Order Now',
     link_url: '/providers?category=vegetables_fruits',
     image_position: 'end',
+    image_size: 'medium',
     has_glassmorphism: true,
   },
 ]
@@ -212,8 +235,13 @@ function BannerCard({
     ? 'bg-slate-800 text-white hover:bg-slate-700'
     : 'bg-white text-slate-900 hover:bg-white/95'
 
-  const imageOnStart = banner.image_position === 'start'
-  const imageOnBackground = banner.image_position === 'background'
+  const imagePosition = banner.image_position || 'end'
+  const imageSize = banner.image_size || 'medium'
+  const sizeConfig = IMAGE_SIZE_CONFIG[imageSize]
+
+  const imageOnStart = imagePosition === 'start'
+  const imageOnCenter = imagePosition === 'center'
+  const imageOnBackground = imagePosition === 'background'
 
   const CardContent = (
     <motion.div
@@ -245,11 +273,11 @@ function BannerCard({
       {/* Content Container */}
       <div className={`
         relative z-10 h-full p-5 md:p-6
-        flex ${imageOnStart ? 'flex-row-reverse' : 'flex-row'}
-        items-center justify-between gap-4
+        flex ${imageOnCenter ? 'flex-col' : imageOnStart ? 'flex-row-reverse' : 'flex-row'}
+        items-center ${imageOnCenter ? 'justify-center text-center' : 'justify-between'} gap-4
       `}>
         {/* Text Content */}
-        <div className={`flex-1 ${imageOnStart ? 'text-end' : 'text-start'}`}>
+        <div className={`${imageOnCenter ? '' : 'flex-1'} ${imageOnCenter ? 'text-center' : imageOnStart ? 'text-end' : 'text-start'}`}>
           {/* Badge */}
           {badgeText && (
             <div className={`
@@ -305,14 +333,16 @@ function BannerCard({
         {/* Product Image (Subtle 3D Effect) */}
         {!imageOnBackground && banner.image_url && (
           <div className={`
-            relative
-            ${isDesktop ? 'w-36 h-36 md:w-40 md:h-40' : 'w-28 h-28 sm:w-32 sm:h-32'}
-            flex-shrink-0
+            relative flex-shrink-0
+            ${imageOnCenter
+              ? `${isDesktop ? sizeConfig.containerClass : sizeConfig.mobileClass} w-auto aspect-square`
+              : `${isDesktop ? sizeConfig.containerClass : sizeConfig.mobileClass} w-auto aspect-square`
+            }
           `}>
             <motion.img
               src={banner.image_url}
               alt={title}
-              className="w-full h-full object-contain transform translate-y-1"
+              className="h-full w-auto object-contain transform translate-y-1"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.3 }}
