@@ -67,19 +67,19 @@ interface HomepageBanner {
   display_order?: number
 }
 
-// Image size configuration - uses fixed sizes for consistent display
+// Image size configuration - uses fixed sizes with max constraints
 const IMAGE_SIZE_CONFIG: Record<ImageSize, { desktopClass: string; mobileClass: string }> = {
   small: {
-    desktopClass: 'w-28 h-28 md:w-32 md:h-32',
-    mobileClass: 'w-20 h-20 sm:w-24 sm:h-24'
+    desktopClass: 'w-24 h-24 md:w-28 md:h-28 max-h-[50%]',
+    mobileClass: 'w-16 h-16 sm:w-20 sm:h-20 max-h-[45%]'
   },
   medium: {
-    desktopClass: 'w-36 h-36 md:w-40 md:h-40',
-    mobileClass: 'w-28 h-28 sm:w-32 sm:h-32'
+    desktopClass: 'w-32 h-32 md:w-36 md:h-36 max-h-[65%]',
+    mobileClass: 'w-24 h-24 sm:w-28 sm:h-28 max-h-[60%]'
   },
   large: {
-    desktopClass: 'w-44 h-44 md:w-52 md:h-52',
-    mobileClass: 'w-36 h-36 sm:w-40 sm:h-40'
+    desktopClass: 'w-40 h-40 md:w-44 md:h-44 max-h-[80%]',
+    mobileClass: 'w-32 h-32 sm:w-36 sm:h-36 max-h-[75%]'
   },
 }
 
@@ -333,13 +333,13 @@ function BannerCard({
         {/* Product Image (Subtle 3D Effect) */}
         {!imageOnBackground && banner.image_url && (
           <div className={`
-            relative flex-shrink-0
+            relative flex-shrink-0 flex items-center justify-center
             ${isDesktop ? sizeConfig.desktopClass : sizeConfig.mobileClass}
           `}>
             <motion.img
               src={banner.image_url}
               alt={title}
-              className="w-full h-full object-contain"
+              className="max-w-full max-h-full object-contain"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.3 }}
