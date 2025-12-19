@@ -27,7 +27,23 @@ import {
   X,
   Save,
   Clock,
+  Upload,
+  Link as LinkIcon,
 } from 'lucide-react'
+
+// Pastel Color Presets from Brand Guidelines (no emojis)
+const PASTEL_PRESETS = [
+  { name: { ar: 'كريمي دافئ', en: 'Warm Cream' }, start: '#FEF3C7', end: '#FEF9C3' },
+  { name: { ar: 'بيج ناعم', en: 'Soft Beige' }, start: '#F5EBDC', end: '#EDE0CD' },
+  { name: { ar: 'أزرق إنجزنا', en: 'Engezna Blue' }, start: '#009DE0', end: '#0077B6' },
+  { name: { ar: 'نعناعي', en: 'Soft Mint' }, start: '#D1FAE5', end: '#A7F3D0' },
+  { name: { ar: 'وردي ناعم', en: 'Soft Rose' }, start: '#FFE4E6', end: '#FECDD3' },
+  { name: { ar: 'خوخي', en: 'Soft Peach' }, start: '#FFEDD5', end: '#FED7AA' },
+  { name: { ar: 'زهري', en: 'Soft Pink' }, start: '#FCE7F3', end: '#FBCFE8' },
+  { name: { ar: 'لافندر', en: 'Soft Lavender' }, start: '#EDE9FE', end: '#DDD6FE' },
+  { name: { ar: 'فيروزي', en: 'Soft Teal' }, start: '#CCFBF1', end: '#99F6E4' },
+  { name: { ar: 'عنبري', en: 'Soft Amber' }, start: '#FEF3C7', end: '#FDE68A' },
+]
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
@@ -231,6 +247,8 @@ export default function AdminBannersPage() {
   const [isSaving, setIsSaving] = useState(false)
 
   const [formData, setFormData] = useState(defaultFormData)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('upload')
 
   const [stats, setStats] = useState({
     total: 0,
@@ -473,6 +491,81 @@ export default function AdminBannersPage() {
 
   function resetForm() {
     setFormData(defaultFormData)
+    setUploadMode('upload')
+  }
+
+  // Handle image upload
+  async function handleImageUpload(file: File) {
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+    if (!validTypes.includes(file.type)) {
+      alert(locale === 'ar' ? 'نوع الملف غير مدعوم. استخدم PNG, JPG, WebP, أو GIF' : 'Unsupported file type. Use PNG, JPG, WebP, or GIF')
+      return
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert(locale === 'ar' ? 'حجم الملف كبير جداً. الحد الأقصى 2MB' : 'File too large. Maximum 2MB')
+      return
+    }
+
+    setIsUploading(true)
+
+    try {
+      const supabase = createClient()
+
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `banner-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      const filePath = `banners/${fileName}`
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('public-assets')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (error) {
+        // If bucket doesn't exist, show helpful message
+        if (error.message.includes('bucket') || error.message.includes('not found')) {
+          alert(locale === 'ar'
+            ? 'يرجى إنشاء bucket باسم "public-assets" في Supabase Storage أولاً'
+            : 'Please create a bucket named "public-assets" in Supabase Storage first')
+        } else {
+          throw error
+        }
+        return
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('public-assets')
+        .getPublicUrl(filePath)
+
+      setFormData({ ...formData, image_url: publicUrl })
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert(locale === 'ar' ? 'حدث خطأ أثناء رفع الصورة' : 'Error uploading image')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  // Handle drag and drop
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      handleImageUpload(file)
+    }
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault()
   }
 
   function openEditModal(banner: HomepageBanner) {
@@ -911,58 +1004,188 @@ export default function AdminBannersPage() {
                       </div>
                     </div>
 
-                    {/* Image URL */}
+                    {/* Image Upload / URL */}
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        {locale === 'ar' ? 'رابط صورة المنتج (PNG مفرغ مفضل)' : 'Product Image URL (Transparent PNG preferred)'}
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'صورة المنتج (PNG مفرغ مفضل)' : 'Product Image (Transparent PNG preferred)'}
                       </label>
-                      <input
-                        type="url"
-                        value={formData.image_url}
-                        onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
-                        placeholder="https://example.com/pizza.png"
-                      />
+
+                      {/* Toggle between Upload and URL */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setUploadMode('upload')}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                            uploadMode === 'upload'
+                              ? 'bg-primary text-white'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          <Upload className="w-4 h-4" />
+                          {locale === 'ar' ? 'رفع' : 'Upload'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUploadMode('url')}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                            uploadMode === 'url'
+                              ? 'bg-primary text-white'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          <LinkIcon className="w-4 h-4" />
+                          {locale === 'ar' ? 'رابط' : 'URL'}
+                        </button>
+                      </div>
+
+                      {uploadMode === 'upload' ? (
+                        <div
+                          onDrop={handleDrop}
+                          onDragOver={handleDragOver}
+                          className={`
+                            relative border-2 border-dashed rounded-xl p-6 text-center transition-colors
+                            ${isUploading ? 'border-primary bg-primary/5' : 'border-slate-300 hover:border-primary'}
+                          `}
+                        >
+                          {isUploading ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+                              <p className="text-sm text-slate-600">
+                                {locale === 'ar' ? 'جاري الرفع...' : 'Uploading...'}
+                              </p>
+                            </div>
+                          ) : formData.image_url ? (
+                            <div className="flex flex-col items-center gap-3">
+                              <img
+                                src={formData.image_url}
+                                alt="Preview"
+                                className="w-20 h-20 object-contain rounded-lg bg-slate-100"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, image_url: '' })}
+                                className="text-sm text-red-500 hover:text-red-700"
+                              >
+                                {locale === 'ar' ? 'إزالة الصورة' : 'Remove Image'}
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                              <p className="text-sm text-slate-600 mb-1">
+                                {locale === 'ar' ? 'اسحب الصورة هنا أو' : 'Drag image here or'}
+                              </p>
+                              <label className="cursor-pointer">
+                                <span className="text-sm text-primary font-medium hover:underline">
+                                  {locale === 'ar' ? 'اضغط للاختيار' : 'click to browse'}
+                                </span>
+                                <input
+                                  type="file"
+                                  accept="image/png,image/jpeg,image/webp,image/gif"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) handleImageUpload(file)
+                                  }}
+                                />
+                              </label>
+                              <p className="text-xs text-slate-400 mt-2">
+                                PNG, JPG, WebP, GIF - {locale === 'ar' ? 'الحد الأقصى 2MB' : 'Max 2MB'}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <input
+                          type="url"
+                          value={formData.image_url}
+                          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                          className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
+                          placeholder="https://example.com/pizza.png"
+                        />
+                      )}
                     </div>
 
                     {/* Gradient Colors */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          {locale === 'ar' ? 'لون التدرج (بداية)' : 'Gradient Start'}
-                        </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="color"
-                            value={formData.gradient_start}
-                            onChange={(e) => setFormData({ ...formData, gradient_start: e.target.value })}
-                            className="w-12 h-10 border border-slate-200 rounded-lg cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={formData.gradient_start}
-                            onChange={(e) => setFormData({ ...formData, gradient_start: e.target.value })}
-                            className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary font-mono"
-                          />
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        {locale === 'ar' ? 'ألوان التدرج' : 'Gradient Colors'}
+                      </label>
+
+                      {/* Pastel Presets */}
+                      <div className="mb-3">
+                        <p className="text-xs text-slate-500 mb-2">
+                          {locale === 'ar' ? 'ألوان الباستيل الموصى بها:' : 'Recommended Pastel Colors:'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {PASTEL_PRESETS.map((preset, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setFormData({
+                                ...formData,
+                                gradient_start: preset.start,
+                                gradient_end: preset.end,
+                              })}
+                              className={`
+                                group relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                                border hover:scale-105
+                                ${formData.gradient_start === preset.start && formData.gradient_end === preset.end
+                                  ? 'border-primary ring-2 ring-primary/30'
+                                  : 'border-slate-200 hover:border-slate-300'
+                                }
+                              `}
+                              style={{
+                                background: `linear-gradient(135deg, ${preset.start} 0%, ${preset.end} 100%)`,
+                              }}
+                            >
+                              <span className="relative z-10 text-slate-700 drop-shadow-sm">
+                                {locale === 'ar' ? preset.name.ar : preset.name.en}
+                              </span>
+                            </button>
+                          ))}
                         </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          {locale === 'ar' ? 'لون التدرج (نهاية)' : 'Gradient End'}
-                        </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="color"
-                            value={formData.gradient_end}
-                            onChange={(e) => setFormData({ ...formData, gradient_end: e.target.value })}
-                            className="w-12 h-10 border border-slate-200 rounded-lg cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={formData.gradient_end}
-                            onChange={(e) => setFormData({ ...formData, gradient_end: e.target.value })}
-                            className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary font-mono"
-                          />
+
+                      {/* Custom Color Pickers */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">
+                            {locale === 'ar' ? 'بداية' : 'Start'}
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="color"
+                              value={formData.gradient_start}
+                              onChange={(e) => setFormData({ ...formData, gradient_start: e.target.value })}
+                              className="w-10 h-9 border border-slate-200 rounded-lg cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={formData.gradient_start}
+                              onChange={(e) => setFormData({ ...formData, gradient_start: e.target.value })}
+                              className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary font-mono text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">
+                            {locale === 'ar' ? 'نهاية' : 'End'}
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="color"
+                              value={formData.gradient_end}
+                              onChange={(e) => setFormData({ ...formData, gradient_end: e.target.value })}
+                              className="w-10 h-9 border border-slate-200 rounded-lg cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={formData.gradient_end}
+                              onChange={(e) => setFormData({ ...formData, gradient_end: e.target.value })}
+                              className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary font-mono text-sm"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>

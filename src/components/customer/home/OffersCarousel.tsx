@@ -4,7 +4,14 @@ import { useLocale } from 'next-intl'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useTransform,
+  useSpring,
+  animate,
+} from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 
 // Types
@@ -150,8 +157,6 @@ function BannerCard({
   locale: string
   isDesktop: boolean
 }) {
-  const isRTL = locale === 'ar'
-
   const title = locale === 'ar' ? banner.title_ar : banner.title_en
   const description = locale === 'ar' ? banner.description_ar : banner.description_en
   const badgeText = locale === 'ar' ? banner.badge_text_ar : banner.badge_text_en
@@ -168,7 +173,7 @@ function BannerCard({
     <motion.div
       className={`
         relative overflow-hidden rounded-2xl
-        ${isDesktop ? 'aspect-[16/9]' : 'aspect-[16/9]'}
+        aspect-[16/9]
         ${isDesktop && !isActive ? 'opacity-70' : 'opacity-100'}
       `}
       style={gradientStyle}
@@ -253,7 +258,7 @@ function BannerCard({
           )}
         </div>
 
-        {/* Product Image (3D Effect - breaks border) */}
+        {/* Product Image (Subtle 3D Effect) */}
         {!imageOnBackground && banner.image_url && (
           <div className={`
             relative
@@ -263,16 +268,13 @@ function BannerCard({
             <motion.img
               src={banner.image_url}
               alt={title}
-              className="
-                w-full h-full object-contain
-                drop-shadow-2xl
-                transform translate-y-2
-              "
+              className="w-full h-full object-contain transform translate-y-1"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.3 }}
               style={{
-                filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.3))',
+                // Subtle gradient shadow instead of solid black
+                filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15)) drop-shadow(0 16px 32px rgba(0,0,0,0.1))',
               }}
             />
           </div>
@@ -293,6 +295,104 @@ function BannerCard({
   return CardContent
 }
 
+// Liquid Progress Indicator Component
+function LiquidProgressIndicator({
+  totalItems,
+  scrollProgress,
+  currentIndex,
+  onSelect,
+  autoPlay,
+  autoPlayInterval,
+  isRTL,
+}: {
+  totalItems: number
+  scrollProgress: ReturnType<typeof useMotionValue<number>>
+  currentIndex: number
+  onSelect: (index: number) => void
+  autoPlay: boolean
+  autoPlayInterval: number
+  isRTL: boolean
+}) {
+  // Spring for smooth liquid effect
+  const springProgress = useSpring(scrollProgress, {
+    stiffness: 300,
+    damping: 30,
+    mass: 0.5,
+  })
+
+  // Calculate indicator positions based on scroll
+  const getIndicatorStyle = (index: number) => {
+    // Transform scroll progress to continuous index (0 to totalItems-1)
+    const continuousIndex = useTransform(
+      springProgress,
+      [0, 1],
+      isRTL ? [totalItems - 1, 0] : [0, totalItems - 1]
+    )
+
+    // Calculate distance from current position
+    const distance = useTransform(continuousIndex, (latest) => {
+      return Math.abs(latest - index)
+    })
+
+    // Width: expands when close, shrinks when far
+    const width = useTransform(distance, [0, 0.5, 1, 2], [24, 16, 8, 8])
+
+    // Opacity: full when active, reduced when far
+    const opacity = useTransform(distance, [0, 1, 2], [1, 0.6, 0.4])
+
+    return { width, opacity }
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 mt-4">
+      {Array.from({ length: totalItems }).map((_, index) => {
+        const { width, opacity } = getIndicatorStyle(index)
+
+        return (
+          <motion.button
+            key={index}
+            onClick={() => onSelect(index)}
+            className="relative h-1.5 rounded-full overflow-hidden bg-slate-200"
+            style={{ width, opacity }}
+            whileHover={{ scale: 1.2 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            {/* Active fill with liquid stretch */}
+            <motion.div
+              className="absolute inset-0 bg-primary rounded-full origin-left"
+              initial={false}
+              animate={{
+                scaleX: index === currentIndex ? 1 : 0,
+                originX: isRTL ? 1 : 0,
+              }}
+              transition={{
+                type: 'spring',
+                stiffness: 400,
+                damping: 30,
+              }}
+            />
+
+            {/* Auto-play progress fill */}
+            {index === currentIndex && autoPlay && (
+              <motion.div
+                className="absolute inset-0 bg-primary/60 rounded-full"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{
+                  duration: autoPlayInterval / 1000,
+                  ease: 'linear',
+                }}
+                style={{ originX: isRTL ? 1 : 0 }}
+                key={`progress-${currentIndex}`}
+              />
+            )}
+          </motion.button>
+        )
+      })}
+    </div>
+  )
+}
+
 export function OffersCarousel({
   banners: propBanners,
   autoPlay = true,
@@ -311,9 +411,13 @@ export function OffersCarousel({
   const [isPaused, setIsPaused] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Motion value for continuous scroll tracking
+  const scrollProgress = useMotionValue(0)
 
   const sectionTitle = title || (locale === 'ar' ? 'العروض' : 'Offers')
 
@@ -364,7 +468,7 @@ export function OffersCarousel({
 
   // Auto-play logic
   useEffect(() => {
-    if (!autoPlay || banners.length <= 1 || isPaused || (isDesktop && isHovered)) {
+    if (!autoPlay || banners.length <= 1 || isPaused || isDragging || (isDesktop && isHovered)) {
       if (autoPlayRef.current) {
         clearInterval(autoPlayRef.current)
         autoPlayRef.current = null
@@ -381,29 +485,53 @@ export function OffersCarousel({
         clearInterval(autoPlayRef.current)
       }
     }
-  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered])
+  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDragging, isDesktop, isHovered])
+
+  // Update scroll progress when currentIndex changes (programmatic)
+  useEffect(() => {
+    if (banners.length <= 1) return
+
+    const targetProgress = currentIndex / (banners.length - 1)
+    animate(scrollProgress, isRTL ? 1 - targetProgress : targetProgress, {
+      type: 'spring',
+      stiffness: 300,
+      damping: 30,
+    })
+  }, [currentIndex, banners.length, isRTL, scrollProgress])
 
   // Scroll to index on change (mobile snap scroll)
   useEffect(() => {
-    if (!isDesktop && scrollContainerRef.current) {
+    if (!isDesktop && scrollContainerRef.current && !isDragging) {
       const container = scrollContainerRef.current
       const cardWidth = container.offsetWidth * 0.85 + 16 // 85% + gap
-      const scrollPosition = isRTL
-        ? -(currentIndex * cardWidth)
-        : currentIndex * cardWidth
+      const scrollPosition = currentIndex * cardWidth
 
       container.scrollTo({
-        left: isRTL ? container.scrollWidth - container.offsetWidth + scrollPosition : scrollPosition,
+        left: isRTL ? container.scrollWidth - container.offsetWidth - scrollPosition : scrollPosition,
         behavior: 'smooth',
       })
     }
-  }, [currentIndex, isDesktop, isRTL])
+  }, [currentIndex, isDesktop, isRTL, isDragging])
 
-  // Handle scroll events for mobile snap
+  // Handle continuous scroll tracking for liquid indicator
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current || isDesktop) return
 
     const container = scrollContainerRef.current
+    const maxScroll = container.scrollWidth - container.offsetWidth
+
+    if (maxScroll <= 0) return
+
+    // Calculate progress (0 to 1)
+    let progress = container.scrollLeft / maxScroll
+    if (isRTL) {
+      progress = 1 - progress
+    }
+
+    // Update motion value for liquid effect
+    scrollProgress.set(progress)
+
+    // Calculate current index from scroll position
     const cardWidth = container.offsetWidth * 0.85 + 16
     const scrollLeft = isRTL
       ? container.scrollWidth - container.offsetWidth - container.scrollLeft
@@ -413,7 +541,7 @@ export function OffersCarousel({
     if (newIndex !== currentIndex && newIndex >= 0 && newIndex < banners.length) {
       setCurrentIndex(newIndex)
     }
-  }, [currentIndex, banners.length, isDesktop, isRTL])
+  }, [currentIndex, banners.length, isDesktop, isRTL, scrollProgress])
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
@@ -424,8 +552,13 @@ export function OffersCarousel({
   }
 
   // Pause on interaction
-  const handleInteractionStart = () => setIsPaused(true)
+  const handleInteractionStart = () => {
+    setIsPaused(true)
+    setIsDragging(true)
+  }
+
   const handleInteractionEnd = () => {
+    setIsDragging(false)
     setTimeout(() => setIsPaused(false), 3000)
   }
 
@@ -480,7 +613,7 @@ export function OffersCarousel({
             </button>
           )}
 
-          {/* Desktop Navigation Arrows (hover only) */}
+          {/* Desktop Navigation Arrows (expanded touch target) */}
           {isDesktop && banners.length > 3 && (
             <motion.div
               className="flex items-center gap-2"
@@ -490,15 +623,17 @@ export function OffersCarousel({
             >
               <button
                 onClick={handlePrev}
-                className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm"
+                className="w-11 h-11 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm group"
+                aria-label={locale === 'ar' ? 'السابق' : 'Previous'}
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 group-hover:scale-110 transition-transform" />
               </button>
               <button
                 onClick={handleNext}
-                className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm"
+                className="w-11 h-11 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm group"
+                aria-label={locale === 'ar' ? 'التالي' : 'Next'}
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5 group-hover:scale-110 transition-transform" />
               </button>
             </motion.div>
           )}
@@ -510,11 +645,11 @@ export function OffersCarousel({
         className="relative"
         onMouseEnter={() => {
           setIsHovered(true)
-          handleInteractionStart()
+          setIsPaused(true)
         }}
         onMouseLeave={() => {
           setIsHovered(false)
-          handleInteractionEnd()
+          setTimeout(() => setIsPaused(false), 1000)
         }}
       >
         {/* Mobile: Scroll Snap Carousel */}
@@ -540,10 +675,7 @@ export function OffersCarousel({
             {banners.map((banner, index) => (
               <div
                 key={banner.id}
-                className="
-                  flex-shrink-0 w-[85%]
-                  snap-center
-                "
+                className="flex-shrink-0 w-[85%] snap-center"
               >
                 <BannerCard
                   banner={banner}
@@ -588,37 +720,17 @@ export function OffersCarousel({
         )}
       </div>
 
-      {/* Progress Bars (Modern style) */}
+      {/* Liquid Progress Indicator */}
       {banners.length > 1 && (
-        <div className="flex items-center justify-center gap-1.5 mt-4">
-          {banners.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className="relative h-1 rounded-full overflow-hidden transition-all duration-300"
-              style={{
-                width: index === currentIndex ? '24px' : '8px',
-                backgroundColor: index === currentIndex ? 'transparent' : '#CBD5E1',
-              }}
-            >
-              {index === currentIndex && (
-                <motion.div
-                  className="absolute inset-0 bg-primary rounded-full"
-                  initial={{ scaleX: 0, originX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{
-                    duration: autoPlay ? autoPlayInterval / 1000 : 0.3,
-                    ease: 'linear',
-                  }}
-                  key={currentIndex}
-                />
-              )}
-              {index !== currentIndex && (
-                <div className="absolute inset-0 bg-slate-300 rounded-full" />
-              )}
-            </button>
-          ))}
-        </div>
+        <LiquidProgressIndicator
+          totalItems={banners.length}
+          scrollProgress={scrollProgress}
+          currentIndex={currentIndex}
+          onSelect={setCurrentIndex}
+          autoPlay={autoPlay && !isPaused && !isDragging}
+          autoPlayInterval={autoPlayInterval}
+          isRTL={isRTL}
+        />
       )}
     </section>
   )
