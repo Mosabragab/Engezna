@@ -300,6 +300,7 @@ export default function AdminBannersPage() {
   const [editingBanner, setEditingBanner] = useState<HomepageBanner | null>(null)
   const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile')
   const [isSaving, setIsSaving] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const [formData, setFormData] = useState(defaultFormData)
   const [isUploading, setIsUploading] = useState(false)
@@ -513,6 +514,13 @@ export default function AdminBannersPage() {
       setEditingBanner(null)
       resetForm()
       await loadBanners()
+
+      // Show success message
+      const message = editingBanner
+        ? (locale === 'ar' ? 'تم حفظ التعديلات بنجاح' : 'Changes saved successfully')
+        : (locale === 'ar' ? 'تم إنشاء البانر بنجاح' : 'Banner created successfully')
+      setSuccessMessage(message)
+      setTimeout(() => setSuccessMessage(null), 4000)
     } catch (error) {
       alert(locale === 'ar' ? 'حدث خطأ أثناء حفظ البانر' : 'Error saving banner')
     } finally {
@@ -779,6 +787,29 @@ export default function AdminBannersPage() {
         title={locale === 'ar' ? 'بانرات الصفحة الرئيسية' : 'Homepage Banners'}
         onMenuClick={toggleSidebar}
       />
+
+      {/* Success Notification */}
+      <AnimatePresence>
+        {successMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50"
+          >
+            <div className="bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5" />
+              <span className="font-medium">{successMessage}</span>
+              <button
+                onClick={() => setSuccessMessage(null)}
+                className="ms-2 hover:bg-white/20 rounded-full p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
         {/* Stats */}
