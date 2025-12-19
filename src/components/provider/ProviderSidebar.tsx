@@ -15,6 +15,7 @@ import {
   X,
   Star,
   Receipt,
+  Megaphone,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
@@ -80,6 +81,11 @@ export function ProviderSidebar({
       icon: Tag,
       label: { ar: 'العروض', en: 'Promotions' },
       path: `/${locale}/provider/promotions`,
+    },
+    {
+      icon: Megaphone,
+      label: { ar: 'بانر العروض', en: 'Promo Banner' },
+      path: `/${locale}/provider/banner`,
     },
     {
       icon: Wallet,

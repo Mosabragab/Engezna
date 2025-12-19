@@ -54,19 +54,29 @@ function getGradientTextColor(startColor: string, endColor: string): 'light' | '
   return 'light'
 }
 
-// Pastel Color Presets from Brand Guidelines (no emojis)
+// Import banner color palette
+import {
+  BANNER_GRADIENTS,
+  ADMIN_COLOR_OPTIONS_GROUPED,
+  COLOR_CATEGORY_LABELS,
+  getBannerGradient,
+  findGradientByColors,
+} from '@/constants/colors'
+
+// Pastel Color Presets (Soft colors for light backgrounds)
 const PASTEL_PRESETS = [
   { name: { ar: 'كريمي دافئ', en: 'Warm Cream' }, start: '#FEF3C7', end: '#FEF9C3' },
   { name: { ar: 'بيج ناعم', en: 'Soft Beige' }, start: '#F5EBDC', end: '#EDE0CD' },
-  { name: { ar: 'أزرق إنجزنا', en: 'Engezna Blue' }, start: '#009DE0', end: '#0077B6' },
-  { name: { ar: 'نعناعي', en: 'Soft Mint' }, start: '#D1FAE5', end: '#A7F3D0' },
+  { name: { ar: 'نعناعي ناعم', en: 'Soft Mint' }, start: '#D1FAE5', end: '#A7F3D0' },
   { name: { ar: 'وردي ناعم', en: 'Soft Rose' }, start: '#FFE4E6', end: '#FECDD3' },
   { name: { ar: 'خوخي', en: 'Soft Peach' }, start: '#FFEDD5', end: '#FED7AA' },
-  { name: { ar: 'زهري', en: 'Soft Pink' }, start: '#FCE7F3', end: '#FBCFE8' },
-  { name: { ar: 'لافندر', en: 'Soft Lavender' }, start: '#EDE9FE', end: '#DDD6FE' },
-  { name: { ar: 'فيروزي', en: 'Soft Teal' }, start: '#CCFBF1', end: '#99F6E4' },
-  { name: { ar: 'عنبري', en: 'Soft Amber' }, start: '#FEF3C7', end: '#FDE68A' },
+  { name: { ar: 'زهري ناعم', en: 'Soft Pink' }, start: '#FCE7F3', end: '#FBCFE8' },
+  { name: { ar: 'لافندر ناعم', en: 'Soft Lavender' }, start: '#EDE9FE', end: '#DDD6FE' },
+  { name: { ar: 'فيروزي ناعم', en: 'Soft Teal' }, start: '#CCFBF1', end: '#99F6E4' },
+  { name: { ar: 'عنبري ناعم', en: 'Soft Amber' }, start: '#FEF3C7', end: '#FDE68A' },
+  { name: { ar: 'سماوي ناعم', en: 'Soft Sky' }, start: '#E0F2FE', end: '#BAE6FD' },
 ]
+
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
@@ -89,7 +99,8 @@ interface HomepageBanner {
   link_url: string | null
   link_type: string | null
   link_id: string | null
-  image_position: 'start' | 'end' | 'background'
+  image_position: 'start' | 'end' | 'center'
+  image_size: ImageSize
   is_countdown_active: boolean
   countdown_end_time: string | null
   display_order: number
@@ -119,7 +130,15 @@ interface City {
 
 type FilterStatus = 'all' | 'active' | 'inactive' | 'expired' | 'scheduled'
 
-type ImagePosition = 'start' | 'end' | 'background'
+type ImagePosition = 'start' | 'end' | 'center'
+type ImageSize = 'small' | 'medium' | 'large'
+
+// Image sizes using fixed pixel values for consistent display
+const IMAGE_SIZE_CONFIG: Record<ImageSize, { label_ar: string; label_en: string; containerClass: string; imgClass: string }> = {
+  small: { label_ar: 'صغير', label_en: 'Small', containerClass: 'w-20 h-20 sm:w-24 sm:h-24', imgClass: 'max-w-full max-h-full object-contain' },
+  medium: { label_ar: 'وسط', label_en: 'Medium', containerClass: 'w-28 h-28 sm:w-32 sm:h-32', imgClass: 'max-w-full max-h-full object-contain' },
+  large: { label_ar: 'كبير', label_en: 'Large', containerClass: 'w-36 h-36 sm:w-40 sm:h-40', imgClass: 'max-w-full max-h-full object-contain' },
+}
 
 const defaultFormData = {
   title_ar: '',
@@ -137,6 +156,7 @@ const defaultFormData = {
   link_url: '',
   link_type: 'category',
   image_position: 'end' as ImagePosition,
+  image_size: 'medium' as ImageSize,
   is_countdown_active: false,
   countdown_end_time: '',
   is_active: true,
@@ -152,7 +172,7 @@ function BannerPreview({
   locale,
   viewMode,
 }: {
-  data: typeof defaultFormData & { image_position: ImagePosition }
+  data: typeof defaultFormData & { image_position: ImagePosition; image_size: ImageSize }
   locale: string
   viewMode: 'mobile' | 'desktop'
 }) {
@@ -186,7 +206,8 @@ function BannerPreview({
   const placeholderBgClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10'
 
   const imageOnStart = data.image_position === 'start'
-  const imageOnBackground = data.image_position === 'background'
+  const imageOnCenter = data.image_position === 'center'
+  const sizeConfig = IMAGE_SIZE_CONFIG[data.image_size]
 
   return (
     <div
@@ -199,90 +220,106 @@ function BannerPreview({
         className="relative overflow-hidden rounded-2xl aspect-[16/9]"
         style={gradientStyle}
       >
-        {/* Background Image */}
-        {imageOnBackground && data.image_url && (
-          <div className="absolute inset-0">
-            <img
-              src={data.image_url}
-              alt=""
-              className="w-full h-full object-cover opacity-30"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-          </div>
-        )}
-
         {/* Decorative Circles */}
         <div className={`absolute -top-10 -end-10 w-32 h-32 ${decorativeCircleClass} rounded-full blur-sm`} />
         <div className={`absolute -bottom-6 -start-6 w-24 h-24 ${decorativeCircleClass} rounded-full blur-sm`} />
 
-        {/* Content */}
-        <div className={`
-          relative z-10 h-full p-4
-          flex ${imageOnStart ? 'flex-row-reverse' : 'flex-row'}
-          items-center justify-between gap-3
-        `}>
-          <div className={`flex-1 ${imageOnStart ? 'text-end' : 'text-start'}`}>
-            {/* Badge */}
+        {/* Center Position Layout */}
+        {imageOnCenter ? (
+          <div className="relative z-10 h-full p-4 flex flex-col items-center justify-center text-center">
+            {data.image_url && (
+              <div className={`${sizeConfig.containerClass} flex-shrink-0 mb-2`}>
+                <img
+                  src={data.image_url}
+                  alt=""
+                  className={`${sizeConfig.imgClass} object-contain drop-shadow-xl`}
+                />
+              </div>
+            )}
             {badgeText && (
-              <div className={`
-                inline-block mb-2
-                ${badgeBgClass}
-                rounded-lg px-2.5 py-1
-              `}>
+              <div className={`inline-block mb-1 ${badgeBgClass} rounded-lg px-2.5 py-1`}>
                 <span className={`${badgeTextClass} font-bold text-xs`}>
-                  {badgeText || (locale === 'ar' ? 'شارة' : 'Badge')}
+                  {badgeText}
                 </span>
               </div>
             )}
-
-            {/* Title */}
             <h3 className={`${textColorClass} font-bold text-base mb-1 leading-tight`}>
               {title || (locale === 'ar' ? 'عنوان العرض' : 'Offer Title')}
             </h3>
-
-            {/* Description */}
             {description && (
-              <p className={`${textColorSecondary} text-xs mb-2 line-clamp-2`}>
+              <p className={`${textColorSecondary} text-xs mb-2 line-clamp-1`}>
                 {description}
               </p>
             )}
-
-            {/* Countdown */}
-            {data.is_countdown_active && (
-              <div className={`flex items-center gap-1 ${countdownTextClass} text-xs mb-2`}>
-                <Clock className="w-3 h-3" />
-                <span className={`${countdownBgClass} rounded px-1`}>00</span>:
-                <span className={`${countdownBgClass} rounded px-1`}>00</span>:
-                <span className={`${countdownBgClass} rounded px-1`}>00</span>
-              </div>
-            )}
-
-            {/* CTA Button */}
             {ctaText && (
               <button className={`${ctaButtonClass} font-semibold px-3 py-1.5 rounded-lg text-xs`}>
                 {ctaText}
               </button>
             )}
           </div>
+        ) : (
+          /* Left/Right Position Layout */
+          <div className={`
+            relative z-10 h-full p-4
+            flex ${imageOnStart ? 'flex-row-reverse' : 'flex-row'}
+            items-center justify-between gap-3
+          `}>
+            <div className={`flex-1 ${imageOnStart ? 'text-end' : 'text-start'}`}>
+              {/* Badge */}
+              {badgeText && (
+                <div className={`inline-block mb-2 ${badgeBgClass} rounded-lg px-2.5 py-1`}>
+                  <span className={`${badgeTextClass} font-bold text-xs`}>
+                    {badgeText || (locale === 'ar' ? 'شارة' : 'Badge')}
+                  </span>
+                </div>
+              )}
 
-          {/* Product Image */}
-          {!imageOnBackground && data.image_url && (
-            <div className="w-20 h-20 flex-shrink-0">
-              <img
-                src={data.image_url}
-                alt=""
-                className="w-full h-full object-contain drop-shadow-xl"
-              />
-            </div>
-          )}
+              {/* Title */}
+              <h3 className={`${textColorClass} font-bold text-base mb-1 leading-tight`}>
+                {title || (locale === 'ar' ? 'عنوان العرض' : 'Offer Title')}
+              </h3>
 
-          {/* Placeholder when no image */}
-          {!imageOnBackground && !data.image_url && (
-            <div className={`w-20 h-20 flex-shrink-0 ${placeholderBgClass} rounded-xl flex items-center justify-center`}>
-              <ImageIcon className={`w-8 h-8 ${placeholderIconClass}`} />
+              {/* Description */}
+              {description && (
+                <p className={`${textColorSecondary} text-xs mb-2 line-clamp-2`}>
+                  {description}
+                </p>
+              )}
+
+              {/* Countdown */}
+              {data.is_countdown_active && (
+                <div className={`flex items-center gap-1 ${countdownTextClass} text-xs mb-2`}>
+                  <Clock className="w-3 h-3" />
+                  <span className={`${countdownBgClass} rounded px-1`}>00</span>:
+                  <span className={`${countdownBgClass} rounded px-1`}>00</span>:
+                  <span className={`${countdownBgClass} rounded px-1`}>00</span>
+                </div>
+              )}
+
+              {/* CTA Button */}
+              {ctaText && (
+                <button className={`${ctaButtonClass} font-semibold px-3 py-1.5 rounded-lg text-xs`}>
+                  {ctaText}
+                </button>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* Product Image */}
+            {data.image_url ? (
+              <div className={`${sizeConfig.containerClass} flex-shrink-0`}>
+                <img
+                  src={data.image_url}
+                  alt=""
+                  className={`${sizeConfig.imgClass} object-contain drop-shadow-xl`}
+                />
+              </div>
+            ) : (
+              <div className={`${sizeConfig.containerClass} flex-shrink-0 ${placeholderBgClass} rounded-xl flex items-center justify-center`}>
+                <ImageIcon className={`w-8 h-8 ${placeholderIconClass}`} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -490,6 +527,7 @@ export default function AdminBannersPage() {
         link_url: formData.link_url || null,
         link_type: formData.link_type,
         image_position: formData.image_position,
+        image_size: formData.image_size,
         is_countdown_active: formData.is_countdown_active,
         countdown_end_time: formData.is_countdown_active && formData.countdown_end_time
           ? new Date(formData.countdown_end_time).toISOString()
@@ -701,7 +739,8 @@ export default function AdminBannersPage() {
       cta_text_en: banner.cta_text_en || 'Order Now',
       link_url: banner.link_url || '',
       link_type: banner.link_type || 'category',
-      image_position: banner.image_position,
+      image_position: banner.image_position || 'end',
+      image_size: banner.image_size || 'medium',
       is_countdown_active: banner.is_countdown_active,
       countdown_end_time: banner.countdown_end_time
         ? new Date(banner.countdown_end_time).toISOString().slice(0, 16)
@@ -871,6 +910,35 @@ export default function AdminBannersPage() {
             </span>
           </div>
         </div>
+
+        {/* Provider Banners Approvals Link */}
+        <Link
+          href={`/${locale}/admin/banners/approvals`}
+          className="block mb-6"
+        >
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200 hover:border-amber-300 transition-colors group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-amber-900">
+                    {locale === 'ar' ? 'طلبات بانرات التجار' : 'Provider Banner Requests'}
+                  </h3>
+                  <p className="text-sm text-amber-700">
+                    {locale === 'ar' ? 'مراجعة طلبات البانرات من التجار' : 'Review banner requests from providers'}
+                  </p>
+                </div>
+              </div>
+              <div className={`p-2 rounded-lg bg-amber-100 group-hover:bg-amber-200 transition-colors ${isRTL ? 'rotate-180' : ''}`}>
+                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </Link>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -1349,10 +1417,10 @@ export default function AdminBannersPage() {
                         {locale === 'ar' ? 'ألوان التدرج' : 'Gradient Colors'}
                       </label>
 
-                      {/* Pastel Presets */}
-                      <div className="mb-3">
-                        <p className="text-xs text-slate-500 mb-2">
-                          {locale === 'ar' ? 'ألوان الباستيل الموصى بها:' : 'Recommended Pastel Colors:'}
+                      {/* Pastel Colors Section */}
+                      <div className="mb-4 p-3 bg-slate-50 rounded-xl">
+                        <p className="text-xs font-medium text-slate-600 mb-2">
+                          {locale === 'ar' ? 'ألوان الباستيل (خلفيات فاتحة)' : 'Pastel Colors (Light backgrounds)'}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {PASTEL_PRESETS.map((preset, idx) => (
@@ -1382,6 +1450,48 @@ export default function AdminBannersPage() {
                             </button>
                           ))}
                         </div>
+                      </div>
+
+                      {/* Vibrant Colors Section */}
+                      <div className="space-y-3 mb-4">
+                        <p className="text-xs font-medium text-slate-600">
+                          {locale === 'ar' ? 'الألوان الزاهية (للعروض والترويج)' : 'Vibrant Colors (For offers & promotions)'}
+                        </p>
+                        {(['primary', 'accent', 'cool', 'special'] as const).map((category) => (
+                          <div key={category}>
+                            <p className="text-xs text-slate-500 mb-1.5">
+                              {locale === 'ar' ? COLOR_CATEGORY_LABELS[category].ar : COLOR_CATEGORY_LABELS[category].en}
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {ADMIN_COLOR_OPTIONS_GROUPED[category].map((color) => (
+                                <button
+                                  key={color.id}
+                                  type="button"
+                                  onClick={() => setFormData({
+                                    ...formData,
+                                    gradient_start: color.start,
+                                    gradient_end: color.end,
+                                  })}
+                                  className={`
+                                    group relative px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                                    hover:scale-105 shadow-sm
+                                    ${formData.gradient_start === color.start && formData.gradient_end === color.end
+                                      ? 'ring-2 ring-offset-2 ring-primary scale-105'
+                                      : ''
+                                    }
+                                  `}
+                                  style={{
+                                    background: `linear-gradient(135deg, ${color.start} 0%, ${color.end} 100%)`,
+                                  }}
+                                >
+                                  <span className="relative z-10 text-white drop-shadow-md font-semibold">
+                                    {locale === 'ar' ? color.nameAr : color.nameEn}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
                       </div>
 
                       {/* Custom Color Pickers */}
@@ -1427,35 +1537,73 @@ export default function AdminBannersPage() {
                       </div>
                     </div>
 
-                    {/* Image Position & Glassmorphism */}
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* Image Position & Size */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
                           {locale === 'ar' ? 'موقع الصورة' : 'Image Position'}
                         </label>
-                        <select
-                          value={formData.image_position}
-                          onChange={(e) => setFormData({ ...formData, image_position: e.target.value as any })}
-                          className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
-                        >
-                          <option value="end">{locale === 'ar' ? 'نهاية (يمين/يسار)' : 'End (Right/Left)'}</option>
-                          <option value="start">{locale === 'ar' ? 'بداية (يسار/يمين)' : 'Start (Left/Right)'}</option>
-                          <option value="background">{locale === 'ar' ? 'خلفية كاملة' : 'Full Background'}</option>
-                        </select>
+                        <div className="flex gap-2">
+                          {[
+                            { value: 'end', label_ar: 'يسار', label_en: 'Left' },
+                            { value: 'center', label_ar: 'وسط', label_en: 'Center' },
+                            { value: 'start', label_ar: 'يمين', label_en: 'Right' },
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, image_position: option.value as ImagePosition })}
+                              className={`
+                                flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all
+                                ${formData.image_position === option.value
+                                  ? 'border-primary bg-primary/10 text-primary'
+                                  : 'border-slate-200 hover:border-slate-300'
+                                }
+                              `}
+                            >
+                              {locale === 'ar' ? option.label_ar : option.label_en}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex items-end">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.has_glassmorphism}
-                            onChange={(e) => setFormData({ ...formData, has_glassmorphism: e.target.checked })}
-                            className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
-                          />
-                          <span className="text-sm text-slate-700">
-                            {locale === 'ar' ? 'تأثير الزجاج على الشارة' : 'Glassmorphism on Badge'}
-                          </span>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          {locale === 'ar' ? 'حجم الصورة' : 'Image Size'}
                         </label>
+                        <div className="flex gap-2">
+                          {(['small', 'medium', 'large'] as ImageSize[]).map((size) => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, image_size: size })}
+                              className={`
+                                flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all
+                                ${formData.image_size === size
+                                  ? 'border-primary bg-primary/10 text-primary'
+                                  : 'border-slate-200 hover:border-slate-300'
+                                }
+                              `}
+                            >
+                              {locale === 'ar' ? IMAGE_SIZE_CONFIG[size].label_ar : IMAGE_SIZE_CONFIG[size].label_en}
+                            </button>
+                          ))}
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Glassmorphism */}
+                    <div className="flex items-center">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.has_glassmorphism}
+                          onChange={(e) => setFormData({ ...formData, has_glassmorphism: e.target.checked })}
+                          className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
+                        />
+                        <span className="text-sm text-slate-700">
+                          {locale === 'ar' ? 'تأثير الزجاج على الشارة' : 'Glassmorphism on Badge'}
+                        </span>
+                      </label>
                     </div>
 
                     {/* CTA Text AR/EN */}

@@ -48,6 +48,7 @@ interface AdminSidebarProps {
   pendingTasks?: number
   pendingApprovals?: number
   unreadMessages?: number
+  pendingBannerApprovals?: number
 }
 
 export function AdminSidebar({
@@ -58,6 +59,7 @@ export function AdminSidebar({
   pendingTasks = 0,
   pendingApprovals = 0,
   unreadMessages = 0,
+  pendingBannerApprovals = 0,
   hasMounted = false,
 }: AdminSidebarProps & { hasMounted?: boolean }) {
   const locale = useLocale()
@@ -146,6 +148,7 @@ export function AdminSidebar({
       icon: Image,
       label: { ar: 'بانرات الرئيسية', en: 'Homepage Banners' },
       path: `/${locale}/admin/banners`,
+      badge: pendingBannerApprovals > 0 ? pendingBannerApprovals.toString() : undefined,
       resource: 'promotions',
     },
   ]

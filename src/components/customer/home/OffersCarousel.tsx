@@ -39,6 +39,9 @@ function getGradientTextColor(startColor: string, endColor: string): 'light' | '
 }
 
 // Types
+type ImagePosition = 'start' | 'end' | 'center' | 'background'
+type ImageSize = 'small' | 'medium' | 'large'
+
 interface HomepageBanner {
   id: string
   title_ar: string
@@ -57,10 +60,27 @@ interface HomepageBanner {
   link_url?: string | null
   link_type?: string | null
   link_id?: string | null
-  image_position?: 'start' | 'end' | 'background'
+  image_position?: ImagePosition
+  image_size?: ImageSize
   is_countdown_active?: boolean
   countdown_end_time?: string | null
   display_order?: number
+}
+
+// Image size configuration - uses fixed sizes with max constraints
+const IMAGE_SIZE_CONFIG: Record<ImageSize, { desktopClass: string; mobileClass: string }> = {
+  small: {
+    desktopClass: 'w-24 h-24 md:w-28 md:h-28 max-h-[50%]',
+    mobileClass: 'w-16 h-16 sm:w-20 sm:h-20 max-h-[45%]'
+  },
+  medium: {
+    desktopClass: 'w-32 h-32 md:w-36 md:h-36 max-h-[65%]',
+    mobileClass: 'w-24 h-24 sm:w-28 sm:h-28 max-h-[60%]'
+  },
+  large: {
+    desktopClass: 'w-40 h-40 md:w-44 md:h-44 max-h-[80%]',
+    mobileClass: 'w-32 h-32 sm:w-36 sm:h-36 max-h-[75%]'
+  },
 }
 
 // Fallback demo offers (used when no database banners exist)
@@ -79,6 +99,7 @@ const fallbackOffers: HomepageBanner[] = [
     cta_text_en: 'Order Now',
     link_url: '/providers?category=restaurants',
     image_position: 'end',
+    image_size: 'medium',
     has_glassmorphism: true,
   },
   {
@@ -95,6 +116,7 @@ const fallbackOffers: HomepageBanner[] = [
     cta_text_en: 'Order Now',
     link_url: '/providers?category=coffee_desserts',
     image_position: 'end',
+    image_size: 'medium',
     has_glassmorphism: true,
   },
   {
@@ -111,6 +133,7 @@ const fallbackOffers: HomepageBanner[] = [
     cta_text_en: 'Order Now',
     link_url: '/providers?category=vegetables_fruits',
     image_position: 'end',
+    image_size: 'medium',
     has_glassmorphism: true,
   },
 ]
@@ -212,8 +235,13 @@ function BannerCard({
     ? 'bg-slate-800 text-white hover:bg-slate-700'
     : 'bg-white text-slate-900 hover:bg-white/95'
 
-  const imageOnStart = banner.image_position === 'start'
-  const imageOnBackground = banner.image_position === 'background'
+  const imagePosition = banner.image_position || 'end'
+  const imageSize = banner.image_size || 'medium'
+  const sizeConfig = IMAGE_SIZE_CONFIG[imageSize]
+
+  const imageOnStart = imagePosition === 'start'
+  const imageOnCenter = imagePosition === 'center'
+  const imageOnBackground = imagePosition === 'background'
 
   const CardContent = (
     <motion.div
@@ -245,11 +273,11 @@ function BannerCard({
       {/* Content Container */}
       <div className={`
         relative z-10 h-full p-5 md:p-6
-        flex ${imageOnStart ? 'flex-row-reverse' : 'flex-row'}
-        items-center justify-between gap-4
+        flex ${imageOnCenter ? 'flex-col' : imageOnStart ? 'flex-row-reverse' : 'flex-row'}
+        items-center ${imageOnCenter ? 'justify-center text-center' : 'justify-between'} gap-4
       `}>
         {/* Text Content */}
-        <div className={`flex-1 ${imageOnStart ? 'text-end' : 'text-start'}`}>
+        <div className={`${imageOnCenter ? '' : 'flex-1'} ${imageOnCenter ? 'text-center' : imageOnStart ? 'text-end' : 'text-start'}`}>
           {/* Badge */}
           {badgeText && (
             <div className={`
@@ -305,14 +333,13 @@ function BannerCard({
         {/* Product Image (Subtle 3D Effect) */}
         {!imageOnBackground && banner.image_url && (
           <div className={`
-            relative
-            ${isDesktop ? 'w-36 h-36 md:w-40 md:h-40' : 'w-28 h-28 sm:w-32 sm:h-32'}
-            flex-shrink-0
+            relative flex-shrink-0 flex items-center justify-center
+            ${isDesktop ? sizeConfig.desktopClass : sizeConfig.mobileClass}
           `}>
             <motion.img
               src={banner.image_url}
               alt={title}
-              className="w-full h-full object-contain transform translate-y-1"
+              className="max-w-full max-h-full object-contain"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.3 }}
@@ -523,18 +550,23 @@ export function OffersCarousel({
     fetchBanners()
   }, [propBanners, isLocationLoading, governorateId, cityId])
 
-  // Auto-play logic - SIMPLIFIED
+  // Auto-play logic - RTL aware
   useEffect(() => {
     if (!autoPlay || banners.length <= 1 || isPaused || (isDesktop && isHovered)) {
       return
     }
 
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % banners.length)
+      // In RTL, move in reverse direction for natural feel
+      if (isRTL) {
+        setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
+      } else {
+        setCurrentIndex((prev) => (prev + 1) % banners.length)
+      }
     }, autoPlayInterval)
 
     return () => clearInterval(timer)
-  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered])
+  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered, isRTL])
 
   // Scroll to current index (auto-play and programmatic navigation)
   useEffect(() => {
