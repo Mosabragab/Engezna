@@ -2,6 +2,7 @@
   <defs>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400&amp;display=swap');
       .icon-bg { fill: #009DE0; }
       .icon-letter { fill: #FFFFFF; font-family: 'Aref Ruqaa', serif; font-weight: bold; }
       .logo-text { fill: #FFFFFF; font-family: 'Aref Ruqaa', serif; font-weight: bold; }
