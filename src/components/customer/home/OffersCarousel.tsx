@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
+import { useUserLocation } from '@/lib/contexts/LocationContext'
 
 // Helper function to calculate color luminance and determine if text should be dark or light
 function getContrastTextColor(hexColor: string): 'light' | 'dark' {
@@ -425,6 +426,9 @@ export function OffersCarousel({
   const locale = useLocale()
   const isRTL = locale === 'ar'
 
+  // Get user's location for banner targeting
+  const { governorateId, cityId, isLoading: isLocationLoading } = useUserLocation()
+
   const [banners, setBanners] = useState<HomepageBanner[]>(propBanners || [])
   const [isLoading, setIsLoading] = useState(!propBanners)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -446,7 +450,7 @@ export function OffersCarousel({
     return () => window.removeEventListener('resize', checkDesktop)
   }, [])
 
-  // Fetch banners from database
+  // Fetch banners from database - filtered by user's location
   useEffect(() => {
     if (propBanners) {
       setBanners(propBanners)
@@ -454,9 +458,27 @@ export function OffersCarousel({
       return
     }
 
+    // Wait for location to load before fetching banners
+    if (isLocationLoading) return
+
     async function fetchBanners() {
       try {
         const supabase = createClient()
+
+        // Try to use the RPC function if available (more efficient)
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('get_banners_for_location', {
+            p_governorate_id: governorateId || null,
+            p_city_id: cityId || null,
+          })
+
+        if (!rpcError && rpcData && rpcData.length > 0) {
+          setBanners(rpcData)
+          setIsLoading(false)
+          return
+        }
+
+        // Fallback: manual filtering if RPC not available
         const { data, error } = await supabase
           .from('homepage_banners')
           .select('*')
@@ -467,8 +489,25 @@ export function OffersCarousel({
 
         if (error) throw error
 
-        if (data && data.length > 0) {
-          setBanners(data)
+        // Filter by location on client side
+        const filteredData = (data || []).filter(banner => {
+          // National banners (no location restriction)
+          if (!banner.governorate_id && !banner.city_id) return true
+
+          // User has no location set - only show national banners
+          if (!governorateId) return false
+
+          // Governorate-level banners
+          if (banner.governorate_id === governorateId && !banner.city_id) return true
+
+          // City-level banners
+          if (banner.governorate_id === governorateId && banner.city_id === cityId) return true
+
+          return false
+        })
+
+        if (filteredData.length > 0) {
+          setBanners(filteredData)
         } else {
           setBanners(fallbackOffers)
         }
@@ -480,7 +519,7 @@ export function OffersCarousel({
     }
 
     fetchBanners()
-  }, [propBanners])
+  }, [propBanners, isLocationLoading, governorateId, cityId])
 
   // Auto-play logic - SIMPLIFIED
   useEffect(() => {

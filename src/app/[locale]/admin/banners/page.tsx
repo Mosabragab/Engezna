@@ -93,6 +93,23 @@ interface HomepageBanner {
   starts_at: string
   ends_at: string | null
   created_at: string
+  governorate_id: string | null
+  city_id: string | null
+}
+
+interface Governorate {
+  id: string
+  name_ar: string
+  name_en: string
+  is_active: boolean
+}
+
+interface City {
+  id: string
+  name_ar: string
+  name_en: string
+  governorate_id: string
+  is_active: boolean
 }
 
 type FilterStatus = 'all' | 'active' | 'inactive' | 'expired' | 'scheduled'
@@ -120,6 +137,8 @@ const defaultFormData = {
   is_active: true,
   starts_at: new Date().toISOString().split('T')[0],
   ends_at: '',
+  governorate_id: '' as string,
+  city_id: '' as string,
 }
 
 // Live Preview Component
@@ -286,6 +305,11 @@ export default function AdminBannersPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('upload')
 
+  // Location targeting state
+  const [governorates, setGovernorates] = useState<Governorate[]>([])
+  const [cities, setCities] = useState<City[]>([])
+  const [filteredCities, setFilteredCities] = useState<City[]>([])
+
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -295,11 +319,40 @@ export default function AdminBannersPage() {
 
   useEffect(() => {
     checkAuth()
+    loadLocations()
   }, [])
 
   useEffect(() => {
     filterBanners()
   }, [banners, searchQuery, statusFilter])
+
+  // Filter cities when governorate changes
+  useEffect(() => {
+    if (formData.governorate_id) {
+      setFilteredCities(cities.filter(c => c.governorate_id === formData.governorate_id))
+    } else {
+      setFilteredCities([])
+    }
+    // Reset city when governorate changes
+    if (formData.city_id) {
+      const cityBelongsToGovernorate = cities.some(
+        c => c.id === formData.city_id && c.governorate_id === formData.governorate_id
+      )
+      if (!cityBelongsToGovernorate) {
+        setFormData(prev => ({ ...prev, city_id: '' }))
+      }
+    }
+  }, [formData.governorate_id, cities])
+
+  async function loadLocations() {
+    const supabase = createClient()
+    const [govResult, cityResult] = await Promise.all([
+      supabase.from('governorates').select('*').eq('is_active', true).order('name_ar'),
+      supabase.from('cities').select('*').eq('is_active', true).order('name_ar'),
+    ])
+    setGovernorates(govResult.data || [])
+    setCities(cityResult.data || [])
+  }
 
   async function checkAuth() {
     const supabase = createClient()
@@ -427,6 +480,8 @@ export default function AdminBannersPage() {
         is_active: formData.is_active,
         starts_at: new Date(formData.starts_at).toISOString(),
         ends_at: formData.ends_at ? new Date(formData.ends_at).toISOString() : null,
+        governorate_id: formData.governorate_id || null,
+        city_id: formData.city_id || null,
       }
 
       if (editingBanner) {
@@ -631,6 +686,8 @@ export default function AdminBannersPage() {
       ends_at: banner.ends_at
         ? new Date(banner.ends_at).toISOString().split('T')[0]
         : '',
+      governorate_id: banner.governorate_id || '',
+      city_id: banner.city_id || '',
     })
     setShowCreateModal(true)
   }
@@ -1371,6 +1428,72 @@ export default function AdminBannersPage() {
                           className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                         />
                       </div>
+                    </div>
+
+                    {/* Location Targeting */}
+                    <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                      <h4 className="font-medium text-slate-800 mb-3">
+                        {locale === 'ar' ? 'استهداف الموقع الجغرافي' : 'Location Targeting'}
+                      </h4>
+                      <p className="text-xs text-slate-500 mb-3">
+                        {locale === 'ar'
+                          ? 'حدد المحافظة والمدينة لإظهار البانر لعملاء منطقة معينة فقط. اتركه فارغاً لإظهاره للجميع.'
+                          : 'Select governorate and city to show this banner only to customers in that area. Leave empty to show to everyone.'}
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">
+                            {locale === 'ar' ? 'المحافظة' : 'Governorate'}
+                          </label>
+                          <select
+                            value={formData.governorate_id}
+                            onChange={(e) => setFormData({ ...formData, governorate_id: e.target.value, city_id: '' })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary bg-white"
+                          >
+                            <option value="">{locale === 'ar' ? 'كل مصر' : 'All Egypt'}</option>
+                            {governorates.map((gov) => (
+                              <option key={gov.id} value={gov.id}>
+                                {locale === 'ar' ? gov.name_ar : gov.name_en}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">
+                            {locale === 'ar' ? 'المدينة' : 'City'}
+                          </label>
+                          <select
+                            value={formData.city_id}
+                            onChange={(e) => setFormData({ ...formData, city_id: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
+                            disabled={!formData.governorate_id}
+                          >
+                            <option value="">
+                              {formData.governorate_id
+                                ? (locale === 'ar' ? 'كل مدن المحافظة' : 'All cities in governorate')
+                                : (locale === 'ar' ? 'اختر المحافظة أولاً' : 'Select governorate first')}
+                            </option>
+                            {filteredCities.map((city) => (
+                              <option key={city.id} value={city.id}>
+                                {locale === 'ar' ? city.name_ar : city.name_en}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      {/* Location targeting indicator */}
+                      {formData.governorate_id && (
+                        <div className="mt-3 text-xs text-primary flex items-center gap-1">
+                          <Shield className="w-3 h-3" />
+                          {formData.city_id
+                            ? (locale === 'ar'
+                                ? `سيظهر فقط لعملاء ${filteredCities.find(c => c.id === formData.city_id)?.name_ar || ''}`
+                                : `Will show only to customers in ${filteredCities.find(c => c.id === formData.city_id)?.name_en || ''}`)
+                            : (locale === 'ar'
+                                ? `سيظهر لكل عملاء ${governorates.find(g => g.id === formData.governorate_id)?.name_ar || ''}`
+                                : `Will show to all customers in ${governorates.find(g => g.id === formData.governorate_id)?.name_en || ''}`)}
+                        </div>
+                      )}
                     </div>
 
                     {/* Is Active */}
