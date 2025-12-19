@@ -40,7 +40,14 @@ import {
 export const dynamic = 'force-dynamic'
 
 type DurationType = '1_day' | '3_days' | '1_week' | '1_month'
-type ImagePosition = 'start' | 'end' | 'background'
+type ImagePosition = 'start' | 'end' | 'center'
+type ImageSize = 'small' | 'medium' | 'large'
+
+const IMAGE_SIZE_CONFIG: Record<ImageSize, { label_ar: string; label_en: string; containerClass: string; imgClass: string }> = {
+  small: { label_ar: 'صغير', label_en: 'Small', containerClass: 'w-20 h-20', imgClass: 'w-full h-full' },
+  medium: { label_ar: 'وسط', label_en: 'Medium', containerClass: 'w-28 h-28', imgClass: 'w-full h-full' },
+  large: { label_ar: 'كبير', label_en: 'Large', containerClass: 'w-36 h-36 max-h-full', imgClass: 'w-full h-full max-h-[calc(100%-1rem)]' },
+}
 
 type BannerStatus = {
   has_active_banner: boolean
@@ -120,6 +127,7 @@ const defaultFormData = {
   duration_type: '1_week' as DurationType,
   starts_at: '',
   image_position: 'end' as ImagePosition,
+  image_size: 'medium' as ImageSize,
 }
 
 export default function ProviderBannerPage() {
@@ -327,6 +335,7 @@ export default function ProviderBannerPage() {
         banner_type: 'customer',
         has_glassmorphism: true,
         image_position: formData.image_position,
+        image_size: formData.image_size,
         display_order: 999, // Will be ordered by duration priority
       }
 
@@ -747,8 +756,8 @@ export default function ProviderBannerPage() {
                   <div className="flex gap-2">
                     {[
                       { value: 'end', label_ar: 'يسار', label_en: 'Left' },
+                      { value: 'center', label_ar: 'وسط', label_en: 'Center' },
                       { value: 'start', label_ar: 'يمين', label_en: 'Right' },
-                      { value: 'background', label_ar: 'خلفية كاملة', label_en: 'Full Background' },
                     ].map((option) => (
                       <button
                         key={option.value}
@@ -763,6 +772,33 @@ export default function ProviderBannerPage() {
                         `}
                       >
                         {locale === 'ar' ? option.label_ar : option.label_en}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Image Size */}
+              {formData.image_url && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {locale === 'ar' ? 'حجم الصورة' : 'Image Size'}
+                  </label>
+                  <div className="flex gap-2">
+                    {(['small', 'medium', 'large'] as ImageSize[]).map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, image_size: size })}
+                        className={`
+                          flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all
+                          ${formData.image_size === size
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-slate-200 hover:border-slate-300'
+                          }
+                        `}
+                      >
+                        {locale === 'ar' ? IMAGE_SIZE_CONFIG[size].label_ar : IMAGE_SIZE_CONFIG[size].label_en}
                       </button>
                     ))}
                   </div>
@@ -872,28 +908,23 @@ export default function ProviderBannerPage() {
                     background: `linear-gradient(135deg, ${formData.gradient_start} 0%, ${formData.gradient_end} 100%)`,
                   }}
                 >
-                  {/* Background Image */}
-                  {formData.image_position === 'background' && formData.image_url && (
-                    <div className="absolute inset-0">
-                      <img
-                        src={formData.image_url}
-                        alt=""
-                        className="w-full h-full object-cover opacity-30"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                    </div>
-                  )}
-
                   <div className="absolute -top-10 -end-10 w-32 h-32 bg-white/10 rounded-full blur-sm" />
                   <div className="absolute -bottom-6 -start-6 w-24 h-24 bg-white/10 rounded-full blur-sm" />
 
-                  <div className={`
-                    relative z-10 h-full p-4 flex items-center justify-between gap-3
-                    ${formData.image_position === 'start' ? 'flex-row-reverse' : 'flex-row'}
-                  `}>
-                    <div className={`flex-1 ${formData.image_position === 'start' ? 'text-end' : 'text-start'}`}>
+                  {/* Center Position Layout */}
+                  {formData.image_position === 'center' ? (
+                    <div className="relative z-10 h-full p-4 flex flex-col items-center justify-center text-center">
+                      {formData.image_url && (
+                        <div className={`${IMAGE_SIZE_CONFIG[formData.image_size].containerClass} flex-shrink-0 mb-2`}>
+                          <img
+                            src={formData.image_url}
+                            alt=""
+                            className={`${IMAGE_SIZE_CONFIG[formData.image_size].imgClass} object-contain drop-shadow-xl`}
+                          />
+                        </div>
+                      )}
                       {formData.badge_text_ar && (
-                        <div className="inline-block mb-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-2.5 py-1">
+                        <div className="inline-block mb-1 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-2.5 py-1">
                           <span className="text-white font-bold text-xs">
                             {locale === 'ar' ? formData.badge_text_ar : formData.badge_text_en}
                           </span>
@@ -903,7 +934,7 @@ export default function ProviderBannerPage() {
                         {(locale === 'ar' ? formData.title_ar : formData.title_en) || (locale === 'ar' ? 'عنوان العرض' : 'Offer Title')}
                       </h3>
                       {formData.description_ar && (
-                        <p className="text-white/85 text-xs mb-2 line-clamp-2">
+                        <p className="text-white/85 text-xs mb-2 line-clamp-1">
                           {locale === 'ar' ? formData.description_ar : formData.description_en}
                         </p>
                       )}
@@ -913,23 +944,50 @@ export default function ProviderBannerPage() {
                         </button>
                       )}
                     </div>
+                  ) : (
+                    /* Left/Right Position Layout */
+                    <div className={`
+                      relative z-10 h-full p-4 flex items-center justify-between gap-3
+                      ${formData.image_position === 'start' ? 'flex-row-reverse' : 'flex-row'}
+                    `}>
+                      <div className={`flex-1 ${formData.image_position === 'start' ? 'text-end' : 'text-start'}`}>
+                        {formData.badge_text_ar && (
+                          <div className="inline-block mb-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-2.5 py-1">
+                            <span className="text-white font-bold text-xs">
+                              {locale === 'ar' ? formData.badge_text_ar : formData.badge_text_en}
+                            </span>
+                          </div>
+                        )}
+                        <h3 className="text-white font-bold text-base mb-1">
+                          {(locale === 'ar' ? formData.title_ar : formData.title_en) || (locale === 'ar' ? 'عنوان العرض' : 'Offer Title')}
+                        </h3>
+                        {formData.description_ar && (
+                          <p className="text-white/85 text-xs mb-2 line-clamp-2">
+                            {locale === 'ar' ? formData.description_ar : formData.description_en}
+                          </p>
+                        )}
+                        {formData.cta_text_ar && (
+                          <button className="bg-white text-slate-900 font-semibold px-3 py-1.5 rounded-lg text-xs">
+                            {locale === 'ar' ? formData.cta_text_ar : formData.cta_text_en}
+                          </button>
+                        )}
+                      </div>
 
-                    {formData.image_position !== 'background' && (
-                      formData.image_url ? (
-                        <div className="w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0">
+                      {formData.image_url ? (
+                        <div className={`${IMAGE_SIZE_CONFIG[formData.image_size].containerClass} flex-shrink-0`}>
                           <img
                             src={formData.image_url}
                             alt=""
-                            className="w-full h-full object-contain drop-shadow-xl"
+                            className={`${IMAGE_SIZE_CONFIG[formData.image_size].imgClass} object-contain drop-shadow-xl`}
                           />
                         </div>
                       ) : (
                         <div className="w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0 bg-white/10 rounded-xl flex items-center justify-center">
                           <ImageIcon className="w-10 h-10 text-white/50" />
                         </div>
-                      )
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
