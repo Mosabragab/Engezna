@@ -67,19 +67,19 @@ interface HomepageBanner {
   display_order?: number
 }
 
-// Image size configuration - matches admin/provider pages
-const IMAGE_SIZE_CONFIG: Record<ImageSize, { containerClass: string; mobileClass: string }> = {
+// Image size configuration - uses fixed sizes for consistent display
+const IMAGE_SIZE_CONFIG: Record<ImageSize, { desktopClass: string; mobileClass: string }> = {
   small: {
-    containerClass: 'h-[40%] max-h-[40%]',
-    mobileClass: 'h-[35%] max-h-[35%]'
+    desktopClass: 'w-28 h-28 md:w-32 md:h-32',
+    mobileClass: 'w-20 h-20 sm:w-24 sm:h-24'
   },
   medium: {
-    containerClass: 'h-[50%] max-h-[50%]',
-    mobileClass: 'h-[45%] max-h-[45%]'
+    desktopClass: 'w-36 h-36 md:w-40 md:h-40',
+    mobileClass: 'w-28 h-28 sm:w-32 sm:h-32'
   },
   large: {
-    containerClass: 'h-[60%] max-h-[60%]',
-    mobileClass: 'h-[55%] max-h-[55%]'
+    desktopClass: 'w-44 h-44 md:w-52 md:h-52',
+    mobileClass: 'w-36 h-36 sm:w-40 sm:h-40'
   },
 }
 
@@ -334,15 +334,12 @@ function BannerCard({
         {!imageOnBackground && banner.image_url && (
           <div className={`
             relative flex-shrink-0
-            ${imageOnCenter
-              ? `${isDesktop ? sizeConfig.containerClass : sizeConfig.mobileClass} w-auto aspect-square`
-              : `${isDesktop ? sizeConfig.containerClass : sizeConfig.mobileClass} w-auto aspect-square`
-            }
+            ${isDesktop ? sizeConfig.desktopClass : sizeConfig.mobileClass}
           `}>
             <motion.img
               src={banner.image_url}
               alt={title}
-              className="h-full w-auto object-contain transform translate-y-1"
+              className="w-full h-full object-contain"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.3 }}
