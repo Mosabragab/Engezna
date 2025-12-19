@@ -28,6 +28,11 @@ logo-kit/
 │   ├── icon-dark-bg.svg
 │   └── icon-transparent.svg
 │
+├── logo-icon-text/        # أيقونة بالاسم الكامل "إنجزنا"
+│   ├── icon-text-blue-bg.svg
+│   ├── icon-text-dark-bg.svg
+│   └── icon-text-white-bg.svg
+│
 ├── logo-text/             # النص فقط "إنجزنا"
 │   ├── text-color.svg     # نص غامق
 │   ├── text-white.svg     # نص أبيض
@@ -59,10 +64,11 @@ logo-kit/
 
 ## 🔤 Icon Variants | أنواع الأيقونة
 
-| Type | Letter | Usage |
-|------|--------|-------|
+| Type | Content | Usage |
+|------|---------|-------|
 | **English Icon** | E | International markets, English UI |
 | **Arabic Icon** | إ | Arabic markets, Arabic UI |
+| **Full Name Icon** | إنجزنا | Brand-focused, social media profiles |
 
 ---
 
