@@ -223,8 +223,8 @@ function BannerCard({
         ${isDesktop && !isActive ? 'opacity-70' : 'opacity-100'}
       `}
       style={gradientStyle}
-      whileHover={isDesktop ? { scale: 1.02 } : undefined}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      whileHover={isDesktop ? { scale: 1.01 } : undefined}
+      transition={{ type: 'tween', duration: 0.4, ease: 'easeOut' }}
     >
       {/* Background Image (if image_position is 'background') */}
       {imageOnBackground && banner.image_url && (
@@ -293,8 +293,9 @@ function BannerCard({
                 hover:shadow-xl
                 transition-all duration-200
               `}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }}
             >
               {ctaText}
             </motion.button>
@@ -374,9 +375,9 @@ function LiquidProgressIndicator({
               width,
               opacity: isActive ? 1 : 0.5 + (1 - Math.min(distance, 1)) * 0.3
             }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.9 }}
+            transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
           >
             {/* Active fill */}
             <motion.div
@@ -386,9 +387,9 @@ function LiquidProgressIndicator({
                 scaleX: isActive ? 1 : 0,
               }}
               transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 30,
+                type: 'tween',
+                duration: 0.4,
+                ease: 'easeInOut',
               }}
               style={{ originX: isRTL ? 1 : 0 }}
             />
@@ -483,6 +484,7 @@ export function OffersCarousel({
           .from('homepage_banners')
           .select('*')
           .eq('is_active', true)
+          .eq('banner_type', 'customer')
           .lte('starts_at', new Date().toISOString())
           .or(`ends_at.is.null,ends_at.gte.${new Date().toISOString()}`)
           .order('display_order', { ascending: true })
@@ -737,16 +739,16 @@ export function OffersCarousel({
               {visibleBanners.map((banner, idx) => (
                 <motion.div
                   key={`${banner.id}-${(banner as any)._index}`}
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.98 }}
                   animate={{
                     opacity: 1,
-                    scale: idx === 0 ? 1 : 0.98,
+                    scale: idx === 0 ? 1 : 0.99,
                   }}
-                  exit={{ opacity: 0, scale: 0.95 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
                   transition={{
-                    type: 'spring',
-                    stiffness: 300,
-                    damping: 25,
+                    type: 'tween',
+                    duration: 0.6,
+                    ease: [0.25, 0.1, 0.25, 1],
                   }}
                 >
                   <BannerCard
