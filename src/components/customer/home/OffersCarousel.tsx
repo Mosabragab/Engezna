@@ -4,14 +4,7 @@ import { useLocale } from 'next-intl'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import {
-  motion,
-  AnimatePresence,
-  useMotionValue,
-  useTransform,
-  useSpring,
-  animate,
-} from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 
 // Types
@@ -273,7 +266,6 @@ function BannerCard({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.3 }}
               style={{
-                // Subtle gradient shadow instead of solid black
                 filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15)) drop-shadow(0 16px 32px rgba(0,0,0,0.1))',
               }}
             />
@@ -298,82 +290,61 @@ function BannerCard({
 // Liquid Progress Indicator Component
 function LiquidProgressIndicator({
   totalItems,
-  scrollProgress,
   currentIndex,
+  scrollProgress,
   onSelect,
   autoPlay,
   autoPlayInterval,
   isRTL,
 }: {
   totalItems: number
-  scrollProgress: ReturnType<typeof useMotionValue<number>>
   currentIndex: number
+  scrollProgress: number
   onSelect: (index: number) => void
   autoPlay: boolean
   autoPlayInterval: number
   isRTL: boolean
 }) {
-  // Spring for smooth liquid effect
-  const springProgress = useSpring(scrollProgress, {
-    stiffness: 300,
-    damping: 30,
-    mass: 0.5,
-  })
-
-  // Calculate indicator positions based on scroll
-  const getIndicatorStyle = (index: number) => {
-    // Transform scroll progress to continuous index (0 to totalItems-1)
-    const continuousIndex = useTransform(
-      springProgress,
-      [0, 1],
-      isRTL ? [totalItems - 1, 0] : [0, totalItems - 1]
-    )
-
-    // Calculate distance from current position
-    const distance = useTransform(continuousIndex, (latest) => {
-      return Math.abs(latest - index)
-    })
-
-    // Width: expands when close, shrinks when far
-    const width = useTransform(distance, [0, 0.5, 1, 2], [24, 16, 8, 8])
-
-    // Opacity: full when active, reduced when far
-    const opacity = useTransform(distance, [0, 1, 2], [1, 0.6, 0.4])
-
-    return { width, opacity }
-  }
-
   return (
     <div className="flex items-center justify-center gap-1.5 mt-4">
       {Array.from({ length: totalItems }).map((_, index) => {
-        const { width, opacity } = getIndicatorStyle(index)
+        // Calculate distance for liquid effect
+        const distance = Math.abs(scrollProgress - index)
+        const isActive = index === currentIndex
+
+        // Width based on distance (liquid stretch effect)
+        const width = isActive ? 24 : Math.max(8, 16 - distance * 8)
 
         return (
           <motion.button
             key={index}
             onClick={() => onSelect(index)}
             className="relative h-1.5 rounded-full overflow-hidden bg-slate-200"
-            style={{ width, opacity }}
+            animate={{
+              width,
+              opacity: isActive ? 1 : 0.5 + (1 - Math.min(distance, 1)) * 0.3
+            }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             whileHover={{ scale: 1.2 }}
             whileTap={{ scale: 0.9 }}
           >
-            {/* Active fill with liquid stretch */}
+            {/* Active fill */}
             <motion.div
-              className="absolute inset-0 bg-primary rounded-full origin-left"
+              className="absolute inset-0 bg-primary rounded-full"
               initial={false}
               animate={{
-                scaleX: index === currentIndex ? 1 : 0,
-                originX: isRTL ? 1 : 0,
+                scaleX: isActive ? 1 : 0,
               }}
               transition={{
                 type: 'spring',
                 stiffness: 400,
                 damping: 30,
               }}
+              style={{ originX: isRTL ? 1 : 0 }}
             />
 
             {/* Auto-play progress fill */}
-            {index === currentIndex && autoPlay && (
+            {isActive && autoPlay && (
               <motion.div
                 className="absolute inset-0 bg-primary/60 rounded-full"
                 initial={{ scaleX: 0 }}
@@ -411,13 +382,9 @@ export function OffersCarousel({
   const [isPaused, setIsPaused] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Motion value for continuous scroll tracking
-  const scrollProgress = useMotionValue(0)
 
   const sectionTitle = title || (locale === 'ar' ? 'العروض' : 'Offers')
 
@@ -456,7 +423,6 @@ export function OffersCarousel({
           setBanners(fallbackOffers)
         }
       } catch (error) {
-        // Use fallback on error
         setBanners(fallbackOffers)
       } finally {
         setIsLoading(false)
@@ -466,82 +432,67 @@ export function OffersCarousel({
     fetchBanners()
   }, [propBanners])
 
-  // Auto-play logic
+  // Auto-play logic - SIMPLIFIED
   useEffect(() => {
-    if (!autoPlay || banners.length <= 1 || isPaused || isDragging || (isDesktop && isHovered)) {
-      if (autoPlayRef.current) {
-        clearInterval(autoPlayRef.current)
-        autoPlayRef.current = null
-      }
+    if (!autoPlay || banners.length <= 1 || isPaused || (isDesktop && isHovered)) {
       return
     }
 
-    autoPlayRef.current = setInterval(() => {
+    const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % banners.length)
     }, autoPlayInterval)
 
-    return () => {
-      if (autoPlayRef.current) {
-        clearInterval(autoPlayRef.current)
-      }
-    }
-  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDragging, isDesktop, isHovered])
+    return () => clearInterval(timer)
+  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered])
 
-  // Update scroll progress when currentIndex changes (programmatic)
+  // Scroll to current index
   useEffect(() => {
-    if (banners.length <= 1) return
+    if (isDesktop || !scrollContainerRef.current) return
 
-    const targetProgress = currentIndex / (banners.length - 1)
-    animate(scrollProgress, isRTL ? 1 - targetProgress : targetProgress, {
-      type: 'spring',
-      stiffness: 300,
-      damping: 30,
+    const container = scrollContainerRef.current
+    const cards = container.children
+    if (cards.length === 0) return
+
+    const card = cards[currentIndex] as HTMLElement
+    if (!card) return
+
+    // Calculate scroll position
+    const cardRect = card.getBoundingClientRect()
+    const containerRect = container.getBoundingClientRect()
+
+    // Scroll the card to center
+    const scrollLeft = card.offsetLeft - (containerRect.width - cardRect.width) / 2
+
+    container.scrollTo({
+      left: scrollLeft,
+      behavior: 'smooth',
     })
-  }, [currentIndex, banners.length, isRTL, scrollProgress])
 
-  // Scroll to index on change (mobile snap scroll)
-  useEffect(() => {
-    if (!isDesktop && scrollContainerRef.current && !isDragging) {
-      const container = scrollContainerRef.current
-      const cardWidth = container.offsetWidth * 0.85 + 16 // 85% + gap
-      const scrollPosition = currentIndex * cardWidth
+    // Update scroll progress
+    setScrollProgress(currentIndex)
+  }, [currentIndex, isDesktop, banners.length])
 
-      container.scrollTo({
-        left: isRTL ? container.scrollWidth - container.offsetWidth - scrollPosition : scrollPosition,
-        behavior: 'smooth',
-      })
-    }
-  }, [currentIndex, isDesktop, isRTL, isDragging])
-
-  // Handle continuous scroll tracking for liquid indicator
+  // Handle scroll events for snap detection
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current || isDesktop) return
 
     const container = scrollContainerRef.current
-    const maxScroll = container.scrollWidth - container.offsetWidth
+    const containerWidth = container.offsetWidth
+    const scrollLeft = container.scrollLeft
+    const cardWidth = containerWidth * 0.85 + 16 // 85% width + gap
 
-    if (maxScroll <= 0) return
-
-    // Calculate progress (0 to 1)
-    let progress = container.scrollLeft / maxScroll
-    if (isRTL) {
-      progress = 1 - progress
-    }
-
-    // Update motion value for liquid effect
-    scrollProgress.set(progress)
-
-    // Calculate current index from scroll position
-    const cardWidth = container.offsetWidth * 0.85 + 16
-    const scrollLeft = isRTL
-      ? container.scrollWidth - container.offsetWidth - container.scrollLeft
-      : container.scrollLeft
+    // Calculate current card based on scroll position
     const newIndex = Math.round(scrollLeft / cardWidth)
+    const clampedIndex = Math.max(0, Math.min(newIndex, banners.length - 1))
 
-    if (newIndex !== currentIndex && newIndex >= 0 && newIndex < banners.length) {
-      setCurrentIndex(newIndex)
+    // Update scroll progress for liquid effect
+    const progress = scrollLeft / (cardWidth * (banners.length - 1))
+    setScrollProgress(progress * (banners.length - 1))
+
+    if (clampedIndex !== currentIndex) {
+      setCurrentIndex(clampedIndex)
     }
-  }, [currentIndex, banners.length, isDesktop, isRTL, scrollProgress])
+  }, [currentIndex, banners.length, isDesktop])
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
@@ -551,15 +502,10 @@ export function OffersCarousel({
     setCurrentIndex((prev) => (prev + 1) % banners.length)
   }
 
-  // Pause on interaction
-  const handleInteractionStart = () => {
-    setIsPaused(true)
-    setIsDragging(true)
-  }
-
-  const handleInteractionEnd = () => {
-    setIsDragging(false)
-    setTimeout(() => setIsPaused(false), 3000)
+  // Pause handlers
+  const handleTouchStart = () => setIsPaused(true)
+  const handleTouchEnd = () => {
+    setTimeout(() => setIsPaused(false), 2000)
   }
 
   if (isLoading) {
@@ -613,7 +559,7 @@ export function OffersCarousel({
             </button>
           )}
 
-          {/* Desktop Navigation Arrows (expanded touch target) */}
+          {/* Desktop Navigation Arrows */}
           {isDesktop && banners.length > 3 && (
             <motion.div
               className="flex items-center gap-2"
@@ -645,11 +591,11 @@ export function OffersCarousel({
         className="relative"
         onMouseEnter={() => {
           setIsHovered(true)
-          setIsPaused(true)
+          if (isDesktop) setIsPaused(true)
         }}
         onMouseLeave={() => {
           setIsHovered(false)
-          setTimeout(() => setIsPaused(false), 1000)
+          if (isDesktop) setTimeout(() => setIsPaused(false), 1000)
         }}
       >
         {/* Mobile: Scroll Snap Carousel */}
@@ -669,8 +615,8 @@ export function OffersCarousel({
               WebkitOverflowScrolling: 'touch',
             }}
             onScroll={handleScroll}
-            onTouchStart={handleInteractionStart}
-            onTouchEnd={handleInteractionEnd}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
             {banners.map((banner, index) => (
               <div
@@ -724,10 +670,10 @@ export function OffersCarousel({
       {banners.length > 1 && (
         <LiquidProgressIndicator
           totalItems={banners.length}
-          scrollProgress={scrollProgress}
           currentIndex={currentIndex}
+          scrollProgress={scrollProgress}
           onSelect={setCurrentIndex}
-          autoPlay={autoPlay && !isPaused && !isDragging}
+          autoPlay={autoPlay && !isPaused}
           autoPlayInterval={autoPlayInterval}
           isRTL={isRTL}
         />
