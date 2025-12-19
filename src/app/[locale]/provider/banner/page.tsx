@@ -44,11 +44,32 @@ type DurationType = '1_day' | '3_days' | '1_week' | '1_month'
 type ImagePosition = 'start' | 'end' | 'center'
 type ImageSize = 'small' | 'medium' | 'large'
 
-// Image sizes using fixed pixel values for consistent display
-const IMAGE_SIZE_CONFIG: Record<ImageSize, { label_ar: string; label_en: string; containerClass: string; imgClass: string }> = {
-  small: { label_ar: 'صغير', label_en: 'Small', containerClass: 'w-20 h-20 sm:w-24 sm:h-24', imgClass: 'max-w-full max-h-full object-contain' },
-  medium: { label_ar: 'وسط', label_en: 'Medium', containerClass: 'w-28 h-28 sm:w-32 sm:h-32', imgClass: 'max-w-full max-h-full object-contain' },
-  large: { label_ar: 'كبير', label_en: 'Large', containerClass: 'w-36 h-36 sm:w-40 sm:h-40', imgClass: 'max-w-full max-h-full object-contain' },
+// Unified image size configuration - relative to banner height for consistency
+// These settings match the customer-facing carousel for accurate preview
+const IMAGE_SIZE_CONFIG: Record<ImageSize, {
+  label_ar: string
+  label_en: string
+  maxHeight: string
+  maxWidth: string
+}> = {
+  small: {
+    label_ar: 'صغير',
+    label_en: 'Small',
+    maxHeight: '45%',
+    maxWidth: '25%'
+  },
+  medium: {
+    label_ar: 'وسط',
+    label_en: 'Medium',
+    maxHeight: '55%',
+    maxWidth: '30%'
+  },
+  large: {
+    label_ar: 'كبير',
+    label_en: 'Large',
+    maxHeight: '65%',
+    maxWidth: '35%'
+  },
 }
 
 type BannerStatus = {
@@ -1037,11 +1058,17 @@ export default function ProviderBannerPage() {
                   {formData.image_position === 'center' ? (
                     <div className="relative z-10 h-full p-4 flex flex-col items-center justify-center text-center">
                       {formData.image_url && (
-                        <div className={`${IMAGE_SIZE_CONFIG[formData.image_size].containerClass} flex-shrink-0 mb-2`}>
+                        <div
+                          className="flex-shrink-0 mb-2 flex items-center justify-center"
+                          style={{
+                            height: IMAGE_SIZE_CONFIG[formData.image_size].maxHeight,
+                            maxWidth: '40%'
+                          }}
+                        >
                           <img
                             src={formData.image_url}
                             alt=""
-                            className={`${IMAGE_SIZE_CONFIG[formData.image_size].imgClass} object-contain drop-shadow-xl`}
+                            className="w-auto h-full max-w-full object-contain drop-shadow-xl"
                           />
                         </div>
                       )}
@@ -1096,11 +1123,17 @@ export default function ProviderBannerPage() {
                       </div>
 
                       {formData.image_url ? (
-                        <div className={`${IMAGE_SIZE_CONFIG[formData.image_size].containerClass} flex-shrink-0`}>
+                        <div
+                          className="flex-shrink-0 flex items-center justify-center"
+                          style={{
+                            height: IMAGE_SIZE_CONFIG[formData.image_size].maxHeight,
+                            maxWidth: IMAGE_SIZE_CONFIG[formData.image_size].maxWidth
+                          }}
+                        >
                           <img
                             src={formData.image_url}
                             alt=""
-                            className={`${IMAGE_SIZE_CONFIG[formData.image_size].imgClass} object-contain drop-shadow-xl`}
+                            className="w-auto h-full max-w-full object-contain drop-shadow-xl"
                           />
                         </div>
                       ) : (
