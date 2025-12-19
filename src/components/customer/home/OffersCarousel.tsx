@@ -432,6 +432,7 @@ export function OffersCarousel({
   const [isDesktop, setIsDesktop] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false)
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -505,6 +506,9 @@ export function OffersCarousel({
     const card = cards[currentIndex] as HTMLElement
     if (!card) return
 
+    // Set flag to prevent handleScroll from interfering
+    setIsAutoScrolling(true)
+
     // Use scrollIntoView for better cross-browser and RTL support
     card.scrollIntoView({
       behavior: 'smooth',
@@ -514,11 +518,19 @@ export function OffersCarousel({
 
     // Update scroll progress
     setScrollProgress(currentIndex)
+
+    // Reset flag after animation completes
+    const resetTimer = setTimeout(() => {
+      setIsAutoScrolling(false)
+    }, 500)
+
+    return () => clearTimeout(resetTimer)
   }, [currentIndex, isDesktop, banners.length])
 
   // Handle scroll events for snap detection
   const handleScroll = useCallback(() => {
-    if (!scrollContainerRef.current || isDesktop) return
+    // Skip if we're auto-scrolling or on desktop
+    if (!scrollContainerRef.current || isDesktop || isAutoScrolling) return
 
     const container = scrollContainerRef.current
     const containerWidth = container.offsetWidth
@@ -536,7 +548,7 @@ export function OffersCarousel({
     if (clampedIndex !== currentIndex) {
       setCurrentIndex(clampedIndex)
     }
-  }, [currentIndex, banners.length, isDesktop])
+  }, [currentIndex, banners.length, isDesktop, isAutoScrolling])
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
