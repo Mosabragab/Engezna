@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engezna Logo Exporter | مُصدّر شعار إنجزنا</title>
+  <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&family=Noto+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --engezna-blue: #009DE0;
+      --dark-blue: #0077B6;
+      --charcoal: #0F172A;
+      --white: #FFFFFF;
+      --light-gray: #F8FAFC;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans Arabic', sans-serif;
+      background: var(--light-gray);
+      padding: 20px;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    h1 { text-align: center; margin-bottom: 10px; color: var(--charcoal); }
+    .subtitle { text-align: center; color: #64748B; margin-bottom: 30px; }
+
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .export-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .export-card h3 {
+      font-size: 0.9rem;
+      color: #64748B;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .export-card h3 span {
+      background: var(--engezna-blue);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .logo-container.light { background: var(--white); border: 1px solid #E2E8F0; }
+    .logo-container.dark { background: var(--charcoal); }
+    .logo-container.blue { background: var(--engezna-blue); }
+    .logo-container.gradient { background: linear-gradient(135deg, var(--engezna-blue), var(--dark-blue)); }
+
+    /* Logo Styles */
+    .logo-text {
+      font-family: 'Aref Ruqaa', serif;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .logo-text.charcoal { color: var(--charcoal); }
+    .logo-text.white { color: var(--white); }
+    .logo-text.blue { color: var(--engezna-blue); }
+
+    .logo-text.size-xl { font-size: 64px; }
+    .logo-text.size-lg { font-size: 48px; }
+    .logo-text.size-md { font-size: 36px; }
+
+    /* Icon Styles */
+    .app-icon {
+      border-radius: 22%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Aref Ruqaa', serif;
+      font-weight: bold;
+    }
+
+    .app-icon.blue-bg { background: var(--engezna-blue); color: white; }
+    .app-icon.dark-bg { background: var(--charcoal); color: white; }
+    .app-icon.white-bg { background: var(--white); color: var(--engezna-blue); border: 1px solid #E2E8F0; }
+
+    /* Combined Logo */
+    .combined-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .combined-logo .icon {
+      width: 56px;
+      height: 56px;
+      background: var(--engezna-blue);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      font-family: 'Aref Ruqaa', serif;
+    }
+
+    /* Primary Logo with Tagline */
+    .primary-logo {
+      text-align: center;
+    }
+
+    .primary-logo .main-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .primary-logo .tagline {
+      font-family: 'Noto Sans Arabic', sans-serif;
+      font-size: 16px;
+      margin-top: 8px;
+    }
+
+    .primary-logo .tagline.gray { color: #64748B; }
+    .primary-logo .tagline.light { color: rgba(255,255,255,0.7); }
+
+    /* Download Button */
+    .download-btn {
+      width: 100%;
+      padding: 10px;
+      background: var(--engezna-blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Noto Sans Arabic', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .download-btn:hover { background: var(--dark-blue); }
+    .download-btn:disabled { background: #94A3B8; cursor: not-allowed; }
+
+    .size-info {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #94A3B8;
+      margin-top: 8px;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      color: var(--charcoal);
+      margin: 40px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--engezna-blue);
+    }
+
+    .download-all {
+      display: block;
+      width: 100%;
+      max-width: 400px;
+      margin: 30px auto;
+      padding: 15px;
+      background: var(--charcoal);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Noto Sans Arabic', sans-serif;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .download-all:hover { background: #1E293B; }
+
+    .instructions {
+      background: #FEF3C7;
+      border: 1px solid #F59E0B;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 30px;
+      color: #64748B;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>مُصدّر شعار إنجزنا</h1>
+    <p class="subtitle">اضغط على أي زر لتحميل الشعار بصيغة PNG</p>
+
+    <div class="instructions">
+      <strong>تعليمات:</strong> انتظر حتى يتم تحميل الخطوط بالكامل (3-5 ثواني) ثم اضغط على زر التحميل
+    </div>
+
+    <!-- Text Logos -->
+    <h2 class="section-title">الشعار النصي - Text Logo</h2>
+    <div class="export-grid">
+
+      <!-- Text on Light -->
+      <div class="export-card">
+        <h3>نص على خلفية فاتحة <span>PNG</span></h3>
+        <div class="logo-container light" id="text-light">
+          <span class="logo-text charcoal size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportPNG('text-light', 'engezna-text-light', 2)">تحميل PNG</button>
+        <div class="size-info">512 × 256 px</div>
+      </div>
+
+      <!-- Text on Dark -->
+      <div class="export-card">
+        <h3>نص على خلفية داكنة <span>PNG</span></h3>
+        <div class="logo-container dark" id="text-dark">
+          <span class="logo-text white size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportPNG('text-dark', 'engezna-text-dark', 2)">تحميل PNG</button>
+        <div class="size-info">512 × 256 px</div>
+      </div>
+
+      <!-- Text on Blue -->
+      <div class="export-card">
+        <h3>نص على خلفية زرقاء <span>PNG</span></h3>
+        <div class="logo-container blue" id="text-blue">
+          <span class="logo-text white size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportPNG('text-blue', 'engezna-text-blue', 2)">تحميل PNG</button>
+        <div class="size-info">512 × 256 px</div>
+      </div>
+
+      <!-- Text Blue Color -->
+      <div class="export-card">
+        <h3>نص أزرق على خلفية بيضاء <span>PNG</span></h3>
+        <div class="logo-container light" id="text-blue-color">
+          <span class="logo-text blue size-xl">إنجزنا</span>
+        </div>
+        <button class="download-btn" onclick="exportPNG('text-blue-color', 'engezna-text-blue-on-white', 2)">تحميل PNG</button>
+        <div class="size-info">512 × 256 px</div>
+      </div>
+
+    </div>
+
+    <!-- Icon E -->
+    <h2 class="section-title">أيقونة E - English Icon</h2>
+    <div class="export-grid">
+
+      <div class="export-card">
+        <h3>أيقونة E - خلفية زرقاء <span>512px</span></h3>
+        <div class="logo-container light" id="icon-e-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 128px; height: 128px; font-size: 64px;">E</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('icon-e-blue', 'engezna-icon-e-blue', 512)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>أيقونة E - خلفية داكنة <span>512px</span></h3>
+        <div class="logo-container light" id="icon-e-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 128px; height: 128px; font-size: 64px;">E</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('icon-e-dark', 'engezna-icon-e-dark', 512)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>أيقونة E - خلفية بيضاء <span>512px</span></h3>
+        <div class="logo-container" id="icon-e-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 128px; height: 128px; font-size: 64px;">E</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('icon-e-white', 'engezna-icon-e-white', 512)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- Icon إ -->
+    <h2 class="section-title">أيقونة إ - Arabic Icon</h2>
+    <div class="export-grid">
+
+      <div class="export-card">
+        <h3>أيقونة إ - خلفية زرقاء <span>512px</span></h3>
+        <div class="logo-container light" id="icon-ar-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 128px; height: 128px; font-size: 72px;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('icon-ar-blue', 'engezna-icon-ar-blue', 512)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>أيقونة إ - خلفية داكنة <span>512px</span></h3>
+        <div class="logo-container light" id="icon-ar-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 128px; height: 128px; font-size: 72px;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('icon-ar-dark', 'engezna-icon-ar-dark', 512)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>أيقونة إ - خلفية بيضاء <span>512px</span></h3>
+        <div class="logo-container" id="icon-ar-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 128px; height: 128px; font-size: 72px;">إ</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('icon-ar-white', 'engezna-icon-ar-white', 512)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- Icon Full Text -->
+    <h2 class="section-title">أيقونة بالاسم الكامل - Full Name Icon</h2>
+    <div class="export-grid">
+
+      <div class="export-card">
+        <h3>أيقونة إنجزنا - خلفية زرقاء <span>512px</span></h3>
+        <div class="logo-container light" id="icon-text-blue" style="padding: 20px;">
+          <div class="app-icon blue-bg" style="width: 128px; height: 128px; font-size: 36px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('icon-text-blue', 'engezna-icon-fulltext-blue', 512)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>أيقونة إنجزنا - خلفية داكنة <span>512px</span></h3>
+        <div class="logo-container light" id="icon-text-dark" style="padding: 20px;">
+          <div class="app-icon dark-bg" style="width: 128px; height: 128px; font-size: 36px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('icon-text-dark', 'engezna-icon-fulltext-dark', 512)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>أيقونة إنجزنا - خلفية بيضاء <span>512px</span></h3>
+        <div class="logo-container" id="icon-text-white" style="padding: 20px; background: #F1F5F9;">
+          <div class="app-icon white-bg" style="width: 128px; height: 128px; font-size: 36px;">إنجزنا</div>
+        </div>
+        <button class="download-btn" onclick="exportIcon('icon-text-white', 'engezna-icon-fulltext-white', 512)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- Combined Logos -->
+    <h2 class="section-title">الشعار المدمج - Combined Logo</h2>
+    <div class="export-grid">
+
+      <div class="export-card">
+        <h3>مدمج E - خلفية فاتحة <span>PNG</span></h3>
+        <div class="logo-container light" id="combined-e-light" style="padding: 30px;">
+          <div class="combined-logo">
+            <div class="icon">E</div>
+            <span class="logo-text charcoal size-lg">إنجزنا</span>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportPNG('combined-e-light', 'engezna-combined-e-light', 2)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>مدمج E - خلفية داكنة <span>PNG</span></h3>
+        <div class="logo-container dark" id="combined-e-dark" style="padding: 30px;">
+          <div class="combined-logo">
+            <div class="icon">E</div>
+            <span class="logo-text white size-lg">إنجزنا</span>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportPNG('combined-e-dark', 'engezna-combined-e-dark', 2)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>مدمج إ - خلفية فاتحة <span>PNG</span></h3>
+        <div class="logo-container light" id="combined-ar-light" style="padding: 30px;">
+          <div class="combined-logo">
+            <div class="icon" style="font-size: 32px;">إ</div>
+            <span class="logo-text charcoal size-lg">إنجزنا</span>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportPNG('combined-ar-light', 'engezna-combined-ar-light', 2)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>مدمج إ - خلفية داكنة <span>PNG</span></h3>
+        <div class="logo-container dark" id="combined-ar-dark" style="padding: 30px;">
+          <div class="combined-logo">
+            <div class="icon" style="font-size: 32px;">إ</div>
+            <span class="logo-text white size-lg">إنجزنا</span>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportPNG('combined-ar-dark', 'engezna-combined-ar-dark', 2)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <!-- Primary Logos with Tagline -->
+    <h2 class="section-title">الشعار الرئيسي مع السلوجان - Primary Logo</h2>
+    <div class="export-grid">
+
+      <div class="export-card">
+        <h3>رئيسي E - خلفية فاتحة <span>PNG</span></h3>
+        <div class="logo-container light" id="primary-e-light" style="padding: 30px;">
+          <div class="primary-logo">
+            <div class="main-row">
+              <span class="logo-text charcoal size-lg">إنجزنا</span>
+              <div class="icon" style="width: 56px; height: 56px; background: #009DE0; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: bold; font-family: 'Aref Ruqaa', serif;">E</div>
+            </div>
+            <div class="tagline gray">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportPNG('primary-e-light', 'engezna-primary-e-light', 2)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>رئيسي E - خلفية داكنة <span>PNG</span></h3>
+        <div class="logo-container dark" id="primary-e-dark" style="padding: 30px;">
+          <div class="primary-logo">
+            <div class="main-row">
+              <span class="logo-text white size-lg">إنجزنا</span>
+              <div class="icon" style="width: 56px; height: 56px; background: #009DE0; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; font-weight: bold; font-family: 'Aref Ruqaa', serif;">E</div>
+            </div>
+            <div class="tagline light">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportPNG('primary-e-dark', 'engezna-primary-e-dark', 2)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>رئيسي إ - خلفية فاتحة <span>PNG</span></h3>
+        <div class="logo-container light" id="primary-ar-light" style="padding: 30px;">
+          <div class="primary-logo">
+            <div class="main-row">
+              <span class="logo-text charcoal size-lg">إنجزنا</span>
+              <div class="icon" style="width: 56px; height: 56px; background: #009DE0; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold; font-family: 'Aref Ruqaa', serif;">إ</div>
+            </div>
+            <div class="tagline gray">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportPNG('primary-ar-light', 'engezna-primary-ar-light', 2)">تحميل PNG</button>
+      </div>
+
+      <div class="export-card">
+        <h3>رئيسي إ - خلفية داكنة <span>PNG</span></h3>
+        <div class="logo-container dark" id="primary-ar-dark" style="padding: 30px;">
+          <div class="primary-logo">
+            <div class="main-row">
+              <span class="logo-text white size-lg">إنجزنا</span>
+              <div class="icon" style="width: 56px; height: 56px; background: #009DE0; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold; font-family: 'Aref Ruqaa', serif;">إ</div>
+            </div>
+            <div class="tagline light">عايز تطلب؟ إنجزنا</div>
+          </div>
+        </div>
+        <button class="download-btn" onclick="exportPNG('primary-ar-dark', 'engezna-primary-ar-dark', 2)">تحميل PNG</button>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      <p>© 2025 Engezna. All rights reserved.</p>
+    </div>
+  </div>
+
+  <script>
+    // Wait for fonts to load
+    document.fonts.ready.then(() => {
+      console.log('Fonts loaded!');
+    });
+
+    async function exportPNG(elementId, filename, scale = 2) {
+      const element = document.getElementById(elementId);
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        const canvas = await html2canvas(element, {
+          scale: scale,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل PNG';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+
+    async function exportIcon(elementId, filename, size = 512) {
+      const element = document.getElementById(elementId);
+      const iconElement = element.querySelector('.app-icon');
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التصدير...';
+
+      try {
+        const scale = size / 128; // 128 is the displayed size
+        const canvas = await html2canvas(iconElement, {
+          scale: scale,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `${filename}-${size}px.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        btn.textContent = 'تم التحميل ✓';
+        setTimeout(() => {
+          btn.textContent = 'تحميل PNG';
+          btn.disabled = false;
+        }, 2000);
+      } catch (error) {
+        console.error('Export error:', error);
+        btn.textContent = 'خطأ - حاول مرة أخرى';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
