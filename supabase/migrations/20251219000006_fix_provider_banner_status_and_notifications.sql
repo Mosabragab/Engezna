@@ -21,6 +21,10 @@ END $$;
 -- Updated function to get provider's banner status
 -- Now includes rejected/cancelled banners for provider to see
 -- ═══════════════════════════════════════════════════════════════════════════
+
+-- Drop the old function first (return type is changing)
+DROP FUNCTION IF EXISTS get_provider_banner_status(UUID);
+
 CREATE OR REPLACE FUNCTION get_provider_banner_status(p_provider_id UUID)
 RETURNS TABLE (
   has_active_banner BOOLEAN,
