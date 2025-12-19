@@ -1,7 +1,7 @@
 # Engezna Logo Kit | كيت شعار إنجزنا
 
 > **Version:** 1.0.0
-> **Last Updated:** December 2024
+> **Last Updated:** December 2025
 > **Brand Color:** #009DE0 (Engezna Blue)
 
 ---
@@ -10,45 +10,38 @@
 
 ```
 logo-kit/
-├── logo-primary/          # الشعار الكامل (نص + أيقونة)
-│   ├── engezna-logo-color.svg
-│   ├── engezna-logo-white.svg
-│   ├── engezna-logo-black.svg
-│   └── [PNG exports at various sizes]
+├── logo-primary/          # الشعار الكامل (نص + أيقونة + سلوجان)
+│   ├── primary-full-color.svg        # EN icon - خلفية فاتحة
+│   ├── primary-reversed.svg          # EN icon - خلفية داكنة
+│   ├── primary-ar-full-color.svg     # AR icon (إ) - خلفية فاتحة
+│   └── primary-ar-reversed.svg       # AR icon (إ) - خلفية داكنة
 │
-├── logo-icon/             # الأيقونة فقط
-│   ├── engezna-icon-color.svg
-│   ├── engezna-icon-white.svg
-│   └── [PNG exports at various sizes]
+├── logo-icon-en/          # الأيقونة الإنجليزية (E)
+│   ├── icon-blue-bg.svg
+│   ├── icon-white-bg.svg
+│   ├── icon-dark-bg.svg
+│   └── icon-transparent.svg
+│
+├── logo-icon-ar/          # الأيقونة العربية (إ)
+│   ├── icon-blue-bg.svg
+│   ├── icon-white-bg.svg
+│   ├── icon-dark-bg.svg
+│   └── icon-transparent.svg
 │
 ├── logo-text/             # النص فقط "إنجزنا"
-│   ├── engezna-text-color.svg
-│   ├── engezna-text-white.svg
-│   └── engezna-text-black.svg
+│   ├── text-color.svg     # نص غامق
+│   ├── text-white.svg     # نص أبيض
+│   └── text-blue.svg      # نص أزرق
 │
-├── social-media/          # مقاسات السوشيال ميديا
-│   ├── facebook/
-│   ├── instagram/
-│   ├── twitter-x/
-│   ├── linkedin/
-│   ├── youtube/
-│   ├── tiktok/
-│   └── whatsapp/
+├── logo-combined-en/      # الشعار المدمج (أيقونة E + نص)
+│   ├── combined-horizontal-color.svg
+│   └── combined-horizontal-white.svg
 │
-├── app-stores/            # متاجر التطبيقات
-│   ├── apple-app-store/
-│   └── google-play/
+├── logo-combined-ar/      # الشعار المدمج (أيقونة إ + نص)
+│   ├── combined-horizontal-color.svg
+│   └── combined-horizontal-white.svg
 │
-├── favicon/               # أيقونات المواقع
-│
-├── mockups/               # الموكابس
-│   ├── business-cards/
-│   ├── letterhead/
-│   ├── packaging/
-│   ├── digital/
-│   └── merchandise/
-│
-└── guidelines/            # إرشادات الاستخدام
+└── logo-preview.html      # معاينة جميع الأصول
 ```
 
 ---
@@ -64,94 +57,83 @@ logo-kit/
 
 ---
 
+## 🔤 Icon Variants | أنواع الأيقونة
+
+| Type | Letter | Usage |
+|------|--------|-------|
+| **English Icon** | E | International markets, English UI |
+| **Arabic Icon** | إ | Arabic markets, Arabic UI |
+
+---
+
 ## 📐 Size Specifications | مواصفات الأحجام
+
+### App Icon Sizes | أحجام أيقونة التطبيق
+
+| Size | Usage |
+|------|-------|
+| 1024 × 1024 | App Store |
+| 512 × 512 | Google Play |
+| 180 × 180 | Apple Touch Icon |
+| 192 × 192 | Android Chrome |
+| 128 × 128 | Web app |
+| 96 × 96 | Windows |
+| 64 × 64 | Desktop |
+| 48 × 48 | Small desktop |
+| 32 × 32 | Favicon retina |
+| 16 × 16 | Favicon |
 
 ### Social Media Sizes | مقاسات السوشيال ميديا
 
 #### Facebook
-| Asset | Size (px) | File |
-|-------|-----------|------|
-| Profile Picture | 180 × 180 | `facebook/profile-180.png` |
-| Cover Photo | 820 × 312 | `facebook/cover-820x312.png` |
-| Post Square | 1200 × 1200 | `facebook/post-square-1200.png` |
-| Post Landscape | 1200 × 630 | `facebook/post-landscape-1200x630.png` |
-| Story | 1080 × 1920 | `facebook/story-1080x1920.png` |
+| Asset | Size (px) |
+|-------|-----------|
+| Profile Picture | 180 × 180 |
+| Cover Photo | 820 × 312 |
+| Post Square | 1200 × 1200 |
+| Post Landscape | 1200 × 630 |
+| Story | 1080 × 1920 |
 
 #### Instagram
-| Asset | Size (px) | File |
-|-------|-----------|------|
-| Profile Picture | 320 × 320 | `instagram/profile-320.png` |
-| Post Square | 1080 × 1080 | `instagram/post-square-1080.png` |
-| Post Portrait | 1080 × 1350 | `instagram/post-portrait-1080x1350.png` |
-| Post Landscape | 1080 × 566 | `instagram/post-landscape-1080x566.png` |
-| Story/Reels | 1080 × 1920 | `instagram/story-1080x1920.png` |
+| Asset | Size (px) |
+|-------|-----------|
+| Profile Picture | 320 × 320 |
+| Post Square | 1080 × 1080 |
+| Post Portrait | 1080 × 1350 |
+| Story/Reels | 1080 × 1920 |
 
 #### Twitter/X
-| Asset | Size (px) | File |
-|-------|-----------|------|
-| Profile Picture | 400 × 400 | `twitter-x/profile-400.png` |
-| Header | 1500 × 500 | `twitter-x/header-1500x500.png` |
-| Post | 1200 × 675 | `twitter-x/post-1200x675.png` |
+| Asset | Size (px) |
+|-------|-----------|
+| Profile Picture | 400 × 400 |
+| Header | 1500 × 500 |
+| Post | 1200 × 675 |
 
 #### LinkedIn
-| Asset | Size (px) | File |
-|-------|-----------|------|
-| Profile Picture | 400 × 400 | `linkedin/profile-400.png` |
-| Company Logo | 300 × 300 | `linkedin/company-logo-300.png` |
-| Cover | 1128 × 191 | `linkedin/cover-1128x191.png` |
-| Post | 1200 × 627 | `linkedin/post-1200x627.png` |
+| Asset | Size (px) |
+|-------|-----------|
+| Profile Picture | 400 × 400 |
+| Company Logo | 300 × 300 |
+| Cover | 1128 × 191 |
 
 #### YouTube
-| Asset | Size (px) | File |
-|-------|-----------|------|
-| Profile Picture | 800 × 800 | `youtube/profile-800.png` |
-| Channel Art | 2560 × 1440 | `youtube/channel-art-2560x1440.png` |
-| Thumbnail | 1280 × 720 | `youtube/thumbnail-1280x720.png` |
-| Watermark | 150 × 150 | `youtube/watermark-150.png` |
+| Asset | Size (px) |
+|-------|-----------|
+| Profile Picture | 800 × 800 |
+| Channel Art | 2560 × 1440 |
+| Thumbnail | 1280 × 720 |
 
 #### TikTok
-| Asset | Size (px) | File |
-|-------|-----------|------|
-| Profile Picture | 200 × 200 | `tiktok/profile-200.png` |
-| Video | 1080 × 1920 | `tiktok/video-1080x1920.png` |
+| Asset | Size (px) |
+|-------|-----------|
+| Profile Picture | 200 × 200 |
+| Video | 1080 × 1920 |
 
 #### WhatsApp
-| Asset | Size (px) | File |
-|-------|-----------|------|
-| Profile Picture | 500 × 500 | `whatsapp/profile-500.png` |
-| Status | 1080 × 1920 | `whatsapp/status-1080x1920.png` |
-
----
-
-### App Store Sizes | مقاسات متاجر التطبيقات
-
-#### Apple App Store
-| Asset | Size (px) | File |
-|-------|-----------|------|
-| App Icon | 1024 × 1024 | `app-stores/apple/icon-1024.png` |
-| iPhone Screenshots | 1290 × 2796 | `app-stores/apple/screenshot-iphone.png` |
-| iPad Screenshots | 2048 × 2732 | `app-stores/apple/screenshot-ipad.png` |
-
-#### Google Play Store
-| Asset | Size (px) | File |
-|-------|-----------|------|
-| App Icon | 512 × 512 | `app-stores/google/icon-512.png` |
-| Feature Graphic | 1024 × 500 | `app-stores/google/feature-1024x500.png` |
-| Screenshots | 1080 × 1920 | `app-stores/google/screenshot.png` |
-
----
-
-### Favicon Sizes | أحجام الفافيكون
-
-| Size | Usage | File |
-|------|-------|------|
-| 16 × 16 | Browser tab | `favicon/favicon-16.png` |
-| 32 × 32 | Browser tab (retina) | `favicon/favicon-32.png` |
-| 48 × 48 | Windows site | `favicon/favicon-48.png` |
-| 64 × 64 | Windows site (retina) | `favicon/favicon-64.png` |
-| 180 × 180 | Apple Touch Icon | `favicon/apple-touch-icon.png` |
-| 192 × 192 | Android Chrome | `favicon/android-chrome-192.png` |
-| 512 × 512 | Android Chrome (splash) | `favicon/android-chrome-512.png` |
+| Asset | Size (px) |
+|-------|-----------|
+| Profile Picture | 500 × 500 |
+| Status | 1080 × 1920 |
 
 ---
 
@@ -200,4 +182,4 @@ For brand inquiries or custom assets, contact the design team.
 
 ---
 
-© 2024 Engezna. All rights reserved.
+© 2025 Engezna. All rights reserved.
