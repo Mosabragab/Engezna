@@ -305,7 +305,7 @@ DO $$ BEGIN
   USING (
     provider_id IN (
       SELECT id FROM public.providers
-      WHERE user_id = auth.uid()
+      WHERE owner_id = auth.uid()
     )
     OR provider_id IS NULL -- Allow viewing admin banners too
   );
@@ -320,7 +320,7 @@ DO $$ BEGIN
   WITH CHECK (
     provider_id IN (
       SELECT id FROM public.providers
-      WHERE user_id = auth.uid()
+      WHERE owner_id = auth.uid()
     )
     AND approval_status = 'pending'
   );
@@ -335,7 +335,7 @@ DO $$ BEGIN
   USING (
     provider_id IN (
       SELECT id FROM public.providers
-      WHERE user_id = auth.uid()
+      WHERE owner_id = auth.uid()
     )
     AND approval_status = 'pending'
   );
@@ -350,7 +350,7 @@ DO $$ BEGIN
   USING (
     provider_id IN (
       SELECT id FROM public.providers
-      WHERE user_id = auth.uid()
+      WHERE owner_id = auth.uid()
     )
     AND approval_status = 'pending'
   );
