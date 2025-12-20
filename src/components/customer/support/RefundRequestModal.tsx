@@ -248,8 +248,11 @@ export function RefundRequestModal({
         {/* Backdrop - separate layer for closing */}
         <div
           className="absolute inset-0 bg-black/50"
-          onClick={handleClose}
-          onTouchEnd={handleClose}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleClose()
+            }
+          }}
         />
 
         {/* Modal Content */}
@@ -342,25 +345,25 @@ export function RefundRequestModal({
                     const isSelected = issueType === type.id
 
                     return (
-                      <label
+                      <div
                         key={type.id}
+                        onClick={() => {
+                          console.log('Clicked:', type.id)
+                          setIssueType(type.id)
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation()
+                        }}
                         className={cn(
-                          'w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 cursor-pointer select-none',
+                          'w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 cursor-pointer select-none touch-manipulation',
                           isSelected
                             ? 'border-orange-500 bg-orange-50'
                             : 'border-slate-200 hover:border-slate-300 active:bg-slate-100'
                         )}
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
                       >
-                        <input
-                          type="radio"
-                          name="issueType"
-                          value={type.id}
-                          checked={isSelected}
-                          onChange={() => setIssueType(type.id)}
-                          className="sr-only"
-                        />
                         <div className={cn(
-                          'w-12 h-12 rounded-xl flex items-center justify-center',
+                          'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0',
                           type.color
                         )}>
                           <Icon className="w-6 h-6" />
@@ -371,12 +374,12 @@ export function RefundRequestModal({
                           </p>
                         </div>
                         <div className={cn(
-                          'w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors',
+                          'w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0',
                           isSelected ? 'border-orange-500 bg-orange-500' : 'border-slate-300'
                         )}>
                           {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
                         </div>
-                      </label>
+                      </div>
                     )
                   })}
                 </div>
