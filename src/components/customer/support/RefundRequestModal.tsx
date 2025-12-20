@@ -13,7 +13,6 @@ import {
   Trash2,
   Loader2,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { createClient } from '@/lib/supabase/client'
 
@@ -243,17 +242,23 @@ export function RefundRequestModal({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Orange Header */}
-          <div className="bg-orange-500 text-white p-4 flex-shrink-0">
+          <div
+            className="text-white p-4 flex-shrink-0"
+            style={{ backgroundColor: '#f97316' }}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                >
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
                   <h2 className="font-bold text-lg">
                     {isArabic ? 'طلب مساعدة' : 'Get Help'}
                   </h2>
-                  <p className="text-sm text-white text-opacity-80">
+                  <p className="text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
                     {isArabic ? `طلب #${order.order_number}` : `Order #${order.order_number}`}
                   </p>
                 </div>
@@ -261,7 +266,8 @@ export function RefundRequestModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-colors"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -270,17 +276,28 @@ export function RefundRequestModal({
 
           {/* Steps Indicator */}
           {step < 3 && (
-            <div className="bg-slate-50 px-4 py-3 border-b flex-shrink-0">
+            <div className="px-4 py-3 border-b flex-shrink-0" style={{ backgroundColor: '#f8fafc' }}>
               <div className="flex items-center justify-center gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                  step >= 1 ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'
-                }`}>1</div>
-                <div className={`w-8 h-1 rounded ${step >= 2 ? 'bg-orange-500' : 'bg-slate-200'}`} />
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                  step >= 2 ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'
-                }`}>2</div>
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                  style={{
+                    backgroundColor: step >= 1 ? '#f97316' : '#e2e8f0',
+                    color: step >= 1 ? '#ffffff' : '#64748b'
+                  }}
+                >1</div>
+                <div
+                  className="w-8 h-1 rounded"
+                  style={{ backgroundColor: step >= 2 ? '#f97316' : '#e2e8f0' }}
+                />
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                  style={{
+                    backgroundColor: step >= 2 ? '#f97316' : '#e2e8f0',
+                    color: step >= 2 ? '#ffffff' : '#64748b'
+                  }}
+                >2</div>
               </div>
-              <div className="flex justify-between mt-2 text-xs text-slate-500 px-2">
+              <div className="flex justify-between mt-2 text-xs px-2" style={{ color: '#64748b' }}>
                 <span>{isArabic ? 'نوع المشكلة' : 'Issue Type'}</span>
                 <span>{isArabic ? 'التفاصيل' : 'Details'}</span>
               </div>
@@ -307,24 +324,30 @@ export function RefundRequestModal({
                         key={issue.id}
                         type="button"
                         onClick={() => handleIssueSelect(issue.id)}
-                        className={`w-full p-4 rounded-xl border-2 flex items-center gap-4 transition-all ${
-                          isSelected
-                            ? 'border-orange-500 bg-orange-50'
-                            : 'border-slate-200 hover:border-slate-300 active:bg-slate-50'
-                        }`}
+                        className="w-full p-4 rounded-xl border-2 flex items-center gap-4 transition-all"
+                        style={{
+                          borderColor: isSelected ? '#f97316' : '#e2e8f0',
+                          backgroundColor: isSelected ? '#fff7ed' : '#ffffff'
+                        }}
                       >
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${issue.color}`}>
                           <Icon className="w-6 h-6" />
                         </div>
-                        <span className="flex-1 text-right font-medium text-slate-900">
+                        <span className="flex-1 text-right font-medium" style={{ color: '#0f172a' }}>
                           {isArabic ? issue.label_ar : issue.label_en}
                         </span>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                          isSelected
-                            ? 'border-orange-500 bg-orange-500'
-                            : 'border-slate-300'
-                        }`}>
-                          {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
+                        <div
+                          className="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+                          style={{
+                            borderColor: isSelected ? '#f97316' : '#cbd5e1',
+                            backgroundColor: isSelected ? '#f97316' : 'transparent'
+                          }}
+                        >
+                          {isSelected && (
+                            <svg className="w-4 h-4" fill="white" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
                         </div>
                       </button>
                     )
@@ -429,7 +452,7 @@ export function RefundRequestModal({
           {/* Footer Actions */}
           <div className="p-4 border-t bg-white flex-shrink-0">
             {step === 1 && (
-              <Button
+              <button
                 type="button"
                 onClick={() => {
                   if (selectedIssue) {
@@ -439,41 +462,43 @@ export function RefundRequestModal({
                   }
                 }}
                 disabled={!selectedIssue}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-semibold"
+                className="w-full py-3 rounded-xl font-semibold text-white transition-colors disabled:opacity-50"
+                style={{ backgroundColor: '#f97316' }}
               >
                 {isArabic ? 'التالي' : 'Next'}
-              </Button>
+              </button>
             )}
 
             {step === 2 && (
               <div className="flex gap-3">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => setStep(1)}
-                  className="flex-1 py-3"
+                  className="flex-1 py-3 rounded-xl font-semibold border border-slate-300"
                 >
                   {isArabic ? 'السابق' : 'Back'}
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading || !description.trim()}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3"
+                  className="flex-1 py-3 rounded-xl font-semibold text-white transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: '#f97316' }}
                 >
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isArabic ? 'إرسال' : 'Submit')}
-                </Button>
+                </button>
               </div>
             )}
 
             {step === 3 && (
-              <Button
+              <button
                 type="button"
                 onClick={onClose}
-                className="w-full py-3"
+                className="w-full py-3 rounded-xl font-semibold text-white"
+                style={{ backgroundColor: '#22c55e' }}
               >
                 {isArabic ? 'تم' : 'Done'}
-              </Button>
+              </button>
             )}
           </div>
         </div>
