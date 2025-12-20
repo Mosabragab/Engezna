@@ -134,8 +134,8 @@ export default function CustomerSupportPage() {
     if (ticketsData) {
       setTickets(ticketsData.map(t => ({
         ...t,
-        order: t.order as { order_number: string } | undefined,
-        provider: t.provider as { name_ar: string; name_en: string } | undefined,
+        order: Array.isArray(t.order) ? t.order[0] : t.order,
+        provider: Array.isArray(t.provider) ? t.provider[0] : t.provider,
       })))
     }
 
@@ -164,8 +164,8 @@ export default function CustomerSupportPage() {
     if (refundsData) {
       setRefunds(refundsData.map(r => ({
         ...r,
-        order: r.order as { order_number: string } | undefined,
-        provider: r.provider as { name_ar: string; name_en: string } | undefined,
+        order: Array.isArray(r.order) ? r.order[0] : r.order,
+        provider: Array.isArray(r.provider) ? r.provider[0] : r.provider,
       })))
     }
 
