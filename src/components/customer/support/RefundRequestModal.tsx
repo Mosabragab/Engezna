@@ -240,14 +240,10 @@ export function RefundRequestModal({
           type: 'new_refund_request',
           title_ar: 'طلب استرداد جديد',
           title_en: 'New Refund Request',
-          message_ar: `لديك طلب استرداد جديد للطلب #${order.order_number}`,
-          message_en: `You have a new refund request for order #${order.order_number}`,
-          data: {
-            order_id: order.id,
-            order_number: order.order_number,
-            amount: order.total,
-            issue_type: selectedIssue
-          }
+          body_ar: `لديك طلب استرداد جديد للطلب #${order.order_number} بقيمة ${order.total} ج.م`,
+          body_en: `You have a new refund request for order #${order.order_number} worth ${order.total} EGP`,
+          related_order_id: order.id,
+          related_customer_id: order.customer_id
         })
       } catch {
         // Notification is optional
