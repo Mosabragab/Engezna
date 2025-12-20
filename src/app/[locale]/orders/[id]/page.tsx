@@ -359,9 +359,13 @@ export default function OrderTrackingPage() {
       .single()
 
     if (refundData) {
+      // Handle provider being returned as array or single object from Supabase
+      const providerData = Array.isArray(refundData.provider)
+        ? refundData.provider[0]
+        : refundData.provider
       setPendingRefund({
         ...refundData,
-        provider: refundData.provider as { name_ar: string; name_en: string } | undefined
+        provider: providerData as { name_ar: string; name_en: string } | undefined
       })
     }
 
