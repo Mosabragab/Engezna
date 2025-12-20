@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
   Upload,
@@ -238,43 +237,25 @@ export function RefundRequestModal({
   if (!isOpen) return null
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      >
-        {/* Backdrop - separate layer for closing */}
-        <div
-          className="absolute inset-0 bg-black/50"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              handleClose()
-            }
-          }}
-        />
+    <div className="fixed inset-0 z-[9999]">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={handleClose}
+      />
 
+      {/* Modal Container */}
+      <div className="absolute inset-0 flex items-end sm:items-center justify-center pointer-events-none">
         {/* Modal Content */}
-        <motion.div
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        <div
           className={cn(
-            'bg-white w-full sm:w-[480px] max-h-[85vh] sm:max-h-[90vh]',
-            'sm:rounded-2xl rounded-t-3xl overflow-hidden flex flex-col relative z-10',
-            'pb-safe'
+            'bg-white w-full sm:w-[480px] max-h-[80vh] sm:max-h-[85vh]',
+            'sm:rounded-2xl rounded-t-3xl overflow-hidden flex flex-col',
+            'pointer-events-auto'
           )}
-          style={{ maxHeight: 'calc(100vh - 60px)' }}
         >
-          {/* Drag Handle for Mobile */}
-          <div className="sm:hidden flex justify-center py-2 bg-gradient-to-r from-orange-500 to-orange-600">
-            <div className="w-10 h-1 bg-white/40 rounded-full" />
-          </div>
-
           {/* Header */}
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 pt-2 sm:pt-4 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5" />
@@ -330,11 +311,7 @@ export function RefundRequestModal({
           <div className="flex-1 overflow-y-auto p-4">
             {/* Step 1: Select Issue Type */}
             {step === 1 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-4"
-              >
+              <div className="space-y-4">
                 <h4 className="font-semibold text-slate-900">
                   {isArabic ? 'ما هي المشكلة؟' : 'What is the issue?'}
                 </h4>
@@ -383,16 +360,12 @@ export function RefundRequestModal({
                     )
                   })}
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Step 2: Description & Evidence */}
             {step === 2 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-4"
-              >
+              <div className="space-y-4">
                 <div>
                   <label className="block font-semibold text-slate-900 mb-2">
                     {isArabic ? 'وصف المشكلة *' : 'Describe the issue *'}
@@ -470,16 +443,12 @@ export function RefundRequestModal({
                     </span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Step 3: Success */}
             {step === 3 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-8"
-              >
+              <div className="text-center py-8">
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-10 h-10 text-green-600" />
                 </div>
@@ -500,7 +469,7 @@ export function RefundRequestModal({
                     }
                   </p>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Error Message */}
@@ -571,9 +540,9 @@ export function RefundRequestModal({
               </Button>
             )}
           </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        </div>
+      </div>
+    </div>
   )
 }
 
