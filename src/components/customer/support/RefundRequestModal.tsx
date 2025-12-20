@@ -1,24 +1,21 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   X,
-  Upload,
   AlertTriangle,
-  RefreshCw,
   Package,
+  RefreshCw,
   HelpCircle,
   CheckCircle2,
   Camera,
   Trash2,
   Loader2,
-  ArrowRight,
-  ArrowLeft,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { createClient } from '@/lib/supabase/client'
-import { cn } from '@/lib/utils'
 
 interface Order {
   id: string
@@ -51,40 +48,35 @@ const ISSUE_TYPES = [
     label_ar: 'أصناف ناقصة',
     label_en: 'Missing items',
     icon: Package,
-    color: 'text-orange-600 bg-orange-100',
-    refund_type: 'partial'
+    color: 'bg-orange-100 text-orange-600',
   },
   {
     id: 'wrong_items',
     label_ar: 'أصناف خاطئة',
     label_en: 'Wrong items',
     icon: RefreshCw,
-    color: 'text-blue-600 bg-blue-100',
-    refund_type: 'item_resend'
+    color: 'bg-blue-100 text-blue-600',
   },
   {
     id: 'quality_issue',
     label_ar: 'مشكلة في الجودة',
     label_en: 'Quality issue',
     icon: AlertTriangle,
-    color: 'text-red-600 bg-red-100',
-    refund_type: 'full'
+    color: 'bg-red-100 text-red-600',
   },
   {
     id: 'never_received',
     label_ar: 'لم أستلم الطلب',
     label_en: 'Never received',
     icon: Package,
-    color: 'text-purple-600 bg-purple-100',
-    refund_type: 'full'
+    color: 'bg-purple-100 text-purple-600',
   },
   {
     id: 'other',
     label_ar: 'مشكلة أخرى',
     label_en: 'Other issue',
     icon: HelpCircle,
-    color: 'text-slate-600 bg-slate-100',
-    refund_type: 'full'
+    color: 'bg-slate-100 text-slate-600',
   },
 ]
 
@@ -96,17 +88,50 @@ export function RefundRequestModal({
   onSuccess
 }: RefundRequestModalProps) {
   const isArabic = locale === 'ar'
-  const isRTL = isArabic
-
+  const [mounted, setMounted] = useState(false)
   const [step, setStep] = useState(1)
-  const [issueType, setIssueType] = useState('')
+  const [selectedIssue, setSelectedIssue] = useState<string>('')
   const [description, setDescription] = useState('')
   const [images, setImages] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Mount check for portal
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
+
+  // Reset on close
+  useEffect(() => {
+    if (!isOpen) {
+      setStep(1)
+      setSelectedIssue('')
+      setDescription('')
+      setImages([])
+      setImagePreviews([])
+      setError('')
+    }
+  }, [isOpen])
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
+
+  const handleIssueSelect = (issueId: string) => {
+    console.log('Selected issue:', issueId)
+    setSelectedIssue(issueId)
+  }
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -114,11 +139,7 @@ export function RefundRequestModal({
       setError(isArabic ? 'الحد الأقصى 5 صور' : 'Maximum 5 images allowed')
       return
     }
-
-    const newImages = [...images, ...files]
-    setImages(newImages)
-
-    // Create previews
+    setImages(prev => [...prev, ...files])
     files.forEach(file => {
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -134,11 +155,6 @@ export function RefundRequestModal({
   }
 
   const handleSubmit = async () => {
-    if (!issueType) {
-      setError(isArabic ? 'يرجى اختيار نوع المشكلة' : 'Please select issue type')
-      return
-    }
-
     if (!description.trim()) {
       setError(isArabic ? 'يرجى وصف المشكلة' : 'Please describe the issue')
       return
@@ -150,7 +166,7 @@ export function RefundRequestModal({
     try {
       const supabase = createClient()
 
-      // Upload images
+      // Upload images if any
       const imageUrls: string[] = []
       for (const image of images) {
         const fileName = `${order.id}/${Date.now()}-${image.name}`
@@ -166,55 +182,37 @@ export function RefundRequestModal({
         }
       }
 
-      // Get selected issue type details
-      const selectedIssue = ISSUE_TYPES.find(t => t.id === issueType)
+      // Create refund request
+      const { error: insertError } = await supabase.from('refunds').insert({
+        order_id: order.id,
+        customer_id: order.customer_id,
+        provider_id: order.provider_id,
+        amount: order.total,
+        reason: selectedIssue,
+        reason_ar: description,
+        issue_type: selectedIssue,
+        evidence_images: imageUrls.length > 0 ? imageUrls : null,
+        status: 'pending',
+        request_source: 'customer',
+        provider_action: 'pending',
+        confirmation_deadline: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+      })
 
-      // Create refund request using the helper function
-      const { data: refundData, error: refundError } = await supabase.rpc(
-        'create_customer_refund_request',
-        {
-          p_order_id: order.id,
-          p_amount: order.total,
-          p_reason: description,
-          p_issue_type: issueType,
-          p_evidence_images: imageUrls.length > 0 ? imageUrls : null
-        }
-      )
+      if (insertError) throw insertError
 
-      if (refundError) {
-        // Fallback to direct insert if function doesn't exist
-        const { error: insertError } = await supabase.from('refunds').insert({
-          order_id: order.id,
-          customer_id: order.customer_id,
-          provider_id: order.provider_id,
-          amount: order.total,
-          reason: issueType,
-          reason_ar: description,
-          issue_type: issueType,
-          evidence_images: imageUrls,
-          status: 'pending',
-          request_source: 'customer',
-          refund_type: selectedIssue?.refund_type || 'full',
-          provider_action: 'pending',
-          confirmation_deadline: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
-        })
-
-        if (insertError) throw insertError
-      }
-
-      // Create support ticket linked to refund
+      // Create support ticket
       await supabase.from('support_tickets').insert({
         user_id: order.customer_id,
         provider_id: order.provider_id,
         order_id: order.id,
-        type: 'quality',
+        type: 'refund',
         subject: `طلب استرداد - ${order.order_number}`,
         description: description,
         priority: 'high',
         status: 'open'
       })
 
-      setStep(3) // Success step
+      setStep(3)
       onSuccess?.()
     } catch (err) {
       console.error('Error submitting refund:', err)
@@ -224,146 +222,118 @@ export function RefundRequestModal({
     }
   }
 
-  const handleClose = () => {
-    setStep(1)
-    setIssueType('')
-    setDescription('')
-    setImages([])
-    setImagePreviews([])
-    setError('')
-    onClose()
-  }
+  if (!isOpen || !mounted) return null
 
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 z-[9999]">
-      {/* Backdrop */}
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[99999]"
+      style={{ isolation: 'isolate' }}
+    >
+      {/* Dark Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
-        onClick={handleClose}
+        className="fixed inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+        aria-hidden="true"
       />
 
-      {/* Modal Container */}
-      <div className="absolute inset-0 flex items-end sm:items-center justify-center pointer-events-none">
-        {/* Modal Content */}
+      {/* Modal */}
+      <div className="fixed inset-0 flex items-center justify-center p-4">
         <div
-          className={cn(
-            'bg-white w-full sm:w-[480px] max-h-[80vh] sm:max-h-[85vh]',
-            'sm:rounded-2xl rounded-t-3xl overflow-hidden flex flex-col',
-            'pointer-events-auto'
-          )}
+          className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] overflow-hidden shadow-2xl flex flex-col"
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5" />
+          {/* Orange Header */}
+          <div className="bg-orange-500 text-white p-4 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-lg">
+                    {isArabic ? 'طلب مساعدة' : 'Get Help'}
+                  </h2>
+                  <p className="text-sm text-white text-opacity-80">
+                    {isArabic ? `طلب #${order.order_number}` : `Order #${order.order_number}`}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold">
-                  {isArabic ? 'طلب مساعدة' : 'Get Help'}
-                </h3>
-                <p className="text-sm text-white/80">
-                  {isArabic ? `الطلب #${order.order_number}` : `Order #${order.order_number}`}
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="text-white hover:bg-white/20"
-            >
-              <X className="w-5 h-5" />
-            </Button>
           </div>
 
-          {/* Progress Steps */}
+          {/* Steps Indicator */}
           {step < 3 && (
-            <div className="px-4 py-3 bg-slate-50 border-b">
-              <div className="flex items-center justify-center gap-2">
-                {[1, 2].map((s) => (
-                  <div key={s} className="flex items-center gap-2">
-                    <div className={cn(
-                      'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
-                      step >= s ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'
-                    )}>
-                      {s}
-                    </div>
-                    {s < 2 && (
-                      <div className={cn(
-                        'w-12 h-1 rounded',
-                        step > s ? 'bg-orange-500' : 'bg-slate-200'
-                      )} />
-                    )}
-                  </div>
-                ))}
+            <div className="bg-slate-50 px-4 py-3 border-b flex-shrink-0">
+              <div className="flex items-center justify-center gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                  step >= 1 ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'
+                }`}>1</div>
+                <div className={`w-8 h-1 rounded ${step >= 2 ? 'bg-orange-500' : 'bg-slate-200'}`} />
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                  step >= 2 ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'
+                }`}>2</div>
               </div>
-              <div className="flex justify-between mt-2 text-xs text-slate-500">
+              <div className="flex justify-between mt-2 text-xs text-slate-500 px-2">
                 <span>{isArabic ? 'نوع المشكلة' : 'Issue Type'}</span>
                 <span>{isArabic ? 'التفاصيل' : 'Details'}</span>
               </div>
             </div>
           )}
 
-          {/* Content */}
+          {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto p-4">
-            {/* Step 1: Select Issue Type */}
+
+            {/* STEP 1: Issue Selection */}
             {step === 1 && (
-              <div className="space-y-4">
-                <h4 className="font-semibold text-slate-900">
+              <div>
+                <h3 className="font-semibold text-slate-900 mb-4 text-center">
                   {isArabic ? 'ما هي المشكلة؟' : 'What is the issue?'}
-                </h4>
+                </h3>
 
                 <div className="space-y-3">
-                  {ISSUE_TYPES.map((type) => {
-                    const Icon = type.icon
-                    const isSelected = issueType === type.id
+                  {ISSUE_TYPES.map((issue) => {
+                    const Icon = issue.icon
+                    const isSelected = selectedIssue === issue.id
 
                     return (
-                      <div
-                        key={type.id}
-                        onClick={() => {
-                          console.log('Clicked:', type.id)
-                          setIssueType(type.id)
-                        }}
-                        onTouchStart={(e) => {
-                          e.stopPropagation()
-                        }}
-                        className={cn(
-                          'w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 cursor-pointer select-none touch-manipulation',
+                      <button
+                        key={issue.id}
+                        type="button"
+                        onClick={() => handleIssueSelect(issue.id)}
+                        className={`w-full p-4 rounded-xl border-2 flex items-center gap-4 transition-all ${
                           isSelected
                             ? 'border-orange-500 bg-orange-50'
-                            : 'border-slate-200 hover:border-slate-300 active:bg-slate-100'
-                        )}
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                            : 'border-slate-200 hover:border-slate-300 active:bg-slate-50'
+                        }`}
                       >
-                        <div className={cn(
-                          'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0',
-                          type.color
-                        )}>
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${issue.color}`}>
                           <Icon className="w-6 h-6" />
                         </div>
-                        <div className="flex-1 text-start">
-                          <p className="font-medium text-slate-900">
-                            {isArabic ? type.label_ar : type.label_en}
-                          </p>
-                        </div>
-                        <div className={cn(
-                          'w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0',
-                          isSelected ? 'border-orange-500 bg-orange-500' : 'border-slate-300'
-                        )}>
+                        <span className="flex-1 text-right font-medium text-slate-900">
+                          {isArabic ? issue.label_ar : issue.label_en}
+                        </span>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-500'
+                            : 'border-slate-300'
+                        }`}>
                           {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
                         </div>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
               </div>
             )}
 
-            {/* Step 2: Description & Evidence */}
+            {/* STEP 2: Details */}
             {step === 2 && (
               <div className="space-y-4">
                 <div>
@@ -373,12 +343,9 @@ export function RefundRequestModal({
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder={isArabic
-                      ? 'اشرح المشكلة بالتفصيل...'
-                      : 'Explain the issue in detail...'
-                    }
+                    placeholder={isArabic ? 'اشرح المشكلة بالتفصيل...' : 'Explain the issue in detail...'}
                     className="min-h-[120px] resize-none"
-                    dir={isRTL ? 'rtl' : 'ltr'}
+                    dir={isArabic ? 'rtl' : 'ltr'}
                   />
                 </div>
 
@@ -386,18 +353,13 @@ export function RefundRequestModal({
                   <label className="block font-semibold text-slate-900 mb-2">
                     {isArabic ? 'صور للإثبات (اختياري)' : 'Evidence photos (optional)'}
                   </label>
-                  <p className="text-sm text-slate-500 mb-3">
-                    {isArabic
-                      ? 'أضف صور توضح المشكلة (حتى 5 صور)'
-                      : 'Add photos showing the issue (up to 5)'
-                    }
-                  </p>
 
                   <div className="flex flex-wrap gap-3">
                     {imagePreviews.map((preview, index) => (
                       <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden border">
                         <img src={preview} alt="" className="w-full h-full object-cover" />
                         <button
+                          type="button"
                           onClick={() => removeImage(index)}
                           className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
                         >
@@ -408,13 +370,12 @@ export function RefundRequestModal({
 
                     {images.length < 5 && (
                       <button
+                        type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-20 h-20 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 hover:border-orange-400 hover:text-orange-500 transition-colors"
+                        className="w-20 h-20 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 hover:border-orange-400 hover:text-orange-500"
                       >
                         <Camera className="w-6 h-6" />
-                        <span className="text-xs mt-1">
-                          {isArabic ? 'إضافة' : 'Add'}
-                        </span>
+                        <span className="text-xs mt-1">{isArabic ? 'إضافة' : 'Add'}</span>
                       </button>
                     )}
                   </div>
@@ -429,16 +390,10 @@ export function RefundRequestModal({
                   />
                 </div>
 
-                {/* Order Summary */}
                 <div className="bg-slate-50 rounded-xl p-4">
-                  <h5 className="font-medium text-slate-900 mb-2">
-                    {isArabic ? 'ملخص الطلب' : 'Order Summary'}
-                  </h5>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">
-                      {isArabic ? 'إجمالي الطلب' : 'Order Total'}
-                    </span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="text-slate-600">{isArabic ? 'إجمالي الطلب' : 'Order Total'}</span>
+                    <span className="font-bold text-slate-900">
                       {order.total.toFixed(2)} {isArabic ? 'ج.م' : 'EGP'}
                     </span>
                   </div>
@@ -446,95 +401,76 @@ export function RefundRequestModal({
               </div>
             )}
 
-            {/* Step 3: Success */}
+            {/* STEP 3: Success */}
             {step === 3 && (
-              <div className="text-center py-8">
+              <div className="text-center py-6">
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-10 h-10 text-green-600" />
                 </div>
-                <h4 className="text-xl font-bold text-slate-900 mb-2">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">
                   {isArabic ? 'تم إرسال طلبك' : 'Request Submitted'}
-                </h4>
+                </h3>
                 <p className="text-slate-600 mb-4">
                   {isArabic
-                    ? 'سيتم مراجعة طلبك من قبل التاجر خلال 24 ساعة'
-                    : 'Your request will be reviewed by the merchant within 24 hours'
-                  }
+                    ? 'سيتم مراجعة طلبك خلال 24 ساعة'
+                    : 'Your request will be reviewed within 24 hours'}
                 </p>
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
-                  <p>
-                    {isArabic
-                      ? 'ستصلك إشعارات بتحديثات حالة طلبك. يمكنك متابعة الطلب من صفحة "تذاكر الدعم".'
-                      : 'You will receive notifications about your request status. Track it from "Support Tickets" page.'
-                    }
-                  </p>
-                </div>
               </div>
             )}
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm mt-4">
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                 {error}
               </div>
             )}
           </div>
 
           {/* Footer Actions */}
-          <div className="p-4 border-t bg-white">
+          <div className="p-4 border-t bg-white flex-shrink-0">
             {step === 1 && (
               <Button
-                onClick={() => setStep(2)}
-                disabled={!issueType}
-                className="w-full bg-orange-500 hover:bg-orange-600"
-                size="lg"
+                type="button"
+                onClick={() => {
+                  if (selectedIssue) {
+                    setStep(2)
+                  } else {
+                    setError(isArabic ? 'يرجى اختيار نوع المشكلة' : 'Please select an issue type')
+                  }
+                }}
+                disabled={!selectedIssue}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-semibold"
               >
                 {isArabic ? 'التالي' : 'Next'}
-                {isRTL ? (
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                ) : (
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                )}
               </Button>
             )}
 
             {step === 2 && (
               <div className="flex gap-3">
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={() => setStep(1)}
-                  className="flex-1"
-                  size="lg"
+                  className="flex-1 py-3"
                 >
-                  {isRTL ? (
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  ) : (
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                  )}
                   {isArabic ? 'السابق' : 'Back'}
                 </Button>
                 <Button
+                  type="button"
                   onClick={handleSubmit}
                   disabled={loading || !description.trim()}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600"
-                  size="lg"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3"
                 >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      {isArabic ? 'إرسال الطلب' : 'Submit Request'}
-                    </>
-                  )}
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isArabic ? 'إرسال' : 'Submit')}
                 </Button>
               </div>
             )}
 
             {step === 3 && (
               <Button
-                onClick={handleClose}
-                className="w-full"
-                size="lg"
+                type="button"
+                onClick={onClose}
+                className="w-full py-3"
               >
                 {isArabic ? 'تم' : 'Done'}
               </Button>
@@ -544,6 +480,9 @@ export function RefundRequestModal({
       </div>
     </div>
   )
+
+  // Use Portal to render outside the current DOM hierarchy
+  return createPortal(modalContent, document.body)
 }
 
 export default RefundRequestModal
