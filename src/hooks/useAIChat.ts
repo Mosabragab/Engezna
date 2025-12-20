@@ -517,6 +517,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         'show_promotions': '🔥 العروض',
         'show_popular': '⭐ الأكثر طلباً',
         'show_nearby': '📍 الأقرب',
+        'show_help': '🆘 مساعدة وشكوى',
       }
 
       // Fallback: Map title to message (backwards compatibility)
@@ -538,6 +539,9 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
         // Also handle the text payload (when agentHandler didn't have providerId but useAIChat has selectedProviderId)
         'عايز أشوف المنتجات': selectedProviderId ? `navigate:/ar/providers/${selectedProviderId}` : 'عايز أشوف المنتجات',
         '🔍 ابحث': 'search',
+        // Help and complaints - navigate to support page
+        'show_help': 'navigate:/ar/profile/support',
+        '🆘 مساعدة وشكوى': 'navigate:/ar/profile/support',
       }
 
       // If action is a QuickActionsBar payload, use its label for display

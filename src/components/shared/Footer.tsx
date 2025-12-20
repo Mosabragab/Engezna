@@ -67,6 +67,8 @@ export function Footer() {
     { href: `/${locale}/orders`, label: t('myOrders'), icon: ShoppingBag },
     { href: `/${locale}/favorites`, label: t('favorites'), icon: Heart },
     { href: `/${locale}/profile/account`, label: t('myAccount'), icon: User },
+    { href: `/${locale}/help`, label: locale === 'ar' ? 'مركز المساعدة' : 'Help Center', icon: HelpCircle },
+    { href: `/${locale}/profile/support`, label: locale === 'ar' ? 'الدعم والشكاوى' : 'Support & Complaints', icon: MessageCircle },
   ]
 
   const partnerLinks = [
