@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   Phone,
   ShoppingBag,
+  HeadphonesIcon,
 } from 'lucide-react'
 
 interface UserProfile {
@@ -94,6 +95,12 @@ export default function SettingsPage() {
       href: `/${locale}/orders`,
     },
     {
+      icon: HeadphonesIcon,
+      label: isRTL ? 'الدعم والمساعدة' : 'Support & Help',
+      href: `/${locale}/profile/support`,
+      highlight: true,
+    },
+    {
       icon: User,
       label: t('menu.account'),
       href: `/${locale}/profile/account`,
@@ -158,19 +165,22 @@ export default function SettingsPage() {
         <Card className="overflow-hidden">
           {menuItems.map((item, index) => {
             const Icon = item.icon
+            const isHighlight = 'highlight' in item && item.highlight
 
             return (
               <Link key={item.href} href={item.href}>
                 <div className={`flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors ${
                   index < menuItems.length - 1 ? 'border-b border-slate-100' : ''
-                }`}>
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-primary" />
+                } ${isHighlight ? 'bg-orange-50' : ''}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    isHighlight ? 'bg-orange-100' : 'bg-primary/10'
+                  }`}>
+                    <Icon className={`w-5 h-5 ${isHighlight ? 'text-orange-600' : 'text-primary'}`} />
                   </div>
-                  <span className="flex-1 font-medium text-slate-900">
+                  <span className={`flex-1 font-medium ${isHighlight ? 'text-orange-900' : 'text-slate-900'}`}>
                     {item.label}
                   </span>
-                  <ChevronLeft className={`w-5 h-5 text-slate-400 ${isRTL ? '' : 'rotate-180'}`} />
+                  <ChevronLeft className={`w-5 h-5 ${isHighlight ? 'text-orange-400' : 'text-slate-400'} ${isRTL ? '' : 'rotate-180'}`} />
                 </div>
               </Link>
             )

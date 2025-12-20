@@ -165,51 +165,94 @@ export function RefundRequestModal({
     try {
       const supabase = createClient()
 
-      // Upload images if any
+      // Upload images if any (skip if bucket doesn't exist)
       const imageUrls: string[] = []
       for (const image of images) {
-        const fileName = `${order.id}/${Date.now()}-${image.name}`
-        const { data, error: uploadError } = await supabase.storage
-          .from('refund-evidence')
-          .upload(fileName, image)
-
-        if (data && !uploadError) {
-          const { data: urlData } = supabase.storage
+        try {
+          const fileName = `${order.id}/${Date.now()}-${image.name}`
+          const { data, error: uploadError } = await supabase.storage
             .from('refund-evidence')
-            .getPublicUrl(fileName)
-          imageUrls.push(urlData.publicUrl)
+            .upload(fileName, image)
+
+          if (data && !uploadError) {
+            const { data: urlData } = supabase.storage
+              .from('refund-evidence')
+              .getPublicUrl(fileName)
+            imageUrls.push(urlData.publicUrl)
+          }
+        } catch {
+          // Continue without images if storage fails
+          console.log('Image upload skipped - bucket may not exist')
         }
       }
 
-      // Create refund request
-      const { error: insertError } = await supabase.from('refunds').insert({
-        order_id: order.id,
-        customer_id: order.customer_id,
-        provider_id: order.provider_id,
-        amount: order.total,
-        reason: selectedIssue,
-        reason_ar: description,
-        issue_type: selectedIssue,
-        evidence_images: imageUrls.length > 0 ? imageUrls : null,
-        status: 'pending',
-        request_source: 'customer',
-        provider_action: 'pending',
-        confirmation_deadline: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+      // Use the RPC function which bypasses RLS
+      const { data: refundId, error: rpcError } = await supabase.rpc('create_customer_refund_request', {
+        p_order_id: order.id,
+        p_amount: order.total,
+        p_reason: description,
+        p_issue_type: selectedIssue,
+        p_evidence_images: imageUrls.length > 0 ? imageUrls : null
       })
 
-      if (insertError) throw insertError
+      if (rpcError) {
+        console.error('RPC error:', rpcError)
+        // Fallback to direct insert if RPC doesn't exist
+        const { error: insertError } = await supabase.from('refunds').insert({
+          order_id: order.id,
+          customer_id: order.customer_id,
+          provider_id: order.provider_id,
+          amount: order.total,
+          reason: selectedIssue,
+          reason_ar: description,
+          issue_type: selectedIssue,
+          evidence_images: imageUrls.length > 0 ? imageUrls : null,
+          status: 'pending',
+          request_source: 'customer',
+          provider_action: 'pending',
+          confirmation_deadline: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+        })
+
+        if (insertError) throw insertError
+      }
 
       // Create support ticket
-      await supabase.from('support_tickets').insert({
-        user_id: order.customer_id,
-        provider_id: order.provider_id,
-        order_id: order.id,
-        type: 'refund',
-        subject: `طلب استرداد - ${order.order_number}`,
-        description: description,
-        priority: 'high',
-        status: 'open'
-      })
+      try {
+        await supabase.from('support_tickets').insert({
+          user_id: order.customer_id,
+          provider_id: order.provider_id,
+          order_id: order.id,
+          type: 'refund',
+          subject: `طلب استرداد - ${order.order_number}`,
+          description: description,
+          priority: 'high',
+          status: 'open'
+        })
+      } catch {
+        // Support ticket is optional, continue if fails
+        console.log('Support ticket creation skipped')
+      }
+
+      // Create provider notification
+      try {
+        await supabase.from('provider_notifications').insert({
+          provider_id: order.provider_id,
+          type: 'new_refund_request',
+          title_ar: 'طلب استرداد جديد',
+          title_en: 'New Refund Request',
+          message_ar: `لديك طلب استرداد جديد للطلب #${order.order_number}`,
+          message_en: `You have a new refund request for order #${order.order_number}`,
+          data: {
+            order_id: order.id,
+            order_number: order.order_number,
+            amount: order.total,
+            issue_type: selectedIssue
+          }
+        })
+      } catch {
+        // Notification is optional
+        console.log('Provider notification skipped')
+      }
 
       setStep(3)
       onSuccess?.()
