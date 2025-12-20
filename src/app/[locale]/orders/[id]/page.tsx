@@ -28,7 +28,7 @@ import {
   MessageSquare,
 } from 'lucide-react'
 import { OrderChat } from '@/components/shared/OrderChat'
-import { RefundRequestModal, RefundConfirmationCard } from '@/components/customer/support'
+import { RefundRequestModal, RefundConfirmationCard, SupportOptionsModal } from '@/components/customer/support'
 
 // Cancellation reasons
 const CANCELLATION_REASONS = [
@@ -193,6 +193,7 @@ export default function OrderTrackingPage() {
   const [submittingReview, setSubmittingReview] = useState(false)
 
   // Refund/Support state
+  const [showSupportOptions, setShowSupportOptions] = useState(false)
   const [showRefundModal, setShowRefundModal] = useState(false)
   const [pendingRefund, setPendingRefund] = useState<{
     id: string
@@ -748,7 +749,7 @@ export default function OrderTrackingPage() {
         {(isDelivered || isCancelled) && !pendingRefund && (
           <button
             type="button"
-            onClick={() => setShowRefundModal(true)}
+            onClick={() => setShowSupportOptions(true)}
             className="w-full bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4 text-start active:bg-orange-100 transition-colors"
           >
             <div className="flex items-center gap-3">
@@ -1123,6 +1124,17 @@ export default function OrderTrackingPage() {
           </div>
         </div>
       )}
+
+      {/* Support Options Modal */}
+      <SupportOptionsModal
+        isOpen={showSupportOptions}
+        onClose={() => setShowSupportOptions(false)}
+        locale={locale}
+        orderId={order?.id}
+        providerId={order?.provider_id}
+        userId={user?.id}
+        onOpenRefundModal={() => setShowRefundModal(true)}
+      />
 
       {/* Refund Request Modal */}
       {showRefundModal && order && (
