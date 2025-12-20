@@ -196,6 +196,7 @@ export default function OrderTrackingPage() {
   const [showRefundModal, setShowRefundModal] = useState(false)
   const [pendingRefund, setPendingRefund] = useState<{
     id: string
+    order_id: string
     amount: number
     provider_action: string
     customer_confirmed: boolean
@@ -346,6 +347,7 @@ export default function OrderTrackingPage() {
       .from('refunds')
       .select(`
         id,
+        order_id,
         amount,
         provider_action,
         customer_confirmed,
