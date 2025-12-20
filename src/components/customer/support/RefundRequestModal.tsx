@@ -329,34 +329,46 @@ export function RefundRequestModal({
                     const isSelected = issueType === type.id
 
                     return (
-                      <button
+                      <div
                         key={type.id}
-                        onClick={() => setIssueType(type.id)}
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setIssueType(type.id)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setIssueType(type.id)
+                          }
+                        }}
                         className={cn(
-                          'w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4',
+                          'w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 cursor-pointer select-none',
                           isSelected
                             ? 'border-orange-500 bg-orange-50'
-                            : 'border-slate-200 hover:border-slate-300'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                         )}
                       >
                         <div className={cn(
-                          'w-12 h-12 rounded-xl flex items-center justify-center',
+                          'w-12 h-12 rounded-xl flex items-center justify-center pointer-events-none',
                           type.color
                         )}>
                           <Icon className="w-6 h-6" />
                         </div>
-                        <div className="flex-1 text-start">
+                        <div className="flex-1 text-start pointer-events-none">
                           <p className="font-medium text-slate-900">
                             {isArabic ? type.label_ar : type.label_en}
                           </p>
                         </div>
                         <div className={cn(
-                          'w-6 h-6 rounded-full border-2 flex items-center justify-center',
+                          'w-6 h-6 rounded-full border-2 flex items-center justify-center pointer-events-none',
                           isSelected ? 'border-orange-500 bg-orange-500' : 'border-slate-300'
                         )}>
                           {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>

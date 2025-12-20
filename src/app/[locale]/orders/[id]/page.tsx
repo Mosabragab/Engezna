@@ -747,9 +747,9 @@ export default function OrderTrackingPage() {
         {/* Get Help / Request Refund - For delivered or cancelled orders */}
         {(isDelivered || isCancelled) && !pendingRefund && (
           <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <AlertTriangle className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
@@ -762,8 +762,9 @@ export default function OrderTrackingPage() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setShowRefundModal(true)}
-                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl font-semibold transition-colors text-sm"
+                className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors text-sm flex-shrink-0"
               >
                 {locale === 'ar' ? 'طلب مساعدة' : 'Get Help'}
               </button>
