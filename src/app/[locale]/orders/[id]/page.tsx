@@ -746,30 +746,32 @@ export default function OrderTrackingPage() {
 
         {/* Get Help / Request Refund - For delivered or cancelled orders */}
         {(isDelivered || isCancelled) && !pendingRefund && (
-          <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="flex items-center gap-3 flex-1">
-                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-orange-900">
-                    {locale === 'ar' ? 'هل واجهت مشكلة؟' : 'Had an issue?'}
-                  </p>
-                  <p className="text-sm text-orange-700">
-                    {locale === 'ar' ? 'يمكنك طلب استرداد أو تقديم شكوى' : 'Request refund or submit complaint'}
-                  </p>
-                </div>
+          <button
+            type="button"
+            onClick={() => setShowRefundModal(true)}
+            className="w-full bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4 text-start active:bg-orange-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-orange-600" />
               </div>
-              <button
-                type="button"
-                onClick={() => setShowRefundModal(true)}
-                className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors text-sm flex-shrink-0"
-              >
-                {locale === 'ar' ? 'طلب مساعدة' : 'Get Help'}
-              </button>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-orange-900 text-base">
+                  {locale === 'ar' ? 'هل واجهت مشكلة؟' : 'Had an issue?'}
+                </p>
+                <p className="text-sm text-orange-700">
+                  {locale === 'ar' ? 'اضغط هنا لطلب استرداد أو تقديم شكوى' : 'Tap here to request refund or submit complaint'}
+                </p>
+              </div>
+              <div className="flex-shrink-0">
+                {isRTL ? (
+                  <ArrowLeft className="w-5 h-5 text-orange-600" />
+                ) : (
+                  <ArrowRight className="w-5 h-5 text-orange-600" />
+                )}
+              </div>
             </div>
-          </div>
+          </button>
         )}
 
         {/* Delivery Address */}

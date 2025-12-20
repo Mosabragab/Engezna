@@ -243,22 +243,35 @@ export function RefundRequestModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
-        onClick={handleClose}
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       >
+        {/* Backdrop - separate layer for closing */}
+        <div
+          className="absolute inset-0 bg-black/50"
+          onClick={handleClose}
+          onTouchEnd={handleClose}
+        />
+
+        {/* Modal Content */}
         <motion.div
           initial={{ y: '100%', opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          onClick={(e) => e.stopPropagation()}
           className={cn(
-            'bg-white w-full sm:w-[480px] sm:max-h-[90vh] max-h-[85vh]',
-            'sm:rounded-2xl rounded-t-2xl overflow-hidden flex flex-col'
+            'bg-white w-full sm:w-[480px] max-h-[85vh] sm:max-h-[90vh]',
+            'sm:rounded-2xl rounded-t-3xl overflow-hidden flex flex-col relative z-10',
+            'pb-safe'
           )}
+          style={{ maxHeight: 'calc(100vh - 60px)' }}
         >
+          {/* Drag Handle for Mobile */}
+          <div className="sm:hidden flex justify-center py-2 bg-gradient-to-r from-orange-500 to-orange-600">
+            <div className="w-10 h-1 bg-white/40 rounded-full" />
+          </div>
+
           {/* Header */}
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 pt-2 sm:pt-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5" />
@@ -329,46 +342,41 @@ export function RefundRequestModal({
                     const isSelected = issueType === type.id
 
                     return (
-                      <div
+                      <label
                         key={type.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          setIssueType(type.id)
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            setIssueType(type.id)
-                          }
-                        }}
                         className={cn(
                           'w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 cursor-pointer select-none',
                           isSelected
                             ? 'border-orange-500 bg-orange-50'
-                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                            : 'border-slate-200 hover:border-slate-300 active:bg-slate-100'
                         )}
                       >
+                        <input
+                          type="radio"
+                          name="issueType"
+                          value={type.id}
+                          checked={isSelected}
+                          onChange={() => setIssueType(type.id)}
+                          className="sr-only"
+                        />
                         <div className={cn(
-                          'w-12 h-12 rounded-xl flex items-center justify-center pointer-events-none',
+                          'w-12 h-12 rounded-xl flex items-center justify-center',
                           type.color
                         )}>
                           <Icon className="w-6 h-6" />
                         </div>
-                        <div className="flex-1 text-start pointer-events-none">
+                        <div className="flex-1 text-start">
                           <p className="font-medium text-slate-900">
                             {isArabic ? type.label_ar : type.label_en}
                           </p>
                         </div>
                         <div className={cn(
-                          'w-6 h-6 rounded-full border-2 flex items-center justify-center pointer-events-none',
+                          'w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors',
                           isSelected ? 'border-orange-500 bg-orange-500' : 'border-slate-300'
                         )}>
                           {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
                         </div>
-                      </div>
+                      </label>
                     )
                   })}
                 </div>
