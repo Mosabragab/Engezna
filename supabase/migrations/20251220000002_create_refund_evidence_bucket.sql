@@ -55,7 +55,7 @@ BEGIN
   USING (
     customer_id = auth.uid()
     OR provider_id IN (
-      SELECT id FROM providers WHERE user_id = auth.uid()
+      SELECT id FROM providers WHERE owner_id = auth.uid()
     )
   );
 END $$;
@@ -84,7 +84,7 @@ BEGIN
   USING (
     user_id = auth.uid()
     OR provider_id IN (
-      SELECT id FROM providers WHERE user_id = auth.uid()
+      SELECT id FROM providers WHERE owner_id = auth.uid()
     )
   );
 END $$;
