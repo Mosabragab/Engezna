@@ -36,6 +36,12 @@ interface Refund {
   reason_ar: string | null
   status: 'pending' | 'approved' | 'rejected' | 'processed' | 'failed'
   refund_method: string | null
+  refund_type: string | null
+  provider_action: string | null
+  customer_confirmed: boolean
+  confirmation_deadline: string | null
+  escalated_to_admin: boolean
+  provider_notes: string | null
   processed_amount: number
   processing_notes: string | null
   request_source: string
@@ -51,7 +57,7 @@ interface Refund {
   provider?: { name_ar: string; name_en: string }
 }
 
-type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected' | 'processed' | 'failed'
+type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected' | 'processed' | 'failed' | 'escalated'
 
 export default function AdminRefundsPage() {
   const locale = useLocale()
@@ -76,6 +82,7 @@ export default function AdminRefundsPage() {
     pending: 0,
     approved: 0,
     processed: 0,
+    escalated: 0,
     totalAmount: 0,
   })
 
@@ -133,6 +140,7 @@ export default function AdminRefundsPage() {
       const pending = (data || []).filter(r => r.status === 'pending').length
       const approved = (data || []).filter(r => r.status === 'approved').length
       const processed = (data || []).filter(r => r.status === 'processed').length
+      const escalated = (data || []).filter(r => r.escalated_to_admin === true).length
       const totalAmount = (data || [])
         .filter(r => r.status === 'processed')
         .reduce((sum, r) => sum + (r.processed_amount || r.amount), 0)
@@ -142,6 +150,7 @@ export default function AdminRefundsPage() {
         pending,
         approved,
         processed,
+        escalated,
         totalAmount,
       })
     } catch {
@@ -162,7 +171,9 @@ export default function AdminRefundsPage() {
       )
     }
 
-    if (statusFilter !== 'all') {
+    if (statusFilter === 'escalated') {
+      filtered = filtered.filter(r => r.escalated_to_admin === true)
+    } else if (statusFilter !== 'all') {
       filtered = filtered.filter(r => r.status === statusFilter)
     }
 
@@ -364,7 +375,7 @@ export default function AdminRefundsPage() {
 
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <ArrowLeftRight className="w-5 h-5 text-slate-600" />
@@ -378,6 +389,13 @@ export default function AdminRefundsPage() {
               <span className="text-sm text-amber-700">{locale === 'ar' ? 'في الانتظار' : 'Pending'}</span>
             </div>
             <p className="text-2xl font-bold text-amber-700">{stats.pending}</p>
+          </div>
+          <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+            <div className="flex items-center gap-3 mb-2">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <span className="text-sm text-red-700">{locale === 'ar' ? 'مصعّد للإدارة' : 'Escalated'}</span>
+            </div>
+            <p className="text-2xl font-bold text-red-700">{stats.escalated}</p>
           </div>
           <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
             <div className="flex items-center gap-3 mb-2">
@@ -393,7 +411,7 @@ export default function AdminRefundsPage() {
             </div>
             <p className="text-2xl font-bold text-green-700">{stats.processed}</p>
           </div>
-          <div className="bg-purple-50 rounded-xl p-4 border border-purple-200 col-span-2 lg:col-span-1">
+          <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
             <div className="flex items-center gap-3 mb-2">
               <DollarSign className="w-5 h-5 text-purple-600" />
               <span className="text-sm text-purple-700">{locale === 'ar' ? 'إجمالي المسترد' : 'Total Refunded'}</span>
@@ -423,6 +441,7 @@ export default function AdminRefundsPage() {
             >
               <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
               <option value="pending">{locale === 'ar' ? 'في الانتظار' : 'Pending'}</option>
+              <option value="escalated">{locale === 'ar' ? 'مصعّد للإدارة' : 'Escalated'}</option>
               <option value="approved">{locale === 'ar' ? 'معتمد' : 'Approved'}</option>
               <option value="rejected">{locale === 'ar' ? 'مرفوض' : 'Rejected'}</option>
               <option value="processed">{locale === 'ar' ? 'تم التنفيذ' : 'Processed'}</option>
@@ -497,7 +516,24 @@ export default function AdminRefundsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {getStatusBadge(refund.status)}
+                        <div className="flex flex-col gap-1">
+                          {getStatusBadge(refund.status)}
+                          {refund.escalated_to_admin && (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                              <AlertCircle className="w-3 h-3" />
+                              {locale === 'ar' ? 'مصعّد' : 'Escalated'}
+                            </span>
+                          )}
+                          {refund.provider_action && (
+                            <span className="text-xs text-slate-500">
+                              {refund.provider_action === 'cash_refund'
+                                ? (locale === 'ar' ? 'رد نقدي' : 'Cash Refund')
+                                : refund.provider_action === 'resend_item'
+                                ? (locale === 'ar' ? 'إعادة إرسال' : 'Resend')
+                                : refund.provider_action}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-2">
@@ -602,11 +638,69 @@ export default function AdminRefundsPage() {
                 </div>
               </div>
 
-              {/* Status */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-600">{locale === 'ar' ? 'الحالة:' : 'Status:'}</span>
-                {getStatusBadge(selectedRefund.status)}
+              {/* Status & Additional Info */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-600">{locale === 'ar' ? 'الحالة:' : 'Status:'}</span>
+                  {getStatusBadge(selectedRefund.status)}
+                </div>
+
+                {selectedRefund.escalated_to_admin && (
+                  <div className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-red-600" />
+                    <span className="text-sm font-medium text-red-700">
+                      {locale === 'ar' ? 'مصعّد للإدارة - العميل لم يستلم المبلغ' : 'Escalated - Customer did not receive refund'}
+                    </span>
+                  </div>
+                )}
+
+                {selectedRefund.provider_action && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجراء التاجر:' : 'Provider Action:'}</span>
+                    <span className="text-sm font-medium text-slate-800">
+                      {selectedRefund.provider_action === 'cash_refund'
+                        ? (locale === 'ar' ? 'رد نقدي عبر المندوب' : 'Cash refund via rider')
+                        : selectedRefund.provider_action === 'resend_item'
+                        ? (locale === 'ar' ? 'إعادة إرسال المنتج' : 'Resend item')
+                        : selectedRefund.provider_action === 'escalate_to_admin'
+                        ? (locale === 'ar' ? 'تصعيد للإدارة' : 'Escalate to admin')
+                        : selectedRefund.provider_action}
+                    </span>
+                  </div>
+                )}
+
+                {selectedRefund.provider_action === 'cash_refund' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-600">{locale === 'ar' ? 'تأكيد العميل:' : 'Customer Confirmed:'}</span>
+                    <span className={`text-sm font-medium ${selectedRefund.customer_confirmed ? 'text-green-600' : 'text-orange-600'}`}>
+                      {selectedRefund.customer_confirmed
+                        ? (locale === 'ar' ? 'تم الاستلام' : 'Received')
+                        : (locale === 'ar' ? 'لم يؤكد بعد' : 'Not confirmed yet')}
+                    </span>
+                  </div>
+                )}
+
+                {selectedRefund.confirmation_deadline && !selectedRefund.customer_confirmed && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-600">{locale === 'ar' ? 'مهلة التأكيد:' : 'Confirmation Deadline:'}</span>
+                    <span className="text-sm text-slate-800">
+                      {formatDate(selectedRefund.confirmation_deadline, locale)}
+                    </span>
+                  </div>
+                )}
               </div>
+
+              {/* Provider Notes */}
+              {selectedRefund.provider_notes && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {locale === 'ar' ? 'ملاحظات التاجر' : 'Provider Notes'}
+                  </label>
+                  <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700">
+                    {selectedRefund.provider_notes}
+                  </div>
+                </div>
+              )}
 
               {/* Review Notes (for pending/approved) */}
               {(selectedRefund.status === 'pending' || selectedRefund.status === 'approved') && (
