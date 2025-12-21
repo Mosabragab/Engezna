@@ -13,7 +13,6 @@ import {
   Users,
   Wallet,
   X,
-  HeadphonesIcon,
   Activity,
   MapPin,
   UserCog,
@@ -27,7 +26,6 @@ import {
   Key,
   Receipt,
   Image,
-  RefreshCw,
   Scale,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
@@ -130,23 +128,10 @@ export function AdminSidebar({
       resource: 'analytics',
     },
     {
-      icon: HeadphonesIcon,
-      label: { ar: 'الدعم', en: 'Support' },
-      path: `/${locale}/admin/support`,
-      badge: openTickets > 0 ? openTickets.toString() : undefined,
-      resource: 'support',
-    },
-    {
-      icon: RefreshCw,
-      label: { ar: 'المرتجعات', en: 'Refunds' },
-      path: `/${locale}/admin/refunds`,
-      badge: pendingRefunds > 0 ? pendingRefunds.toString() : undefined,
-      resource: 'support',
-    },
-    {
       icon: Scale,
       label: { ar: 'مركز النزاعات', en: 'Resolution Center' },
       path: `/${locale}/admin/resolution-center`,
+      badge: (openTickets + pendingRefunds) > 0 ? (openTickets + pendingRefunds).toString() : undefined,
       resource: 'support',
     },
     {
