@@ -195,6 +195,7 @@ export interface DashboardStats {
     customers: number;
     providers: number;
     admins: number;
+    newToday: number;
     newThisMonth: number;
     changePercent: number;
   };
@@ -216,6 +217,10 @@ export interface DashboardStats {
     todayRevenue: number;
     thisMonthRevenue: number;
     changePercent: number;
+  };
+  // الدعم
+  support: {
+    openTickets: number;
   };
 }
 
