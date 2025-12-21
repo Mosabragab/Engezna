@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { MapPin, Bell, User, ChevronDown, ShoppingCart, Check, X, DollarSign, Package, AlertCircle, Clock, Loader2, MessageCircle, Reply } from 'lucide-react'
+import { MapPin, Bell, User, ChevronDown, ShoppingCart, Check, X, DollarSign, Package, AlertCircle, Clock, Loader2, MessageCircle, Reply, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
@@ -32,6 +32,7 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
   const [locationLoading, setLocationLoading] = useState(true)
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false)
   const [confirmingRefundId, setConfirmingRefundId] = useState<string | null>(null)
+  const [confirmedRefundIds, setConfirmedRefundIds] = useState<Set<string>>(new Set())
   const dropdownRef = useRef<HTMLDivElement>(null)
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -167,10 +168,14 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
       if (error) {
         console.error('Error confirming refund:', error)
       } else {
+        // Add to confirmed set to show success message
+        setConfirmedRefundIds(prev => new Set(prev).add(orderId))
         // Mark notification as read
         await markAsRead(notificationId)
-        // Refresh notifications
-        await refresh()
+        // Refresh notifications after a delay to show success message
+        setTimeout(async () => {
+          await refresh()
+        }, 2000)
       }
     } catch (error) {
       console.error('Error:', error)
@@ -343,33 +348,44 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
                                 </span>
                               </div>
 
-                              {/* Refund Confirmation Button */}
+                              {/* Refund Confirmation Button or Success Message */}
                               {isRefundConfirmation(notification) && notification.related_order_id && (
-                                <div className="mt-2 flex gap-2">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleConfirmRefund(notification.related_order_id!, notification.id)
-                                    }}
-                                    disabled={confirmingRefundId === notification.related_order_id}
-                                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
-                                  >
-                                    {confirmingRefundId === notification.related_order_id ? (
-                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                      <Check className="h-3.5 w-3.5" />
-                                    )}
-                                    {locale === 'ar' ? 'نعم، استلمت' : 'Yes, Received'}
-                                  </button>
-                                  <Link
-                                    href={`/${locale}/profile/support`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="flex items-center justify-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                    {locale === 'ar' ? 'لم أستلم' : 'Not Received'}
-                                  </Link>
-                                </div>
+                                confirmedRefundIds.has(notification.related_order_id) ? (
+                                  // Success message after confirmation
+                                  <div className="mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                    <span className="text-xs font-medium text-green-700">
+                                      {locale === 'ar' ? 'شكراً لتأكيدك! تم تسجيل الاستلام بنجاح' : 'Thank you! Receipt confirmed successfully'}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  // Confirmation buttons
+                                  <div className="mt-2 flex gap-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleConfirmRefund(notification.related_order_id!, notification.id)
+                                      }}
+                                      disabled={confirmingRefundId === notification.related_order_id}
+                                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                      {confirmingRefundId === notification.related_order_id ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Check className="h-3.5 w-3.5" />
+                                      )}
+                                      {locale === 'ar' ? 'نعم، استلمت' : 'Yes, Received'}
+                                    </button>
+                                    <Link
+                                      href={`/${locale}/profile/support`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="flex items-center justify-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors"
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                      {locale === 'ar' ? 'لم أستلم' : 'Not Received'}
+                                    </Link>
+                                  </div>
+                                )
                               )}
 
                               {/* Reply to Message Button */}
