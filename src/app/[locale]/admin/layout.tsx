@@ -53,7 +53,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
         .in('status', ['pending_approval', 'incomplete'])
 
       if (hasRegionFilter) {
-        providersQuery = providersQuery.in('governorate_id', assignedGovernorateIds)
+        providersQuery = providersQuery.in('governorate_id', allowedGovernorateIds)
       }
 
       const { count: providersCount, error: providersError } = await providersQuery
