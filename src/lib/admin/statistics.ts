@@ -152,6 +152,10 @@ export async function getDashboardStats(
     }
 
     const profiles = profilesData || [];
+    const customersOnly = profiles.filter((p) => p.role === 'customer');
+    const customersToday = customersOnly.filter(
+      (p) => new Date(p.created_at) >= new Date(startOfToday)
+    );
     const profilesThisMonth = profiles.filter(
       (p) => new Date(p.created_at) >= new Date(startOfMonth)
     );
@@ -165,9 +169,10 @@ export async function getDashboardStats(
       total: profiles.length,
       active: profiles.length, // All profiles are considered active
       inactive: 0,
-      customers: profiles.filter((p) => p.role === 'customer').length,
+      customers: customersOnly.length,
       providers: profiles.filter((p) => p.role === 'provider').length,
       admins: profiles.filter((p) => p.role === 'admin').length,
+      newToday: customersToday.length, // عملاء جدد اليوم
       newThisMonth: profilesThisMonth.length,
       changePercent: calculateChangePercent(profilesThisMonth.length, profilesLastMonth.length),
     };
@@ -289,6 +294,28 @@ export async function getDashboardStats(
       changePercent: calculateChangePercent(thisMonthRevenue, lastMonthRevenue),
     };
 
+    // ───────────────────────────────────────────────────────────────────
+    // إحصائيات الدعم - Support Statistics
+    // ───────────────────────────────────────────────────────────────────
+    let openSupportTickets = 0;
+    try {
+      const { count, error: ticketsError } = await supabase
+        .from('support_tickets')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['open', 'in_progress']);
+
+      if (!ticketsError && count !== null) {
+        openSupportTickets = count;
+      }
+    } catch (err) {
+      console.error('Error fetching support tickets:', err);
+      openSupportTickets = 0;
+    }
+
+    const supportStats = {
+      openTickets: openSupportTickets,
+    };
+
     return {
       success: true,
       data: {
@@ -296,6 +323,7 @@ export async function getDashboardStats(
         users: userStats,
         orders: orderStats,
         finance: financeStats,
+        support: supportStats,
       },
     };
   } catch (err) {
