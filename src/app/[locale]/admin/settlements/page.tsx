@@ -281,9 +281,21 @@ export default function AdminSettlementsPage() {
       }
 
       let createdCount = 0
-      const COMMISSION_RATE = 0.07 // 7% max
+      const DEFAULT_COMMISSION_RATE = 0.07 // 7% max as fallback
 
       for (const provider of activeProviders) {
+        // Get provider's actual commission rate from database
+        const { data: providerData } = await supabase
+          .from('providers')
+          .select('commission_rate')
+          .eq('id', provider.id)
+          .single()
+
+        // Use provider's rate (stored as percentage like 5.00 or 6.00) or default to 7%
+        const providerCommissionRate = providerData?.commission_rate
+          ? providerData.commission_rate / 100
+          : DEFAULT_COMMISSION_RATE
+
         // Get delivered orders for this provider in the period (including payment_method)
         const { data: allOrders } = await supabase
           .from('orders')
@@ -301,13 +313,13 @@ export default function AdminSettlementsPage() {
           const codOrders = orders.filter(o => o.payment_method === 'cash' || o.payment_method === 'cod')
           const onlineOrders = orders.filter(o => o.payment_method !== 'cash' && o.payment_method !== 'cod')
 
-          // Calculate COD breakdown (Provider collects cash → owes commission to platform)
+          // Calculate COD breakdown using provider's actual commission rate
           const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-          const codCommissionOwed = codGrossRevenue * COMMISSION_RATE
+          const codCommissionOwed = codGrossRevenue * providerCommissionRate
 
-          // Calculate Online breakdown (Platform collects → owes revenue minus commission to provider)
+          // Calculate Online breakdown using provider's actual commission rate
           const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-          const onlinePlatformCommission = onlineGrossRevenue * COMMISSION_RATE
+          const onlinePlatformCommission = onlineGrossRevenue * providerCommissionRate
           const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
 
           // Calculate totals
@@ -380,7 +392,19 @@ export default function AdminSettlementsPage() {
     setIsGenerating(true)
     try {
       const supabase = createClient()
-      const COMMISSION_RATE = 0.07 // 7% max
+      const DEFAULT_COMMISSION_RATE = 0.07 // 7% max as fallback
+
+      // Get provider's actual commission rate from database
+      const { data: providerData } = await supabase
+        .from('providers')
+        .select('commission_rate')
+        .eq('id', generateForm.providerId)
+        .single()
+
+      // Use provider's rate (stored as percentage like 5.00 or 6.00) or default to 7%
+      const providerCommissionRate = providerData?.commission_rate
+        ? providerData.commission_rate / 100
+        : DEFAULT_COMMISSION_RATE
 
       // Get all order IDs already included in previous settlements
       const { data: existingSettlements } = await supabase
@@ -428,13 +452,13 @@ export default function AdminSettlementsPage() {
       const codOrders = orders.filter(o => o.payment_method === 'cash' || o.payment_method === 'cod')
       const onlineOrders = orders.filter(o => o.payment_method !== 'cash' && o.payment_method !== 'cod')
 
-      // Calculate COD breakdown (Provider collects cash → owes commission to platform)
+      // Calculate COD breakdown using provider's actual commission rate
       const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const codCommissionOwed = codGrossRevenue * COMMISSION_RATE
+      const codCommissionOwed = codGrossRevenue * providerCommissionRate
 
-      // Calculate Online breakdown (Platform collects → owes revenue minus commission to provider)
+      // Calculate Online breakdown using provider's actual commission rate
       const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const onlinePlatformCommission = onlineGrossRevenue * COMMISSION_RATE
+      const onlinePlatformCommission = onlineGrossRevenue * providerCommissionRate
       const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
 
       // Calculate totals

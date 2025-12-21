@@ -564,9 +564,11 @@ export default function AdminFinancePage() {
                   >
                     <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
                     <option value="pending">{locale === 'ar' ? 'معلق' : 'Pending'}</option>
-                    <option value="processing">{locale === 'ar' ? 'قيد المعالجة' : 'Processing'}</option>
-                    <option value="completed">{locale === 'ar' ? 'مكتمل' : 'Completed'}</option>
-                    <option value="failed">{locale === 'ar' ? 'فشل' : 'Failed'}</option>
+                    <option value="partially_paid">{locale === 'ar' ? 'مدفوع جزئياً' : 'Partially Paid'}</option>
+                    <option value="paid">{locale === 'ar' ? 'مدفوع' : 'Paid'}</option>
+                    <option value="overdue">{locale === 'ar' ? 'متأخر' : 'Overdue'}</option>
+                    <option value="disputed">{locale === 'ar' ? 'نزاع' : 'Disputed'}</option>
+                    <option value="waived">{locale === 'ar' ? 'معفى' : 'Waived'}</option>
                   </select>
                 </div>
               </div>
