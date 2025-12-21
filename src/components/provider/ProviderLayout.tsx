@@ -33,6 +33,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [pendingOrders, setPendingOrders] = useState(0)
+  const [pendingRefunds, setPendingRefunds] = useState(0)
 
   // Load unread notifications count from provider_notifications table
   const loadUnreadCount = useCallback(async (providerId: string) => {
@@ -55,6 +56,16 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       .eq('status', 'pending')
 
     setPendingOrders(pendingCount || 0)
+
+    // Get pending refunds count (refunds awaiting provider response)
+    const { count: refundsCount } = await supabase
+      .from('refunds')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', providerId)
+      .eq('status', 'pending')
+      .eq('provider_action', 'pending')
+
+    setPendingRefunds(refundsCount || 0)
   }, [])
 
   useEffect(() => {
@@ -242,6 +253,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         provider={provider}
         pendingOrders={pendingOrders}
         unreadNotifications={unreadCount}
+        pendingRefunds={pendingRefunds}
       />
 
       {/* Main Content */}

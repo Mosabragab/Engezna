@@ -39,6 +39,7 @@ interface ProviderSidebarProps {
   } | null
   pendingOrders?: number
   unreadNotifications?: number
+  pendingRefunds?: number
 }
 
 export function ProviderSidebar({
@@ -47,6 +48,7 @@ export function ProviderSidebar({
   provider,
   pendingOrders = 0,
   unreadNotifications = 0,
+  pendingRefunds = 0,
 }: ProviderSidebarProps) {
   const locale = useLocale()
   const pathname = usePathname()
@@ -103,6 +105,7 @@ export function ProviderSidebar({
       icon: RefreshCw,
       label: { ar: 'المرتجعات', en: 'Refunds' },
       path: `/${locale}/provider/refunds`,
+      badge: pendingRefunds > 0 ? pendingRefunds.toString() : undefined,
     },
     {
       icon: MessageSquare,

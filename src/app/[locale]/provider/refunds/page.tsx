@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ProviderLayout } from '@/components/provider'
 import {
   RefreshCw,
   DollarSign,
@@ -261,16 +262,23 @@ export default function ProviderRefundsPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <ProviderLayout
+        pageTitle={{ ar: 'طلبات الاسترداد', en: 'Refund Requests' }}
+        pageSubtitle={{ ar: 'إدارة طلبات الاسترداد من العملاء', en: 'Manage customer refund requests' }}
+      >
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </div>
+      </ProviderLayout>
     )
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <ProviderLayout
+      pageTitle={{ ar: 'طلبات الاسترداد', en: 'Refund Requests' }}
+      pageSubtitle={{ ar: 'إدارة طلبات الاسترداد من العملاء', en: 'Manage customer refund requests' }}
+    >
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -557,5 +565,6 @@ export default function ProviderRefundsPage() {
         </CardContent>
       </Card>
     </div>
+    </ProviderLayout>
   )
 }
