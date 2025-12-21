@@ -298,6 +298,8 @@ export async function getDashboardStats(
     // إحصائيات الدعم - Support Statistics
     // ───────────────────────────────────────────────────────────────────
     let openSupportTickets = 0;
+    let pendingRefunds = 0;
+
     try {
       const { count, error: ticketsError } = await supabase
         .from('support_tickets')
@@ -312,8 +314,24 @@ export async function getDashboardStats(
       openSupportTickets = 0;
     }
 
+    try {
+      const { count, error: refundsError } = await supabase
+        .from('refunds')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['pending', 'approved']); // pending = awaiting action, approved = awaiting processing
+
+      if (!refundsError && count !== null) {
+        pendingRefunds = count;
+      }
+    } catch (err) {
+      console.error('Error fetching pending refunds:', err);
+      pendingRefunds = 0;
+    }
+
     const supportStats = {
       openTickets: openSupportTickets,
+      pendingRefunds: pendingRefunds,
+      totalDisputes: openSupportTickets + pendingRefunds,
     };
 
     return {

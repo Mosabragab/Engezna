@@ -15,12 +15,12 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
-  HeadphonesIcon,
   CheckCircle2,
   DollarSign,
   ArrowRight,
   Hourglass,
   Wallet,
+  Scale,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
           pendingProviders: apiStats.providers?.pending || 0,
           totalCustomers: apiStats.users?.customers || 0,
           newCustomersToday: apiStats.users?.newToday || 0,
-          openTickets: apiStats.support?.openTickets || 0,
+          openTickets: apiStats.support?.totalDisputes || 0,
           pendingApprovals: apiStats.providers?.pending || 0,
           commissionsMonth: apiStats.finance?.totalCommission || 0,
           pendingSettlements: apiStats.finance?.pendingSettlement || 0,
@@ -367,16 +367,16 @@ export default function AdminDashboard() {
               <p className="text-xs text-amber/80">{locale === 'ar' ? 'تنتظر الموافقة' : 'Awaiting Approval'}</p>
             </Link>
 
-            {/* Open Tickets */}
-            <Link href={`/${locale}/admin/support`} className="bg-card-bg-primary rounded-xl p-4 border border-primary/30 hover:border-primary/50 transition-colors">
+            {/* Open Disputes - Resolution Center */}
+            <Link href={`/${locale}/admin/resolution-center`} className="bg-card-bg-primary rounded-xl p-4 border border-primary/30 hover:border-primary/50 transition-colors">
               <div className="flex items-center gap-3 mb-2">
-                <HeadphonesIcon className="w-5 h-5 text-primary" />
+                <Scale className="w-5 h-5 text-primary" />
                 <span className="text-sm font-medium text-primary">
-                  {locale === 'ar' ? 'تذاكر الدعم' : 'Support Tickets'}
+                  {locale === 'ar' ? 'النزاعات المفتوحة' : 'Open Disputes'}
                 </span>
               </div>
               <p className="text-3xl font-bold text-primary">{formatNumber(stats.openTickets, locale)}</p>
-              <p className="text-xs text-primary/80">{locale === 'ar' ? 'مفتوحة' : 'Open'}</p>
+              <p className="text-xs text-primary/80">{locale === 'ar' ? 'تذاكر + مرتجعات' : 'Tickets + Refunds'}</p>
             </Link>
 
             {/* Pending Settlements */}

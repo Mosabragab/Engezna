@@ -218,9 +218,11 @@ export interface DashboardStats {
     thisMonthRevenue: number;
     changePercent: number;
   };
-  // الدعم
+  // الدعم والنزاعات
   support: {
     openTickets: number;
+    pendingRefunds: number;
+    totalDisputes: number;
   };
 }
 
