@@ -259,9 +259,26 @@ export async function getDashboardStats(
       0
     );
 
-    // Pending settlement (orders that are delivered but not settled)
-    // For now, we'll calculate based on platform commission
-    const pendingSettlement = totalCommission * 0.3; // Placeholder - 30% pending
+    // Pending settlement - calculate from actual settlements table
+    // Sum of net_payout for settlements that are pending or partially_paid
+    let pendingSettlement = 0;
+    try {
+      const { data: pendingSettlementsData, error: settlementsError } = await supabase
+        .from('settlements')
+        .select('net_payout')
+        .in('status', ['pending', 'partially_paid']);
+
+      if (!settlementsError && pendingSettlementsData) {
+        pendingSettlement = pendingSettlementsData.reduce(
+          (sum, s) => sum + (s.net_payout || 0),
+          0
+        );
+      }
+    } catch (err) {
+      console.error('Error fetching pending settlements:', err);
+      // Fall back to 0 if there's an error
+      pendingSettlement = 0;
+    }
 
     const financeStats = {
       totalRevenue,

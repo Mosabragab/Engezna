@@ -387,8 +387,8 @@ export default function AdminDashboard() {
                   {locale === 'ar' ? 'تسويات معلقة' : 'Pending Settlements'}
                 </span>
               </div>
-              <p className="text-3xl font-bold text-purple">{formatNumber(stats.pendingSettlements, locale)}</p>
-              <p className="text-xs text-purple/80">{locale === 'ar' ? 'متجر' : 'Providers'}</p>
+              <p className="text-3xl font-bold text-purple">{formatCurrency(stats.pendingSettlements, locale)}</p>
+              <p className="text-xs text-purple/80">{locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </Link>
 
             {/* Commissions */}
