@@ -181,18 +181,32 @@ export default function ResolutionCenterPage() {
       .not('provider_id', 'is', null)
       .order('created_at', { ascending: false })
 
+    // Transform refunds data to match interface
     if (refundsData) {
-      setRefunds(refundsData as Refund[])
+      const transformedRefunds = refundsData.map((r: Record<string, unknown>) => ({
+        ...r,
+        order: Array.isArray(r.order) ? r.order[0] : r.order,
+        customer: Array.isArray(r.customer) ? r.customer[0] : r.customer,
+        provider: Array.isArray(r.provider) ? r.provider[0] : r.provider,
+      })) as Refund[]
+      setRefunds(transformedRefunds)
     }
+
+    // Transform complaints data to match interface
     if (complaintsData) {
-      setComplaints(complaintsData as Complaint[])
+      const transformedComplaints = complaintsData.map((c: Record<string, unknown>) => ({
+        ...c,
+        user: Array.isArray(c.user) ? c.user[0] : c.user,
+        provider: Array.isArray(c.provider) ? c.provider[0] : c.provider,
+      })) as Complaint[]
+      setComplaints(transformedComplaints)
     }
 
     // Calculate stats
-    const pendingRefunds = refundsData?.filter(r => r.status === 'pending').length || 0
-    const escalatedRefunds = refundsData?.filter(r => r.escalated_to_admin).length || 0
-    const openComplaints = complaintsData?.filter(c => c.status === 'open').length || 0
-    const urgentComplaints = complaintsData?.filter(c => c.priority === 'urgent').length || 0
+    const pendingRefunds = refundsData?.filter((r: Record<string, unknown>) => r.status === 'pending').length || 0
+    const escalatedRefunds = refundsData?.filter((r: Record<string, unknown>) => r.escalated_to_admin).length || 0
+    const openComplaints = complaintsData?.filter((c: Record<string, unknown>) => c.status === 'open').length || 0
+    const urgentComplaints = complaintsData?.filter((c: Record<string, unknown>) => c.priority === 'urgent').length || 0
 
     setStats({
       totalRefunds: refundsData?.length || 0,
