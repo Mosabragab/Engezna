@@ -321,12 +321,12 @@ export function RefundRequestModal({
       await new Promise(resolve => setTimeout(resolve, 50))
       setStep(3)
 
-      // Auto-close after 3 seconds to give user time to see the message
+      // Auto-close after 7 seconds to give user time to see the message
       // Call onSuccess and onClose together after delay
       setTimeout(() => {
         onSuccess?.()
         onClose()
-      }, 3000)
+      }, 7000)
     } catch (err) {
       console.error('Error submitting refund:', err)
       setError(isArabic ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'Error occurred, please try again')
