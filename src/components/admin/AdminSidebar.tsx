@@ -69,10 +69,22 @@ export function AdminSidebar({
   const isRTL = locale === 'ar'
 
   // استخدام نظام الصلاحيات
-  const { loading, hasResource, isSuperAdmin, roles, legacyRole } = usePermissions()
+  const { loading, hasResource, isSuperAdmin, roles, legacyRole, accessibleResources } = usePermissions()
 
   // جلب الدور الرئيسي للعرض
   const primaryRole = roles.find(r => r.is_primary) || roles[0]
+
+  // Debug logging (remove in production)
+  if (typeof window !== 'undefined') {
+    console.log('[Sidebar Debug]', {
+      loading,
+      isSuperAdmin,
+      legacyRole,
+      rolesCount: roles.length,
+      primaryRoleCode: primaryRole?.role?.code,
+      accessibleResources,
+    })
+  }
 
   // التحقق من إمكانية الوصول للمورد
   const canAccess = (resource: ResourceCode): boolean => {
