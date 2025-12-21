@@ -143,7 +143,7 @@ export function AdminHeader({
 
       filteredNotifs = filteredNotifs.filter(notif => {
         // Allow all generic/message notifications (no region filtering needed)
-        if (['message', 'announcement', 'system', 'task', 'approval'].includes(notif.type)) {
+        if (['message', 'announcement', 'system', 'task', 'approval', 'reminder'].includes(notif.type)) {
           return true
         }
 
@@ -153,12 +153,24 @@ export function AdminHeader({
         }
 
         // FALLBACK: For old notifications without governorate_id, check related_provider_id
-        if (notif.related_provider_id && providerIdsInRegion.length > 0) {
-          return providerIdsInRegion.includes(notif.related_provider_id)
+        if (notif.related_provider_id) {
+          if (providerIdsInRegion.length > 0) {
+            return providerIdsInRegion.includes(notif.related_provider_id)
+          }
+          // Has provider_id but we have no providers in region - don't show
+          return false
         }
 
-        // If notification has no region info, allow it (backwards compatibility)
-        // These are likely old notifications or generic system notifications
+        // For provider/order/refund related notifications without region info, hide them for regional admins
+        // These are old notifications that should not be shown to regional admins
+        if (['provider', 'new_provider', 'order', 'new_order', 'order_status',
+             'refund', 'new_refund_request', 'refund_escalated', 'escalation',
+             'dispute', 'settlement', 'payment', 'review'].includes(notif.type)) {
+          // No region info and it's a region-specific notification type - hide it
+          return false
+        }
+
+        // Allow other generic notifications
         return true
       })
     }

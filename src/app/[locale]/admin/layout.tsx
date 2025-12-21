@@ -100,52 +100,67 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
       }
 
       // Get open tickets count (filtered by provider's region)
-      let ticketsQuery = supabase
-        .from('support_tickets')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'open')
+      // If regional admin has no providers in their region, show 0
+      if (hasRegionFilter && regionProviderIds.length === 0) {
+        setOpenTickets(0)
+      } else {
+        let ticketsQuery = supabase
+          .from('support_tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'open')
 
-      if (hasRegionFilter && regionProviderIds.length > 0) {
-        ticketsQuery = ticketsQuery.in('provider_id', regionProviderIds)
-      }
+        if (hasRegionFilter && regionProviderIds.length > 0) {
+          ticketsQuery = ticketsQuery.in('provider_id', regionProviderIds)
+        }
 
-      const { count: ticketsCount, error: ticketsError } = await ticketsQuery
+        const { count: ticketsCount, error: ticketsError } = await ticketsQuery
 
-      if (!ticketsError) {
-        setOpenTickets(ticketsCount || 0)
+        if (!ticketsError) {
+          setOpenTickets(ticketsCount || 0)
+        }
       }
 
       // Get pending banner approvals count (filtered by provider's region)
-      let bannersQuery = supabase
-        .from('homepage_banners')
-        .select('*', { count: 'exact', head: true })
-        .not('provider_id', 'is', null)
-        .eq('approval_status', 'pending')
+      // If regional admin has no providers in their region, show 0
+      if (hasRegionFilter && regionProviderIds.length === 0) {
+        setPendingBannerApprovals(0)
+      } else {
+        let bannersQuery = supabase
+          .from('homepage_banners')
+          .select('*', { count: 'exact', head: true })
+          .not('provider_id', 'is', null)
+          .eq('approval_status', 'pending')
 
-      if (hasRegionFilter && regionProviderIds.length > 0) {
-        bannersQuery = bannersQuery.in('provider_id', regionProviderIds)
-      }
+        if (hasRegionFilter && regionProviderIds.length > 0) {
+          bannersQuery = bannersQuery.in('provider_id', regionProviderIds)
+        }
 
-      const { count: bannerApprovalsCount, error: bannerApprovalsError } = await bannersQuery
+        const { count: bannerApprovalsCount, error: bannerApprovalsError } = await bannersQuery
 
-      if (!bannerApprovalsError) {
-        setPendingBannerApprovals(bannerApprovalsCount || 0)
+        if (!bannerApprovalsError) {
+          setPendingBannerApprovals(bannerApprovalsCount || 0)
+        }
       }
 
       // Get pending refunds count (filtered by provider's region)
-      let refundsQuery = supabase
-        .from('refunds')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
+      // If regional admin has no providers in their region, show 0
+      if (hasRegionFilter && regionProviderIds.length === 0) {
+        setPendingRefunds(0)
+      } else {
+        let refundsQuery = supabase
+          .from('refunds')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending')
 
-      if (hasRegionFilter && regionProviderIds.length > 0) {
-        refundsQuery = refundsQuery.in('provider_id', regionProviderIds)
-      }
+        if (hasRegionFilter && regionProviderIds.length > 0) {
+          refundsQuery = refundsQuery.in('provider_id', regionProviderIds)
+        }
 
-      const { count: refundsCount, error: refundsError } = await refundsQuery
+        const { count: refundsCount, error: refundsError } = await refundsQuery
 
-      if (!refundsError) {
-        setPendingRefunds(refundsCount || 0)
+        if (!refundsError) {
+          setPendingRefunds(refundsCount || 0)
+        }
       }
     } catch {
       // Silently fail for badge counts - not critical
