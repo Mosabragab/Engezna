@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Food Delivery Platform
 
-**Version:** 5.3 (Week 5 - Complete Feature Set)
+**Version:** 5.4 (Week 6 - Refunds & Settlements Integration)
 **Date:** November 27, 2025
-**Last Updated:** December 10, 2025 (Session 16)
+**Last Updated:** December 21, 2025 (Session 19)
 **Project Lead:** Mosab
 **Location:** Beni Suef, Upper Egypt
 
@@ -24,11 +24,42 @@ fair, transparent pricing.
 
 ## 📊 Current Development Status
 
-**Phase:** Week 6 - Provider Features Enhancement
-**Status:** Week 6 - Provider Management Complete ✅
+**Phase:** Week 6 - Refunds & Settlements Integration
+**Status:** Week 6 - Resolution Center Complete ✅
 **Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~92% of MVP Complete
-**Last Session:** December 11, 2025 (Session 17)
+**Overall Progress:** ~94% of MVP Complete
+**Last Session:** December 21, 2025 (Session 19)
+
+### Session 19 Updates (December 21, 2025)
+
+**Dynamic Permissions System:**
+- ✅ **Unified Role System** - Supervisors page now uses dynamic roles from `admin_roles` table
+- ✅ **Disputes Resource** - Added disputes permissions to all relevant roles
+- ✅ **New Roles Configured** - Default permissions for regional_manager, orders_moderator, support_agent, analyst, viewer
+
+**Refunds-Settlements Integration (Critical Fixes):**
+- ✅ **Proportional Commission Reduction** - Partial refunds now reduce commission proportionally
+  - Example: 27.91% refund → 27.91% commission reduction (was zeroing entire commission)
+- ✅ **Settlement Adjustments Audit** - New `settlement_adjustments` table for tracking changes
+- ✅ **Retroactive Adjustment** - Existing settlements updated when refunds are processed
+- ✅ **Exclude Adjusted Orders** - Settlement generation skips orders with refund adjustments
+- ✅ **Handle Both COD & Online** - Proper handling for all payment types
+
+**Customer Notification Fixes:**
+- ✅ **Fixed Notification Columns** - `notify_refund_status_change` now uses correct column names (body_ar/body_en)
+- ✅ **Notification Dropdown** - Shows on hover over bell icon with last 5 notifications
+- ✅ **Refund Confirmation Buttons** - Customer can confirm cash refund receipt directly from dropdown
+- ✅ **Notification Icons** - Different icons based on type (refund/delivered/cancelled)
+
+**Migrations Created:**
+- `20251221000002_add_disputes_permissions.sql` - Disputes resource permissions
+- `20251221000003_assign_new_roles_permissions.sql` - Default permissions for new roles
+- `20251221000004_fix_refunds_settlements_integration.sql` - Critical integration fixes
+- `20251221000005_fix_refund_notification_columns.sql` - Notification column fix
+
+**Files Modified:**
+- `src/app/[locale]/admin/supervisors/page.tsx` - Dynamic role selection
+- `src/components/customer/layout/CustomerHeader.tsx` - Notification dropdown with confirmation
 
 ### Session 17 Updates (December 11, 2025)
 
