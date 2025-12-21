@@ -18,7 +18,6 @@ import {
   Check,
   Trash2,
   AlertTriangle,
-  Reply,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User } from '@supabase/supabase-js'
@@ -344,10 +343,9 @@ export function ProviderHeader({
                                     }
                                     setNotificationsOpen(false)
                                   }}
-                                  className="p-1.5 text-slate-400 hover:text-blue-600 rounded-full hover:bg-blue-50"
-                                  title={locale === 'ar' ? 'رد' : 'Reply'}
+                                  className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors"
                                 >
-                                  <Reply className="w-4 h-4" />
+                                  {locale === 'ar' ? 'رد' : 'Reply'}
                                 </Link>
                               )}
                               {!notification.is_read && (
