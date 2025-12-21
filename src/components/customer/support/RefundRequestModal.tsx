@@ -299,6 +299,10 @@ export function RefundRequestModal({
 
       setStep(3)
       onSuccess?.()
+      // Auto-close after 3 seconds
+      setTimeout(() => {
+        onClose()
+      }, 3000)
     } catch (err) {
       console.error('Error submitting refund:', err)
       setError(isArabic ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'Error occurred, please try again')
@@ -632,16 +636,21 @@ export function RefundRequestModal({
             {/* STEP 3: Success */}
             {step === 3 && (
               <div className="text-center py-6">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                   <CheckCircle2 className="w-10 h-10 text-green-600" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  {isArabic ? 'تم إرسال طلبك' : 'Request Submitted'}
+                <h3 className="text-xl font-bold text-green-700 mb-2">
+                  {isArabic ? 'تم إرسال طلبك بنجاح!' : 'Request Submitted Successfully!'}
                 </h3>
-                <p className="text-slate-600 mb-4">
+                <p className="text-slate-600 mb-2">
                   {isArabic
                     ? 'سيتم مراجعة طلبك خلال 24 ساعة'
                     : 'Your request will be reviewed within 24 hours'}
+                </p>
+                <p className="text-sm text-slate-400">
+                  {isArabic
+                    ? 'ستغلق النافذة تلقائياً...'
+                    : 'This window will close automatically...'}
                 </p>
               </div>
             )}
