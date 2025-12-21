@@ -67,10 +67,12 @@ SET
   ),
   -- Recalculate platform_commission based on provider's rate
   platform_commission = (
-    SELECT COALESCE(SUM(o.total), 0) * COALESCE(p.commission_rate / 100, 0.07)
-    FROM orders o, providers p
+    SELECT COALESCE(SUM(o.total), 0) * COALESCE(
+      (SELECT p.commission_rate / 100 FROM providers p WHERE p.id = s.provider_id),
+      0.07
+    )
+    FROM orders o
     WHERE o.id = ANY(cs.correct_orders_included)
-    AND p.id = s.provider_id
   ),
   updated_at = NOW()
 FROM corrected_settlements cs
