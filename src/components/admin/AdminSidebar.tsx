@@ -132,7 +132,7 @@ export function AdminSidebar({
       label: { ar: 'مركز النزاعات', en: 'Resolution Center' },
       path: `/${locale}/admin/resolution-center`,
       badge: (openTickets + pendingRefunds) > 0 ? (openTickets + pendingRefunds).toString() : undefined,
-      resource: 'support',
+      resource: 'disputes',
     },
     {
       icon: MapPin,
