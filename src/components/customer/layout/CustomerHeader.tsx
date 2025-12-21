@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { MapPin, Bell, User, ChevronDown, ShoppingCart, Check, X, DollarSign, Package, AlertCircle, Clock, Loader2 } from 'lucide-react'
+import { MapPin, Bell, User, ChevronDown, ShoppingCart, Check, X, DollarSign, Package, AlertCircle, Clock, Loader2, MessageCircle, Reply } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
@@ -202,9 +202,16 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
         return <Package className="h-4 w-4 text-blue-500" />
       case 'order_cancelled':
         return <X className="h-4 w-4 text-red-500" />
+      case 'new_message':
+        return <MessageCircle className="h-4 w-4 text-primary" />
       default:
         return <Bell className="h-4 w-4 text-slate-400" />
     }
+  }
+
+  // Check if notification is a message from provider
+  function isMessageNotification(notification: { type: string }) {
+    return notification.type === 'new_message'
   }
 
   // Check if notification is a refund that needs confirmation
@@ -361,6 +368,20 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
                                   >
                                     <X className="h-3.5 w-3.5" />
                                     {locale === 'ar' ? 'لم أستلم' : 'Not Received'}
+                                  </Link>
+                                </div>
+                              )}
+
+                              {/* Reply to Message Button */}
+                              {isMessageNotification(notification) && notification.related_order_id && (
+                                <div className="mt-2">
+                                  <Link
+                                    href={`/${locale}/orders/${notification.related_order_id}?chat=open`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-medium rounded-lg transition-colors"
+                                  >
+                                    <Reply className="h-3.5 w-3.5" />
+                                    {locale === 'ar' ? 'رد على الرسالة' : 'Reply to Message'}
                                   </Link>
                                 </div>
                               )}
