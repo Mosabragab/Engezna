@@ -656,3 +656,113 @@ $$ LANGUAGE plpgsql;
 ---
 
 *آخر تحديث: 2025-12-16*
+
+---
+
+## 📋 سجل جلسات التطوير
+
+### جلسة 2025-12-21: Regional Filtering للـ Admin Dashboard
+
+#### الأهداف المنجزة ✅
+
+| المهمة | الوصف | الملف |
+|--------|-------|-------|
+| تصفية المتاجر حسب المنطقة | المشرف الإقليمي يرى فقط متاجر منطقته | `admin/providers/page.tsx` |
+| تصفية الطلبات حسب المنطقة | الطلبات من متاجر المنطقة فقط | `admin/orders/page.tsx` |
+| تصفية العملاء حسب المنطقة | العملاء المرتبطين بطلبات المنطقة | `admin/customers/page.tsx` |
+| تصفية Resolution Center | إحصائيات المنازعات للمنطقة فقط | `admin/resolution-center/page.tsx` |
+| تصفية Analytics | تحليلات المنطقة فقط | `admin/analytics/page.tsx` |
+| تصفية أرقام الشارات | Badge counts على الـ sidebar | `admin/layout.tsx` |
+| تصفية الإشعارات | إشعارات المنطقة فقط | `components/admin/AdminHeader.tsx` |
+| AdminRegionContext | تخزين مؤقت لبيانات المشرف | `lib/contexts/AdminRegionContext.tsx` |
+| Database Migration | إضافة regional columns للإشعارات | Migration file |
+
+#### الدروس المستفادة 📚
+
+##### 1. Whitelist vs Blacklist للتصفية
+
+```typescript
+// ❌ Blacklist (غير موثوق): حاول استثناء أنواع معينة
+const regionalTypes = ['new_provider', 'refund_escalated', 'late_order', ...]
+if (regionalTypes.includes(notif.type)) {
+  // filter by region
+}
+// المشكلة: ممكن تنسى نوع جديد
+
+// ✅ Whitelist (موثوق): اسمح فقط بأنواع محددة
+const genericTypes = ['message', 'announcement', 'system', 'welcome', 'info']
+if (genericTypes.includes(notif.type)) {
+  return true // سماح عام
+}
+if (notif.governorate_id) {
+  return allowedGovernorateIds.includes(notif.governorate_id)
+}
+return false // رفض الباقي
+```
+
+##### 2. معالجة حالة "لا يوجد providers في المنطقة"
+
+```typescript
+// ❌ غلط: الفلتر لا يُطبق عندما regionProviderIds فارغة
+if (hasRegionFilter && regionProviderIds.length > 0) {
+  query = query.in('provider_id', regionProviderIds)
+}
+// المشكلة: لو regionProviderIds.length === 0، يعرض كل البيانات!
+
+// ✅ صح: إرجاع صفر بدلاً من كل البيانات
+if (hasRegionFilter && regionProviderIds.length === 0) {
+  setData([]) // أو عرض 0
+  return
+}
+if (hasRegionFilter && regionProviderIds.length > 0) {
+  query = query.in('provider_id', regionProviderIds)
+}
+```
+
+##### 3. انتظار تحميل الفلتر قبل تطبيقه
+
+```typescript
+// ❌ غلط: تحميل البيانات قبل أن يجهز الفلتر
+useEffect(() => {
+  loadData() // الفلتر قد يكون null
+}, [])
+
+// ✅ صح: انتظار تحميل الفلتر
+const { loading: filterLoading, hasRegionFilter } = useAdminRegion()
+
+useEffect(() => {
+  if (!filterLoading) {
+    loadData() // الفلتر جاهز الآن
+  }
+}, [filterLoading])
+```
+
+#### الملفات الجديدة
+
+| الملف | الوصف |
+|-------|-------|
+| `src/lib/contexts/AdminRegionContext.tsx` | Context للتخزين المؤقت لبيانات المنطقة |
+| `supabase/migrations/20251221210000_add_regional_filtering_to_admin_notifications.sql` | إضافة columns و triggers للإشعارات الإقليمية |
+
+#### Database Functions الجديدة
+
+```sql
+-- دالة للحصول على المشرفين المسؤولين عن محافظة
+get_admins_for_governorate(p_governorate_id UUID)
+
+-- دالة لإنشاء إشعار إقليمي
+create_regional_admin_notification(
+  p_type, p_title, p_body,
+  p_provider_id, p_order_id, p_governorate_id, ...
+)
+```
+
+#### SQL Query لحذف مستخدم تجريبي
+
+```sql
+-- حذف admin user بالإيميل
+DELETE FROM admin_users WHERE user_id IN (
+  SELECT id FROM auth.users WHERE email = 'bebo@test.com'
+);
+DELETE FROM auth.users WHERE email = 'bebo@test.com';
+```
