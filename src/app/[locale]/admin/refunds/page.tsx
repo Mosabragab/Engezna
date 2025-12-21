@@ -22,6 +22,8 @@ import {
   User as UserIcon,
   Store,
   FileText,
+  MapPin,
+  Filter,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -54,7 +56,19 @@ interface Refund {
   // Relations
   order?: { order_number: string; total: number }
   customer?: { full_name: string; phone: string }
-  provider?: { name_ar: string; name_en: string }
+  provider?: { name_ar: string; name_en: string; governorate_id?: string }
+}
+
+interface Governorate {
+  id: string
+  name_ar: string
+  name_en: string
+}
+
+interface AdminUser {
+  id: string
+  role: string
+  assigned_regions: Array<{ governorate_id?: string; city_id?: string; district_id?: string }>
 }
 
 type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected' | 'processed' | 'failed' | 'escalated'
@@ -77,6 +91,12 @@ export default function AdminRefundsPage() {
   const [reviewNotes, setReviewNotes] = useState('')
   const [processingAction, setProcessingAction] = useState(false)
 
+  // Geographic filtering state
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
+  const [governorates, setGovernorates] = useState<Governorate[]>([])
+  const [selectedGovernorate, setSelectedGovernorate] = useState<string>('all')
+  const isSuperAdmin = adminUser?.role === 'super_admin'
+
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -92,7 +112,7 @@ export default function AdminRefundsPage() {
 
   useEffect(() => {
     filterRefunds()
-  }, [refunds, searchQuery, statusFilter])
+  }, [refunds, searchQuery, statusFilter, selectedGovernorate, adminUser])
 
   async function checkAuth() {
     const supabase = createClient()
@@ -108,6 +128,29 @@ export default function AdminRefundsPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
+
+        // Load admin user details (for region-based filtering)
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('id, role, assigned_regions')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminData) {
+          setAdminUser(adminData as AdminUser)
+        }
+
+        // Load governorates for filter dropdown
+        const { data: govData } = await supabase
+          .from('governorates')
+          .select('id, name_ar, name_en')
+          .eq('is_active', true)
+          .order('name_ar')
+
+        if (govData) {
+          setGovernorates(govData)
+        }
+
         await loadRefunds()
       }
     }
@@ -125,7 +168,7 @@ export default function AdminRefundsPage() {
           *,
           order:orders(order_number, total),
           customer:profiles!customer_id(full_name, phone),
-          provider:providers(name_ar, name_en)
+          provider:providers(name_ar, name_en, governorate_id)
         `)
         .order('created_at', { ascending: false })
 
@@ -160,6 +203,27 @@ export default function AdminRefundsPage() {
 
   function filterRefunds() {
     let filtered = [...refunds]
+
+    // Geographic filtering
+    // Super admin: filter by selected governorate (if not 'all')
+    // Regional admin: filter by their assigned regions only
+    if (adminUser) {
+      const assignedGovernorateIds = (adminUser.assigned_regions || [])
+        .map(r => r.governorate_id)
+        .filter(Boolean) as string[]
+
+      if (adminUser.role === 'super_admin') {
+        // Super admin can filter by any governorate
+        if (selectedGovernorate !== 'all') {
+          filtered = filtered.filter(r => r.provider?.governorate_id === selectedGovernorate)
+        }
+      } else if (assignedGovernorateIds.length > 0) {
+        // Regional admin: only show refunds from their assigned governorates
+        filtered = filtered.filter(r =>
+          r.provider?.governorate_id && assignedGovernorateIds.includes(r.provider.governorate_id)
+        )
+      }
+    }
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
@@ -447,6 +511,36 @@ export default function AdminRefundsPage() {
               <option value="processed">{locale === 'ar' ? 'تم التنفيذ' : 'Processed'}</option>
               <option value="failed">{locale === 'ar' ? 'فشل' : 'Failed'}</option>
             </select>
+
+            {/* Governorate Filter - Only for Super Admin */}
+            {isSuperAdmin && governorates.length > 0 && (
+              <div className="relative">
+                <MapPin className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`} />
+                <select
+                  value={selectedGovernorate}
+                  onChange={(e) => setSelectedGovernorate(e.target.value)}
+                  className={`${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 min-w-[150px]`}
+                >
+                  <option value="all">{locale === 'ar' ? 'كل المحافظات' : 'All Governorates'}</option>
+                  {governorates.map((gov) => (
+                    <option key={gov.id} value={gov.id}>
+                      {locale === 'ar' ? gov.name_ar : gov.name_en}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Show assigned region for regional admins */}
+            {!isSuperAdmin && adminUser?.assigned_regions && adminUser.assigned_regions.length > 0 && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                <MapPin className="w-4 h-4" />
+                <span>
+                  {locale === 'ar' ? 'منطقتك: ' : 'Your Region: '}
+                  {governorates.find(g => g.id === adminUser.assigned_regions[0]?.governorate_id)?.[locale === 'ar' ? 'name_ar' : 'name_en'] || '-'}
+                </span>
+              </div>
+            )}
 
             <Button
               variant="outline"
