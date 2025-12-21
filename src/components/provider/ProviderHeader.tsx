@@ -18,6 +18,7 @@ import {
   Check,
   Trash2,
   AlertTriangle,
+  Reply,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User } from '@supabase/supabase-js'
@@ -332,6 +333,23 @@ export function ProviderHeader({
                               </p>
                             </div>
                             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              {/* Reply button for customer messages */}
+                              {notification.type === 'new_message' && notification.related_order_id && (
+                                <Link
+                                  href={`/${locale}/provider/orders/${notification.related_order_id}?openChat=true`}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (!notification.is_read) {
+                                      markAsRead(notification.id)
+                                    }
+                                    setNotificationsOpen(false)
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-blue-600 rounded-full hover:bg-blue-50"
+                                  title={locale === 'ar' ? 'رد' : 'Reply'}
+                                >
+                                  <Reply className="w-4 h-4" />
+                                </Link>
+                              )}
                               {!notification.is_read && (
                                 <button
                                   onClick={(e) => {
