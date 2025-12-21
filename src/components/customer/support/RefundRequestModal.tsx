@@ -211,6 +211,23 @@ export function RefundRequestModal({
     try {
       const supabase = createClient()
 
+      // Check for existing pending refund on this order
+      const { data: existingRefund } = await supabase
+        .from('refunds')
+        .select('id, status')
+        .eq('order_id', order.id)
+        .in('status', ['pending', 'approved'])
+        .limit(1)
+        .maybeSingle()
+
+      if (existingRefund) {
+        setError(isArabic
+          ? 'يوجد طلب استرداد معلق لهذا الطلب بالفعل. يرجى انتظار مراجعته.'
+          : 'A pending refund request already exists for this order. Please wait for it to be reviewed.')
+        setLoading(false)
+        return
+      }
+
       // Upload images if any (skip if bucket doesn't exist)
       const imageUrls: string[] = []
       for (const image of images) {
@@ -297,19 +314,19 @@ export function RefundRequestModal({
         console.log('Provider notification skipped')
       }
 
-      // Show success screen first
-      setStep(3)
+      // Show success screen - set loading false BEFORE step change to ensure render
       setLoading(false)
 
-      // Call success callback
-      onSuccess?.()
+      // Use a small delay to ensure React renders the success state before any parent re-renders
+      await new Promise(resolve => setTimeout(resolve, 50))
+      setStep(3)
 
-      // Auto-close after 4 seconds to give user time to see the message
+      // Auto-close after 3 seconds to give user time to see the message
+      // Call onSuccess and onClose together after delay
       setTimeout(() => {
+        onSuccess?.()
         onClose()
-      }, 4000)
-
-      return // Exit early, don't continue to finally block
+      }, 3000)
     } catch (err) {
       console.error('Error submitting refund:', err)
       setError(isArabic ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'Error occurred, please try again')
