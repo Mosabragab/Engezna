@@ -17,6 +17,7 @@ import {
   MessageCircle,
   Check,
   Trash2,
+  AlertTriangle,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User } from '@supabase/supabase-js'
@@ -143,6 +144,9 @@ export function ProviderHeader({
         return <MessageCircle className="w-5 h-5 text-blue-600" />
       case 'new_review':
         return <Star className="w-5 h-5 text-primary" />
+      case 'new_refund_request':
+      case 'refund_confirmed':
+        return <AlertTriangle className="w-5 h-5 text-orange-600" />
       default:
         return <Bell className="w-5 h-5 text-slate-500" />
     }
@@ -156,6 +160,9 @@ export function ProviderHeader({
         return 'bg-blue-100'
       case 'new_review':
         return 'bg-primary/10'
+      case 'new_refund_request':
+      case 'refund_confirmed':
+        return 'bg-orange-100'
       default:
         return 'bg-slate-100'
     }
@@ -170,6 +177,9 @@ export function ProviderHeader({
           : `/${locale}/provider/orders`
       case 'new_review':
         return `/${locale}/provider/reviews`
+      case 'new_refund_request':
+      case 'refund_confirmed':
+        return `/${locale}/provider/refunds`
       default:
         return `/${locale}/provider`
     }
