@@ -28,6 +28,7 @@ import {
   Receipt,
   Image,
   RefreshCw,
+  Scale,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { usePermissions } from '@/lib/permissions/use-permissions'
@@ -140,6 +141,12 @@ export function AdminSidebar({
       label: { ar: 'المرتجعات', en: 'Refunds' },
       path: `/${locale}/admin/refunds`,
       badge: pendingRefunds > 0 ? pendingRefunds.toString() : undefined,
+      resource: 'support',
+    },
+    {
+      icon: Scale,
+      label: { ar: 'مركز النزاعات', en: 'Resolution Center' },
+      path: `/${locale}/admin/resolution-center`,
       resource: 'support',
     },
     {
