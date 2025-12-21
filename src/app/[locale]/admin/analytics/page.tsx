@@ -81,11 +81,12 @@ export default function AdminAnalyticsPage() {
   }, [])
 
   useEffect(() => {
-    if (isAdmin) {
+    // Wait for geoFilter to be loaded before loading analytics
+    if (isAdmin && !geoLoading) {
       const supabase = createClient()
       loadAnalytics(supabase)
     }
-  }, [periodFilter, isAdmin, geoFilter])
+  }, [periodFilter, isAdmin, geoFilter, geoLoading])
 
   async function checkAuth() {
     const supabase = createClient()
@@ -113,7 +114,7 @@ export default function AdminAnalyticsPage() {
         }
 
         setLoading(false) // Show page immediately
-        loadAnalytics(supabase) // Load data in background (don't await)
+        // loadAnalytics will be triggered by useEffect when geoFilter is ready
         return
       }
     }
@@ -144,42 +145,6 @@ export default function AdminAnalyticsPage() {
 
     const startDate = getDateRange(periodFilter)
 
-    // Get geographic names for fallback matching (old orders without IDs)
-    let filterGovName: { ar: string | null; en: string | null } = { ar: null, en: null }
-    let filterCityName: { ar: string | null; en: string | null } = { ar: null, en: null }
-    let filterDistrictName: { ar: string | null; en: string | null } = { ar: null, en: null }
-
-    if (geoFilter.governorate_id) {
-      const { data: gov } = await supabase
-        .from('governorates')
-        .select('name_ar, name_en')
-        .eq('id', geoFilter.governorate_id)
-        .single()
-      if (gov) {
-        filterGovName = { ar: gov.name_ar, en: gov.name_en }
-      }
-    }
-    if (geoFilter.city_id) {
-      const { data: city } = await supabase
-        .from('cities')
-        .select('name_ar, name_en')
-        .eq('id', geoFilter.city_id)
-        .single()
-      if (city) {
-        filterCityName = { ar: city.name_ar, en: city.name_en }
-      }
-    }
-    if (geoFilter.district_id) {
-      const { data: district } = await supabase
-        .from('districts')
-        .select('name_ar, name_en')
-        .eq('id', geoFilter.district_id)
-        .single()
-      if (district) {
-        filterDistrictName = { ar: district.name_ar, en: district.name_en }
-      }
-    }
-
     // Get providers with geographic info for filtering
     let providersForFilterQuery = supabase
       .from('providers')
@@ -205,57 +170,20 @@ export default function AdminAnalyticsPage() {
       .gte('created_at', startDate)
       .eq('status', 'delivered')
 
-    // Filter orders by geographic filter
+    // Filter orders by geographic filter - only orders from providers in the selected region
     let orders = ordersData || []
 
     if (geoFilter.governorate_id || geoFilter.city_id || geoFilter.district_id) {
-      orders = orders.filter(order => {
-        // First, check if provider matches (provider location)
-        if (filteredProviderIds.includes(order.provider_id)) {
-          return true
-        }
-
-        // Fallback: check delivery_address for matching geography
-        const addr = order.delivery_address as {
-          governorate_id?: string
-          governorate_ar?: string
-          governorate_en?: string
-          city_id?: string
-          city_ar?: string
-          city_en?: string
-          district_id?: string
-          district_ar?: string
-          district_en?: string
-        } | null
-
-        if (!addr) return false
-
-        // Check governorate match (by ID or name)
-        if (geoFilter.governorate_id) {
-          const govMatch = addr.governorate_id === geoFilter.governorate_id ||
-            (filterGovName.ar && addr.governorate_ar === filterGovName.ar) ||
-            (filterGovName.en && addr.governorate_en === filterGovName.en)
-          if (!govMatch) return false
-        }
-
-        // Check city match (by ID or name)
-        if (geoFilter.city_id) {
-          const cityMatch = addr.city_id === geoFilter.city_id ||
-            (filterCityName.ar && addr.city_ar === filterCityName.ar) ||
-            (filterCityName.en && addr.city_en === filterCityName.en)
-          if (!cityMatch) return false
-        }
-
-        // Check district match (by ID or name)
-        if (geoFilter.district_id) {
-          const districtMatch = addr.district_id === geoFilter.district_id ||
-            (filterDistrictName.ar && addr.district_ar === filterDistrictName.ar) ||
-            (filterDistrictName.en && addr.district_en === filterDistrictName.en)
-          if (!districtMatch) return false
-        }
-
-        return true
-      })
+      // For regional admins, strictly filter by provider location
+      // If no providers found in region, show empty results
+      if (filteredProviderIds.length === 0) {
+        orders = []
+      } else {
+        orders = orders.filter(order => {
+          // Only show orders from providers in the region
+          return filteredProviderIds.includes(order.provider_id)
+        })
+      }
     }
 
     const dailyMap = new Map<string, { orders: number; revenue: number }>()
@@ -418,6 +346,7 @@ export default function AdminAnalyticsPage() {
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
       restaurant: { ar: 'مطاعم', en: 'Restaurants' },
+      restaurant_cafe: { ar: 'مطاعم', en: 'Restaurants' }, // Alias for restaurant
       grocery: { ar: 'بقالة', en: 'Grocery' },
       pharmacy: { ar: 'صيدلية', en: 'Pharmacy' },
       electronics: { ar: 'إلكترونيات', en: 'Electronics' },

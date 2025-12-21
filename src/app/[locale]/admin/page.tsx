@@ -192,6 +192,7 @@ export default function AdminDashboard() {
         .limit(5)
 
       // Apply region filter for non-super_admin
+      let regionProviderIds: string[] = []
       if (assignedGovernorateIds.length > 0) {
         pendingProvidersQuery = pendingProvidersQuery.in('governorate_id', assignedGovernorateIds)
         // For orders, we need to filter by provider's governorate
@@ -200,9 +201,12 @@ export default function AdminDashboard() {
           .from('providers')
           .select('id')
           .in('governorate_id', assignedGovernorateIds)
-        const regionProviderIds = regionProviders?.map(p => p.id) || []
+        regionProviderIds = regionProviders?.map(p => p.id) || []
         if (regionProviderIds.length > 0) {
           recentOrdersQuery = recentOrdersQuery.in('provider_id', regionProviderIds)
+        } else {
+          // No providers in this region - use impossible filter to return empty results
+          recentOrdersQuery = recentOrdersQuery.eq('provider_id', 'no-providers-in-region')
         }
       }
 
