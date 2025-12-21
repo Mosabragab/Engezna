@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ProviderLayout } from '@/components/provider'
 import {
   MessageSquare,
   RefreshCw,
@@ -259,16 +260,23 @@ export default function ProviderComplaintsPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <ProviderLayout
+        pageTitle={{ ar: 'شكاوى العملاء', en: 'Customer Complaints' }}
+        pageSubtitle={{ ar: 'متابعة والرد على شكاوى العملاء', en: 'Track and respond to customer complaints' }}
+      >
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </div>
+      </ProviderLayout>
     )
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <ProviderLayout
+      pageTitle={{ ar: 'شكاوى العملاء', en: 'Customer Complaints' }}
+      pageSubtitle={{ ar: 'متابعة والرد على شكاوى العملاء', en: 'Track and respond to customer complaints' }}
+    >
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -534,5 +542,6 @@ export default function ProviderComplaintsPage() {
         </div>
       </div>
     </div>
+    </ProviderLayout>
   )
 }

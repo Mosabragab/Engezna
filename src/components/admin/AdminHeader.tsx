@@ -165,6 +165,11 @@ export function AdminHeader({
         return { icon: Store, bgColor: 'bg-purple-100', iconColor: 'text-purple-600' }
       case 'review':
         return { icon: Star, bgColor: 'bg-yellow-100', iconColor: 'text-yellow-600' }
+      case 'refund':
+      case 'new_refund_request':
+      case 'refund_escalated':
+      case 'escalation':
+        return { icon: AlertCircle, bgColor: 'bg-orange-100', iconColor: 'text-orange-600' }
       default:
         return { icon: AlertCircle, bgColor: 'bg-slate-100', iconColor: 'text-slate-600' }
     }
@@ -184,6 +189,8 @@ export function AdminHeader({
       router.push(`/${locale}/admin/providers`)
     } else if (notification.type === 'review') {
       router.push(`/${locale}/admin/approvals`)
+    } else if (notification.type === 'refund' || notification.type === 'new_refund_request' || notification.type === 'refund_escalated' || notification.type === 'escalation') {
+      router.push(`/${locale}/admin/refunds`)
     }
     // For other types, just close the dropdown without navigation
     setNotificationsOpen(false)

@@ -35,6 +35,8 @@ import {
   ChevronDown,
   Receipt,
   MessageCircle,
+  RefreshCw,
+  MessageSquare,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import {
@@ -72,6 +74,7 @@ interface DashboardStats {
   totalCustomers: number
   unrespondedReviews: number
   unreadMessages: number
+  pendingRefunds: number
   // Today's payment breakdown
   todayCodOrders: number
   todayCodRevenue: number
@@ -102,6 +105,7 @@ export default function ProviderDashboard() {
     totalCustomers: 0,
     unrespondedReviews: 0,
     unreadMessages: 0,
+    pendingRefunds: 0,
     todayCodOrders: 0,
     todayCodRevenue: 0,
     todayOnlineOrders: 0,
@@ -286,7 +290,8 @@ export default function ProviderDashboard() {
       { data: productsData },
       { data: allOrdersData },
       { data: unrespondedReviewsData },
-      { data: unreadMessagesData }
+      { data: unreadMessagesData },
+      { count: pendingRefundsCount }
     ] = await Promise.all([
       supabase
         .from('orders')
@@ -317,7 +322,14 @@ export default function ProviderDashboard() {
         .from('order_messages')
         .select('id, orders!inner(provider_id)')
         .eq('sender_type', 'customer')
-        .eq('is_read', false)
+        .eq('is_read', false),
+      // Count pending refunds for this provider
+      supabase
+        .from('refunds')
+        .select('*', { count: 'exact', head: true })
+        .eq('provider_id', providerId)
+        .eq('status', 'pending')
+        .eq('provider_action', 'pending')
     ])
 
     const uniqueCustomers = new Set(allOrdersData?.map(o => o.customer_id) || [])
@@ -342,6 +354,7 @@ export default function ProviderDashboard() {
       totalCustomers: uniqueCustomers.size,
       unrespondedReviews: unrespondedReviewsData?.length || 0,
       unreadMessages: providerUnreadMessages.length,
+      pendingRefunds: pendingRefundsCount || 0,
       todayCodOrders: todayCodOrders.length,
       todayCodRevenue: todayCodConfirmed.reduce((sum, o) => sum + (o.total || 0), 0),
       todayOnlineOrders: todayOnlineOrders.length,
@@ -397,6 +410,17 @@ export default function ProviderDashboard() {
       icon: Receipt,
       label: locale === 'ar' ? 'التسويات' : 'Settlements',
       path: `/${locale}/provider/settlements`
+    },
+    {
+      icon: RefreshCw,
+      label: locale === 'ar' ? 'المرتجعات' : 'Refunds',
+      path: `/${locale}/provider/refunds`,
+      badge: stats.pendingRefunds > 0 ? stats.pendingRefunds.toString() : undefined
+    },
+    {
+      icon: MessageSquare,
+      label: locale === 'ar' ? 'الشكاوى' : 'Complaints',
+      path: `/${locale}/provider/complaints`
     },
     {
       icon: Clock,

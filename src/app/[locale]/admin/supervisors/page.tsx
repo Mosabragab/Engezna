@@ -33,22 +33,35 @@ import {
   AlertCircle,
   MapPin,
   Key,
+  Store,
+  ShoppingCart,
+  MessageCircle,
+  TrendingUp,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-// Admin role types matching the database enum
-type AdminRole = 'super_admin' | 'general_moderator' | 'support' | 'finance'
+// Dynamic Role from database
+interface Role {
+  id: string
+  code: string
+  name_ar: string
+  name_en: string
+  description_ar?: string
+  description_en?: string
+  color: string
+  icon: string
+  is_system: boolean
+  is_active: boolean
+}
 
-interface Permissions {
-  providers: { view: boolean; approve: boolean; edit: boolean; delete: boolean }
-  orders: { view: boolean; cancel: boolean; refund: boolean }
-  customers: { view: boolean; ban: boolean; edit: boolean }
-  finance: { view: boolean; settlements: boolean; reports: boolean }
-  support: { view: boolean; assign: boolean; resolve: boolean }
-  team: { view: boolean; manage: boolean }
-  settings: { view: boolean; edit: boolean }
-  analytics: { view: boolean }
+// Admin role assignment from admin_roles table
+interface AdminRoleAssignment {
+  id: string
+  admin_id: string
+  role_id: string
+  is_primary: boolean
+  role?: Role
 }
 
 interface AssignedRegion {
@@ -81,8 +94,7 @@ interface District {
 interface Supervisor {
   id: string
   user_id: string
-  role: AdminRole
-  permissions: Permissions
+  role: string // Legacy field - kept for backward compatibility
   assigned_regions: AssignedRegion[]
   is_active: boolean
   last_active_at: string | null
@@ -95,94 +107,31 @@ interface Supervisor {
     phone: string | null
     avatar_url: string | null
   }
+  // New: roles from admin_roles table
+  admin_roles: AdminRoleAssignment[]
+  // Computed: primary role for display
+  primaryRole?: Role
 }
 
 type FilterStatus = 'all' | 'active' | 'inactive'
-type FilterRole = 'all' | AdminRole
 
-// Default permissions by role
-const getDefaultPermissions = (role: AdminRole): Permissions => {
-  switch (role) {
-    case 'super_admin':
-      return {
-        providers: { view: true, approve: true, edit: true, delete: true },
-        orders: { view: true, cancel: true, refund: true },
-        customers: { view: true, ban: true, edit: true },
-        finance: { view: true, settlements: true, reports: true },
-        support: { view: true, assign: true, resolve: true },
-        team: { view: true, manage: true },
-        settings: { view: true, edit: true },
-        analytics: { view: true },
-      }
-    case 'general_moderator':
-      return {
-        providers: { view: true, approve: true, edit: true, delete: false },
-        orders: { view: true, cancel: true, refund: false },
-        customers: { view: true, ban: true, edit: false },
-        finance: { view: false, settlements: false, reports: false },
-        support: { view: true, assign: false, resolve: false },
-        team: { view: false, manage: false },
-        settings: { view: false, edit: false },
-        analytics: { view: true },
-      }
-    case 'support':
-      return {
-        providers: { view: true, approve: false, edit: false, delete: false },
-        orders: { view: true, cancel: false, refund: false },
-        customers: { view: true, ban: false, edit: false },
-        finance: { view: false, settlements: false, reports: false },
-        support: { view: true, assign: true, resolve: true },
-        team: { view: false, manage: false },
-        settings: { view: false, edit: false },
-        analytics: { view: false },
-      }
-    case 'finance':
-      return {
-        providers: { view: true, approve: false, edit: false, delete: false },
-        orders: { view: true, cancel: false, refund: true },
-        customers: { view: true, ban: false, edit: false },
-        finance: { view: true, settlements: true, reports: true },
-        support: { view: false, assign: false, resolve: false },
-        team: { view: false, manage: false },
-        settings: { view: false, edit: false },
-        analytics: { view: true },
-      }
-    default:
-      return {
-        providers: { view: true, approve: false, edit: false, delete: false },
-        orders: { view: true, cancel: false, refund: false },
-        customers: { view: true, ban: false, edit: false },
-        finance: { view: false, settlements: false, reports: false },
-        support: { view: true, assign: false, resolve: false },
-        team: { view: false, manage: false },
-        settings: { view: false, edit: false },
-        analytics: { view: true },
-      }
+// Icon mapping for dynamic roles
+function getRoleIcon(iconName: string): React.ElementType {
+  const iconMap: Record<string, React.ElementType> = {
+    'Crown': Crown,
+    'UserCog': UserCog,
+    'Headphones': Headphones,
+    'Wallet': Wallet,
+    'ShieldCheck': ShieldCheck,
+    'Store': Store,
+    'MapPin': MapPin,
+    'ShoppingCart': ShoppingCart,
+    'MessageCircle': MessageCircle,
+    'TrendingUp': TrendingUp,
+    'Eye': Eye,
+    'Shield': Shield,
   }
-}
-
-// Role labels and icons
-const roleConfig: Record<AdminRole, { label: { ar: string; en: string }; icon: React.ElementType; color: string }> = {
-  super_admin: {
-    label: { ar: 'المدير التنفيذي', en: 'Super Admin' },
-    icon: Crown,
-    color: 'text-amber-600 bg-amber-100',
-  },
-  general_moderator: {
-    label: { ar: 'مشرف عام', en: 'General Moderator' },
-    icon: ShieldCheck,
-    color: 'text-blue-600 bg-blue-100',
-  },
-  support: {
-    label: { ar: 'مشرف دعم', en: 'Support' },
-    icon: Headphones,
-    color: 'text-purple-600 bg-purple-100',
-  },
-  finance: {
-    label: { ar: 'مشرف مالي', en: 'Finance' },
-    icon: Wallet,
-    color: 'text-emerald-600 bg-emerald-100',
-  },
+  return iconMap[iconName] || Shield
 }
 
 export default function AdminSupervisorsPage() {
@@ -199,8 +148,11 @@ export default function AdminSupervisorsPage() {
   const [filteredSupervisors, setFilteredSupervisors] = useState<Supervisor[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
-  const [roleFilter, setRoleFilter] = useState<FilterRole>('all')
+  const [roleFilter, setRoleFilter] = useState<string>('all') // Dynamic role ID or 'all'
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  // Available roles from database
+  const [availableRoles, setAvailableRoles] = useState<Role[]>([])
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false)
@@ -211,7 +163,7 @@ export default function AdminSupervisorsPage() {
   // Form states for add/edit
   const [formData, setFormData] = useState({
     email: '',
-    role: 'general_moderator' as AdminRole,
+    role_id: '', // Role ID from roles table
     is_active: true,
     assigned_regions: [] as AssignedRegion[],
   })
@@ -232,15 +184,13 @@ export default function AdminSupervisorsPage() {
     total: 0,
     active: 0,
     inactive: 0,
-    superAdmins: 0,
-    moderators: 0,
-    support: 0,
-    finance: 0,
+    byRole: {} as Record<string, number>, // Dynamic role counts
   })
 
   useEffect(() => {
     checkAuth()
     loadGeoData()
+    loadRoles()
   }, [])
 
   useEffect(() => {
@@ -281,6 +231,24 @@ export default function AdminSupervisorsPage() {
     }
   }
 
+  async function loadRoles() {
+    const supabase = createClient()
+    const { data: rolesData } = await supabase
+      .from('roles')
+      .select('*')
+      .eq('is_active', true)
+      .order('name_ar')
+
+    if (rolesData) {
+      setAvailableRoles(rolesData)
+      // Set default role_id if empty
+      if (!formData.role_id && rolesData.length > 0) {
+        const defaultRole = rolesData.find(r => r.code === 'general_moderator') || rolesData[0]
+        setFormData(prev => ({ ...prev, role_id: defaultRole.id }))
+      }
+    }
+  }
+
   async function checkAuth() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -296,15 +264,35 @@ export default function AdminSupervisorsPage() {
       if (profile?.role === 'admin') {
         setIsAdmin(true)
 
-        // Check if user is super_admin
+        // Get admin_user record
         const { data: adminUser } = await supabase
           .from('admin_users')
-          .select('role')
+          .select('id, role')
           .eq('user_id', user.id)
           .single()
 
-        if (adminUser?.role === 'super_admin') {
-          setIsSuperAdmin(true)
+        if (adminUser) {
+          // Check if user is super_admin - check both legacy field AND admin_roles
+          if (adminUser.role === 'super_admin') {
+            setIsSuperAdmin(true)
+          } else {
+            // Also check admin_roles for super_admin role
+            const { data: adminRoles } = await supabase
+              .from('admin_roles')
+              .select('role:roles!inner(code)')
+              .eq('admin_id', adminUser.id)
+
+            const hasSuperAdminRole = adminRoles?.some(
+              (ar: Record<string, unknown>) => {
+                const role = ar.role as { code: string } | { code: string }[] | null
+                const roleCode = Array.isArray(role) ? role[0]?.code : role?.code
+                return roleCode === 'super_admin'
+              }
+            )
+            if (hasSuperAdminRole) {
+              setIsSuperAdmin(true)
+            }
+          }
         }
 
         await loadSupervisors(supabase)
@@ -330,67 +318,62 @@ export default function AdminSupervisorsPage() {
       .order('created_at', { ascending: false })
 
     if (error) {
-      // Try alternative query without join
-      const { data: adminUsersAlt, error: altError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (altError) return
-
-      // Manually fetch profiles
-      const supervisorsWithProfiles: Supervisor[] = await Promise.all(
-        (adminUsersAlt || []).map(async (admin) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('full_name, email, phone, avatar_url')
-            .eq('id', admin.user_id)
-            .single()
-
-          return {
-            ...admin,
-            assigned_regions: admin.assigned_regions || [],
-            profile: profileData || {
-              full_name: null,
-              email: null,
-              phone: null,
-              avatar_url: null,
-            },
-          }
-        })
-      )
-
-      setSupervisors(supervisorsWithProfiles)
-      calculateStats(supervisorsWithProfiles)
+      console.error('Error loading supervisors:', error)
       return
     }
 
-    const supervisorsData = (adminUsers || []).map((admin: any) => ({
-      ...admin,
-      assigned_regions: admin.assigned_regions || [],
-      profile: admin.profile || {
-        full_name: null,
-        email: null,
-        phone: null,
-        avatar_url: null,
-      },
-    }))
+    // Load admin_roles for all supervisors
+    const adminIds = (adminUsers || []).map(a => a.id)
+    const { data: allAdminRoles } = await supabase
+      .from('admin_roles')
+      .select(`
+        *,
+        role:roles(*)
+      `)
+      .in('admin_id', adminIds)
+
+    // Map admin_roles to each supervisor
+    const supervisorsData: Supervisor[] = (adminUsers || []).map((admin: Record<string, unknown>) => {
+      const adminRoles = (allAdminRoles || []).filter(ar => ar.admin_id === admin.id) as AdminRoleAssignment[]
+      const primaryRoleAssignment = adminRoles.find(ar => ar.is_primary) || adminRoles[0]
+      const profileData = Array.isArray(admin.profile) ? admin.profile[0] : admin.profile
+
+      return {
+        ...admin,
+        assigned_regions: (admin.assigned_regions as AssignedRegion[]) || [],
+        profile: profileData || {
+          full_name: null,
+          email: null,
+          phone: null,
+          avatar_url: null,
+        },
+        admin_roles: adminRoles,
+        primaryRole: primaryRoleAssignment?.role,
+      } as Supervisor
+    })
 
     setSupervisors(supervisorsData)
     calculateStats(supervisorsData)
   }
 
   function calculateStats(data: Supervisor[]) {
-    const stats = {
+    // Calculate stats by role using admin_roles
+    const byRole: Record<string, number> = {}
+
+    data.forEach(s => {
+      // Use primaryRole from admin_roles if available, otherwise fall back to legacy role
+      const roleCode = s.primaryRole?.code || s.role
+      if (roleCode) {
+        byRole[roleCode] = (byRole[roleCode] || 0) + 1
+      }
+    })
+
+    setStats({
       total: data.length,
       active: data.filter(s => s.is_active).length,
       inactive: data.filter(s => !s.is_active).length,
-      superAdmins: data.filter(s => s.role === 'super_admin').length,
-      moderators: data.filter(s => s.role === 'general_moderator').length,
-      support: data.filter(s => s.role === 'support').length,
-      finance: data.filter(s => s.role === 'finance').length,
-    }
-    setStats(stats)
+      byRole,
+    })
   }
 
   function filterSupervisors() {
@@ -412,7 +395,13 @@ export default function AdminSupervisorsPage() {
     }
 
     if (roleFilter !== 'all') {
-      filtered = filtered.filter(s => s.role === roleFilter)
+      // Filter by role_id from admin_roles, or fall back to legacy role code
+      filtered = filtered.filter(s => {
+        // Check if any admin_role matches the filter
+        const hasRole = s.admin_roles?.some(ar => ar.role_id === roleFilter || ar.role?.code === roleFilter)
+        // Also check legacy role field
+        return hasRole || s.role === roleFilter
+      })
     }
 
     setFilteredSupervisors(filtered)
@@ -439,6 +428,11 @@ export default function AdminSupervisorsPage() {
   async function handleAddSupervisor() {
     if (!formData.email) {
       setFormError(locale === 'ar' ? 'البريد الإلكتروني مطلوب' : 'Email is required')
+      return
+    }
+
+    if (!formData.role_id) {
+      setFormError(locale === 'ar' ? 'يرجى اختيار دور' : 'Please select a role')
       return
     }
 
@@ -472,48 +466,77 @@ export default function AdminSupervisorsPage() {
       return
     }
 
+    // Get the selected role for legacy field sync
+    const selectedRole = availableRoles.find(r => r.id === formData.role_id)
+
     // Update profile role to admin
     await supabase
       .from('profiles')
       .update({ role: 'admin' })
       .eq('id', profile.id)
 
-    // Create admin_user record
-    const { error: createError } = await supabase
+    // Create admin_user record (with legacy role field for backward compatibility)
+    const { data: newAdmin, error: createError } = await supabase
       .from('admin_users')
       .insert({
         user_id: profile.id,
-        role: formData.role,
-        permissions: getDefaultPermissions(formData.role),
+        role: selectedRole?.code || 'general_moderator', // Legacy field
         assigned_regions: formData.assigned_regions,
         is_active: formData.is_active,
       })
+      .select('id')
+      .single()
 
-    if (createError) {
+    if (createError || !newAdmin) {
       setFormError(locale === 'ar' ? 'حدث خطأ أثناء إضافة المشرف' : 'Error adding supervisor')
       setFormLoading(false)
       return
     }
 
+    // Create admin_role entry (new system)
+    const { error: roleError } = await supabase
+      .from('admin_roles')
+      .insert({
+        admin_id: newAdmin.id,
+        role_id: formData.role_id,
+        is_primary: true,
+      })
+
+    if (roleError) {
+      console.error('Error creating admin_role:', roleError)
+      // Continue anyway - admin was created, role can be added later
+    }
+
     // Reload supervisors
     await loadSupervisors(supabase)
     setShowAddModal(false)
-    setFormData({ email: '', role: 'general_moderator', is_active: true, assigned_regions: [] })
+
+    // Reset form with default role
+    const defaultRole = availableRoles.find(r => r.code === 'general_moderator') || availableRoles[0]
+    setFormData({ email: '', role_id: defaultRole?.id || '', is_active: true, assigned_regions: [] })
     setFormLoading(false)
   }
 
   async function handleEditSupervisor() {
     if (!selectedSupervisor) return
 
+    if (!formData.role_id) {
+      setFormError(locale === 'ar' ? 'يرجى اختيار دور' : 'Please select a role')
+      return
+    }
+
     setFormLoading(true)
     setFormError('')
     const supabase = createClient()
 
+    // Get the selected role for legacy field sync
+    const selectedRole = availableRoles.find(r => r.id === formData.role_id)
+
+    // Update admin_users (with legacy role field)
     const { error } = await supabase
       .from('admin_users')
       .update({
-        role: formData.role,
-        permissions: getDefaultPermissions(formData.role),
+        role: selectedRole?.code || selectedSupervisor.role, // Sync legacy field
         assigned_regions: formData.assigned_regions,
         is_active: formData.is_active,
       })
@@ -524,6 +547,28 @@ export default function AdminSupervisorsPage() {
       setFormLoading(false)
       return
     }
+
+    // Update admin_roles - remove old primary and add new
+    // First, check if there's an existing primary role
+    const existingPrimaryRole = selectedSupervisor.admin_roles?.find(ar => ar.is_primary)
+
+    if (existingPrimaryRole && existingPrimaryRole.role_id !== formData.role_id) {
+      // Update existing primary role
+      await supabase
+        .from('admin_roles')
+        .update({ role_id: formData.role_id })
+        .eq('id', existingPrimaryRole.id)
+    } else if (!existingPrimaryRole) {
+      // No existing role, create new one
+      await supabase
+        .from('admin_roles')
+        .insert({
+          admin_id: selectedSupervisor.id,
+          role_id: formData.role_id,
+          is_primary: true,
+        })
+    }
+    // If same role, no change needed
 
     // Reload supervisors
     await loadSupervisors(supabase)
@@ -537,6 +582,18 @@ export default function AdminSupervisorsPage() {
 
     setFormLoading(true)
     const supabase = createClient()
+
+    // Remove admin_roles first (due to foreign key)
+    await supabase
+      .from('admin_roles')
+      .delete()
+      .eq('admin_id', selectedSupervisor.id)
+
+    // Remove admin_permissions if any
+    await supabase
+      .from('admin_permissions')
+      .delete()
+      .eq('admin_id', selectedSupervisor.id)
 
     // Remove from admin_users
     const { error } = await supabase
@@ -564,9 +621,11 @@ export default function AdminSupervisorsPage() {
 
   function openEditModal(supervisor: Supervisor) {
     setSelectedSupervisor(supervisor)
+    // Get primary role_id from admin_roles
+    const primaryRole = supervisor.admin_roles?.find(ar => ar.is_primary) || supervisor.admin_roles?.[0]
     setFormData({
       email: supervisor.profile?.email || '',
-      role: supervisor.role,
+      role_id: primaryRole?.role_id || '',
       is_active: supervisor.is_active,
       assigned_regions: supervisor.assigned_regions || [],
     })
@@ -693,7 +752,7 @@ export default function AdminSupervisorsPage() {
 
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-7 gap-4 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
                 <Users className="w-5 h-5 text-slate-600" />
@@ -715,33 +774,27 @@ export default function AdminSupervisorsPage() {
               </div>
               <p className="text-2xl font-bold text-error">{formatNumber(stats.inactive, locale)}</p>
             </div>
-            <div className="bg-card-bg-amber rounded-xl p-4 border border-amber/30">
+            {/* Dynamic role stats */}
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <Crown className="w-5 h-5 text-amber" />
-                <span className="text-sm text-amber">{locale === 'ar' ? 'مدراء' : 'Super Admins'}</span>
+                <Shield className="w-5 h-5 text-slate-600" />
+                <span className="text-sm text-slate-600">{locale === 'ar' ? 'الأدوار' : 'By Role'}</span>
               </div>
-              <p className="text-2xl font-bold text-amber">{formatNumber(stats.superAdmins, locale)}</p>
-            </div>
-            <div className="bg-card-bg-primary rounded-xl p-4 border border-primary/30">
-              <div className="flex items-center gap-3 mb-2">
-                <ShieldCheck className="w-5 h-5 text-primary" />
-                <span className="text-sm text-primary">{locale === 'ar' ? 'مشرفين' : 'Moderators'}</span>
+              <div className="flex flex-wrap gap-2">
+                {availableRoles.slice(0, 4).map(role => {
+                  const count = stats.byRole[role.code] || 0
+                  if (count === 0) return null
+                  return (
+                    <span
+                      key={role.id}
+                      className="text-xs px-2 py-1 rounded-full"
+                      style={{ backgroundColor: `${role.color}20`, color: role.color }}
+                    >
+                      {count} {locale === 'ar' ? role.name_ar : role.name_en}
+                    </span>
+                  )
+                })}
               </div>
-              <p className="text-2xl font-bold text-primary">{formatNumber(stats.moderators, locale)}</p>
-            </div>
-            <div className="bg-card-bg-purple rounded-xl p-4 border border-purple/30">
-              <div className="flex items-center gap-3 mb-2">
-                <Headphones className="w-5 h-5 text-purple" />
-                <span className="text-sm text-purple">{locale === 'ar' ? 'دعم' : 'Support'}</span>
-              </div>
-              <p className="text-2xl font-bold text-purple">{formatNumber(stats.support, locale)}</p>
-            </div>
-            <div className="bg-card-bg-emerald rounded-xl p-4 border border-emerald/30">
-              <div className="flex items-center gap-3 mb-2">
-                <Wallet className="w-5 h-5 text-emerald" />
-                <span className="text-sm text-emerald">{locale === 'ar' ? 'مالية' : 'Finance'}</span>
-              </div>
-              <p className="text-2xl font-bold text-emerald">{formatNumber(stats.finance, locale)}</p>
             </div>
           </div>
 
@@ -771,14 +824,15 @@ export default function AdminSupervisorsPage() {
 
               <select
                 value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value as FilterRole)}
+                onChange={(e) => setRoleFilter(e.target.value)}
                 className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
               >
                 <option value="all">{locale === 'ar' ? 'كل الأدوار' : 'All Roles'}</option>
-                <option value="super_admin">{locale === 'ar' ? 'المدير التنفيذي' : 'Super Admin'}</option>
-                <option value="general_moderator">{locale === 'ar' ? 'مشرف عام' : 'General Moderator'}</option>
-                <option value="support">{locale === 'ar' ? 'مشرف دعم' : 'Support'}</option>
-                <option value="finance">{locale === 'ar' ? 'مشرف مالي' : 'Finance'}</option>
+                {availableRoles.map(role => (
+                  <option key={role.id} value={role.code}>
+                    {locale === 'ar' ? role.name_ar : role.name_en}
+                  </option>
+                ))}
               </select>
 
               <Button
@@ -826,8 +880,10 @@ export default function AdminSupervisorsPage() {
                 <tbody className="divide-y divide-slate-100">
                   {filteredSupervisors.length > 0 ? (
                     filteredSupervisors.map((supervisor) => {
-                      const RoleIcon = roleConfig[supervisor.role]?.icon || UserCog
-                      const roleColor = roleConfig[supervisor.role]?.color || 'text-slate-600 bg-slate-100'
+                      // Use primaryRole from admin_roles, fall back to legacy role
+                      const displayRole = supervisor.primaryRole
+                      const RoleIcon = displayRole ? getRoleIcon(displayRole.icon) : UserCog
+                      const roleColor = displayRole?.color || '#64748b'
 
                       return (
                         <tr key={supervisor.id} className="hover:bg-slate-50 transition-colors">
@@ -862,9 +918,14 @@ export default function AdminSupervisorsPage() {
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${roleColor}`}>
+                            <span
+                              className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                              style={{ backgroundColor: `${roleColor}20`, color: roleColor }}
+                            >
                               <RoleIcon className="w-3.5 h-3.5" />
-                              {roleConfig[supervisor.role]?.label[locale === 'ar' ? 'ar' : 'en']}
+                              {displayRole
+                                ? (locale === 'ar' ? displayRole.name_ar : displayRole.name_en)
+                                : supervisor.role}
                             </span>
                           </td>
                           <td className="px-4 py-3">
@@ -1014,14 +1075,16 @@ export default function AdminSupervisorsPage() {
                   {locale === 'ar' ? 'الدور' : 'Role'}
                 </label>
                 <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminRole })}
+                  value={formData.role_id}
+                  onChange={(e) => setFormData({ ...formData, role_id: e.target.value })}
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
                 >
-                  <option value="general_moderator">{locale === 'ar' ? 'مشرف عام' : 'General Moderator'}</option>
-                  <option value="support">{locale === 'ar' ? 'مشرف دعم' : 'Support'}</option>
-                  <option value="finance">{locale === 'ar' ? 'مشرف مالي' : 'Finance'}</option>
-                  <option value="super_admin">{locale === 'ar' ? 'المدير التنفيذي' : 'Super Admin'}</option>
+                  <option value="">{locale === 'ar' ? 'اختر الدور...' : 'Select role...'}</option>
+                  {availableRoles.map(role => (
+                    <option key={role.id} value={role.id}>
+                      {locale === 'ar' ? role.name_ar : role.name_en}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -1153,14 +1216,16 @@ export default function AdminSupervisorsPage() {
                   {locale === 'ar' ? 'الدور' : 'Role'}
                 </label>
                 <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminRole })}
+                  value={formData.role_id}
+                  onChange={(e) => setFormData({ ...formData, role_id: e.target.value })}
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
                 >
-                  <option value="general_moderator">{locale === 'ar' ? 'مشرف عام' : 'General Moderator'}</option>
-                  <option value="support">{locale === 'ar' ? 'مشرف دعم' : 'Support'}</option>
-                  <option value="finance">{locale === 'ar' ? 'مشرف مالي' : 'Finance'}</option>
-                  <option value="super_admin">{locale === 'ar' ? 'المدير التنفيذي' : 'Super Admin'}</option>
+                  <option value="">{locale === 'ar' ? 'اختر الدور...' : 'Select role...'}</option>
+                  {availableRoles.map(role => (
+                    <option key={role.id} value={role.id}>
+                      {locale === 'ar' ? role.name_ar : role.name_en}
+                    </option>
+                  ))}
                 </select>
               </div>
 

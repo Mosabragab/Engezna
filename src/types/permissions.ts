@@ -24,6 +24,7 @@ export type ResourceCode =
   | 'finance'
   | 'analytics'
   | 'support'
+  | 'disputes'
   | 'locations'
   | 'team'
   | 'approvals'
@@ -293,6 +294,12 @@ export const RESOURCE_CONFIG: Record<ResourceCode, {
     icon: 'Headphones',
     href: '/admin/support',
     label: { ar: 'الدعم', en: 'Support' },
+    category: 'main',
+  },
+  disputes: {
+    icon: 'Scale',
+    href: '/admin/resolution-center',
+    label: { ar: 'مركز النزاعات', en: 'Resolution Center' },
     category: 'main',
   },
   locations: {

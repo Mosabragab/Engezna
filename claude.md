@@ -1,8 +1,53 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 12, 2025 (Session 18)
-**Status:** Week 5 - Complete Feature Set (Session 18) ✅
-**Branch:** `claude/here-maps-integration-017zDHWVpx3H1i4KP3Bc42bx`
+**Last Updated:** December 21, 2025 (Session 19)
+**Status:** Week 6 - Resolution Center Complete ✅
+**Branch:** `claude/fix-returns-complaints-workflow-YkDHe`
+
+---
+
+## 🆕 Session 19 Updates (December 21, 2025)
+
+### Dynamic Permissions System
+- Unified role system using `admin_roles` table instead of hardcoded enum
+- Added `disputes` resource to permissions for relevant roles
+- Configured default permissions for new roles: regional_manager, orders_moderator, support_agent, analyst, viewer
+
+### Refunds-Settlements Integration (Critical)
+**Problem Fixed:** Partial refunds were zeroing entire commission instead of proportional reduction
+
+**Solution:**
+```sql
+-- Proportional commission reduction formula
+commission_reduction = original_commission * (refund_amount / order_total)
+-- Example: 27.91% refund → 27.91% commission reduction
+```
+
+**New Components:**
+- `settlement_adjustments` table for audit trail
+- `update_settlement_after_refund()` function for retroactive adjustments
+- Updated `generate_provider_settlement()` to exclude adjusted orders
+- Updated `generate_auto_settlements()` to exclude adjusted orders
+
+### Customer Notification Dropdown
+- Hover dropdown on notification bell icon
+- Shows last 5 notifications with type-specific icons
+- Refund confirmation buttons for cash refunds
+- Customer can confirm receipt without navigating to support page
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `src/app/[locale]/admin/supervisors/page.tsx` | Dynamic role selection from database |
+| `src/components/customer/layout/CustomerHeader.tsx` | Notification dropdown with confirmation |
+
+### Migrations Created
+| Migration | Purpose |
+|-----------|---------|
+| `20251221000002_add_disputes_permissions.sql` | Disputes resource permissions |
+| `20251221000003_assign_new_roles_permissions.sql` | Default permissions for new roles |
+| `20251221000004_fix_refunds_settlements_integration.sql` | Critical refunds-settlements fixes |
+| `20251221000005_fix_refund_notification_columns.sql` | Fixed notification column names |
 
 ---
 
@@ -155,8 +200,8 @@ Technique:
 - **Name:** Engezna (إنجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
-- **Status:** Week 5 Complete - Full Feature Set ✅
-- **Progress:** ~88% of MVP Complete
+- **Status:** Week 6 Complete - Resolution Center ✅
+- **Progress:** ~94% of MVP Complete
 - **Live URL:** https://engezna.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
@@ -394,6 +439,8 @@ Week 1 ████████████ 100% ✅ Provider browsing + cart
 Week 2 ████████████ 100% ✅ Auth + Checkout + Orders + Settings
 Week 3 ████████████ 100% ✅ Partner Dashboard + Menu Management
 Week 4 ████████████ 100% ✅ Admin Dashboard + Supervisor System
+Week 5 ████████████ 100% ✅ Customer Features + Settlements System
+Week 6 ████████████ 100% ✅ Resolution Center + Refunds Integration
 ```
 
 ### Week 0: Foundation (100% ✅)
@@ -507,6 +554,30 @@ Week 4 ████████████ 100% ✅ Admin Dashboard + Superviso
   - [x] Role and permissions pre-configuration ✅
   - [x] Region assignment during invitation ✅
   - [x] Copy invitation link functionality ✅
+
+### Week 5: Customer Features + Settlements (100% ✅)
+- [x] Order cancellation for customers ✅
+- [x] Reviews & Ratings system ✅
+- [x] Favorites feature ✅
+- [x] Promo codes system ✅
+- [x] Real-time notifications (Supabase Realtime) ✅
+- [x] In-app chat between customer and provider ✅
+- [x] Settlements system (Admin + Provider pages) ✅
+- [x] COD vs Online payment breakdown ✅
+- [x] Excel Menu Import system ✅
+- [x] Product Variants system ✅
+
+### Week 6: Resolution Center + Refunds Integration (100% ✅)
+- [x] Unified permission system using dynamic roles ✅
+- [x] Disputes resource added to permissions ✅
+- [x] Default permissions for new roles ✅
+- [x] Proportional commission reduction for partial refunds ✅
+- [x] Settlement adjustments audit table ✅
+- [x] Retroactive settlement adjustment on refunds ✅
+- [x] Exclude adjusted orders from future settlements ✅
+- [x] Fixed notification column names (body_ar/body_en) ✅
+- [x] Notification dropdown with hover ✅
+- [x] Refund confirmation buttons in dropdown ✅
 
 ---
 

@@ -376,10 +376,37 @@ npm run type-check   # TypeScript type checking
 
 ### 📊 Current Status
 
-**Phase:** Week 5 - Admin Backend Integration + UI Polish
-**Status:** Week 5 - Complete Feature Set ✅
-**Overall Progress:** ~88% of MVP Complete
-**Last Updated:** December 11, 2025 (Session 17)
+**Phase:** Week 6 - Refunds & Settlements Integration
+**Status:** Week 6 - Resolution Center Complete ✅
+**Overall Progress:** ~94% of MVP Complete
+**Last Updated:** December 21, 2025 (Session 19)
+
+---
+
+### 🔄 Session 19 Updates (December 21, 2025)
+
+**Refunds-Settlements Integration (Critical Fixes):**
+- ✅ **Proportional Commission Reduction**: Partial refunds now reduce commission proportionally
+  - Example: 27.91% refund → 27.91% commission reduction (was zeroing entire commission)
+- ✅ **Settlement Adjustments Audit**: New `settlement_adjustments` table for tracking changes
+- ✅ **Retroactive Adjustment**: Existing settlements updated when refunds are processed
+- ✅ **Exclude Adjusted Orders**: Settlement generation skips orders with refund adjustments
+
+**Dynamic Permissions System:**
+- ✅ **Unified Role System**: Supervisors page uses dynamic roles from `admin_roles` table
+- ✅ **Disputes Resource**: Added disputes permissions to all relevant roles
+- ✅ **New Roles Configured**: Default permissions for regional_manager, orders_moderator, support_agent, analyst, viewer
+
+**Customer Notification Enhancements:**
+- ✅ **Notification Dropdown**: Shows on hover over bell icon with last 5 notifications
+- ✅ **Refund Confirmation Buttons**: Customer can confirm cash refund receipt from dropdown
+- ✅ **Fixed Notification Columns**: Corrected column names in notification trigger
+
+**Migrations Created:**
+- `20251221000002_add_disputes_permissions.sql`
+- `20251221000003_assign_new_roles_permissions.sql`
+- `20251221000004_fix_refunds_settlements_integration.sql`
+- `20251221000005_fix_refund_notification_columns.sql`
 
 ---
 
@@ -782,12 +809,21 @@ npm run dev
 
 ### 📊 الحالة الحالية
 
-**المرحلة:** الأسبوع 5 - مجموعة الميزات الكاملة
-**الحالة:** الأسبوع 5 - مجموعة الميزات الكاملة ✅
-**التقدم الكلي:** ~88% من MVP مكتمل
-**آخر تحديث:** 7 ديسمبر 2025 (الجلسة 15)
+**المرحلة:** الأسبوع 6 - تكامل المبالغ المستردة والتسويات
+**الحالة:** الأسبوع 6 - مركز الحلول مكتمل ✅
+**التقدم الكلي:** ~94% من MVP مكتمل
+**آخر تحديث:** 21 ديسمبر 2025 (الجلسة 19)
 
-**مميزات الجلسة 15 (جديد!):**
+**مميزات الجلسة 19 (جديد!):**
+- ✅ **تكامل المبالغ المستردة والتسويات** - إصلاحات حرجة:
+  - تخفيض العمولة بشكل نسبي للمبالغ المستردة الجزئية
+  - جدول `settlement_adjustments` لتتبع التعديلات
+  - تعديل التسويات الحالية عند معالجة المبالغ المستردة
+- ✅ **نظام الصلاحيات الموحد** - استخدام الأدوار الديناميكية من قاعدة البيانات
+- ✅ **قائمة الإشعارات المنسدلة** - تظهر عند التحويم مع أزرار تأكيد الاسترداد
+- ✅ **إصلاح أعمدة الإشعارات** - تصحيح أسماء الأعمدة في دالة الإشعارات
+
+**مميزات الجلسة 15:**
 - ✅ **نظام التسويات** - إدارة تسويات المتاجر والمدفوعات
   - صفحة تسويات الإدارة (`/admin/settlements`)
   - صفحة تسويات المتجر (`/provider/settlements`)

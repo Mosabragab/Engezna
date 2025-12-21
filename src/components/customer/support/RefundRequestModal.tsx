@@ -97,6 +97,11 @@ export function RefundRequestModal({
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Partial refund state
+  const [refundType, setRefundType] = useState<'full' | 'partial'>('full')
+  const [partialAmount, setPartialAmount] = useState<string>('')
+  const [selectedItems, setSelectedItems] = useState<string[]>([])
+
   // Mount check for portal
   useEffect(() => {
     setMounted(true)
@@ -112,8 +117,37 @@ export function RefundRequestModal({
       setImages([])
       setImagePreviews([])
       setError('')
+      setRefundType('full')
+      setPartialAmount('')
+      setSelectedItems([])
     }
   }, [isOpen])
+
+  // Calculate refund amount based on selected type
+  const calculateRefundAmount = () => {
+    if (refundType === 'full') {
+      return order.total
+    }
+    // If items are selected, calculate their total
+    if (selectedItems.length > 0 && order.items) {
+      return order.items
+        .filter(item => selectedItems.includes(item.id))
+        .reduce((sum, item) => sum + item.total_price, 0)
+    }
+    // Otherwise use manual amount
+    return parseFloat(partialAmount) || 0
+  }
+
+  const refundAmount = calculateRefundAmount()
+
+  // Toggle item selection
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItems(prev =>
+      prev.includes(itemId)
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    )
+  }
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -159,11 +193,40 @@ export function RefundRequestModal({
       return
     }
 
+    // Validate partial refund amount
+    if (refundType === 'partial') {
+      if (refundAmount <= 0) {
+        setError(isArabic ? 'يرجى تحديد مبلغ الاسترداد' : 'Please specify the refund amount')
+        return
+      }
+      if (refundAmount > order.total) {
+        setError(isArabic ? 'مبلغ الاسترداد لا يمكن أن يتجاوز إجمالي الطلب' : 'Refund amount cannot exceed order total')
+        return
+      }
+    }
+
     setLoading(true)
     setError('')
 
     try {
       const supabase = createClient()
+
+      // Check for existing pending refund on this order
+      const { data: existingRefund } = await supabase
+        .from('refunds')
+        .select('id, status')
+        .eq('order_id', order.id)
+        .in('status', ['pending', 'approved'])
+        .limit(1)
+        .maybeSingle()
+
+      if (existingRefund) {
+        setError(isArabic
+          ? 'يوجد طلب استرداد معلق لهذا الطلب بالفعل. يرجى انتظار مراجعته.'
+          : 'A pending refund request already exists for this order. Please wait for it to be reviewed.')
+        setLoading(false)
+        return
+      }
 
       // Upload images if any (skip if bucket doesn't exist)
       const imageUrls: string[] = []
@@ -189,7 +252,7 @@ export function RefundRequestModal({
       // Use the RPC function which bypasses RLS
       const { data: refundId, error: rpcError } = await supabase.rpc('create_customer_refund_request', {
         p_order_id: order.id,
-        p_amount: order.total,
+        p_amount: refundAmount,
         p_reason: description,
         p_issue_type: selectedIssue,
         p_evidence_images: imageUrls.length > 0 ? imageUrls : null
@@ -202,7 +265,8 @@ export function RefundRequestModal({
           order_id: order.id,
           customer_id: order.customer_id,
           provider_id: order.provider_id,
-          amount: order.total,
+          amount: refundAmount,
+          refund_type: refundType,
           reason: selectedIssue,
           reason_ar: description,
           issue_type: selectedIssue,
@@ -223,7 +287,7 @@ export function RefundRequestModal({
           provider_id: order.provider_id,
           order_id: order.id,
           type: 'refund',
-          subject: `طلب استرداد - ${order.order_number}`,
+          subject: `طلب استرداد ${refundType === 'partial' ? 'جزئي' : 'كامل'} - ${order.order_number}`,
           description: description,
           priority: 'high',
           status: 'open'
@@ -240,8 +304,8 @@ export function RefundRequestModal({
           type: 'new_refund_request',
           title_ar: 'طلب استرداد جديد',
           title_en: 'New Refund Request',
-          body_ar: `لديك طلب استرداد جديد للطلب #${order.order_number} بقيمة ${order.total} ج.م`,
-          body_en: `You have a new refund request for order #${order.order_number} worth ${order.total} EGP`,
+          body_ar: `لديك طلب استرداد ${refundType === 'partial' ? 'جزئي' : 'كامل'} للطلب #${order.order_number} بقيمة ${refundAmount.toFixed(2)} ج.م`,
+          body_en: `You have a new ${refundType} refund request for order #${order.order_number} worth ${refundAmount.toFixed(2)} EGP`,
           related_order_id: order.id,
           related_customer_id: order.customer_id
         })
@@ -250,12 +314,22 @@ export function RefundRequestModal({
         console.log('Provider notification skipped')
       }
 
+      // Show success screen - set loading false BEFORE step change to ensure render
+      setLoading(false)
+
+      // Use a small delay to ensure React renders the success state before any parent re-renders
+      await new Promise(resolve => setTimeout(resolve, 50))
       setStep(3)
-      onSuccess?.()
+
+      // Auto-close after 7 seconds to give user time to see the message
+      // Call onSuccess and onClose together after delay
+      setTimeout(() => {
+        onSuccess?.()
+        onClose()
+      }, 7000)
     } catch (err) {
       console.error('Error submitting refund:', err)
       setError(isArabic ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'Error occurred, please try again')
-    } finally {
       setLoading(false)
     }
   }
@@ -398,6 +472,112 @@ export function RefundRequestModal({
             {/* STEP 2: Details */}
             {step === 2 && (
               <div className="space-y-4">
+                {/* Refund Type Selection */}
+                <div>
+                  <label className="block font-semibold text-slate-900 mb-2">
+                    {isArabic ? 'نوع الاسترداد *' : 'Refund Type *'}
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRefundType('full')
+                        setSelectedItems([])
+                        setPartialAmount('')
+                      }}
+                      className={`flex-1 p-3 rounded-xl border-2 text-center transition-all ${
+                        refundType === 'full'
+                          ? 'border-orange-500 bg-orange-50 text-orange-700'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="font-medium">{isArabic ? 'استرداد كامل' : 'Full Refund'}</div>
+                      <div className="text-sm text-slate-500">{order.total.toFixed(2)} {isArabic ? 'ج.م' : 'EGP'}</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRefundType('partial')}
+                      className={`flex-1 p-3 rounded-xl border-2 text-center transition-all ${
+                        refundType === 'partial'
+                          ? 'border-orange-500 bg-orange-50 text-orange-700'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="font-medium">{isArabic ? 'استرداد جزئي' : 'Partial Refund'}</div>
+                      <div className="text-sm text-slate-500">{isArabic ? 'اختر الأصناف' : 'Select items'}</div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Item Selection for Partial Refund */}
+                {refundType === 'partial' && order.items && order.items.length > 0 && (
+                  <div>
+                    <label className="block font-semibold text-slate-900 mb-2">
+                      {isArabic ? 'اختر الأصناف المتضررة' : 'Select affected items'}
+                    </label>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {order.items.map((item) => (
+                        <label
+                          key={item.id}
+                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                            selectedItems.includes(item.id)
+                              ? 'border-orange-500 bg-orange-50'
+                              : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.includes(item.id)}
+                            onChange={() => toggleItemSelection(item.id)}
+                            className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                          />
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-slate-700">
+                              {isArabic ? item.item_name_ar : item.item_name_en}
+                            </span>
+                            <span className="text-xs text-slate-500 mx-2">x{item.quantity}</span>
+                          </div>
+                          <span className="text-sm font-medium text-slate-900">
+                            {item.total_price.toFixed(2)} {isArabic ? 'ج.م' : 'EGP'}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual Amount Input for Partial Refund (if no items or want different amount) */}
+                {refundType === 'partial' && (
+                  <div>
+                    <label className="block font-semibold text-slate-900 mb-2">
+                      {isArabic ? 'أو أدخل المبلغ يدوياً' : 'Or enter amount manually'}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max={order.total}
+                        step="0.01"
+                        value={partialAmount}
+                        onChange={(e) => {
+                          setPartialAmount(e.target.value)
+                          setSelectedItems([]) // Clear item selection when manual amount is entered
+                        }}
+                        placeholder={isArabic ? 'المبلغ' : 'Amount'}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        dir="ltr"
+                      />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
+                        {isArabic ? 'ج.م' : 'EGP'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {isArabic ? `الحد الأقصى: ${order.total.toFixed(2)} ج.م` : `Maximum: ${order.total.toFixed(2)} EGP`}
+                    </p>
+                  </div>
+                )}
+
+                {/* Description */}
                 <div>
                   <label className="block font-semibold text-slate-900 mb-2">
                     {isArabic ? 'وصف المشكلة *' : 'Describe the issue *'}
@@ -406,11 +586,12 @@ export function RefundRequestModal({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder={isArabic ? 'اشرح المشكلة بالتفصيل...' : 'Explain the issue in detail...'}
-                    className="min-h-[120px] resize-none"
+                    className="min-h-[100px] resize-none"
                     dir={isArabic ? 'rtl' : 'ltr'}
                   />
                 </div>
 
+                {/* Evidence Photos */}
                 <div>
                   <label className="block font-semibold text-slate-900 mb-2">
                     {isArabic ? 'صور للإثبات (اختياري)' : 'Evidence photos (optional)'}
@@ -452,13 +633,25 @@ export function RefundRequestModal({
                   />
                 </div>
 
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">{isArabic ? 'إجمالي الطلب' : 'Order Total'}</span>
-                    <span className="font-bold text-slate-900">
-                      {order.total.toFixed(2)} {isArabic ? 'ج.م' : 'EGP'}
+                {/* Refund Summary */}
+                <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-sm text-green-700">{isArabic ? 'مبلغ الاسترداد' : 'Refund Amount'}</span>
+                      <span className="text-xs text-green-600 mx-2">
+                        ({refundType === 'full' ? (isArabic ? 'كامل' : 'Full') : (isArabic ? 'جزئي' : 'Partial')})
+                      </span>
+                    </div>
+                    <span className="text-xl font-bold text-green-700">
+                      {refundAmount.toFixed(2)} {isArabic ? 'ج.م' : 'EGP'}
                     </span>
                   </div>
+                  {refundType === 'partial' && (
+                    <div className="flex justify-between text-xs text-slate-500 mt-2 pt-2 border-t border-green-200">
+                      <span>{isArabic ? 'من أصل' : 'Out of'}</span>
+                      <span>{order.total.toFixed(2)} {isArabic ? 'ج.م' : 'EGP'}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -466,16 +659,21 @@ export function RefundRequestModal({
             {/* STEP 3: Success */}
             {step === 3 && (
               <div className="text-center py-6">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                   <CheckCircle2 className="w-10 h-10 text-green-600" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  {isArabic ? 'تم إرسال طلبك' : 'Request Submitted'}
+                <h3 className="text-xl font-bold text-green-700 mb-2">
+                  {isArabic ? 'تم إرسال طلبك بنجاح!' : 'Request Submitted Successfully!'}
                 </h3>
-                <p className="text-slate-600 mb-4">
+                <p className="text-slate-600 mb-2">
                   {isArabic
                     ? 'سيتم مراجعة طلبك خلال 24 ساعة'
                     : 'Your request will be reviewed within 24 hours'}
+                </p>
+                <p className="text-sm text-slate-400">
+                  {isArabic
+                    ? 'ستغلق النافذة تلقائياً...'
+                    : 'This window will close automatically...'}
                 </p>
               </div>
             )}
