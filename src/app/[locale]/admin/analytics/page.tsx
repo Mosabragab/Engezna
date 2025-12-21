@@ -6,8 +6,9 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
+import { AdminHeader, useAdminSidebar, GeoFilter, useAdminGeoFilter } from '@/components/admin'
 import type { GeoFilterValue } from '@/components/admin'
+import { MapPin } from 'lucide-react'
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -56,7 +57,8 @@ export default function AdminAnalyticsPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(true)
-  const { geoFilter, setGeoFilter } = useGeoFilter()
+  const { geoFilter, setGeoFilter, isRegionalAdmin, allowedGovernorateIds, loading: geoLoading } = useAdminGeoFilter()
+  const [governorates, setGovernorates] = useState<{ id: string; name_ar: string; name_en: string }[]>([])
 
   const [periodFilter, setPeriodFilter] = useState<FilterPeriod>('month')
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
@@ -99,6 +101,17 @@ export default function AdminAnalyticsPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
+
+        // Load governorates for display
+        const { data: govData } = await supabase
+          .from('governorates')
+          .select('id, name_ar, name_en')
+          .eq('is_active', true)
+          .order('name_ar')
+        if (govData) {
+          setGovernorates(govData)
+        }
+
         setLoading(false) // Show page immediately
         loadAnalytics(supabase) // Load data in background (don't await)
         return
@@ -487,15 +500,31 @@ export default function AdminAnalyticsPage() {
                 ))}
               </div>
 
-              {/* Geographic Filter */}
-              <div className="flex items-center gap-3 lg:ml-auto pt-2 lg:pt-0 lg:border-l lg:border-slate-200 lg:pl-4">
-                <span className="text-sm text-slate-500 whitespace-nowrap">{locale === 'ar' ? 'فلترة جغرافية:' : 'Location:'}</span>
-                <GeoFilter
-                  value={geoFilter}
-                  onChange={setGeoFilter}
-                  showDistrict={true}
-                />
-              </div>
+              {/* Geographic Filter - Only show for non-regional admins */}
+              {!isRegionalAdmin && !geoLoading && (
+                <div className="flex items-center gap-3 lg:ml-auto pt-2 lg:pt-0 lg:border-l lg:border-slate-200 lg:pl-4">
+                  <span className="text-sm text-slate-500 whitespace-nowrap">{locale === 'ar' ? 'فلترة جغرافية:' : 'Location:'}</span>
+                  <GeoFilter
+                    value={geoFilter}
+                    onChange={setGeoFilter}
+                    showDistrict={true}
+                  />
+                </div>
+              )}
+
+              {/* Region indicator for regional admins */}
+              {isRegionalAdmin && allowedGovernorateIds.length > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 lg:ml-auto">
+                  <MapPin className="w-4 h-4" />
+                  <span>
+                    {locale === 'ar' ? 'منطقتك: ' : 'Your Region: '}
+                    {governorates
+                      .filter(g => allowedGovernorateIds.includes(g.id))
+                      .map(g => locale === 'ar' ? g.name_ar : g.name_en)
+                      .join(', ') || '-'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

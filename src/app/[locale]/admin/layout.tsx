@@ -12,6 +12,12 @@ interface AdminLayoutInnerProps {
   children: React.ReactNode
 }
 
+interface AdminUser {
+  id: string
+  role: string
+  assigned_regions: Array<{ governorate_id?: string; city_id?: string }>
+}
+
 function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const pathname = usePathname()
   const { isOpen, close, hasMounted } = useAdminSidebar()
@@ -19,6 +25,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const [openTickets, setOpenTickets] = useState(0)
   const [pendingBannerApprovals, setPendingBannerApprovals] = useState(0)
   const [pendingRefunds, setPendingRefunds] = useState(0)
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
 
   // Check if current page is login page - don't show sidebar
   const isLoginPage = pathname?.includes('/admin/login')
@@ -27,52 +34,115 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
     // Don't load badge counts on login page
     if (isLoginPage) return
 
-    loadBadgeCounts()
+    // First load admin user data, then badge counts
+    loadAdminAndBadges()
     // Refresh badge counts every 60 seconds
-    const interval = setInterval(loadBadgeCounts, 60000)
+    const interval = setInterval(() => loadBadgeCounts(adminUser), 60000)
     return () => clearInterval(interval)
   }, [isLoginPage])
 
-  async function loadBadgeCounts() {
+  async function loadAdminAndBadges() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    // Get admin user's assigned_regions
+    const { data: adminData } = await supabase
+      .from('admin_users')
+      .select('id, role, assigned_regions')
+      .eq('user_id', user.id)
+      .single()
+
+    if (adminData) {
+      setAdminUser(adminData as AdminUser)
+      await loadBadgeCounts(adminData as AdminUser)
+    }
+  }
+
+  async function loadBadgeCounts(admin: AdminUser | null) {
     try {
       const supabase = createClient()
 
-      // Get pending providers count
-      const { count: providersCount, error: providersError } = await supabase
+      // Determine region filter
+      const isSuperAdmin = admin?.role === 'super_admin'
+      const assignedGovernorateIds = !isSuperAdmin && admin?.assigned_regions
+        ? (admin.assigned_regions || [])
+            .map(r => r.governorate_id)
+            .filter(Boolean) as string[]
+        : []
+      const hasRegionFilter = assignedGovernorateIds.length > 0
+
+      // Get provider IDs for the region (needed for filtering related data)
+      let regionProviderIds: string[] = []
+      if (hasRegionFilter) {
+        const { data: regionProviders } = await supabase
+          .from('providers')
+          .select('id')
+          .in('governorate_id', assignedGovernorateIds)
+        regionProviderIds = regionProviders?.map(p => p.id) || []
+      }
+
+      // Get pending providers count (filtered by region)
+      let providersQuery = supabase
         .from('providers')
         .select('*', { count: 'exact', head: true })
         .in('status', ['pending_approval', 'incomplete'])
+
+      if (hasRegionFilter) {
+        providersQuery = providersQuery.in('governorate_id', assignedGovernorateIds)
+      }
+
+      const { count: providersCount, error: providersError } = await providersQuery
 
       if (!providersError) {
         setPendingProviders(providersCount || 0)
       }
 
-      // Get open tickets count (if support_tickets table exists)
-      const { count: ticketsCount, error: ticketsError } = await supabase
+      // Get open tickets count (filtered by provider's region)
+      let ticketsQuery = supabase
         .from('support_tickets')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'open')
+
+      if (hasRegionFilter && regionProviderIds.length > 0) {
+        ticketsQuery = ticketsQuery.in('provider_id', regionProviderIds)
+      }
+
+      const { count: ticketsCount, error: ticketsError } = await ticketsQuery
 
       if (!ticketsError) {
         setOpenTickets(ticketsCount || 0)
       }
 
-      // Get pending banner approvals count (banners created by providers)
-      const { count: bannerApprovalsCount, error: bannerApprovalsError } = await supabase
+      // Get pending banner approvals count (filtered by provider's region)
+      let bannersQuery = supabase
         .from('homepage_banners')
         .select('*', { count: 'exact', head: true })
         .not('provider_id', 'is', null)
         .eq('approval_status', 'pending')
 
+      if (hasRegionFilter && regionProviderIds.length > 0) {
+        bannersQuery = bannersQuery.in('provider_id', regionProviderIds)
+      }
+
+      const { count: bannerApprovalsCount, error: bannerApprovalsError } = await bannersQuery
+
       if (!bannerApprovalsError) {
         setPendingBannerApprovals(bannerApprovalsCount || 0)
       }
 
-      // Get pending refunds count (awaiting admin review)
-      const { count: refundsCount, error: refundsError } = await supabase
+      // Get pending refunds count (filtered by provider's region)
+      let refundsQuery = supabase
         .from('refunds')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending')
+
+      if (hasRegionFilter && regionProviderIds.length > 0) {
+        refundsQuery = refundsQuery.in('provider_id', regionProviderIds)
+      }
+
+      const { count: refundsCount, error: refundsError } = await refundsQuery
 
       if (!refundsError) {
         setPendingRefunds(refundsCount || 0)

@@ -182,8 +182,9 @@ export default function ResolutionCenterPage() {
       .order('created_at', { ascending: false })
 
     // Transform refunds data to match interface
+    let transformedRefunds: Refund[] = []
     if (refundsData) {
-      const transformedRefunds = refundsData.map((r: Record<string, unknown>) => ({
+      transformedRefunds = refundsData.map((r: Record<string, unknown>) => ({
         ...r,
         order: Array.isArray(r.order) ? r.order[0] : r.order,
         customer: Array.isArray(r.customer) ? r.customer[0] : r.customer,
@@ -193,8 +194,9 @@ export default function ResolutionCenterPage() {
     }
 
     // Transform complaints data to match interface
+    let transformedComplaints: Complaint[] = []
     if (complaintsData) {
-      const transformedComplaints = complaintsData.map((c: Record<string, unknown>) => ({
+      transformedComplaints = complaintsData.map((c: Record<string, unknown>) => ({
         ...c,
         user: Array.isArray(c.user) ? c.user[0] : c.user,
         provider: Array.isArray(c.provider) ? c.provider[0] : c.provider,
@@ -202,17 +204,59 @@ export default function ResolutionCenterPage() {
       setComplaints(transformedComplaints)
     }
 
-    // Calculate stats
-    const pendingRefunds = refundsData?.filter((r: Record<string, unknown>) => r.status === 'pending').length || 0
-    const escalatedRefunds = refundsData?.filter((r: Record<string, unknown>) => r.escalated_to_admin).length || 0
-    const openComplaints = complaintsData?.filter((c: Record<string, unknown>) => c.status === 'open').length || 0
-    const urgentComplaints = complaintsData?.filter((c: Record<string, unknown>) => c.priority === 'urgent').length || 0
+    // Apply regional filtering for stats calculation
+    // Note: We recalculate the filtered data here to get accurate stats
+    const filterForStats = <T extends { provider?: { governorate_id?: string } | null }>(items: T[], admin: AdminUser | null): T[] => {
+      if (!admin) return items
+
+      const assignedGovernorateIds = (admin.assigned_regions || [])
+        .map(r => r.governorate_id)
+        .filter(Boolean) as string[]
+
+      // Super admin sees everything
+      if (admin.role === 'super_admin') {
+        return items
+      }
+
+      // Regional admin only sees their region
+      if (assignedGovernorateIds.length > 0) {
+        return items.filter(item =>
+          item.provider?.governorate_id && assignedGovernorateIds.includes(item.provider.governorate_id)
+        )
+      }
+
+      return items
+    }
+
+    // Get admin user for filtering stats
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    let currentAdminUser: AdminUser | null = null
+    if (currentUser) {
+      const { data: adminData } = await supabase
+        .from('admin_users')
+        .select('id, role, assigned_regions')
+        .eq('user_id', currentUser.id)
+        .single()
+      if (adminData) {
+        currentAdminUser = adminData as AdminUser
+      }
+    }
+
+    // Filter data for stats calculation
+    const filteredRefundsForStats = filterForStats(transformedRefunds, currentAdminUser)
+    const filteredComplaintsForStats = filterForStats(transformedComplaints, currentAdminUser)
+
+    // Calculate stats from filtered data
+    const pendingRefunds = filteredRefundsForStats.filter(r => r.status === 'pending').length
+    const escalatedRefunds = filteredRefundsForStats.filter(r => r.escalated_to_admin).length
+    const openComplaints = filteredComplaintsForStats.filter(c => c.status === 'open').length
+    const urgentComplaints = filteredComplaintsForStats.filter(c => c.priority === 'urgent').length
 
     setStats({
-      totalRefunds: refundsData?.length || 0,
+      totalRefunds: filteredRefundsForStats.length,
       pendingRefunds,
       escalatedRefunds,
-      totalComplaints: complaintsData?.length || 0,
+      totalComplaints: filteredComplaintsForStats.length,
       openComplaints,
       urgentComplaints,
     })

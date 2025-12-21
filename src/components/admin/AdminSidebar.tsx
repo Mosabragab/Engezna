@@ -74,18 +74,6 @@ export function AdminSidebar({
   // جلب الدور الرئيسي للعرض
   const primaryRole = roles.find(r => r.is_primary) || roles[0]
 
-  // Debug logging (remove in production)
-  if (typeof window !== 'undefined') {
-    console.log('[Sidebar Debug]', {
-      loading,
-      isSuperAdmin,
-      legacyRole,
-      rolesCount: roles.length,
-      primaryRoleCode: primaryRole?.role?.code,
-      accessibleResources,
-    })
-  }
-
   // التحقق من إمكانية الوصول للمورد
   const canAccess = (resource: ResourceCode): boolean => {
     // super_admin يرى كل شيء
