@@ -37,6 +37,7 @@ interface Notification {
   related_message_id: string | null
   related_provider_id: string | null
   related_order_id: string | null
+  governorate_id: string | null
   is_read: boolean
   created_at: string
 }
@@ -73,7 +74,6 @@ export function AdminHeader({
   const [isPending, startTransition] = useTransition()
   const [adminUserData, setAdminUserData] = useState<AdminUserData | null>(null)
   const [regionProviderIds, setRegionProviderIds] = useState<string[]>([])
-  const [regionOrderIds, setRegionOrderIds] = useState<string[]>([])
 
   // Load notifications on mount
   useEffect(() => {
@@ -109,40 +109,19 @@ export function AdminHeader({
       : []
     const hasRegionFilter = assignedGovernorateIds.length > 0
 
-    // Get provider IDs for the region (for filtering notifications)
-    let providerIdsInRegion: string[] = []
-    let orderIdsInRegion: string[] = []
-
-    if (hasRegionFilter) {
-      const { data: regionProviders } = await supabase
-        .from('providers')
-        .select('id')
-        .in('governorate_id', assignedGovernorateIds)
-
-      providerIdsInRegion = (regionProviders || []).map(p => p.id)
-      setRegionProviderIds(providerIdsInRegion)
-
-      // Get recent order IDs from those providers (for order notification filtering)
-      if (providerIdsInRegion.length > 0) {
-        const { data: regionOrders } = await supabase
-          .from('orders')
-          .select('id')
-          .in('provider_id', providerIdsInRegion)
-          .order('created_at', { ascending: false })
-          .limit(100)
-
-        orderIdsInRegion = (regionOrders || []).map(o => o.id)
-        setRegionOrderIds(orderIdsInRegion)
-      }
-    }
-
-    // Fetch notifications
-    const { data: notifs, error } = await supabase
+    // Build notification query
+    let notifQuery = supabase
       .from('admin_notifications')
       .select('*')
       .eq('admin_id', adminUser.id)
       .order('created_at', { ascending: false })
-      .limit(20) // Fetch more to allow for filtering
+      .limit(10)
+
+    // For regional admins, also fetch notifications that match their region
+    // New notifications will have governorate_id set; for backwards compatibility
+    // with old notifications, we also do client-side filtering
+
+    const { data: notifs, error } = await notifQuery
 
     if (error) {
       console.error('Error loading notifications:', error)
@@ -151,52 +130,37 @@ export function AdminHeader({
 
     // Filter notifications for regional admins
     let filteredNotifs = notifs || []
-    if (hasRegionFilter && providerIdsInRegion.length > 0) {
+
+    if (hasRegionFilter) {
+      // Get provider IDs for the region (for filtering old notifications without governorate_id)
+      const { data: regionProviders } = await supabase
+        .from('providers')
+        .select('id')
+        .in('governorate_id', assignedGovernorateIds)
+
+      const providerIdsInRegion = (regionProviders || []).map(p => p.id)
+      setRegionProviderIds(providerIdsInRegion)
+
       filteredNotifs = filteredNotifs.filter(notif => {
-        // Allow all generic/message notifications
+        // Allow all generic/message notifications (no region filtering needed)
         if (['message', 'announcement', 'system', 'task', 'approval'].includes(notif.type)) {
           return true
         }
 
-        // For provider notifications, check if provider is in region
-        if (['provider', 'new_provider'].includes(notif.type)) {
-          // If notification has related_provider_id, check it
-          if (notif.related_provider_id) {
-            return providerIdsInRegion.includes(notif.related_provider_id)
-          }
-          // Otherwise, allow (can't filter without provider ID)
-          return true
+        // NEW: If notification has governorate_id, use it for filtering (most efficient)
+        if (notif.governorate_id) {
+          return assignedGovernorateIds.includes(notif.governorate_id)
         }
 
-        // For order notifications, check if order is in region
-        if (['order', 'new_order', 'order_status'].includes(notif.type)) {
-          if (notif.related_order_id) {
-            return orderIdsInRegion.includes(notif.related_order_id)
-          }
-          return true
+        // FALLBACK: For old notifications without governorate_id, check related_provider_id
+        if (notif.related_provider_id && providerIdsInRegion.length > 0) {
+          return providerIdsInRegion.includes(notif.related_provider_id)
         }
 
-        // For refund/dispute notifications, check provider
-        if (['refund', 'new_refund_request', 'refund_escalated', 'escalation', 'dispute'].includes(notif.type)) {
-          if (notif.related_provider_id) {
-            return providerIdsInRegion.includes(notif.related_provider_id)
-          }
-          return true
-        }
-
-        // For settlement/payment notifications, check provider
-        if (['settlement', 'payment'].includes(notif.type)) {
-          if (notif.related_provider_id) {
-            return providerIdsInRegion.includes(notif.related_provider_id)
-          }
-          return true
-        }
-
-        // Allow other notifications by default
+        // If notification has no region info, allow it (backwards compatibility)
+        // These are likely old notifications or generic system notifications
         return true
-      }).slice(0, 10) // Limit to 10 after filtering
-    } else {
-      filteredNotifs = filteredNotifs.slice(0, 10)
+      })
     }
 
     setNotifications(filteredNotifs)
