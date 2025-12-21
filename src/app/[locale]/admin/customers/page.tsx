@@ -147,8 +147,9 @@ export default function AdminCustomersPage() {
           orders_count,
           total_spent,
           last_order_at,
-          governorate_id: addressData?.governorate_id || null,
-          city_id: addressData?.city_id || null,
+          // Use address data first, then fall back to profile's governorate_id
+          governorate_id: addressData?.governorate_id || customer.governorate_id || null,
+          city_id: addressData?.city_id || customer.city_id || null,
           district_id: addressData?.district_id || null,
         }
       })
