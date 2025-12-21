@@ -50,6 +50,7 @@ interface AdminSidebarProps {
   pendingApprovals?: number
   unreadMessages?: number
   pendingBannerApprovals?: number
+  pendingRefunds?: number
 }
 
 export function AdminSidebar({
@@ -61,6 +62,7 @@ export function AdminSidebar({
   pendingApprovals = 0,
   unreadMessages = 0,
   pendingBannerApprovals = 0,
+  pendingRefunds = 0,
   hasMounted = false,
 }: AdminSidebarProps & { hasMounted?: boolean }) {
   const locale = useLocale()
@@ -137,6 +139,7 @@ export function AdminSidebar({
       icon: RefreshCw,
       label: { ar: 'المرتجعات', en: 'Refunds' },
       path: `/${locale}/admin/refunds`,
+      badge: pendingRefunds > 0 ? pendingRefunds.toString() : undefined,
       resource: 'support',
     },
     {
