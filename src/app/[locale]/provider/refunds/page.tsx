@@ -118,12 +118,14 @@ export default function ProviderRefundsPage() {
     setProviderId(provider.id)
 
     // Fetch refunds
+    // Note: Using !customer_id to specify the exact foreign key relationship
+    // since refunds has multiple FKs to profiles (customer_id, requested_by, reviewed_by, processed_by)
     const { data: refundsData, error: refundsError } = await supabase
       .from('refunds')
       .select(`
         *,
         order:orders(order_number, total, delivery_address),
-        customer:profiles(full_name, phone)
+        customer:profiles!customer_id(full_name, phone)
       `)
       .eq('provider_id', provider.id)
       .order('created_at', { ascending: false })
