@@ -297,16 +297,22 @@ export function RefundRequestModal({
         console.log('Provider notification skipped')
       }
 
+      // Show success screen first
       setStep(3)
+      setLoading(false)
+
+      // Call success callback
       onSuccess?.()
-      // Auto-close after 3 seconds
+
+      // Auto-close after 4 seconds to give user time to see the message
       setTimeout(() => {
         onClose()
-      }, 3000)
+      }, 4000)
+
+      return // Exit early, don't continue to finally block
     } catch (err) {
       console.error('Error submitting refund:', err)
       setError(isArabic ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'Error occurred, please try again')
-    } finally {
       setLoading(false)
     }
   }
