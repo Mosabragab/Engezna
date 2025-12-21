@@ -349,11 +349,17 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
   // الصلاحيات الافتراضية للأدوار القديمة (للاستخدام في hasResource)
   const legacyRoleDefaultPermissions: Record<string, ResourceCode[]> = {
-    super_admin: ['dashboard', 'providers', 'orders', 'customers', 'finance', 'analytics', 'support', 'locations', 'team', 'approvals', 'tasks', 'messages', 'announcements', 'promotions', 'settings', 'activity_log', 'roles', 'escalation_rules'], // super_admin يرى كل شيء
-    general_moderator: ['dashboard', 'providers', 'orders', 'customers', 'support', 'locations', 'promotions', 'team', 'tasks', 'messages', 'announcements'],
+    super_admin: ['dashboard', 'providers', 'orders', 'customers', 'finance', 'analytics', 'support', 'disputes', 'locations', 'team', 'approvals', 'tasks', 'messages', 'announcements', 'promotions', 'settings', 'activity_log', 'roles', 'escalation_rules'], // super_admin يرى كل شيء
+    general_moderator: ['dashboard', 'providers', 'orders', 'customers', 'support', 'disputes', 'locations', 'promotions', 'team', 'tasks', 'messages', 'announcements'],
     store_supervisor: ['dashboard', 'providers', 'orders', 'support', 'messages'],
-    support: ['dashboard', 'support', 'orders', 'customers', 'messages'],
+    support: ['dashboard', 'support', 'disputes', 'orders', 'customers', 'messages'],
     finance: ['dashboard', 'finance', 'orders', 'analytics', 'messages'],
+    // الأدوار الجديدة
+    regional_manager: ['dashboard', 'providers', 'orders', 'customers', 'analytics', 'support', 'disputes', 'locations', 'tasks', 'approvals', 'messages', 'announcements'],
+    orders_moderator: ['dashboard', 'orders', 'providers', 'customers', 'support', 'disputes', 'locations', 'tasks', 'approvals', 'messages', 'announcements'],
+    support_agent: ['dashboard', 'support', 'disputes', 'orders', 'customers', 'providers', 'tasks', 'messages', 'announcements'],
+    analyst: ['dashboard', 'analytics', 'orders', 'providers', 'customers', 'finance', 'locations', 'activity_log', 'messages', 'announcements'],
+    viewer: ['dashboard', 'providers', 'orders', 'customers', 'support', 'locations', 'tasks', 'approvals', 'messages', 'announcements'],
   };
 
   // هل يمكن الوصول للمورد؟
