@@ -32,9 +32,9 @@ interface SettlementRecord {
   id: string
   provider_id: string
   provider: { name_ar: string; name_en: string; governorate_id: string | null; city_id: string | null; district_id: string | null } | null
-  amount: number
+  gross_revenue: number
   platform_commission: number
-  net_amount: number
+  net_payout: number
   status: string
   period_start: string
   period_end: string
@@ -216,9 +216,9 @@ export default function AdminFinancePage() {
       .select(`
         id,
         provider_id,
-        amount,
+        gross_revenue,
         platform_commission,
-        net_amount,
+        net_payout,
         status,
         period_start,
         period_end,
@@ -232,8 +232,8 @@ export default function AdminFinancePage() {
     const settlementsTyped = (settlementsData || []) as unknown as SettlementRecord[]
     setSettlements(settlementsTyped)
 
-    const pendingSettlements = settlementsTyped.filter(s => s.status === 'pending' || s.status === 'partially_paid').reduce((sum, s) => sum + (s.net_amount || 0), 0)
-    const completedSettlements = settlementsTyped.filter(s => s.status === 'paid' || s.status === 'waived').reduce((sum, s) => sum + (s.net_amount || 0), 0)
+    const pendingSettlements = settlementsTyped.filter(s => s.status === 'pending' || s.status === 'partially_paid').reduce((sum, s) => sum + (s.net_payout || 0), 0)
+    const completedSettlements = settlementsTyped.filter(s => s.status === 'paid' || s.status === 'waived').reduce((sum, s) => sum + (s.net_payout || 0), 0)
 
     setStats({
       totalRevenue,
@@ -608,13 +608,13 @@ export default function AdminFinancePage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-medium text-slate-900">{formatCurrency(settlement.amount, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                          <span className="font-medium text-slate-900">{formatCurrency(settlement.gross_revenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm text-red-600">-{formatCurrency(settlement.platform_commission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-bold text-green-600">{formatCurrency(settlement.net_amount, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                          <span className="font-bold text-green-600">{formatCurrency(settlement.net_payout, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${getSettlementStatusColor(settlement.status)}`}>
