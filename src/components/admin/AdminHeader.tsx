@@ -142,17 +142,22 @@ export function AdminHeader({
       setRegionProviderIds(providerIdsInRegion)
 
       filteredNotifs = filteredNotifs.filter(notif => {
-        // Allow all generic/message notifications (no region filtering needed)
-        if (['message', 'announcement', 'system', 'task', 'approval', 'reminder'].includes(notif.type)) {
+        // WHITELIST APPROACH: Only allow specific generic notification types
+        // Everything else is assumed to be region-specific
+
+        // Generic notifications that should be shown to all admins
+        const genericTypes = ['message', 'announcement', 'system', 'task', 'approval', 'reminder', 'welcome', 'info']
+
+        if (genericTypes.includes(notif.type)) {
           return true
         }
 
-        // NEW: If notification has governorate_id, use it for filtering (most efficient)
+        // If notification has governorate_id, use it for filtering
         if (notif.governorate_id) {
           return assignedGovernorateIds.includes(notif.governorate_id)
         }
 
-        // FALLBACK: For old notifications without governorate_id, check related_provider_id
+        // If notification has related_provider_id, check if provider is in region
         if (notif.related_provider_id) {
           if (providerIdsInRegion.length > 0) {
             return providerIdsInRegion.includes(notif.related_provider_id)
@@ -161,17 +166,10 @@ export function AdminHeader({
           return false
         }
 
-        // For provider/order/refund related notifications without region info, hide them for regional admins
-        // These are old notifications that should not be shown to regional admins
-        if (['provider', 'new_provider', 'order', 'new_order', 'order_status',
-             'refund', 'new_refund_request', 'refund_escalated', 'escalation',
-             'dispute', 'settlement', 'payment', 'review'].includes(notif.type)) {
-          // No region info and it's a region-specific notification type - hide it
-          return false
-        }
-
-        // Allow other generic notifications
-        return true
+        // For any other notification type without region info, don't show to regional admins
+        // This catches: order, new_order, order_status, late_order, delayed_order,
+        // refund, escalation, provider, new_provider, settlement, payment, review, etc.
+        return false
       })
     }
 
