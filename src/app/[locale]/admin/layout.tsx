@@ -6,82 +6,45 @@ import { usePathname } from 'next/navigation'
 import { PermissionsProvider } from '@/lib/permissions/use-permissions'
 import { AdminSidebarProvider, useAdminSidebar } from '@/components/admin/AdminSidebarContext'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { AdminRegionProvider, useAdminRegion } from '@/lib/contexts/AdminRegionContext'
 import { createClient } from '@/lib/supabase/client'
 
 interface AdminLayoutInnerProps {
   children: React.ReactNode
 }
 
-interface AdminUser {
-  id: string
-  role: string
-  assigned_regions: Array<{ governorate_id?: string; city_id?: string }>
-}
-
 function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const pathname = usePathname()
   const { isOpen, close, hasMounted } = useAdminSidebar()
+  const {
+    hasRegionFilter,
+    allowedGovernorateIds,
+    regionProviderIds,
+    loading: regionLoading,
+  } = useAdminRegion()
+
   const [pendingProviders, setPendingProviders] = useState(0)
   const [openTickets, setOpenTickets] = useState(0)
   const [pendingBannerApprovals, setPendingBannerApprovals] = useState(0)
   const [pendingRefunds, setPendingRefunds] = useState(0)
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
 
   // Check if current page is login page - don't show sidebar
   const isLoginPage = pathname?.includes('/admin/login')
 
   useEffect(() => {
-    // Don't load badge counts on login page
-    if (isLoginPage) return
+    // Don't load badge counts on login page or while region data is loading
+    if (isLoginPage || regionLoading) return
 
-    // First load admin user data, then badge counts
-    loadAdminAndBadges()
+    // Load badge counts using cached region data
+    loadBadgeCounts()
     // Refresh badge counts every 60 seconds
-    const interval = setInterval(() => loadBadgeCounts(adminUser), 60000)
+    const interval = setInterval(loadBadgeCounts, 60000)
     return () => clearInterval(interval)
-  }, [isLoginPage])
+  }, [isLoginPage, regionLoading, hasRegionFilter, regionProviderIds])
 
-  async function loadAdminAndBadges() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) return
-
-    // Get admin user's assigned_regions
-    const { data: adminData } = await supabase
-      .from('admin_users')
-      .select('id, role, assigned_regions')
-      .eq('user_id', user.id)
-      .single()
-
-    if (adminData) {
-      setAdminUser(adminData as AdminUser)
-      await loadBadgeCounts(adminData as AdminUser)
-    }
-  }
-
-  async function loadBadgeCounts(admin: AdminUser | null) {
+  async function loadBadgeCounts() {
     try {
       const supabase = createClient()
-
-      // Determine region filter
-      const isSuperAdmin = admin?.role === 'super_admin'
-      const assignedGovernorateIds = !isSuperAdmin && admin?.assigned_regions
-        ? (admin.assigned_regions || [])
-            .map(r => r.governorate_id)
-            .filter(Boolean) as string[]
-        : []
-      const hasRegionFilter = assignedGovernorateIds.length > 0
-
-      // Get provider IDs for the region (needed for filtering related data)
-      let regionProviderIds: string[] = []
-      if (hasRegionFilter) {
-        const { data: regionProviders } = await supabase
-          .from('providers')
-          .select('id')
-          .in('governorate_id', assignedGovernorateIds)
-        regionProviderIds = regionProviders?.map(p => p.id) || []
-      }
 
       // Get pending providers count (filtered by region)
       let providersQuery = supabase
@@ -200,11 +163,13 @@ export default function AdminLayout({
 }) {
   return (
     <PermissionsProvider>
-      <AdminSidebarProvider>
-        <AdminLayoutInner>
-          {children}
-        </AdminLayoutInner>
-      </AdminSidebarProvider>
+      <AdminRegionProvider>
+        <AdminSidebarProvider>
+          <AdminLayoutInner>
+            {children}
+          </AdminLayoutInner>
+        </AdminSidebarProvider>
+      </AdminRegionProvider>
     </PermissionsProvider>
   )
 }
