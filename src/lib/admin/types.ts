@@ -231,6 +231,7 @@ export interface StatsFilters {
   dateFrom?: string;
   dateTo?: string;
   governorateId?: string;
+  governorateIds?: string[]; // قائمة المحافظات للمشرفين الإقليميين
   cityId?: string;
 }
 

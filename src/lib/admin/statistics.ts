@@ -86,7 +86,15 @@ export async function getDashboardStats(
 ): Promise<OperationResult<DashboardStats>> {
   try {
     const supabase = createAdminClient();
-    const { governorateId, cityId } = filters;
+    const { governorateId, governorateIds, cityId } = filters;
+
+    // Determine which governorates to filter by
+    const filterGovernorateIds: string[] = governorateIds?.length
+      ? governorateIds
+      : governorateId
+        ? [governorateId]
+        : [];
+    const hasRegionFilter = filterGovernorateIds.length > 0;
 
     // Date ranges
     const startOfMonth = getStartOfMonth();
@@ -99,8 +107,8 @@ export async function getDashboardStats(
     // إحصائيات مقدمي الخدمة - Provider Statistics
     // ───────────────────────────────────────────────────────────────────
 
-    let providersQuery = supabase.from('providers').select('status, created_at');
-    if (governorateId) providersQuery = providersQuery.eq('governorate_id', governorateId);
+    let providersQuery = supabase.from('providers').select('id, status, created_at, governorate_id');
+    if (hasRegionFilter) providersQuery = providersQuery.in('governorate_id', filterGovernorateIds);
     if (cityId) providersQuery = providersQuery.eq('city_id', cityId);
 
     const { data: providersData, error: providersError } = await providersQuery;
@@ -111,6 +119,9 @@ export async function getDashboardStats(
     }
 
     const providers = providersData || [];
+    // Get provider IDs for filtering orders, settlements, etc.
+    const providerIds = providers.map((p) => p.id);
+
     const providersThisMonth = providers.filter(
       (p) => new Date(p.created_at) >= new Date(startOfMonth)
     );
@@ -183,11 +194,15 @@ export async function getDashboardStats(
 
     let ordersQuery = supabase
       .from('orders')
-      .select('status, total, platform_commission, created_at');
+      .select('status, total, platform_commission, created_at, provider_id');
 
-    // Apply geographic filters through provider
-    // Note: For simplicity, we're not filtering orders by geography here
-    // In production, you might want to join with providers table
+    // Filter orders by providers in the specified regions
+    if (hasRegionFilter && providerIds.length > 0) {
+      ordersQuery = ordersQuery.in('provider_id', providerIds);
+    } else if (hasRegionFilter && providerIds.length === 0) {
+      // No providers in region = no orders
+      ordersQuery = ordersQuery.eq('provider_id', '00000000-0000-0000-0000-000000000000');
+    }
 
     const { data: ordersData, error: ordersError } = await ordersQuery;
 
@@ -268,10 +283,19 @@ export async function getDashboardStats(
     // Sum of net_payout for settlements that are pending or partially_paid
     let pendingSettlement = 0;
     try {
-      const { data: pendingSettlementsData, error: settlementsError } = await supabase
+      let settlementsQuery = supabase
         .from('settlements')
-        .select('net_payout')
+        .select('net_payout, provider_id')
         .in('status', ['pending', 'partially_paid']);
+
+      // Filter settlements by providers in the specified regions
+      if (hasRegionFilter && providerIds.length > 0) {
+        settlementsQuery = settlementsQuery.in('provider_id', providerIds);
+      } else if (hasRegionFilter && providerIds.length === 0) {
+        settlementsQuery = settlementsQuery.eq('provider_id', '00000000-0000-0000-0000-000000000000');
+      }
+
+      const { data: pendingSettlementsData, error: settlementsError } = await settlementsQuery;
 
       if (!settlementsError && pendingSettlementsData) {
         pendingSettlement = pendingSettlementsData.reduce(
@@ -301,10 +325,19 @@ export async function getDashboardStats(
     let pendingRefunds = 0;
 
     try {
-      const { count, error: ticketsError } = await supabase
+      let ticketsQuery = supabase
         .from('support_tickets')
         .select('*', { count: 'exact', head: true })
         .in('status', ['open', 'in_progress']);
+
+      // Filter tickets by providers in the specified regions
+      if (hasRegionFilter && providerIds.length > 0) {
+        ticketsQuery = ticketsQuery.in('provider_id', providerIds);
+      } else if (hasRegionFilter && providerIds.length === 0) {
+        ticketsQuery = ticketsQuery.eq('provider_id', '00000000-0000-0000-0000-000000000000');
+      }
+
+      const { count, error: ticketsError } = await ticketsQuery;
 
       if (!ticketsError && count !== null) {
         openSupportTickets = count;
@@ -315,10 +348,19 @@ export async function getDashboardStats(
     }
 
     try {
-      const { count, error: refundsError } = await supabase
+      let refundsQuery = supabase
         .from('refunds')
         .select('*', { count: 'exact', head: true })
-        .in('status', ['pending', 'approved']); // pending = awaiting action, approved = awaiting processing
+        .in('status', ['pending', 'approved']);
+
+      // Filter refunds by providers in the specified regions
+      if (hasRegionFilter && providerIds.length > 0) {
+        refundsQuery = refundsQuery.in('provider_id', providerIds);
+      } else if (hasRegionFilter && providerIds.length === 0) {
+        refundsQuery = refundsQuery.eq('provider_id', '00000000-0000-0000-0000-000000000000');
+      }
+
+      const { count, error: refundsError } = await refundsQuery;
 
       if (!refundsError && count !== null) {
         pendingRefunds = count;

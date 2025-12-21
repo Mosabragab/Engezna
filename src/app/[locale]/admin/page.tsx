@@ -21,6 +21,7 @@ import {
   Hourglass,
   Wallet,
   Scale,
+  MapPin,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -60,6 +61,18 @@ interface PendingProvider {
   phone: string
 }
 
+interface AdminUser {
+  id: string
+  role: string
+  assigned_regions: Array<{ governorate_id?: string; city_id?: string; district_id?: string }>
+}
+
+interface Governorate {
+  id: string
+  name_ar: string
+  name_en: string
+}
+
 export default function AdminDashboard() {
   const locale = useLocale()
   const isRTL = locale === 'ar'
@@ -67,6 +80,8 @@ export default function AdminDashboard() {
   const [user, setUser] = useState<User | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
+  const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [stats, setStats] = useState<DashboardStats>({
     ordersToday: 0,
     ordersWeek: 0,
@@ -104,44 +119,100 @@ export default function AdminDashboard() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true)
-        await loadDashboardData(supabase)
+
+        // Load admin user details for region filtering
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('id, role, assigned_regions')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminData) {
+          setAdminUser(adminData as AdminUser)
+        }
+
+        // Load governorates for display
+        const { data: govData } = await supabase
+          .from('governorates')
+          .select('id, name_ar, name_en')
+          .eq('is_active', true)
+          .order('name_ar')
+
+        if (govData) {
+          setGovernorates(govData)
+        }
+
+        await loadDashboardData(supabase, adminData as AdminUser | null)
       }
     }
 
     setLoading(false)
   }
 
-  async function loadDashboardData(supabase: ReturnType<typeof createClient>) {
+  async function loadDashboardData(supabase: ReturnType<typeof createClient>, adminData: AdminUser | null) {
     try {
-      // Load stats from API
+      // Determine governorate IDs for filtering (only for non-super_admin)
+      const isSuperAdmin = adminData?.role === 'super_admin'
+      const assignedGovernorateIds = !isSuperAdmin && adminData?.assigned_regions
+        ? (adminData.assigned_regions || [])
+            .map(r => r.governorate_id)
+            .filter(Boolean) as string[]
+        : []
+
+      // Load stats from API with region filter
       const statsResponse = await fetch('/api/admin/stats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'dashboard' }),
+        body: JSON.stringify({
+          action: 'dashboard',
+          filters: assignedGovernorateIds.length > 0 ? { governorateIds: assignedGovernorateIds } : {},
+        }),
       })
       const statsResult = await statsResponse.json()
+
+      // Build queries with region filter
+      let pendingProvidersQuery = supabase.from('providers')
+        .select('id, name_ar, name_en, category, created_at, phone, governorate_id')
+        .in('status', ['pending_approval', 'incomplete'])
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      let recentOrdersQuery = supabase.from('orders')
+        .select(`
+          id,
+          order_number,
+          total,
+          status,
+          created_at,
+          provider_id,
+          provider:providers(name_ar, name_en, governorate_id),
+          customer:profiles(full_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      // Apply region filter for non-super_admin
+      if (assignedGovernorateIds.length > 0) {
+        pendingProvidersQuery = pendingProvidersQuery.in('governorate_id', assignedGovernorateIds)
+        // For orders, we need to filter by provider's governorate
+        // Get provider IDs first then filter
+        const { data: regionProviders } = await supabase
+          .from('providers')
+          .select('id')
+          .in('governorate_id', assignedGovernorateIds)
+        const regionProviderIds = regionProviders?.map(p => p.id) || []
+        if (regionProviderIds.length > 0) {
+          recentOrdersQuery = recentOrdersQuery.in('provider_id', regionProviderIds)
+        }
+      }
 
       // Load recent orders and pending providers in parallel
       const [
         { data: pendingProvidersData },
         { data: recentOrdersData },
       ] = await Promise.all([
-        supabase.from('providers').select('id, name_ar, name_en, category, created_at, phone')
-          .in('status', ['pending_approval', 'incomplete'])
-          .order('created_at', { ascending: false })
-          .limit(5),
-        supabase.from('orders')
-          .select(`
-            id,
-            order_number,
-            total,
-            status,
-            created_at,
-            provider:providers(name_ar, name_en),
-            customer:profiles(full_name)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(5),
+        pendingProvidersQuery,
+        recentOrdersQuery,
       ])
 
       // Set stats from API response
@@ -279,6 +350,22 @@ export default function AdminDashboard() {
             <p className="text-slate-500">
               {locale === 'ar' ? 'إليك نظرة عامة على منصة إنجزنا' : "Here's an overview of Engezna platform"}
             </p>
+            {/* Region Indicator for Regional Admins */}
+            {adminUser && adminUser.role !== 'super_admin' && adminUser.assigned_regions?.length > 0 && (
+              <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 w-fit">
+                <MapPin className="w-4 h-4" />
+                <span>
+                  {locale === 'ar' ? 'منطقتك: ' : 'Your Region: '}
+                  {adminUser.assigned_regions
+                    .map(r => {
+                      const gov = governorates.find(g => g.id === r.governorate_id)
+                      return gov ? (locale === 'ar' ? gov.name_ar : gov.name_en) : null
+                    })
+                    .filter(Boolean)
+                    .join(', ') || '-'}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Error Alert */}
@@ -289,7 +376,7 @@ export default function AdminDashboard() {
                 onClick={() => {
                   setDataError(null)
                   const supabase = createClient()
-                  loadDashboardData(supabase)
+                  loadDashboardData(supabase, adminUser)
                 }}
                 className="text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded-lg transition-colors"
               >
