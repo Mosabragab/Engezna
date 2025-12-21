@@ -28,6 +28,7 @@ import {
   MessageSquare,
 } from 'lucide-react'
 import { OrderChat } from '@/components/shared/OrderChat'
+import { RefundRequestModal, RefundConfirmationCard, SupportOptionsModal } from '@/components/customer/support'
 
 // Cancellation reasons
 const CANCELLATION_REASONS = [
@@ -191,6 +192,20 @@ export default function OrderTrackingPage() {
   const [existingReview, setExistingReview] = useState<Review | null>(null)
   const [submittingReview, setSubmittingReview] = useState(false)
 
+  // Refund/Support state
+  const [showSupportOptions, setShowSupportOptions] = useState(false)
+  const [showRefundModal, setShowRefundModal] = useState(false)
+  const [pendingRefund, setPendingRefund] = useState<{
+    id: string
+    order_id: string
+    amount: number
+    provider_action: string
+    customer_confirmed: boolean
+    confirmation_deadline: string
+    provider_notes?: string
+    provider?: { name_ar: string; name_en: string }
+  } | null>(null)
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.push(`/${locale}/auth/login?redirect=/orders/${orderId}`)
@@ -326,6 +341,35 @@ export default function OrderTrackingPage() {
       setExistingReview(reviewData)
       setReviewRating(reviewData.rating)
       setReviewComment(reviewData.comment || '')
+    }
+
+    // Fetch pending refund that needs confirmation
+    const { data: refundData } = await supabase
+      .from('refunds')
+      .select(`
+        id,
+        order_id,
+        amount,
+        provider_action,
+        customer_confirmed,
+        confirmation_deadline,
+        provider_notes,
+        provider:providers(name_ar, name_en)
+      `)
+      .eq('order_id', orderId)
+      .eq('provider_action', 'cash_refund')
+      .eq('customer_confirmed', false)
+      .single()
+
+    if (refundData) {
+      // Handle provider being returned as array or single object from Supabase
+      const providerData = Array.isArray(refundData.provider)
+        ? refundData.provider[0]
+        : refundData.provider
+      setPendingRefund({
+        ...refundData,
+        provider: providerData as { name_ar: string; name_en: string } | undefined
+      })
     }
 
     setLoading(false)
@@ -688,6 +732,49 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
+        {/* Refund Confirmation Card - Show when provider confirmed cash refund */}
+        {pendingRefund && (
+          <RefundConfirmationCard
+            refund={pendingRefund}
+            locale={locale}
+            onConfirm={() => {
+              setPendingRefund(null)
+              loadOrderDetails()
+            }}
+            className="mb-4"
+          />
+        )}
+
+        {/* Get Help / Request Refund - For delivered or cancelled orders */}
+        {(isDelivered || isCancelled) && !pendingRefund && (
+          <button
+            type="button"
+            onClick={() => setShowSupportOptions(true)}
+            className="w-full bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4 text-start active:bg-orange-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-orange-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-orange-900 text-base">
+                  {locale === 'ar' ? 'هل واجهت مشكلة؟' : 'Had an issue?'}
+                </p>
+                <p className="text-sm text-orange-700">
+                  {locale === 'ar' ? 'اضغط هنا لطلب استرداد أو تقديم شكوى' : 'Tap here to request refund or submit complaint'}
+                </p>
+              </div>
+              <div className="flex-shrink-0">
+                {isRTL ? (
+                  <ArrowLeft className="w-5 h-5 text-orange-600" />
+                ) : (
+                  <ArrowRight className="w-5 h-5 text-orange-600" />
+                )}
+              </div>
+            </div>
+          </button>
+        )}
+
         {/* Delivery Address */}
         <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
           <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-3">
@@ -1036,6 +1123,43 @@ export default function OrderTrackingPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Support Options Modal */}
+      <SupportOptionsModal
+        isOpen={showSupportOptions}
+        onClose={() => setShowSupportOptions(false)}
+        locale={locale}
+        orderId={order?.id}
+        providerId={order?.provider_id}
+        userId={user?.id}
+        onOpenRefundModal={() => setShowRefundModal(true)}
+      />
+
+      {/* Refund Request Modal */}
+      {showRefundModal && order && (
+        <RefundRequestModal
+          isOpen={showRefundModal}
+          onClose={() => setShowRefundModal(false)}
+          order={{
+            id: order.id,
+            order_number: order.order_number,
+            total: order.total,
+            status: order.status,
+            provider_id: order.provider_id,
+            customer_id: order.customer_id,
+            created_at: order.created_at,
+            items: orderItems.map(item => ({
+              id: item.id,
+              item_name_ar: item.item_name_ar,
+              item_name_en: item.item_name_en,
+              quantity: item.quantity,
+              total_price: item.total_price,
+            })),
+          }}
+          locale={locale}
+          onSuccess={() => loadOrderDetails()}
+        />
       )}
 
       {/* Review Modal */}

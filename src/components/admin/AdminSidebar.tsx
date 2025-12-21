@@ -27,6 +27,7 @@ import {
   Key,
   Receipt,
   Image,
+  RefreshCw,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { usePermissions } from '@/lib/permissions/use-permissions'
@@ -130,6 +131,12 @@ export function AdminSidebar({
       label: { ar: 'الدعم', en: 'Support' },
       path: `/${locale}/admin/support`,
       badge: openTickets > 0 ? openTickets.toString() : undefined,
+      resource: 'support',
+    },
+    {
+      icon: RefreshCw,
+      label: { ar: 'المرتجعات', en: 'Refunds' },
+      path: `/${locale}/admin/refunds`,
       resource: 'support',
     },
     {

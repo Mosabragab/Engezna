@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { Home, Search, ShoppingCart, Heart } from 'lucide-react'
+import { Home, Search, ShoppingCart, ClipboardList, Heart } from 'lucide-react'
 import { useCart } from '@/lib/store/cart'
 
 interface NavItem {
@@ -25,8 +25,8 @@ export function BottomNavigation() {
     { id: 'home', href: `/${locale}`, icon: Home, labelKey: 'home' },
     { id: 'browse', href: `/${locale}/providers`, icon: Search, labelKey: 'browse' },
     { id: 'cart', href: `/${locale}/cart`, icon: ShoppingCart, labelKey: 'cart' },
+    { id: 'orders', href: `/${locale}/orders`, icon: ClipboardList, labelKey: 'orders' },
     { id: 'favorites', href: `/${locale}/favorites`, icon: Heart, labelKey: 'favorites' },
-    // Profile removed - already available in header
   ]
 
   const isActive = (href: string) => {

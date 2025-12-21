@@ -16,6 +16,8 @@ import {
   Star,
   Receipt,
   Megaphone,
+  RefreshCw,
+  MessageSquare,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
@@ -96,6 +98,16 @@ export function ProviderSidebar({
       icon: Receipt,
       label: { ar: 'التسويات', en: 'Settlements' },
       path: `/${locale}/provider/settlements`,
+    },
+    {
+      icon: RefreshCw,
+      label: { ar: 'المرتجعات', en: 'Refunds' },
+      path: `/${locale}/provider/refunds`,
+    },
+    {
+      icon: MessageSquare,
+      label: { ar: 'الشكاوى', en: 'Complaints' },
+      path: `/${locale}/provider/complaints`,
     },
     {
       icon: Clock,

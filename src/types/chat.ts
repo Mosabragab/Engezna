@@ -256,4 +256,11 @@ export const DEFAULT_QUICK_ACTIONS: QuickAction[] = [
     icon: '📍',
     action: 'show_nearby',
   },
+  {
+    id: 'help',
+    label_ar: '🆘 مساعدة وشكوى',
+    label_en: '🆘 Help & Complaints',
+    icon: '🆘',
+    action: 'show_help',
+  },
 ]
