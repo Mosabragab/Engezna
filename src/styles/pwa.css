@@ -193,7 +193,7 @@
 .pwa-splash {
   position: fixed;
   inset: 0;
-  background-color: #000000;
+  background-color: #0F172A; /* Charcoal - brand color */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -243,6 +243,43 @@
 /* RTL Support for cards */
 [dir="rtl"] .pwa-card-tap:active {
   background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* ============================================
+   DARK THEME CARD STYLES
+   ============================================ */
+
+/* Cards with borders instead of shadows for dark theme */
+.dark .pwa-card,
+[data-theme="dark"] .pwa-card,
+@media (prefers-color-scheme: dark) {
+  .pwa-card-dark {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+  }
+}
+
+/* Provider/Restaurant cards in dark mode */
+.dark [class*="card"],
+.dark [class*="Card"],
+[data-theme="dark"] [class*="card"],
+[data-theme="dark"] [class*="Card"] {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Remove shadows in dark mode for cleaner look */
+.dark .shadow,
+.dark .shadow-sm,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xl,
+[data-theme="dark"] .shadow,
+[data-theme="dark"] .shadow-sm,
+[data-theme="dark"] .shadow-md,
+[data-theme="dark"] .shadow-lg,
+[data-theme="dark"] .shadow-xl {
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* ============================================

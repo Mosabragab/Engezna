@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <!-- Black background with rounded corners -->
-  <rect width="512" height="512" rx="0" fill="#000000"/>
+  <!-- Charcoal background (#0F172A) for brand consistency -->
+  <rect width="512" height="512" rx="0" fill="#0F172A"/>
 
   <!-- Arabic logo text "إنجزنا" in Aref Ruqaa style -->
   <text
