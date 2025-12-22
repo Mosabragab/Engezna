@@ -20,7 +20,7 @@
   --color-primary-dark: 198 100% 34%;    /* Darker Blue */
   --color-primary-foreground: 0 0% 100%; /* White */
 
-  --color-secondary: 0 0% 0%;            /* #000000 */
+  --color-secondary: 222 47% 11%;        /* #0F172A Charcoal */
   --color-secondary-foreground: 0 0% 100%;
 
   --color-white: 0 0% 100%;              /* #FFFFFF */
@@ -155,7 +155,7 @@
 
 .badge-premium {
   background-color: hsl(var(--color-premium));
-  color: #000;
+  color: #0F172A;
   border-radius: 999px;
   padding: 0.1rem 0.5rem;
   font-size: 0.75rem;

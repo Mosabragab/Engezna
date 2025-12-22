@@ -21,7 +21,7 @@
     --primary-dark: 198 100% 34%;       /* Darker Blue */
     --primary-foreground: 0 0% 100%;    /* White */
 
-    --secondary: 0 0% 0%;               /* #000000 Black */
+    --secondary: 222 47% 11%;           /* #0F172A Charcoal */
     --secondary-foreground: 0 0% 100%;
 
     /* ACCENT COLORS - Harmonized with #009DE0 */
@@ -225,7 +225,7 @@
 
   .badge-premium {
     background-color: hsl(var(--premium));
-    color: black;
+    color: hsl(222 47% 11%); /* #0F172A Charcoal */
   }
 
   .status-success {
