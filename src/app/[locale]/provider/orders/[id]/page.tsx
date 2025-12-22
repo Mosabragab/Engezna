@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -118,7 +118,9 @@ export default function ProviderOrderDetailPage() {
   const orderId = params.id as string
   const locale = useLocale()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const isRTL = locale === 'ar'
+  const openChat = searchParams.get('openChat') === 'true'
 
   const [order, setOrder] = useState<Order | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
@@ -749,6 +751,7 @@ export default function ProviderOrderDetailPage() {
           locale={locale}
           customerName={customer?.full_name}
           providerName={locale === 'ar' ? providerInfo?.name_ar : providerInfo?.name_en}
+          defaultOpen={openChat}
         />
       )}
     </div>

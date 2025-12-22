@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
+import { AdminHeader, useAdminSidebar, GeoFilter, useAdminGeoFilter } from '@/components/admin'
 import type { GeoFilterValue } from '@/components/admin'
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
 import {
@@ -63,7 +63,7 @@ export default function AdminCustomersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-  const { geoFilter, setGeoFilter } = useGeoFilter()
+  const { geoFilter, setGeoFilter, isRegionalAdmin } = useAdminGeoFilter()
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -147,8 +147,9 @@ export default function AdminCustomersPage() {
           orders_count,
           total_spent,
           last_order_at,
-          governorate_id: addressData?.governorate_id || null,
-          city_id: addressData?.city_id || null,
+          // Use address data first, then fall back to profile's governorate_id
+          governorate_id: addressData?.governorate_id || customer.governorate_id || null,
+          city_id: addressData?.city_id || customer.city_id || null,
           district_id: addressData?.district_id || null,
         }
       })
@@ -182,16 +183,19 @@ export default function AdminCustomersPage() {
       }
     }
 
-    // Geographic filter
+    // Geographic filter - for regional admins, strictly filter by their region
     if (geoFilter.governorate_id || geoFilter.city_id || geoFilter.district_id) {
       filtered = filtered.filter(c => {
-        if (geoFilter.district_id && c.district_id) {
+        // District filter (most specific)
+        if (geoFilter.district_id) {
           return c.district_id === geoFilter.district_id
         }
-        if (geoFilter.city_id && c.city_id) {
+        // City filter
+        if (geoFilter.city_id) {
           return c.city_id === geoFilter.city_id
         }
-        if (geoFilter.governorate_id && c.governorate_id) {
+        // Governorate filter
+        if (geoFilter.governorate_id) {
           return c.governorate_id === geoFilter.governorate_id
         }
         return true
@@ -383,15 +387,17 @@ export default function AdminCustomersPage() {
                 </Button>
               </div>
 
-              {/* Row 2: Geographic Filter */}
-              <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
-                <span className="text-sm text-slate-500">{locale === 'ar' ? 'فلترة جغرافية:' : 'Geographic Filter:'}</span>
-                <GeoFilter
-                  value={geoFilter}
-                  onChange={setGeoFilter}
-                  showDistrict={true}
-                />
-              </div>
+              {/* Row 2: Geographic Filter - Only show for non-regional admins */}
+              {!isRegionalAdmin && (
+                <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+                  <span className="text-sm text-slate-500">{locale === 'ar' ? 'فلترة جغرافية:' : 'Geographic Filter:'}</span>
+                  <GeoFilter
+                    value={geoFilter}
+                    onChange={setGeoFilter}
+                    showDistrict={true}
+                  />
+                </div>
+              )}
             </div>
           </div>
 

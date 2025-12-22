@@ -195,6 +195,7 @@ export interface DashboardStats {
     customers: number;
     providers: number;
     admins: number;
+    newToday: number;
     newThisMonth: number;
     changePercent: number;
   };
@@ -217,6 +218,12 @@ export interface DashboardStats {
     thisMonthRevenue: number;
     changePercent: number;
   };
+  // الدعم والنزاعات
+  support: {
+    openTickets: number;
+    pendingRefunds: number;
+    totalDisputes: number;
+  };
 }
 
 // فلاتر الإحصائيات
@@ -224,6 +231,7 @@ export interface StatsFilters {
   dateFrom?: string;
   dateTo?: string;
   governorateId?: string;
+  governorateIds?: string[]; // قائمة المحافظات للمشرفين الإقليميين
   cityId?: string;
 }
 

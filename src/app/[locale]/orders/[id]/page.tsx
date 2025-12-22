@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -169,8 +169,10 @@ export default function OrderTrackingPage() {
   const orderId = params.id as string
   const locale = useLocale()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
   const isRTL = locale === 'ar'
+  const openChat = searchParams.get('openChat') === 'true'
 
   const [order, setOrder] = useState<Order | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
@@ -990,6 +992,7 @@ export default function OrderTrackingPage() {
               locale={locale}
               providerName={locale === 'ar' ? provider?.name_ar : provider?.name_en}
               isInline={true}
+              defaultOpen={openChat}
             />
           )}
           <button

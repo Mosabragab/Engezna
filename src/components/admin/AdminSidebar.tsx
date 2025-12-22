@@ -69,7 +69,7 @@ export function AdminSidebar({
   const isRTL = locale === 'ar'
 
   // استخدام نظام الصلاحيات
-  const { loading, hasResource, isSuperAdmin, roles, legacyRole } = usePermissions()
+  const { loading, hasResource, isSuperAdmin, roles, legacyRole, accessibleResources } = usePermissions()
 
   // جلب الدور الرئيسي للعرض
   const primaryRole = roles.find(r => r.is_primary) || roles[0]

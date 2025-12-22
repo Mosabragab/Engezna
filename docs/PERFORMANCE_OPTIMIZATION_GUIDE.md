@@ -1147,8 +1147,90 @@ function LazyImage({ src, alt, ...props }: ImageProps) {
 ```markdown
 | التاريخ | المشكلة | الحل | النتيجة |
 |---------|---------|------|---------|
-| [التاريخ] | [وصف المشكلة] | [الحل المطبق] | [قبل → بعد] |
+| 2025-12-21 | ~50+ استعلامات مكررة لكل صفحة admin | AdminRegionContext مع sessionStorage caching (3 ساعات) | ~5 استعلامات فقط |
+| 2025-12-21 | تحميل بطيء لصفحات Admin Dashboard | تخزين مؤقت لبيانات المنطقة والمحافظات | تحسن ملحوظ في سرعة التحميل |
 ```
+
+---
+
+## 🆕 AdminRegionContext - تخزين مؤقت لبيانات المشرف (جديد - 2025-12-21)
+
+### المشكلة
+
+كانت صفحات Admin Dashboard تقوم بـ ~50+ استعلامات مكررة لكل تنقل:
+- `admin_users` - 30+ مرة
+- `governorates` - 20+ مرة
+- `providers` (للحصول على regionProviderIds) - متعددة
+
+### الحل: AdminRegionContext
+
+```typescript
+// src/lib/contexts/AdminRegionContext.tsx
+
+const CACHE_KEY = 'admin_region_cache'
+const CACHE_TTL = 3 * 60 * 60 * 1000 // 3 ساعات
+
+interface AdminRegionData {
+  adminId: string | null
+  userId: string | null
+  role: string | null
+  assignedRegions: Array<{ governorate_id?: string; city_id?: string }>
+  isSuperAdmin: boolean
+  isRegionalAdmin: boolean
+  allowedGovernorateIds: string[]
+  regionProviderIds: string[]
+  governorates: Governorate[]
+  cities: City[]
+}
+```
+
+### كيف يعمل؟
+
+1. **التحميل الأول**: يجلب البيانات من قاعدة البيانات
+2. **التخزين**: يحفظ في sessionStorage مع timestamp
+3. **الاستخدام اللاحق**: يقرأ من الـ cache إذا لم تنتهِ صلاحيته
+4. **التحديث**: يتم تحديث الـ cache عند:
+   - تسجيل دخول جديد
+   - تسجيل خروج
+   - استدعاء `refresh()` يدوياً
+
+### الاستخدام
+
+```typescript
+// في أي component داخل Admin Layout
+import { useAdminRegion, useRegionFilter } from '@/lib/contexts/AdminRegionContext'
+
+function MyAdminPage() {
+  const {
+    hasRegionFilter,
+    allowedGovernorateIds,
+    regionProviderIds,
+    loading,
+    governorates,
+    cities,
+  } = useAdminRegion()
+
+  // أو استخدم useRegionFilter للـ helpers
+  const { applyProviderFilter, applyGovernorateFilter } = useRegionFilter()
+
+  // تطبيق الفلتر على query
+  let query = supabase.from('orders').select('*')
+  query = applyProviderFilter(query, 'provider_id')
+}
+```
+
+### Hooks المتاحة
+
+| Hook | الاستخدام |
+|------|----------|
+| `useAdminRegion()` | الوصول لكل البيانات المخزنة |
+| `useRegionFilter()` | helpers لتطبيق الفلاتر على queries |
+
+### ملاحظات مهمة
+
+1. **عند عدم وجود providers في المنطقة**: يجب إرجاع 0 أو مصفوفة فارغة بدلاً من عرض كل البيانات
+2. **Timing**: تأكد من انتظار `loading: false` قبل تطبيق الفلاتر
+3. **Cache Invalidation**: يتم تلقائياً عند تغيير حالة المصادقة
 
 ---
 

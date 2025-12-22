@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { PermissionsProvider } from '@/lib/permissions/use-permissions'
 import { AdminSidebarProvider, useAdminSidebar } from '@/components/admin/AdminSidebarContext'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { AdminRegionProvider, useAdminRegion } from '@/lib/contexts/AdminRegionContext'
 import { createClient } from '@/lib/supabase/client'
 
 interface AdminLayoutInnerProps {
@@ -15,6 +16,13 @@ interface AdminLayoutInnerProps {
 function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const pathname = usePathname()
   const { isOpen, close, hasMounted } = useAdminSidebar()
+  const {
+    hasRegionFilter,
+    allowedGovernorateIds,
+    regionProviderIds,
+    loading: regionLoading,
+  } = useAdminRegion()
+
   const [pendingProviders, setPendingProviders] = useState(0)
   const [openTickets, setOpenTickets] = useState(0)
   const [pendingBannerApprovals, setPendingBannerApprovals] = useState(0)
@@ -24,58 +32,98 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const isLoginPage = pathname?.includes('/admin/login')
 
   useEffect(() => {
-    // Don't load badge counts on login page
-    if (isLoginPage) return
+    // Don't load badge counts on login page or while region data is loading
+    if (isLoginPage || regionLoading) return
 
+    // Load badge counts using cached region data
     loadBadgeCounts()
     // Refresh badge counts every 60 seconds
     const interval = setInterval(loadBadgeCounts, 60000)
     return () => clearInterval(interval)
-  }, [isLoginPage])
+  }, [isLoginPage, regionLoading, hasRegionFilter, regionProviderIds])
 
   async function loadBadgeCounts() {
     try {
       const supabase = createClient()
 
-      // Get pending providers count
-      const { count: providersCount, error: providersError } = await supabase
+      // Get pending providers count (filtered by region)
+      let providersQuery = supabase
         .from('providers')
         .select('*', { count: 'exact', head: true })
         .in('status', ['pending_approval', 'incomplete'])
+
+      if (hasRegionFilter) {
+        providersQuery = providersQuery.in('governorate_id', allowedGovernorateIds)
+      }
+
+      const { count: providersCount, error: providersError } = await providersQuery
 
       if (!providersError) {
         setPendingProviders(providersCount || 0)
       }
 
-      // Get open tickets count (if support_tickets table exists)
-      const { count: ticketsCount, error: ticketsError } = await supabase
-        .from('support_tickets')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'open')
+      // Get open tickets count (filtered by provider's region)
+      // If regional admin has no providers in their region, show 0
+      if (hasRegionFilter && regionProviderIds.length === 0) {
+        setOpenTickets(0)
+      } else {
+        let ticketsQuery = supabase
+          .from('support_tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'open')
 
-      if (!ticketsError) {
-        setOpenTickets(ticketsCount || 0)
+        if (hasRegionFilter && regionProviderIds.length > 0) {
+          ticketsQuery = ticketsQuery.in('provider_id', regionProviderIds)
+        }
+
+        const { count: ticketsCount, error: ticketsError } = await ticketsQuery
+
+        if (!ticketsError) {
+          setOpenTickets(ticketsCount || 0)
+        }
       }
 
-      // Get pending banner approvals count (banners created by providers)
-      const { count: bannerApprovalsCount, error: bannerApprovalsError } = await supabase
-        .from('homepage_banners')
-        .select('*', { count: 'exact', head: true })
-        .not('provider_id', 'is', null)
-        .eq('approval_status', 'pending')
+      // Get pending banner approvals count (filtered by provider's region)
+      // If regional admin has no providers in their region, show 0
+      if (hasRegionFilter && regionProviderIds.length === 0) {
+        setPendingBannerApprovals(0)
+      } else {
+        let bannersQuery = supabase
+          .from('homepage_banners')
+          .select('*', { count: 'exact', head: true })
+          .not('provider_id', 'is', null)
+          .eq('approval_status', 'pending')
 
-      if (!bannerApprovalsError) {
-        setPendingBannerApprovals(bannerApprovalsCount || 0)
+        if (hasRegionFilter && regionProviderIds.length > 0) {
+          bannersQuery = bannersQuery.in('provider_id', regionProviderIds)
+        }
+
+        const { count: bannerApprovalsCount, error: bannerApprovalsError } = await bannersQuery
+
+        if (!bannerApprovalsError) {
+          setPendingBannerApprovals(bannerApprovalsCount || 0)
+        }
       }
 
-      // Get pending refunds count (awaiting admin review)
-      const { count: refundsCount, error: refundsError } = await supabase
-        .from('refunds')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
+      // Get pending refunds count (filtered by provider's region)
+      // If regional admin has no providers in their region, show 0
+      if (hasRegionFilter && regionProviderIds.length === 0) {
+        setPendingRefunds(0)
+      } else {
+        let refundsQuery = supabase
+          .from('refunds')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending')
 
-      if (!refundsError) {
-        setPendingRefunds(refundsCount || 0)
+        if (hasRegionFilter && regionProviderIds.length > 0) {
+          refundsQuery = refundsQuery.in('provider_id', regionProviderIds)
+        }
+
+        const { count: refundsCount, error: refundsError } = await refundsQuery
+
+        if (!refundsError) {
+          setPendingRefunds(refundsCount || 0)
+        }
       }
     } catch {
       // Silently fail for badge counts - not critical
@@ -115,11 +163,13 @@ export default function AdminLayout({
 }) {
   return (
     <PermissionsProvider>
-      <AdminSidebarProvider>
-        <AdminLayoutInner>
-          {children}
-        </AdminLayoutInner>
-      </AdminSidebarProvider>
+      <AdminRegionProvider>
+        <AdminSidebarProvider>
+          <AdminLayoutInner>
+            {children}
+          </AdminLayoutInner>
+        </AdminSidebarProvider>
+      </AdminRegionProvider>
     </PermissionsProvider>
   )
 }

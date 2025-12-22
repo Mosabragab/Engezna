@@ -35,8 +35,17 @@ interface Notification {
   title: string
   body: string | null
   related_message_id: string | null
+  related_provider_id: string | null
+  related_order_id: string | null
+  governorate_id: string | null
   is_read: boolean
   created_at: string
+}
+
+interface AdminUserData {
+  id: string
+  role: string
+  assigned_regions: Array<{ governorate_id?: string; city_id?: string }>
 }
 
 interface AdminHeaderProps {
@@ -63,6 +72,8 @@ export function AdminHeader({
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isPending, startTransition] = useTransition()
+  const [adminUserData, setAdminUserData] = useState<AdminUserData | null>(null)
+  const [regionProviderIds, setRegionProviderIds] = useState<string[]>([])
 
   // Load notifications on mount
   useEffect(() => {
@@ -78,30 +89,92 @@ export function AdminHeader({
 
     if (!authUser) return
 
-    // Get admin_id from admin_users
+    // Get admin_id and role from admin_users
     const { data: adminUser } = await supabase
       .from('admin_users')
-      .select('id')
+      .select('id, role, assigned_regions')
       .eq('user_id', authUser.id)
       .single()
 
     if (!adminUser) return
 
-    // Fetch notifications
-    const { data: notifs, error } = await supabase
+    setAdminUserData(adminUser as AdminUserData)
+
+    // Determine region filter (only for non-super_admin with assigned regions)
+    const isSuperAdmin = adminUser.role === 'super_admin'
+    const assignedGovernorateIds = !isSuperAdmin && adminUser.assigned_regions
+      ? (adminUser.assigned_regions || [])
+          .map((r: { governorate_id?: string }) => r.governorate_id)
+          .filter(Boolean) as string[]
+      : []
+    const hasRegionFilter = assignedGovernorateIds.length > 0
+
+    // Build notification query
+    let notifQuery = supabase
       .from('admin_notifications')
       .select('*')
       .eq('admin_id', adminUser.id)
       .order('created_at', { ascending: false })
       .limit(10)
 
+    // For regional admins, also fetch notifications that match their region
+    // New notifications will have governorate_id set; for backwards compatibility
+    // with old notifications, we also do client-side filtering
+
+    const { data: notifs, error } = await notifQuery
+
     if (error) {
       console.error('Error loading notifications:', error)
       return
     }
 
-    setNotifications(notifs || [])
-    setUnreadCount((notifs || []).filter(n => !n.is_read).length)
+    // Filter notifications for regional admins
+    let filteredNotifs = notifs || []
+
+    if (hasRegionFilter) {
+      // Get provider IDs for the region (for filtering old notifications without governorate_id)
+      const { data: regionProviders } = await supabase
+        .from('providers')
+        .select('id')
+        .in('governorate_id', assignedGovernorateIds)
+
+      const providerIdsInRegion = (regionProviders || []).map(p => p.id)
+      setRegionProviderIds(providerIdsInRegion)
+
+      filteredNotifs = filteredNotifs.filter(notif => {
+        // WHITELIST APPROACH: Only allow specific generic notification types
+        // Everything else is assumed to be region-specific
+
+        // Generic notifications that should be shown to all admins
+        const genericTypes = ['message', 'announcement', 'system', 'task', 'approval', 'reminder', 'welcome', 'info']
+
+        if (genericTypes.includes(notif.type)) {
+          return true
+        }
+
+        // If notification has governorate_id, use it for filtering
+        if (notif.governorate_id) {
+          return assignedGovernorateIds.includes(notif.governorate_id)
+        }
+
+        // If notification has related_provider_id, check if provider is in region
+        if (notif.related_provider_id) {
+          if (providerIdsInRegion.length > 0) {
+            return providerIdsInRegion.includes(notif.related_provider_id)
+          }
+          // Has provider_id but we have no providers in region - don't show
+          return false
+        }
+
+        // For any other notification type without region info, don't show to regional admins
+        // This catches: order, new_order, order_status, late_order, delayed_order,
+        // refund, escalation, provider, new_provider, settlement, payment, review, etc.
+        return false
+      })
+    }
+
+    setNotifications(filteredNotifs)
+    setUnreadCount(filteredNotifs.filter(n => !n.is_read).length)
   }
 
   async function markAsRead(notificationId: string) {

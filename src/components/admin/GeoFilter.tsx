@@ -229,4 +229,72 @@ export function useGeoFilter() {
   return { geoFilter, setGeoFilter }
 }
 
+// Hook for admin geo filter with automatic regional filtering
+export function useAdminGeoFilter() {
+  const [geoFilter, setGeoFilter] = useState<GeoFilterValue>({
+    governorate_id: null,
+    city_id: null,
+    district_id: null,
+  })
+  const [assignedRegions, setAssignedRegions] = useState<Array<{ governorate_id?: string; city_id?: string }>>([])
+  const [isRegionalAdmin, setIsRegionalAdmin] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadAdminRegions()
+  }, [])
+
+  async function loadAdminRegions() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    // Get admin user's assigned_regions and role
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('role, assigned_regions')
+      .eq('user_id', user.id)
+      .single()
+
+    if (adminUser) {
+      const regions = adminUser.assigned_regions || []
+      setAssignedRegions(regions)
+
+      // Check if user is a regional admin (has assigned regions and is not super_admin)
+      const isRegional = regions.length > 0 && adminUser.role !== 'super_admin'
+      setIsRegionalAdmin(isRegional)
+
+      // Auto-apply first region filter for regional admins
+      if (isRegional && regions.length > 0) {
+        const firstRegion = regions[0]
+        setGeoFilter({
+          governorate_id: firstRegion.governorate_id || null,
+          city_id: firstRegion.city_id || null,
+          district_id: null,
+        })
+      }
+    }
+
+    setLoading(false)
+  }
+
+  // Get list of allowed governorate IDs for regional admin
+  const allowedGovernorateIds = assignedRegions
+    .map(r => r.governorate_id)
+    .filter(Boolean) as string[]
+
+  return {
+    geoFilter,
+    setGeoFilter,
+    isRegionalAdmin,
+    assignedRegions,
+    allowedGovernorateIds,
+    loading,
+  }
+}
+
 export default GeoFilter

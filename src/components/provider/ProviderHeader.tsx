@@ -332,6 +332,22 @@ export function ProviderHeader({
                               </p>
                             </div>
                             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              {/* Reply button for customer messages */}
+                              {notification.type === 'new_message' && notification.related_order_id && (
+                                <Link
+                                  href={`/${locale}/provider/orders/${notification.related_order_id}?openChat=true`}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (!notification.is_read) {
+                                      markAsRead(notification.id)
+                                    }
+                                    setNotificationsOpen(false)
+                                  }}
+                                  className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors"
+                                >
+                                  {locale === 'ar' ? 'رد' : 'Reply'}
+                                </Link>
+                              )}
                               {!notification.is_read && (
                                 <button
                                   onClick={(e) => {

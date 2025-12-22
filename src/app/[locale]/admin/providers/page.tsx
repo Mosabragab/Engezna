@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
+import { AdminHeader, useAdminSidebar, GeoFilter, useAdminGeoFilter } from '@/components/admin'
 import { formatNumber, formatDate } from '@/lib/utils/formatters'
 import {
   Shield,
@@ -65,7 +65,7 @@ export default function AdminProvidersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
-  const { geoFilter, setGeoFilter } = useGeoFilter()
+  const { geoFilter, setGeoFilter, isRegionalAdmin, loading: geoLoading } = useAdminGeoFilter()
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -162,16 +162,19 @@ export default function AdminProvidersPage() {
       filtered = filtered.filter(p => p.category === categoryFilter)
     }
 
-    // Geographic filter
+    // Geographic filter - for regional admins, strictly filter by their region
     if (geoFilter.governorate_id || geoFilter.city_id || geoFilter.district_id) {
       filtered = filtered.filter(p => {
-        if (geoFilter.district_id && p.district_id) {
+        // District filter (most specific)
+        if (geoFilter.district_id) {
           return p.district_id === geoFilter.district_id
         }
-        if (geoFilter.city_id && p.city_id) {
+        // City filter
+        if (geoFilter.city_id) {
           return p.city_id === geoFilter.city_id
         }
-        if (geoFilter.governorate_id && p.governorate_id) {
+        // Governorate filter
+        if (geoFilter.governorate_id) {
           return p.governorate_id === geoFilter.governorate_id
         }
         return true
@@ -476,14 +479,16 @@ export default function AdminProvidersPage() {
                 <option value="vegetables_fruits">{locale === 'ar' ? 'خضروات وفواكه' : 'Fruits & Vegetables'}</option>
               </select>
 
-              {/* Geographic Filter */}
-              <GeoFilter
-                value={geoFilter}
-                onChange={setGeoFilter}
-                showDistrict={true}
-                inline={true}
-                showClearButton={true}
-              />
+              {/* Geographic Filter - Only show for non-regional admins */}
+              {!isRegionalAdmin && (
+                <GeoFilter
+                  value={geoFilter}
+                  onChange={setGeoFilter}
+                  showDistrict={true}
+                  inline={true}
+                  showClearButton={true}
+                />
+              )}
 
               {/* Refresh */}
               <Button

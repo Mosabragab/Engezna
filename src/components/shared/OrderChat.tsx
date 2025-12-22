@@ -22,6 +22,7 @@ interface OrderChatProps {
   providerName?: string
   customerName?: string
   isInline?: boolean // New prop for inline mode
+  defaultOpen?: boolean // Open chat automatically
 }
 
 export function OrderChat({
@@ -32,8 +33,9 @@ export function OrderChat({
   providerName,
   customerName,
   isInline = false,
+  defaultOpen = false,
 }: OrderChatProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(defaultOpen)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)

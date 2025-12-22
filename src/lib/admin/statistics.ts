@@ -86,7 +86,15 @@ export async function getDashboardStats(
 ): Promise<OperationResult<DashboardStats>> {
   try {
     const supabase = createAdminClient();
-    const { governorateId, cityId } = filters;
+    const { governorateId, governorateIds, cityId } = filters;
+
+    // Determine which governorates to filter by
+    const filterGovernorateIds: string[] = governorateIds?.length
+      ? governorateIds
+      : governorateId
+        ? [governorateId]
+        : [];
+    const hasRegionFilter = filterGovernorateIds.length > 0;
 
     // Date ranges
     const startOfMonth = getStartOfMonth();
@@ -99,8 +107,8 @@ export async function getDashboardStats(
     // إحصائيات مقدمي الخدمة - Provider Statistics
     // ───────────────────────────────────────────────────────────────────
 
-    let providersQuery = supabase.from('providers').select('status, created_at');
-    if (governorateId) providersQuery = providersQuery.eq('governorate_id', governorateId);
+    let providersQuery = supabase.from('providers').select('id, status, created_at, governorate_id');
+    if (hasRegionFilter) providersQuery = providersQuery.in('governorate_id', filterGovernorateIds);
     if (cityId) providersQuery = providersQuery.eq('city_id', cityId);
 
     const { data: providersData, error: providersError } = await providersQuery;
@@ -111,6 +119,9 @@ export async function getDashboardStats(
     }
 
     const providers = providersData || [];
+    // Get provider IDs for filtering orders, settlements, etc.
+    const providerIds = providers.map((p) => p.id);
+
     const providersThisMonth = providers.filter(
       (p) => new Date(p.created_at) >= new Date(startOfMonth)
     );
@@ -152,6 +163,10 @@ export async function getDashboardStats(
     }
 
     const profiles = profilesData || [];
+    const customersOnly = profiles.filter((p) => p.role === 'customer');
+    const customersToday = customersOnly.filter(
+      (p) => new Date(p.created_at) >= new Date(startOfToday)
+    );
     const profilesThisMonth = profiles.filter(
       (p) => new Date(p.created_at) >= new Date(startOfMonth)
     );
@@ -165,9 +180,10 @@ export async function getDashboardStats(
       total: profiles.length,
       active: profiles.length, // All profiles are considered active
       inactive: 0,
-      customers: profiles.filter((p) => p.role === 'customer').length,
+      customers: customersOnly.length,
       providers: profiles.filter((p) => p.role === 'provider').length,
       admins: profiles.filter((p) => p.role === 'admin').length,
+      newToday: customersToday.length, // عملاء جدد اليوم
       newThisMonth: profilesThisMonth.length,
       changePercent: calculateChangePercent(profilesThisMonth.length, profilesLastMonth.length),
     };
@@ -178,11 +194,15 @@ export async function getDashboardStats(
 
     let ordersQuery = supabase
       .from('orders')
-      .select('status, total, platform_commission, created_at');
+      .select('status, total, platform_commission, created_at, provider_id');
 
-    // Apply geographic filters through provider
-    // Note: For simplicity, we're not filtering orders by geography here
-    // In production, you might want to join with providers table
+    // Filter orders by providers in the specified regions
+    if (hasRegionFilter && providerIds.length > 0) {
+      ordersQuery = ordersQuery.in('provider_id', providerIds);
+    } else if (hasRegionFilter && providerIds.length === 0) {
+      // No providers in region = no orders
+      ordersQuery = ordersQuery.eq('provider_id', '00000000-0000-0000-0000-000000000000');
+    }
 
     const { data: ordersData, error: ordersError } = await ordersQuery;
 
@@ -259,9 +279,35 @@ export async function getDashboardStats(
       0
     );
 
-    // Pending settlement (orders that are delivered but not settled)
-    // For now, we'll calculate based on platform commission
-    const pendingSettlement = totalCommission * 0.3; // Placeholder - 30% pending
+    // Pending settlement - calculate from actual settlements table
+    // Sum of net_payout for settlements that are pending or partially_paid
+    let pendingSettlement = 0;
+    try {
+      let settlementsQuery = supabase
+        .from('settlements')
+        .select('net_payout, provider_id')
+        .in('status', ['pending', 'partially_paid']);
+
+      // Filter settlements by providers in the specified regions
+      if (hasRegionFilter && providerIds.length > 0) {
+        settlementsQuery = settlementsQuery.in('provider_id', providerIds);
+      } else if (hasRegionFilter && providerIds.length === 0) {
+        settlementsQuery = settlementsQuery.eq('provider_id', '00000000-0000-0000-0000-000000000000');
+      }
+
+      const { data: pendingSettlementsData, error: settlementsError } = await settlementsQuery;
+
+      if (!settlementsError && pendingSettlementsData) {
+        pendingSettlement = pendingSettlementsData.reduce(
+          (sum, s) => sum + (s.net_payout || 0),
+          0
+        );
+      }
+    } catch (err) {
+      console.error('Error fetching pending settlements:', err);
+      // Fall back to 0 if there's an error
+      pendingSettlement = 0;
+    }
 
     const financeStats = {
       totalRevenue,
@@ -272,6 +318,64 @@ export async function getDashboardStats(
       changePercent: calculateChangePercent(thisMonthRevenue, lastMonthRevenue),
     };
 
+    // ───────────────────────────────────────────────────────────────────
+    // إحصائيات الدعم - Support Statistics
+    // ───────────────────────────────────────────────────────────────────
+    let openSupportTickets = 0;
+    let pendingRefunds = 0;
+
+    try {
+      let ticketsQuery = supabase
+        .from('support_tickets')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['open', 'in_progress']);
+
+      // Filter tickets by providers in the specified regions
+      if (hasRegionFilter && providerIds.length > 0) {
+        ticketsQuery = ticketsQuery.in('provider_id', providerIds);
+      } else if (hasRegionFilter && providerIds.length === 0) {
+        ticketsQuery = ticketsQuery.eq('provider_id', '00000000-0000-0000-0000-000000000000');
+      }
+
+      const { count, error: ticketsError } = await ticketsQuery;
+
+      if (!ticketsError && count !== null) {
+        openSupportTickets = count;
+      }
+    } catch (err) {
+      console.error('Error fetching support tickets:', err);
+      openSupportTickets = 0;
+    }
+
+    try {
+      let refundsQuery = supabase
+        .from('refunds')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['pending', 'approved']);
+
+      // Filter refunds by providers in the specified regions
+      if (hasRegionFilter && providerIds.length > 0) {
+        refundsQuery = refundsQuery.in('provider_id', providerIds);
+      } else if (hasRegionFilter && providerIds.length === 0) {
+        refundsQuery = refundsQuery.eq('provider_id', '00000000-0000-0000-0000-000000000000');
+      }
+
+      const { count, error: refundsError } = await refundsQuery;
+
+      if (!refundsError && count !== null) {
+        pendingRefunds = count;
+      }
+    } catch (err) {
+      console.error('Error fetching pending refunds:', err);
+      pendingRefunds = 0;
+    }
+
+    const supportStats = {
+      openTickets: openSupportTickets,
+      pendingRefunds: pendingRefunds,
+      totalDisputes: openSupportTickets + pendingRefunds,
+    };
+
     return {
       success: true,
       data: {
@@ -279,6 +383,7 @@ export async function getDashboardStats(
         users: userStats,
         orders: orderStats,
         finance: financeStats,
+        support: supportStats,
       },
     };
   } catch (err) {

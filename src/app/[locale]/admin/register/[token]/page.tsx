@@ -334,13 +334,19 @@ export default function AdminRegisterPage() {
         })
 
       if (registerError) {
-        setFormError(locale === 'ar' ? 'خطأ في إنشاء حساب المشرف' : 'Error creating admin account')
+        console.error('Register RPC error:', registerError)
+        setFormError(locale === 'ar'
+          ? `خطأ في إنشاء حساب المشرف: ${registerError.message}`
+          : `Error creating admin account: ${registerError.message}`)
         setFormLoading(false)
         return
       }
 
       if (registerResult && !registerResult.success) {
-        setFormError(locale === 'ar' ? 'خطأ في إنشاء حساب المشرف' : 'Error creating admin account')
+        console.error('Register function error:', registerResult.error)
+        setFormError(locale === 'ar'
+          ? `خطأ في إنشاء حساب المشرف: ${registerResult.error || 'Unknown error'}`
+          : `Error creating admin account: ${registerResult.error || 'Unknown error'}`)
         setFormLoading(false)
         return
       }
