@@ -11,7 +11,7 @@ export function generateMetadata() {
     title: "Engezna - إنجزنا | Food Delivery in Beni Suef",
     description: "إنجزنا واطلب - Fast food delivery from restaurants, coffee shops, groceries in Beni Suef",
     manifest: '/manifest.json',
-    themeColor: '#009DE0',
+    themeColor: '#0F172A',
     appleWebApp: {
       capable: true,
       statusBarStyle: 'default',
@@ -28,8 +28,8 @@ export function generateMetadata() {
       viewportFit: 'cover',
     },
     icons: {
-      icon: '/icons/icon-192x192.png',
-      apple: '/icons/icon-192x192.png',
+      icon: '/icons/android-chrome-192-dark-192px.png',
+      apple: '/icons/apple-touch-icon-dark-180px.png',
     },
   }
 }
