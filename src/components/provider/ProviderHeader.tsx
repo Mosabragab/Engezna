@@ -335,7 +335,7 @@ export function ProviderHeader({
                               {/* Reply button for customer messages */}
                               {notification.type === 'new_message' && notification.related_order_id && (
                                 <Link
-                                  href={`/${locale}/provider/orders/${notification.related_order_id}/chat`}
+                                  href={`/${locale}/provider/orders/${notification.related_order_id}?openChat=true`}
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     if (!notification.is_read) {
