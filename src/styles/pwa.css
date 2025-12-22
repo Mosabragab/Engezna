@@ -251,7 +251,11 @@
 
 /* Cards with borders instead of shadows for dark theme */
 .dark .pwa-card,
-[data-theme="dark"] .pwa-card,
+[data-theme="dark"] .pwa-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
 @media (prefers-color-scheme: dark) {
   .pwa-card-dark {
     border: 1px solid rgba(255, 255, 255, 0.1);
