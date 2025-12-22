@@ -13,18 +13,6 @@
   "id": "/",
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-maskable.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
-    },
-    {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
@@ -37,6 +25,12 @@
       "purpose": "any"
     },
     {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
@@ -44,21 +38,50 @@
     }
   ],
   "categories": ["food", "shopping", "lifestyle"],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-home-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "الصفحة الرئيسية - تصفح المطاعم والعروض"
+    },
+    {
+      "src": "/screenshots/screenshot-providers-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "قائمة المتاجر والمطاعم"
+    },
+    {
+      "src": "/screenshots/screenshot-order-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "تتبع طلبك بسهولة"
+    },
+    {
+      "src": "/screenshots/screenshot-home-desktop.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "الصفحة الرئيسية على الديسكتوب"
+    }
+  ],
   "shortcuts": [
     {
       "name": "تصفح المتاجر",
       "short_name": "المتاجر",
       "description": "تصفح جميع المتاجر المتاحة",
       "url": "/ar/providers",
-      "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "طلباتي",
       "short_name": "الطلبات",
       "description": "عرض طلباتي السابقة",
       "url": "/ar/orders",
-      "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "prefer_related_applications": false,
