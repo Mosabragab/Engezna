@@ -1,18 +1,25 @@
 # Engezna Logo Kit | كيت شعار إنجزنا
 
-> **Version:** 2.0.0
+> **Version:** 3.0.0
 > **Last Updated:** December 2025
 > **Brand Color:** #009DE0 (Engezna Blue)
+> **Theme Color:** #0F172A (Charcoal)
 
 ---
 
 ## 📁 Folder Structure | هيكل المجلدات
 
 ```
-logo-kit/
+branding/logo-kit/
 ├── logo-exporter.html    # أداة تصدير PNG التفاعلية (الأداة الرئيسية)
 ├── logo-preview.html     # معاينة جميع الأصول
 └── README.md             # هذا الملف
+
+public/icons/             # الأيقونات المستخدمة في التطبيق
+├── icon-192x192.png      # PWA + Apple Touch (Charcoal bg)
+├── icon-512x512.png      # PWA + Notifications (Charcoal bg)
+├── favicon-32-dark.png   # Favicon
+└── favicon-64-dark.png   # Favicon + Badge
 ```
 
 ---
@@ -28,115 +35,100 @@ logo-kit/
 
 ## 🎨 Brand Colors | ألوان العلامة
 
-| Color | HEX | RGB | Usage |
-|-------|-----|-----|-------|
-| **Engezna Blue** | `#009DE0` | `0, 157, 224` | Primary brand color |
-| **Dark Blue** | `#0077B6` | `0, 119, 182` | Gradient end, hover states |
-| **Charcoal** | `#0F172A` | `15, 23, 42` | Text, dark backgrounds |
-| **White** | `#FFFFFF` | `255, 255, 255` | Light backgrounds |
+| Color | HEX | Usage |
+|-------|-----|-------|
+| **Engezna Blue** | `#009DE0` | Primary brand color, CTAs, links |
+| **Dark Blue** | `#0077B6` | Hover states, gradients |
+| **Charcoal** | `#0F172A` | App icons, theme color, dark backgrounds |
+| **White** | `#FFFFFF` | Text on dark, light backgrounds |
+
+### ⚠️ Important Color Note
+
+**نستخدم Charcoal (#0F172A) بدلاً من الأسود المصمت (#000000)**
+
+الأسباب:
+- مظهر أكثر احترافية وفخامة
+- تباين أفضل مع الألوان الأخرى
+- يتناسق مع Tailwind Slate-900
+- أسهل على العين من الأسود الحاد
 
 ---
 
-## 🔤 Icon Variants | أنواع الأيقونة
+## 🔤 Official App Icon | الأيقونة الرسمية
 
-| Type | Content | Usage |
-|------|---------|-------|
-| **English Icon** | E | International markets, English UI |
-| **Arabic Icon** | إ | Arabic markets, Arabic UI |
-| **Full Name Icon** | إنجزنا | Brand-focused, social media profiles, app stores |
+### النص الكامل "إنجزنا"
+
+| Variant | Background | Text Color | Usage |
+|---------|------------|------------|-------|
+| **Primary (Charcoal)** | `#0F172A` | `#FFFFFF` | ✅ PWA, App Stores, Main icon |
+| **Blue** | `#009DE0` | `#FFFFFF` | Social media profiles |
+| **White** | `#FFFFFF` | `#009DE0` | Light backgrounds |
+
+### ❌ Deprecated Variants (لم تعد مستخدمة)
+
+- ~~حرف "إ" فقط~~ → نستخدم "إنجزنا" الكاملة
+- ~~حرف "E" الإنجليزي~~ → نستخدم "إنجزنا" العربية
+- ~~خلفية سوداء #000000~~ → نستخدم Charcoal #0F172A
 
 ---
 
-## 📐 Available Exports | الأصول المتاحة للتصدير
+## 📐 PWA Icons (Required) | أيقونات التطبيق
 
-### 📱 App Store Icons
-| Platform | Size |
-|----------|------|
-| iOS App Store | 1024 × 1024 |
-| Google Play | 512 × 512 |
+| File | Size | Purpose |
+|------|------|---------|
+| `icon-192x192.png` | 192×192 | PWA manifest, Apple Touch, Shortcuts |
+| `icon-512x512.png` | 512×512 | PWA manifest (maskable), Notifications |
+| `favicon-32-dark.png` | 32×32 | Browser favicon |
+| `favicon-64-dark.png` | 64×64 | Browser favicon, Notification badge |
 
-### 📘 Facebook
-| Asset | Size |
-|-------|------|
-| Profile Picture | 180 × 180 |
-| Cover Photo | 820 × 312 |
-| Post Square | 1200 × 1200 |
-| Post Landscape | 1200 × 630 |
+### Icon Specifications
 
-### 📸 Instagram
-| Asset | Size |
-|-------|------|
-| Profile Picture | 320 × 320 |
-| Post Square | 1080 × 1080 |
-| Story/Reels | 1080 × 1920 |
+```
+Background: #0F172A (Charcoal)
+Text: إنجزنا
+Font: Aref Ruqaa Bold
+Text Color: #FFFFFF (White)
+Border Radius: 22% (Android adaptive)
+```
 
-### 🐦 Twitter/X
-| Asset | Size |
-|-------|------|
-| Profile Picture | 400 × 400 |
-| Header Banner | 1500 × 500 |
+---
 
-### 💼 LinkedIn
-| Asset | Size |
-|-------|------|
-| Profile Picture | 400 × 400 |
-| Company Logo | 300 × 300 |
-| Cover Photo | 1128 × 191 |
+## 📱 Social Media Assets
 
-### 🎬 YouTube
-| Asset | Size |
-|-------|------|
-| Profile Picture | 800 × 800 |
-| Watermark | 150 × 150 |
-| Thumbnail | 1280 × 720 |
-| Channel Art | 2560 × 1440 |
+Social media assets are exported from `logo-exporter.html` on demand.
+They should NOT be stored in `public/icons/` to keep the production bundle small.
 
-### 🎵 TikTok
-| Asset | Size |
-|-------|------|
-| Profile Picture | 200 × 200 |
+### Available Exports
 
-### 💬 WhatsApp
-| Asset | Size |
-|-------|------|
-| Profile Picture | 500 × 500 |
-| Status | 1080 × 1920 |
-
-### 🌐 Favicon & Web
-| Asset | Size |
-|-------|------|
-| Favicon | 32 × 32, 64 × 64 |
-| Apple Touch Icon | 180 × 180 |
-| Android Chrome | 192 × 192, 512 × 512 |
+| Platform | Assets |
+|----------|--------|
+| **App Stores** | iOS 1024px, Android 512px |
+| **Facebook** | Profile 180px, Cover 820×312, Post 1200px |
+| **Instagram** | Profile 320px, Post 1080px, Story 1080×1920 |
+| **Twitter/X** | Profile 400px, Header 1500×500 |
+| **LinkedIn** | Profile 400px, Company 300px, Cover 1128×191 |
+| **YouTube** | Profile 800px, Thumbnail 1280×720, Channel Art 2560×1440 |
+| **TikTok** | Profile 200px |
+| **WhatsApp** | Profile 500px, Status 1080×1920 |
 
 ---
 
 ## ✅ Logo Usage Guidelines | إرشادات الاستخدام
 
 ### Do's | الصحيح ✓
-- ✅ Use the logo with adequate clear space around it
-- ✅ Use approved color variations only
+- ✅ Use Charcoal (#0F172A) background for app icons
+- ✅ Use the full "إنجزنا" text, not single letters
+- ✅ Use adequate clear space around the logo
+- ✅ Use high-resolution PNG exports from logo-exporter.html
 - ✅ Maintain the original aspect ratio
-- ✅ Use high-resolution PNG exports
-- ✅ Use the logo-exporter.html for consistent exports
 
 ### Don'ts | الخطأ ✗
+- ❌ Don't use pure black (#000000) - use Charcoal instead
+- ❌ Don't use single letter "إ" or "E" for main icons
 - ❌ Don't stretch or distort the logo
 - ❌ Don't change the logo colors
-- ❌ Don't add effects (shadows, gradients, outlines)
-- ❌ Don't rotate the logo
-- ❌ Don't place on busy backgrounds without contrast
-- ❌ Don't use low-resolution versions for large formats
-
----
-
-## 📏 Minimum Sizes | الأحجام الدنيا
-
-| Format | Minimum Size |
-|--------|--------------|
-| Digital | 24px height |
-| Print | 10mm height |
-| Favicon | 16 × 16px |
+- ❌ Don't add effects (shadows, extra gradients, outlines)
+- ❌ Don't store social media assets in public/icons/
 
 ---
 
@@ -147,6 +139,30 @@ logo-kit/
 | Logo Text | Aref Ruqaa | 700 (Bold) |
 | Arabic Body | Noto Sans Arabic | 400, 500, 700 |
 | English Body | Noto Sans | 400, 500, 600, 700 |
+
+---
+
+## 📏 Technical Specifications
+
+### manifest.json Icons
+```json
+{
+  "icons": [
+    { "src": "/icons/icon-192x192.png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/icons/icon-192x192.png", "sizes": "192x192", "purpose": "maskable" },
+    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}
+```
+
+### Theme Colors
+```json
+{
+  "theme_color": "#0F172A",
+  "background_color": "#0F172A"
+}
+```
 
 ---
 
