@@ -1,14 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <!-- Black background with rounded corners -->
-  <rect width="512" height="512" rx="0" fill="#000000"/>
+  <!-- Black background - full bleed for maskable -->
+  <rect width="512" height="512" fill="#000000"/>
 
-  <!-- Arabic logo text "إنجزنا" in Aref Ruqaa style -->
+  <!-- Safe zone circle (80% of icon = 410px diameter centered) -->
+  <!-- Arabic logo text "إنجزنا" - sized to fit within safe zone -->
   <text
     x="256"
     y="290"
     text-anchor="middle"
     font-family="'Aref Ruqaa', 'Arial', serif"
-    font-size="100"
+    font-size="85"
     font-weight="700"
     fill="#FFFFFF"
     direction="rtl"
