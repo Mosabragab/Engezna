@@ -164,8 +164,8 @@ const FAQ_ITEMS: FAQItem[] = [
     id: '14',
     question_ar: 'ما هي مناطق التغطية؟',
     question_en: 'What areas do you cover?',
-    answer_ar: 'حالياً نغطي محافظة بني سويف. يمكنك رؤية المتاجر المتاحة في منطقتك من الصفحة الرئيسية بعد تحديد موقعك.',
-    answer_en: 'Currently we cover Beni Suef governorate. You can see available stores in your area from the homepage after setting your location.',
+    answer_ar: 'نغطي عدة محافظات مصرية ونتوسع باستمرار. يمكنك رؤية المتاجر المتاحة في منطقتك من الصفحة الرئيسية بعد تحديد موقعك.',
+    answer_en: 'We cover multiple Egyptian governorates and are continuously expanding. You can see available stores in your area from the homepage after setting your location.',
     category: 'general',
   },
   {

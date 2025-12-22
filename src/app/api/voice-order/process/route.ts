@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Build the system prompt
-    const systemPrompt = `أنت مساعد طلبات ذكي لتطبيق إنجزنا للتوصيل في بني سويف، مصر.
+    const systemPrompt = `أنت مساعد طلبات ذكي لتطبيق إنجزنا للتوصيل في مصر.
 مهمتك مساعدة العملاء في:
 1. البحث عن المطاعم والكافيهات والمتاجر
 2. البحث عن الأطباق والمنتجات

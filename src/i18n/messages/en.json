@@ -29,7 +29,7 @@
       "subtitle": "Everything you need in one place",
       "restaurants": {
         "title": "Restaurants",
-        "description": "Order from the best restaurants in Beni Suef"
+        "description": "Order from the best restaurants in your area"
       },
       "coffee": {
         "title": "Coffee Shops",
@@ -124,7 +124,7 @@
       },
       "contact": {
         "title": "Contact Us",
-        "address": "Beni Suef, Egypt",
+        "address": "Egypt",
         "email": "info@engezna.com",
         "phone": "+20 xxx xxx xxx"
       },
@@ -987,7 +987,7 @@
       "q4": "Do I need delivery drivers?",
       "a4": "No, you control delivery your way - with your own drivers or yourself.",
       "q5": "Which cities are available?",
-      "a5": "We currently operate in Beni Suef, Minya, Assiut, Sohag, and Qena, and expanding soon."
+      "a5": "We operate across multiple Egyptian governorates and are continuously expanding to cover more areas."
     },
     "readyToJoin": "Ready to Join?",
     "readyToJoinSubtitle": "Start your journey with us today and increase your sales",

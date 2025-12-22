@@ -8,8 +8,8 @@ import '../globals.css'
 
 export function generateMetadata() {
   return {
-    title: "Engezna - إنجزنا | Food Delivery in Beni Suef",
-    description: "إنجزنا واطلب - Fast food delivery from restaurants, coffee shops, groceries in Beni Suef",
+    title: "Engezna - إنجزنا | Food Delivery in Egypt",
+    description: "إنجزنا واطلب - Fast food delivery from restaurants, coffee shops, groceries across Egypt",
     manifest: '/manifest.json',
     themeColor: '#0F172A',
     appleWebApp: {

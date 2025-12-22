@@ -4,9 +4,9 @@
 
 ![Engezna Logo](public/logo.svg)
 
-**Modern Food Delivery Platform for Beni Suef, Upper Egypt**
+**Modern Food Delivery Platform for Egypt**
 
-منصة توصيل طعام حديثة لمدينة بني سويف، صعيد مصر
+منصة توصيل طعام حديثة لجمهورية مصر العربية
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.0.7-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.1-61dafb)](https://react.dev/)
@@ -24,10 +24,10 @@
 
 ### 🎯 About Engezna
 
-**Engezna (إنجزنا)** - meaning "We've got it done!" - is a B2C food delivery marketplace designed specifically for Beni Suef and Upper Egypt. We connect local restaurants, coffee shops, and grocery stores with customers through a modern, bilingual platform.
+**Engezna (إنجزنا)** - meaning "We've got it done!" - is a B2C food delivery marketplace designed to serve all of Egypt, starting from Upper Egypt governorates. We connect local restaurants, coffee shops, and grocery stores with customers through a modern, bilingual platform.
 
 #### **Our Mission**
-To bring modern food delivery services to Upper Egypt while supporting local businesses and creating economic opportunities through fair, transparent pricing.
+To bring modern food delivery services to Egyptian governorates outside major cities, supporting local businesses and creating economic opportunities through fair, transparent pricing.
 
 #### **Key Differentiator**
 - **6 months 0% commission** then **max 7%** (vs competitors' 25-30%)
@@ -727,10 +727,10 @@ Proprietary - All rights reserved. This project is not open source.
 
 ### 🎯 عن إنجزنا
 
-**إنجزنا (Engezna)** - تعني "خلصناها!" - هي منصة توصيل طعام B2C مصممة خصيصًا لمدينة بني سويف وصعيد مصر. نحن نربط المطاعم المحلية والمقاهي ومحلات البقالة بالعملاء من خلال منصة حديثة ثنائية اللغة.
+**إنجزنا (Engezna)** - تعني "خلصناها!" - هي منصة توصيل طعام B2C مصممة لخدمة جمهورية مصر العربية بالكامل، بدءاً من محافظات الصعيد. نحن نربط المطاعم المحلية والمقاهي ومحلات البقالة بالعملاء من خلال منصة حديثة ثنائية اللغة.
 
 #### **مهمتنا**
-جلب خدمات توصيل الطعام الحديثة إلى صعيد مصر مع دعم الأعمال المحلية وخلق فرص اقتصادية من خلال أسعار عادلة وشفافة.
+جلب خدمات توصيل الطعام الحديثة إلى محافظات مصر خارج المدن الكبرى مع دعم الأعمال المحلية وخلق فرص اقتصادية من خلال أسعار عادلة وشفافة.
 
 #### **ميزتنا الرئيسية**
 - **عمولة منخفضة جدًا 5-7%** (مقارنة بـ 15-20% للمنافسين)
@@ -965,8 +965,8 @@ npm run dev
 
 <div align="center">
 
-**Made with 💚 in Beni Suef, Egypt**
+**Made with 💚 in Egypt**
 
-صنع بـ 💚 في بني سويف، مصر
+صنع بـ 💚 في مصر
 
 </div>
