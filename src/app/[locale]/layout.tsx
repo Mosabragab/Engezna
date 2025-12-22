@@ -14,7 +14,7 @@ export function generateMetadata() {
     themeColor: '#0F172A',
     appleWebApp: {
       capable: true,
-      statusBarStyle: 'default',
+      statusBarStyle: 'black-translucent',
       title: 'إنجزنا',
     },
     formatDetection: {
@@ -69,10 +69,24 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning>
       <head>
+        {/* Google Fonts */}
         <link
           href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&display=swap"
           rel="stylesheet"
         />
+        {/* Apple Touch Icons - Required for iOS Home Screen */}
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-192x192.png" />
+        {/* Apple Startup Image / Splash Screen */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="إنجزنا" />
+        {/* Theme Color for all browsers */}
+        <meta name="theme-color" content="#0F172A" />
+        <meta name="msapplication-TileColor" content="#0F172A" />
+        <meta name="msapplication-TileImage" content="/icons/icon-192x192.png" />
       </head>
       <body className={`${notoSans.variable} ${notoSansArabic.variable} font-sans antialiased`}>
         <ThemeProvider
