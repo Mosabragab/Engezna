@@ -118,6 +118,7 @@ self.addEventListener("push", (event) => {
       vibrate: [100, 50, 100] as number[],
       data: {
         url: data.url || "/ar",
+        badgeCount: data.badgeCount || 1,
       },
       dir: "rtl" as const,
       lang: "ar",
@@ -126,7 +127,12 @@ self.addEventListener("push", (event) => {
     };
 
     event.waitUntil(
-      self.registration.showNotification(data.title || "إنجزنا", options)
+      Promise.all([
+        // Show notification
+        self.registration.showNotification(data.title || "إنجزنا", options),
+        // Update app badge
+        updateAppBadge(data.badgeCount || 1),
+      ])
     );
   }
 });
@@ -138,20 +144,48 @@ self.addEventListener("notificationclick", (event) => {
   const urlToOpen = event.notification.data?.url || "/ar";
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      // Check if there's already a window open
-      for (const client of clientList) {
-        if (client.url.includes(urlToOpen) && "focus" in client) {
-          return client.focus();
+    Promise.all([
+      // Clear badge when notification is clicked
+      clearAppBadge(),
+      // Open/focus window
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+        // Check if there's already a window open
+        for (const client of clientList) {
+          if (client.url.includes(urlToOpen) && "focus" in client) {
+            return client.focus();
+          }
         }
-      }
-      // Open new window if none found
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen);
-      }
-    })
+        // Open new window if none found
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(urlToOpen);
+        }
+      }),
+    ])
   );
 });
+
+// App Badge API helpers
+async function updateAppBadge(count: number): Promise<void> {
+  try {
+    if ("setAppBadge" in navigator) {
+      await (navigator as any).setAppBadge(count);
+      console.log(`[SW] Badge set to ${count}`);
+    }
+  } catch (error) {
+    console.warn("[SW] Badge API not supported:", error);
+  }
+}
+
+async function clearAppBadge(): Promise<void> {
+  try {
+    if ("clearAppBadge" in navigator) {
+      await (navigator as any).clearAppBadge();
+      console.log("[SW] Badge cleared");
+    }
+  } catch (error) {
+    console.warn("[SW] Badge clear not supported:", error);
+  }
+}
 
 // Background Sync for offline requests (e.g., ratings, complaints)
 self.addEventListener("sync", (event) => {
