@@ -28,8 +28,8 @@ export function generateMetadata() {
       viewportFit: 'cover',
     },
     icons: {
-      icon: '/icons/android-chrome-192-dark-192px.png',
-      apple: '/icons/apple-touch-icon-dark-180px.png',
+      icon: '/icons/icon-192x192.png',
+      apple: '/icons/icon-192x192.png',
     },
   }
 }

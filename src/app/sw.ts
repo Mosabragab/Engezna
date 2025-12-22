@@ -113,7 +113,7 @@ self.addEventListener("push", (event) => {
     const data = event.data.json();
     const options = {
       body: data.body || "لديك إشعار جديد من إنجزنا",
-      icon: "/icons/android-chrome-192-dark-192px.png",
+      icon: "/icons/icon-512x512.png",
       badge: "/icons/favicon-64-dark.png",
       vibrate: [100, 50, 100] as number[],
       data: {
