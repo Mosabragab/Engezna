@@ -99,12 +99,12 @@ export function InstallPrompt() {
 
         {/* Content */}
         <div className="flex items-start gap-4">
-          {/* App Icon */}
-          <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-2xl font-bold">
-              {locale === 'ar' ? 'إ' : 'E'}
-            </span>
-          </div>
+          {/* App Icon - Using actual icon image */}
+          <img
+            src="/icons/icon-192x192.png"
+            alt="إنجزنا"
+            className="w-14 h-14 rounded-xl flex-shrink-0"
+          />
 
           {/* Text */}
           <div className="flex-1 min-w-0 pe-6">
