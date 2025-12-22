@@ -99,12 +99,12 @@ export function InstallPrompt() {
 
         {/* Content */}
         <div className="flex items-start gap-4">
-          {/* App Icon */}
-          <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-2xl font-bold">
-              {locale === 'ar' ? 'إ' : 'E'}
-            </span>
-          </div>
+          {/* App Icon - Using actual icon image */}
+          <img
+            src="/icons/icon-192x192.png"
+            alt="إنجزنا"
+            className="w-14 h-14 rounded-xl flex-shrink-0"
+          />
 
           {/* Text */}
           <div className="flex-1 min-w-0 pe-6">
@@ -117,7 +117,7 @@ export function InstallPrompt() {
         <div className="flex gap-2 mt-4">
           <Button
             onClick={handleInstall}
-            className="flex-1"
+            className="flex-1 bg-[#0F172A] hover:bg-[#1e293b] text-white"
           >
             <Download className="w-4 h-4 me-2" />
             {t('installButton')}
@@ -125,7 +125,7 @@ export function InstallPrompt() {
           <Button
             onClick={handleDismiss}
             variant="outline"
-            className="flex-1"
+            className="flex-1 border-[#0F172A] text-[#0F172A] hover:bg-[#0F172A] hover:text-white"
           >
             {t('later')}
           </Button>
