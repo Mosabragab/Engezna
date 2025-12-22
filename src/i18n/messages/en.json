@@ -996,5 +996,16 @@
       "orders": "Monthly Orders",
       "cities": "Governorates"
     }
+  },
+  "offline": {
+    "title": "You're Offline",
+    "description": "Check your internet connection and try again",
+    "retry": "Retry",
+    "retrying": "Retrying...",
+    "callSupport": "Call Customer Support",
+    "whatsappSupport": "Chat on WhatsApp",
+    "recentlyVisited": "Recently Visited Stores",
+    "footer": "You'll be redirected automatically when you're back online",
+    "redirecting": "Redirecting..."
   }
 }

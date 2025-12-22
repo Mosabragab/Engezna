@@ -1,3 +1,6 @@
+/* PWA Native Feel Styles - imported first per CSS spec */
+@import '../styles/pwa.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
