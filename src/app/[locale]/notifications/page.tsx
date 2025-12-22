@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Bell, Package, Tag, Gift, Info, Check, Trash2, Loader2, CreditCard, MessageCircle } from 'lucide-react'
+import Link from 'next/link'
 import { CustomerLayout } from '@/components/customer/layout'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/customer'
@@ -219,6 +220,20 @@ export default function NotificationsPage() {
 
                   {/* Actions */}
                   <div className="flex items-start gap-1" onClick={(e) => e.stopPropagation()}>
+                    {/* Reply button for message notifications */}
+                    {notification.type === 'order_message' && notification.related_order_id && (
+                      <Link
+                        href={`/${locale}/orders/${notification.related_order_id}?openChat=true`}
+                        onClick={() => {
+                          if (!notification.is_read) {
+                            handleMarkAsRead(notification.id)
+                          }
+                        }}
+                        className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors"
+                      >
+                        {locale === 'ar' ? 'رد' : 'Reply'}
+                      </Link>
+                    )}
                     {!notification.is_read && (
                       <button
                         onClick={() => handleMarkAsRead(notification.id)}
