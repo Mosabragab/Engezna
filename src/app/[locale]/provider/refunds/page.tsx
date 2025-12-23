@@ -96,9 +96,7 @@ export default function ProviderRefundsPage() {
 
     // Get current user's provider
     const { data: { user } } = await supabase.auth.getUser()
-    console.log('🔍 DEBUG - Current user:', user?.id, user?.email)
     if (!user) {
-      console.log('❌ DEBUG - No user logged in!')
       setLoading(false)
       return
     }
@@ -109,10 +107,7 @@ export default function ProviderRefundsPage() {
       .eq('owner_id', user.id)
       .single()
 
-    console.log('🔍 DEBUG - Provider lookup:', { provider, providerError, owner_id: user.id })
-
     if (!provider) {
-      console.log('❌ DEBUG - No provider found for user!')
       setLoading(false)
       return
     }
@@ -130,13 +125,6 @@ export default function ProviderRefundsPage() {
       `)
       .eq('provider_id', provider.id)
       .order('created_at', { ascending: false })
-
-    console.log('🔍 DEBUG - Refunds query:', {
-      provider_id: provider.id,
-      refundsCount: refundsData?.length,
-      refundsError,
-      refundsData
-    })
 
     if (refundsData) {
       setRefunds(refundsData.map(r => ({

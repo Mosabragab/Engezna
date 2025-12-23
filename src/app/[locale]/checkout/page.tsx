@@ -582,9 +582,9 @@ export default function CheckoutPage() {
       // Calculate final total with discount
       const finalTotal = subtotal + (provider.delivery_fee || 0) - discountAmount
 
-      // Calculate platform commission on actual revenue (subtotal minus discount, excluding delivery fee)
-      const commissionRate = provider.commission_rate || 6.0
-      const platformCommission = ((subtotal - discountAmount) * commissionRate) / 100
+      // NOTE: platform_commission is calculated SERVER-SIDE by database trigger
+      // This prevents any client-side manipulation of commission values
+      // See: supabase/migrations/20251223100000_secure_commission_calculation.sql
 
       // Build delivery address JSONB with full geographic data
       const deliveryAddressJson = buildDeliveryAddressJson()
@@ -594,7 +594,7 @@ export default function CheckoutPage() {
         Date.now() + (provider.estimated_delivery_time_min || 30) * 60 * 1000
       ).toISOString()
 
-      // Create order
+      // Create order - platform_commission will be set by database trigger
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -605,7 +605,7 @@ export default function CheckoutPage() {
           delivery_fee: provider.delivery_fee,
           discount: discountAmount,
           total: finalTotal,
-          platform_commission: platformCommission,
+          // platform_commission is calculated by trigger - DO NOT send from client
           payment_method: paymentMethod,
           payment_status: 'pending',
           delivery_address: deliveryAddressJson,
