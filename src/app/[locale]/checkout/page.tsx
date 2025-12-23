@@ -544,7 +544,7 @@ export default function CheckoutPage() {
     }
 
     if (!termsAccepted) {
-      setError(locale === 'ar' ? 'يرجى الموافقة على الشروط والأحكام وسياسة الاسترداد' : 'Please accept the Terms & Conditions and Refund Policy')
+      setError(locale === 'ar' ? 'يرجى الموافقة على الشروط والأحكام وسياسة الخصوصية' : 'Please accept the Terms & Conditions and Privacy Policy')
       return false
     }
 
@@ -1221,12 +1221,12 @@ export default function CheckoutPage() {
                             </Link>
                             {' '}و{' '}
                             <Link
-                              href={`/${locale}/terms#refunds`}
+                              href={`/${locale}/privacy`}
                               target="_blank"
                               className="text-primary hover:underline font-medium"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              سياسة الاسترداد
+                              سياسة الخصوصية
                             </Link>
                           </>
                         ) : (
@@ -1242,12 +1242,12 @@ export default function CheckoutPage() {
                             </Link>
                             {' '}and{' '}
                             <Link
-                              href={`/${locale}/terms#refunds`}
+                              href={`/${locale}/privacy`}
                               target="_blank"
                               className="text-primary hover:underline font-medium"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              Refund Policy
+                              Privacy Policy
                             </Link>
                           </>
                         )}

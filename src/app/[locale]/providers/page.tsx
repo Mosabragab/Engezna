@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useLocale } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CustomerLayout } from '@/components/customer/layout'
 import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared'
@@ -34,14 +35,24 @@ type SortOption = 'rating' | 'delivery_time' | 'delivery_fee'
 
 export default function ProvidersPage() {
   const locale = useLocale()
+  const searchParams = useSearchParams()
+  const categoryFromUrl = searchParams.get('category')
+
   const [providers, setProviders] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedCategory, setSelectedCategory] = useState<string>(categoryFromUrl || 'all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortOption | null>(null)
   const [showOpenOnly, setShowOpenOnly] = useState(false)
   const [showOffersOnly, setShowOffersOnly] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
+
+  // Update category when URL changes
+  useEffect(() => {
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl)
+    }
+  }, [categoryFromUrl])
 
   // Get location from context (no Supabase queries needed!)
   const {
