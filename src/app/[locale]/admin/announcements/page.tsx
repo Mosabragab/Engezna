@@ -121,6 +121,23 @@ export default function AdminAnnouncementsPage() {
     unread: 0,
   })
 
+  // Helper function - defined before useCallback that uses it
+  function calculateStats(data: Announcement[], adminId: string | null) {
+    const now = new Date()
+
+    const stats = {
+      total: data.length,
+      active: data.filter(a => {
+        if (a.expires_at && new Date(a.expires_at) < now) return false
+        if (a.scheduled_at && new Date(a.scheduled_at) > now) return false
+        return true
+      }).length,
+      pinned: data.filter(a => a.is_pinned).length,
+      unread: adminId ? data.filter(a => !a.read_by?.includes(adminId)).length : 0,
+    }
+    setStats(stats)
+  }
+
   const loadAnnouncements = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     const { data: announcementsData, error } = await supabase
       .from('announcements')
@@ -235,22 +252,6 @@ export default function AdminAnnouncementsPage() {
   useEffect(() => {
     filterAnnouncements()
   }, [filterAnnouncements])
-
-  function calculateStats(data: Announcement[], adminId: string | null) {
-    const now = new Date()
-
-    const stats = {
-      total: data.length,
-      active: data.filter(a => {
-        if (a.expires_at && new Date(a.expires_at) < now) return false
-        if (a.scheduled_at && new Date(a.scheduled_at) > now) return false
-        return true
-      }).length,
-      pinned: data.filter(a => a.is_pinned).length,
-      unread: adminId ? data.filter(a => !a.read_by?.includes(adminId)).length : 0,
-    }
-    setStats(stats)
-  }
 
   function isUnread(announcement: Announcement): boolean {
     if (!currentAdminId) return false
