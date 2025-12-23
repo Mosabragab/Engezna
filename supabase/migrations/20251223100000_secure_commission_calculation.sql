@@ -6,15 +6,10 @@
 --
 -- CRITICAL: Commission must NEVER be trusted from client input!
 --
--- COMMISSION PRIORITY (Provider-based ONLY):
---   1. Grace Period → 0%
---   2. Exempt Status → 0%
---   3. custom_commission_rate (provider-specific rate)
---   4. commission_rate (provider's standard rate)
---   5. Platform default rate (from platform_settings)
---
--- REFUND HANDLING:
---   Orders with status 'cancelled', 'rejected', or 'refunded' → 0% commission
+-- COMMISSION RULES:
+--   1. Commission is ONLY calculated for DELIVERED/COMPLETED orders
+--   2. Pending, cancelled, rejected orders = 0 commission
+--   3. Priority: custom_commission_rate → commission_rate → platform default
 -- ============================================================================
 
 -- Drop existing trigger if any
@@ -33,9 +28,10 @@ DECLARE
     v_settings JSONB;
 BEGIN
     -- ========================================================================
-    -- STEP 1: Handle cancelled/rejected/refunded orders - NO COMMISSION
+    -- RULE 1: Only DELIVERED/COMPLETED orders get commission
+    -- All other statuses = 0 commission
     -- ========================================================================
-    IF NEW.status IN ('cancelled', 'rejected') THEN
+    IF NEW.status NOT IN ('delivered', 'completed') THEN
         NEW.platform_commission := 0;
         RETURN NEW;
     END IF;
@@ -137,10 +133,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Trigger: Auto-calculate commission on INSERT and UPDATE
 -- ============================================================================
 -- Triggers on:
---   - INSERT: New order created
---   - UPDATE of subtotal/discount: Order totals changed
---   - UPDATE of provider_id: Order moved to different provider
---   - UPDATE of status: Order cancelled/rejected (commission set to 0)
+--   - INSERT: New order created (commission = 0 since pending)
+--   - UPDATE of status: When delivered → calculate real commission
+--   - UPDATE of subtotal/discount: Recalculate if delivered
 -- ============================================================================
 CREATE TRIGGER trigger_calculate_order_commission
     BEFORE INSERT OR UPDATE OF subtotal, discount, provider_id, status ON orders
@@ -154,25 +149,41 @@ COMMENT ON FUNCTION calculate_order_commission() IS
 'SECURITY: Calculates platform commission server-side.
 Client-provided commission values are IGNORED and overwritten.
 
+KEY RULE: Only DELIVERED/COMPLETED orders have commission > 0
+All other statuses (pending, preparing, cancelled, etc.) = 0 commission
+
 Commission Priority (Provider-based ONLY):
 1. Grace Period → 0%
 2. Exempt Status → 0%
 3. custom_commission_rate (provider-specific)
 4. commission_rate (provider standard)
-5. Platform default
-
-Cancelled/Rejected orders automatically get 0% commission.';
+5. Platform default';
 
 COMMENT ON TRIGGER trigger_calculate_order_commission ON orders IS
 'SECURITY TRIGGER: Ensures commission is always calculated server-side.
-Also handles status changes (cancelled/rejected → 0 commission).';
+Commission is 0 until order is delivered/completed.';
 
 -- ============================================================================
--- Recalculate existing cancelled orders (fix any incorrect commissions)
+-- FIX EXISTING DATA: Set commission to 0 for non-delivered orders
 -- ============================================================================
--- Set commission to 0 for all cancelled/rejected orders
 UPDATE orders
 SET platform_commission = 0
-WHERE status IN ('cancelled', 'rejected')
-AND platform_commission != 0;
+WHERE status NOT IN ('delivered', 'completed')
+AND (platform_commission IS NULL OR platform_commission != 0);
+
+-- ============================================================================
+-- FIX EXISTING DATA: Recalculate commission for delivered orders
+-- This ensures all delivered orders have correct commission based on provider
+-- ============================================================================
+UPDATE orders o
+SET platform_commission = ROUND(
+    ((COALESCE(o.subtotal, o.total, 0) - COALESCE(o.discount, 0)) *
+     COALESCE(
+        (SELECT p.custom_commission_rate FROM providers p WHERE p.id = o.provider_id),
+        (SELECT p.commission_rate FROM providers p WHERE p.id = o.provider_id),
+        7.00
+     )) / 100,
+    2
+)
+WHERE o.status IN ('delivered', 'completed');
 
