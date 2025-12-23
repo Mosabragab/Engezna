@@ -93,6 +93,50 @@ export default function AdminSupportPage() {
     urgent: 0,
   })
 
+  // Helper function - defined before useCallback that uses it
+  async function loadTickets(supabase: ReturnType<typeof createClient>) {
+    const { data } = await supabase
+      .from('support_tickets')
+      .select(`
+        *,
+        user:profiles!support_tickets_user_id_fkey(full_name, email, phone),
+        provider:providers(name_ar, name_en, governorate_id),
+        assignee:profiles!support_tickets_assigned_to_fkey(full_name)
+      `)
+      .order('created_at', { ascending: false })
+
+    if (data) {
+      const ticketsWithCounts = await Promise.all(
+        data.map(async (ticket) => {
+          const { count } = await supabase
+            .from('ticket_messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('ticket_id', ticket.id)
+
+          return {
+            ...ticket,
+            messages_count: count || 0,
+          }
+        })
+      )
+
+      setTickets(ticketsWithCounts as SupportTicket[])
+
+      const open = ticketsWithCounts.filter(t => t.status === 'open').length
+      const inProgress = ticketsWithCounts.filter(t => t.status === 'in_progress').length
+      const resolved = ticketsWithCounts.filter(t => t.status === 'resolved').length
+      const urgent = ticketsWithCounts.filter(t => t.priority === 'urgent').length
+
+      setStats({
+        total: ticketsWithCounts.length,
+        open,
+        inProgress,
+        resolved,
+        urgent,
+      })
+    }
+  }
+
   const checkAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -189,49 +233,6 @@ export default function AdminSupportPage() {
   useEffect(() => {
     filterTickets()
   }, [filterTickets])
-
-  async function loadTickets(supabase: ReturnType<typeof createClient>) {
-    const { data } = await supabase
-      .from('support_tickets')
-      .select(`
-        *,
-        user:profiles!support_tickets_user_id_fkey(full_name, email, phone),
-        provider:providers(name_ar, name_en, governorate_id),
-        assignee:profiles!support_tickets_assigned_to_fkey(full_name)
-      `)
-      .order('created_at', { ascending: false })
-
-    if (data) {
-      const ticketsWithCounts = await Promise.all(
-        data.map(async (ticket) => {
-          const { count } = await supabase
-            .from('ticket_messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('ticket_id', ticket.id)
-
-          return {
-            ...ticket,
-            messages_count: count || 0,
-          }
-        })
-      )
-
-      setTickets(ticketsWithCounts as SupportTicket[])
-
-      const open = ticketsWithCounts.filter(t => t.status === 'open').length
-      const inProgress = ticketsWithCounts.filter(t => t.status === 'in_progress').length
-      const resolved = ticketsWithCounts.filter(t => t.status === 'resolved').length
-      const urgent = ticketsWithCounts.filter(t => t.priority === 'urgent').length
-
-      setStats({
-        total: ticketsWithCounts.length,
-        open,
-        inProgress,
-        resolved,
-        urgent,
-      })
-    }
-  }
 
   async function handleStatusChange(ticketId: string, newStatus: string) {
     setActionLoading(ticketId)

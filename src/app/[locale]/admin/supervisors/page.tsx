@@ -239,6 +239,81 @@ export default function AdminSupervisorsPage() {
     }
   }, [])
 
+  // Helper functions - defined before useCallback that uses them
+  function calculateStats(data: Supervisor[]) {
+    // Calculate stats by role using admin_roles
+    const byRole: Record<string, number> = {}
+
+    data.forEach(s => {
+      // Use primaryRole from admin_roles if available, otherwise fall back to legacy role
+      const roleCode = s.primaryRole?.code || s.role
+      if (roleCode) {
+        byRole[roleCode] = (byRole[roleCode] || 0) + 1
+      }
+    })
+
+    setStats({
+      total: data.length,
+      active: data.filter(s => s.is_active).length,
+      inactive: data.filter(s => !s.is_active).length,
+      byRole,
+    })
+  }
+
+  async function loadSupervisors(supabase: ReturnType<typeof createClient>) {
+    // Get admin_users with their profile data
+    const { data: adminUsers, error } = await supabase
+      .from('admin_users')
+      .select(`
+        *,
+        profile:profiles!admin_users_user_id_fkey(
+          full_name,
+          email,
+          phone,
+          avatar_url
+        )
+      `)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error loading supervisors:', error)
+      return
+    }
+
+    // Load admin_roles for all supervisors
+    const adminIds = (adminUsers || []).map(a => a.id)
+    const { data: allAdminRoles } = await supabase
+      .from('admin_roles')
+      .select(`
+        *,
+        role:roles(*)
+      `)
+      .in('admin_id', adminIds)
+
+    // Map admin_roles to each supervisor
+    const supervisorsData: Supervisor[] = (adminUsers || []).map((admin: Record<string, unknown>) => {
+      const adminRoles = (allAdminRoles || []).filter(ar => ar.admin_id === admin.id) as AdminRoleAssignment[]
+      const primaryRoleAssignment = adminRoles.find(ar => ar.is_primary) || adminRoles[0]
+      const profileData = Array.isArray(admin.profile) ? admin.profile[0] : admin.profile
+
+      return {
+        ...admin,
+        assigned_regions: (admin.assigned_regions as AssignedRegion[]) || [],
+        profile: profileData || {
+          full_name: null,
+          email: null,
+          phone: null,
+          avatar_url: null,
+        },
+        admin_roles: adminRoles,
+        primaryRole: primaryRoleAssignment?.role,
+      } as Supervisor
+    })
+
+    setSupervisors(supervisorsData)
+    calculateStats(supervisorsData)
+  }
+
   const checkAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -332,80 +407,6 @@ export default function AdminSupervisorsPage() {
   useEffect(() => {
     filterSupervisors()
   }, [filterSupervisors])
-
-  async function loadSupervisors(supabase: ReturnType<typeof createClient>) {
-    // Get admin_users with their profile data
-    const { data: adminUsers, error } = await supabase
-      .from('admin_users')
-      .select(`
-        *,
-        profile:profiles!admin_users_user_id_fkey(
-          full_name,
-          email,
-          phone,
-          avatar_url
-        )
-      `)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error loading supervisors:', error)
-      return
-    }
-
-    // Load admin_roles for all supervisors
-    const adminIds = (adminUsers || []).map(a => a.id)
-    const { data: allAdminRoles } = await supabase
-      .from('admin_roles')
-      .select(`
-        *,
-        role:roles(*)
-      `)
-      .in('admin_id', adminIds)
-
-    // Map admin_roles to each supervisor
-    const supervisorsData: Supervisor[] = (adminUsers || []).map((admin: Record<string, unknown>) => {
-      const adminRoles = (allAdminRoles || []).filter(ar => ar.admin_id === admin.id) as AdminRoleAssignment[]
-      const primaryRoleAssignment = adminRoles.find(ar => ar.is_primary) || adminRoles[0]
-      const profileData = Array.isArray(admin.profile) ? admin.profile[0] : admin.profile
-
-      return {
-        ...admin,
-        assigned_regions: (admin.assigned_regions as AssignedRegion[]) || [],
-        profile: profileData || {
-          full_name: null,
-          email: null,
-          phone: null,
-          avatar_url: null,
-        },
-        admin_roles: adminRoles,
-        primaryRole: primaryRoleAssignment?.role,
-      } as Supervisor
-    })
-
-    setSupervisors(supervisorsData)
-    calculateStats(supervisorsData)
-  }
-
-  function calculateStats(data: Supervisor[]) {
-    // Calculate stats by role using admin_roles
-    const byRole: Record<string, number> = {}
-
-    data.forEach(s => {
-      // Use primaryRole from admin_roles if available, otherwise fall back to legacy role
-      const roleCode = s.primaryRole?.code || s.role
-      if (roleCode) {
-        byRole[roleCode] = (byRole[roleCode] || 0) + 1
-      }
-    })
-
-    setStats({
-      total: data.length,
-      active: data.filter(s => s.is_active).length,
-      inactive: data.filter(s => !s.is_active).length,
-      byRole,
-    })
-  }
 
   async function handleToggleActive(supervisor: Supervisor) {
     setActionLoading(supervisor.id)
