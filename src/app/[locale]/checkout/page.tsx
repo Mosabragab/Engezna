@@ -26,7 +26,9 @@ import {
   Tag,
   X,
   Loader2,
+  FileText,
 } from 'lucide-react'
+import Link from 'next/link'
 
 // Simplified district interface for saved addresses (backward compatibility)
 interface SavedAddressDistrict {
@@ -110,6 +112,9 @@ export default function CheckoutPage() {
   const [promoCodeError, setPromoCodeError] = useState<string | null>(null)
   const [promoCodeLoading, setPromoCodeLoading] = useState(false)
   const [discountAmount, setDiscountAmount] = useState(0)
+
+  // Terms acceptance
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   // Address mode: 'saved' or 'new'
   const [addressMode, setAddressMode] = useState<'saved' | 'new'>('saved')
@@ -536,6 +541,11 @@ export default function CheckoutPage() {
         setError(locale === 'ar' ? 'يرجى ملء المحافظة والمدينة والعنوان' : 'Please fill governorate, city and address')
         return false
       }
+    }
+
+    if (!termsAccepted) {
+      setError(locale === 'ar' ? 'يرجى الموافقة على الشروط والأحكام وسياسة الاسترداد' : 'Please accept the Terms & Conditions and Refund Policy')
+      return false
     }
 
     return true
@@ -1179,10 +1189,76 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
+                  {/* Terms & Conditions Acceptance */}
+                  <div className="pb-4 border-b">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <div className="relative flex-shrink-0 mt-0.5">
+                        <input
+                          type="checkbox"
+                          checked={termsAccepted}
+                          onChange={(e) => setTermsAccepted(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className={`w-5 h-5 border-2 rounded transition-all flex items-center justify-center ${
+                          termsAccepted
+                            ? 'bg-primary border-primary'
+                            : 'border-muted-foreground group-hover:border-primary'
+                        }`}>
+                          {termsAccepted && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                      </div>
+                      <span className="text-sm text-muted-foreground leading-relaxed">
+                        {locale === 'ar' ? (
+                          <>
+                            أوافق على{' '}
+                            <Link
+                              href={`/${locale}/terms`}
+                              target="_blank"
+                              className="text-primary hover:underline font-medium"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              الشروط والأحكام
+                            </Link>
+                            {' '}و{' '}
+                            <Link
+                              href={`/${locale}/terms#refunds`}
+                              target="_blank"
+                              className="text-primary hover:underline font-medium"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              سياسة الاسترداد
+                            </Link>
+                          </>
+                        ) : (
+                          <>
+                            I agree to the{' '}
+                            <Link
+                              href={`/${locale}/terms`}
+                              target="_blank"
+                              className="text-primary hover:underline font-medium"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Terms & Conditions
+                            </Link>
+                            {' '}and{' '}
+                            <Link
+                              href={`/${locale}/terms#refunds`}
+                              target="_blank"
+                              className="text-primary hover:underline font-medium"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Refund Policy
+                            </Link>
+                          </>
+                        )}
+                      </span>
+                    </label>
+                  </div>
+
                   {/* Place Order Button - Matching cart button style */}
                   <button
                     onClick={handlePlaceOrder}
-                    disabled={isLoading}
+                    disabled={isLoading || !termsAccepted}
                     className="w-full bg-primary text-white rounded-lg py-3 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                   >
                     <span>
