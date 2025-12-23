@@ -121,9 +121,11 @@ We may update this Privacy Policy from time to time. We will notify you of any c
 
 If you have questions about this Privacy Policy, please contact us:
 
-- **Email:** privacy@engezna.com
+- **Company:** Sweifcom for Trade and Export (سويفكم للتجارة والتصدير)
+- **Commercial Registry:** 2767
+- **Address:** Saleh Hammam St., next to Al-Abasiri Mosque, Beni Suef, Egypt
+- **Email:** support@engezna.com
 - **Support:** Through the app's Help section
-- **Address:** Egypt
 
 ---
 
@@ -240,9 +242,11 @@ If you have questions about this Privacy Policy, please contact us:
 
 إذا كانت لديك أسئلة حول سياسة الخصوصية هذه، يُرجى التواصل معنا:
 
-- **البريد الإلكتروني:** privacy@engezna.com
+- **الشركة:** سويفكم للتجارة والتصدير
+- **السجل التجاري:** 2767
+- **العنوان:** ش صالح حمام بجوار مسجد الاباصيري - بني سويف، مصر
+- **البريد الإلكتروني:** support@engezna.com
 - **الدعم الفني:** من خلال قسم المساعدة في التطبيق
-- **العنوان:** جمهورية مصر العربية
 
 ---
 

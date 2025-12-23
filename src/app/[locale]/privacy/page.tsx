@@ -80,9 +80,11 @@ export default function PrivacyPage() {
           title: '٧. تواصل معنا',
           content: `إذا كانت لديك أسئلة حول سياسة الخصوصية:
 
-📧 البريد الإلكتروني: privacy@engezna.com
-💬 الدعم الفني: من خلال قسم المساعدة في التطبيق
-📍 العنوان: جمهورية مصر العربية`
+🏢 الشركة: سويفكم للتجارة والتصدير
+📍 العنوان: ش صالح حمام بجوار مسجد الاباصيري - بني سويف، مصر
+📋 السجل التجاري: 2767
+📧 البريد الإلكتروني: support@engezna.com
+💬 الدعم الفني: من خلال قسم المساعدة في التطبيق`
         }
       ]
     },
@@ -155,9 +157,11 @@ To exercise these rights, contact us at: privacy@engezna.com`
           title: '7. Contact Us',
           content: `If you have questions about this Privacy Policy:
 
-📧 Email: privacy@engezna.com
-💬 Support: Through the app's Help section
-📍 Address: Egypt`
+🏢 Company: Sweifcom for Trade and Export
+📍 Address: Saleh Hammam St., next to Al-Abasiri Mosque, Beni Suef, Egypt
+📋 Commercial Registry: 2767
+📧 Email: support@engezna.com
+💬 Support: Through the app's Help section`
         }
       ]
     }

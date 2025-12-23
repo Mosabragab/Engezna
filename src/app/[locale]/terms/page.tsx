@@ -202,8 +202,10 @@ export default function TermsPage() {
         }
       ],
       footer: {
+        company: 'سويفكم للتجارة والتصدير - سجل تجاري: 2767',
+        address: 'ش صالح حمام بجوار مسجد الاباصيري - بني سويف، مصر',
         law: 'هذه الشروط تخضع لقوانين جمهورية مصر العربية وتتوافق مع قانون حماية المستهلك المصري (القانون رقم ١٨١ لسنة ٢٠١٨)',
-        contact: 'للاستفسارات: legal@engezna.com'
+        contact: 'للاستفسارات: support@engezna.com'
       }
     },
     en: {
@@ -374,8 +376,10 @@ Upon termination:
         }
       ],
       footer: {
+        company: 'Sweifcom for Trade and Export - Commercial Registry: 2767',
+        address: 'Saleh Hammam St., next to Al-Abasiri Mosque, Beni Suef, Egypt',
         law: 'These Terms are governed by the laws of the Arab Republic of Egypt and comply with the Egyptian Consumer Protection Law (Law No. 181 of 2018)',
-        contact: 'For inquiries: legal@engezna.com'
+        contact: 'For inquiries: support@engezna.com'
       }
     }
   }
@@ -489,6 +493,12 @@ Upon termination:
             {/* Footer Note */}
             <div className="bg-[#0F172A] rounded-xl p-6 text-center mt-8">
               <Scale className="w-8 h-8 text-[#009DE0] mx-auto mb-3" />
+              <p className="text-white font-semibold text-sm mb-1">
+                {t.footer.company}
+              </p>
+              <p className="text-slate-400 text-xs mb-3">
+                {t.footer.address}
+              </p>
               <p className="text-slate-300 text-sm mb-2">
                 {t.footer.law}
               </p>
