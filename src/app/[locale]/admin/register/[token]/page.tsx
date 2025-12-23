@@ -68,22 +68,26 @@ interface Invitation {
   roleInfo?: DbRole
 }
 
-// Icon mapping for dynamic role icons
-function getRoleIcon(iconName: string): React.ElementType {
+// Role icon component - renders icon based on name
+function RoleIconComponent({ iconName, className, style }: {
+  iconName?: string
+  className?: string
+  style?: React.CSSProperties
+}) {
   switch (iconName) {
-    case 'Crown': return Crown
-    case 'UserCog': return UserCog
-    case 'Headphones': return Headphones
-    case 'Wallet': return Wallet
-    case 'ShieldCheck': return ShieldCheck
-    case 'Shield': return Shield
-    case 'Store': return Store
-    case 'MapPin': return MapPin
-    case 'ShoppingCart': return ShoppingCart
-    case 'MessageCircle': return MessageCircle
-    case 'TrendingUp': return TrendingUp
-    case 'Eye': return Eye
-    default: return Shield
+    case 'Crown': return <Crown className={className} style={style} />
+    case 'UserCog': return <UserCog className={className} style={style} />
+    case 'Headphones': return <Headphones className={className} style={style} />
+    case 'Wallet': return <Wallet className={className} style={style} />
+    case 'ShieldCheck': return <ShieldCheck className={className} style={style} />
+    case 'Store': return <Store className={className} style={style} />
+    case 'MapPin': return <MapPin className={className} style={style} />
+    case 'ShoppingCart': return <ShoppingCart className={className} style={style} />
+    case 'MessageCircle': return <MessageCircle className={className} style={style} />
+    case 'TrendingUp': return <TrendingUp className={className} style={style} />
+    case 'Eye': return <Eye className={className} style={style} />
+    case 'Shield':
+    default: return <Shield className={className} style={style} />
   }
 }
 
@@ -424,7 +428,6 @@ export default function AdminRegisterPage() {
 
   // Get role display info - use dynamic roleInfo if available, otherwise show raw role code
   const roleInfo = invitation.roleInfo
-  const RoleIcon = roleInfo ? getRoleIcon(roleInfo.icon) : Shield
   const roleName = roleInfo
     ? (locale === 'ar' ? roleInfo.name_ar : roleInfo.name_en)
     : invitation.role
@@ -457,7 +460,7 @@ export default function AdminRegisterPage() {
           <div className="bg-gradient-to-r from-[#009DE0] to-[#0080b8] px-6 py-5 text-white">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <RoleIcon className="w-6 h-6" />
+                <RoleIconComponent iconName={roleInfo?.icon} className="w-6 h-6" />
               </div>
               <div>
                 <h1 className="text-xl font-bold">
@@ -604,7 +607,7 @@ export default function AdminRegisterPage() {
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <RoleIcon className="w-4 h-4" style={{ color: roleColor }} />
+                  <RoleIconComponent iconName={roleInfo?.icon} className="w-4 h-4" style={{ color: roleColor }} />
                   <span className="text-slate-700">
                     {locale === 'ar' ? 'الدور: ' : 'Role: '}
                     <span className="font-medium" style={{ color: roleColor }}>{roleName}</span>

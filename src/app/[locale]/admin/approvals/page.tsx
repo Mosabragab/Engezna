@@ -197,7 +197,7 @@ export default function AdminApprovalsPage() {
 
     // Batch fetch admin users (single query instead of N queries)
     const adminIdArray = Array.from(adminIds)
-    let adminUsersMap: Record<string, string> = {} // admin_id -> user_id
+    const adminUsersMap: Record<string, string> = {} // admin_id -> user_id
 
     if (adminIdArray.length > 0) {
       const { data: adminUsers } = await supabase
@@ -216,7 +216,7 @@ export default function AdminApprovalsPage() {
     const userIds = new Set<string>(Object.values(adminUsersMap))
 
     // Batch fetch profiles (single query instead of N queries)
-    let profilesMap: Record<string, { full_name: string | null; email: string | null }> = {}
+    const profilesMap: Record<string, { full_name: string | null; email: string | null }> = {}
 
     if (userIds.size > 0) {
       const { data: profiles } = await supabase

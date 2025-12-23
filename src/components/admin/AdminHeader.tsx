@@ -102,7 +102,7 @@ export function AdminHeader({
     const hasRegionFilter = assignedGovernorateIds.length > 0
 
     // Build notification query
-    let notifQuery = supabase
+    const notifQuery = supabase
       .from('admin_notifications')
       .select('*')
       .eq('admin_id', adminUser.id)

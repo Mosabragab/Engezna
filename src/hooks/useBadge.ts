@@ -37,9 +37,9 @@ const isBadgeSupported = (): boolean => {
 // Lazy load Capacitor Badge (won't fail if not installed)
 async function loadCapacitorBadge(): Promise<any | null> {
   try {
-    // @ts-ignore - Dynamic import, module may not exist
-    const module = await import('@capacitor/badge')
-    return module.Badge
+    // @ts-expect-error - Dynamic import, module may not exist
+    const badgeModule = await import('@capacitor/badge')
+    return badgeModule.Badge
   } catch {
     return null
   }
