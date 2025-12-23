@@ -11,7 +11,7 @@
 
 ## 📋 Executive Summary
 
-**Engezna (إنجزنا)** is a B2C delivery marketplace platform designed to serve all of Egypt, starting from Upper Egypt governorates. The platform connects local merchants (restaurants, supermarkets, groceries, pharmacies, and more) with customers, enabling fast and reliable delivery in underserved markets.
+**Engezna (إنجزنا)** is a B2C delivery marketplace platform designed to serve all of Egypt, starting from Upper Egypt governorates. The platform connects local stores (restaurants, supermarkets, groceries, pharmacies, and more) with customers, enabling fast and reliable delivery in underserved markets.
 
 Mission: To bring modern delivery services to Egyptian governorates outside
 the major cities (Cairo, Giza, Alexandria, North Coast), starting with Beni Suef,
@@ -535,12 +535,12 @@ fair, transparent pricing.
 ### **Problem Statement**
 Egyptian governorates outside major cities lack modern delivery infrastructure. Existing national platforms (Talabat, Noon) don't serve these regions adequately with their high 15-20% commission rates, leaving a gap for:
 - Customers who want convenient delivery services
-- Local merchants seeking online presence and affordable platform fees
+- Local stores seeking online presence and affordable platform fees
 - Local economy needing digital transformation
 
 ### **Solution**
 A localized, bilingual (Arabic/English) delivery marketplace that:
-- Connects customers with local merchants (restaurants, supermarkets, groceries, pharmacies, and more)
+- Connects customers with local stores (restaurants, supermarkets, groceries, pharmacies, and more)
 - **Providers use their existing delivery staff** (no driver app needed)
 - **Ultra-low commission** (5-7% vs competitors' 15-20%)
 - Supports Arabic-first user experience with RTL design

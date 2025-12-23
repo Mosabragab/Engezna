@@ -9,7 +9,7 @@ import '../globals.css'
 export function generateMetadata() {
   return {
     title: "Engezna - إنجزنا | Delivery Marketplace in Egypt",
-    description: "إنجزنا واطلب - Fast delivery from local merchants across Egypt",
+    description: "إنجزنا واطلب - Fast delivery from local stores across Egypt",
     manifest: '/manifest.json',
     themeColor: '#0F172A',
     appleWebApp: {

@@ -24,7 +24,7 @@
 
 ### 🎯 About Engezna
 
-**Engezna (إنجزنا)** - meaning "We've got it done!" - is a B2C delivery marketplace designed to serve all of Egypt, starting from Upper Egypt governorates. We connect local merchants (restaurants, supermarkets, groceries, pharmacies, and more) with customers through a modern, bilingual platform.
+**Engezna (إنجزنا)** - meaning "We've got it done!" - is a B2C delivery marketplace designed to serve all of Egypt, starting from Upper Egypt governorates. We connect local stores (restaurants, supermarkets, groceries, pharmacies, and more) with customers through a modern, bilingual platform.
 
 #### **Our Mission**
 To bring modern delivery services to Egyptian governorates outside major cities, supporting local businesses and creating economic opportunities through fair, transparent pricing.
@@ -39,7 +39,7 @@ To bring modern delivery services to Egyptian governorates outside major cities,
 ### ✨ Features
 
 #### **For Customers**
-- 🛍️ Browse local merchants (restaurants, supermarkets, groceries, pharmacies, and more)
+- 🛍️ Browse local stores (restaurants, supermarkets, groceries, pharmacies, and more)
 - 🔍 Search and filter by cuisine, rating, delivery time
 - 🛒 Easy ordering with real-time tracking
 - 💳 Multiple payment options (Cash on Delivery, online)
@@ -727,7 +727,7 @@ Proprietary - All rights reserved. This project is not open source.
 
 ### 🎯 عن إنجزنا
 
-**إنجزنا (Engezna)** - تعني "خلصناها!" - هي منصة توصيل B2C مصممة لخدمة جمهورية مصر العربية بالكامل، بدءاً من محافظات الصعيد. نحن نربط التجار المحليين (مطاعم، سوبر ماركت، بقالة، صيدليات، وغيرها) بالعملاء من خلال منصة حديثة ثنائية اللغة.
+**إنجزنا (Engezna)** - تعني "خلصناها!" - هي منصة توصيل B2C مصممة لخدمة جمهورية مصر العربية بالكامل، بدءاً من محافظات الصعيد. نحن نربط المتاجر المحلية (مطاعم، سوبر ماركت، بقالة، صيدليات، وغيرها) بالعملاء من خلال منصة حديثة ثنائية اللغة.
 
 #### **مهمتنا**
 جلب خدمات التوصيل الحديثة إلى محافظات مصر خارج المدن الكبرى مع دعم الأعمال المحلية وخلق فرص اقتصادية من خلال أسعار عادلة وشفافة.
@@ -741,7 +741,7 @@ Proprietary - All rights reserved. This project is not open source.
 ### ✨ المميزات
 
 #### **للعملاء**
-- 🛍️ تصفح التجار المحليين (مطاعم، سوبر ماركت، بقالة، صيدليات، وغيرها)
+- 🛍️ تصفح المتاجر المحلية (مطاعم، سوبر ماركت، بقالة، صيدليات، وغيرها)
 - 🔍 البحث والتصفية حسب نوع الطعام والتقييم ووقت التوصيل
 - 🛒 طلب سهل مع تتبع فوري
 - 💳 خيارات دفع متعددة (الدفع عند الاستلام، الدفع الإلكتروني)
@@ -749,7 +749,7 @@ Proprietary - All rights reserved. This project is not open source.
 - 🌍 واجهة ثنائية اللغة (عربي/إنجليزي)
 - 📱 تصميم متجاوب يبدأ بالموبايل
 
-#### **للتجار الشركاء**
+#### **للمتاجر الشريكة**
 - 📋 إدارة قائمة المنتجات بسيطة
 - 📊 إشعارات فورية بالطلبات
 - 💰 عمولة شفافة 5-7%
