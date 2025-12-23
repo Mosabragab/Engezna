@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -187,17 +187,7 @@ export default function AdminSupervisorsPage() {
     byRole: {} as Record<string, number>, // Dynamic role counts
   })
 
-  useEffect(() => {
-    checkAuth()
-    loadGeoData()
-    loadRoles()
-  }, [])
-
-  useEffect(() => {
-    filterSupervisors()
-  }, [supervisors, searchQuery, statusFilter, roleFilter])
-
-  async function loadGeoData() {
+  const loadGeoData = useCallback(async () => {
     const supabase = createClient()
 
     // Load governorates
@@ -229,9 +219,9 @@ export default function AdminSupervisorsPage() {
     if (districtData) {
       setDistricts(districtData)
     }
-  }
+  }, [])
 
-  async function loadRoles() {
+  const loadRoles = useCallback(async () => {
     const supabase = createClient()
     const { data: rolesData } = await supabase
       .from('roles')
@@ -247,9 +237,9 @@ export default function AdminSupervisorsPage() {
         setFormData(prev => ({ ...prev, role_id: defaultRole.id }))
       }
     }
-  }
+  }, [])
 
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
@@ -300,7 +290,48 @@ export default function AdminSupervisorsPage() {
     }
 
     setLoading(false)
-  }
+  }, [])
+
+  const filterSupervisors = useCallback(() => {
+    let filtered = [...supervisors]
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(s =>
+        s.profile?.full_name?.toLowerCase().includes(query) ||
+        s.profile?.phone?.includes(query) ||
+        s.profile?.email?.toLowerCase().includes(query)
+      )
+    }
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(s =>
+        statusFilter === 'active' ? s.is_active : !s.is_active
+      )
+    }
+
+    if (roleFilter !== 'all') {
+      // Filter by role_id from admin_roles, or fall back to legacy role code
+      filtered = filtered.filter(s => {
+        // Check if any admin_role matches the filter
+        const hasRole = s.admin_roles?.some(ar => ar.role_id === roleFilter || ar.role?.code === roleFilter)
+        // Also check legacy role field
+        return hasRole || s.role === roleFilter
+      })
+    }
+
+    setFilteredSupervisors(filtered)
+  }, [supervisors, searchQuery, statusFilter, roleFilter])
+
+  useEffect(() => {
+    checkAuth()
+    loadGeoData()
+    loadRoles()
+  }, [checkAuth, loadGeoData, loadRoles])
+
+  useEffect(() => {
+    filterSupervisors()
+  }, [filterSupervisors])
 
   async function loadSupervisors(supabase: ReturnType<typeof createClient>) {
     // Get admin_users with their profile data
@@ -374,37 +405,6 @@ export default function AdminSupervisorsPage() {
       inactive: data.filter(s => !s.is_active).length,
       byRole,
     })
-  }
-
-  function filterSupervisors() {
-    let filtered = [...supervisors]
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(s =>
-        s.profile?.full_name?.toLowerCase().includes(query) ||
-        s.profile?.phone?.includes(query) ||
-        s.profile?.email?.toLowerCase().includes(query)
-      )
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(s =>
-        statusFilter === 'active' ? s.is_active : !s.is_active
-      )
-    }
-
-    if (roleFilter !== 'all') {
-      // Filter by role_id from admin_roles, or fall back to legacy role code
-      filtered = filtered.filter(s => {
-        // Check if any admin_role matches the filter
-        const hasRole = s.admin_roles?.some(ar => ar.role_id === roleFilter || ar.role?.code === roleFilter)
-        // Also check legacy role field
-        return hasRole || s.role === roleFilter
-      })
-    }
-
-    setFilteredSupervisors(filtered)
   }
 
   async function handleToggleActive(supervisor: Supervisor) {

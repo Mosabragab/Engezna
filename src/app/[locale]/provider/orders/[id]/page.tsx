@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
@@ -130,11 +130,7 @@ export default function ProviderOrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
 
-  useEffect(() => {
-    checkAuthAndLoadOrder()
-  }, [orderId])
-
-  const checkAuthAndLoadOrder = async () => {
+  const checkAuthAndLoadOrder = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
@@ -196,7 +192,11 @@ export default function ProviderOrderDetailPage() {
     }
 
     setLoading(false)
-  }
+  }, [locale, orderId, router])
+
+  useEffect(() => {
+    checkAuthAndLoadOrder()
+  }, [checkAuthAndLoadOrder])
 
   const handleAcceptOrder = async () => {
     if (!order) return

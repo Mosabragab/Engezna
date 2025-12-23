@@ -75,15 +75,7 @@ export function AdminHeader({
   const [adminUserData, setAdminUserData] = useState<AdminUserData | null>(null)
   const [regionProviderIds, setRegionProviderIds] = useState<string[]>([])
 
-  // Load notifications on mount
-  useEffect(() => {
-    loadNotifications()
-    // Set up polling for new notifications every 30 seconds
-    const interval = setInterval(loadNotifications, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  async function loadNotifications() {
+  const loadNotifications = useCallback(async () => {
     const supabase = createClient()
     const { data: { user: authUser } } = await supabase.auth.getUser()
 
@@ -110,7 +102,7 @@ export function AdminHeader({
     const hasRegionFilter = assignedGovernorateIds.length > 0
 
     // Build notification query
-    let notifQuery = supabase
+    const notifQuery = supabase
       .from('admin_notifications')
       .select('*')
       .eq('admin_id', adminUser.id)
@@ -175,7 +167,15 @@ export function AdminHeader({
 
     setNotifications(filteredNotifs)
     setUnreadCount(filteredNotifs.filter(n => !n.is_read).length)
-  }
+  }, [])
+
+  // Load notifications on mount
+  useEffect(() => {
+    loadNotifications()
+    // Set up polling for new notifications every 30 seconds
+    const interval = setInterval(loadNotifications, 30000)
+    return () => clearInterval(interval)
+  }, [loadNotifications])
 
   async function markAsRead(notificationId: string) {
     const supabase = createClient()

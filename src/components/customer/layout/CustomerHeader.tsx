@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -46,42 +46,7 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
   const { getItemCount } = useCart()
   const cartItemCount = getItemCount()
 
-  useEffect(() => {
-    if (guestLocationLoaded) {
-      checkAuth()
-    }
-  }, [guestLocationLoaded])
-
-  // Listen for guest location changes
-  useEffect(() => {
-    const handleLocationChange = (event: Event) => {
-      const customEvent = event as CustomEvent
-      const newLocation = customEvent.detail
-      // Update location display immediately with the new data
-      if (newLocation?.cityName) {
-        setCurrentLocation(locale === 'ar' ? newLocation.cityName.ar : newLocation.cityName.en)
-      } else if (newLocation?.governorateName) {
-        setCurrentLocation(locale === 'ar' ? newLocation.governorateName.ar : newLocation.governorateName.en)
-      }
-    }
-    window.addEventListener('guestLocationChanged', handleLocationChange)
-    return () => {
-      window.removeEventListener('guestLocationChanged', handleLocationChange)
-    }
-  }, [locale])
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowNotificationDropdown(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const supabase = createClient()
 
     try {
@@ -129,7 +94,42 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
     }
 
     setLocationLoading(false)
-  }
+  }, [locale, guestLocation])
+
+  useEffect(() => {
+    if (guestLocationLoaded) {
+      checkAuth()
+    }
+  }, [guestLocationLoaded, checkAuth])
+
+  // Listen for guest location changes
+  useEffect(() => {
+    const handleLocationChange = (event: Event) => {
+      const customEvent = event as CustomEvent
+      const newLocation = customEvent.detail
+      // Update location display immediately with the new data
+      if (newLocation?.cityName) {
+        setCurrentLocation(locale === 'ar' ? newLocation.cityName.ar : newLocation.cityName.en)
+      } else if (newLocation?.governorateName) {
+        setCurrentLocation(locale === 'ar' ? newLocation.governorateName.ar : newLocation.governorateName.en)
+      }
+    }
+    window.addEventListener('guestLocationChanged', handleLocationChange)
+    return () => {
+      window.removeEventListener('guestLocationChanged', handleLocationChange)
+    }
+  }, [locale])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowNotificationDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Confirm refund receipt
   async function handleConfirmRefund(orderId: string, notificationId: string) {

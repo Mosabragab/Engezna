@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -48,11 +48,7 @@ export default function OffersPage() {
   const [freeDeliveryProviders, setFreeDeliveryProviders] = useState<Provider[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    fetchOffers()
-  }, [])
-
-  async function fetchOffers() {
+  const fetchOffers = useCallback(async () => {
     const supabase = createClient()
 
     // Fetch active promo codes - wrap in try-catch in case table doesn't exist
@@ -90,7 +86,11 @@ export default function OffersPage() {
     }
 
     setIsLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchOffers()
+  }, [fetchOffers])
 
   const getDescription = (promo: PromoCode) => {
     return locale === 'ar' ? promo.description_ar : promo.description_en

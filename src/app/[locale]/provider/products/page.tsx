@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
@@ -97,40 +97,7 @@ export default function ProviderProductsPage() {
   const [newCategoryIsExtras, setNewCategoryIsExtras] = useState(false)
   const [categoryLoading, setCategoryLoading] = useState(false)
 
-  useEffect(() => {
-    checkAuthAndLoadProducts()
-  }, [])
-
-  const checkAuthAndLoadProducts = async () => {
-    setLoading(true)
-    const supabase = createClient()
-
-    // Check authentication
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/products`)
-      return
-    }
-
-    // Get provider ID
-    const { data: providerData } = await supabase
-      .from('providers')
-      .select('id, status')
-      .eq('owner_id', user.id)
-      .limit(1)
-
-    const provider = providerData?.[0]
-    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
-      router.push(`/${locale}/provider`)
-      return
-    }
-
-    setProviderId(provider.id)
-    await loadProducts(provider.id)
-    setLoading(false)
-  }
-
-  const loadProducts = async (provId: string) => {
+  const loadProducts = useCallback(async (provId: string) => {
     const supabase = createClient()
 
     // First get all products
@@ -175,7 +142,40 @@ export default function ProviderProductsPage() {
     if (promotionsData) {
       setPromotions(promotionsData)
     }
-  }
+  }, [])
+
+  const checkAuthAndLoadProducts = useCallback(async () => {
+    setLoading(true)
+    const supabase = createClient()
+
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push(`/${locale}/auth/login?redirect=/provider/products`)
+      return
+    }
+
+    // Get provider ID
+    const { data: providerData } = await supabase
+      .from('providers')
+      .select('id, status')
+      .eq('owner_id', user.id)
+      .limit(1)
+
+    const provider = providerData?.[0]
+    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
+      router.push(`/${locale}/provider`)
+      return
+    }
+
+    setProviderId(provider.id)
+    await loadProducts(provider.id)
+    setLoading(false)
+  }, [loadProducts, locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoadProducts()
+  }, [checkAuthAndLoadProducts])
 
   const handleRefresh = async () => {
     if (!providerId) return

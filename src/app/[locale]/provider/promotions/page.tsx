@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
@@ -87,11 +87,30 @@ export default function PromotionsPage() {
   })
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    checkAuthAndLoadPromotions()
+  const loadPromotions = useCallback(async (provId: string) => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('promotions')
+      .select('*')
+      .eq('provider_id', provId)
+      .order('created_at', { ascending: false })
+
+    if (data) setPromotions(data)
   }, [])
 
-  const checkAuthAndLoadPromotions = async () => {
+  const loadProducts = useCallback(async (provId: string) => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('menu_items')
+      .select('id, name_ar, name_en')
+      .eq('provider_id', provId)
+      .eq('is_available', true)
+      .order('name_ar')
+
+    if (data) setProducts(data)
+  }, [])
+
+  const checkAuthAndLoadPromotions = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
@@ -118,30 +137,11 @@ export default function PromotionsPage() {
     await loadProducts(provider.id)
 
     setLoading(false)
-  }
+  }, [loadProducts, loadPromotions, locale, router])
 
-  const loadPromotions = async (provId: string) => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('promotions')
-      .select('*')
-      .eq('provider_id', provId)
-      .order('created_at', { ascending: false })
-
-    if (data) setPromotions(data)
-  }
-
-  const loadProducts = async (provId: string) => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('menu_items')
-      .select('id, name_ar, name_en')
-      .eq('provider_id', provId)
-      .eq('is_available', true)
-      .order('name_ar')
-
-    if (data) setProducts(data)
-  }
+  useEffect(() => {
+    checkAuthAndLoadPromotions()
+  }, [checkAuthAndLoadPromotions])
 
   const getPromotionStatus = (promo: Promotion) => {
     const now = new Date()

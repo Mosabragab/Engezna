@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -76,19 +76,7 @@ export default function AdminAnalyticsPage() {
     avgOrderChange: 0,
   })
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    // Wait for geoFilter to be loaded before loading analytics
-    if (isAdmin && !geoLoading) {
-      const supabase = createClient()
-      loadAnalytics(supabase)
-    }
-  }, [periodFilter, isAdmin, geoFilter, geoLoading])
-
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
@@ -120,9 +108,9 @@ export default function AdminAnalyticsPage() {
     }
 
     setLoading(false)
-  }
+  }, [])
 
-  async function loadAnalytics(supabase: ReturnType<typeof createClient>) {
+  const loadAnalytics = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     setDataLoading(true)
     const getDateRange = (period: FilterPeriod) => {
       const start = new Date()
@@ -331,7 +319,19 @@ export default function AdminAnalyticsPage() {
 
     setCategoryStats(categories)
     setDataLoading(false)
-  }
+  }, [periodFilter, geoFilter])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    // Wait for geoFilter to be loaded before loading analytics
+    if (isAdmin && !geoLoading) {
+      const supabase = createClient()
+      loadAnalytics(supabase)
+    }
+  }, [isAdmin, geoLoading, loadAnalytics])
 
   const getPeriodLabel = (period: FilterPeriod) => {
     const labels: Record<FilterPeriod, { ar: string; en: string }> = {

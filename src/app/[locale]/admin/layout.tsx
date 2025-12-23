@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { usePathname } from 'next/navigation'
 import { PermissionsProvider } from '@/lib/permissions/use-permissions'
@@ -31,18 +31,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   // Check if current page is login page - don't show sidebar
   const isLoginPage = pathname?.includes('/admin/login')
 
-  useEffect(() => {
-    // Don't load badge counts on login page or while region data is loading
-    if (isLoginPage || regionLoading) return
-
-    // Load badge counts using cached region data
-    loadBadgeCounts()
-    // Refresh badge counts every 60 seconds
-    const interval = setInterval(loadBadgeCounts, 60000)
-    return () => clearInterval(interval)
-  }, [isLoginPage, regionLoading, hasRegionFilter, regionProviderIds])
-
-  async function loadBadgeCounts() {
+  const loadBadgeCounts = useCallback(async () => {
     try {
       const supabase = createClient()
 
@@ -128,7 +117,18 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
     } catch {
       // Silently fail for badge counts - not critical
     }
-  }
+  }, [hasRegionFilter, regionProviderIds, allowedGovernorateIds])
+
+  useEffect(() => {
+    // Don't load badge counts on login page or while region data is loading
+    if (isLoginPage || regionLoading) return
+
+    // Load badge counts using cached region data
+    loadBadgeCounts()
+    // Refresh badge counts every 60 seconds
+    const interval = setInterval(loadBadgeCounts, 60000)
+    return () => clearInterval(interval)
+  }, [isLoginPage, regionLoading, loadBadgeCounts])
 
   // Login page - render without sidebar
   if (isLoginPage) {

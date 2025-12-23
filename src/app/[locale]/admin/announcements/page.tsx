@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -121,50 +121,7 @@ export default function AdminAnnouncementsPage() {
     unread: 0,
   })
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    filterAnnouncements()
-  }, [announcements, searchQuery, typeFilter, statusFilter])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('id, role')
-          .eq('user_id', user.id)
-          .single()
-
-        if (adminUser) {
-          setCurrentAdminId(adminUser.id)
-          if (adminUser.role === 'super_admin') {
-            setIsSuperAdmin(true)
-          }
-        }
-
-        await loadAnnouncements(supabase)
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadAnnouncements(supabase: ReturnType<typeof createClient>) {
+  const loadAnnouncements = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     const { data: announcementsData, error } = await supabase
       .from('announcements')
       .select('*')
@@ -201,25 +158,44 @@ export default function AdminAnnouncementsPage() {
 
     setAnnouncements(announcementsWithCreators)
     calculateStats(announcementsWithCreators, currentAdminId)
-  }
+  }, [currentAdminId])
 
-  function calculateStats(data: Announcement[], adminId: string | null) {
-    const now = new Date()
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
 
-    const stats = {
-      total: data.length,
-      active: data.filter(a => {
-        if (a.expires_at && new Date(a.expires_at) < now) return false
-        if (a.scheduled_at && new Date(a.scheduled_at) > now) return false
-        return true
-      }).length,
-      pinned: data.filter(a => a.is_pinned).length,
-      unread: adminId ? data.filter(a => !a.read_by?.includes(adminId)).length : 0,
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+
+        const { data: adminUser } = await supabase
+          .from('admin_users')
+          .select('id, role')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminUser) {
+          setCurrentAdminId(adminUser.id)
+          if (adminUser.role === 'super_admin') {
+            setIsSuperAdmin(true)
+          }
+        }
+
+        await loadAnnouncements(supabase)
+      }
     }
-    setStats(stats)
-  }
 
-  function filterAnnouncements() {
+    setLoading(false)
+  }, [loadAnnouncements])
+
+  const filterAnnouncements = useCallback(() => {
     let filtered = [...announcements]
     const now = new Date()
 
@@ -250,6 +226,30 @@ export default function AdminAnnouncementsPage() {
     }
 
     setFilteredAnnouncements(filtered)
+  }, [announcements, searchQuery, typeFilter, statusFilter])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    filterAnnouncements()
+  }, [filterAnnouncements])
+
+  function calculateStats(data: Announcement[], adminId: string | null) {
+    const now = new Date()
+
+    const stats = {
+      total: data.length,
+      active: data.filter(a => {
+        if (a.expires_at && new Date(a.expires_at) < now) return false
+        if (a.scheduled_at && new Date(a.scheduled_at) > now) return false
+        return true
+      }).length,
+      pinned: data.filter(a => a.is_pinned).length,
+      unread: adminId ? data.filter(a => !a.read_by?.includes(adminId)).length : 0,
+    }
+    setStats(stats)
   }
 
   function isUnread(announcement: Announcement): boolean {

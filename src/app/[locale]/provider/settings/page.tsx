@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
@@ -90,11 +90,7 @@ export default function ProviderSettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
 
-  useEffect(() => {
-    checkAuthAndLoadProvider()
-  }, [])
-
-  const checkAuthAndLoadProvider = async () => {
+  const checkAuthAndLoadProvider = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
@@ -131,7 +127,11 @@ export default function ProviderSettingsPage() {
     setLogoPreview(providerData.logo_url)
 
     setLoading(false)
-  }
+  }, [locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoadProvider()
+  }, [checkAuthAndLoadProvider])
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

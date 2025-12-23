@@ -16,7 +16,9 @@ import {
   MessageSquare,
   Scale,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  RefreshCw,
+  Wallet
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -125,6 +127,41 @@ export default function TermsPage() {
 • يتم إصدار المبالغ المستردة وفقاً لتقدير المنصة
 
 مقدمو الخدمات الذين تتكرر الشكاوى ضدهم قد يواجهون التعليق أو الإزالة الدائمة.`
+        },
+        {
+          id: 'refunds',
+          icon: RefreshCw,
+          title: 'سياسة الاسترداد والإرجاع',
+          content: `📋 حالات الاسترداد المؤهلة:
+• منتج ناقص أو مختلف عما تم طلبه
+• منتج تالف أو غير صالح
+• عدم استلام الطلب رغم الدفع
+• إلغاء الطلب من قبل المتجر
+
+⏱️ مهلة تقديم طلب الاسترداد:
+• خلال ٢٤ ساعة من استلام الطلب
+• مع صور توضيحية للمشكلة (إن وجدت)
+
+💵 طرق الاسترداد:
+• الدفع عند الاستلام: يتم رد المبلغ نقداً من المتجر عبر المندوب
+• الدفع الإلكتروني (مستقبلاً): يتم رد المبلغ لنفس وسيلة الدفع المستخدمة
+
+✅ تأكيد استلام المبلغ المسترد:
+• عند رد المبلغ نقداً، ستصلك رسالة تأكيد
+• يجب الضغط على "تأكيد الاستلام" خلال ٤٨ ساعة
+• عدم التأكيد خلال المهلة يُعتبر موافقة تلقائية على استلام المبلغ
+
+⚠️ حالات غير مؤهلة للاسترداد:
+• تغيير الرأي بعد استلام الطلب
+• المنتجات الاستهلاكية بعد فتحها
+• الطلبات الخاصة أو المُعدّة حسب الطلب
+• الطلبات الوهمية أو عدم الاستلام المتعمد
+
+🔄 حقوق المنصة في تعديل السياسة:
+تحتفظ إنجزنا بالحق في تعديل سياسة الاسترداد بما يتناسب مع:
+• طرق الدفع المتاحة (نقدي/إلكتروني)
+• طبيعة المنتجات والخدمات
+• المتطلبات القانونية والتنظيمية`
         }
       ],
       providerSections: [
@@ -199,6 +236,43 @@ export default function TermsPage() {
 • يجب تنفيذ جميع الطلبات المعلقة
 • العمولات المستحقة تظل واجبة الدفع
 • يمكن للمتجر طلب تصدير البيانات`
+        },
+        {
+          id: 'refund-settlement',
+          icon: Wallet,
+          title: 'الاستردادات وأثرها على التسويات',
+          content: `📌 مسؤولية المتجر في الاسترداد:
+المتجر مسؤول عن معالجة طلبات الاسترداد للعملاء في الحالات التالية:
+• منتج ناقص أو خاطئ
+• منتج تالف أو غير مطابق للمواصفات
+• إلغاء الطلب بعد الدفع
+
+💵 آلية رد المبلغ (الدفع عند الاستلام):
+• يقوم المتجر برد المبلغ نقداً للعميل عبر المندوب
+• يتم إشعار العميل بطلب تأكيد استلام المبلغ
+• مهلة تأكيد العميل: ٤٨ ساعة
+
+📊 أثر الاسترداد على التسوية:
+عند تأكيد العميل استلام المبلغ المسترد:
+• يتم تعديل عمولة الطلب بنسبة الاسترداد
+• استرداد كامل = إلغاء العمولة بالكامل
+• استرداد جزئي = تخفيض العمولة بنفس النسبة
+
+مثال - استرداد جزئي:
+إجمالي الطلب: ٢٠٠ جنيه | العمولة: ١٤ جنيه
+مبلغ الاسترداد: ١٠٠ جنيه (٥٠٪)
+العمولة الجديدة: ٧ جنيه (تخفيض ٥٠٪)
+
+⚠️ ملاحظات هامة:
+• التعديلات تُسجل في سجل تدقيق التسويات
+• الطلبات المُعدّلة تُستثنى من التسويات المستقبلية
+• يحق للمنصة إعادة حساب التسوية في أي وقت
+
+🔮 الدفع الإلكتروني (مستقبلاً):
+عند تفعيل الدفع الإلكتروني:
+• يتم خصم مبلغ الاسترداد من رصيد المتجر
+• تُعدّل العمولة تلقائياً قبل التحويل
+• تحتفظ المنصة بحق تجميد الأموال لحين البت في النزاعات`
         }
       ],
       footer: {
@@ -299,6 +373,41 @@ When a dispute is escalated to the Resolution Center:
 • Refunds are issued at the Platform's discretion
 
 Service providers with repeated complaints may face suspension or permanent removal.`
+        },
+        {
+          id: 'refunds',
+          icon: RefreshCw,
+          title: 'Refund and Return Policy',
+          content: `📋 Eligible Refund Cases:
+• Missing or incorrect product
+• Damaged or defective product
+• Order not received despite payment
+• Order cancelled by the store
+
+⏱️ Refund Request Deadline:
+• Within 24 hours of receiving the order
+• With supporting photos (if applicable)
+
+💵 Refund Methods:
+• Cash on Delivery: Refund is made in cash by the store via delivery
+• Electronic Payment (future): Refund to the same payment method used
+
+✅ Confirming Receipt of Refund:
+• When refunded in cash, you will receive a confirmation notification
+• You must click "Confirm Receipt" within 48 hours
+• Failure to confirm within the deadline is considered automatic acceptance
+
+⚠️ Non-Eligible Cases:
+• Change of mind after receiving the order
+• Consumable products after opening
+• Custom or made-to-order items
+• Fake orders or intentional non-receipt
+
+🔄 Platform Rights to Modify Policy:
+Engezna reserves the right to modify the refund policy based on:
+• Available payment methods (cash/electronic)
+• Nature of products and services
+• Legal and regulatory requirements`
         }
       ],
       providerSections: [
@@ -373,6 +482,43 @@ Upon termination:
 • All pending orders must be fulfilled
 • Outstanding commissions remain payable
 • Store can request data export`
+        },
+        {
+          id: 'refund-settlement',
+          icon: Wallet,
+          title: 'Refunds and Settlement Impact',
+          content: `📌 Store Responsibility for Refunds:
+The store is responsible for processing customer refund requests in these cases:
+• Missing or incorrect product
+• Damaged or non-conforming product
+• Order cancellation after payment
+
+💵 Refund Process (Cash on Delivery):
+• The store refunds the customer in cash via delivery
+• The customer is notified to confirm receipt of the refund
+• Customer confirmation deadline: 48 hours
+
+📊 Refund Impact on Settlement:
+When the customer confirms receiving the refunded amount:
+• Order commission is adjusted proportionally to the refund
+• Full refund = Commission fully cancelled
+• Partial refund = Commission reduced by the same percentage
+
+Example - Partial Refund:
+Order total: 200 EGP | Commission: 14 EGP
+Refund amount: 100 EGP (50%)
+New commission: 7 EGP (50% reduction)
+
+⚠️ Important Notes:
+• Adjustments are recorded in settlement audit log
+• Adjusted orders are excluded from future settlements
+• The Platform reserves the right to recalculate settlements at any time
+
+🔮 Electronic Payment (Future):
+When electronic payment is activated:
+• Refund amount is deducted from store balance
+• Commission is automatically adjusted before transfer
+• The Platform reserves the right to hold funds pending dispute resolution`
         }
       ],
       footer: {

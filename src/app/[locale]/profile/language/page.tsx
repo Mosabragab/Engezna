@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
@@ -17,11 +17,7 @@ export default function LanguagePage() {
   const [selectedLanguage, setSelectedLanguage] = useState(locale)
   const [changing, setChanging] = useState(false)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -31,7 +27,11 @@ export default function LanguagePage() {
     }
 
     setAuthLoading(false)
-  }
+  }, [locale, router])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   async function handleLanguageChange(newLocale: string) {
     if (newLocale === locale) return

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
@@ -61,38 +61,7 @@ export default function ProviderReviewsPage() {
   const [responseText, setResponseText] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    checkAuthAndLoadReviews()
-  }, [])
-
-  const checkAuthAndLoadReviews = async () => {
-    setLoading(true)
-    const supabase = createClient()
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/reviews`)
-      return
-    }
-
-    const { data: providerData } = await supabase
-      .from('providers')
-      .select('id, status')
-      .eq('owner_id', user.id)
-      .limit(1)
-
-    const provider = providerData?.[0]
-    if (!provider || provider.status === 'pending_approval') {
-      router.push(`/${locale}/provider`)
-      return
-    }
-
-    setProviderId(provider.id)
-    await loadReviews(provider.id)
-    setLoading(false)
-  }
-
-  const loadReviews = async (provId: string) => {
+  const loadReviews = useCallback(async (provId: string) => {
     const supabase = createClient()
 
     const { data: reviewsData, error } = await supabase
@@ -137,7 +106,38 @@ export default function ProviderReviewsPage() {
         distribution,
       })
     }
-  }
+  }, [])
+
+  const checkAuthAndLoadReviews = useCallback(async () => {
+    setLoading(true)
+    const supabase = createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push(`/${locale}/auth/login?redirect=/provider/reviews`)
+      return
+    }
+
+    const { data: providerData } = await supabase
+      .from('providers')
+      .select('id, status')
+      .eq('owner_id', user.id)
+      .limit(1)
+
+    const provider = providerData?.[0]
+    if (!provider || provider.status === 'pending_approval') {
+      router.push(`/${locale}/provider`)
+      return
+    }
+
+    setProviderId(provider.id)
+    await loadReviews(provider.id)
+    setLoading(false)
+  }, [loadReviews, locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoadReviews()
+  }, [checkAuthAndLoadReviews])
 
   const handleOpenResponseModal = (review: Review) => {
     setSelectedReview(review)

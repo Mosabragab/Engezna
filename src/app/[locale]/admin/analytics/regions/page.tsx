@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -101,40 +101,7 @@ export default function AdminRegionalAnalyticsPage() {
     totalRevenue: 0,
   })
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    if (isAdmin) {
-      const supabase = createClient()
-      loadRegionData(supabase)
-    }
-  }, [periodFilter, viewLevel, selectedGovernorate, selectedCity, isAdmin])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        await loadLocationData(supabase)
-        await loadRegionData(supabase)
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadLocationData(supabase: ReturnType<typeof createClient>) {
+  const loadLocationData = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     // Load governorates
     const { data: govData } = await supabase
       .from('governorates')
@@ -158,9 +125,9 @@ export default function AdminRegionalAnalyticsPage() {
       .order('name_ar')
 
     if (districtData) setDistricts(districtData)
-  }
+  }, [])
 
-  async function loadRegionData(supabase: ReturnType<typeof createClient>) {
+  const loadRegionData = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     const getDateRange = (period: FilterPeriod) => {
       const start = new Date()
       switch (period) {
@@ -382,7 +349,40 @@ export default function AdminRegionalAnalyticsPage() {
       totalOrders,
       totalRevenue,
     })
-  }
+  }, [periodFilter, viewLevel, selectedGovernorate, selectedCity, governorates, cities, districts, locale])
+
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+        await loadLocationData(supabase)
+        await loadRegionData(supabase)
+      }
+    }
+
+    setLoading(false)
+  }, [loadLocationData, loadRegionData])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    if (isAdmin) {
+      const supabase = createClient()
+      loadRegionData(supabase)
+    }
+  }, [periodFilter, viewLevel, selectedGovernorate, selectedCity, isAdmin, loadRegionData])
 
   const getPeriodLabel = (period: FilterPeriod) => {
     const labels: Record<FilterPeriod, { ar: string; en: string }> = {

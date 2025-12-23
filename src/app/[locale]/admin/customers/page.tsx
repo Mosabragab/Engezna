@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -73,38 +73,7 @@ export default function AdminCustomersPage() {
     totalRevenue: 0,
   })
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    filterCustomers()
-  }, [customers, searchQuery, statusFilter, geoFilter])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        setLoading(false) // Show page immediately
-        loadCustomers(supabase) // Load in background
-        return
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadCustomers(supabase: ReturnType<typeof createClient>) {
+  const loadCustomers = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     setDataLoading(true)
     const { data: customersData, error } = await supabase
       .from('profiles')
@@ -157,9 +126,32 @@ export default function AdminCustomersPage() {
 
     setCustomers(customersWithOrders)
     setDataLoading(false)
-  }
+  }, [])
 
-  function filterCustomers() {
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+        setLoading(false) // Show page immediately
+        loadCustomers(supabase) // Load in background
+        return
+      }
+    }
+
+    setLoading(false)
+  }, [loadCustomers])
+
+  const filterCustomers = useCallback(() => {
     let filtered = [...customers]
 
     if (searchQuery) {
@@ -222,7 +214,15 @@ export default function AdminCustomersPage() {
       totalOrders,
       totalRevenue,
     })
-  }
+  }, [customers, searchQuery, statusFilter, geoFilter])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    filterCustomers()
+  }, [filterCustomers])
 
   async function handleBanCustomer(customerId: string, ban: boolean) {
     setActionLoading(customerId)

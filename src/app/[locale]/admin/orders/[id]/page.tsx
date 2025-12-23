@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -143,11 +143,24 @@ export default function AdminOrderDetailsPage() {
   const [order, setOrder] = useState<OrderDetails | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
 
-  useEffect(() => {
-    checkAuth()
+  const loadOrder = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get', orderId }),
+      })
+      const result = await response.json()
+
+      if (result.success && result.data) {
+        setOrder(result.data as OrderDetails)
+      }
+    } catch {
+      // Error handled silently
+    }
   }, [orderId])
 
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
@@ -166,24 +179,11 @@ export default function AdminOrderDetailsPage() {
     }
 
     setLoading(false)
-  }
+  }, [loadOrder])
 
-  async function loadOrder() {
-    try {
-      const response = await fetch('/api/admin/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get', orderId }),
-      })
-      const result = await response.json()
-
-      if (result.success && result.data) {
-        setOrder(result.data as OrderDetails)
-      }
-    } catch {
-      // Error handled silently
-    }
-  }
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   async function handleStatusChange(newStatus: string) {
     if (!order) return

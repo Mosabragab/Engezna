@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
@@ -75,38 +75,7 @@ export default function ProviderSettlementsPage() {
     totalRevenue: 0,
   })
 
-  useEffect(() => {
-    checkAuthAndLoad()
-  }, [])
-
-  async function checkAuthAndLoad() {
-    setLoading(true)
-    const supabase = createClient()
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/settlements`)
-      return
-    }
-
-    const { data: providerData } = await supabase
-      .from('providers')
-      .select('id, status')
-      .eq('owner_id', user.id)
-      .limit(1)
-
-    const provider = providerData?.[0]
-    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
-      router.push(`/${locale}/provider`)
-      return
-    }
-
-    setProviderId(provider.id)
-    await loadSettlements(provider.id, supabase)
-    setLoading(false)
-  }
-
-  async function loadSettlements(provId: string, supabase?: ReturnType<typeof createClient>) {
+  const loadSettlements = useCallback(async (provId: string, supabase?: ReturnType<typeof createClient>) => {
     const client = supabase || createClient()
 
     const { data: settlementsData } = await client
@@ -148,7 +117,38 @@ export default function ProviderSettlementsPage() {
       totalOrders,
       totalRevenue,
     })
-  }
+  }, [])
+
+  const checkAuthAndLoad = useCallback(async () => {
+    setLoading(true)
+    const supabase = createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push(`/${locale}/auth/login?redirect=/provider/settlements`)
+      return
+    }
+
+    const { data: providerData } = await supabase
+      .from('providers')
+      .select('id, status')
+      .eq('owner_id', user.id)
+      .limit(1)
+
+    const provider = providerData?.[0]
+    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
+      router.push(`/${locale}/provider`)
+      return
+    }
+
+    setProviderId(provider.id)
+    await loadSettlements(provider.id, supabase)
+    setLoading(false)
+  }, [loadSettlements, locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoad()
+  }, [checkAuthAndLoad])
 
   async function handleRefresh() {
     if (!providerId) return

@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Building, Map, X } from 'lucide-react'
 
@@ -52,11 +52,7 @@ export function GeoFilter({
   const [cities, setCities] = useState<City[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadLocations()
-  }, [])
-
-  async function loadLocations() {
+  const loadLocations = useCallback(async () => {
     const supabase = createClient()
 
     const [govRes, cityRes] = await Promise.all([
@@ -76,7 +72,11 @@ export function GeoFilter({
     setGovernorates(govRes.data || [])
     setCities(cityRes.data || [])
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    loadLocations()
+  }, [loadLocations])
 
   const filteredCities = value.governorate_id
     ? cities.filter(c => c.governorate_id === value.governorate_id)
@@ -240,11 +240,7 @@ export function useAdminGeoFilter() {
   const [isRegionalAdmin, setIsRegionalAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadAdminRegions()
-  }, [])
-
-  async function loadAdminRegions() {
+  const loadAdminRegions = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -280,7 +276,11 @@ export function useAdminGeoFilter() {
     }
 
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    loadAdminRegions()
+  }, [loadAdminRegions])
 
   // Get list of allowed governorate IDs for regional admin
   const allowedGovernorateIds = assignedRegions

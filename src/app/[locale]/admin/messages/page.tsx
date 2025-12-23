@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -99,15 +99,113 @@ export default function AdminMessagesPage() {
     adminId: string | null
   }>({ hasAdminRecord: false, isActive: false, adminId: null })
 
-  useEffect(() => {
-    checkAuth()
+  const calculateStats = useCallback((data: Message[], adminId: string | null) => {
+    if (!adminId) return
+
+    const inbox = data.filter(m =>
+      m.recipient_ids?.includes(adminId) || m.is_broadcast
+    ).length
+
+    const unread = data.filter(m =>
+      (m.recipient_ids?.includes(adminId) || m.is_broadcast) &&
+      !m.read_by?.includes(adminId)
+    ).length
+
+    const sent = data.filter(m => m.sender_id === adminId).length
+
+    setStats({ inbox, unread, sent })
   }, [])
 
-  useEffect(() => {
-    filterMessages()
+  const loadMessages = useCallback(async (supabase: ReturnType<typeof createClient>) => {
+    const { data: messagesData, error } = await supabase
+      .from('internal_messages')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) return
+
+    // Load sender names
+    const messagesWithSenders = await Promise.all(
+      (messagesData || []).map(async (message) => {
+        let sender = null
+
+        if (message.sender_id) {
+          const { data: senderAdmin } = await supabase
+            .from('admin_users')
+            .select('user_id')
+            .eq('id', message.sender_id)
+            .single()
+
+          if (senderAdmin) {
+            const { data: senderProfile } = await supabase
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', senderAdmin.user_id)
+              .single()
+            sender = senderProfile
+          }
+        }
+
+        return { ...message, sender }
+      })
+    )
+
+    setMessages(messagesWithSenders)
+    calculateStats(messagesWithSenders, currentAdminId)
+  }, [currentAdminId, calculateStats])
+
+  const loadSupervisors = useCallback(async (supabase: ReturnType<typeof createClient>) => {
+    const { data: adminUsers } = await supabase
+      .from('admin_users')
+      .select('id, user_id')
+      .eq('is_active', true)
+
+    if (adminUsers) {
+      const supervisorsList = await Promise.all(
+        adminUsers.map(async (admin) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', admin.user_id)
+            .single()
+
+          return {
+            id: admin.id,
+            full_name: profile?.full_name || null,
+            email: profile?.email || null,
+          }
+        })
+      )
+      setSupervisors(supervisorsList)
+    }
+  }, [])
+
+  const filterMessages = useCallback(() => {
+    if (!currentAdminId) return
+
+    let filtered = [...messages]
+
+    if (viewMode === 'inbox') {
+      filtered = filtered.filter(m =>
+        m.recipient_ids?.includes(currentAdminId) || m.is_broadcast
+      )
+    } else if (viewMode === 'sent') {
+      filtered = filtered.filter(m => m.sender_id === currentAdminId)
+    }
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(m =>
+        m.subject?.toLowerCase().includes(query) ||
+        m.body?.toLowerCase().includes(query) ||
+        m.sender?.full_name?.toLowerCase().includes(query)
+      )
+    }
+
+    setFilteredMessages(filtered)
   }, [messages, searchQuery, viewMode, currentAdminId])
 
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
@@ -149,113 +247,15 @@ export default function AdminMessagesPage() {
     }
 
     setLoading(false)
-  }
+  }, [loadMessages, loadSupervisors])
 
-  async function loadMessages(supabase: ReturnType<typeof createClient>) {
-    const { data: messagesData, error } = await supabase
-      .from('internal_messages')
-      .select('*')
-      .order('created_at', { ascending: false })
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
-    if (error) return
-
-    // Load sender names
-    const messagesWithSenders = await Promise.all(
-      (messagesData || []).map(async (message) => {
-        let sender = null
-
-        if (message.sender_id) {
-          const { data: senderAdmin } = await supabase
-            .from('admin_users')
-            .select('user_id')
-            .eq('id', message.sender_id)
-            .single()
-
-          if (senderAdmin) {
-            const { data: senderProfile } = await supabase
-              .from('profiles')
-              .select('full_name, email')
-              .eq('id', senderAdmin.user_id)
-              .single()
-            sender = senderProfile
-          }
-        }
-
-        return { ...message, sender }
-      })
-    )
-
-    setMessages(messagesWithSenders)
-    calculateStats(messagesWithSenders, currentAdminId)
-  }
-
-  async function loadSupervisors(supabase: ReturnType<typeof createClient>) {
-    const { data: adminUsers } = await supabase
-      .from('admin_users')
-      .select('id, user_id')
-      .eq('is_active', true)
-
-    if (adminUsers) {
-      const supervisorsList = await Promise.all(
-        adminUsers.map(async (admin) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', admin.user_id)
-            .single()
-
-          return {
-            id: admin.id,
-            full_name: profile?.full_name || null,
-            email: profile?.email || null,
-          }
-        })
-      )
-      setSupervisors(supervisorsList)
-    }
-  }
-
-  function calculateStats(data: Message[], adminId: string | null) {
-    if (!adminId) return
-
-    const inbox = data.filter(m =>
-      m.recipient_ids?.includes(adminId) || m.is_broadcast
-    ).length
-
-    const unread = data.filter(m =>
-      (m.recipient_ids?.includes(adminId) || m.is_broadcast) &&
-      !m.read_by?.includes(adminId)
-    ).length
-
-    const sent = data.filter(m => m.sender_id === adminId).length
-
-    setStats({ inbox, unread, sent })
-  }
-
-  function filterMessages() {
-    if (!currentAdminId) return
-
-    let filtered = [...messages]
-
-    if (viewMode === 'inbox') {
-      filtered = filtered.filter(m =>
-        m.recipient_ids?.includes(currentAdminId) || m.is_broadcast
-      )
-    } else if (viewMode === 'sent') {
-      filtered = filtered.filter(m => m.sender_id === currentAdminId)
-    }
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(m =>
-        m.subject?.toLowerCase().includes(query) ||
-        m.body?.toLowerCase().includes(query) ||
-        m.sender?.full_name?.toLowerCase().includes(query)
-      )
-    }
-
-    setFilteredMessages(filtered)
-  }
+  useEffect(() => {
+    filterMessages()
+  }, [filterMessages])
 
   function isUnread(message: Message): boolean {
     if (!currentAdminId) return false

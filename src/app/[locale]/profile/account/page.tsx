@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
@@ -36,11 +36,7 @@ export default function AccountPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  useEffect(() => {
-    checkAuthAndLoadProfile()
-  }, [])
-
-  async function checkAuthAndLoadProfile() {
+  const checkAuthAndLoadProfile = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -71,7 +67,11 @@ export default function AccountPage() {
 
       setPhone(profileData.phone || '')
     }
-  }
+  }, [locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoadProfile()
+  }, [checkAuthAndLoadProfile])
 
   async function handleSave() {
     if (!userId) return

@@ -73,40 +73,7 @@ export function SearchableSelect({
     district_id: null,
   })
 
-  // Load items on mount
-  useEffect(() => {
-    loadItems()
-  }, [type])
-
-  // Filter items when search or geo filter changes
-  useEffect(() => {
-    filterItems()
-  }, [items, searchQuery, geoFilter])
-
-  // Set selected item when value changes
-  useEffect(() => {
-    if (value && items.length > 0) {
-      const item = items.find(i => i.id === value)
-      if (item) {
-        setSelectedItem(item)
-      }
-    } else {
-      setSelectedItem(null)
-    }
-  }, [value, items])
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  async function loadItems() {
+  const loadItems = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
@@ -180,9 +147,9 @@ export function SearchableSelect({
     }
 
     setLoading(false)
-  }
+  }, [locale, type])
 
-  function filterItems() {
+  const filterItems = useCallback(() => {
     let filtered = [...items]
 
     // Text search
@@ -208,7 +175,40 @@ export function SearchableSelect({
     }
 
     setFilteredItems(filtered)
-  }
+  }, [items, searchQuery, geoFilter, type])
+
+  // Load items on mount
+  useEffect(() => {
+    loadItems()
+  }, [loadItems])
+
+  // Filter items when search or geo filter changes
+  useEffect(() => {
+    filterItems()
+  }, [filterItems])
+
+  // Set selected item when value changes
+  useEffect(() => {
+    if (value && items.length > 0) {
+      const item = items.find(i => i.id === value)
+      if (item) {
+        setSelectedItem(item)
+      }
+    } else {
+      setSelectedItem(null)
+    }
+  }, [value, items])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   function handleSelect(item: ItemType) {
     setSelectedItem(item)

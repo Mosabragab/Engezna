@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -78,11 +78,7 @@ export function ConstraintsEditor({
   const [districts, setDistricts] = useState<District[]>([])
   const [loadingGeo, setLoadingGeo] = useState(true)
 
-  useEffect(() => {
-    loadGeoData()
-  }, [])
-
-  async function loadGeoData() {
+  const loadGeoData = useCallback(async () => {
     const supabase = createClient()
     setLoadingGeo(true)
 
@@ -96,7 +92,11 @@ export function ConstraintsEditor({
     if (cityRes.data) setCities(cityRes.data)
     if (distRes.data) setDistricts(distRes.data)
     setLoadingGeo(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    loadGeoData()
+  }, [loadGeoData])
 
   function toggleSection(section: string) {
     const newExpanded = new Set(expandedSections)

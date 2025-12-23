@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -67,36 +67,7 @@ export default function AdminActivityLogPage() {
   const [entityFilter, setEntityFilter] = useState<FilterEntity>('all')
   const [dateFilter, setDateFilter] = useState<string>('')
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    filterLogs()
-  }, [logs, searchQuery, actionFilter, entityFilter, dateFilter])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        await loadActivityLogs()
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadActivityLogs() {
+  const loadActivityLogs = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/audit', {
         method: 'POST',
@@ -149,9 +120,30 @@ export default function AdminActivityLogPage() {
         setLogs(data as ActivityLog[])
       }
     }
-  }
+  }, [])
 
-  function filterLogs() {
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+        await loadActivityLogs()
+      }
+    }
+
+    setLoading(false)
+  }, [loadActivityLogs])
+
+  const filterLogs = useCallback(() => {
     let filtered = [...logs]
 
     if (searchQuery) {
@@ -182,7 +174,15 @@ export default function AdminActivityLogPage() {
     }
 
     setFilteredLogs(filtered)
-  }
+  }, [logs, searchQuery, actionFilter, entityFilter, dateFilter])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    filterLogs()
+  }, [filterLogs])
 
   const getActionIcon = (action: string) => {
     switch (action) {

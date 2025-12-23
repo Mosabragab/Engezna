@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
@@ -33,16 +33,7 @@ export default function EmailPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
 
-  useEffect(() => {
-    checkAuthAndLoadProfile()
-  }, [])
-
-  useEffect(() => {
-    // Clear validation error when inputs change
-    setValidationError(null)
-  }, [newEmail, confirmEmail, password])
-
-  async function checkAuthAndLoadProfile() {
+  const checkAuthAndLoadProfile = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -64,7 +55,16 @@ export default function EmailPage() {
     if (profileData) {
       setProfile(profileData)
     }
-  }
+  }, [locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoadProfile()
+  }, [checkAuthAndLoadProfile])
+
+  useEffect(() => {
+    // Clear validation error when inputs change
+    setValidationError(null)
+  }, [newEmail, confirmEmail, password])
 
   function validateEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

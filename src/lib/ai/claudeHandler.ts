@@ -192,7 +192,7 @@ export async function* runClaudeAgentStream(options: AgentHandlerOptions): Async
   const tools = convertToolsToAnthropic(context)
 
   // Convert messages to Anthropic format (use effectiveMessages which may be transformed)
-  let anthropicMessages: AnthropicMessage[] = convertMessagesToAnthropic(effectiveMessages)
+  const anthropicMessages: AnthropicMessage[] = convertMessagesToAnthropic(effectiveMessages)
 
   const turns: ConversationTurn[] = []
 

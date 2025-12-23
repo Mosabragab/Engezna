@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -84,43 +84,7 @@ export default function AdminProvidersPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    const status = searchParams.get('status')
-    if (status === 'pending') {
-      setStatusFilter('pending_approval')
-    }
-  }, [searchParams])
-
-  useEffect(() => {
-    filterProviders()
-  }, [providers, searchQuery, statusFilter, categoryFilter, geoFilter])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        await loadProviders(supabase)
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadProviders(supabase: ReturnType<typeof createClient>) {
+  const loadProviders = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     const { data } = await supabase
       .from('providers')
       .select('*')
@@ -140,9 +104,30 @@ export default function AdminProvidersPage() {
         paused,
       })
     }
-  }
+  }, [])
 
-  function filterProviders() {
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+        await loadProviders(supabase)
+      }
+    }
+
+    setLoading(false)
+  }, [loadProviders])
+
+  const filterProviders = useCallback(() => {
     let filtered = [...providers]
 
     if (searchQuery) {
@@ -194,7 +179,22 @@ export default function AdminProvidersPage() {
     })
 
     setFilteredProviders(filtered)
-  }
+  }, [providers, searchQuery, statusFilter, categoryFilter, geoFilter, locale])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    const status = searchParams.get('status')
+    if (status === 'pending') {
+      setStatusFilter('pending_approval')
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    filterProviders()
+  }, [filterProviders])
 
   function openConfirmModal(provider: Provider, action: 'approve' | 'reject' | 'pause' | 'resume', newStatus: string) {
     setConfirmAction({

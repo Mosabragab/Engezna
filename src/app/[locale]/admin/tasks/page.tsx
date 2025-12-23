@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -154,52 +154,28 @@ export default function AdminTasksPage() {
     overdue: 0,
   })
 
-  useEffect(() => {
-    checkAuth()
+  const calculateStats = useCallback((data: Task[]) => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+    const stats = {
+      total: data.length,
+      active: data.filter(t => ['new', 'accepted', 'in_progress'].includes(t.status)).length,
+      pending: data.filter(t => t.status === 'pending').length,
+      completedToday: data.filter(t => {
+        if (t.status !== 'completed' || !t.completed_at) return false
+        return new Date(t.completed_at) >= today
+      }).length,
+      overdue: data.filter(t => {
+        if (['completed', 'cancelled'].includes(t.status)) return false
+        if (!t.deadline) return false
+        return new Date(t.deadline) < now
+      }).length,
+    }
+    setStats(stats)
   }, [])
 
-  useEffect(() => {
-    filterTasks()
-  }, [tasks, searchQuery, statusFilter, priorityFilter, viewMode, currentAdminId])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-
-        // Get admin_user record
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('id, role')
-          .eq('user_id', user.id)
-          .single()
-
-        if (adminUser) {
-          setCurrentAdminId(adminUser.id)
-          if (adminUser.role === 'super_admin') {
-            setIsSuperAdmin(true)
-          }
-        }
-
-        await loadTasks(supabase)
-        await loadSupervisors(supabase)
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadTasks(supabase: ReturnType<typeof createClient>) {
+  const loadTasks = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     const { data: tasksData, error } = await supabase
       .from('admin_tasks')
       .select('*')
@@ -253,9 +229,9 @@ export default function AdminTasksPage() {
 
     setTasks(tasksWithUsers)
     calculateStats(tasksWithUsers)
-  }
+  }, [calculateStats])
 
-  async function loadSupervisors(supabase: ReturnType<typeof createClient>) {
+  const loadSupervisors = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     const { data: adminUsers } = await supabase
       .from('admin_users')
       .select('id, user_id')
@@ -278,30 +254,9 @@ export default function AdminTasksPage() {
       )
       setSupervisors(supervisorsList)
     }
-  }
+  }, [])
 
-  function calculateStats(data: Task[]) {
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-
-    const stats = {
-      total: data.length,
-      active: data.filter(t => ['new', 'accepted', 'in_progress'].includes(t.status)).length,
-      pending: data.filter(t => t.status === 'pending').length,
-      completedToday: data.filter(t => {
-        if (t.status !== 'completed' || !t.completed_at) return false
-        return new Date(t.completed_at) >= today
-      }).length,
-      overdue: data.filter(t => {
-        if (['completed', 'cancelled'].includes(t.status)) return false
-        if (!t.deadline) return false
-        return new Date(t.deadline) < now
-      }).length,
-    }
-    setStats(stats)
-  }
-
-  function filterTasks() {
+  const filterTasks = useCallback(() => {
     let filtered = [...tasks]
 
     // Filter by view mode (all vs my tasks)
@@ -327,7 +282,52 @@ export default function AdminTasksPage() {
     }
 
     setFilteredTasks(filtered)
-  }
+  }, [tasks, searchQuery, statusFilter, priorityFilter, viewMode, currentAdminId])
+
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+
+        // Get admin_user record
+        const { data: adminUser } = await supabase
+          .from('admin_users')
+          .select('id, role')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminUser) {
+          setCurrentAdminId(adminUser.id)
+          if (adminUser.role === 'super_admin') {
+            setIsSuperAdmin(true)
+          }
+        }
+
+        await loadTasks(supabase)
+        await loadSupervisors(supabase)
+      }
+    }
+
+    setLoading(false)
+  }, [loadTasks, loadSupervisors])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    filterTasks()
+  }, [filterTasks])
 
   function isOverdue(task: Task): boolean {
     if (['completed', 'cancelled'].includes(task.status)) return false
