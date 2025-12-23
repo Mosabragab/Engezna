@@ -1,7 +1,7 @@
 {
   "name": "إنجزنا - Engezna",
   "short_name": "إنجزنا",
-  "description": "توصيل أسرع بينك وبين أقرب تاجر في محافظتك",
+  "description": "توصيل أسرع بينك وبين أقرب متجر في محافظتك",
   "start_url": "/ar",
   "display": "standalone",
   "background_color": "#0F172A",
@@ -11,6 +11,7 @@
   "dir": "rtl",
   "scope": "/",
   "id": "/",
+  "privacy_policy_url": "/ar/privacy",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -44,14 +45,14 @@
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "الصفحة الرئيسية - تصفح المطاعم والعروض"
+      "label": "الصفحة الرئيسية - تصفح المتاجر والعروض"
     },
     {
       "src": "/screenshots/screenshot-providers-mobile.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "قائمة المتاجر والمطاعم"
+      "label": "قائمة المتاجر المحلية"
     },
     {
       "src": "/screenshots/screenshot-order-mobile.png",

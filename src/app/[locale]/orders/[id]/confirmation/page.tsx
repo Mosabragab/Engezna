@@ -472,6 +472,35 @@ export default function OrderConfirmationPage() {
               </Button>
             </Link>
           </div>
+
+          {/* Legal Links */}
+          <div className="mt-6 pt-4 border-t border-border/50 text-center">
+            <p className="text-xs text-muted-foreground">
+              {locale === 'ar' ? (
+                <>
+                  بإتمام الطلب، فإنك توافق على{' '}
+                  <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+                    الشروط والأحكام
+                  </Link>
+                  {' '}و{' '}
+                  <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+                    سياسة الخصوصية
+                  </Link>
+                </>
+              ) : (
+                <>
+                  By placing an order, you agree to our{' '}
+                  <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+                    Terms & Conditions
+                  </Link>
+                  {' '}and{' '}
+                  <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+                    Privacy Policy
+                  </Link>
+                </>
+              )}
+            </p>
+          </div>
         </div>
       </div>
     </CustomerLayout>
