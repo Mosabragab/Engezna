@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -64,32 +64,7 @@ export default function SettlementGroupsPage() {
   const [formFrequency, setFormFrequency] = useState<'daily' | '3_days' | 'weekly'>('3_days')
   const [formIsDefault, setFormIsDefault] = useState(false)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        await loadData()
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const supabase = createClient()
 
     // Fetch groups
@@ -115,7 +90,32 @@ export default function SettlementGroupsPage() {
     if (providersData) {
       setProviders(providersData)
     }
-  }
+  }, [])
+
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+        await loadData()
+      }
+    }
+
+    setLoading(false)
+  }, [loadData])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   async function handleSaveGroup() {
     const supabase = createClient()

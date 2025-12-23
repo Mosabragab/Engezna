@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, use } from 'react'
+import React, { useEffect, useState, use, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -142,32 +142,7 @@ export default function SupervisorPermissionsPage({ params }: PageProps) {
   // Expanded sections
   const [expandedResources, setExpandedResources] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('role')
-        .eq('user_id', user.id)
-        .single()
-
-      if (adminUser?.role === 'super_admin') {
-        setIsSuperAdmin(true)
-        await loadData(supabase)
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadData(supabase: ReturnType<typeof createClient>) {
+  const loadData = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     // Load supervisor
     const { data: supervisorData } = await supabase
       .from('admin_users')
@@ -238,7 +213,32 @@ export default function SupervisorPermissionsPage({ params }: PageProps) {
     if (allPermsData) {
       setAllPermissions(allPermsData)
     }
-  }
+  }, [supervisorId])
+
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: adminUser } = await supabase
+        .from('admin_users')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+
+      if (adminUser?.role === 'super_admin') {
+        setIsSuperAdmin(true)
+        await loadData(supabase)
+      }
+    }
+
+    setLoading(false)
+  }, [loadData])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   function toggleResource(resourceCode: string) {
     const newExpanded = new Set(expandedResources)

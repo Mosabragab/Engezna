@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
@@ -26,11 +26,7 @@ export default function MenuImportPage() {
   const [provider, setProvider] = useState<Provider | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    checkAuthAndLoadProvider()
-  }, [])
-
-  async function checkAuthAndLoadProvider() {
+  const checkAuthAndLoadProvider = useCallback(async () => {
     const supabase = createClient()
 
     try {
@@ -72,7 +68,11 @@ export default function MenuImportPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoadProvider()
+  }, [checkAuthAndLoadProvider])
 
   // Loading state
   if (loading) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -111,11 +111,7 @@ export default function AdminRegisterPage() {
   const [formLoading, setFormLoading] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  useEffect(() => {
-    validateInvitation()
-  }, [token])
-
-  async function validateInvitation() {
+  const validateInvitation = useCallback(async () => {
     if (!token) {
       setError(locale === 'ar' ? 'رابط الدعوة غير صالح' : 'Invalid invitation link')
       setLoading(false)
@@ -243,7 +239,11 @@ export default function AdminRegisterPage() {
     }
 
     setLoading(false)
-  }
+  }, [token, locale])
+
+  useEffect(() => {
+    validateInvitation()
+  }, [validateInvitation])
 
   function getTimeRemaining(): string {
     if (!invitation) return ''

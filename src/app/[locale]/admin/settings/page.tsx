@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState} from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -113,11 +113,18 @@ export default function AdminSettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
 
-  useEffect(() => {
-    checkAuth()
+  const loadSettings = useCallback(async (supabase: ReturnType<typeof createClient>) => {
+    const { data } = await supabase
+      .from('platform_settings')
+      .select('*')
+      .single()
+
+    if (data) {
+      setSettings({ ...defaultSettings, ...data })
+    }
   }, [])
 
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
@@ -136,18 +143,11 @@ export default function AdminSettingsPage() {
     }
 
     setLoading(false)
-  }
+  }, [loadSettings])
 
-  async function loadSettings(supabase: ReturnType<typeof createClient>) {
-    const { data } = await supabase
-      .from('platform_settings')
-      .select('*')
-      .single()
-
-    if (data) {
-      setSettings({ ...defaultSettings, ...data })
-    }
-  }
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   async function handleSaveSettings() {
     setSaving(true)

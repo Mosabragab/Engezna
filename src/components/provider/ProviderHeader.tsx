@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -67,14 +67,7 @@ export function ProviderHeader({
   const [notifications, setNotifications] = useState<ProviderNotification[]>([])
   const [loadingNotifications, setLoadingNotifications] = useState(false)
 
-  // Load notifications when dropdown opens
-  useEffect(() => {
-    if (notificationsOpen && providerId) {
-      loadNotifications()
-    }
-  }, [notificationsOpen, providerId])
-
-  async function loadNotifications() {
+  const loadNotifications = useCallback(async () => {
     if (!providerId) return
     setLoadingNotifications(true)
     const supabase = createClient()
@@ -91,7 +84,14 @@ export function ProviderHeader({
     }
 
     setLoadingNotifications(false)
-  }
+  }, [providerId])
+
+  // Load notifications when dropdown opens
+  useEffect(() => {
+    if (notificationsOpen && providerId) {
+      loadNotifications()
+    }
+  }, [notificationsOpen, providerId, loadNotifications])
 
   async function markAsRead(notificationId: string) {
     const supabase = createClient()

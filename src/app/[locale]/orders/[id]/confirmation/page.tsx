@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
@@ -81,11 +81,7 @@ export default function OrderConfirmationPage() {
   const [loading, setLoading] = useState(true)
   const [retryCount, setRetryCount] = useState(0)
 
-  useEffect(() => {
-    loadOrderDetails()
-  }, [orderId, retryCount])
-
-  const loadOrderDetails = async () => {
+  const loadOrderDetails = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
@@ -150,7 +146,11 @@ export default function OrderConfirmationPage() {
     }
 
     setLoading(false)
-  }
+  }, [orderId, retryCount, locale, router])
+
+  useEffect(() => {
+    loadOrderDetails()
+  }, [loadOrderDetails])
 
   const getStatusInfo = (status: string) => {
     switch (status) {

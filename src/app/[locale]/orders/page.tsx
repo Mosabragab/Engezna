@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
@@ -65,17 +65,7 @@ export default function OrderHistoryPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter] = useState<FilterType>('all')
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push(`/${locale}/auth/login?redirect=/orders`)
-      return
-    }
-    if (user) {
-      loadOrders()
-    }
-  }, [user, authLoading])
-
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
@@ -106,7 +96,17 @@ export default function OrderHistoryPage() {
     }
 
     setLoading(false)
-  }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push(`/${locale}/auth/login?redirect=/orders`)
+      return
+    }
+    if (user) {
+      loadOrders()
+    }
+  }, [user, authLoading, router, locale, loadOrders])
 
   const handleRefresh = async () => {
     setRefreshing(true)

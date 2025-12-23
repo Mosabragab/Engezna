@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
@@ -99,35 +99,7 @@ export default function AddressesPage() {
   const [deliveryInstructions, setDeliveryInstructions] = useState('')
   const [isDefault, setIsDefault] = useState(false)
 
-  useEffect(() => {
-    checkAuthAndLoadData()
-  }, [])
-
-  useEffect(() => {
-    if (governorateId) {
-      loadCities(governorateId)
-    } else {
-      setCities([])
-    }
-  }, [governorateId])
-
-  async function checkAuthAndLoadData() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/profile/addresses`)
-      return
-    }
-
-    setUserId(user.id)
-    setAuthLoading(false)
-
-    await loadAddresses(user.id)
-    await loadGovernorates()
-  }
-
-  async function loadAddresses(uid: string) {
+  const loadAddresses = useCallback(async (uid: string) => {
     setLoading(true)
     const supabase = createClient()
 
@@ -144,9 +116,9 @@ export default function AddressesPage() {
     }
 
     setLoading(false)
-  }
+  }, [])
 
-  async function loadGovernorates() {
+  const loadGovernorates = useCallback(async () => {
     const supabase = createClient()
     const { data } = await supabase
       .from('governorates')
@@ -157,9 +129,9 @@ export default function AddressesPage() {
     if (data) {
       setGovernorates(data)
     }
-  }
+  }, [])
 
-  async function loadCities(govId: string) {
+  const loadCities = useCallback(async (govId: string) => {
     const supabase = createClient()
     const { data } = await supabase
       .from('cities')
@@ -171,7 +143,35 @@ export default function AddressesPage() {
     if (data) {
       setCities(data)
     }
-  }
+  }, [])
+
+  const checkAuthAndLoadData = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      router.push(`/${locale}/auth/login?redirect=/profile/addresses`)
+      return
+    }
+
+    setUserId(user.id)
+    setAuthLoading(false)
+
+    await loadAddresses(user.id)
+    await loadGovernorates()
+  }, [locale, router, loadAddresses, loadGovernorates])
+
+  useEffect(() => {
+    checkAuthAndLoadData()
+  }, [checkAuthAndLoadData])
+
+  useEffect(() => {
+    if (governorateId) {
+      loadCities(governorateId)
+    } else {
+      setCities([])
+    }
+  }, [governorateId, loadCities])
 
   function openAddDialog() {
     resetForm()

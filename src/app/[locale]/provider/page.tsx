@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -155,38 +155,7 @@ export default function ProviderDashboard() {
     }
   }, [provider])
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      // Load provider owned by current user
-      const { data: providerData } = await supabase
-        .from('providers')
-        .select('*')
-        .eq('owner_id', user.id)
-        .order('created_at', { ascending: true })
-        .limit(1)
-
-      if (providerData && providerData.length > 0) {
-        const providerRecord = providerData[0]
-        setProvider(providerRecord)
-        // Calculate commission info
-        const info = getCommissionInfo(providerRecord)
-        setCommissionInfo(info)
-        await loadStats(providerRecord.id, supabase)
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadStats(providerId: string, supabase: ReturnType<typeof createClient>) {
+  const loadStats = useCallback(async (providerId: string, supabase: ReturnType<typeof createClient>) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -267,7 +236,38 @@ export default function ProviderDashboard() {
       todayOnlineOrders: todayOnlineOrders.length,
       todayOnlineRevenue: todayOnlineConfirmed.reduce((sum, o) => sum + (o.total || 0), 0),
     })
-  }
+  }, [])
+
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      // Load provider owned by current user
+      const { data: providerData } = await supabase
+        .from('providers')
+        .select('*')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+
+      if (providerData && providerData.length > 0) {
+        const providerRecord = providerData[0]
+        setProvider(providerRecord)
+        // Calculate commission info
+        const info = getCommissionInfo(providerRecord)
+        setCommissionInfo(info)
+        await loadStats(providerRecord.id, supabase)
+      }
+    }
+
+    setLoading(false)
+  }, [loadStats])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   if (loading) {
     return (

@@ -69,9 +69,30 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     setPendingRefunds(refundsCount || 0)
   }, [])
 
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: providerData } = await supabase
+        .from('providers')
+        .select('id, name_ar, name_en, logo_url, status, category')
+        .eq('owner_id', user.id)
+        .limit(1)
+
+      if (providerData && providerData.length > 0) {
+        setProvider(providerData[0])
+        await loadUnreadCount(providerData[0].id)
+      }
+    }
+
+    setLoading(false)
+  }, [loadUnreadCount])
+
   useEffect(() => {
     checkAuth()
-  }, [])
+  }, [checkAuth])
 
   // Realtime subscription for provider_notifications
   useEffect(() => {
@@ -194,27 +215,6 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       clearAppBadge()
     }
   }, [unreadCount, pendingOrders, pendingRefunds])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: providerData } = await supabase
-        .from('providers')
-        .select('id, name_ar, name_en, logo_url, status, category')
-        .eq('owner_id', user.id)
-        .limit(1)
-
-      if (providerData && providerData.length > 0) {
-        setProvider(providerData[0])
-        await loadUnreadCount(providerData[0].id)
-      }
-    }
-
-    setLoading(false)
-  }
 
   async function handleSignOut() {
     const supabase = createClient()

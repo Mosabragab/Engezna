@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -110,52 +110,8 @@ export default function ProviderDetailPage() {
   const [newCommissionRate, setNewCommissionRate] = useState(0)
   const [commissionLoading, setCommissionLoading] = useState(false)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        await loadProvider()
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadProvider() {
-    try {
-      const response = await fetch('/api/admin/providers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get', providerId }),
-      })
-      const result = await response.json()
-
-      if (result.success && result.data) {
-        setProvider(result.data)
-        setNewCommissionRate(result.data.commission_rate || 10)
-        await loadProviderStats()
-        await loadRecentOrders()
-      }
-    } catch {
-      // Error handled silently
-    }
-  }
-
-  async function loadProviderStats() {
+  // Define loadProviderStats first (called by loadProvider)
+  const loadProviderStats = useCallback(async () => {
     const supabase = createClient()
     const { data: orders } = await supabase
       .from('orders')
@@ -173,9 +129,10 @@ export default function ProviderDetailPage() {
         pendingOrders: pending.length,
       })
     }
-  }
+  }, [providerId])
 
-  async function loadRecentOrders() {
+  // Define loadRecentOrders second (called by loadProvider)
+  const loadRecentOrders = useCallback(async () => {
     const supabase = createClient()
     const { data: orders } = await supabase
       .from('orders')
@@ -194,7 +151,54 @@ export default function ProviderDetailPage() {
     if (orders) {
       setRecentOrders(orders as unknown as Order[])
     }
-  }
+  }, [providerId])
+
+  // Define loadProvider third (uses loadProviderStats and loadRecentOrders)
+  const loadProvider = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/providers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get', providerId }),
+      })
+      const result = await response.json()
+
+      if (result.success && result.data) {
+        setProvider(result.data)
+        setNewCommissionRate(result.data.commission_rate || 10)
+        await loadProviderStats()
+        await loadRecentOrders()
+      }
+    } catch {
+      // Error handled silently
+    }
+  }, [providerId, loadProviderStats, loadRecentOrders])
+
+  // Define checkAuth fourth (uses loadProvider)
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+        await loadProvider()
+      }
+    }
+
+    setLoading(false)
+  }, [loadProvider])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   function openActionModal(action: 'approve' | 'reject' | 'suspend' | 'reactivate') {
     setCurrentAction(action)

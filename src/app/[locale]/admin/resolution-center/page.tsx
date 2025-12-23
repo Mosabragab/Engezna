@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -107,55 +107,7 @@ export default function ResolutionCenterPage() {
     openComplaints: 0,
   })
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-
-        // Load admin user details
-        const { data: adminData } = await supabase
-          .from('admin_users')
-          .select('id, role, assigned_regions')
-          .eq('user_id', user.id)
-          .single()
-
-        if (adminData) {
-          setAdminUser(adminData as AdminUser)
-        }
-
-        // Load governorates
-        const { data: govData } = await supabase
-          .from('governorates')
-          .select('id, name_ar, name_en')
-          .eq('is_active', true)
-          .order('name_ar')
-
-        if (govData) {
-          setGovernorates(govData)
-        }
-
-        await loadData()
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const supabase = createClient()
 
     // Load refunds
@@ -260,7 +212,55 @@ export default function ResolutionCenterPage() {
       openComplaints,
       urgentComplaints,
     })
-  }
+  }, [])
+
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+
+        // Load admin user details
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('id, role, assigned_regions')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminData) {
+          setAdminUser(adminData as AdminUser)
+        }
+
+        // Load governorates
+        const { data: govData } = await supabase
+          .from('governorates')
+          .select('id, name_ar, name_en')
+          .eq('is_active', true)
+          .order('name_ar')
+
+        if (govData) {
+          setGovernorates(govData)
+        }
+
+        await loadData()
+      }
+    }
+
+    setLoading(false)
+  }, [loadData])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   // Filter items based on admin region
   const filterByRegion = <T extends { provider?: { governorate_id?: string } | null }>(items: T[]): T[] => {

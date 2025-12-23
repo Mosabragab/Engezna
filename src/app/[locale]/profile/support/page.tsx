@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -98,17 +98,7 @@ export default function CustomerSupportPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('refunds')
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push(`/${locale}/auth/login?redirect=/profile/support`)
-      return
-    }
-    if (user) {
-      loadData()
-    }
-  }, [user, authLoading])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
@@ -170,7 +160,17 @@ export default function CustomerSupportPage() {
     }
 
     setLoading(false)
-  }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push(`/${locale}/auth/login?redirect=/profile/support`)
+      return
+    }
+    if (user) {
+      loadData()
+    }
+  }, [user, authLoading, router, locale, loadData])
 
   const formatDate = (dateString: string) => {
     return formatDistanceToNow(new Date(dateString), {

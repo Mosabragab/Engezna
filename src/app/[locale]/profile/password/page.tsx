@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
@@ -33,16 +33,7 @@ export default function PasswordPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
 
-  useEffect(() => {
-    checkAuthAndLoadProfile()
-  }, [])
-
-  useEffect(() => {
-    // Clear validation error when inputs change
-    setValidationError(null)
-  }, [currentPassword, newPassword, confirmPassword])
-
-  async function checkAuthAndLoadProfile() {
+  const checkAuthAndLoadProfile = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -64,7 +55,16 @@ export default function PasswordPage() {
     if (profileData) {
       setProfile(profileData)
     }
-  }
+  }, [locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoadProfile()
+  }, [checkAuthAndLoadProfile])
+
+  useEffect(() => {
+    // Clear validation error when inputs change
+    setValidationError(null)
+  }, [currentPassword, newPassword, confirmPassword])
 
   async function handleUpdatePassword() {
     if (!userId || !profile?.email) return

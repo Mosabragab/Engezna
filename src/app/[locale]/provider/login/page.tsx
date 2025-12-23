@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
@@ -54,11 +54,7 @@ export default function ProviderLoginPage() {
     resolver: zodResolver(loginSchema),
   })
 
-  useEffect(() => {
-    checkExistingAuth()
-  }, [])
-
-  async function checkExistingAuth() {
+  const checkExistingAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -77,7 +73,11 @@ export default function ProviderLoginPage() {
     }
 
     setCheckingAuth(false)
-  }
+  }, [locale, router])
+
+  useEffect(() => {
+    checkExistingAuth()
+  }, [checkExistingAuth])
 
   async function onSubmit(data: LoginFormData) {
     setLoading(true)

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -133,13 +133,7 @@ export default function InviteSupervisorPage() {
   const [cities, setCities] = useState<Array<{ id: string; name_ar: string; name_en: string; governorate_id: string }>>([])
   const [districts, setDistricts] = useState<Array<{ id: string; name_ar: string; name_en: string; city_id: string | null; governorate_id: string }>>([])
 
-  useEffect(() => {
-    checkAuth()
-    loadGeoData()
-    loadRoles()
-  }, [])
-
-  async function loadRoles() {
+  const loadRoles = useCallback(async () => {
     const supabase = createClient()
 
     // Load roles
@@ -174,9 +168,9 @@ export default function InviteSupervisorPage() {
       }
       setRolePermissions(permissionsMap)
     }
-  }
+  }, [])
 
-  async function loadGeoData() {
+  const loadGeoData = useCallback(async () => {
     const supabase = createClient()
 
     const [govRes, cityRes, distRes] = await Promise.all([
@@ -188,9 +182,9 @@ export default function InviteSupervisorPage() {
     if (govRes.data) setGovernorates(govRes.data)
     if (cityRes.data) setCities(cityRes.data)
     if (distRes.data) setDistricts(distRes.data)
-  }
+  }, [])
 
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     setUser(user)
@@ -218,7 +212,13 @@ export default function InviteSupervisorPage() {
     }
 
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    checkAuth()
+    loadGeoData()
+    loadRoles()
+  }, [checkAuth, loadGeoData, loadRoles])
 
   function addRegion() {
     if (!tempRegion.governorate_id) return

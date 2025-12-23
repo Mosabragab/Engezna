@@ -134,9 +134,89 @@ export default function ProviderOrdersPage() {
     orderTotal: number
   }>({ show: false, orderId: null, orderNumber: null, orderTotal: 0 })
 
+  const loadOrders = useCallback(async (provId: string) => {
+    const supabase = createClient()
+
+    // Fetch orders with items in a single query using join
+    const { data: ordersData, error } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        order_number,
+        customer_id,
+        status,
+        payment_status,
+        subtotal,
+        delivery_fee,
+        total,
+        payment_method,
+        delivery_address,
+        customer_notes,
+        created_at,
+        profiles:customer_id (
+          full_name,
+          phone
+        ),
+        order_items (
+          id,
+          item_name_ar,
+          item_name_en,
+          quantity,
+          unit_price,
+          total_price
+        )
+      `)
+      .eq('provider_id', provId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (error) {
+      console.error('Error loading orders:', error)
+      return
+    }
+
+    if (ordersData) {
+      const orders = ordersData.map((order: any) => ({
+        ...order,
+        customer: Array.isArray(order.profiles) ? order.profiles[0] : order.profiles,
+        items: order.order_items || [],
+      }))
+      setOrders(orders)
+    }
+  }, [])
+
+  const checkAuthAndLoadOrders = useCallback(async () => {
+    setLoading(true)
+    const supabase = createClient()
+
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push(`/${locale}/auth/login?redirect=/provider/orders`)
+      return
+    }
+
+    // Get provider ID
+    const { data: providerData } = await supabase
+      .from('providers')
+      .select('id, status')
+      .eq('owner_id', user.id)
+      .limit(1)
+
+    const provider = providerData?.[0]
+    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
+      router.push(`/${locale}/provider`)
+      return
+    }
+
+    setProviderId(provider.id)
+    await loadOrders(provider.id)
+    setLoading(false)
+  }, [loadOrders, locale, router])
+
   useEffect(() => {
     checkAuthAndLoadOrders()
-  }, [])
+  }, [checkAuthAndLoadOrders])
 
   // Auto-refresh every 60 seconds as fallback
   useEffect(() => {
@@ -148,7 +228,7 @@ export default function ProviderOrdersPage() {
     }, 60000) // 60 seconds
 
     return () => clearInterval(interval)
-  }, [providerId])
+  }, [providerId, loadOrders])
 
   // Realtime subscription for new orders and updates
   useEffect(() => {
@@ -199,75 +279,7 @@ export default function ProviderOrdersPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [providerId])
-
-  const checkAuthAndLoadOrders = async () => {
-    setLoading(true)
-    const supabase = createClient()
-
-    // Check authentication
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/orders`)
-      return
-    }
-
-    // Get provider ID
-    const { data: providerData } = await supabase
-      .from('providers')
-      .select('id, status')
-      .eq('owner_id', user.id)
-      .limit(1)
-
-    const provider = providerData?.[0]
-    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
-      router.push(`/${locale}/provider`)
-      return
-    }
-
-    setProviderId(provider.id)
-    await loadOrders(provider.id)
-    setLoading(false)
-  }
-
-  const loadOrders = async (provId: string) => {
-    const supabase = createClient()
-
-    // Fetch orders with items in a single query using join
-    const { data: ordersData, error } = await supabase
-      .from('orders')
-      .select(`
-        id,
-        order_number,
-        customer_id,
-        status,
-        payment_status,
-        subtotal,
-        delivery_fee,
-        total,
-        payment_method,
-        delivery_address,
-        customer_notes,
-        created_at,
-        customer:profiles!customer_id(full_name, phone),
-        order_items(id, item_name_ar, item_name_en, quantity, unit_price, total_price)
-      `)
-      .eq('provider_id', provId)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      return
-    }
-
-    // Transform data to expected format
-    const ordersWithItems = (ordersData || []).map((order) => ({
-      ...order,
-      customer: Array.isArray(order.customer) ? order.customer[0] : order.customer,
-      items: order.order_items || []
-    }))
-
-    setOrders(ordersWithItems)
-  }
+  }, [providerId, loadOrders])
 
   const handleRefresh = async () => {
     if (!providerId) return

@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -101,55 +101,7 @@ export default function AdminDashboard() {
   const [pendingProviders, setPendingProviders] = useState<PendingProvider[]>([])
   const [dataError, setDataError] = useState<string | null>(null)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-
-        // Load admin user details for region filtering
-        const { data: adminData } = await supabase
-          .from('admin_users')
-          .select('id, role, assigned_regions')
-          .eq('user_id', user.id)
-          .single()
-
-        if (adminData) {
-          setAdminUser(adminData as AdminUser)
-        }
-
-        // Load governorates for display
-        const { data: govData } = await supabase
-          .from('governorates')
-          .select('id, name_ar, name_en')
-          .eq('is_active', true)
-          .order('name_ar')
-
-        if (govData) {
-          setGovernorates(govData)
-        }
-
-        await loadDashboardData(supabase, adminData as AdminUser | null)
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadDashboardData(supabase: ReturnType<typeof createClient>, adminData: AdminUser | null) {
+  const loadDashboardData = useCallback(async (supabase: ReturnType<typeof createClient>, adminData: AdminUser | null) => {
     try {
       // Determine governorate IDs for filtering (only for non-super_admin)
       const isSuperAdmin = adminData?.role === 'super_admin'
@@ -257,7 +209,55 @@ export default function AdminDashboard() {
     } catch {
       setDataError(locale === 'ar' ? 'خطأ في تحميل بيانات لوحة التحكم' : 'Error loading dashboard data')
     }
-  }
+  }, [locale])
+
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+
+        // Load admin user details for region filtering
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('id, role, assigned_regions')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminData) {
+          setAdminUser(adminData as AdminUser)
+        }
+
+        // Load governorates for display
+        const { data: govData } = await supabase
+          .from('governorates')
+          .select('id, name_ar, name_en')
+          .eq('is_active', true)
+          .order('name_ar')
+
+        if (govData) {
+          setGovernorates(govData)
+        }
+
+        await loadDashboardData(supabase, adminData as AdminUser | null)
+      }
+    }
+
+    setLoading(false)
+  }, [loadDashboardData])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   const getStatusColor = (status: string) => {
     switch (status) {

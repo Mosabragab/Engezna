@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
@@ -97,17 +97,7 @@ export default function FinancePage() {
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
 
-  useEffect(() => {
-    checkAuthAndLoadFinance()
-  }, [])
-
-  useEffect(() => {
-    if (providerId && commissionRate) {
-      loadFinanceData(providerId, commissionRate)
-    }
-  }, [providerId, commissionRate, dateFilter, customStartDate, customEndDate])
-
-  const getDateRange = () => {
+  const getDateRange = useCallback(() => {
     const now = new Date()
     let startDate: Date
     let endDate: Date = now
@@ -150,42 +140,9 @@ export default function FinancePage() {
     }
 
     return { startDate, endDate, lastPeriodStart, lastPeriodEnd }
-  }
+  }, [dateFilter, customStartDate, customEndDate])
 
-  const checkAuthAndLoadFinance = async () => {
-    setLoading(true)
-    const supabase = createClient()
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/finance`)
-      return
-    }
-
-    const { data: providerData } = await supabase
-      .from('providers')
-      .select('id, status, commission_rate')
-      .eq('owner_id', user.id)
-      .limit(1)
-
-    const provider = providerData?.[0]
-    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
-      router.push(`/${locale}/provider`)
-      return
-    }
-
-    // Set commission rate from database (default to 7% max if not set)
-    const providerCommissionRate = provider.commission_rate != null
-      ? provider.commission_rate / 100  // Convert from percentage (e.g., 7) to decimal (0.07)
-      : 0.07
-
-    setCommissionRate(providerCommissionRate)
-    setProviderId(provider.id)
-    await loadFinanceData(provider.id, providerCommissionRate)
-    setLoading(false)
-  }
-
-  const loadFinanceData = async (provId: string, currentCommissionRate: number = commissionRate) => {
+  const loadFinanceData = useCallback(async (provId: string, currentCommissionRate: number = commissionRate) => {
     const supabase = createClient()
     const { startDate, endDate, lastPeriodStart, lastPeriodEnd } = getDateRange()
 
@@ -301,7 +258,50 @@ export default function FinancePage() {
 
       setTransactions(txns)
     }
-  }
+  }, [commissionRate, getDateRange, locale])
+
+  const checkAuthAndLoadFinance = useCallback(async () => {
+    setLoading(true)
+    const supabase = createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push(`/${locale}/auth/login?redirect=/provider/finance`)
+      return
+    }
+
+    const { data: providerData } = await supabase
+      .from('providers')
+      .select('id, status, commission_rate')
+      .eq('owner_id', user.id)
+      .limit(1)
+
+    const provider = providerData?.[0]
+    if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
+      router.push(`/${locale}/provider`)
+      return
+    }
+
+    // Set commission rate from database (default to 7% max if not set)
+    const providerCommissionRate = provider.commission_rate != null
+      ? provider.commission_rate / 100  // Convert from percentage (e.g., 7) to decimal (0.07)
+      : 0.07
+
+    setCommissionRate(providerCommissionRate)
+    setProviderId(provider.id)
+    await loadFinanceData(provider.id, providerCommissionRate)
+    setLoading(false)
+  }, [loadFinanceData, locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoadFinance()
+  }, [checkAuthAndLoadFinance])
+
+  useEffect(() => {
+    if (providerId && commissionRate) {
+      loadFinanceData(providerId, commissionRate)
+    }
+  }, [providerId, commissionRate, dateFilter, customStartDate, customEndDate, loadFinanceData])
 
   const handleRefresh = async () => {
     if (!providerId) return

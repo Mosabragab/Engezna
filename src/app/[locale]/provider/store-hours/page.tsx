@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
@@ -76,11 +76,7 @@ export default function StoreHoursPage() {
   const [businessHours, setBusinessHours] = useState<BusinessHours>(DEFAULT_HOURS)
   const [copySource, setCopySource] = useState<string | null>(null)
 
-  useEffect(() => {
-    checkAuthAndLoadHours()
-  }, [])
-
-  const checkAuthAndLoadHours = async () => {
+  const checkAuthAndLoadHours = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
@@ -110,7 +106,11 @@ export default function StoreHoursPage() {
     }
 
     setLoading(false)
-  }
+  }, [locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoadHours()
+  }, [checkAuthAndLoadHours])
 
   const handleToggleDay = (day: string) => {
     setBusinessHours(prev => ({

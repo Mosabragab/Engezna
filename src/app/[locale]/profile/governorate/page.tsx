@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
@@ -60,10 +60,24 @@ export default function GovernoratePage() {
     return getCitiesByGovernorate(governorateId)
   }, [governorateId, getCitiesByGovernorate])
 
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      setUserId(user.id)
+      setIsGuest(false)
+    } else {
+      setIsGuest(true)
+    }
+
+    setAuthLoading(false)
+  }, [])
+
   // Check auth state on mount
   useEffect(() => {
     checkAuth()
-  }, [])
+  }, [checkAuth])
 
   // Initialize selections when user location loads
   useEffect(() => {
@@ -86,21 +100,7 @@ export default function GovernoratePage() {
     if (governorateId && governorateId !== currentGovernorateId) {
       setCityId('')
     }
-  }, [governorateId])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (user) {
-      setUserId(user.id)
-      setIsGuest(false)
-    } else {
-      setIsGuest(true)
-    }
-
-    setAuthLoading(false)
-  }
+  }, [governorateId, currentGovernorateId])
 
   async function handleSave() {
     if (!governorateId) {

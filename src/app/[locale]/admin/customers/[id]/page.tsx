@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -92,43 +92,7 @@ export default function AdminCustomerDetailsPage() {
   const [customer, setCustomer] = useState<CustomerDetails | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
 
-  useEffect(() => {
-    checkAuth()
-  }, [customerId])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('role')
-          .eq('user_id', user.id)
-          .single()
-
-        if (adminUser?.role === 'super_admin') {
-          setIsSuperAdmin(true)
-        }
-
-        await loadCustomer(supabase)
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadCustomer(supabase: ReturnType<typeof createClient>) {
+  const loadCustomer = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     // Load customer profile
     const { data: profileData, error } = await supabase
       .from('profiles')
@@ -196,7 +160,43 @@ export default function AdminCustomerDetailsPage() {
       orders: orders.slice(0, 10), // Only last 10 orders
       default_address,
     })
-  }
+  }, [customerId, locale])
+
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+
+        const { data: adminUser } = await supabase
+          .from('admin_users')
+          .select('role')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminUser?.role === 'super_admin') {
+          setIsSuperAdmin(true)
+        }
+
+        await loadCustomer(supabase)
+      }
+    }
+
+    setLoading(false)
+  }, [loadCustomer])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   async function handleBanCustomer(ban: boolean) {
     if (!customer) return

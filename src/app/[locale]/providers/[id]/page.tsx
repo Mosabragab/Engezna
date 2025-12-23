@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -152,32 +152,7 @@ export default function ProviderDetailPage() {
       .trim()
   }
 
-  useEffect(() => {
-    fetchProviderData()
-  }, [providerId])
-
-  // Get user info for SmartAssistant
-  useEffect(() => {
-    async function fetchUserData() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserId(user.id)
-        // Get user's city from profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('city_id')
-          .eq('id', user.id)
-          .single()
-        if (profile?.city_id) {
-          setUserCityId(profile.city_id)
-        }
-      }
-    }
-    fetchUserData()
-  }, [])
-
-  async function fetchProviderData() {
+  const fetchProviderData = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
@@ -270,7 +245,32 @@ export default function ProviderDetailPage() {
     }
 
     setLoading(false)
-  }
+  }, [providerId])
+
+  useEffect(() => {
+    fetchProviderData()
+  }, [fetchProviderData])
+
+  // Get user info for SmartAssistant
+  useEffect(() => {
+    async function fetchUserData() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+        // Get user's city from profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('city_id')
+          .eq('id', user.id)
+          .single()
+        if (profile?.city_id) {
+          setUserCityId(profile.city_id)
+        }
+      }
+    }
+    fetchUserData()
+  }, [])
 
   // Get promotion for a specific product
   const getProductPromotion = (productId: string) => {

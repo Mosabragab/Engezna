@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -160,50 +160,18 @@ export default function AdminApprovalsPage() {
     myRequests: 0,
   })
 
-  useEffect(() => {
-    checkAuth()
+  const calculateStats = useCallback((data: ApprovalRequest[], adminId: string | null) => {
+    const stats = {
+      total: data.length,
+      pending: data.filter(a => a.status === 'pending').length,
+      approved: data.filter(a => ['approved', 'approved_with_changes'].includes(a.status)).length,
+      rejected: data.filter(a => a.status === 'rejected').length,
+      myRequests: adminId ? data.filter(a => a.requested_by === adminId).length : 0,
+    }
+    setStats(stats)
   }, [])
 
-  useEffect(() => {
-    filterApprovals()
-  }, [approvals, searchQuery, statusFilter, typeFilter, viewMode, currentAdminId])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('id, role')
-          .eq('user_id', user.id)
-          .single()
-
-        if (adminUser) {
-          setCurrentAdminId(adminUser.id)
-          if (adminUser.role === 'super_admin') {
-            setIsSuperAdmin(true)
-          }
-        }
-
-        await loadApprovals(supabase)
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadApprovals(supabase: ReturnType<typeof createClient>) {
+  const loadApprovals = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     const { data: approvalsData, error } = await supabase
       .from('approval_requests')
       .select('*')
@@ -287,20 +255,9 @@ export default function AdminApprovalsPage() {
 
     setApprovals(approvalsWithUsers)
     calculateStats(approvalsWithUsers, currentAdminId)
-  }
+  }, [locale, currentAdminId, calculateStats])
 
-  function calculateStats(data: ApprovalRequest[], adminId: string | null) {
-    const stats = {
-      total: data.length,
-      pending: data.filter(a => a.status === 'pending').length,
-      approved: data.filter(a => ['approved', 'approved_with_changes'].includes(a.status)).length,
-      rejected: data.filter(a => a.status === 'rejected').length,
-      myRequests: adminId ? data.filter(a => a.requested_by === adminId).length : 0,
-    }
-    setStats(stats)
-  }
-
-  function filterApprovals() {
+  const filterApprovals = useCallback(() => {
     let filtered = [...approvals]
 
     // View mode filter
@@ -328,7 +285,50 @@ export default function AdminApprovalsPage() {
     }
 
     setFilteredApprovals(filtered)
-  }
+  }, [approvals, searchQuery, statusFilter, typeFilter, viewMode, currentAdminId])
+
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+
+        const { data: adminUser } = await supabase
+          .from('admin_users')
+          .select('id, role')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminUser) {
+          setCurrentAdminId(adminUser.id)
+          if (adminUser.role === 'super_admin') {
+            setIsSuperAdmin(true)
+          }
+        }
+
+        await loadApprovals(supabase)
+      }
+    }
+
+    setLoading(false)
+  }, [loadApprovals])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    filterApprovals()
+  }, [filterApprovals])
 
   function getTimeSince(date: string): string {
     const now = new Date()

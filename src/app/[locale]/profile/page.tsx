@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
@@ -38,11 +38,7 @@ export default function SettingsPage() {
   const [authLoading, setAuthLoading] = useState(true)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -65,7 +61,11 @@ export default function SettingsPage() {
     })
 
     setAuthLoading(false)
-  }
+  }, [locale, router])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   async function handleLogout() {
     const supabase = createClient()

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
@@ -94,39 +94,7 @@ export default function ReportsPage() {
   const [avgOrderValue, setAvgOrderValue] = useState(0)
   const [totalCustomers, setTotalCustomers] = useState(0)
 
-  useEffect(() => {
-    checkAuthAndLoadReports()
-  }, [])
-
-  const checkAuthAndLoadReports = async () => {
-    setLoading(true)
-    const supabase = createClient()
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/reports`)
-      return
-    }
-
-    const { data: providerData } = await supabase
-      .from('providers')
-      .select('id, status')
-      .eq('owner_id', user.id)
-      .limit(1)
-
-    const provider = providerData?.[0]
-    // Allow providers with active statuses to view reports (exclude only pending_approval)
-    if (!provider || provider.status === 'pending_approval') {
-      router.push(`/${locale}/provider`)
-      return
-    }
-
-    setProviderId(provider.id)
-    await loadAllReports(provider.id)
-    setLoading(false)
-  }
-
-  const loadAllReports = async (provId: string) => {
+  const loadAllReports = useCallback(async (provId: string) => {
     const supabase = createClient()
     const now = new Date()
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -255,7 +223,39 @@ export default function ReportsPage() {
       const sorted = Object.values(productStats).sort((a, b) => b.total_quantity - a.total_quantity).slice(0, 5)
       setTopProducts(sorted)
     }
-  }
+  }, [])
+
+  const checkAuthAndLoadReports = useCallback(async () => {
+    setLoading(true)
+    const supabase = createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push(`/${locale}/auth/login?redirect=/provider/reports`)
+      return
+    }
+
+    const { data: providerData } = await supabase
+      .from('providers')
+      .select('id, status')
+      .eq('owner_id', user.id)
+      .limit(1)
+
+    const provider = providerData?.[0]
+    // Allow providers with active statuses to view reports (exclude only pending_approval)
+    if (!provider || provider.status === 'pending_approval') {
+      router.push(`/${locale}/provider`)
+      return
+    }
+
+    setProviderId(provider.id)
+    await loadAllReports(provider.id)
+    setLoading(false)
+  }, [loadAllReports, locale, router])
+
+  useEffect(() => {
+    checkAuthAndLoadReports()
+  }, [checkAuthAndLoadReports])
 
   const handleRefresh = async () => {
     if (!providerId) return

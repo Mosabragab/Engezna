@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -86,38 +86,7 @@ export default function AdminFinancePage() {
     ordersCount: 0,
   })
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    filterSettlements()
-  }, [settlements, searchQuery, settlementStatusFilter, geoFilter])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        setLoading(false) // Show page immediately
-        loadFinanceData(supabase) // Load in background
-        return
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadFinanceData(supabase: ReturnType<typeof createClient>) {
+  const loadFinanceData = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     setDataLoading(true)
 
     const getDateRange = (period: FilterPeriod) => {
@@ -250,9 +219,32 @@ export default function AdminFinancePage() {
     })
 
     setDataLoading(false)
-  }
+  }, [periodFilter])
 
-  function filterSettlements() {
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+        setLoading(false) // Show page immediately
+        loadFinanceData(supabase) // Load in background
+        return
+      }
+    }
+
+    setLoading(false)
+  }, [loadFinanceData])
+
+  const filterSettlements = useCallback(() => {
     let filtered = [...settlements]
 
     if (searchQuery) {
@@ -284,7 +276,15 @@ export default function AdminFinancePage() {
     }
 
     setFilteredSettlements(filtered)
-  }
+  }, [settlements, searchQuery, settlementStatusFilter, geoFilter, locale])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    filterSettlements()
+  }, [filterSettlements])
 
   async function handleRefresh() {
     const supabase = createClient()
