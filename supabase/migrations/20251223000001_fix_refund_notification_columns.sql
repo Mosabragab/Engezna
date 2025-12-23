@@ -5,25 +5,7 @@
 --   Fix the trigger function that creates customer notifications for refund status
 --   changes. The function was using wrong column names (message_ar/message_en)
 --   instead of the correct ones (body_ar/body_en).
---   Also adds missing 'data' column for JSONB metadata.
 -- ═══════════════════════════════════════════════════════════════════════════════
-
--- ═══════════════════════════════════════════════════════════════════════════════
--- 1. ADD MISSING 'data' COLUMN TO customer_notifications
--- ═══════════════════════════════════════════════════════════════════════════════
-
-ALTER TABLE customer_notifications
-  ADD COLUMN IF NOT EXISTS data JSONB;
-
-ALTER TABLE customer_notifications
-  ADD COLUMN IF NOT EXISTS related_refund_id UUID REFERENCES refunds(id) ON DELETE CASCADE;
-
--- ═══════════════════════════════════════════════════════════════════════════════
--- 2. FIX THE TRIGGER FUNCTION
--- ═══════════════════════════════════════════════════════════════════════════════
-
--- Drop existing trigger first
-DROP TRIGGER IF EXISTS trigger_notify_refund_status ON refunds;
 
 -- Recreate the function with CORRECT column names
 CREATE OR REPLACE FUNCTION notify_refund_status_change()
@@ -32,20 +14,21 @@ DECLARE
   v_order_number TEXT;
   v_customer_name TEXT;
   v_provider_name TEXT;
+  v_provider_governorate_id UUID;
   v_status_text_ar TEXT;
   v_status_text_en TEXT;
   v_notification_type TEXT;
 BEGIN
-  -- Get order and related info
-  SELECT o.order_number, p.full_name, pr.name_ar
-  INTO v_order_number, v_customer_name, v_provider_name
+  -- Get order and related info including provider's governorate
+  SELECT o.order_number, p.full_name, pr.name_ar, pr.governorate_id
+  INTO v_order_number, v_customer_name, v_provider_name, v_provider_governorate_id
   FROM orders o
   LEFT JOIN profiles p ON p.id = o.customer_id
   LEFT JOIN providers pr ON pr.id = o.provider_id
   WHERE o.id = NEW.order_id;
 
   -- Notify on provider action change
-  IF NEW.provider_action IS DISTINCT FROM OLD.provider_action THEN
+  IF NEW.provider_action != COALESCE(OLD.provider_action, 'pending') THEN
     CASE NEW.provider_action
       WHEN 'cash_refund' THEN
         v_status_text_ar := 'أكد المتجر رد المبلغ كاش - يرجى تأكيد استلام المبلغ';
@@ -73,36 +56,26 @@ BEGIN
         customer_id,
         title_ar,
         title_en,
-        body_ar,  -- FIXED: was message_ar
-        body_en,  -- FIXED: was message_en
+        body_ar,          -- FIXED: was message_ar
+        body_en,          -- FIXED: was message_en
         type,
-        data
+        related_order_id  -- FIXED: removed 'data' column (doesn't exist)
       ) VALUES (
         NEW.customer_id,
         'تحديث طلب الاسترداد',
         'Refund Update',
-        v_status_text_ar || ' - الطلب #' || COALESCE(v_order_number, NEW.order_id::TEXT),
-        v_status_text_en || ' - Order #' || COALESCE(v_order_number, NEW.order_id::TEXT),
+        v_status_text_ar || ' - الطلب #' || COALESCE(v_order_number, ''),
+        v_status_text_en || ' - Order #' || COALESCE(v_order_number, ''),
         'order_update',
-        jsonb_build_object(
-          'refund_id', NEW.id,
-          'order_id', NEW.order_id,
-          'provider_action', NEW.provider_action,
-          'amount', NEW.amount,
-          'notification_type', v_notification_type,
-          'requires_confirmation', NEW.provider_action = 'cash_refund',
-          'confirmation_deadline', NEW.confirmation_deadline
-        )
+        NEW.order_id
       );
-      RAISE NOTICE 'Created customer notification for refund % with action %', NEW.id, NEW.provider_action;
     EXCEPTION WHEN OTHERS THEN
-      RAISE WARNING 'Failed to create customer notification for refund %: %', NEW.id, SQLERRM;
+      RAISE WARNING 'Failed to create customer notification: %', SQLERRM;
     END;
   END IF;
 
-  -- Notify on customer confirmation
+  -- Notify on customer confirmation (this part was already correct)
   IF NEW.customer_confirmed = true AND (OLD.customer_confirmed = false OR OLD.customer_confirmed IS NULL) THEN
-    -- Notify provider that customer confirmed
     BEGIN
       INSERT INTO provider_notifications (
         provider_id,
@@ -118,77 +91,31 @@ BEGIN
         'refund_confirmed',
         'تم تأكيد الاسترداد',
         'Refund Confirmed',
-        'أكد العميل استلام المبلغ المسترد للطلب #' || COALESCE(v_order_number, NEW.order_id::TEXT) || ' بقيمة ' || NEW.amount || ' ج.م',
-        'Customer confirmed refund receipt for order #' || COALESCE(v_order_number, NEW.order_id::TEXT) || ' worth ' || NEW.amount || ' EGP',
+        'أكد العميل استلام المبلغ المسترد للطلب #' || COALESCE(v_order_number, '') || ' بقيمة ' || NEW.amount || ' ج.م',
+        'Customer confirmed refund receipt for order #' || COALESCE(v_order_number, '') || ' worth ' || NEW.amount || ' EGP',
         NEW.order_id,
         NEW.customer_id
       );
     EXCEPTION WHEN OTHERS THEN
-      RAISE WARNING 'Failed to create provider confirmation notification: %', SQLERRM;
+      RAISE WARNING 'Failed to create provider notification: %', SQLERRM;
     END;
   END IF;
 
-  -- Notify on escalation
+  -- Notify on escalation - USE REGIONAL TARGETING
   IF NEW.escalated_to_admin = true AND (OLD.escalated_to_admin = false OR OLD.escalated_to_admin IS NULL) THEN
-    -- Create admin notification for escalation
-    BEGIN
-      INSERT INTO admin_notifications (
-        admin_id,
-        type,
-        title,
-        body,
-        related_refund_id
-      )
-      SELECT
-        au.id,
-        'refund_escalated',
-        'تصعيد طلب استرداد - #' || COALESCE(v_order_number, NEW.order_id::TEXT),
-        'سبب التصعيد: ' || COALESCE(NEW.escalation_reason, 'غير محدد') ||
-        ' | المبلغ: ' || NEW.amount || ' ج.م',
-        NEW.id
-      FROM admin_users au
-      WHERE au.is_active = true
-      AND (au.role = 'super_admin' OR au.role = 'support' OR au.role = 'admin');
-    EXCEPTION WHEN OTHERS THEN
-      RAISE WARNING 'Failed to create admin escalation notification: %', SQLERRM;
-    END;
+    PERFORM create_regional_admin_notification(
+      'escalation',
+      'تصعيد طلب استرداد - #' || COALESCE(v_order_number, ''),
+      'سبب التصعيد: ' || COALESCE(NEW.escalation_reason, 'غير محدد') || ' - المتجر: ' || COALESCE(v_provider_name, ''),
+      NEW.provider_id,
+      NEW.order_id,
+      v_provider_governorate_id
+    );
   END IF;
 
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Recreate the trigger
-CREATE TRIGGER trigger_notify_refund_status
-  AFTER UPDATE ON refunds
-  FOR EACH ROW
-  EXECUTE FUNCTION notify_refund_status_change();
-
--- ═══════════════════════════════════════════════════════════════════════════════
--- VERIFY: Check if customer_notifications has the correct columns
--- ═══════════════════════════════════════════════════════════════════════════════
-
-DO $$
-DECLARE
-  has_body_ar BOOLEAN;
-  has_body_en BOOLEAN;
-BEGIN
-  SELECT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'customer_notifications' AND column_name = 'body_ar'
-  ) INTO has_body_ar;
-
-  SELECT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'customer_notifications' AND column_name = 'body_en'
-  ) INTO has_body_en;
-
-  IF has_body_ar AND has_body_en THEN
-    RAISE NOTICE '✅ Column verification passed: body_ar and body_en exist';
-  ELSE
-    RAISE WARNING '❌ Column verification failed! body_ar=%s, body_en=%s', has_body_ar, has_body_en;
-  END IF;
-END $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SUCCESS LOG
@@ -199,5 +126,6 @@ BEGIN
   RAISE NOTICE '✅ Migration completed: Fixed refund notification column names';
   RAISE NOTICE '   - Changed message_ar → body_ar';
   RAISE NOTICE '   - Changed message_en → body_en';
-  RAISE NOTICE '   - Trigger recreated successfully';
+  RAISE NOTICE '   - Removed data column (does not exist in table)';
+  RAISE NOTICE '   - Added related_order_id for navigation';
 END $$;

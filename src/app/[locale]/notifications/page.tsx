@@ -3,16 +3,18 @@
 import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { Bell, Package, Tag, Gift, Info, Check, Trash2, Loader2, CreditCard, MessageCircle } from 'lucide-react'
+import { Bell, Package, Tag, Gift, Info, Check, Trash2, Loader2, CreditCard, MessageCircle, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { CustomerLayout } from '@/components/customer/layout'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/hooks/customer'
+import { createClient } from '@/lib/supabase/client'
 
 export default function NotificationsPage() {
   const locale = useLocale()
   const router = useRouter()
   const [markingRead, setMarkingRead] = useState<string | null>(null)
+  const [confirmingRefund, setConfirmingRefund] = useState<string | null>(null)
 
   // Use real-time notifications hook
   const {
@@ -24,6 +26,43 @@ export default function NotificationsPage() {
     markAllAsRead: markAllAsReadHook,
     deleteNotification: deleteNotificationHook,
   } = useNotifications()
+
+  // Handle refund confirmation
+  const handleConfirmRefund = async (orderId: string, notificationId: string) => {
+    setConfirmingRefund(notificationId)
+    const supabase = createClient()
+
+    try {
+      // Get refund ID from order
+      const { data: refund } = await supabase
+        .from('refunds')
+        .select('id')
+        .eq('order_id', orderId)
+        .eq('provider_action', 'cash_refund')
+        .eq('customer_confirmed', false)
+        .single()
+
+      if (refund) {
+        // Call the confirm RPC
+        const { error } = await supabase.rpc('customer_confirm_refund', {
+          p_refund_id: refund.id,
+          p_received: true,
+          p_notes: null
+        })
+
+        if (!error) {
+          // Mark notification as read and delete it
+          await markAsReadHook(notificationId)
+          await deleteNotificationHook(notificationId)
+          // Show success (optional: could add toast)
+        }
+      }
+    } catch (err) {
+      console.error('Error confirming refund:', err)
+    } finally {
+      setConfirmingRefund(null)
+    }
+  }
 
   // Wrapper functions to handle loading state
   const handleMarkAsRead = async (id: string) => {
@@ -62,6 +101,9 @@ export default function NotificationsPage() {
         return <Package className="w-5 h-5 text-red-500" />
       case 'order_message':
         return <MessageCircle className="w-5 h-5 text-blue-500" />
+      case 'refund_cash_confirmed':
+      case 'refund_update':
+        return <RefreshCw className="w-5 h-5 text-green-500" />
       case 'payment_confirmed':
         return <CreditCard className="w-5 h-5 text-green-500" />
       case 'promotion':
@@ -220,6 +262,21 @@ export default function NotificationsPage() {
 
                   {/* Actions */}
                   <div className="flex items-start gap-1" onClick={(e) => e.stopPropagation()}>
+                    {/* Confirm refund button for cash refund notifications */}
+                    {notification.body_ar?.includes('يرجى تأكيد استلام') && notification.related_order_id && (
+                      <button
+                        onClick={() => handleConfirmRefund(notification.related_order_id!, notification.id)}
+                        disabled={confirmingRefund === notification.id}
+                        className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                      >
+                        {confirmingRefund === notification.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Check className="w-3 h-3" />
+                        )}
+                        {locale === 'ar' ? 'تأكيد الاستلام' : 'Confirm'}
+                      </button>
+                    )}
                     {/* Reply button for message notifications */}
                     {notification.type === 'order_message' && notification.related_order_id && (
                       <Link
