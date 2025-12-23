@@ -80,7 +80,7 @@ export default function PrivacyPage() {
           title: '٧. تواصل معنا',
           content: `إذا كانت لديك أسئلة حول سياسة الخصوصية:
 
-🏢 الشركة: سويفكم للتجارة والتصدير
+🏢 الشركة: سويفكم للتجارة والتصدير (ذ.م.م)
 📍 العنوان: ش صالح حمام بجوار مسجد الاباصيري - بني سويف، مصر
 📋 السجل التجاري: 2767
 📧 البريد الإلكتروني: support@engezna.com
@@ -157,7 +157,7 @@ To exercise these rights, contact us at: privacy@engezna.com`
           title: '7. Contact Us',
           content: `If you have questions about this Privacy Policy:
 
-🏢 Company: Sweifcom for Trade and Export
+🏢 Company: Sweifcom for Trade and Export (LLC)
 📍 Address: Saleh Hammam St., next to Al-Abasiri Mosque, Beni Suef, Egypt
 📋 Commercial Registry: 2767
 📧 Email: support@engezna.com

@@ -202,7 +202,7 @@ export default function TermsPage() {
         }
       ],
       footer: {
-        company: 'سويفكم للتجارة والتصدير - سجل تجاري: 2767',
+        company: 'سويفكم للتجارة والتصدير (ذ.م.م) - سجل تجاري: 2767',
         address: 'ش صالح حمام بجوار مسجد الاباصيري - بني سويف، مصر',
         law: 'هذه الشروط تخضع لقوانين جمهورية مصر العربية وتتوافق مع قانون حماية المستهلك المصري (القانون رقم ١٨١ لسنة ٢٠١٨)',
         contact: 'للاستفسارات: support@engezna.com'
@@ -376,7 +376,7 @@ Upon termination:
         }
       ],
       footer: {
-        company: 'Sweifcom for Trade and Export - Commercial Registry: 2767',
+        company: 'Sweifcom for Trade and Export (LLC) - Commercial Registry: 2767',
         address: 'Saleh Hammam St., next to Al-Abasiri Mosque, Beni Suef, Egypt',
         law: 'These Terms are governed by the laws of the Arab Republic of Egypt and comply with the Egyptian Consumer Protection Law (Law No. 181 of 2018)',
         contact: 'For inquiries: support@engezna.com'
