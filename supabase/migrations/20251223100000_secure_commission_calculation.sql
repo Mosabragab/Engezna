@@ -5,6 +5,16 @@
 -- on the database server, preventing client-side manipulation.
 --
 -- CRITICAL: Commission must NEVER be trusted from client input!
+--
+-- COMMISSION PRIORITY (Provider-based ONLY):
+--   1. Grace Period → 0%
+--   2. Exempt Status → 0%
+--   3. custom_commission_rate (provider-specific rate)
+--   4. commission_rate (provider's standard rate)
+--   5. Platform default rate (from platform_settings)
+--
+-- REFUND HANDLING:
+--   Orders with status 'cancelled', 'rejected', or 'refunded' → 0% commission
 -- ============================================================================
 
 -- Drop existing trigger if any
@@ -22,7 +32,17 @@ DECLARE
     v_provider_record RECORD;
     v_settings JSONB;
 BEGIN
-    -- Get platform commission settings
+    -- ========================================================================
+    -- STEP 1: Handle cancelled/rejected/refunded orders - NO COMMISSION
+    -- ========================================================================
+    IF NEW.status IN ('cancelled', 'rejected') THEN
+        NEW.platform_commission := 0;
+        RETURN NEW;
+    END IF;
+
+    -- ========================================================================
+    -- STEP 2: Get platform commission settings
+    -- ========================================================================
     SELECT value INTO v_settings
     FROM platform_settings
     WHERE key = 'commission';
@@ -32,41 +52,46 @@ BEGIN
         v_settings := '{"enabled": true, "default_rate": 7.00, "max_rate": 7.00}'::jsonb;
     END IF;
 
-    -- If commission system is disabled, set to 0
+    -- If commission system is disabled globally, set to 0
     IF NOT COALESCE((v_settings->>'enabled')::boolean, true) THEN
         NEW.platform_commission := 0;
         RETURN NEW;
     END IF;
 
-    -- Get provider details
+    -- ========================================================================
+    -- STEP 3: Get provider details
+    -- ========================================================================
     SELECT
         p.commission_status,
         p.grace_period_start,
         p.grace_period_end,
         p.custom_commission_rate,
-        p.commission_rate,
-        p.governorate_id
+        p.commission_rate
     INTO v_provider_record
     FROM providers p
     WHERE p.id = NEW.provider_id;
 
-    -- If provider not found, use default rate
+    -- ========================================================================
+    -- STEP 4: Determine commission rate (PROVIDER-BASED ONLY)
+    -- ========================================================================
     IF NOT FOUND THEN
+        -- Provider not found, use default rate
         v_commission_rate := COALESCE((v_settings->>'default_rate')::DECIMAL(5,2), 7.00);
+        v_commission_source := 'platform_default';
     ELSE
-        -- Check grace period first
+        -- PRIORITY 1: Check grace period
         IF v_provider_record.commission_status = 'in_grace_period'
            AND v_provider_record.grace_period_end IS NOT NULL
            AND NOW() < v_provider_record.grace_period_end THEN
             v_commission_rate := 0;
             v_commission_source := 'grace_period';
 
-        -- Check if exempt
+        -- PRIORITY 2: Check if exempt
         ELSIF v_provider_record.commission_status = 'exempt' THEN
             v_commission_rate := 0;
             v_commission_source := 'exempt';
 
-        -- Use custom commission rate if set
+        -- PRIORITY 3: Use custom_commission_rate if set (provider-specific)
         ELSIF v_provider_record.custom_commission_rate IS NOT NULL THEN
             v_commission_rate := LEAST(
                 v_provider_record.custom_commission_rate,
@@ -74,7 +99,7 @@ BEGIN
             );
             v_commission_source := 'provider_custom';
 
-        -- Use provider's commission_rate column
+        -- PRIORITY 4: Use commission_rate (provider's standard rate)
         ELSIF v_provider_record.commission_rate IS NOT NULL THEN
             v_commission_rate := LEAST(
                 v_provider_record.commission_rate,
@@ -82,32 +107,17 @@ BEGIN
             );
             v_commission_source := 'provider_rate';
 
-        -- Check governorate override
-        ELSIF v_provider_record.governorate_id IS NOT NULL THEN
-            SELECT g.commission_override INTO v_commission_rate
-            FROM governorates g
-            WHERE g.id = v_provider_record.governorate_id
-            AND g.commission_override IS NOT NULL;
-
-            IF FOUND AND v_commission_rate IS NOT NULL THEN
-                v_commission_rate := LEAST(
-                    v_commission_rate,
-                    COALESCE((v_settings->>'max_rate')::DECIMAL(5,2), 7.00)
-                );
-                v_commission_source := 'governorate';
-            ELSE
-                v_commission_rate := COALESCE((v_settings->>'default_rate')::DECIMAL(5,2), 7.00);
-                v_commission_source := 'platform_default';
-            END IF;
-
-        -- Use platform default
+        -- PRIORITY 5: Use platform default
         ELSE
             v_commission_rate := COALESCE((v_settings->>'default_rate')::DECIMAL(5,2), 7.00);
             v_commission_source := 'platform_default';
         END IF;
     END IF;
 
-    -- Calculate commission on actual revenue (subtotal - discount, excluding delivery)
+    -- ========================================================================
+    -- STEP 5: Calculate commission
+    -- ========================================================================
+    -- Commission is calculated on actual revenue (subtotal - discount, excluding delivery)
     -- SECURITY: This calculation happens on the server, client input is IGNORED
     NEW.platform_commission := ROUND(
         ((COALESCE(NEW.subtotal, 0) - COALESCE(NEW.discount, 0)) * v_commission_rate) / 100,
@@ -126,8 +136,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- ============================================================================
 -- Trigger: Auto-calculate commission on INSERT and UPDATE
 -- ============================================================================
+-- Triggers on:
+--   - INSERT: New order created
+--   - UPDATE of subtotal/discount: Order totals changed
+--   - UPDATE of provider_id: Order moved to different provider
+--   - UPDATE of status: Order cancelled/rejected (commission set to 0)
+-- ============================================================================
 CREATE TRIGGER trigger_calculate_order_commission
-    BEFORE INSERT OR UPDATE OF subtotal, discount, provider_id ON orders
+    BEFORE INSERT OR UPDATE OF subtotal, discount, provider_id, status ON orders
     FOR EACH ROW
     EXECUTE FUNCTION calculate_order_commission();
 
@@ -137,24 +153,26 @@ CREATE TRIGGER trigger_calculate_order_commission
 COMMENT ON FUNCTION calculate_order_commission() IS
 'SECURITY: Calculates platform commission server-side.
 Client-provided commission values are IGNORED and overwritten.
-Commission is based on provider rate, grace period, exemptions, or platform default.';
+
+Commission Priority (Provider-based ONLY):
+1. Grace Period → 0%
+2. Exempt Status → 0%
+3. custom_commission_rate (provider-specific)
+4. commission_rate (provider standard)
+5. Platform default
+
+Cancelled/Rejected orders automatically get 0% commission.';
 
 COMMENT ON TRIGGER trigger_calculate_order_commission ON orders IS
-'SECURITY TRIGGER: Ensures commission is always calculated server-side,
-preventing any client-side manipulation of platform fees.';
+'SECURITY TRIGGER: Ensures commission is always calculated server-side.
+Also handles status changes (cancelled/rejected → 0 commission).';
 
 -- ============================================================================
--- Recalculate existing orders with incorrect commission (optional - run manually)
+-- Recalculate existing cancelled orders (fix any incorrect commissions)
 -- ============================================================================
--- Uncomment the following to fix any existing orders with manipulated commissions:
-/*
-UPDATE orders o
-SET platform_commission = ROUND(
-    ((COALESCE(o.subtotal, 0) - COALESCE(o.discount, 0)) *
-     COALESCE(p.commission_rate, 7.0)) / 100,
-    2
-)
-FROM providers p
-WHERE o.provider_id = p.id
-AND o.created_at > NOW() - INTERVAL '30 days';
-*/
+-- Set commission to 0 for all cancelled/rejected orders
+UPDATE orders
+SET platform_commission = 0
+WHERE status IN ('cancelled', 'rejected')
+AND platform_commission != 0;
+
