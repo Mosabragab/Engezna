@@ -1,6 +1,6 @@
 # Engezna Project Status
 
-## Last Updated: 2025-12-12
+## Last Updated: 2025-12-23 (Session 20)
 
 ## Project Overview
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
@@ -14,7 +14,28 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 
 ---
 
-## Current Status: Development Phase
+## Current Status: Week 7 - PWA & Store Publishing Preparation
+
+### Session 20 Updates (December 23, 2025)
+
+#### Legal Compliance & Company Registration
+- [x] **Privacy Policy Page** (`/privacy`) - Bilingual with Charcoal theme header
+- [x] **Terms & Conditions Page** (`/terms`) - Tabbed interface (Customer/Provider)
+- [x] **Company Information** - سويفكم للتجارة والتصدير (ذ.م.م)
+  - Commercial Registry: 2767
+  - Address: ش صالح حمام بجوار مسجد الاباصيري - بني سويف
+  - Email: support@engezna.com
+- [x] **Signup Terms Checkbox** - Required agreement with Zod validation
+- [x] **Order Confirmation Legal Links** - Terms & Privacy links added
+- [x] **Manifest.json Privacy URL** - `privacy_policy_url` for PWA compliance
+
+#### E2E Testing Setup (Playwright)
+- [x] **Playwright Configuration** - Multi-browser (Chrome, Safari, Mobile)
+- [x] **Customer Journey Smoke Test** - Homepage → Store → Cart → Checkout
+- [x] **PWA Offline Tests** - Service Worker, Offline page, Manifest validation
+- [x] **NPM Scripts** - `test:e2e`, `test:e2e:ui`, `test:e2e:headed`
+
+---
 
 ### Completed Features
 
@@ -39,6 +60,9 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - [x] **Guest browsing** - Browse stores without login (localStorage location)
 - [x] **Welcome/Landing page** - First-time visitor experience with features showcase
 - [x] **PWA support** - Install prompt for mobile users
+- [x] **Privacy Policy page** - `/privacy` with company info
+- [x] **Terms & Conditions page** - `/terms` with tabbed interface
+- [x] **E2E Tests (Playwright)** - Customer journey and PWA tests
 
 #### Provider Side
 - [x] Provider registration & approval flow

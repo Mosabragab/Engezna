@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { setAppBadge, clearAppBadge } from '@/hooks/useBadge'
 import type { User, RealtimeChannel } from '@supabase/supabase-js'
 
 // Shared audio instance to prevent memory leaks
@@ -268,6 +269,15 @@ export function useNotifications() {
       await loadNotifications(user.id)
     }
   }
+
+  // Update app badge when unread count changes
+  useEffect(() => {
+    if (unreadCount > 0) {
+      setAppBadge(unreadCount)
+    } else {
+      clearAppBadge()
+    }
+  }, [unreadCount])
 
   return {
     notifications,

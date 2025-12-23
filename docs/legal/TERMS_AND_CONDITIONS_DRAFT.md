@@ -341,9 +341,11 @@ Nothing in these Terms affects your statutory rights under the Egyptian Consumer
 #### 17. Contact Information
 
 For questions about these Terms:
-- **Email:** legal@engezna.com
-- **Support:** support@engezna.com
-- **Address:** Egypt
+- **Company:** Sweifcom for Trade and Export LLC (سويفكم للتجارة والتصدير ذ.م.م)
+- **Commercial Registry:** 2767
+- **Address:** Saleh Hammam St., next to Al-Abasiri Mosque, Beni Suef, Egypt
+- **Email:** support@engezna.com
+- **Support:** Through the app's Help section
 
 ---
 
@@ -680,9 +682,11 @@ For questions about these Terms:
 #### ١٧. معلومات التواصل
 
 للاستفسارات حول هذه الشروط:
-- **البريد الإلكتروني:** legal@engezna.com
-- **الدعم الفني:** support@engezna.com
-- **العنوان:** جمهورية مصر العربية
+- **الشركة:** سويفكم للتجارة والتصدير (ذ.م.م)
+- **السجل التجاري:** 2767
+- **العنوان:** ش صالح حمام بجوار مسجد الاباصيري - بني سويف، مصر
+- **البريد الإلكتروني:** support@engezna.com
+- **الدعم الفني:** من خلال قسم المساعدة في التطبيق
 
 ---
 

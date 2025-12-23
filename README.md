@@ -376,10 +376,39 @@ npm run type-check   # TypeScript type checking
 
 ### 📊 Current Status
 
-**Phase:** Week 6 - Refunds & Settlements Integration
-**Status:** Week 6 - Resolution Center Complete ✅
-**Overall Progress:** ~94% of MVP Complete
-**Last Updated:** December 21, 2025 (Session 19)
+**Phase:** Week 7 - PWA & Store Publishing Preparation
+**Status:** Legal Compliance & E2E Testing Complete ✅
+**Overall Progress:** ~96% of MVP Complete
+**Last Updated:** December 23, 2025 (Session 20)
+
+---
+
+### 🔄 Session 20 Updates (December 23, 2025)
+
+**Legal Compliance & Company Registration:**
+- ✅ **Privacy Policy Page** (`/privacy`) - Bilingual with Charcoal theme header
+- ✅ **Terms & Conditions Page** (`/terms`) - Tabbed interface (Customer/Provider)
+- ✅ **Company Information Integration** - سويفكم للتجارة والتصدير (ذ.م.م)
+  - Commercial Registry: 2767
+  - Address: ش صالح حمام بجوار مسجد الاباصيري - بني سويف
+  - Email: support@engezna.com
+- ✅ **Signup Terms Checkbox** - Required agreement with Zod validation
+- ✅ **Order Confirmation Legal Links** - Terms & Privacy links added
+- ✅ **Manifest.json Privacy URL** - `privacy_policy_url` for PWA compliance
+
+**E2E Testing Setup (Playwright):**
+- ✅ **Playwright Configuration** - Multi-browser (Chrome, Safari, Mobile)
+- ✅ **Customer Journey Smoke Test** - Homepage → Store → Cart → Checkout
+- ✅ **PWA Offline Tests** - Service Worker, Offline page, Manifest validation
+- ✅ **NPM Scripts** - `test:e2e`, `test:e2e:ui`, `test:e2e:headed`
+
+**Files Created:**
+- `src/app/[locale]/privacy/page.tsx` - Privacy Policy page
+- `src/app/[locale]/terms/page.tsx` - Terms & Conditions page
+- `docs/legal/COMPANY_INFO.md` - Internal company data
+- `playwright.config.ts` - E2E test configuration
+- `e2e/customer-journey.spec.ts` - Customer flow tests
+- `e2e/pwa-offline.spec.ts` - PWA & offline tests
 
 ---
 
@@ -809,19 +838,26 @@ npm run dev
 
 ### 📊 الحالة الحالية
 
-**المرحلة:** الأسبوع 6 - تكامل المبالغ المستردة والتسويات
-**الحالة:** الأسبوع 6 - مركز الحلول مكتمل ✅
-**التقدم الكلي:** ~94% من MVP مكتمل
-**آخر تحديث:** 21 ديسمبر 2025 (الجلسة 19)
+**المرحلة:** الأسبوع 7 - PWA والاستعداد لنشر المتجر
+**الحالة:** الامتثال القانوني واختبارات E2E مكتملة ✅
+**التقدم الكلي:** ~96% من MVP مكتمل
+**آخر تحديث:** 23 ديسمبر 2025 (الجلسة 20)
 
-**مميزات الجلسة 19 (جديد!):**
-- ✅ **تكامل المبالغ المستردة والتسويات** - إصلاحات حرجة:
-  - تخفيض العمولة بشكل نسبي للمبالغ المستردة الجزئية
-  - جدول `settlement_adjustments` لتتبع التعديلات
-  - تعديل التسويات الحالية عند معالجة المبالغ المستردة
+**مميزات الجلسة 20 (جديد!):**
+- ✅ **صفحات الامتثال القانوني**:
+  - صفحة سياسة الخصوصية (`/privacy`) - ثنائية اللغة مع هيدر رمادي داكن
+  - صفحة الشروط والأحكام (`/terms`) - واجهة تبويبية (عميل/متجر)
+- ✅ **معلومات الشركة** - سويفكم للتجارة والتصدير (ذ.م.م)
+  - السجل التجاري: 2767
+  - العنوان: ش صالح حمام بجوار مسجد الاباصيري - بني سويف
+  - البريد: support@engezna.com
+- ✅ **موافقة الشروط عند التسجيل** - مربع اختيار إلزامي مع Zod validation
+- ✅ **اختبارات E2E (Playwright)** - اختبارات رحلة العميل وPWA
+
+**مميزات الجلسة 19:**
+- ✅ **تكامل المبالغ المستردة والتسويات** - إصلاحات حرجة
 - ✅ **نظام الصلاحيات الموحد** - استخدام الأدوار الديناميكية من قاعدة البيانات
 - ✅ **قائمة الإشعارات المنسدلة** - تظهر عند التحويم مع أزرار تأكيد الاسترداد
-- ✅ **إصلاح أعمدة الإشعارات** - تصحيح أسماء الأعمدة في دالة الإشعارات
 
 **مميزات الجلسة 15:**
 - ✅ **نظام التسويات** - إدارة تسويات المتاجر والمدفوعات
