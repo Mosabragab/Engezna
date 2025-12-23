@@ -1,21 +1,21 @@
 # Product Requirements Document (PRD)
-## Engezna - إنجزنا | Food Delivery Platform
+## Engezna - إنجزنا | Delivery Marketplace Platform
 
 **Version:** 5.4 (Week 6 - Refunds & Settlements Integration)
 **Date:** November 27, 2025
-**Last Updated:** December 21, 2025 (Session 19)
+**Last Updated:** December 22, 2025 (Session 20)
 **Project Lead:** Mosab
-**Location:** Beni Suef, Upper Egypt
+**Location:** Egypt (Starting from Upper Egypt governorates)
 
 ---
 
 ## 📋 Executive Summary
 
-**Engezna (إنجزنا)** is a B2C food delivery marketplace platform designed specifically for Beni Suef, Upper Egypt. The platform connects local restaurants, coffee shops, and grocery stores with customers, enabling fast and reliable food delivery in an underserved market.
+**Engezna (إنجزنا)** is a B2C delivery marketplace platform designed to serve all of Egypt, starting from Upper Egypt governorates. The platform connects local merchants (restaurants, supermarkets, groceries, pharmacies, and more) with customers, enabling fast and reliable delivery in underserved markets.
 
-Mission: To bring modern food delivery services to Egyptian governorates outside 
-the major cities (Cairo, Giza, Alexandria, North Coast), starting with Beni Suef, 
-while supporting local businesses and creating economic opportunities through 
+Mission: To bring modern delivery services to Egyptian governorates outside
+the major cities (Cairo, Giza, Alexandria, North Coast), starting with Beni Suef,
+while supporting local businesses and creating economic opportunities through
 fair, transparent pricing.
 
 **Key Differentiator:** Ultra-low 5-7% commission model where providers manage their own delivery staff, allowing us to offer the most competitive rates in the Egyptian market.
@@ -533,14 +533,14 @@ fair, transparent pricing.
 ## 🎯 Project Overview
 
 ### **Problem Statement**
-Beni Suef and Upper Egypt lack modern food delivery infrastructure. Existing national platforms (Talabat, Noon) don't serve the region adequately with their high 15-20% commission rates, leaving a gap for:
-- Customers who want convenient food delivery
-- Local restaurants seeking online presence and affordable platform fees
+Egyptian governorates outside major cities lack modern delivery infrastructure. Existing national platforms (Talabat, Noon) don't serve these regions adequately with their high 15-20% commission rates, leaving a gap for:
+- Customers who want convenient delivery services
+- Local merchants seeking online presence and affordable platform fees
 - Local economy needing digital transformation
 
 ### **Solution**
-A localized, bilingual (Arabic/English) food delivery platform that:
-- Connects customers with local restaurants and shops
+A localized, bilingual (Arabic/English) delivery marketplace that:
+- Connects customers with local merchants (restaurants, supermarkets, groceries, pharmacies, and more)
 - **Providers use their existing delivery staff** (no driver app needed)
 - **Ultra-low commission** (5-7% vs competitors' 15-20%)
 - Supports Arabic-first user experience with RTL design

@@ -4,9 +4,9 @@
 
 ![Engezna Logo](public/logo.svg)
 
-**Modern Food Delivery Platform for Egypt**
+**Modern Delivery Marketplace for Egypt**
 
-منصة توصيل طعام حديثة لجمهورية مصر العربية
+منصة توصيل محلية حديثة لجمهورية مصر العربية
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.0.7-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.1-61dafb)](https://react.dev/)
@@ -24,10 +24,10 @@
 
 ### 🎯 About Engezna
 
-**Engezna (إنجزنا)** - meaning "We've got it done!" - is a B2C food delivery marketplace designed to serve all of Egypt, starting from Upper Egypt governorates. We connect local restaurants, coffee shops, and grocery stores with customers through a modern, bilingual platform.
+**Engezna (إنجزنا)** - meaning "We've got it done!" - is a B2C delivery marketplace designed to serve all of Egypt, starting from Upper Egypt governorates. We connect local merchants (restaurants, supermarkets, groceries, pharmacies, and more) with customers through a modern, bilingual platform.
 
 #### **Our Mission**
-To bring modern food delivery services to Egyptian governorates outside major cities, supporting local businesses and creating economic opportunities through fair, transparent pricing.
+To bring modern delivery services to Egyptian governorates outside major cities, supporting local businesses and creating economic opportunities through fair, transparent pricing.
 
 #### **Key Differentiator**
 - **6 months 0% commission** then **max 7%** (vs competitors' 25-30%)
@@ -39,7 +39,7 @@ To bring modern food delivery services to Egyptian governorates outside major ci
 ### ✨ Features
 
 #### **For Customers**
-- 🍔 Browse local restaurants, coffee shops, and groceries
+- 🛍️ Browse local merchants (restaurants, supermarkets, groceries, pharmacies, and more)
 - 🔍 Search and filter by cuisine, rating, delivery time
 - 🛒 Easy ordering with real-time tracking
 - 💳 Multiple payment options (Cash on Delivery, online)
@@ -47,8 +47,8 @@ To bring modern food delivery services to Egyptian governorates outside major ci
 - 🌍 Bilingual interface (Arabic/English)
 - 📱 Mobile-first responsive design
 
-#### **For Restaurant Partners**
-- 📋 Simple menu management
+#### **For Merchant Partners**
+- 📋 Simple product catalog management
 - 📊 Real-time order notifications
 - 💰 **0% for 6 months**, then **max 7%** commission
 - 📈 Sales analytics and insights
@@ -727,10 +727,10 @@ Proprietary - All rights reserved. This project is not open source.
 
 ### 🎯 عن إنجزنا
 
-**إنجزنا (Engezna)** - تعني "خلصناها!" - هي منصة توصيل طعام B2C مصممة لخدمة جمهورية مصر العربية بالكامل، بدءاً من محافظات الصعيد. نحن نربط المطاعم المحلية والمقاهي ومحلات البقالة بالعملاء من خلال منصة حديثة ثنائية اللغة.
+**إنجزنا (Engezna)** - تعني "خلصناها!" - هي منصة توصيل B2C مصممة لخدمة جمهورية مصر العربية بالكامل، بدءاً من محافظات الصعيد. نحن نربط التجار المحليين (مطاعم، سوبر ماركت، بقالة، صيدليات، وغيرها) بالعملاء من خلال منصة حديثة ثنائية اللغة.
 
 #### **مهمتنا**
-جلب خدمات توصيل الطعام الحديثة إلى محافظات مصر خارج المدن الكبرى مع دعم الأعمال المحلية وخلق فرص اقتصادية من خلال أسعار عادلة وشفافة.
+جلب خدمات التوصيل الحديثة إلى محافظات مصر خارج المدن الكبرى مع دعم الأعمال المحلية وخلق فرص اقتصادية من خلال أسعار عادلة وشفافة.
 
 #### **ميزتنا الرئيسية**
 - **عمولة منخفضة جدًا 5-7%** (مقارنة بـ 15-20% للمنافسين)
@@ -741,7 +741,7 @@ Proprietary - All rights reserved. This project is not open source.
 ### ✨ المميزات
 
 #### **للعملاء**
-- 🍔 تصفح المطاعم والمقاهي ومحلات البقالة المحلية
+- 🛍️ تصفح التجار المحليين (مطاعم، سوبر ماركت، بقالة، صيدليات، وغيرها)
 - 🔍 البحث والتصفية حسب نوع الطعام والتقييم ووقت التوصيل
 - 🛒 طلب سهل مع تتبع فوري
 - 💳 خيارات دفع متعددة (الدفع عند الاستلام، الدفع الإلكتروني)
@@ -749,8 +749,8 @@ Proprietary - All rights reserved. This project is not open source.
 - 🌍 واجهة ثنائية اللغة (عربي/إنجليزي)
 - 📱 تصميم متجاوب يبدأ بالموبايل
 
-#### **لشركاء المطاعم**
-- 📋 إدارة قائمة طعام بسيطة
+#### **للتجار الشركاء**
+- 📋 إدارة قائمة المنتجات بسيطة
 - 📊 إشعارات فورية بالطلبات
 - 💰 عمولة شفافة 5-7%
 - 📈 تحليلات ورؤى للمبيعات

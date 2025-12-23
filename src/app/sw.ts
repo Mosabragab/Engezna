@@ -11,7 +11,7 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
-// Initialize Serwist with custom caching strategies for Engezna food delivery app
+// Initialize Serwist with custom caching strategies for Engezna delivery marketplace
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,

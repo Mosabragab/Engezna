@@ -44,14 +44,14 @@
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "الصفحة الرئيسية - تصفح المطاعم والعروض"
+      "label": "الصفحة الرئيسية - تصفح التجار والعروض"
     },
     {
       "src": "/screenshots/screenshot-providers-mobile.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "قائمة المتاجر والمطاعم"
+      "label": "قائمة التجار المحليين"
     },
     {
       "src": "/screenshots/screenshot-order-mobile.png",
