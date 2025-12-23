@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { clearAppBadge } from '@/hooks/useBadge'
 import { CustomerLayout } from '@/components/customer/layout'
 import { Card } from '@/components/ui/card'
 import {
@@ -69,6 +70,7 @@ export default function SettingsPage() {
   async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
+    clearAppBadge() // Clear badge on sign out
     router.push(`/${locale}/auth/login`)
   }
 

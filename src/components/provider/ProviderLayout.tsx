@@ -4,6 +4,7 @@ import { ReactNode, useState, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { setAppBadge, clearAppBadge } from '@/hooks/useBadge'
 import { Button } from '@/components/ui/button'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ProviderSidebar } from './ProviderSidebar'
@@ -184,6 +185,16 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     }
   }, [provider?.id])
 
+  // Update app badge when notification counts change
+  useEffect(() => {
+    const totalBadge = unreadCount + pendingOrders + pendingRefunds
+    if (totalBadge > 0) {
+      setAppBadge(totalBadge)
+    } else {
+      clearAppBadge()
+    }
+  }, [unreadCount, pendingOrders, pendingRefunds])
+
   async function checkAuth() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -208,6 +219,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
+    clearAppBadge() // Clear badge on sign out
     window.location.href = `/${locale}`
   }
 
