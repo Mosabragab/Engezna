@@ -28,10 +28,12 @@ DECLARE
     v_settings JSONB;
 BEGIN
     -- ========================================================================
-    -- RULE 1: Only DELIVERED/COMPLETED orders get commission
+    -- RULE 1: Only DELIVERED orders get commission
     -- All other statuses = 0 commission
+    -- (Note: Database enum only has: pending, confirmed, accepted, preparing,
+    --  ready, out_for_delivery, delivered, cancelled, rejected)
     -- ========================================================================
-    IF NEW.status NOT IN ('delivered', 'completed') THEN
+    IF NEW.status != 'delivered' THEN
         NEW.platform_commission := 0;
         RETURN NEW;
     END IF;
@@ -149,7 +151,7 @@ COMMENT ON FUNCTION calculate_order_commission() IS
 'SECURITY: Calculates platform commission server-side.
 Client-provided commission values are IGNORED and overwritten.
 
-KEY RULE: Only DELIVERED/COMPLETED orders have commission > 0
+KEY RULE: Only DELIVERED orders have commission > 0
 All other statuses (pending, preparing, cancelled, etc.) = 0 commission
 
 Commission Priority (Provider-based ONLY):
@@ -168,7 +170,7 @@ Commission is 0 until order is delivered/completed.';
 -- ============================================================================
 UPDATE orders
 SET platform_commission = 0
-WHERE status NOT IN ('delivered', 'completed')
+WHERE status != 'delivered'
 AND (platform_commission IS NULL OR platform_commission != 0);
 
 -- ============================================================================
@@ -185,5 +187,5 @@ SET platform_commission = ROUND(
      )) / 100,
     2
 )
-WHERE o.status IN ('delivered', 'completed');
+WHERE o.status = 'delivered';
 

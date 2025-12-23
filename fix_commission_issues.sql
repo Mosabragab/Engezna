@@ -38,7 +38,7 @@ ORDER BY s.paid_at DESC;
 -- ============================================================================
 UPDATE orders
 SET platform_commission = 0
-WHERE status NOT IN ('delivered', 'completed')
+WHERE status != 'delivered'
 AND platform_commission > 0;
 
 -- ============================================================================
@@ -66,7 +66,7 @@ SET platform_commission = ROUND(
      )) / 100,
     2
 )
-WHERE o.status IN ('delivered', 'completed');
+WHERE o.status = 'delivered';
 
 -- ============================================================================
 -- 4️⃣ التحقق بعد الإصلاح
