@@ -15,10 +15,11 @@ interface Category {
 
 // Active categories - 4 categories currently available
 // Updated December 2024 - New design with emoji and gradient backgrounds
+// Keys must match database category values: restaurant_cafe, coffee_patisserie, grocery, vegetables_fruits
 const categories: Category[] = [
   {
     id: '1',
-    key: 'restaurants',
+    key: 'restaurant_cafe',
     nameAr: 'مطاعم',
     nameEn: 'Restaurants',
     emoji: '🍔',
@@ -26,7 +27,7 @@ const categories: Category[] = [
   },
   {
     id: '2',
-    key: 'coffee-sweets',
+    key: 'coffee_patisserie',
     nameAr: 'البن والحلويات',
     nameEn: 'Coffee & Sweets',
     emoji: '☕',
@@ -34,7 +35,7 @@ const categories: Category[] = [
   },
   {
     id: '3',
-    key: 'supermarket',
+    key: 'grocery',
     nameAr: 'سوبر ماركت',
     nameEn: 'Supermarket',
     emoji: '🛒',
@@ -42,7 +43,7 @@ const categories: Category[] = [
   },
   {
     id: '4',
-    key: 'vegetables-fruits',
+    key: 'vegetables_fruits',
     nameAr: 'خضروات وفواكه',
     nameEn: 'Vegetables & Fruits',
     emoji: '🍌',
