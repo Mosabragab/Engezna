@@ -233,51 +233,6 @@ export default function AdminSupportPage() {
     }
   }
 
-  function filterTickets() {
-    let filtered = [...tickets]
-
-    // Geographic filtering
-    // Super admin: filter by selected governorate (if not 'all')
-    // Regional admin: filter by their assigned regions only
-    if (adminUser) {
-      const assignedGovernorateIds = (adminUser.assigned_regions || [])
-        .map(r => r.governorate_id)
-        .filter(Boolean) as string[]
-
-      if (adminUser.role === 'super_admin') {
-        // Super admin can filter by any governorate
-        if (selectedGovernorate !== 'all') {
-          filtered = filtered.filter(t => t.provider?.governorate_id === selectedGovernorate)
-        }
-      } else if (assignedGovernorateIds.length > 0) {
-        // Regional admin: only show tickets from their assigned governorates
-        filtered = filtered.filter(t =>
-          t.provider?.governorate_id && assignedGovernorateIds.includes(t.provider.governorate_id)
-        )
-      }
-    }
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(t =>
-        t.ticket_number.toLowerCase().includes(query) ||
-        t.subject.toLowerCase().includes(query) ||
-        t.user?.full_name?.toLowerCase().includes(query) ||
-        t.user?.email?.toLowerCase().includes(query)
-      )
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(t => t.status === statusFilter)
-    }
-
-    if (priorityFilter !== 'all') {
-      filtered = filtered.filter(t => t.priority === priorityFilter)
-    }
-
-    setFilteredTickets(filtered)
-  }
-
   async function handleStatusChange(ticketId: string, newStatus: string) {
     setActionLoading(ticketId)
     const supabase = createClient()

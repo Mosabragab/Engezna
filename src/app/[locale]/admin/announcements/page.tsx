@@ -252,39 +252,6 @@ export default function AdminAnnouncementsPage() {
     setStats(stats)
   }
 
-  function filterAnnouncements() {
-    let filtered = [...announcements]
-    const now = new Date()
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(a =>
-        a.title?.toLowerCase().includes(query) ||
-        a.content?.toLowerCase().includes(query)
-      )
-    }
-
-    if (typeFilter !== 'all') {
-      filtered = filtered.filter(a => a.type === typeFilter)
-    }
-
-    if (statusFilter !== 'all') {
-      if (statusFilter === 'active') {
-        filtered = filtered.filter(a => {
-          if (a.expires_at && new Date(a.expires_at) < now) return false
-          if (a.scheduled_at && new Date(a.scheduled_at) > now) return false
-          return true
-        })
-      } else if (statusFilter === 'scheduled') {
-        filtered = filtered.filter(a => a.scheduled_at && new Date(a.scheduled_at) > now)
-      } else if (statusFilter === 'expired') {
-        filtered = filtered.filter(a => a.expires_at && new Date(a.expires_at) < now)
-      }
-    }
-
-    setFilteredAnnouncements(filtered)
-  }
-
   function isUnread(announcement: Announcement): boolean {
     if (!currentAdminId) return false
     return !announcement.read_by?.includes(currentAdminId)

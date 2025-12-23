@@ -407,37 +407,6 @@ export default function AdminSupervisorsPage() {
     })
   }
 
-  function filterSupervisors() {
-    let filtered = [...supervisors]
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(s =>
-        s.profile?.full_name?.toLowerCase().includes(query) ||
-        s.profile?.phone?.includes(query) ||
-        s.profile?.email?.toLowerCase().includes(query)
-      )
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(s =>
-        statusFilter === 'active' ? s.is_active : !s.is_active
-      )
-    }
-
-    if (roleFilter !== 'all') {
-      // Filter by role_id from admin_roles, or fall back to legacy role code
-      filtered = filtered.filter(s => {
-        // Check if any admin_role matches the filter
-        const hasRole = s.admin_roles?.some(ar => ar.role_id === roleFilter || ar.role?.code === roleFilter)
-        // Also check legacy role field
-        return hasRole || s.role === roleFilter
-      })
-    }
-
-    setFilteredSupervisors(filtered)
-  }
-
   async function handleToggleActive(supervisor: Supervisor) {
     setActionLoading(supervisor.id)
     const supabase = createClient()
