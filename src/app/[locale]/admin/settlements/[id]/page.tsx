@@ -719,7 +719,7 @@ export default function SettlementDetailPage() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-red-600">
-                            {formatCurrency(order.platform_commission || (order.total * 0.07), locale)}
+                            {formatCurrency(order.platform_commission ?? 0, locale)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
