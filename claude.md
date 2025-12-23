@@ -1,8 +1,70 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 21, 2025 (Session 19)
-**Status:** Week 6 - Resolution Center Complete ✅
-**Branch:** `claude/fix-returns-complaints-workflow-YkDHe`
+**Last Updated:** December 23, 2025 (Session 20)
+**Status:** Week 7 - PWA & Store Publishing Preparation ✅
+**Branch:** `claude/pwa-conversion-review-5HHs6`
+
+---
+
+## 🆕 Session 20 Updates (December 23, 2025)
+
+### Legal Compliance & Company Registration
+- ✅ **Privacy Policy Page** (`/privacy`) - Bilingual with Charcoal theme header
+- ✅ **Terms & Conditions Page** (`/terms`) - Tabbed interface (Customer/Provider)
+- ✅ **Company Information Integration** - سويفكم للتجارة والتصدير (ذ.م.م)
+  - Commercial Registry: 2767
+  - Address: ش صالح حمام بجوار مسجد الاباصيري - بني سويف
+  - Email: support@engezna.com
+- ✅ **Signup Terms Checkbox** - Required `agreeToTerms` with Zod validation
+- ✅ **Order Confirmation Legal Links** - Terms & Privacy links at bottom
+- ✅ **Manifest.json Privacy URL** - Added `privacy_policy_url` for PWA compliance
+
+### E2E Testing Setup (Playwright)
+- ✅ **Playwright Configuration** (`playwright.config.ts`)
+  - Multi-browser: Mobile Chrome (Pixel 5), Mobile Safari (iPhone 13), Desktop Chrome
+  - Arabic locale (ar-EG) and Cairo timezone
+  - Web server auto-start for tests
+- ✅ **Customer Journey Tests** (`e2e/customer-journey.spec.ts`)
+  - Homepage display, providers navigation
+  - Store details, cart operations
+  - Footer legal links verification
+  - Signup terms checkbox requirement
+- ✅ **PWA Offline Tests** (`e2e/pwa-offline.spec.ts`)
+  - Service worker registration
+  - Offline page display
+  - Manifest.json validation (privacy_policy_url, theme_color, lang/dir)
+  - App installability meta tags
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `src/app/[locale]/privacy/page.tsx` | Privacy Policy page |
+| `src/app/[locale]/terms/page.tsx` | Terms & Conditions page |
+| `docs/legal/COMPANY_INFO.md` | Internal company data reference |
+| `playwright.config.ts` | E2E testing configuration |
+| `e2e/customer-journey.spec.ts` | Customer flow smoke tests |
+| `e2e/pwa-offline.spec.ts` | PWA and offline functionality tests |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `public/manifest.json` | Added `privacy_policy_url` |
+| `src/app/[locale]/auth/signup/page.tsx` | Terms checkbox with Zod validation |
+| `src/app/[locale]/orders/[id]/confirmation/page.tsx` | Legal links section |
+| `package.json` | Playwright dependency and test scripts |
+
+### NPM Scripts Added
+```bash
+npm run test:e2e        # Run all E2E tests
+npm run test:e2e:ui     # Interactive UI mode
+npm run test:e2e:headed # With visible browser
+npm run test:e2e:debug  # Debug mode
+```
+
+### Commits
+- `3a4fc0c` - feat(legal): Implement Privacy Policy and Terms & Conditions pages
+- `ce5fa31` - docs(legal): Add company information to legal pages and documents
+- `8d1b3a9` - docs(legal): Add LLC designation to company name
 
 ---
 
