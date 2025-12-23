@@ -284,17 +284,36 @@ export default function AdminSettlementsPage() {
       const DEFAULT_COMMISSION_RATE = 0.07 // 7% max as fallback
 
       for (const provider of activeProviders) {
-        // Get provider's actual commission rate from database
+        // Get provider's actual commission settings from database
         const { data: providerData } = await supabase
           .from('providers')
-          .select('commission_rate')
+          .select('commission_rate, custom_commission_rate, commission_status, grace_period_end')
           .eq('id', provider.id)
           .single()
 
-        // Use provider's rate (stored as percentage like 5.00 or 6.00) or default to 7%
-        const providerCommissionRate = providerData?.commission_rate
-          ? providerData.commission_rate / 100
-          : DEFAULT_COMMISSION_RATE
+        // Determine commission rate based on provider status
+        let providerCommissionRate = DEFAULT_COMMISSION_RATE
+
+        if (providerData) {
+          // Check grace period first
+          if (providerData.commission_status === 'in_grace_period' &&
+              providerData.grace_period_end &&
+              new Date() < new Date(providerData.grace_period_end)) {
+            providerCommissionRate = 0
+          }
+          // Check if exempt
+          else if (providerData.commission_status === 'exempt') {
+            providerCommissionRate = 0
+          }
+          // Use custom rate if set
+          else if (providerData.custom_commission_rate) {
+            providerCommissionRate = providerData.custom_commission_rate / 100
+          }
+          // Use provider's standard rate
+          else if (providerData.commission_rate) {
+            providerCommissionRate = providerData.commission_rate / 100
+          }
+        }
 
         // Get delivered orders for this provider in the period (including payment_method)
         const { data: allOrders } = await supabase
@@ -309,21 +328,41 @@ export default function AdminSettlementsPage() {
         const orders = allOrders?.filter(o => !settledOrderIds.has(o.id)) || []
 
         if (orders && orders.length > 0) {
+          // Get processed refunds for these orders
+          const orderIds = orders.map(o => o.id)
+          const { data: refundsData } = await supabase
+            .from('refunds')
+            .select('order_id, processed_amount, amount, status, affects_settlement')
+            .in('order_id', orderIds)
+            .eq('status', 'processed')
+
+          // Calculate total refunds that affect settlement
+          const totalRefunds = (refundsData || [])
+            .filter(r => r.affects_settlement !== false)
+            .reduce((sum, r) => sum + (r.processed_amount || r.amount || 0), 0)
+
           // Separate orders by payment method
           const codOrders = orders.filter(o => o.payment_method === 'cash' || o.payment_method === 'cod')
           const onlineOrders = orders.filter(o => o.payment_method !== 'cash' && o.payment_method !== 'cod')
 
           // Calculate COD breakdown using provider's actual commission rate
           const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-          const codCommissionOwed = codGrossRevenue * providerCommissionRate
+          // Deduct refunds proportionally from COD (simplified: deduct from total)
+          const codRefundsProportion = codGrossRevenue / (codGrossRevenue + onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)) || 0
+          const codRefunds = totalRefunds * codRefundsProportion
+          const codNetRevenue = Math.max(0, codGrossRevenue - codRefunds)
+          const codCommissionOwed = codNetRevenue * providerCommissionRate
 
           // Calculate Online breakdown using provider's actual commission rate
           const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-          const onlinePlatformCommission = onlineGrossRevenue * providerCommissionRate
-          const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
+          const onlineRefunds = totalRefunds - codRefunds
+          const onlineNetRevenue = Math.max(0, onlineGrossRevenue - onlineRefunds)
+          const onlinePlatformCommission = onlineNetRevenue * providerCommissionRate
+          const onlinePayoutOwed = onlineNetRevenue - onlinePlatformCommission
 
-          // Calculate totals
+          // Calculate totals (after refunds)
           const grossRevenue = codGrossRevenue + onlineGrossRevenue
+          const netRevenue = grossRevenue - totalRefunds
           const platformCommission = codCommissionOwed + onlinePlatformCommission
 
           // Net balance: What platform owes provider minus what provider owes platform
@@ -394,17 +433,36 @@ export default function AdminSettlementsPage() {
       const supabase = createClient()
       const DEFAULT_COMMISSION_RATE = 0.07 // 7% max as fallback
 
-      // Get provider's actual commission rate from database
+      // Get provider's actual commission settings from database
       const { data: providerData } = await supabase
         .from('providers')
-        .select('commission_rate')
+        .select('commission_rate, custom_commission_rate, commission_status, grace_period_end')
         .eq('id', generateForm.providerId)
         .single()
 
-      // Use provider's rate (stored as percentage like 5.00 or 6.00) or default to 7%
-      const providerCommissionRate = providerData?.commission_rate
-        ? providerData.commission_rate / 100
-        : DEFAULT_COMMISSION_RATE
+      // Determine commission rate based on provider status
+      let providerCommissionRate = DEFAULT_COMMISSION_RATE
+
+      if (providerData) {
+        // Check grace period first
+        if (providerData.commission_status === 'in_grace_period' &&
+            providerData.grace_period_end &&
+            new Date() < new Date(providerData.grace_period_end)) {
+          providerCommissionRate = 0
+        }
+        // Check if exempt
+        else if (providerData.commission_status === 'exempt') {
+          providerCommissionRate = 0
+        }
+        // Use custom rate if set
+        else if (providerData.custom_commission_rate) {
+          providerCommissionRate = providerData.custom_commission_rate / 100
+        }
+        // Use provider's standard rate
+        else if (providerData.commission_rate) {
+          providerCommissionRate = providerData.commission_rate / 100
+        }
+      }
 
       // Get all order IDs already included in previous settlements
       const { data: existingSettlements } = await supabase
@@ -448,21 +506,41 @@ export default function AdminSettlementsPage() {
         return
       }
 
+      // Get processed refunds for these orders
+      const orderIds = orders.map(o => o.id)
+      const { data: refundsData } = await supabase
+        .from('refunds')
+        .select('order_id, processed_amount, amount, status, affects_settlement')
+        .in('order_id', orderIds)
+        .eq('status', 'processed')
+
+      // Calculate total refunds that affect settlement
+      const totalRefunds = (refundsData || [])
+        .filter(r => r.affects_settlement !== false)
+        .reduce((sum, r) => sum + (r.processed_amount || r.amount || 0), 0)
+
       // Separate orders by payment method
       const codOrders = orders.filter(o => o.payment_method === 'cash' || o.payment_method === 'cod')
       const onlineOrders = orders.filter(o => o.payment_method !== 'cash' && o.payment_method !== 'cod')
 
       // Calculate COD breakdown using provider's actual commission rate
       const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const codCommissionOwed = codGrossRevenue * providerCommissionRate
+      // Deduct refunds proportionally from COD
+      const codRefundsProportion = codGrossRevenue / (codGrossRevenue + onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)) || 0
+      const codRefunds = totalRefunds * codRefundsProportion
+      const codNetRevenue = Math.max(0, codGrossRevenue - codRefunds)
+      const codCommissionOwed = codNetRevenue * providerCommissionRate
 
       // Calculate Online breakdown using provider's actual commission rate
       const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const onlinePlatformCommission = onlineGrossRevenue * providerCommissionRate
-      const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
+      const onlineRefunds = totalRefunds - codRefunds
+      const onlineNetRevenue = Math.max(0, onlineGrossRevenue - onlineRefunds)
+      const onlinePlatformCommission = onlineNetRevenue * providerCommissionRate
+      const onlinePayoutOwed = onlineNetRevenue - onlinePlatformCommission
 
-      // Calculate totals
+      // Calculate totals (after refunds)
       const grossRevenue = codGrossRevenue + onlineGrossRevenue
+      const netRevenue = grossRevenue - totalRefunds
       const platformCommission = codCommissionOwed + onlinePlatformCommission
 
       // Net balance: What platform owes provider minus what provider owes platform

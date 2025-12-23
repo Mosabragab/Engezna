@@ -166,26 +166,30 @@ COMMENT ON TRIGGER trigger_calculate_order_commission ON orders IS
 Commission is 0 until order is delivered/completed.';
 
 -- ============================================================================
--- FIX EXISTING DATA: Set commission to 0 for non-delivered orders
+-- NOTE: Existing data is NOT modified to preserve test data
+-- The trigger will apply to NEW orders and status changes going forward
 -- ============================================================================
+-- To fix existing data manually, run:
+/*
+-- Set commission to 0 for non-delivered orders
 UPDATE orders
 SET platform_commission = 0
 WHERE status != 'delivered'
 AND (platform_commission IS NULL OR platform_commission != 0);
 
--- ============================================================================
--- FIX EXISTING DATA: Recalculate commission for delivered orders
--- This ensures all delivered orders have correct commission based on provider
--- ============================================================================
+-- Recalculate commission for delivered orders (respecting grace period)
 UPDATE orders o
 SET platform_commission = ROUND(
     ((COALESCE(o.subtotal, o.total, 0) - COALESCE(o.discount, 0)) *
-     COALESCE(
-        (SELECT p.custom_commission_rate FROM providers p WHERE p.id = o.provider_id),
-        (SELECT p.commission_rate FROM providers p WHERE p.id = o.provider_id),
-        7.00
-     )) / 100,
+     CASE
+        WHEN p.commission_status = 'in_grace_period' AND p.grace_period_end > NOW() THEN 0
+        WHEN p.commission_status = 'exempt' THEN 0
+        ELSE COALESCE(p.custom_commission_rate, p.commission_rate, 7.00)
+     END) / 100,
     2
 )
-WHERE o.status = 'delivered';
+FROM providers p
+WHERE p.id = o.provider_id
+AND o.status = 'delivered';
+*/
 
