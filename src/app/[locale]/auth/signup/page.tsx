@@ -30,6 +30,9 @@ const signupSchema = z.object({
   governorateId: z.string().min(1, 'Please select your governorate'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
+  agreeToTerms: z.boolean().refine((val) => val === true, {
+    message: 'You must agree to the terms and conditions',
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -57,6 +60,7 @@ export default function SignupPage() {
     resolver: zodResolver(signupSchema),
     defaultValues: {
       governorateId: '',
+      agreeToTerms: false,
     },
   })
 
@@ -300,6 +304,49 @@ export default function SignupPage() {
               />
               {errors.confirmPassword && (
                 <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+              )}
+            </div>
+
+            {/* Terms Agreement Checkbox */}
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="agreeToTerms"
+                  {...register('agreeToTerms')}
+                  disabled={isLoading}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                />
+                <label htmlFor="agreeToTerms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+                  {locale === 'ar' ? (
+                    <>
+                      أوافق على{' '}
+                      <Link href={`/${locale}/terms`} className="text-primary hover:underline font-medium" target="_blank">
+                        الشروط والأحكام
+                      </Link>
+                      {' '}و{' '}
+                      <Link href={`/${locale}/privacy`} className="text-primary hover:underline font-medium" target="_blank">
+                        سياسة الخصوصية
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      I agree to the{' '}
+                      <Link href={`/${locale}/terms`} className="text-primary hover:underline font-medium" target="_blank">
+                        Terms & Conditions
+                      </Link>
+                      {' '}and{' '}
+                      <Link href={`/${locale}/privacy`} className="text-primary hover:underline font-medium" target="_blank">
+                        Privacy Policy
+                      </Link>
+                    </>
+                  )}
+                </label>
+              </div>
+              {errors.agreeToTerms && (
+                <p className="text-sm text-destructive">
+                  {locale === 'ar' ? 'يجب الموافقة على الشروط والأحكام' : errors.agreeToTerms.message}
+                </p>
               )}
             </div>
 
