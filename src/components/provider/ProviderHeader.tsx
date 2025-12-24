@@ -219,15 +219,15 @@ export function ProviderHeader({
           </Link>
         </div>
 
-        {/* Center: Page Title on Desktop */}
+        {/* Center: Page Title - visible on all screens */}
         {pageTitle && (
-          <div className="hidden md:flex items-center justify-center flex-1">
-            <div className="text-center">
-              <h2 className="text-lg font-semibold text-slate-800">
+          <div className="flex items-center justify-center flex-1 min-w-0 px-2">
+            <div className="text-center truncate">
+              <h2 className="text-sm md:text-lg font-semibold text-slate-800 truncate">
                 {locale === 'ar' ? pageTitle.ar : pageTitle.en}
               </h2>
               {pageSubtitle && (
-                <p className="text-xs text-slate-500">
+                <p className="text-[10px] md:text-xs text-slate-500 truncate hidden md:block">
                   {locale === 'ar' ? pageSubtitle.ar : pageSubtitle.en}
                 </p>
               )}

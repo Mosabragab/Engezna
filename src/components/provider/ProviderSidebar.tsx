@@ -173,12 +173,19 @@ export function ProviderSidebar({
           flex flex-col h-screen max-h-screen overflow-hidden
         `}
       >
-        {/* Logo - Compact on mobile */}
+        {/* Logo - Compact on mobile, normal on desktop */}
         <div className="p-3 lg:p-4 border-b border-slate-200 flex-shrink-0">
           <div className="flex items-center justify-between">
             <Link href={`/${locale}/provider`} className="flex flex-col">
-              <EngeznaLogo size="sm" static showPen={false} />
-              <p className="text-[10px] lg:text-xs text-slate-500 mt-0.5">
+              {/* Mobile logo - smaller */}
+              <div className="lg:hidden">
+                <EngeznaLogo size="sm" static showPen={false} />
+              </div>
+              {/* Desktop logo - normal size */}
+              <div className="hidden lg:block">
+                <EngeznaLogo size="md" static showPen={false} />
+              </div>
+              <p className="text-[10px] lg:text-xs text-slate-500 mt-0.5 lg:mt-1">
                 {locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}
               </p>
             </Link>
@@ -193,21 +200,32 @@ export function ProviderSidebar({
 
         {/* Scrollable Content - Store Info + Navigation */}
         <div className="flex-1 overflow-y-auto">
-          {/* Store Info - Compact on mobile */}
+          {/* Store Info - Compact inline on mobile, card on desktop */}
           {provider && (
-            <div className="p-2 lg:p-3 border-b border-slate-200">
-              <div className="bg-slate-50 rounded-lg p-2 lg:p-3 flex items-center gap-2 lg:block">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs lg:text-sm font-medium text-slate-900 truncate">
-                    {locale === 'ar' ? provider.name_ar : provider.name_en}
-                  </p>
-                  <p className="text-[10px] lg:text-xs text-slate-500 capitalize hidden lg:block">
-                    {provider.category.replace('_', ' ')}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 lg:mt-2">
+            <div className="p-2 lg:p-4 border-b border-slate-200">
+              {/* Mobile: inline compact */}
+              <div className="lg:hidden bg-slate-50 rounded-lg p-2 flex items-center gap-2">
+                <p className="text-xs font-medium text-slate-900 truncate flex-1">
+                  {locale === 'ar' ? provider.name_ar : provider.name_en}
+                </p>
+                <div className="flex items-center gap-1.5">
                   <span className={`w-2 h-2 rounded-full ${getStatusColor(provider.status)}`} />
-                  <span className="text-[10px] lg:text-xs text-slate-600">
+                  <span className="text-[10px] text-slate-600">
+                    {getStatusLabel(provider.status)}
+                  </span>
+                </div>
+              </div>
+              {/* Desktop: full card */}
+              <div className="hidden lg:block bg-slate-50 rounded-xl p-3">
+                <p className="text-sm font-medium text-slate-900 truncate">
+                  {locale === 'ar' ? provider.name_ar : provider.name_en}
+                </p>
+                <p className="text-xs text-slate-500 capitalize">
+                  {provider.category.replace('_', ' ')}
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className={`w-2 h-2 rounded-full ${getStatusColor(provider.status)}`} />
+                  <span className="text-xs text-slate-600">
                     {getStatusLabel(provider.status)}
                   </span>
                 </div>
@@ -215,7 +233,7 @@ export function ProviderSidebar({
             </div>
           )}
 
-          {/* Navigation */}
+          {/* Navigation - Compact on mobile, normal on desktop */}
           <nav className="p-2 lg:p-3 pb-6 space-y-0.5 lg:space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.path ||
