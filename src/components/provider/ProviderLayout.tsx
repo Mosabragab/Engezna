@@ -200,9 +200,52 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       )
       .subscribe()
 
+    // Also subscribe to refunds for pending refunds count (sidebar badge)
+    const refundsChannel = supabase
+      .channel(`layout-refunds-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'refunds',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const newRefund = payload.new as { status: string; provider_action: string }
+          if (newRefund.status === 'pending' && newRefund.provider_action === 'pending') {
+            setPendingRefunds(prev => prev + 1)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'refunds',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const oldRefund = payload.old as { status: string; provider_action: string }
+          const newRefund = payload.new as { status: string; provider_action: string }
+          const wasPending = oldRefund.status === 'pending' && oldRefund.provider_action === 'pending'
+          const isPending = newRefund.status === 'pending' && newRefund.provider_action === 'pending'
+
+          if (wasPending && !isPending) {
+            setPendingRefunds(prev => Math.max(0, prev - 1))
+          }
+          if (!wasPending && isPending) {
+            setPendingRefunds(prev => prev + 1)
+          }
+        }
+      )
+      .subscribe()
+
     return () => {
       supabase.removeChannel(notificationsChannel)
       supabase.removeChannel(ordersChannel)
+      supabase.removeChannel(refundsChannel)
     }
   }, [provider?.id])
 
