@@ -96,6 +96,20 @@ interface Settlement {
   admin_notes: string | null
   created_at: string
   updated_at: string
+  // COD breakdown
+  cod_orders_count?: number
+  cod_gross_revenue?: number
+  cod_commission_owed?: number
+  // Online breakdown
+  online_orders_count?: number
+  online_gross_revenue?: number
+  online_platform_commission?: number
+  online_payout_owed?: number
+  // Net calculation
+  net_balance?: number
+  settlement_direction?: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
+  // Orders included
+  orders_included?: string[]
 }
 
 type DateFilter = 'today' | 'week' | 'month' | 'custom'
@@ -1039,36 +1053,136 @@ export default function UnifiedFinancePage() {
                           </div>
 
                           {selectedSettlement?.id === settlement.id && (
-                            <div className="mt-4 pt-4 border-t border-slate-200 space-y-3">
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <p className="text-slate-500">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Gross Revenue'}</p>
-                                  <p className="font-medium text-slate-900">{formatCurrencyUtil(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                            <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
+                              {/* COD/Online Breakdown */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {/* COD Section */}
+                                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Banknote className="w-4 h-4 text-amber-600" />
+                                    <span className="font-medium text-amber-800 text-sm">
+                                      {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
+                                    </span>
+                                  </div>
+                                  <div className="space-y-1 text-xs">
+                                    <div className="flex justify-between">
+                                      <span className="text-amber-700">{locale === 'ar' ? 'عدد الطلبات:' : 'Orders:'}</span>
+                                      <span className="font-medium text-amber-900">{settlement.cod_orders_count || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-amber-700">{locale === 'ar' ? 'الإيرادات:' : 'Revenue:'}</span>
+                                      <span className="font-medium text-amber-900">{formatCurrencyUtil(settlement.cod_gross_revenue || 0, locale)}</span>
+                                    </div>
+                                    <div className="flex justify-between border-t border-amber-200 pt-1 mt-1">
+                                      <span className="text-amber-700">{locale === 'ar' ? 'عمولة مستحقة للمنصة:' : 'Commission Due:'}</span>
+                                      <span className="font-bold text-amber-900">{formatCurrencyUtil(settlement.cod_commission_owed || 0, locale)}</span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="text-slate-500">{locale === 'ar' ? `عمولة المنصة (${commissionRatePercent}%)` : `Platform Commission (${commissionRatePercent}%)`}</p>
-                                  <p className="font-medium text-red-600">-{formatCurrencyUtil(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-                                </div>
-                                <div>
-                                  <p className="text-slate-500">{locale === 'ar' ? 'صافي المزود' : 'Net Payout'}</p>
-                                  <p className="font-bold text-green-600">{formatCurrencyUtil(settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-                                </div>
-                                <div>
-                                  <p className="text-slate-500">{locale === 'ar' ? 'تاريخ الإنشاء' : 'Created At'}</p>
-                                  <p className="font-medium text-slate-900">{formatDateUtil(settlement.created_at, locale)}</p>
+
+                                {/* Online Section */}
+                                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <CreditCard className="w-4 h-4 text-blue-600" />
+                                    <span className="font-medium text-blue-800 text-sm">
+                                      {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+                                    </span>
+                                  </div>
+                                  <div className="space-y-1 text-xs">
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-700">{locale === 'ar' ? 'عدد الطلبات:' : 'Orders:'}</span>
+                                      <span className="font-medium text-blue-900">{settlement.online_orders_count || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-700">{locale === 'ar' ? 'الإيرادات:' : 'Revenue:'}</span>
+                                      <span className="font-medium text-blue-900">{formatCurrencyUtil(settlement.online_gross_revenue || 0, locale)}</span>
+                                    </div>
+                                    <div className="flex justify-between border-t border-blue-200 pt-1 mt-1">
+                                      <span className="text-blue-700">{locale === 'ar' ? 'مستحق للمزود:' : 'Due to Provider:'}</span>
+                                      <span className="font-bold text-blue-900">{formatCurrencyUtil(settlement.online_payout_owed || 0, locale)}</span>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
 
+                              {/* Financial Summary */}
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div className="p-2 bg-slate-50 rounded-lg text-center">
+                                  <p className="text-slate-500 text-xs">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Gross Revenue'}</p>
+                                  <p className="font-bold text-slate-900">{formatCurrencyUtil(settlement.gross_revenue || 0, locale)}</p>
+                                </div>
+                                <div className="p-2 bg-slate-50 rounded-lg text-center">
+                                  <p className="text-slate-500 text-xs">{locale === 'ar' ? `عمولة المنصة (${commissionRatePercent}%)` : `Commission (${commissionRatePercent}%)`}</p>
+                                  <p className="font-bold text-red-600">-{formatCurrencyUtil(settlement.platform_commission || 0, locale)}</p>
+                                </div>
+                                <div className="p-2 bg-slate-50 rounded-lg text-center">
+                                  <p className="text-slate-500 text-xs">{locale === 'ar' ? 'صافي المزود' : 'Net Payout'}</p>
+                                  <p className="font-bold text-green-600">{formatCurrencyUtil(settlement.net_payout || (settlement.gross_revenue || 0) - (settlement.platform_commission || 0), locale)}</p>
+                                </div>
+                                <div className="p-2 bg-slate-50 rounded-lg text-center">
+                                  <p className="text-slate-500 text-xs">{locale === 'ar' ? 'تاريخ الإنشاء' : 'Created'}</p>
+                                  <p className="font-medium text-slate-900 text-xs">{formatDateUtil(settlement.created_at, locale)}</p>
+                                </div>
+                              </div>
+
+                              {/* Net Balance Result */}
+                              {(() => {
+                                const netBalance = Math.abs(settlement.net_balance || 0)
+                                const direction = settlement.settlement_direction
+                                const isPlatformPays = direction === 'platform_pays_provider'
+                                const isProviderPays = direction === 'provider_pays_platform'
+
+                                return (
+                                  <div className={`p-3 rounded-lg ${
+                                    isPlatformPays ? 'bg-green-100 border border-green-300' :
+                                    isProviderPays ? 'bg-amber-100 border border-amber-300' :
+                                    'bg-slate-100 border border-slate-300'
+                                  }`}>
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <p className="font-medium text-sm">
+                                          {locale === 'ar' ? 'الحساب النهائي' : 'Final Balance'}
+                                        </p>
+                                        <p className="text-xs text-slate-600">
+                                          {isPlatformPays
+                                            ? (locale === 'ar' ? 'المنصة تدفع لك' : 'Platform pays you')
+                                            : isProviderPays
+                                              ? (locale === 'ar' ? 'تدفع للمنصة' : 'You pay platform')
+                                              : (locale === 'ar' ? 'متوازن' : 'Balanced')}
+                                        </p>
+                                      </div>
+                                      <p className={`text-xl font-bold ${
+                                        isPlatformPays ? 'text-green-700' :
+                                        isProviderPays ? 'text-amber-700' :
+                                        'text-slate-700'
+                                      }`}>
+                                        {formatCurrencyUtil(netBalance, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )
+                              })()}
+
+                              {/* Payment Status */}
                               {settlement.paid_at && (
-                                <div className="bg-green-50 p-3 rounded-lg">
-                                  <p className="text-sm text-green-700">
-                                    <CheckCircle2 className="w-4 h-4 inline mr-1" />
-                                    {locale === 'ar' ? 'تم الدفع بتاريخ' : 'Paid on'} {formatDateUtil(settlement.paid_at, locale)}
-                                    {settlement.payment_method && ` (${settlement.payment_method})`}
-                                  </p>
+                                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                    <div>
+                                      <p className="text-sm font-medium text-green-800">
+                                        {locale === 'ar' ? 'تم الدفع' : 'Payment Completed'}
+                                      </p>
+                                      <p className="text-xs text-green-600">
+                                        {formatDateUtil(settlement.paid_at, locale)}
+                                        {settlement.payment_method && ` • ${settlement.payment_method}`}
+                                        {settlement.payment_reference && ` • ${settlement.payment_reference}`}
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
                               )}
 
+                              {/* Notes */}
                               {settlement.notes && (
                                 <div className="bg-slate-100 p-3 rounded-lg">
                                   <p className="text-sm text-slate-600">
