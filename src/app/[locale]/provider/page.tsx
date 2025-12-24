@@ -167,7 +167,8 @@ export default function ProviderDashboard() {
       { data: allOrdersData },
       { data: unrespondedReviewsData },
       { data: unreadMessagesData },
-      { count: pendingRefundsCount }
+      { count: pendingRefundsCount },
+      { data: todayRefundsData }
     ] = await Promise.all([
       supabase
         .from('orders')
@@ -205,7 +206,14 @@ export default function ProviderDashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('provider_id', providerId)
         .eq('status', 'pending')
-        .eq('provider_action', 'pending')
+        .eq('provider_action', 'pending'),
+      // Get today's processed refunds (all types reduce displayed revenue)
+      supabase
+        .from('refunds')
+        .select('amount, order_id')
+        .eq('provider_id', providerId)
+        .in('status', ['approved', 'processed'])
+        .gte('created_at', today.toISOString())
     ])
 
     const uniqueCustomers = new Set(allOrdersData?.map(o => o.customer_id) || [])
@@ -218,12 +226,20 @@ export default function ProviderDashboard() {
     const todayCodConfirmed = todayCodOrders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
     const todayOnlineConfirmed = todayOnlineOrders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
 
+    // Calculate total refunds processed today (affects today's revenue)
+    const totalRefundsToday = (todayRefundsData || []).reduce((sum, r) => sum + (r.amount || 0), 0)
+
     // Filter unread messages for this provider
     const providerUnreadMessages = (unreadMessagesData || []).filter((m: any) => m.orders?.provider_id === providerId)
 
+    // Calculate gross revenue and subtract refunds
+    const grossRevenue = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+    const grossCodRevenue = todayCodConfirmed.reduce((sum, o) => sum + (o.total || 0), 0)
+    const grossOnlineRevenue = todayOnlineConfirmed.reduce((sum, o) => sum + (o.total || 0), 0)
+
     setStats({
       todayOrders: todayOrdersData?.length || 0,
-      todayRevenue: confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0),
+      todayRevenue: Math.max(0, grossRevenue - totalRefundsToday),
       pendingOrders: pendingData?.length || 0,
       activeProducts: productsData?.length || 0,
       totalOrders: allOrdersData?.length || 0,
@@ -232,9 +248,9 @@ export default function ProviderDashboard() {
       unreadMessages: providerUnreadMessages.length,
       pendingRefunds: pendingRefundsCount || 0,
       todayCodOrders: todayCodOrders.length,
-      todayCodRevenue: todayCodConfirmed.reduce((sum, o) => sum + (o.total || 0), 0),
+      todayCodRevenue: grossCodRevenue,
       todayOnlineOrders: todayOnlineOrders.length,
-      todayOnlineRevenue: todayOnlineConfirmed.reduce((sum, o) => sum + (o.total || 0), 0),
+      todayOnlineRevenue: grossOnlineRevenue,
     })
   }, [])
 

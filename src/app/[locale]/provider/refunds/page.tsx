@@ -27,6 +27,14 @@ import { formatDistanceToNow } from 'date-fns'
 import { ar, enUS } from 'date-fns/locale'
 import Link from 'next/link'
 
+interface RefundItem {
+  id: string
+  name_ar: string
+  name_en: string
+  quantity: number
+  price: number
+}
+
 interface Refund {
   id: string
   order_id: string
@@ -40,6 +48,8 @@ interface Refund {
   customer_confirmed: boolean
   confirmation_deadline: string | null
   evidence_images: string[] | null
+  metadata: { selected_items?: RefundItem[] } | null
+  refund_type: string | null
   created_at: string
   order?: {
     order_number: string
@@ -81,10 +91,13 @@ export default function ProviderRefundsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('pending')
 
-  // Stats
-  const pendingCount = refunds.filter(r => r.status === 'pending').length
-  const approvedCount = refunds.filter(r => r.status === 'approved' || r.provider_action === 'cash_refund').length
-  const completedCount = refunds.filter(r => r.status === 'processed' && r.customer_confirmed).length
+  // Stats - must match filterRefunds logic exactly
+  const pendingCount = refunds.filter(r => r.status === 'pending' && r.provider_action === 'pending').length
+  const inProgressCount = refunds.filter(r =>
+    (r.status === 'approved' && !r.customer_confirmed) ||
+    r.provider_action === 'item_resend'
+  ).length
+  const completedCount = refunds.filter(r => r.status === 'processed' || r.customer_confirmed).length
 
   useEffect(() => {
     loadData()
@@ -96,9 +109,7 @@ export default function ProviderRefundsPage() {
 
     // Get current user's provider
     const { data: { user } } = await supabase.auth.getUser()
-    console.log('🔍 DEBUG - Current user:', user?.id, user?.email)
     if (!user) {
-      console.log('❌ DEBUG - No user logged in!')
       setLoading(false)
       return
     }
@@ -109,10 +120,7 @@ export default function ProviderRefundsPage() {
       .eq('owner_id', user.id)
       .single()
 
-    console.log('🔍 DEBUG - Provider lookup:', { provider, providerError, owner_id: user.id })
-
     if (!provider) {
-      console.log('❌ DEBUG - No provider found for user!')
       setLoading(false)
       return
     }
@@ -130,13 +138,6 @@ export default function ProviderRefundsPage() {
       `)
       .eq('provider_id', provider.id)
       .order('created_at', { ascending: false })
-
-    console.log('🔍 DEBUG - Refunds query:', {
-      provider_id: provider.id,
-      refundsCount: refundsData?.length,
-      refundsError,
-      refundsData
-    })
 
     if (refundsData) {
       setRefunds(refundsData.map(r => ({
@@ -173,6 +174,8 @@ export default function ProviderRefundsPage() {
       }
 
       await loadData()
+      // Switch to in_progress tab to show the updated status
+      setActiveTab('in_progress')
     } catch (err) {
       console.error('Error processing refund:', err)
     } finally {
@@ -202,6 +205,8 @@ export default function ProviderRefundsPage() {
       }
 
       await loadData()
+      // Switch to in_progress tab to show the updated status
+      setActiveTab('in_progress')
     } catch (err) {
       console.error('Error:', err)
     } finally {
@@ -317,7 +322,7 @@ export default function ProviderRefundsPage() {
               <RefreshCw className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-blue-700">{approvedCount}</p>
+              <p className="text-2xl font-bold text-blue-700">{inProgressCount}</p>
               <p className="text-sm text-blue-600">
                 {isArabic ? 'قيد التنفيذ' : 'In Progress'}
               </p>
@@ -433,6 +438,30 @@ export default function ProviderRefundsPage() {
                             }
                           </span>
                         </div>
+
+                        {/* Disputed Items */}
+                        {refund.refund_type === 'partial' && refund.metadata?.selected_items && refund.metadata.selected_items.length > 0 && (
+                          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-sm font-medium text-red-700 mb-2">
+                              {isArabic ? 'الأصناف محل النزاع:' : 'Disputed Items:'}
+                            </p>
+                            <div className="space-y-2">
+                              {refund.metadata.selected_items.map((item, idx) => (
+                                <div key={item.id || idx} className="flex items-center justify-between text-sm bg-white p-2 rounded">
+                                  <div>
+                                    <span className="font-medium text-slate-900">
+                                      {isArabic ? item.name_ar : item.name_en}
+                                    </span>
+                                    <span className="text-slate-500 mx-2">×{item.quantity}</span>
+                                  </div>
+                                  <span className="font-medium text-red-600">
+                                    {item.price.toFixed(2)} {isArabic ? 'ج.م' : 'EGP'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Description */}
                         {refund.reason_ar && (

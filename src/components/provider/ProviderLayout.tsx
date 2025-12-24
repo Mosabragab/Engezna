@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ProviderSidebar } from './ProviderSidebar'
 import { ProviderHeader } from './ProviderHeader'
+import { ProviderBottomNav } from './ProviderBottomNav'
 import type { User } from '@supabase/supabase-js'
 
 interface Provider {
@@ -35,6 +36,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [unreadCount, setUnreadCount] = useState(0)
   const [pendingOrders, setPendingOrders] = useState(0)
   const [pendingRefunds, setPendingRefunds] = useState(0)
+  const [pendingComplaints, setPendingComplaints] = useState(0)
 
   // Load unread notifications count from provider_notifications table
   const loadUnreadCount = useCallback(async (providerId: string) => {
@@ -67,6 +69,15 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       .eq('provider_action', 'pending')
 
     setPendingRefunds(refundsCount || 0)
+
+    // Get pending complaints count (open or in_progress support tickets)
+    const { count: complaintsCount } = await supabase
+      .from('support_tickets')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', providerId)
+      .in('status', ['open', 'in_progress'])
+
+    setPendingComplaints(complaintsCount || 0)
   }, [])
 
   const checkAuth = useCallback(async () => {
@@ -200,21 +211,107 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       )
       .subscribe()
 
+    // Also subscribe to refunds for pending refunds count (sidebar badge)
+    const refundsChannel = supabase
+      .channel(`layout-refunds-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'refunds',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const newRefund = payload.new as { status: string; provider_action: string }
+          if (newRefund.status === 'pending' && newRefund.provider_action === 'pending') {
+            setPendingRefunds(prev => prev + 1)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'refunds',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const oldRefund = payload.old as { status: string; provider_action: string }
+          const newRefund = payload.new as { status: string; provider_action: string }
+          const wasPending = oldRefund.status === 'pending' && oldRefund.provider_action === 'pending'
+          const isPending = newRefund.status === 'pending' && newRefund.provider_action === 'pending'
+
+          if (wasPending && !isPending) {
+            setPendingRefunds(prev => Math.max(0, prev - 1))
+          }
+          if (!wasPending && isPending) {
+            setPendingRefunds(prev => prev + 1)
+          }
+        }
+      )
+      .subscribe()
+
+    // Also subscribe to support_tickets for pending complaints count (sidebar badge)
+    const complaintsChannel = supabase
+      .channel(`layout-complaints-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'support_tickets',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const newTicket = payload.new as { status: string }
+          if (newTicket.status === 'open' || newTicket.status === 'in_progress') {
+            setPendingComplaints(prev => prev + 1)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'support_tickets',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const oldTicket = payload.old as { status: string }
+          const newTicket = payload.new as { status: string }
+          const wasPending = oldTicket.status === 'open' || oldTicket.status === 'in_progress'
+          const isPending = newTicket.status === 'open' || newTicket.status === 'in_progress'
+
+          if (wasPending && !isPending) {
+            setPendingComplaints(prev => Math.max(0, prev - 1))
+          }
+          if (!wasPending && isPending) {
+            setPendingComplaints(prev => prev + 1)
+          }
+        }
+      )
+      .subscribe()
+
     return () => {
       supabase.removeChannel(notificationsChannel)
       supabase.removeChannel(ordersChannel)
+      supabase.removeChannel(refundsChannel)
+      supabase.removeChannel(complaintsChannel)
     }
   }, [provider?.id])
 
   // Update app badge when notification counts change
   useEffect(() => {
-    const totalBadge = unreadCount + pendingOrders + pendingRefunds
+    const totalBadge = unreadCount + pendingOrders + pendingRefunds + pendingComplaints
     if (totalBadge > 0) {
       setAppBadge(totalBadge)
     } else {
       clearAppBadge()
     }
-  }, [unreadCount, pendingOrders, pendingRefunds])
+  }, [unreadCount, pendingOrders, pendingRefunds, pendingComplaints])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -266,6 +363,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         pendingOrders={pendingOrders}
         unreadNotifications={unreadCount}
         pendingRefunds={pendingRefunds}
+        pendingComplaints={pendingComplaints}
       />
 
       {/* Main Content */}
@@ -282,10 +380,16 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           pageSubtitle={pageSubtitle}
         />
 
-        {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+        {/* Page Content - with bottom padding for mobile nav */}
+        <main className="flex-1 p-4 lg:p-6 overflow-auto pb-20 lg:pb-6">
           {children}
         </main>
+
+        {/* Bottom Navigation - Mobile Only */}
+        <ProviderBottomNav
+          pendingOrders={pendingOrders}
+          pendingRefunds={pendingRefunds}
+        />
       </div>
     </div>
   )

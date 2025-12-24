@@ -8,9 +8,6 @@ import {
   Menu,
   Bell,
   LogOut,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   User as UserIcon,
   ShoppingBag,
   Star,
@@ -18,6 +15,7 @@ import {
   Check,
   Trash2,
   AlertTriangle,
+  ExternalLink,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User } from '@supabase/supabase-js'
@@ -219,15 +217,15 @@ export function ProviderHeader({
           </Link>
         </div>
 
-        {/* Center: Page Title on Desktop */}
+        {/* Center: Page Title - visible on all screens */}
         {pageTitle && (
-          <div className="hidden md:flex items-center justify-center flex-1">
-            <div className="text-center">
-              <h2 className="text-lg font-semibold text-slate-800">
+          <div className="flex items-center justify-center flex-1 min-w-0 px-2">
+            <div className="text-center truncate">
+              <h2 className="text-sm md:text-lg font-semibold text-slate-800 truncate">
                 {locale === 'ar' ? pageTitle.ar : pageTitle.en}
               </h2>
               {pageSubtitle && (
-                <p className="text-xs text-slate-500">
+                <p className="text-[10px] md:text-xs text-slate-500 truncate hidden md:block">
                   {locale === 'ar' ? pageSubtitle.ar : pageSubtitle.en}
                 </p>
               )}
@@ -397,16 +395,11 @@ export function ProviderHeader({
           >
             <button className="flex items-center gap-2 p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
               <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="font-semibold text-sm text-primary">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </span>
+                <UserIcon className="w-4 h-4 text-primary" />
               </div>
               <span className="hidden sm:inline text-sm font-medium text-slate-700">
                 {locale === 'ar' ? 'حسابي' : 'My Account'}
               </span>
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`}
-              />
             </button>
 
             {/* Dropdown Menu */}
@@ -431,14 +424,16 @@ export function ProviderHeader({
                       <UserIcon className="w-4 h-4" />
                       {locale === 'ar' ? 'حسابي' : 'My Account'}
                     </Link>
-                    <Link
-                      href={`/${locale}`}
+                    <a
+                      href={providerId ? `/${locale}/providers/${providerId}` : `/${locale}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={() => setAccountMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                     >
-                      {isRTL ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-                      {locale === 'ar' ? 'العودة للموقع' : 'Back to Site'}
-                    </Link>
+                      <ExternalLink className="w-4 h-4" />
+                      {locale === 'ar' ? 'معاينة المتجر' : 'Preview Store'}
+                    </a>
                   </div>
 
                   {/* Logout */}

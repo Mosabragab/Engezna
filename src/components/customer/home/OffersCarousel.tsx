@@ -705,27 +705,22 @@ export function OffersCarousel({
 
           {/* Desktop Navigation Arrows */}
           {isDesktop && banners.length > 3 && (
-            <motion.div
-              className="flex items-center gap-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isHovered ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
+            <div className="flex items-center gap-2">
               <button
                 onClick={handlePrev}
-                className="w-11 h-11 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm group"
+                className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm group"
                 aria-label={locale === 'ar' ? 'السابق' : 'Previous'}
               >
                 <ChevronLeft className="w-5 h-5 group-hover:scale-110 transition-transform" />
               </button>
               <button
                 onClick={handleNext}
-                className="w-11 h-11 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm group"
+                className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm group"
                 aria-label={locale === 'ar' ? 'التالي' : 'Next'}
               >
                 <ChevronRight className="w-5 h-5 group-hover:scale-110 transition-transform" />
               </button>
-            </motion.div>
+            </div>
           )}
         </div>
       </div>

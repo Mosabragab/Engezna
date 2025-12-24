@@ -40,6 +40,7 @@ interface ProviderSidebarProps {
   pendingOrders?: number
   unreadNotifications?: number
   pendingRefunds?: number
+  pendingComplaints?: number
 }
 
 export function ProviderSidebar({
@@ -49,6 +50,7 @@ export function ProviderSidebar({
   pendingOrders = 0,
   unreadNotifications = 0,
   pendingRefunds = 0,
+  pendingComplaints = 0,
 }: ProviderSidebarProps) {
   const locale = useLocale()
   const pathname = usePathname()
@@ -64,7 +66,7 @@ export function ProviderSidebar({
       icon: ShoppingBag,
       label: { ar: 'الطلبات', en: 'Orders' },
       path: `/${locale}/provider/orders`,
-      badge: (pendingOrders + unreadNotifications) > 0 ? (pendingOrders + unreadNotifications).toString() : undefined,
+      badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
     },
     {
       icon: Package,
@@ -111,6 +113,7 @@ export function ProviderSidebar({
       icon: MessageSquare,
       label: { ar: 'الشكاوى', en: 'Complaints' },
       path: `/${locale}/provider/complaints`,
+      badge: pendingComplaints > 0 ? pendingComplaints.toString() : undefined,
     },
     {
       icon: Clock,
@@ -170,77 +173,101 @@ export function ProviderSidebar({
           w-64 bg-white border-${isRTL ? 'l' : 'r'} border-slate-200 shadow-sm
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0
-          flex flex-col
+          flex flex-col h-screen max-h-screen overflow-hidden
         `}
       >
-        {/* Logo */}
-        <div className="p-4 border-b border-slate-200">
+        {/* Logo - Compact on mobile, normal on desktop */}
+        <div className="p-3 lg:p-4 border-b border-slate-200 flex-shrink-0">
           <div className="flex items-center justify-between">
             <Link href={`/${locale}/provider`} className="flex flex-col">
-              <EngeznaLogo size="md" static showPen={false} />
-              <p className="text-xs text-slate-500 mt-1">
+              {/* Mobile logo - smaller */}
+              <div className="lg:hidden">
+                <EngeznaLogo size="sm" static showPen={false} />
+              </div>
+              {/* Desktop logo - normal size */}
+              <div className="hidden lg:block">
+                <EngeznaLogo size="md" static showPen={false} />
+              </div>
+              <p className="text-[10px] lg:text-xs text-slate-500 mt-0.5 lg:mt-1">
                 {locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}
               </p>
             </Link>
             <button
               onClick={onClose}
-              className="lg:hidden text-slate-500 hover:text-slate-700"
+              className="lg:hidden text-slate-500 hover:text-slate-700 p-1"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Store Info */}
-        {provider && (
-          <div className="p-4 border-b border-slate-200">
-            <div className="bg-slate-50 rounded-xl p-3">
-              <p className="text-sm font-medium text-slate-900 truncate">
-                {locale === 'ar' ? provider.name_ar : provider.name_en}
-              </p>
-              <p className="text-xs text-slate-500 capitalize">
-                {provider.category.replace('_', ' ')}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <span className={`w-2 h-2 rounded-full ${getStatusColor(provider.status)}`} />
-                <span className="text-xs text-slate-600">
-                  {getStatusLabel(provider.status)}
-                </span>
+        {/* Scrollable Content - Store Info + Navigation */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Store Info - Compact inline on mobile, card on desktop */}
+          {provider && (
+            <div className="p-2 lg:p-4 border-b border-slate-200">
+              {/* Mobile: inline compact */}
+              <div className="lg:hidden bg-slate-50 rounded-lg p-2 flex items-center gap-2">
+                <p className="text-xs font-medium text-slate-900 truncate flex-1">
+                  {locale === 'ar' ? provider.name_ar : provider.name_en}
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${getStatusColor(provider.status)}`} />
+                  <span className="text-[10px] text-slate-600">
+                    {getStatusLabel(provider.status)}
+                  </span>
+                </div>
+              </div>
+              {/* Desktop: full card */}
+              <div className="hidden lg:block bg-slate-50 rounded-xl p-3">
+                <p className="text-sm font-medium text-slate-900 truncate">
+                  {locale === 'ar' ? provider.name_ar : provider.name_en}
+                </p>
+                <p className="text-xs text-slate-500 capitalize">
+                  {provider.category.replace('_', ' ')}
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className={`w-2 h-2 rounded-full ${getStatusColor(provider.status)}`} />
+                  <span className="text-xs text-slate-600">
+                    {getStatusLabel(provider.status)}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = pathname === item.path ||
-              (item.path !== `/${locale}/provider` && pathname.startsWith(item.path))
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                onClick={onClose}
-                className={`
-                  w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                  ${isActive
-                    ? 'bg-primary text-white shadow-md'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
-                `}
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium text-sm">
-                  {locale === 'ar' ? item.label.ar : item.label.en}
-                </span>
-                {item.badge && (
-                  <span className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs px-2 py-0.5 rounded-full`}>
-                    {item.badge}
+          {/* Navigation - Compact on mobile, full size on desktop */}
+          <nav className="p-2 lg:p-3 pb-6 space-y-0.5 lg:space-y-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.path ||
+                (item.path !== `/${locale}/provider` && pathname.startsWith(item.path))
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  onClick={onClose}
+                  className={`
+                    w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+                    max-lg:gap-2 max-lg:px-3 max-lg:py-2 max-lg:rounded-lg
+                    ${isActive
+                      ? 'bg-primary text-white shadow-md'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
+                  `}
+                >
+                  <item.icon className="w-5 h-5 max-lg:w-4 max-lg:h-4 flex-shrink-0" />
+                  <span className="font-medium text-sm max-lg:text-xs">
+                    {locale === 'ar' ? item.label.ar : item.label.en}
                   </span>
-                )}
-              </Link>
-            )
-          })}
-        </nav>
+                  {item.badge && (
+                    <span className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs max-lg:text-[10px] px-2 max-lg:px-1.5 py-0.5 rounded-full`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
       </aside>
     </>
   )

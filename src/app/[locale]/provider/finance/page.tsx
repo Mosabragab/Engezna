@@ -92,7 +92,7 @@ export default function FinancePage() {
     onlineConfirmed: 0,
   })
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [filterType, setFilterType] = useState<'all' | 'order' | 'payout' | 'commission'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'order' | 'payout' | 'commission' | 'refund'>('all')
   const [dateFilter, setDateFilter] = useState<DateFilter>('month')
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
@@ -154,13 +154,33 @@ export default function FinancePage() {
       .eq('status', 'delivered')
       .order('created_at', { ascending: false })
 
+    // Get refunds to subtract from earnings
+    const { data: refunds } = await supabase
+      .from('refunds')
+      .select('id, amount, created_at, order_id, status, orders!inner(order_number)')
+      .eq('provider_id', provId)
+      .in('status', ['approved', 'processed'])
+      .order('created_at', { ascending: false })
+
+    // Get settlements (payouts) for the provider
+    const { data: settlements } = await supabase
+      .from('settlements')
+      .select('id, period_start, period_end, net_payout, net_amount_due, platform_commission, status, payment_date, created_at')
+      .eq('provider_id', provId)
+      .order('created_at', { ascending: false })
+
     if (allOrders) {
-      // Helper to get commission (use stored value or calculate as fallback using provider's rate)
-      const getCommission = (order: typeof allOrders[0]) => {
-        if (order.platform_commission != null) return order.platform_commission
-        // Fallback: calculate on (subtotal - discount) using provider's commission rate
+      // Calculate theoretical commission (always based on rate, regardless of grace period)
+      // This shows the merchant what the commission WOULD BE so they get used to seeing it
+      const getTheoreticalCommission = (order: typeof allOrders[0]) => {
         const revenue = (order.subtotal || order.total || 0) - (order.discount || 0)
         return revenue * currentCommissionRate
+      }
+
+      // Actual commission (what will be charged - could be 0 during grace period)
+      const getActualCommission = (order: typeof allOrders[0]) => {
+        if (order.platform_commission != null) return order.platform_commission
+        return getTheoreticalCommission(order)
       }
 
       // FILTER ALL ORDERS BY DATE RANGE FIRST
@@ -169,22 +189,33 @@ export default function FinancePage() {
         return d >= startDate && d <= endDate
       })
 
+      // Calculate refunds for this period
+      const periodRefunds = (refunds || []).filter(r => {
+        const d = new Date(r.created_at)
+        return d >= startDate && d <= endDate
+      })
+      const totalRefundsAmount = periodRefunds.reduce((sum, r) => sum + (r.amount || 0), 0)
+
       // Separate by payment status (filtered by date)
       const confirmedOrders = orders.filter(o => o.payment_status === 'completed')
       const pendingPaymentOrders = orders.filter(o => o.payment_status === 'pending')
 
       // Calculate confirmed totals (only completed payments in the period)
+      // Use ACTUAL commission for earnings (respects grace period)
       const confirmedRevenue = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const confirmedCommission = confirmedOrders.reduce((sum, o) => sum + getCommission(o), 0)
-      const confirmedEarnings = confirmedRevenue - confirmedCommission
+      const confirmedActualCommission = confirmedOrders.reduce((sum, o) => sum + getActualCommission(o), 0)
+      const confirmedEarnings = Math.max(0, confirmedRevenue - confirmedActualCommission - totalRefundsAmount)
 
       // Calculate pending collection (delivered but payment pending in the period)
       const pendingRevenue = pendingPaymentOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const pendingCommission = pendingPaymentOrders.reduce((sum, o) => sum + getCommission(o), 0)
-      const pendingCollection = pendingRevenue - pendingCommission
+      const pendingActualCommission = pendingPaymentOrders.reduce((sum, o) => sum + getActualCommission(o), 0)
+      const pendingCollection = pendingRevenue - pendingActualCommission
 
-      // Total commission from orders in the period
-      const totalCommission = orders.reduce((sum, o) => sum + getCommission(o), 0)
+      // Total THEORETICAL commission for display (shows what commission would be, even during grace period)
+      // Subtract commission proportional to refunds (refunded amounts shouldn't have commission)
+      const grossCommission = orders.reduce((sum, o) => sum + getTheoreticalCommission(o), 0)
+      const refundsCommission = totalRefundsAmount * currentCommissionRate
+      const totalCommission = Math.max(0, grossCommission - refundsCommission)
 
       // Period earnings = confirmed earnings in this period
       const periodEarnings = confirmedEarnings
@@ -194,21 +225,27 @@ export default function FinancePage() {
         const d = new Date(o.created_at)
         return d >= lastPeriodStart && d <= lastPeriodEnd
       })
+      const lastPeriodRefunds = (refunds || []).filter(r => {
+        const d = new Date(r.created_at)
+        return d >= lastPeriodStart && d <= lastPeriodEnd
+      })
+      const lastPeriodRefundsAmount = lastPeriodRefunds.reduce((sum, r) => sum + (r.amount || 0), 0)
       const lastPeriodConfirmedOrders = lastPeriodOrders.filter(o => o.payment_status === 'completed')
       const lastPeriodRevenue = lastPeriodConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const lastPeriodCommission = lastPeriodConfirmedOrders.reduce((sum, o) => sum + getCommission(o), 0)
-      const lastPeriodEarnings = lastPeriodRevenue - lastPeriodCommission
+      const lastPeriodCommission = lastPeriodConfirmedOrders.reduce((sum, o) => sum + getActualCommission(o), 0)
+      const lastPeriodEarnings = Math.max(0, lastPeriodRevenue - lastPeriodCommission - lastPeriodRefundsAmount)
 
       // Pending payout calculation (for filtered period)
       // For Online orders: Platform owes provider (revenue - commission)
       const periodOnlineConfirmed = confirmedOrders.filter(o => o.payment_method !== 'cash')
       const periodOnlineRevenue = periodOnlineConfirmed.reduce((sum, o) => sum + (o.total || 0), 0)
-      const periodOnlineCommission = periodOnlineConfirmed.reduce((sum, o) => sum + getCommission(o), 0)
+      const periodOnlineCommission = periodOnlineConfirmed.reduce((sum, o) => sum + getActualCommission(o), 0)
       const pendingPayout = periodOnlineRevenue - periodOnlineCommission
 
       // COD commission owed - what provider owes platform from COD orders in period
+      // Use ACTUAL commission (0 during grace period)
       const periodCodConfirmed = confirmedOrders.filter(o => o.payment_method === 'cash')
-      const codCommissionOwed = periodCodConfirmed.reduce((sum, o) => sum + getCommission(o), 0)
+      const codCommissionOwed = periodCodConfirmed.reduce((sum, o) => sum + getActualCommission(o), 0)
 
       // COD vs Online breakdown (within date range - already filtered)
       const codOrders = orders.filter(o => o.payment_method === 'cash')
@@ -244,19 +281,85 @@ export default function FinancePage() {
       })
 
       // Build transaction list from filtered orders
-      const txns: Transaction[] = orders.slice(0, 30).map(order => ({
+      const orderTxns: Transaction[] = orders.slice(0, 30).map(order => ({
         id: order.id,
         type: 'order' as const,
-        amount: (order.total || 0) - getCommission(order),
+        amount: (order.total || 0) - getActualCommission(order),
         status: order.payment_status === 'completed' ? 'completed' as const : 'pending' as const,
         paymentStatus: order.payment_status || 'pending',
         paymentMethod: order.payment_method || 'cash',
-        description: locale === 'ar' ? `#${order.order_number || order.id.slice(0, 8).toUpperCase()}` : `#${order.order_number || order.id.slice(0, 8).toUpperCase()}`,
+        description: locale === 'ar' ? `طلب #${order.order_number || order.id.slice(0, 8).toUpperCase()}` : `Order #${order.order_number || order.id.slice(0, 8).toUpperCase()}`,
         created_at: order.created_at,
         order_id: order.id,
       }))
 
-      setTransactions(txns)
+      // Build refund transactions
+      const refundTxns: Transaction[] = (refunds || [])
+        .filter(r => {
+          const d = new Date(r.created_at)
+          return d >= startDate && d <= endDate
+        })
+        .slice(0, 20)
+        .map(refund => ({
+          id: refund.id,
+          type: 'refund' as const,
+          amount: refund.amount || 0,
+          status: 'completed' as const,
+          paymentStatus: 'refunded',
+          paymentMethod: 'refund',
+          description: locale === 'ar'
+            ? `استرداد #${(refund.orders as any)?.order_number || refund.order_id?.slice(0, 8).toUpperCase() || ''}`
+            : `Refund #${(refund.orders as any)?.order_number || refund.order_id?.slice(0, 8).toUpperCase() || ''}`,
+          created_at: refund.created_at,
+          order_id: refund.order_id || undefined,
+        }))
+
+      // Build settlement (payout) transactions
+      const settlementTxns: Transaction[] = (settlements || [])
+        .filter(s => {
+          const d = new Date(s.created_at)
+          return d >= startDate && d <= endDate
+        })
+        .slice(0, 20)
+        .map(settlement => ({
+          id: settlement.id,
+          type: 'payout' as const,
+          amount: settlement.net_payout || settlement.net_amount_due || 0,
+          status: settlement.status === 'paid' ? 'completed' as const :
+                  settlement.status === 'pending' ? 'pending' as const :
+                  'failed' as const,
+          paymentStatus: settlement.status === 'paid' ? 'completed' : 'pending',
+          paymentMethod: 'bank_transfer',
+          description: locale === 'ar'
+            ? `تسوية ${new Date(settlement.period_start).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })} - ${new Date(settlement.period_end).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}`
+            : `Settlement ${new Date(settlement.period_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(settlement.period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+          created_at: settlement.payment_date || settlement.created_at,
+        }))
+
+      // Build commission transactions (from confirmed orders)
+      const commissionTxns: Transaction[] = confirmedOrders
+        .filter(o => getActualCommission(o) > 0)
+        .slice(0, 20)
+        .map(order => ({
+          id: `comm-${order.id}`,
+          type: 'commission' as const,
+          amount: getActualCommission(order),
+          status: 'completed' as const,
+          paymentStatus: 'completed',
+          paymentMethod: order.payment_method || 'cash',
+          description: locale === 'ar'
+            ? `عمولة طلب #${order.order_number || order.id.slice(0, 8).toUpperCase()}`
+            : `Commission #${order.order_number || order.id.slice(0, 8).toUpperCase()}`,
+          created_at: order.created_at,
+          order_id: order.id,
+        }))
+
+      // Combine all transactions and sort by date
+      const allTxns = [...orderTxns, ...refundTxns, ...settlementTxns, ...commissionTxns]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 50)
+
+      setTransactions(allTxns)
     }
   }, [commissionRate, getDateRange, locale])
 
@@ -339,6 +442,7 @@ export default function FinancePage() {
     { key: 'order', label_ar: 'الطلبات', label_en: 'Orders' },
     { key: 'payout', label_ar: 'التحويلات', label_en: 'Payouts' },
     { key: 'commission', label_ar: 'العمولات', label_en: 'Commissions' },
+    { key: 'refund', label_ar: 'المرتجعات', label_en: 'Refunds' },
   ]
 
   const dateFilters = [
@@ -482,7 +586,7 @@ export default function FinancePage() {
             </CardContent>
           </Card>
 
-          {/* Total Commission */}
+          {/* Total Commission - Shows theoretical value so merchant gets used to it */}
           <Card className="bg-[hsl(var(--info)/0.1)] border-[hsl(var(--info)/0.3)]">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
@@ -490,6 +594,7 @@ export default function FinancePage() {
               </div>
               <p className="text-2xl font-bold text-info">{formatCurrency(stats.totalCommission)}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'العمولات (حتى 7%)' : 'Commission (up to 7%)'}</p>
+              {/* Note: This shows theoretical commission so merchant gets used to seeing it */}
             </CardContent>
           </Card>
         </div>
@@ -784,68 +889,112 @@ export default function FinancePage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredTransactions.map((txn) => (
-                  <Link
-                    key={txn.id}
-                    href={`/${locale}/provider/orders/${txn.order_id}`}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        txn.status === 'completed' ? 'bg-[hsl(var(--deal)/0.15)]' :
-                        txn.status === 'pending' ? 'bg-[hsl(var(--premium)/0.2)]' :
-                        'bg-[hsl(var(--error)/0.15)]'
-                      }`}>
-                        {txn.status === 'completed' ? (
-                          <ArrowUpRight className="w-5 h-5 text-deal" />
-                        ) : txn.status === 'pending' ? (
-                          <Clock className="w-5 h-5 text-premium" />
-                        ) : (
-                          <XCircle className="w-5 h-5 text-error" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {txn.type === 'order'
-                            ? (locale === 'ar' ? 'طلب' : 'Order')
-                            : txn.type === 'payout'
-                            ? (locale === 'ar' ? 'تحويل' : 'Payout')
-                            : txn.type === 'commission'
-                            ? (locale === 'ar' ? 'عمولة' : 'Commission')
-                            : (locale === 'ar' ? 'استرداد' : 'Refund')} {txn.description}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs text-slate-500">{formatDate(txn.created_at)}</p>
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">
-                            {txn.paymentMethod === 'cash'
-                              ? (locale === 'ar' ? 'كاش' : 'Cash')
-                              : (locale === 'ar' ? 'بطاقة' : 'Card')}
-                          </span>
+                {filteredTransactions.map((txn) => {
+                  // Determine if this is a deduction (commission or refund)
+                  const isDeduction = txn.type === 'commission' || txn.type === 'refund'
+                  const isIncome = txn.type === 'order' || txn.type === 'payout'
+
+                  // Get icon and colors based on transaction type
+                  const getIconAndColor = () => {
+                    if (txn.type === 'refund') {
+                      return {
+                        bg: 'bg-red-100',
+                        icon: <ArrowDownRight className="w-5 h-5 text-red-600" />,
+                        amountColor: 'text-red-600'
+                      }
+                    }
+                    if (txn.type === 'commission') {
+                      return {
+                        bg: 'bg-blue-100',
+                        icon: <Banknote className="w-5 h-5 text-blue-600" />,
+                        amountColor: 'text-blue-600'
+                      }
+                    }
+                    if (txn.type === 'payout') {
+                      return {
+                        bg: txn.status === 'completed' ? 'bg-[hsl(var(--deal)/0.15)]' : 'bg-[hsl(var(--premium)/0.2)]',
+                        icon: txn.status === 'completed'
+                          ? <CheckCircle2 className="w-5 h-5 text-deal" />
+                          : <Clock className="w-5 h-5 text-premium" />,
+                        amountColor: txn.status === 'completed' ? 'text-deal' : 'text-amber-600'
+                      }
+                    }
+                    // Order
+                    return {
+                      bg: txn.status === 'completed' ? 'bg-[hsl(var(--deal)/0.15)]' :
+                          txn.status === 'pending' ? 'bg-[hsl(var(--premium)/0.2)]' :
+                          'bg-[hsl(var(--error)/0.15)]',
+                      icon: txn.status === 'completed'
+                        ? <ArrowUpRight className="w-5 h-5 text-deal" />
+                        : txn.status === 'pending'
+                        ? <Clock className="w-5 h-5 text-premium" />
+                        : <XCircle className="w-5 h-5 text-error" />,
+                      amountColor: txn.status === 'completed' ? 'text-deal' :
+                                   txn.status === 'pending' ? 'text-amber-600' : 'text-error'
+                    }
+                  }
+
+                  const { bg, icon, amountColor } = getIconAndColor()
+
+                  // Get payment method label
+                  const getPaymentMethodLabel = () => {
+                    if (txn.paymentMethod === 'cash') return locale === 'ar' ? 'كاش' : 'Cash'
+                    if (txn.paymentMethod === 'bank_transfer') return locale === 'ar' ? 'تحويل بنكي' : 'Bank'
+                    if (txn.paymentMethod === 'refund') return locale === 'ar' ? 'استرداد' : 'Refund'
+                    return locale === 'ar' ? 'بطاقة' : 'Card'
+                  }
+
+                  const content = (
+                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${bg}`}>
+                          {icon}
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900">
+                            {txn.description}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-slate-500">{formatDate(txn.created_at)}</p>
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">
+                              {getPaymentMethodLabel()}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <div className="text-end">
+                        <p className={`font-bold ${amountColor}`}>
+                          {isDeduction ? '-' : '+'}{formatCurrency(txn.amount)}
+                        </p>
+                        <p className={`text-xs ${amountColor}`}>
+                          {txn.type === 'refund'
+                            ? (locale === 'ar' ? 'مسترد' : 'Refunded')
+                            : txn.type === 'commission'
+                            ? (locale === 'ar' ? 'عمولة' : 'Commission')
+                            : txn.status === 'completed'
+                            ? (locale === 'ar' ? 'مؤكد' : 'Confirmed')
+                            : txn.status === 'pending'
+                            ? (locale === 'ar' ? 'معلق' : 'Pending')
+                            : (locale === 'ar' ? 'فشل' : 'Failed')}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-end">
-                      <p className={`font-bold ${
-                        txn.status === 'completed' ? 'text-deal' :
-                        txn.status === 'pending' ? 'text-amber-600' :
-                        'text-error'
-                      }`}>
-                        +{formatCurrency(txn.amount)}
-                      </p>
-                      <p className={`text-xs ${
-                        txn.status === 'completed' ? 'text-deal' :
-                        txn.status === 'pending' ? 'text-amber-600' :
-                        'text-error'
-                      }`}>
-                        {txn.status === 'completed'
-                          ? (locale === 'ar' ? 'مؤكد' : 'Confirmed')
-                          : txn.status === 'pending'
-                          ? (locale === 'ar' ? 'في انتظار التحصيل' : 'Pending Collection')
-                          : (locale === 'ar' ? 'فشل' : 'Failed')}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
+                  )
+
+                  // Link to order if order_id exists, otherwise just show the content
+                  if (txn.order_id) {
+                    return (
+                      <Link
+                        key={txn.id}
+                        href={`/${locale}/provider/orders/${txn.order_id}`}
+                      >
+                        {content}
+                      </Link>
+                    )
+                  }
+
+                  return <div key={txn.id}>{content}</div>
+                })}
               </div>
             )}
           </CardContent>

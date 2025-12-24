@@ -25,8 +25,6 @@ import {
   X,
   Receipt,
   CreditCard,
-  ChevronRight,
-  ChevronLeft,
   MessageSquare,
   Calendar,
 } from 'lucide-react'
@@ -68,11 +66,30 @@ type Order = {
   payment_method: string
   payment_status: string
   delivery_address: {
-    address: string
-    phone: string
-    full_name: string
+    // Geographic hierarchy
+    governorate_id?: string
+    governorate_ar?: string
+    governorate_en?: string
+    city_id?: string
+    city_ar?: string
+    city_en?: string
+    district_id?: string
+    district_ar?: string
+    district_en?: string
+    // Address details
+    address?: string
+    address_line1?: string
+    street?: string
+    building?: string
+    floor?: string
+    apartment?: string
+    landmark?: string
+    // Contact
+    phone?: string
+    full_name?: string
     notes?: string
-  }
+    delivery_instructions?: string
+  } | null
   customer_notes: string | null
   cancellation_reason: string | null
   created_at: string
@@ -533,7 +550,6 @@ export default function ProviderOrderDetailPage() {
                       ) : (
                         <>
                           {locale === 'ar' ? 'تحديث إلى:' : 'Update to:'} {getNextStatusLabel()}
-                          {isRTL ? <ChevronLeft className="w-4 h-4 mr-2" /> : <ChevronRight className="w-4 h-4 ml-2" />}
                         </>
                       )}
                     </Button>
@@ -567,14 +583,70 @@ export default function ProviderOrderDetailPage() {
                   {locale === 'ar' ? 'اتصال' : 'Call'}
                 </a>
               </div>
+              {/* Delivery Address Section */}
               <div className="pt-4 border-t border-slate-200">
                 <div className="flex items-start gap-2">
                   <MapPin className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />
-                  <div>
-                    <p className="text-slate-900">{order.delivery_address?.address}</p>
+                  <div className="flex-1 space-y-2">
+                    {/* Geographic Tags */}
+                    {order.delivery_address && (order.delivery_address.governorate_ar || order.delivery_address.city_ar || order.delivery_address.district_ar) && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {order.delivery_address.governorate_ar && (
+                          <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
+                            {locale === 'ar' ? order.delivery_address.governorate_ar : order.delivery_address.governorate_en}
+                          </span>
+                        )}
+                        {order.delivery_address.city_ar && (
+                          <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
+                            {locale === 'ar' ? order.delivery_address.city_ar : order.delivery_address.city_en}
+                          </span>
+                        )}
+                        {order.delivery_address.district_ar && (
+                          <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
+                            {locale === 'ar' ? order.delivery_address.district_ar : order.delivery_address.district_en}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Street Address */}
+                    <p className="text-slate-900 font-medium">
+                      {order.delivery_address?.address || order.delivery_address?.address_line1}
+                    </p>
+
+                    {/* Building Details */}
+                    {order.delivery_address && (order.delivery_address.building || order.delivery_address.floor || order.delivery_address.apartment) && (
+                      <p className="text-slate-600 text-sm">
+                        {order.delivery_address.building && (
+                          <span>{locale === 'ar' ? 'مبنى' : 'Bldg'} {order.delivery_address.building}</span>
+                        )}
+                        {order.delivery_address.floor && (
+                          <span>{order.delivery_address.building ? ' - ' : ''}{locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}</span>
+                        )}
+                        {order.delivery_address.apartment && (
+                          <span>{(order.delivery_address.building || order.delivery_address.floor) ? ' - ' : ''}{locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}</span>
+                        )}
+                      </p>
+                    )}
+
+                    {/* Landmark */}
+                    {order.delivery_address?.landmark && (
+                      <p className="text-slate-500 text-sm">
+                        <span className="font-medium">{locale === 'ar' ? 'علامة مميزة:' : 'Landmark:'}</span> {order.delivery_address.landmark}
+                      </p>
+                    )}
+
+                    {/* Delivery Instructions */}
+                    {order.delivery_address?.delivery_instructions && (
+                      <div className="bg-amber-50 rounded-lg p-2 text-sm text-amber-800">
+                        <span className="font-medium">{locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}</span> {order.delivery_address.delivery_instructions}
+                      </div>
+                    )}
+
+                    {/* Address Notes */}
                     {order.delivery_address?.notes && (
-                      <p className="text-sm text-slate-500 mt-1">
-                        {locale === 'ar' ? 'ملاحظات العنوان:' : 'Address notes:'} {order.delivery_address.notes}
+                      <p className="text-slate-500 text-sm italic">
+                        {order.delivery_address.notes}
                       </p>
                     )}
                   </div>

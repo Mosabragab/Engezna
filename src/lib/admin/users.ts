@@ -165,7 +165,6 @@ export async function banUser(
     const timestamp = new Date().toISOString();
 
     // Step 1: Fetch current user from profiles table
-    console.log('[BAN USER v2] Step 1: Fetching user profile for userId:', userId);
     const { data: current, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
@@ -173,10 +172,8 @@ export async function banUser(
       .single();
 
     if (fetchError || !current) {
-      console.error('[BAN USER v2] User not found:', fetchError);
       return { success: false, error: 'User not found', errorCode: 'NOT_FOUND' };
     }
-    console.log('[BAN USER v2] User found:', current.full_name, 'role:', current.role);
 
     // Cannot ban admins
     if (current.role === 'admin') {
@@ -185,41 +182,24 @@ export async function banUser(
 
     // Step 2: Call the database function to cancel orders
     // This uses SECURITY DEFINER to bypass RLS policies
-    console.log('[BAN USER v2] Step 2: Calling cancel_orders_for_banned_customer RPC...');
-    const { data: cancelResult, error: cancelError } = await supabase
+    const { error: cancelError } = await supabase
       .rpc('cancel_orders_for_banned_customer', {
         p_customer_id: userId,
         p_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`
       });
 
-    console.log('[BAN USER v2] Cancel orders RPC result:', {
-      result: cancelResult,
-      error: cancelError?.message || null
-    });
-
     if (cancelError) {
-      console.error('[BAN USER v2] RPC Error:', cancelError);
       // If RPC fails, try direct approach as fallback
-      console.log('[BAN USER v2] Trying direct approach as fallback...');
-
       const activeStatuses = ['pending', 'accepted', 'preparing', 'ready', 'out_for_delivery'];
-      const { data: ordersToCancel, error: ordersError } = await supabase
+      const { data: ordersToCancel } = await supabase
         .from('orders')
         .select('id, order_number, provider_id, total, status')
         .eq('customer_id', userId)
         .in('status', activeStatuses);
 
-      console.log('[BAN USER v2] Orders query result:', {
-        found: ordersToCancel?.length || 0,
-        orders: ordersToCancel,
-        error: ordersError?.message || null
-      });
-
       if (ordersToCancel && ordersToCancel.length > 0) {
         for (const order of ordersToCancel) {
-          console.log('[BAN USER v2] Cancelling order:', order.order_number);
-
-          const { data: cancelData, error: updateError } = await supabase
+          await supabase
             .from('orders')
             .update({
               status: 'cancelled',
@@ -230,15 +210,8 @@ export async function banUser(
             .eq('id', order.id)
             .select('id, status');
 
-          console.log('[BAN USER v2] Order cancel result:', {
-            orderId: order.id,
-            success: !updateError,
-            newData: cancelData,
-            error: updateError?.message || null
-          });
-
-          // Send notification to provider
-          const { error: providerNotifError } = await supabase
+          // Send notification to provider (silently fail if error)
+          await supabase
             .from('provider_notifications')
             .insert({
               provider_id: order.provider_id,
@@ -250,16 +223,11 @@ export async function banUser(
               related_order_id: order.id,
               related_customer_id: userId,
             });
-
-          if (providerNotifError) {
-            console.error('[BAN USER v2] Failed to notify provider:', providerNotifError.message);
-          }
         }
       }
     }
 
     // Step 3: Now update user to banned
-    console.log('[BAN USER v2] Step 3: Updating user is_active to false...');
     const { data: updated, error: updateError } = await supabase
       .from('profiles')
       .update({
@@ -271,14 +239,11 @@ export async function banUser(
       .single();
 
     if (updateError) {
-      console.error('[BAN USER v2] Failed to update user:', updateError);
       return { success: false, error: updateError.message, errorCode: 'DATABASE_ERROR' };
     }
-    console.log('[BAN USER v2] User banned successfully');
 
-    // Step 4: Send notification to the banned customer (if RPC didn't send it)
-    console.log('[BAN USER v2] Step 4: Sending notification to customer...');
-    const { error: customerNotifError } = await supabase
+    // Step 4: Send notification to the banned customer (silently fail if error)
+    await supabase
       .from('customer_notifications')
       .insert({
         customer_id: userId,
@@ -289,16 +254,8 @@ export async function banUser(
         body_en: `Your Engezna account has been suspended. Reason: ${reason.trim()}. For inquiries, please contact Engezna support.`,
       });
 
-    if (customerNotifError) {
-      console.error('[BAN USER v2] Failed to send customer notification:', customerNotifError.message);
-    } else {
-      console.log('[BAN USER v2] Customer notification sent');
-    }
-
-    console.log('[BAN USER v2] Complete! All operations finished.');
     return { success: true, data: updated as AdminUser };
   } catch (err) {
-    console.error('[BAN USER v2] Unexpected error:', err);
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',
