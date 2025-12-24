@@ -26,10 +26,10 @@ BEGIN
   -- TRIGGER CONDITION: ONLY when customer confirms receiving the refund
   -- العمولة تُحدّث فقط عند تأكيد العميل استلام المرتجع
   -- This is the correct business logic:
-  -- 1. Refund requested → no change
-  -- 2. Admin approves → no change (money not yet paid)
+  -- 1. Customer requests refund → no change
+  -- 2. Provider approves → no change
   -- 3. Provider pays customer → no change
-  -- 4. Customer confirms → NOW update commission/settlement
+  -- 4. Customer confirms receiving refund → NOW update commission/settlement
   -- ========================================================================
   IF (NEW.customer_confirmed = true
       AND (OLD.customer_confirmed = false OR OLD.customer_confirmed IS NULL)
@@ -267,13 +267,18 @@ END $$;
 COMMENT ON FUNCTION handle_refund_settlement_update() IS
 'Refund Settlement Update Trigger - v2
 
+BUSINESS FLOW:
+1. Customer requests refund → no change
+2. Provider approves → no change
+3. Provider pays customer → no change
+4. Customer confirms receiving refund → NOW update commission/settlement
+
 TRIGGERS ON:
-1. status changes to approved/processed (NEW)
-2. customer_confirmed becomes true (original)
+- customer_confirmed becomes true (ONLY)
 
 ACTIONS:
-1. Stores original_commission before reduction
-2. Reduces platform_commission proportionally
+1. Updates original_commission (theoretical after refund)
+2. Updates platform_commission (0 for grace period, reduced for others)
 3. Updates settlement totals
 4. Creates audit trail
 
