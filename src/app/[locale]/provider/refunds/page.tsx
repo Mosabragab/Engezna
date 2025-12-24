@@ -27,6 +27,14 @@ import { formatDistanceToNow } from 'date-fns'
 import { ar, enUS } from 'date-fns/locale'
 import Link from 'next/link'
 
+interface RefundItem {
+  id: string
+  name_ar: string
+  name_en: string
+  quantity: number
+  price: number
+}
+
 interface Refund {
   id: string
   order_id: string
@@ -40,6 +48,8 @@ interface Refund {
   customer_confirmed: boolean
   confirmation_deadline: string | null
   evidence_images: string[] | null
+  metadata: { selected_items?: RefundItem[] } | null
+  refund_type: string | null
   created_at: string
   order?: {
     order_number: string
@@ -421,6 +431,30 @@ export default function ProviderRefundsPage() {
                             }
                           </span>
                         </div>
+
+                        {/* Disputed Items */}
+                        {refund.refund_type === 'partial' && refund.metadata?.selected_items && refund.metadata.selected_items.length > 0 && (
+                          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-sm font-medium text-red-700 mb-2">
+                              {isArabic ? 'الأصناف محل النزاع:' : 'Disputed Items:'}
+                            </p>
+                            <div className="space-y-2">
+                              {refund.metadata.selected_items.map((item, idx) => (
+                                <div key={item.id || idx} className="flex items-center justify-between text-sm bg-white p-2 rounded">
+                                  <div>
+                                    <span className="font-medium text-slate-900">
+                                      {isArabic ? item.name_ar : item.name_en}
+                                    </span>
+                                    <span className="text-slate-500 mx-2">×{item.quantity}</span>
+                                  </div>
+                                  <span className="font-medium text-red-600">
+                                    {item.price.toFixed(2)} {isArabic ? 'ج.م' : 'EGP'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Description */}
                         {refund.reason_ar && (

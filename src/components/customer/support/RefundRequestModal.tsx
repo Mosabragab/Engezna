@@ -274,7 +274,16 @@ export function RefundRequestModal({
           status: 'pending',
           request_source: 'customer',
           provider_action: 'pending',
-          confirmation_deadline: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+          confirmation_deadline: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+          metadata: refundType === 'partial' && selectedItems.length > 0 ? {
+            selected_items: order.items?.filter(item => selectedItems.includes(item.id)).map(item => ({
+              id: item.id,
+              name_ar: item.item_name_ar,
+              name_en: item.item_name_en,
+              quantity: item.quantity,
+              price: item.total_price
+            }))
+          } : {}
         })
 
         if (insertError) throw insertError
