@@ -1,15 +1,15 @@
 -- ============================================================================
--- Migration: Update Settlement When Refund is Approved
--- تحديث التسوية عند الموافقة على المرتجع (ليس فقط عند تأكيد العميل)
+-- Migration: Fix Commission Update When Customer Confirms Refund
+-- إصلاح تحديث العمولة عند تأكيد العميل استلام المرتجع
 -- ============================================================================
 -- Date: 2025-12-24
--- Problem: Settlement commission not updated when refund is approved
--- Current behavior: Only updates on customer_confirmed = true
--- Fix: Also update when status changes to 'approved' or 'processed'
+-- Problem: original_commission not updated for grace period merchants
+-- Business Logic: Commission/settlement updated ONLY when customer confirms
+-- Fix: Update BOTH platform_commission AND original_commission properly
 -- ============================================================================
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 1. UPDATE THE REFUND TRIGGER TO ALSO FIRE ON STATUS CHANGE
+-- 1. FIX THE REFUND TRIGGER TO PROPERLY UPDATE original_commission
 -- ═══════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE FUNCTION handle_refund_settlement_update()
@@ -23,18 +23,13 @@ DECLARE
   v_should_adjust BOOLEAN := FALSE;
 BEGIN
   -- ========================================================================
-  -- TRIGGER CONDITION 1: When refund is APPROVED or PROCESSED
-  -- هذا يضمن تحديث العمولة فور الموافقة على المرتجع
-  -- ========================================================================
-  IF (TG_OP = 'UPDATE'
-      AND NEW.status IN ('approved', 'processed')
-      AND OLD.status NOT IN ('approved', 'processed')
-      AND NEW.affects_settlement = true) THEN
-    v_should_adjust := TRUE;
-  END IF;
-
-  -- ========================================================================
-  -- TRIGGER CONDITION 2: When customer confirms (original behavior)
+  -- TRIGGER CONDITION: ONLY when customer confirms receiving the refund
+  -- العمولة تُحدّث فقط عند تأكيد العميل استلام المرتجع
+  -- This is the correct business logic:
+  -- 1. Refund requested → no change
+  -- 2. Admin approves → no change (money not yet paid)
+  -- 3. Provider pays customer → no change
+  -- 4. Customer confirms → NOW update commission/settlement
   -- ========================================================================
   IF (NEW.customer_confirmed = true
       AND (OLD.customer_confirmed = false OR OLD.customer_confirmed IS NULL)
@@ -187,11 +182,11 @@ CREATE TRIGGER trigger_refund_settlement_update
   EXECUTE FUNCTION handle_refund_settlement_update();
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 3. RECALCULATE FOR EXISTING APPROVED REFUNDS
--- تحديث الطلبات والتسويات للمرتجعات الموجودة
+-- 3. RECALCULATE FOR EXISTING CUSTOMER-CONFIRMED REFUNDS
+-- تحديث الطلبات والتسويات للمرتجعات المؤكدة من العميل فقط
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- First, identify orders with approved refunds that weren't adjusted
+-- Only process refunds where customer has confirmed receiving the refund
 DO $$
 DECLARE
   v_refund RECORD;
@@ -205,7 +200,7 @@ BEGIN
     SELECT r.*
     FROM refunds r
     JOIN orders o ON o.id = r.order_id
-    WHERE r.status IN ('approved', 'processed')
+    WHERE r.customer_confirmed = true  -- ONLY customer-confirmed refunds
       AND r.affects_settlement = true
       AND (o.settlement_adjusted = false OR o.settlement_adjusted IS NULL)
   LOOP
