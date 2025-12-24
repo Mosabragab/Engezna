@@ -6,44 +6,58 @@ import Link from 'next/link'
 import {
   Home,
   ShoppingBag,
-  Wallet,
-  MoreHorizontal,
+  Menu,
+  Package,
 } from 'lucide-react'
 
 interface ProviderBottomNavProps {
   pendingOrders?: number
   pendingRefunds?: number
+  onMoreClick?: () => void
 }
 
-export function ProviderBottomNav({ pendingOrders = 0, pendingRefunds = 0 }: ProviderBottomNavProps) {
+export function ProviderBottomNav({ pendingOrders = 0, pendingRefunds = 0, onMoreClick }: ProviderBottomNavProps) {
   const locale = useLocale()
   const pathname = usePathname()
 
-  const navItems = [
+  // Check if current path is under a specific section
+  const isHomePage = pathname === `/${locale}/provider`
+  const isOrdersSection = pathname.startsWith(`/${locale}/provider/orders`)
+  const isFinanceSection = pathname.startsWith(`/${locale}/provider/finance`) ||
+                          pathname.startsWith(`/${locale}/provider/settlements`)
+  const isProductsSection = pathname.startsWith(`/${locale}/provider/products`)
+
+  const navItems: Array<{
+    href?: string
+    icon: typeof Home
+    label: { ar: string; en: string }
+    isActive: boolean
+    badge?: number
+    isMoreButton?: boolean
+  }> = [
     {
       href: `/${locale}/provider`,
       icon: Home,
       label: { ar: 'الرئيسية', en: 'Home' },
-      isActive: pathname === `/${locale}/provider`,
+      isActive: isHomePage,
     },
     {
       href: `/${locale}/provider/orders`,
       icon: ShoppingBag,
       label: { ar: 'الطلبات', en: 'Orders' },
-      isActive: pathname.startsWith(`/${locale}/provider/orders`),
+      isActive: isOrdersSection,
       badge: pendingOrders > 0 ? pendingOrders : undefined,
     },
     {
-      href: `/${locale}/provider/finance`,
-      icon: Wallet,
-      label: { ar: 'المالية', en: 'Finance' },
-      isActive: pathname.startsWith(`/${locale}/provider/finance`) || pathname.startsWith(`/${locale}/provider/settlements`),
+      href: `/${locale}/provider/products`,
+      icon: Package,
+      label: { ar: 'المنتجات', en: 'Products' },
+      isActive: isProductsSection,
     },
     {
-      href: `/${locale}/provider/menu`,
-      icon: MoreHorizontal,
+      icon: Menu,
       label: { ar: 'المزيد', en: 'More' },
-      isActive: false, // "More" opens the sidebar instead
+      isActive: !isHomePage && !isOrdersSection && !isProductsSection, // Active when in "other" pages
       isMoreButton: true,
     },
   ]
@@ -51,16 +65,16 @@ export function ProviderBottomNav({ pendingOrders = 0, pendingRefunds = 0 }: Pro
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
-        {navItems.map((item) => {
+        {navItems.map((item, index) => {
           const Icon = item.icon
           const isActive = item.isActive
 
           if (item.isMoreButton) {
-            // "More" button - just a placeholder that indicates there's more
+            // "More" button - opens the sidebar
             return (
-              <Link
-                key={item.href}
-                href={item.href}
+              <button
+                key="more-button"
+                onClick={onMoreClick}
                 className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-colors ${
                   isActive ? 'text-primary' : 'text-slate-500 hover:text-slate-700'
                 }`}
@@ -69,14 +83,17 @@ export function ProviderBottomNav({ pendingOrders = 0, pendingRefunds = 0 }: Pro
                 <span className="text-[10px] font-medium">
                   {locale === 'ar' ? item.label.ar : item.label.en}
                 </span>
-              </Link>
+                {isActive && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+                )}
+              </button>
             )
           }
 
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={item.href!}
               className={`relative flex flex-col items-center justify-center flex-1 h-full py-2 transition-colors ${
                 isActive ? 'text-primary' : 'text-slate-500 hover:text-slate-700'
               }`}

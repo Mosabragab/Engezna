@@ -335,6 +335,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         <ProviderBottomNav
           pendingOrders={pendingOrders}
           pendingRefunds={pendingRefunds}
+          onMoreClick={() => setSidebarOpen(true)}
         />
       </div>
     </div>
