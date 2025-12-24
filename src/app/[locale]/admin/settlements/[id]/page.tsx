@@ -100,6 +100,7 @@ interface Order {
   // Calculated fields
   refund_amount?: number
   net_for_commission?: number
+  adjusted_commission?: number // Commission after refund adjustment
 }
 
 export default function SettlementDetailPage() {
@@ -205,6 +206,11 @@ export default function SettlementDetailPage() {
       }
 
       if (ordersData) {
+        // Get commission rate from provider
+        const commissionRate = (settlementData.provider?.custom_commission_rate
+          ?? settlementData.provider?.commission_rate
+          ?? 7) / 100 // Convert percentage to decimal
+
         // Add refund_amount and net_for_commission to each order
         const ordersWithRefunds = ordersData.map(order => {
           const refundAmount = refundMap.get(order.id) || 0
@@ -219,11 +225,14 @@ export default function SettlementDetailPage() {
             baseForCommission = (order.total || 0) - (order.delivery_fee || 0) - (order.discount || 0)
           }
           // Subtract refund - merchant shouldn't pay commission on refunded amounts
-          const netForCommission = baseForCommission - refundAmount
+          const netForCommission = Math.max(0, baseForCommission - refundAmount)
+          // Calculate adjusted commission based on net after refund
+          const adjustedCommission = netForCommission * commissionRate
           return {
             ...order,
             refund_amount: refundAmount,
-            net_for_commission: Math.max(0, netForCommission),
+            net_for_commission: netForCommission,
+            adjusted_commission: adjustedCommission,
           }
         })
         setOrders(ordersWithRefunds as unknown as Order[])
@@ -799,7 +808,7 @@ export default function SettlementDetailPage() {
                     <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'المرتجع' : 'Refund'}</th>
                     <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'التوصيل' : 'Delivery'}</th>
                     <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'صافي للعمولة' : 'Net for Commission'}</th>
-                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'العمولة الأصلية' : 'Original Commission'}</th>
+                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'العمولة المستحقة' : 'Commission Due'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -863,11 +872,11 @@ export default function SettlementDetailPage() {
                             </div>
                           </td>
 
-                          {/* Original Commission */}
+                          {/* Commission Due (after refund adjustment) */}
                           <td className="px-3 py-3">
                             <div>
                               <span className={`font-bold ${isGracePeriod ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatCurrency(order.original_commission || order.platform_commission || 0, locale)}
+                                {formatCurrency(order.adjusted_commission || 0, locale)}
                               </span>
                               {isGracePeriod && (
                                 <p className="text-[10px] text-green-500 mt-0.5">
