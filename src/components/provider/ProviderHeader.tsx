@@ -18,6 +18,7 @@ import {
   Check,
   Trash2,
   AlertTriangle,
+  ExternalLink,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User } from '@supabase/supabase-js'
@@ -429,14 +430,16 @@ export function ProviderHeader({
                       <UserIcon className="w-4 h-4" />
                       {locale === 'ar' ? 'حسابي' : 'My Account'}
                     </Link>
-                    <Link
+                    <a
                       href={providerId ? `/${locale}/providers/${providerId}` : `/${locale}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={() => setAccountMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                     >
-                      {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      <ExternalLink className="w-4 h-4" />
                       {locale === 'ar' ? 'معاينة المتجر' : 'Preview Store'}
-                    </Link>
+                    </a>
                   </div>
 
                   {/* Logout */}
