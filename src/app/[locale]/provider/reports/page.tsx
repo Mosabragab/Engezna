@@ -98,12 +98,32 @@ export default function ReportsPage() {
   const loadAllReports = useCallback(async (provId: string) => {
     const supabase = createClient()
     const now = new Date()
+
+    // Use local date strings for consistent comparison (YYYY-MM-DD format)
+    const getLocalDateString = (date: Date): string => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    const todayStr = getLocalDateString(now)
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const weekStart = new Date(todayStart)
-    weekStart.setDate(weekStart.getDate() - 7)
+
+    // Week start: 6 days ago (so week = today + 6 previous days = 7 days total)
+    const weekStartDate = new Date(todayStart)
+    weekStartDate.setDate(weekStartDate.getDate() - 6)
+    const weekStartStr = getLocalDateString(weekStartDate)
+
+    // Month: from day 1 of current month
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const monthStartStr = getLocalDateString(monthStart)
+
+    // Last month
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+    const lastMonthStartStr = getLocalDateString(lastMonthStart)
+    const lastMonthEndStr = getLocalDateString(lastMonthEnd)
 
     // Run all queries in parallel for faster loading
     const [ordersResult, orderItemsResult, refundsResult] = await Promise.all([
@@ -155,46 +175,63 @@ export default function ReportsPage() {
       // Revenue stats - Only count confirmed payments (payment_status = 'completed')
       const confirmedOrders = orders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
 
-      // Calculate refunds for each period
-      const refundsToday = (refunds || [])
-        .filter(r => new Date(r.created_at) >= todayStart)
-        .reduce((sum, r) => sum + (r.amount || 0), 0)
-      const refundsWeek = (refunds || [])
-        .filter(r => new Date(r.created_at) >= weekStart)
-        .reduce((sum, r) => sum + (r.amount || 0), 0)
-      const refundsMonth = (refunds || [])
-        .filter(r => new Date(r.created_at) >= monthStart)
-        .reduce((sum, r) => sum + (r.amount || 0), 0)
-      const refundsLastMonth = (refunds || [])
-        .filter(r => {
-          const d = new Date(r.created_at)
-          return d >= lastMonthStart && d <= lastMonthEnd
-        })
-        .reduce((sum, r) => sum + (r.amount || 0), 0)
+      // Helper to get date string from order/refund created_at
+      const getOrderDateStr = (dateStr: string): string => {
+        const d = new Date(dateStr)
+        return getLocalDateString(d)
+      }
 
-      // Gross revenue for each period
-      const grossTodayRevenue = confirmedOrders
-        .filter(o => new Date(o.created_at) >= todayStart)
-        .reduce((sum, o) => sum + (o.total || 0), 0)
-      const grossWeekRevenue = confirmedOrders
-        .filter(o => new Date(o.created_at) >= weekStart)
-        .reduce((sum, o) => sum + (o.total || 0), 0)
-      const grossMonthRevenue = confirmedOrders
-        .filter(o => new Date(o.created_at) >= monthStart)
-        .reduce((sum, o) => sum + (o.total || 0), 0)
-      const grossLastMonthRevenue = confirmedOrders
-        .filter(o => {
-          const d = new Date(o.created_at)
-          return d >= lastMonthStart && d <= lastMonthEnd
-        })
-        .reduce((sum, o) => sum + (o.total || 0), 0)
+      // Group orders by date for accurate period calculations
+      const ordersByDate = new Map<string, number>()
+      confirmedOrders.forEach(o => {
+        const dateStr = getOrderDateStr(o.created_at)
+        ordersByDate.set(dateStr, (ordersByDate.get(dateStr) || 0) + (o.total || 0))
+      })
 
-      // Net revenue = gross - refunds
+      // Group refunds by date
+      const refundsByDate = new Map<string, number>()
+      ;(refunds || []).forEach(r => {
+        const dateStr = getOrderDateStr(r.created_at)
+        refundsByDate.set(dateStr, (refundsByDate.get(dateStr) || 0) + (r.amount || 0))
+      })
+
+      // Calculate net revenue for each period using date string comparison
+      let todayRevenue = 0
+      let weekRevenue = 0
+      let monthRevenue = 0
+      let lastMonthRevenue = 0
+
+      // Calculate revenue for each date range
+      ordersByDate.forEach((revenue, dateStr) => {
+        const netRevenue = revenue - (refundsByDate.get(dateStr) || 0)
+
+        // Today
+        if (dateStr === todayStr) {
+          todayRevenue += netRevenue
+        }
+
+        // This week (from weekStartStr to todayStr inclusive)
+        if (dateStr >= weekStartStr && dateStr <= todayStr) {
+          weekRevenue += netRevenue
+        }
+
+        // This month (from monthStartStr to todayStr inclusive)
+        if (dateStr >= monthStartStr && dateStr <= todayStr) {
+          monthRevenue += netRevenue
+        }
+
+        // Last month
+        if (dateStr >= lastMonthStartStr && dateStr <= lastMonthEndStr) {
+          lastMonthRevenue += netRevenue
+        }
+      })
+
+      // Net revenue (ensure non-negative)
       setRevenueStats({
-        today: Math.max(0, grossTodayRevenue - refundsToday),
-        thisWeek: Math.max(0, grossWeekRevenue - refundsWeek),
-        thisMonth: Math.max(0, grossMonthRevenue - refundsMonth),
-        lastMonth: Math.max(0, grossLastMonthRevenue - refundsLastMonth)
+        today: Math.max(0, todayRevenue),
+        thisWeek: Math.max(0, weekRevenue),
+        thisMonth: Math.max(0, monthRevenue),
+        lastMonth: Math.max(0, lastMonthRevenue)
       })
 
       // COD vs Online breakdown (this month) - only delivered orders with completed payment for revenue
@@ -240,33 +277,46 @@ export default function ReportsPage() {
       const uniqueCustomers = new Set(orders.map(o => o.customer_id))
       setTotalCustomers(uniqueCustomers.size)
 
-      // Daily revenue for chart (last 30 days) - confirmed payments minus refunds
+      // Daily revenue for chart - show current month (day 1 to end of month)
       const daily: { [key: string]: { revenue: number; orders: number; refunds: number } } = {}
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date(todayStart)
-        d.setDate(d.getDate() - i)
-        const key = d.toISOString().split('T')[0]
+
+      // Get the number of days in current month
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+
+      // Create entries for each day of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(now.getFullYear(), now.getMonth(), day)
+        const key = getLocalDateString(d)
         daily[key] = { revenue: 0, orders: 0, refunds: 0 }
       }
+
+      // Add revenue from confirmed orders
       confirmedOrders.forEach(o => {
-        const key = new Date(o.created_at).toISOString().split('T')[0]
+        const key = getOrderDateStr(o.created_at)
         if (daily[key]) {
           daily[key].revenue += o.total || 0
           daily[key].orders += 1
         }
       })
+
       // Subtract refunds from daily revenue
       ;(refunds || []).forEach(r => {
-        const key = new Date(r.created_at).toISOString().split('T')[0]
+        const key = getOrderDateStr(r.created_at)
         if (daily[key]) {
           daily[key].refunds += r.amount || 0
         }
       })
-      setDailyRevenue(Object.entries(daily).map(([date, data]) => ({
-        date,
-        revenue: Math.max(0, data.revenue - data.refunds),
-        orders: data.orders
-      })))
+
+      // Convert to array and sort by date
+      setDailyRevenue(
+        Object.entries(daily)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([date, data]) => ({
+            date,
+            revenue: Math.max(0, data.revenue - data.refunds),
+            orders: data.orders
+          }))
+      )
     }
 
     // Process top products from the parallel query result
@@ -795,7 +845,7 @@ Payment Filter: ${paymentFilter === 'all' ? 'All' : paymentFilter === 'completed
             <CardHeader className="pb-2">
               <CardTitle className="text-slate-900 flex items-center gap-2 text-lg font-semibold">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                {locale === 'ar' ? 'الإيرادات (آخر 30 يوم)' : 'Revenue (Last 30 Days)'}
+                {locale === 'ar' ? 'الإيرادات (هذا الشهر)' : 'Revenue (This Month)'}
               </CardTitle>
             </CardHeader>
             <CardContent>
