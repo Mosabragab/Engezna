@@ -161,42 +161,41 @@ export default function UnifiedFinancePage() {
   const getDateRange = useCallback(() => {
     const now = new Date()
     let startDate: Date
-    let endDate: Date = now
+    let endDate: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999) // End of today
     let lastPeriodStart: Date
     let lastPeriodEnd: Date
 
     switch (dateFilter) {
       case 'today':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        // Start of today (midnight)
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
         lastPeriodStart = new Date(startDate)
         lastPeriodStart.setDate(lastPeriodStart.getDate() - 1)
-        lastPeriodEnd = new Date(startDate)
-        lastPeriodEnd.setMilliseconds(-1)
+        lastPeriodEnd = new Date(startDate.getTime() - 1) // End of yesterday
         break
       case 'week':
-        startDate = new Date(now)
-        startDate.setDate(startDate.getDate() - 7)
+        // Start of day 7 days ago (midnight)
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0, 0)
         lastPeriodStart = new Date(startDate)
         lastPeriodStart.setDate(lastPeriodStart.getDate() - 7)
-        lastPeriodEnd = new Date(startDate)
-        lastPeriodEnd.setMilliseconds(-1)
+        lastPeriodEnd = new Date(startDate.getTime() - 1) // End of 8 days ago
         break
       case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-        lastPeriodStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-        lastPeriodEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+        lastPeriodStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0)
+        lastPeriodEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
         break
       case 'custom':
-        startDate = customStartDate ? new Date(customStartDate) : new Date(now.getFullYear(), now.getMonth(), 1)
-        endDate = customEndDate ? new Date(customEndDate) : now
+        startDate = customStartDate ? new Date(customStartDate + 'T00:00:00') : new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+        endDate = customEndDate ? new Date(customEndDate + 'T23:59:59.999') : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
         const duration = endDate.getTime() - startDate.getTime()
         lastPeriodEnd = new Date(startDate.getTime() - 1)
         lastPeriodStart = new Date(lastPeriodEnd.getTime() - duration)
         break
       default:
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-        lastPeriodStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-        lastPeriodEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+        lastPeriodStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0)
+        lastPeriodEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
     }
 
     return { startDate, endDate, lastPeriodStart, lastPeriodEnd }
@@ -495,6 +494,9 @@ export default function UnifiedFinancePage() {
     return ((stats.periodEarnings - stats.lastPeriodEarnings) / stats.lastPeriodEarnings * 100).toFixed(1)
   }
 
+  // Get the actual commission rate as percentage for display
+  const commissionRatePercent = Math.round(commissionRate * 100)
+
   const filteredTransactions = transactions.filter(t => {
     if (filterType === 'all') return true
     return t.type === filterType
@@ -735,7 +737,7 @@ export default function UnifiedFinancePage() {
                     <Banknote className="w-8 h-8 text-info" />
                   </div>
                   <p className="text-2xl font-bold text-info">{formatCurrency(stats.totalCommission)}</p>
-                  <p className="text-xs text-slate-500">{locale === 'ar' ? 'العمولات (حتى 7%)' : 'Commission (up to 7%)'}</p>
+                  <p className="text-xs text-slate-500">{locale === 'ar' ? `العمولات (${commissionRatePercent}%)` : `Commission (${commissionRatePercent}%)`}</p>
                 </CardContent>
               </Card>
             </div>
@@ -826,8 +828,8 @@ export default function UnifiedFinancePage() {
                     </p>
                     <p className="text-sm text-slate-500">
                       {locale === 'ar'
-                        ? 'عمولة المنصة حتى 7% فقط من صافي قيمة الطلب (بدون رسوم التوصيل). يتم إنشاء تسوية أسبوعية لمستحقات المنصة.'
-                        : 'Platform commission is up to 7% of net order value (excluding delivery fees). Weekly settlements are generated for platform dues.'}
+                        ? `عمولة المنصة ${commissionRatePercent}% من صافي قيمة الطلب (بدون رسوم التوصيل). يتم إنشاء تسوية أسبوعية لمستحقات المنصة.`
+                        : `Platform commission is ${commissionRatePercent}% of net order value (excluding delivery fees). Weekly settlements are generated for platform dues.`}
                     </p>
                   </div>
                 </div>
@@ -939,8 +941,8 @@ export default function UnifiedFinancePage() {
                     </p>
                     <p className="text-sm text-slate-600">
                       {locale === 'ar'
-                        ? 'يتم إنشاء تسوية أسبوعية تحتوي على عمولة المنصة (حتى 7%) من صافي طلباتك المكتملة (بدون رسوم التوصيل). يجب دفع المبلغ المستحق خلال 7 أيام.'
-                        : 'A weekly settlement is generated containing the platform commission (up to 7%) from your net completed orders (excluding delivery fees). Payment is due within 7 days.'}
+                        ? `يتم إنشاء تسوية أسبوعية تحتوي على عمولة المنصة (${commissionRatePercent}%) من صافي طلباتك المكتملة (بدون رسوم التوصيل). يجب دفع المبلغ المستحق خلال 7 أيام.`
+                        : `A weekly settlement is generated containing the platform commission (${commissionRatePercent}%) from your net completed orders (excluding delivery fees). Payment is due within 7 days.`}
                     </p>
                   </div>
                 </div>
@@ -1044,7 +1046,7 @@ export default function UnifiedFinancePage() {
                                   <p className="font-medium text-slate-900">{formatCurrencyUtil(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
                                 </div>
                                 <div>
-                                  <p className="text-slate-500">{locale === 'ar' ? 'عمولة المنصة (حتى 7%)' : 'Platform Commission (up to 7%)'}</p>
+                                  <p className="text-slate-500">{locale === 'ar' ? `عمولة المنصة (${commissionRatePercent}%)` : `Platform Commission (${commissionRatePercent}%)`}</p>
                                   <p className="font-medium text-red-600">-{formatCurrencyUtil(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
                                 </div>
                                 <div>
