@@ -171,6 +171,8 @@ export default function ProviderRefundsPage() {
       }
 
       await loadData()
+      // Switch to in_progress tab to show the updated status
+      setActiveTab('in_progress')
     } catch (err) {
       console.error('Error processing refund:', err)
     } finally {
@@ -200,6 +202,8 @@ export default function ProviderRefundsPage() {
       }
 
       await loadData()
+      // Switch to in_progress tab to show the updated status
+      setActiveTab('in_progress')
     } catch (err) {
       console.error('Error:', err)
     } finally {
