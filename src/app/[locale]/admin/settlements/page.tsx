@@ -36,7 +36,14 @@ export const dynamic = 'force-dynamic'
 interface Settlement {
   id: string
   provider_id: string
-  provider: { name_ar: string; name_en: string; governorate_id: string | null; city_id: string | null } | null
+  provider: {
+    name_ar: string
+    name_en: string
+    governorate_id: string | null
+    city_id: string | null
+    commission_rate: number | null
+    custom_commission_rate: number | null
+  } | null
   period_start: string
   period_end: string
   total_orders: number
@@ -46,7 +53,7 @@ interface Settlement {
   // New fields from updated schema
   cod_orders_count: number | null
   cod_revenue: number | null
-  cod_provider_owes: number | null
+  cod_commission_owed: number | null
   online_orders_count: number | null
   online_revenue: number | null
   online_platform_owes: number | null
@@ -159,12 +166,12 @@ export default function AdminSettlementsPage() {
 
   async function loadData(supabase: ReturnType<typeof createClient>) {
     setDataLoading(true)
-    // Load settlements
+    // Load settlements with provider commission rates
     const { data: settlementsData } = await supabase
       .from('settlements')
       .select(`
         *,
-        provider:providers(name_ar, name_en, governorate_id, city_id)
+        provider:providers(name_ar, name_en, governorate_id, city_id, commission_rate, custom_commission_rate)
       `)
       .order('created_at', { ascending: false })
       .limit(100)
@@ -604,13 +611,15 @@ export default function AdminSettlementsPage() {
     setIsProcessingPayment(true)
     try {
       const supabase = createClient()
+      const paidAmount = parseFloat(paymentForm.amount)
 
-      // Update settlement status to paid (matches database CHECK constraint)
+      // Update settlement with amount_paid and status
       const { error } = await supabase
         .from('settlements')
         .update({
           status: 'paid',
           paid_at: new Date().toISOString(),
+          amount_paid: paidAmount,
           payment_method: paymentForm.method,
           payment_reference: paymentForm.reference || null,
         })
@@ -874,86 +883,109 @@ export default function AdminSettlementsPage() {
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الفترة' : 'Period'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الطلبات' : 'Orders'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الإيرادات' : 'Revenue'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'العمولة المستحقة' : 'Commission Due'}</th>
+                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'العمولة' : 'Commission'}</th>
+                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'صافي التاجر' : 'Net Payout'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
                     <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'إجراءات' : 'Actions'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredSettlements.length > 0 ? (
-                    filteredSettlements.map((settlement) => (
-                      <tr key={settlement.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                              <Building className="w-5 h-5 text-slate-500" />
+                    filteredSettlements.map((settlement) => {
+                      // Get provider's actual commission rate
+                      const providerCommissionRate = settlement.provider?.custom_commission_rate
+                        ?? settlement.provider?.commission_rate
+                        ?? 7
+
+                      return (
+                        <tr key={settlement.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                                <Building className="w-5 h-5 text-slate-500" />
+                              </div>
+                              <div>
+                                <span className="font-medium text-slate-900">
+                                  {locale === 'ar' ? settlement.provider?.name_ar : settlement.provider?.name_en}
+                                </span>
+                                <p className="text-xs text-slate-500">
+                                  {locale === 'ar' ? `عمولة ${providerCommissionRate}%` : `${providerCommissionRate}% rate`}
+                                </p>
+                              </div>
                             </div>
-                            <span className="font-medium text-slate-900">
-                              {locale === 'ar' ? settlement.provider?.name_ar : settlement.provider?.name_en}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm">
+                              <p className="text-slate-900">{formatDate(settlement.period_start, locale)}</p>
+                              <p className="text-slate-500">{locale === 'ar' ? 'إلى' : 'to'} {formatDate(settlement.period_end, locale)}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div>
+                              <span className="font-medium text-slate-900">{formatNumber(settlement.total_orders, locale)}</span>
+                              <p className="text-xs text-slate-500">
+                                {settlement.cod_orders_count || 0} {locale === 'ar' ? 'نقدي' : 'COD'} |{' '}
+                                {settlement.online_orders_count || 0} {locale === 'ar' ? 'إلكتروني' : 'Online'}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="font-bold text-slate-900">
+                              {formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                             </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm">
-                            <p className="text-slate-900">{formatDate(settlement.period_start, locale)}</p>
-                            <p className="text-slate-500">{locale === 'ar' ? 'إلى' : 'to'} {formatDate(settlement.period_end, locale)}</p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-slate-900">{formatNumber(settlement.total_orders, locale)}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm">
-                            <p className="font-bold text-slate-900">{formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-                            <p className="text-xs text-red-500">
-                              -{locale === 'ar' ? 'عمولة' : 'Commission'}: {formatCurrency(settlement.platform_commission || 0, locale)}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div>
-                            <span className="font-bold text-amber-600">{formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
-                            <p className="text-xs text-slate-500">
-                              {locale === 'ar' ? 'عمولة المنصة' : 'Platform commission'}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${getStatusColor(settlement.status)}`}>
-                            {getStatusIcon(settlement.status)}
-                            {getStatusLabel(settlement.status)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            {settlement.status === 'pending' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 px-2 text-success hover:text-success/80 hover:bg-card-bg-success"
-                                onClick={() => {
-                                  setSelectedSettlement(settlement)
-                                  setPaymentForm({
-                                    amount: (settlement.net_amount_due ?? settlement.platform_commission ?? 0).toString(),
-                                    method: 'cash',
-                                    reference: '',
-                                  })
-                                  setShowPaymentModal(true)
-                                }}
-                              >
-                                <CreditCard className="w-4 h-4 mr-1" />
-                                {locale === 'ar' ? 'تأكيد' : 'Confirm'}
-                              </Button>
-                            )}
-                            <Link href={`/${locale}/admin/settlements/${settlement.id}`}>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <Eye className="w-4 h-4 text-slate-500" />
-                              </Button>
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                          <td className="px-4 py-3">
+                            <div>
+                              <span className="font-bold text-red-600">
+                                {formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              </span>
+                              <p className="text-xs text-slate-500">
+                                ({providerCommissionRate}%)
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="font-bold text-green-600">
+                              {formatCurrency(settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${getStatusColor(settlement.status)}`}>
+                              {getStatusIcon(settlement.status)}
+                              {getStatusLabel(settlement.status)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              {settlement.status === 'pending' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2 text-success hover:text-success/80 hover:bg-card-bg-success"
+                                  onClick={() => {
+                                    setSelectedSettlement(settlement)
+                                    setPaymentForm({
+                                      amount: (settlement.platform_commission ?? 0).toString(),
+                                      method: 'cash',
+                                      reference: '',
+                                    })
+                                    setShowPaymentModal(true)
+                                  }}
+                                >
+                                  <CreditCard className="w-4 h-4 mr-1" />
+                                  {locale === 'ar' ? 'تأكيد' : 'Confirm'}
+                                </Button>
+                              )}
+                              <Link href={`/${locale}/admin/settlements/${settlement.id}`}>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <Eye className="w-4 h-4 text-slate-500" />
+                                </Button>
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
                   ) : (
                     <tr>
                       <td colSpan={8} className="px-4 py-12 text-center">
@@ -1052,22 +1084,33 @@ export default function AdminSettlementsPage() {
               </button>
             </div>
             <div className="p-4 space-y-4">
-              <div className="bg-slate-50 rounded-lg p-3">
+              <div className="bg-slate-50 rounded-lg p-3 space-y-2">
                 <p className="text-sm text-slate-600">
                   {locale === 'ar' ? 'المزود:' : 'Provider:'} <span className="font-medium text-slate-900">
                     {locale === 'ar' ? selectedSettlement.provider?.name_ar : selectedSettlement.provider?.name_en}
                   </span>
-                </p>
-                <p className="text-sm text-slate-600">
-                  {locale === 'ar' ? 'المبلغ المستحق:' : 'Amount Due:'} <span className="font-bold text-amber-600">
-                    {formatCurrency(selectedSettlement.net_amount_due ?? selectedSettlement.platform_commission ?? 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                  <span className="text-xs text-slate-500 ms-2">
+                    ({selectedSettlement.provider?.custom_commission_rate ?? selectedSettlement.provider?.commission_rate ?? 7}%)
                   </span>
                 </p>
-                <p className="text-sm text-slate-600">
-                  {locale === 'ar' ? 'صافي المزود:' : 'Net Payout:'} <span className="font-bold text-green-600">
-                    {formatCurrency(selectedSettlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                  </span>
-                </p>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
+                  <div>
+                    <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Gross Revenue'}</p>
+                    <p className="font-medium text-slate-900">{formatCurrency(selectedSettlement.gross_revenue || 0, locale)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</p>
+                    <p className="font-bold text-red-600">{formatCurrency(selectedSettlement.platform_commission || 0, locale)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">{locale === 'ar' ? 'صافي التاجر' : 'Net Payout'}</p>
+                    <p className="font-bold text-green-600">{formatCurrency(selectedSettlement.net_payout || 0, locale)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
+                    <p className="font-medium text-slate-900">{selectedSettlement.total_orders}</p>
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
