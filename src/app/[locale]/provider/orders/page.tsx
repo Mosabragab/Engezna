@@ -700,8 +700,13 @@ export default function ProviderOrdersPage() {
                             {locale === 'ar' ? statusConfig.label_ar : statusConfig.label_en}
                           </div>
                         </div>
-                        <div className="text-sm text-slate-500">
-                          {formatTime(order.created_at)}
+                        <div className="text-end">
+                          <p className="text-sm text-slate-500">
+                            {formatTime(order.created_at)}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {formatDate(order.created_at)}
+                          </p>
                         </div>
                       </div>
 
