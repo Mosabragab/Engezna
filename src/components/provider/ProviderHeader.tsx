@@ -397,9 +397,7 @@ export function ProviderHeader({
           >
             <button className="flex items-center gap-2 p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
               <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="font-semibold text-sm text-primary">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </span>
+                <UserIcon className="w-4 h-4 text-primary" />
               </div>
               <span className="hidden sm:inline text-sm font-medium text-slate-700">
                 {locale === 'ar' ? 'حسابي' : 'My Account'}

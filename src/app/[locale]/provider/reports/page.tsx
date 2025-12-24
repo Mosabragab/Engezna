@@ -78,6 +78,7 @@ export default function ReportsPage() {
   const [providerId, setProviderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month')
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'completed' | 'pending'>('all')
   const [allOrders, setAllOrders] = useState<any[]>([])
@@ -104,8 +105,8 @@ export default function ReportsPage() {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
 
-    // Run both queries in parallel for faster loading
-    const [ordersResult, orderItemsResult] = await Promise.all([
+    // Run all queries in parallel for faster loading
+    const [ordersResult, orderItemsResult, refundsResult] = await Promise.all([
       supabase
         .from('orders')
         .select('id, status, total, created_at, customer_id, payment_status, payment_method')
@@ -118,11 +119,28 @@ export default function ReportsPage() {
           menu_item_id,
           menu_items!inner(id, name_ar, name_en, provider_id)
         `)
-        .eq('menu_items.provider_id', provId)
+        .eq('menu_items.provider_id', provId),
+      // Get all processed refunds to subtract from revenue
+      supabase
+        .from('refunds')
+        .select('amount, created_at, order_id')
+        .eq('provider_id', provId)
+        .in('status', ['approved', 'processed'])
     ])
 
     const { data: orders, error: ordersError } = ordersResult
     const { data: orderItems, error: orderItemsError } = orderItemsResult
+    const { data: refunds, error: refundsError } = refundsResult
+
+    // Handle errors
+    if (ordersError || orderItemsError) {
+      console.error('Error loading reports:', ordersError || orderItemsError)
+      setError(locale === 'ar' ? 'حدث خطأ في تحميل البيانات' : 'Error loading data')
+      return
+    }
+
+    // Clear any previous error
+    setError(null)
 
     if (orders) {
       // Store all orders for filtering
@@ -136,25 +154,50 @@ export default function ReportsPage() {
 
       // Revenue stats - Only count confirmed payments (payment_status = 'completed')
       const confirmedOrders = orders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
-      const todayRevenue = confirmedOrders
+
+      // Calculate refunds for each period
+      const refundsToday = (refunds || [])
+        .filter(r => new Date(r.created_at) >= todayStart)
+        .reduce((sum, r) => sum + (r.amount || 0), 0)
+      const refundsWeek = (refunds || [])
+        .filter(r => new Date(r.created_at) >= weekStart)
+        .reduce((sum, r) => sum + (r.amount || 0), 0)
+      const refundsMonth = (refunds || [])
+        .filter(r => new Date(r.created_at) >= monthStart)
+        .reduce((sum, r) => sum + (r.amount || 0), 0)
+      const refundsLastMonth = (refunds || [])
+        .filter(r => {
+          const d = new Date(r.created_at)
+          return d >= lastMonthStart && d <= lastMonthEnd
+        })
+        .reduce((sum, r) => sum + (r.amount || 0), 0)
+
+      // Gross revenue for each period
+      const grossTodayRevenue = confirmedOrders
         .filter(o => new Date(o.created_at) >= todayStart)
         .reduce((sum, o) => sum + (o.total || 0), 0)
-      const weekRevenue = confirmedOrders
+      const grossWeekRevenue = confirmedOrders
         .filter(o => new Date(o.created_at) >= weekStart)
         .reduce((sum, o) => sum + (o.total || 0), 0)
-      const monthRevenue = confirmedOrders
+      const grossMonthRevenue = confirmedOrders
         .filter(o => new Date(o.created_at) >= monthStart)
         .reduce((sum, o) => sum + (o.total || 0), 0)
-      const lastMonthRevenue = confirmedOrders
+      const grossLastMonthRevenue = confirmedOrders
         .filter(o => {
           const d = new Date(o.created_at)
           return d >= lastMonthStart && d <= lastMonthEnd
         })
         .reduce((sum, o) => sum + (o.total || 0), 0)
 
-      setRevenueStats({ today: todayRevenue, thisWeek: weekRevenue, thisMonth: monthRevenue, lastMonth: lastMonthRevenue })
+      // Net revenue = gross - refunds
+      setRevenueStats({
+        today: Math.max(0, grossTodayRevenue - refundsToday),
+        thisWeek: Math.max(0, grossWeekRevenue - refundsWeek),
+        thisMonth: Math.max(0, grossMonthRevenue - refundsMonth),
+        lastMonth: Math.max(0, grossLastMonthRevenue - refundsLastMonth)
+      })
 
-      // COD vs Online breakdown (this month)
+      // COD vs Online breakdown (this month) - only delivered orders with completed payment for revenue
       const monthOrders = orders.filter(o => {
         const d = new Date(o.created_at)
         return d >= monthStart && o.status === 'delivered'
@@ -162,14 +205,28 @@ export default function ReportsPage() {
       const codOrders = monthOrders.filter(o => o.payment_method === 'cash')
       const onlineOrders = monthOrders.filter(o => o.payment_method !== 'cash')
 
+      // Calculate refunds for this month's COD and Online orders
+      const monthRefundsByOrder = new Map<string, number>()
+      ;(refunds || [])
+        .filter(r => new Date(r.created_at) >= monthStart)
+        .forEach(r => {
+          monthRefundsByOrder.set(r.order_id, (monthRefundsByOrder.get(r.order_id) || 0) + (r.amount || 0))
+        })
+
+      // Calculate net revenue (gross - refunds per order)
+      const codConfirmedGross = codOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0)
+      const codRefunds = codOrders.reduce((sum, o) => sum + (monthRefundsByOrder.get(o.id) || 0), 0)
+      const onlineConfirmedGross = onlineOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0)
+      const onlineRefunds = onlineOrders.reduce((sum, o) => sum + (monthRefundsByOrder.get(o.id) || 0), 0)
+
       setPaymentMethodStats({
         codOrders: codOrders.length,
-        codRevenue: codOrders.reduce((sum, o) => sum + (o.total || 0), 0),
-        codConfirmed: codOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0),
+        codRevenue: Math.max(0, codOrders.reduce((sum, o) => sum + (o.total || 0), 0) - codRefunds),
+        codConfirmed: Math.max(0, codConfirmedGross - codRefunds),
         codPending: codOrders.filter(o => o.payment_status === 'pending').reduce((sum, o) => sum + (o.total || 0), 0),
         onlineOrders: onlineOrders.length,
-        onlineRevenue: onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0),
-        onlineConfirmed: onlineOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0),
+        onlineRevenue: Math.max(0, onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0) - onlineRefunds),
+        onlineConfirmed: Math.max(0, onlineConfirmedGross - onlineRefunds),
         onlinePending: onlineOrders.filter(o => o.payment_status === 'pending').reduce((sum, o) => sum + (o.total || 0), 0),
       })
 
@@ -183,13 +240,13 @@ export default function ReportsPage() {
       const uniqueCustomers = new Set(orders.map(o => o.customer_id))
       setTotalCustomers(uniqueCustomers.size)
 
-      // Daily revenue for chart (last 30 days) - confirmed payments only
-      const daily: { [key: string]: { revenue: number; orders: number } } = {}
+      // Daily revenue for chart (last 30 days) - confirmed payments minus refunds
+      const daily: { [key: string]: { revenue: number; orders: number; refunds: number } } = {}
       for (let i = 29; i >= 0; i--) {
         const d = new Date(todayStart)
         d.setDate(d.getDate() - i)
         const key = d.toISOString().split('T')[0]
-        daily[key] = { revenue: 0, orders: 0 }
+        daily[key] = { revenue: 0, orders: 0, refunds: 0 }
       }
       confirmedOrders.forEach(o => {
         const key = new Date(o.created_at).toISOString().split('T')[0]
@@ -198,7 +255,18 @@ export default function ReportsPage() {
           daily[key].orders += 1
         }
       })
-      setDailyRevenue(Object.entries(daily).map(([date, data]) => ({ date, ...data })))
+      // Subtract refunds from daily revenue
+      ;(refunds || []).forEach(r => {
+        const key = new Date(r.created_at).toISOString().split('T')[0]
+        if (daily[key]) {
+          daily[key].refunds += r.amount || 0
+        }
+      })
+      setDailyRevenue(Object.entries(daily).map(([date, data]) => ({
+        date,
+        revenue: Math.max(0, data.revenue - data.refunds),
+        orders: data.orders
+      })))
     }
 
     // Process top products from the parallel query result
@@ -271,6 +339,16 @@ export default function ReportsPage() {
     return allOrders.filter(o => o.payment_status === 'pending')
   }
 
+  // Helper to escape CSV fields
+  const escapeCSVField = (field: string | number): string => {
+    const str = String(field)
+    // If field contains comma, quote, or newline, wrap in quotes and escape internal quotes
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`
+    }
+    return str
+  }
+
   // Export to CSV/Excel
   const handleExportExcel = () => {
     const filteredOrders = getFilteredOrders()
@@ -285,14 +363,14 @@ export default function ReportsPage() {
       : ['Order ID', 'Date', 'Total', 'Status', 'Payment Status']
 
     const rows = filteredOrders.map(order => [
-      order.id.slice(0, 8),
-      new Date(order.created_at).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US'),
-      order.total.toFixed(2),
-      order.status,
-      order.payment_status
+      escapeCSVField(order.id.slice(0, 8)),
+      escapeCSVField(new Date(order.created_at).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')),
+      escapeCSVField(order.total?.toFixed(2) || '0.00'),
+      escapeCSVField(order.status || ''),
+      escapeCSVField(order.payment_status || '')
     ])
 
-    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const csvContent = [headers.map(escapeCSVField), ...rows].map(row => row.join(',')).join('\n')
     const BOM = '\uFEFF' // UTF-8 BOM for Arabic support
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -392,6 +470,24 @@ Payment Filter: ${paymentFilter === 'all' ? 'All' : paymentFilter === 'completed
               ? 'عرض ملخص الأداء وإحصائيات الطلبات خلال الفترة الأخيرة'
               : 'View performance summary and order statistics for the recent period'}
           </p>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-red-600 text-lg">!</span>
+              </div>
+              <div>
+                <p className="font-medium text-red-800">{error}</p>
+                <button
+                  onClick={handleRefresh}
+                  className="text-sm text-red-600 hover:underline mt-1"
+                >
+                  {locale === 'ar' ? 'إعادة المحاولة' : 'Try again'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Filters and Export Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white rounded-xl border border-slate-200">
