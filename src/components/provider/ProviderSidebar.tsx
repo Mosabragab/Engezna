@@ -40,6 +40,7 @@ interface ProviderSidebarProps {
   pendingOrders?: number
   unreadNotifications?: number
   pendingRefunds?: number
+  pendingComplaints?: number
 }
 
 export function ProviderSidebar({
@@ -49,6 +50,7 @@ export function ProviderSidebar({
   pendingOrders = 0,
   unreadNotifications = 0,
   pendingRefunds = 0,
+  pendingComplaints = 0,
 }: ProviderSidebarProps) {
   const locale = useLocale()
   const pathname = usePathname()
@@ -111,6 +113,7 @@ export function ProviderSidebar({
       icon: MessageSquare,
       label: { ar: 'الشكاوى', en: 'Complaints' },
       path: `/${locale}/provider/complaints`,
+      badge: pendingComplaints > 0 ? pendingComplaints.toString() : undefined,
     },
     {
       icon: Clock,
