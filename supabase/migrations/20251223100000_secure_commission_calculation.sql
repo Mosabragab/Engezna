@@ -9,6 +9,7 @@
 --   2. Grace period uses created_at instead of NOW() (timing fairness)
 --   3. Commission calculated for ALL orders (visibility in dashboard)
 --   4. Settlements filter by status, not trigger
+--   5. Removed dependency on platform_settings table
 --
 -- RULES:
 --   1. INSERT: Calculate commission server-side (security)
@@ -36,11 +37,13 @@ RETURNS TRIGGER AS $$
 DECLARE
     v_commission_rate DECIMAL(5,2);
     v_provider_record RECORD;
-    v_settings JSONB;
     v_is_insert BOOLEAN;
     v_is_cancellation BOOLEAN;
     v_was_adjusted BOOLEAN;
     v_order_date TIMESTAMPTZ;
+    -- القيم الافتراضية (7% عمولة)
+    v_default_rate CONSTANT DECIMAL(5,2) := 7.00;
+    v_max_rate CONSTANT DECIMAL(5,2) := 7.00;
 BEGIN
     -- ========================================================================
     -- STEP 0: Determine operation type and get order date
@@ -78,24 +81,7 @@ BEGIN
     -- ========================================================================
 
     -- ========================================================================
-    -- STEP 3: Get platform commission settings
-    -- ========================================================================
-    SELECT value INTO v_settings
-    FROM platform_settings
-    WHERE key = 'commission';
-
-    IF v_settings IS NULL THEN
-        v_settings := '{"enabled": true, "default_rate": 7.00, "max_rate": 7.00}'::jsonb;
-    END IF;
-
-    -- If commission system is disabled globally
-    IF NOT COALESCE((v_settings->>'enabled')::boolean, true) THEN
-        NEW.platform_commission := 0;
-        RETURN NEW;
-    END IF;
-
-    -- ========================================================================
-    -- STEP 4: Get provider details
+    -- STEP 3: Get provider details
     -- ========================================================================
     SELECT
         p.commission_status,
@@ -108,11 +94,11 @@ BEGIN
     WHERE p.id = NEW.provider_id;
 
     -- ========================================================================
-    -- STEP 5: Determine commission rate (PROVIDER-BASED)
+    -- STEP 4: Determine commission rate (PROVIDER-BASED)
     -- أولوية النسبة: فترة السماح ← الإعفاء ← المخصصة ← العادية ← الافتراضية
     -- ========================================================================
     IF NOT FOUND THEN
-        v_commission_rate := COALESCE((v_settings->>'default_rate')::DECIMAL(5,2), 7.00);
+        v_commission_rate := v_default_rate;
     ELSE
         -- Priority 1: Grace period (QA Fix #2: use order date, not NOW())
         -- فترة السماح تُقيّم بتاريخ الطلب وليس الوقت الحالي
@@ -127,26 +113,20 @@ BEGIN
 
         -- Priority 3: Custom commission rate
         ELSIF v_provider_record.custom_commission_rate IS NOT NULL THEN
-            v_commission_rate := LEAST(
-                v_provider_record.custom_commission_rate,
-                COALESCE((v_settings->>'max_rate')::DECIMAL(5,2), 7.00)
-            );
+            v_commission_rate := LEAST(v_provider_record.custom_commission_rate, v_max_rate);
 
         -- Priority 4: Provider's standard rate
         ELSIF v_provider_record.commission_rate IS NOT NULL THEN
-            v_commission_rate := LEAST(
-                v_provider_record.commission_rate,
-                COALESCE((v_settings->>'max_rate')::DECIMAL(5,2), 7.00)
-            );
+            v_commission_rate := LEAST(v_provider_record.commission_rate, v_max_rate);
 
         -- Priority 5: Platform default
         ELSE
-            v_commission_rate := COALESCE((v_settings->>'default_rate')::DECIMAL(5,2), 7.00);
+            v_commission_rate := v_default_rate;
         END IF;
     END IF;
 
     -- ========================================================================
-    -- STEP 6: Calculate commission (QA Fix #4: defensive COALESCE)
+    -- STEP 5: Calculate commission (QA Fix #4: defensive COALESCE)
     -- العمولة = (subtotal - discount) × النسبة ÷ 100
     -- ========================================================================
     NEW.platform_commission := ROUND(
