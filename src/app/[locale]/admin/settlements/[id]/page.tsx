@@ -784,6 +784,7 @@ export default function SettlementDetailPage() {
                     <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'قيمة الطلب' : 'Order Value'}</th>
                     <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'المرتجع' : 'Refund'}</th>
                     <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'التوصيل' : 'Delivery'}</th>
+                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'صافي للعمولة' : 'Net for Commission'}</th>
                     <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'العمولة' : 'Commission'}</th>
                   </tr>
                 </thead>
@@ -836,6 +837,18 @@ export default function SettlementDetailPage() {
                             </span>
                           </td>
 
+                          {/* Net for Commission = Order Value - Refund - Delivery */}
+                          <td className="px-3 py-3">
+                            {(() => {
+                              const netForCommission = (order.total || 0) - (order.refund_amount || 0) - (order.delivery_fee || 0)
+                              return (
+                                <span className="font-medium text-blue-600">
+                                  {formatCurrency(Math.max(0, netForCommission), locale)}
+                                </span>
+                              )
+                            })()}
+                          </td>
+
                           {/* Commission from database */}
                           <td className="px-3 py-3">
                             <div>
@@ -854,7 +867,7 @@ export default function SettlementDetailPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-4 py-12 text-center">
+                      <td colSpan={6} className="px-4 py-12 text-center">
                         <Package className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                         <p className="text-slate-500">
                           {locale === 'ar' ? 'لا توجد طلبات' : 'No orders found'}
