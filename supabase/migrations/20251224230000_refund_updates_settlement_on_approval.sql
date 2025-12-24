@@ -86,9 +86,15 @@ BEGIN
       END IF;
 
       -- Update order with new commission
+      -- IMPORTANT: Update BOTH platform_commission AND original_commission
+      -- For grace period merchants, platform_commission = 0 but original_commission shows theoretical
       UPDATE orders
       SET
-        platform_commission = GREATEST(v_new_commission, 0),
+        platform_commission = CASE
+          WHEN platform_commission = 0 THEN 0  -- Keep 0 for grace period
+          ELSE GREATEST(v_new_commission, 0)
+        END,
+        original_commission = GREATEST(v_new_commission, 0),  -- Always update theoretical
         settlement_adjusted = true,
         settlement_notes = COALESCE(settlement_notes, '') ||
           E'\n[' || NOW()::TEXT || '] ' ||
@@ -223,10 +229,15 @@ BEGIN
     END IF;
 
     -- Update order
+    -- IMPORTANT: Update original_commission to the NEW reduced value
+    -- For grace period merchants, keep platform_commission = 0
     UPDATE orders
     SET
-      original_commission = COALESCE(original_commission, platform_commission),
-      platform_commission = GREATEST(v_new_commission, 0),
+      original_commission = GREATEST(v_new_commission, 0),  -- New theoretical commission after refund
+      platform_commission = CASE
+        WHEN platform_commission = 0 THEN 0  -- Keep 0 for grace period
+        ELSE GREATEST(v_new_commission, 0)
+      END,
       settlement_adjusted = true,
       settlement_notes = COALESCE(settlement_notes, '') ||
         E'\n[MIGRATION ' || NOW()::TEXT || '] تصحيح عمولة بسبب مرتجع #' || v_refund.id::TEXT
