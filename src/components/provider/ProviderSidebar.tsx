@@ -64,7 +64,7 @@ export function ProviderSidebar({
       icon: ShoppingBag,
       label: { ar: 'الطلبات', en: 'Orders' },
       path: `/${locale}/provider/orders`,
-      badge: (pendingOrders + unreadNotifications) > 0 ? (pendingOrders + unreadNotifications).toString() : undefined,
+      badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
     },
     {
       icon: Package,
