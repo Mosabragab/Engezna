@@ -207,13 +207,12 @@ export default function ProviderDashboard() {
         .eq('provider_id', providerId)
         .eq('status', 'pending')
         .eq('provider_action', 'pending'),
-      // Get today's processed refunds (affects_settlement = true means it reduces revenue)
+      // Get today's processed refunds (all types reduce displayed revenue)
       supabase
         .from('refunds')
         .select('amount, order_id')
         .eq('provider_id', providerId)
-        .in('status', ['approved', 'completed'])
-        .eq('affects_settlement', true)
+        .in('status', ['approved', 'processed'])
         .gte('created_at', today.toISOString())
     ])
 

@@ -91,10 +91,13 @@ export default function ProviderRefundsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('pending')
 
-  // Stats
-  const pendingCount = refunds.filter(r => r.status === 'pending').length
-  const approvedCount = refunds.filter(r => r.status === 'approved' || r.provider_action === 'cash_refund').length
-  const completedCount = refunds.filter(r => r.status === 'processed' && r.customer_confirmed).length
+  // Stats - must match filterRefunds logic exactly
+  const pendingCount = refunds.filter(r => r.status === 'pending' && r.provider_action === 'pending').length
+  const inProgressCount = refunds.filter(r =>
+    (r.status === 'approved' && !r.customer_confirmed) ||
+    r.provider_action === 'item_resend'
+  ).length
+  const completedCount = refunds.filter(r => r.status === 'processed' || r.customer_confirmed).length
 
   useEffect(() => {
     loadData()
@@ -319,7 +322,7 @@ export default function ProviderRefundsPage() {
               <RefreshCw className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-blue-700">{approvedCount}</p>
+              <p className="text-2xl font-bold text-blue-700">{inProgressCount}</p>
               <p className="text-sm text-blue-600">
                 {isArabic ? 'قيد التنفيذ' : 'In Progress'}
               </p>
