@@ -91,6 +91,7 @@ interface Order {
   subtotal: number | null
   discount: number | null
   platform_commission: number
+  original_commission: number | null
   payment_method: string
   created_at: string
   customer: { full_name: string } | null
@@ -172,6 +173,7 @@ export default function SettlementDetailPage() {
           subtotal,
           discount,
           platform_commission,
+          original_commission,
           payment_method,
           created_at,
           customer:profiles!customer_id(full_name)
@@ -758,11 +760,17 @@ export default function SettlementDetailPage() {
                         <td className="px-4 py-3">
                           {(() => {
                             const isGracePeriod = order.platform_commission === 0 && settlement.provider?.commission_status === 'in_grace_period'
+                            const hasOriginalCommission = isGracePeriod && (order.original_commission ?? 0) > 0
 
                             return (
                               <div className="flex flex-col">
                                 <span className={order.platform_commission === 0 ? 'text-green-600' : 'text-red-600'}>
                                   {formatCurrency(order.platform_commission ?? 0, locale)}
+                                  {hasOriginalCommission && (
+                                    <span className="text-slate-400 text-xs ms-1">
+                                      ({locale === 'ar' ? 'من ' : 'of '}{formatCurrency(order.original_commission ?? 0, locale)})
+                                    </span>
+                                  )}
                                 </span>
                                 {isGracePeriod && (
                                   <span className="text-xs text-green-500 mt-0.5">
