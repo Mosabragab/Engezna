@@ -25,8 +25,6 @@ import {
   X,
   Receipt,
   CreditCard,
-  ChevronRight,
-  ChevronLeft,
   MessageSquare,
   Calendar,
 } from 'lucide-react'
@@ -552,7 +550,6 @@ export default function ProviderOrderDetailPage() {
                       ) : (
                         <>
                           {locale === 'ar' ? 'تحديث إلى:' : 'Update to:'} {getNextStatusLabel()}
-                          {isRTL ? <ChevronLeft className="w-4 h-4 mr-2" /> : <ChevronRight className="w-4 h-4 ml-2" />}
                         </>
                       )}
                     </Button>

@@ -32,8 +32,6 @@ import {
   LogOut,
   User,
   Loader2,
-  ChevronRight,
-  ChevronLeft,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -796,7 +794,7 @@ export default function ProviderSettingsPage() {
                   {!showPasswordForm ? (
                     <button
                       onClick={() => setShowPasswordForm(true)}
-                      className="w-full p-4 rounded-xl border border-slate-300 hover:border-slate-400 transition-all flex items-center justify-between"
+                      className="w-full p-4 rounded-xl border border-slate-300 hover:border-slate-400 transition-all flex items-center justify-start"
                     >
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-slate-100">
@@ -809,7 +807,6 @@ export default function ProviderSettingsPage() {
                           </p>
                         </div>
                       </div>
-                      {isRTL ? <ChevronLeft className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
                     </button>
                   ) : (
                     <div className="space-y-4">

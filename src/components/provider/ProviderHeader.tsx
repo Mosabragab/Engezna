@@ -8,9 +8,6 @@ import {
   Menu,
   Bell,
   LogOut,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   User as UserIcon,
   ShoppingBag,
   Star,
@@ -403,9 +400,6 @@ export function ProviderHeader({
               <span className="hidden sm:inline text-sm font-medium text-slate-700">
                 {locale === 'ar' ? 'حسابي' : 'My Account'}
               </span>
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`}
-              />
             </button>
 
             {/* Dropdown Menu */}

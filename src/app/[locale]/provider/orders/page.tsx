@@ -18,8 +18,6 @@ import {
   Truck,
   ChefHat,
   RefreshCw,
-  ChevronRight,
-  ChevronLeft,
   Phone,
   MapPin,
   User,
@@ -899,14 +897,7 @@ export default function ProviderOrdersPage() {
                               {isLoading ? (
                                 <RefreshCw className="w-4 h-4 animate-spin" />
                               ) : (
-                                <>
-                                  {getNextStatusLabel(order.status)}
-                                  {isRTL ? (
-                                    <ChevronLeft className="w-4 h-4 mr-1" />
-                                  ) : (
-                                    <ChevronRight className="w-4 h-4 ml-1" />
-                                  )}
-                                </>
+                                getNextStatusLabel(order.status)
                               )}
                             </Button>
                           </>
@@ -932,7 +923,6 @@ export default function ProviderOrdersPage() {
                           <Link href={`/${locale}/provider/orders/${order.id}`}>
                             <Button variant="outline" size="sm" className="border-slate-300">
                               {locale === 'ar' ? 'التفاصيل' : 'Details'}
-                              {isRTL ? <ChevronLeft className="w-4 h-4 mr-1" /> : <ChevronRight className="w-4 h-4 ml-1" />}
                             </Button>
                           </Link>
                         )}
