@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ProviderSidebar } from './ProviderSidebar'
 import { ProviderHeader } from './ProviderHeader'
+import { ProviderBottomNav } from './ProviderBottomNav'
 import type { User } from '@supabase/supabase-js'
 
 interface Provider {
@@ -325,10 +326,16 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           pageSubtitle={pageSubtitle}
         />
 
-        {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+        {/* Page Content - with bottom padding for mobile nav */}
+        <main className="flex-1 p-4 lg:p-6 overflow-auto pb-20 lg:pb-6">
           {children}
         </main>
+
+        {/* Bottom Navigation - Mobile Only */}
+        <ProviderBottomNav
+          pendingOrders={pendingOrders}
+          pendingRefunds={pendingRefunds}
+        />
       </div>
     </div>
   )
