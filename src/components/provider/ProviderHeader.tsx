@@ -430,12 +430,12 @@ export function ProviderHeader({
                       {locale === 'ar' ? 'حسابي' : 'My Account'}
                     </Link>
                     <Link
-                      href={`/${locale}`}
+                      href={providerId ? `/${locale}/providers/${providerId}` : `/${locale}`}
                       onClick={() => setAccountMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                     >
-                      {isRTL ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-                      {locale === 'ar' ? 'العودة للموقع' : 'Back to Site'}
+                      {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      {locale === 'ar' ? 'معاينة المتجر' : 'Preview Store'}
                     </Link>
                   </div>
 
