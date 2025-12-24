@@ -173,46 +173,50 @@ export function ProviderSidebar({
           flex flex-col h-screen max-h-screen overflow-hidden
         `}
       >
-        {/* Logo */}
-        <div className="p-4 border-b border-slate-200">
+        {/* Logo - Compact on mobile */}
+        <div className="p-3 lg:p-4 border-b border-slate-200 flex-shrink-0">
           <div className="flex items-center justify-between">
             <Link href={`/${locale}/provider`} className="flex flex-col">
-              <EngeznaLogo size="md" static showPen={false} />
-              <p className="text-xs text-slate-500 mt-1">
+              <EngeznaLogo size="sm" static showPen={false} />
+              <p className="text-[10px] lg:text-xs text-slate-500 mt-0.5">
                 {locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}
               </p>
             </Link>
             <button
               onClick={onClose}
-              className="lg:hidden text-slate-500 hover:text-slate-700"
+              className="lg:hidden text-slate-500 hover:text-slate-700 p-1"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Store Info */}
-        {provider && (
-          <div className="p-4 border-b border-slate-200">
-            <div className="bg-slate-50 rounded-xl p-3">
-              <p className="text-sm font-medium text-slate-900 truncate">
-                {locale === 'ar' ? provider.name_ar : provider.name_en}
-              </p>
-              <p className="text-xs text-slate-500 capitalize">
-                {provider.category.replace('_', ' ')}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <span className={`w-2 h-2 rounded-full ${getStatusColor(provider.status)}`} />
-                <span className="text-xs text-slate-600">
-                  {getStatusLabel(provider.status)}
-                </span>
+        {/* Scrollable Content - Store Info + Navigation */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Store Info - Compact on mobile */}
+          {provider && (
+            <div className="p-2 lg:p-3 border-b border-slate-200">
+              <div className="bg-slate-50 rounded-lg p-2 lg:p-3 flex items-center gap-2 lg:block">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs lg:text-sm font-medium text-slate-900 truncate">
+                    {locale === 'ar' ? provider.name_ar : provider.name_en}
+                  </p>
+                  <p className="text-[10px] lg:text-xs text-slate-500 capitalize hidden lg:block">
+                    {provider.category.replace('_', ' ')}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 lg:mt-2">
+                  <span className={`w-2 h-2 rounded-full ${getStatusColor(provider.status)}`} />
+                  <span className="text-[10px] lg:text-xs text-slate-600">
+                    {getStatusLabel(provider.status)}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Navigation */}
-        <nav className="flex-1 p-3 pb-6 space-y-1 overflow-y-auto safe-area-bottom">
+          {/* Navigation */}
+          <nav className="p-2 lg:p-3 pb-6 space-y-0.5 lg:space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.path ||
               (item.path !== `/${locale}/provider` && pathname.startsWith(item.path))
@@ -222,25 +226,26 @@ export function ProviderSidebar({
                 href={item.path}
                 onClick={onClose}
                 className={`
-                  w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+                  w-full flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl transition-all
                   ${isActive
                     ? 'bg-primary text-white shadow-md'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
                 `}
               >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium text-sm">
+                <item.icon className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+                <span className="font-medium text-xs lg:text-sm">
                   {locale === 'ar' ? item.label.ar : item.label.en}
                 </span>
                 {item.badge && (
-                  <span className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs px-2 py-0.5 rounded-full`}>
+                  <span className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-[10px] lg:text-xs px-1.5 lg:px-2 py-0.5 rounded-full`}>
                     {item.badge}
                   </span>
                 )}
               </Link>
             )
           })}
-        </nav>
+          </nav>
+        </div>
       </aside>
     </>
   )
