@@ -548,7 +548,6 @@ export default function SettlementDetailPage() {
                       const commissionRate = settlement.provider?.custom_commission_rate
                         ?? settlement.provider?.commission_rate
                         ?? 7
-                      const originalTotalCommission = Math.round((settlement.gross_revenue || 0) * commissionRate) / 100
                       const isGracePeriod = (settlement.platform_commission || 0) === 0 && settlement.provider?.commission_status === 'in_grace_period'
 
                       return (
@@ -559,11 +558,6 @@ export default function SettlementDetailPage() {
                           </div>
                           <p className={`text-2xl font-bold ${(settlement.platform_commission || 0) === 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                            {isGracePeriod && originalTotalCommission > 0 && (
-                              <span className="text-slate-400 text-sm font-normal ms-2">
-                                ({locale === 'ar' ? 'من ' : 'of '}{formatCurrency(originalTotalCommission, locale)})
-                              </span>
-                            )}
                           </p>
                           {isGracePeriod && (
                             <p className="text-xs text-green-500 mt-1">
@@ -598,10 +592,18 @@ export default function SettlementDetailPage() {
                         <span className="text-orange-700">{locale === 'ar' ? 'إجمالي الإيرادات:' : 'Revenue:'}</span>
                         <span className="font-bold text-orange-900">{formatCurrency(settlement.cod_gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-orange-700">{locale === 'ar' ? 'عمولة إنجزنا:' : 'Engezna Commission:'}</span>
+                        <span className={`font-bold ${(settlement.cod_commission_owed || 0) === 0 ? 'text-green-600' : 'text-orange-900'}`}>
+                          {formatCurrency(settlement.cod_commission_owed || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        </span>
+                      </div>
                       <div className="border-t border-orange-300 pt-2 mt-2">
                         <div className="flex justify-between">
                           <span className="text-orange-700 font-medium">{locale === 'ar' ? 'عمولة إنجزنا المستحقة:' : 'Engezna Commission Due:'}</span>
-                          <span className="font-bold text-orange-900">{formatCurrency(settlement.cod_commission_owed || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                          <span className={`font-bold ${(settlement.cod_commission_owed || 0) === 0 ? 'text-green-600' : 'text-orange-900'}`}>
+                            {formatCurrency(settlement.cod_commission_owed || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                          </span>
                         </div>
                         <p className="text-xs text-orange-600 mt-1">
                           {locale === 'ar' ? `← ${providerName} يدفع لإنجزنا` : `→ ${providerName} pays Engezna`}
@@ -755,23 +757,12 @@ export default function SettlementDetailPage() {
                         </td>
                         <td className="px-4 py-3">
                           {(() => {
-                            // Calculate original commission (what it would be without grace period)
-                            const commissionRate = settlement.provider?.custom_commission_rate
-                              ?? settlement.provider?.commission_rate
-                              ?? 7
-                            const baseAmount = (order.subtotal ?? order.total ?? 0) - (order.discount ?? 0)
-                            const originalCommission = Math.round((baseAmount * commissionRate / 100) * 100) / 100
                             const isGracePeriod = order.platform_commission === 0 && settlement.provider?.commission_status === 'in_grace_period'
 
                             return (
                               <div className="flex flex-col">
                                 <span className={order.platform_commission === 0 ? 'text-green-600' : 'text-red-600'}>
                                   {formatCurrency(order.platform_commission ?? 0, locale)}
-                                  {isGracePeriod && originalCommission > 0 && (
-                                    <span className="text-slate-400 text-xs ms-1">
-                                      ({locale === 'ar' ? 'من ' : 'of '}{formatCurrency(originalCommission, locale)})
-                                    </span>
-                                  )}
                                 </span>
                                 {isGracePeriod && (
                                   <span className="text-xs text-green-500 mt-0.5">
