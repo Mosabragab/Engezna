@@ -208,15 +208,18 @@ export default function SettlementDetailPage() {
         // Add refund_amount and net_for_commission to each order
         const ordersWithRefunds = ordersData.map(order => {
           const refundAmount = refundMap.get(order.id) || 0
-          // Net for commission = subtotal - discount (excludes delivery)
+          // Net for commission = subtotal - discount - refund (excludes delivery)
           // If subtotal exists, use it directly (already excludes delivery)
           // Otherwise: total - delivery_fee - discount
-          let netForCommission: number
+          // Then subtract refund amount (no commission on refunded amounts)
+          let baseForCommission: number
           if (order.subtotal !== null && order.subtotal !== undefined) {
-            netForCommission = order.subtotal - (order.discount || 0)
+            baseForCommission = order.subtotal - (order.discount || 0)
           } else {
-            netForCommission = (order.total || 0) - (order.delivery_fee || 0) - (order.discount || 0)
+            baseForCommission = (order.total || 0) - (order.delivery_fee || 0) - (order.discount || 0)
           }
+          // Subtract refund - merchant shouldn't pay commission on refunded amounts
+          const netForCommission = baseForCommission - refundAmount
           return {
             ...order,
             refund_amount: refundAmount,
@@ -894,8 +897,8 @@ export default function SettlementDetailPage() {
             <div className="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">
               <p>
                 {locale === 'ar'
-                  ? '* صافي للعمولة = قيمة الطلب - الخصم - التوصيل (العمولة تحسب على هذا المبلغ)'
-                  : '* Net for Commission = Order Value - Discount - Delivery (Commission is calculated on this amount)'}
+                  ? '* صافي للعمولة = قيمة الطلب - الخصم - التوصيل - المرتجع (العمولة تحسب على هذا المبلغ)'
+                  : '* Net for Commission = Order Value - Discount - Delivery - Refund (Commission is calculated on this amount)'}
               </p>
             </div>
           </div>
