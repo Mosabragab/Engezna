@@ -97,10 +97,8 @@ interface Order {
   payment_method: string
   created_at: string
   customer: { full_name: string } | null
-  // Calculated fields
+  // Added from refunds table
   refund_amount?: number
-  net_for_commission?: number
-  adjusted_commission?: number // Commission after refund adjustment
 }
 
 export default function SettlementDetailPage() {
@@ -206,33 +204,12 @@ export default function SettlementDetailPage() {
       }
 
       if (ordersData) {
-        // Get commission rate from provider
-        const commissionRate = (settlementData.provider?.custom_commission_rate
-          ?? settlementData.provider?.commission_rate
-          ?? 7) / 100 // Convert percentage to decimal
-
-        // Add refund_amount and net_for_commission to each order
+        // Add refund_amount to each order (for display purposes)
         const ordersWithRefunds = ordersData.map(order => {
           const refundAmount = refundMap.get(order.id) || 0
-          // Net for commission = subtotal - discount - refund (excludes delivery)
-          // If subtotal exists, use it directly (already excludes delivery)
-          // Otherwise: total - delivery_fee - discount
-          // Then subtract refund amount (no commission on refunded amounts)
-          let baseForCommission: number
-          if (order.subtotal !== null && order.subtotal !== undefined) {
-            baseForCommission = order.subtotal - (order.discount || 0)
-          } else {
-            baseForCommission = (order.total || 0) - (order.delivery_fee || 0) - (order.discount || 0)
-          }
-          // Subtract refund - merchant shouldn't pay commission on refunded amounts
-          const netForCommission = Math.max(0, baseForCommission - refundAmount)
-          // Calculate adjusted commission based on net after refund
-          const adjustedCommission = netForCommission * commissionRate
           return {
             ...order,
             refund_amount: refundAmount,
-            net_for_commission: netForCommission,
-            adjusted_commission: adjustedCommission,
           }
         })
         setOrders(ordersWithRefunds as unknown as Order[])
@@ -807,8 +784,7 @@ export default function SettlementDetailPage() {
                     <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'قيمة الطلب' : 'Order Value'}</th>
                     <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'المرتجع' : 'Refund'}</th>
                     <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'التوصيل' : 'Delivery'}</th>
-                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'صافي للعمولة' : 'Net for Commission'}</th>
-                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'العمولة المستحقة' : 'Commission Due'}</th>
+                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'العمولة' : 'Commission'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -860,23 +836,11 @@ export default function SettlementDetailPage() {
                             </span>
                           </td>
 
-                          {/* Net for Commission (subtotal - discount, excludes delivery) */}
-                          <td className="px-3 py-3">
-                            <div>
-                              <span className="font-medium text-slate-900">
-                                {formatCurrency(order.net_for_commission || 0, locale)}
-                              </span>
-                              <p className="text-[10px] text-slate-400 mt-0.5">
-                                {locale === 'ar' ? 'بدون توصيل' : 'excl. delivery'}
-                              </p>
-                            </div>
-                          </td>
-
-                          {/* Commission Due (after refund adjustment) */}
+                          {/* Commission from database */}
                           <td className="px-3 py-3">
                             <div>
                               <span className={`font-bold ${isGracePeriod ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatCurrency(order.adjusted_commission || 0, locale)}
+                                {formatCurrency(order.original_commission || order.platform_commission || 0, locale)}
                               </span>
                               {isGracePeriod && (
                                 <p className="text-[10px] text-green-500 mt-0.5">
@@ -890,7 +854,7 @@ export default function SettlementDetailPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-4 py-12 text-center">
+                      <td colSpan={5} className="px-4 py-12 text-center">
                         <Package className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                         <p className="text-slate-500">
                           {locale === 'ar' ? 'لا توجد طلبات' : 'No orders found'}
@@ -902,14 +866,6 @@ export default function SettlementDetailPage() {
               </table>
             </div>
 
-            {/* Table Legend */}
-            <div className="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">
-              <p>
-                {locale === 'ar'
-                  ? '* صافي للعمولة = قيمة الطلب - الخصم - التوصيل - المرتجع (العمولة تحسب على هذا المبلغ)'
-                  : '* Net for Commission = Order Value - Discount - Delivery - Refund (Commission is calculated on this amount)'}
-              </p>
-            </div>
           </div>
 
           {/* Settlement Metadata */}
