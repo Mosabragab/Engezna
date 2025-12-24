@@ -147,9 +147,11 @@ export default function FinancePage() {
     const { startDate, endDate, lastPeriodStart, lastPeriodEnd } = getDateRange()
 
     // Get all delivered orders with payment status and platform_commission
+    // IMPORTANT: platform_commission is calculated by DB trigger using (subtotal - discount) * rate
+    // This excludes delivery fees as requested
     const { data: allOrders } = await supabase
       .from('orders')
-      .select('id, order_number, total, subtotal, discount, platform_commission, status, payment_status, payment_method, created_at')
+      .select('id, order_number, total, subtotal, discount, delivery_fee, platform_commission, original_commission, status, payment_status, payment_method, created_at')
       .eq('provider_id', provId)
       .eq('status', 'delivered')
       .order('created_at', { ascending: false })
@@ -170,17 +172,33 @@ export default function FinancePage() {
       .order('created_at', { ascending: false })
 
     if (allOrders) {
-      // Calculate theoretical commission (always based on rate, regardless of grace period)
-      // This shows the merchant what the commission WOULD BE so they get used to seeing it
+      // ═══════════════════════════════════════════════════════════════════════
+      // IMPORTANT: Use DB-calculated commission values, NOT frontend calculation
+      // Commission is calculated by DB trigger using: (subtotal - discount) * rate
+      // This EXCLUDES delivery fees (per business rule: نسبة المنصه علي صافي الطلب بدون التوصيل)
+      // ═══════════════════════════════════════════════════════════════════════
+
+      // Theoretical commission - what would be charged (use original_commission from DB)
+      // Shows merchant what commission would be so they get used to seeing it
       const getTheoreticalCommission = (order: typeof allOrders[0]) => {
-        const revenue = (order.subtotal || order.total || 0) - (order.discount || 0)
-        return revenue * currentCommissionRate
+        // Prefer DB-calculated original_commission (includes grace period visibility)
+        if (order.original_commission != null && order.original_commission > 0) {
+          return order.original_commission
+        }
+        // Fallback: use platform_commission if original not available
+        if (order.platform_commission != null && order.platform_commission > 0) {
+          return order.platform_commission
+        }
+        // Last resort: calculate manually (using subtotal - excludes delivery)
+        const baseAmount = (order.subtotal || (order.total || 0) - (order.delivery_fee || 0)) - (order.discount || 0)
+        return Math.max(0, baseAmount * currentCommissionRate)
       }
 
-      // Actual commission (what will be charged - could be 0 during grace period)
+      // Actual commission - what is actually charged (0 during grace period)
+      // ALWAYS use DB value - it's calculated by trigger with correct formula
       const getActualCommission = (order: typeof allOrders[0]) => {
-        if (order.platform_commission != null) return order.platform_commission
-        return getTheoreticalCommission(order)
+        // Use platform_commission from DB (calculated by trigger)
+        return order.platform_commission || 0
       }
 
       // FILTER ALL ORDERS BY DATE RANGE FIRST

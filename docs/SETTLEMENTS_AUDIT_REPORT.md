@@ -19,12 +19,19 @@
 ### ✅ نقاط القوة الحالية
 
 #### أ) الـ Trigger الهجين (`calculate_order_commission`)
-**الموقع:** `supabase/migrations/20251223100000_secure_commission_calculation.sql`
+**الموقع:** `supabase/migrations/20251224220000_fix_commission_excludes_delivery.sql`
 
 ```
-المعادلة المستخدمة:
-العمولة = (subtotal - discount) × commission_rate / 100
+المعادلة المستخدمة (بعد الإصلاح):
+قاعدة العمولة = subtotal - discount  (بدون رسوم التوصيل)
+العمولة = قاعدة العمولة × commission_rate / 100
+
+ملاحظة هامة: نسبة المنصة تحسب على صافي الطلب بدون خدمة التوصيل
 ```
+
+**إصلاح 24 ديسمبر 2025:**
+- ✅ تم تصحيح المعادلة لاستبعاد `delivery_fee` من حساب العمولة
+- ✅ إذا كان `subtotal` غير موجود، يُحسب: `total - delivery_fee - discount`
 
 **الإيجابيات:**
 - ✅ يحسب العمولة على مستوى السيرفر (أمان ضد التلاعب)
