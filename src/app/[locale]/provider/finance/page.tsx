@@ -154,13 +154,25 @@ export default function FinancePage() {
       .eq('status', 'delivered')
       .order('created_at', { ascending: false })
 
+    // Get refunds to subtract from earnings
+    const { data: refunds } = await supabase
+      .from('refunds')
+      .select('amount, created_at, order_id')
+      .eq('provider_id', provId)
+      .in('status', ['approved', 'processed'])
+
     if (allOrders) {
-      // Helper to get commission (use stored value or calculate as fallback using provider's rate)
-      const getCommission = (order: typeof allOrders[0]) => {
-        if (order.platform_commission != null) return order.platform_commission
-        // Fallback: calculate on (subtotal - discount) using provider's commission rate
+      // Calculate theoretical commission (always based on rate, regardless of grace period)
+      // This shows the merchant what the commission WOULD BE so they get used to seeing it
+      const getTheoreticalCommission = (order: typeof allOrders[0]) => {
         const revenue = (order.subtotal || order.total || 0) - (order.discount || 0)
         return revenue * currentCommissionRate
+      }
+
+      // Actual commission (what will be charged - could be 0 during grace period)
+      const getActualCommission = (order: typeof allOrders[0]) => {
+        if (order.platform_commission != null) return order.platform_commission
+        return getTheoreticalCommission(order)
       }
 
       // FILTER ALL ORDERS BY DATE RANGE FIRST
@@ -169,22 +181,30 @@ export default function FinancePage() {
         return d >= startDate && d <= endDate
       })
 
+      // Calculate refunds for this period
+      const periodRefunds = (refunds || []).filter(r => {
+        const d = new Date(r.created_at)
+        return d >= startDate && d <= endDate
+      })
+      const totalRefundsAmount = periodRefunds.reduce((sum, r) => sum + (r.amount || 0), 0)
+
       // Separate by payment status (filtered by date)
       const confirmedOrders = orders.filter(o => o.payment_status === 'completed')
       const pendingPaymentOrders = orders.filter(o => o.payment_status === 'pending')
 
       // Calculate confirmed totals (only completed payments in the period)
+      // Use ACTUAL commission for earnings (respects grace period)
       const confirmedRevenue = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const confirmedCommission = confirmedOrders.reduce((sum, o) => sum + getCommission(o), 0)
-      const confirmedEarnings = confirmedRevenue - confirmedCommission
+      const confirmedActualCommission = confirmedOrders.reduce((sum, o) => sum + getActualCommission(o), 0)
+      const confirmedEarnings = Math.max(0, confirmedRevenue - confirmedActualCommission - totalRefundsAmount)
 
       // Calculate pending collection (delivered but payment pending in the period)
       const pendingRevenue = pendingPaymentOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const pendingCommission = pendingPaymentOrders.reduce((sum, o) => sum + getCommission(o), 0)
-      const pendingCollection = pendingRevenue - pendingCommission
+      const pendingActualCommission = pendingPaymentOrders.reduce((sum, o) => sum + getActualCommission(o), 0)
+      const pendingCollection = pendingRevenue - pendingActualCommission
 
-      // Total commission from orders in the period
-      const totalCommission = orders.reduce((sum, o) => sum + getCommission(o), 0)
+      // Total THEORETICAL commission for display (shows what commission would be, even during grace period)
+      const totalCommission = orders.reduce((sum, o) => sum + getTheoreticalCommission(o), 0)
 
       // Period earnings = confirmed earnings in this period
       const periodEarnings = confirmedEarnings
@@ -194,21 +214,27 @@ export default function FinancePage() {
         const d = new Date(o.created_at)
         return d >= lastPeriodStart && d <= lastPeriodEnd
       })
+      const lastPeriodRefunds = (refunds || []).filter(r => {
+        const d = new Date(r.created_at)
+        return d >= lastPeriodStart && d <= lastPeriodEnd
+      })
+      const lastPeriodRefundsAmount = lastPeriodRefunds.reduce((sum, r) => sum + (r.amount || 0), 0)
       const lastPeriodConfirmedOrders = lastPeriodOrders.filter(o => o.payment_status === 'completed')
       const lastPeriodRevenue = lastPeriodConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const lastPeriodCommission = lastPeriodConfirmedOrders.reduce((sum, o) => sum + getCommission(o), 0)
-      const lastPeriodEarnings = lastPeriodRevenue - lastPeriodCommission
+      const lastPeriodCommission = lastPeriodConfirmedOrders.reduce((sum, o) => sum + getActualCommission(o), 0)
+      const lastPeriodEarnings = Math.max(0, lastPeriodRevenue - lastPeriodCommission - lastPeriodRefundsAmount)
 
       // Pending payout calculation (for filtered period)
       // For Online orders: Platform owes provider (revenue - commission)
       const periodOnlineConfirmed = confirmedOrders.filter(o => o.payment_method !== 'cash')
       const periodOnlineRevenue = periodOnlineConfirmed.reduce((sum, o) => sum + (o.total || 0), 0)
-      const periodOnlineCommission = periodOnlineConfirmed.reduce((sum, o) => sum + getCommission(o), 0)
+      const periodOnlineCommission = periodOnlineConfirmed.reduce((sum, o) => sum + getActualCommission(o), 0)
       const pendingPayout = periodOnlineRevenue - periodOnlineCommission
 
       // COD commission owed - what provider owes platform from COD orders in period
+      // Use ACTUAL commission (0 during grace period)
       const periodCodConfirmed = confirmedOrders.filter(o => o.payment_method === 'cash')
-      const codCommissionOwed = periodCodConfirmed.reduce((sum, o) => sum + getCommission(o), 0)
+      const codCommissionOwed = periodCodConfirmed.reduce((sum, o) => sum + getActualCommission(o), 0)
 
       // COD vs Online breakdown (within date range - already filtered)
       const codOrders = orders.filter(o => o.payment_method === 'cash')
@@ -247,7 +273,7 @@ export default function FinancePage() {
       const txns: Transaction[] = orders.slice(0, 30).map(order => ({
         id: order.id,
         type: 'order' as const,
-        amount: (order.total || 0) - getCommission(order),
+        amount: (order.total || 0) - getActualCommission(order),
         status: order.payment_status === 'completed' ? 'completed' as const : 'pending' as const,
         paymentStatus: order.payment_status || 'pending',
         paymentMethod: order.payment_method || 'cash',
@@ -482,7 +508,7 @@ export default function FinancePage() {
             </CardContent>
           </Card>
 
-          {/* Total Commission */}
+          {/* Total Commission - Shows theoretical value so merchant gets used to it */}
           <Card className="bg-[hsl(var(--info)/0.1)] border-[hsl(var(--info)/0.3)]">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-2">
@@ -490,6 +516,7 @@ export default function FinancePage() {
               </div>
               <p className="text-2xl font-bold text-info">{formatCurrency(stats.totalCommission)}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'العمولات (حتى 7%)' : 'Commission (up to 7%)'}</p>
+              {/* Note: This shows theoretical commission so merchant gets used to seeing it */}
             </CardContent>
           </Card>
         </div>
