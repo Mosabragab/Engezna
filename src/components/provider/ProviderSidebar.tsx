@@ -170,7 +170,7 @@ export function ProviderSidebar({
           w-64 bg-white border-${isRTL ? 'l' : 'r'} border-slate-200 shadow-sm
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0
-          flex flex-col
+          flex flex-col h-screen max-h-screen overflow-hidden
         `}
       >
         {/* Logo */}
@@ -212,7 +212,7 @@ export function ProviderSidebar({
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3 pb-6 space-y-1 overflow-y-auto safe-area-bottom">
           {navItems.map((item) => {
             const isActive = pathname === item.path ||
               (item.path !== `/${locale}/provider` && pathname.startsWith(item.path))
