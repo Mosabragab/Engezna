@@ -212,7 +212,10 @@ export default function FinancePage() {
       const pendingCollection = pendingRevenue - pendingActualCommission
 
       // Total THEORETICAL commission for display (shows what commission would be, even during grace period)
-      const totalCommission = orders.reduce((sum, o) => sum + getTheoreticalCommission(o), 0)
+      // Subtract commission proportional to refunds (refunded amounts shouldn't have commission)
+      const grossCommission = orders.reduce((sum, o) => sum + getTheoreticalCommission(o), 0)
+      const refundsCommission = totalRefundsAmount * currentCommissionRate
+      const totalCommission = Math.max(0, grossCommission - refundsCommission)
 
       // Period earnings = confirmed earnings in this period
       const periodEarnings = confirmedEarnings
