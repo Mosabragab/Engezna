@@ -233,35 +233,36 @@ export function ProviderSidebar({
             </div>
           )}
 
-          {/* Navigation - Compact on mobile, normal on desktop */}
+          {/* Navigation - Compact on mobile, full size on desktop */}
           <nav className="p-2 lg:p-3 pb-6 space-y-0.5 lg:space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.path ||
-              (item.path !== `/${locale}/provider` && pathname.startsWith(item.path))
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                onClick={onClose}
-                className={`
-                  w-full flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl transition-all
-                  ${isActive
-                    ? 'bg-primary text-white shadow-md'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
-                `}
-              >
-                <item.icon className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
-                <span className="font-medium text-xs lg:text-sm">
-                  {locale === 'ar' ? item.label.ar : item.label.en}
-                </span>
-                {item.badge && (
-                  <span className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-[10px] lg:text-xs px-1.5 lg:px-2 py-0.5 rounded-full`}>
-                    {item.badge}
+            {navItems.map((item) => {
+              const isActive = pathname === item.path ||
+                (item.path !== `/${locale}/provider` && pathname.startsWith(item.path))
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  onClick={onClose}
+                  className={`
+                    w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+                    max-lg:gap-2 max-lg:px-3 max-lg:py-2 max-lg:rounded-lg
+                    ${isActive
+                      ? 'bg-primary text-white shadow-md'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
+                  `}
+                >
+                  <item.icon className="w-5 h-5 max-lg:w-4 max-lg:h-4 flex-shrink-0" />
+                  <span className="font-medium text-sm max-lg:text-xs">
+                    {locale === 'ar' ? item.label.ar : item.label.en}
                   </span>
-                )}
-              </Link>
-            )
-          })}
+                  {item.badge && (
+                    <span className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs max-lg:text-[10px] px-2 max-lg:px-1.5 py-0.5 rounded-full`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
           </nav>
         </div>
       </aside>
