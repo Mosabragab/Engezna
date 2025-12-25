@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
@@ -477,6 +477,39 @@ export default function UnifiedFinancePage() {
       loadFinanceData(providerId, commissionRate)
     }
   }, [providerId, commissionRate, dateFilter, customStartDate, customEndDate, loadFinanceData])
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Realtime Subscription for Settlements
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  useEffect(() => {
+    if (!providerId) return
+
+    const supabase = createClient()
+
+    // Subscribe to settlement changes for this provider
+    const subscription = supabase
+      .channel(`provider-settlements-${providerId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'settlements',
+        filter: `provider_id=eq.${providerId}`
+      }, (payload) => {
+        // Refresh data when settlements change
+        if (payload.eventType === 'INSERT') {
+          console.log('[Realtime] New settlement created')
+        } else if (payload.eventType === 'UPDATE') {
+          console.log('[Realtime] Settlement updated')
+        }
+        loadFinanceData(providerId, commissionRate)
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(subscription)
+    }
+  }, [providerId, commissionRate, loadFinanceData])
 
   const handleRefresh = async () => {
     if (!providerId) return

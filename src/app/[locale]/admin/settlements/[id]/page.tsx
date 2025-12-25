@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import { AdminHeader, useAdminSidebar } from '@/components/admin'
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
+import { exportSettlementToPDF, type SettlementExportData } from '@/lib/finance'
 import {
   Shield,
   ArrowRight,
@@ -33,6 +34,7 @@ import {
   Trash2,
   History,
   FileText,
+  Download,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -456,6 +458,75 @@ export default function SettlementDetailPage() {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PDF Export Handler
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const handleExportPDF = () => {
+    if (!settlement) return
+
+    const exportData: SettlementExportData = {
+      settlement: {
+        id: settlement.id,
+        providerId: settlement.provider_id,
+        periodStart: settlement.period_start,
+        periodEnd: settlement.period_end,
+        totalOrders: settlement.total_orders,
+        grossRevenue: settlement.gross_revenue,
+        platformCommission: settlement.platform_commission,
+        netPayout: settlement.net_payout || (settlement.gross_revenue - settlement.platform_commission),
+        netBalance: settlement.net_balance || 0,
+        settlementDirection: settlement.settlement_direction || 'balanced',
+        status: settlement.status,
+        amountPaid: settlement.amount_paid || 0,
+        paidAt: settlement.paid_at || undefined,
+        paymentMethod: settlement.payment_method || undefined,
+        paymentReference: settlement.payment_reference || undefined,
+        createdAt: settlement.created_at,
+        updatedAt: settlement.updated_at,
+        cod: {
+          ordersCount: settlement.cod_orders_count || 0,
+          revenue: settlement.cod_gross_revenue || 0,
+          commissionOwed: settlement.cod_commission_owed || 0,
+        },
+        online: {
+          ordersCount: settlement.online_orders_count || 0,
+          revenue: settlement.online_gross_revenue || 0,
+          payoutOwed: settlement.online_payout_owed || 0,
+        },
+      },
+      providerName: {
+        ar: settlement.provider?.name_ar || '',
+        en: settlement.provider?.name_en || '',
+      },
+      orders: orders.map(o => ({
+        id: o.id,
+        orderNumber: o.order_number,
+        total: o.total,
+        commission: o.platform_commission,
+        paymentMethod: o.payment_method,
+        createdAt: o.created_at,
+      })),
+      auditLog: auditLog.map(a => ({
+        id: a.id,
+        settlementId: a.settlement_id,
+        action: a.action,
+        oldStatus: a.old_status,
+        newStatus: a.new_status,
+        amountChanged: a.amount_changed,
+        changedBy: a.profile?.full_name || a.changed_by,
+        notes: a.notes,
+        createdAt: a.created_at,
+      })),
+    }
+
+    exportSettlementToPDF(exportData, {
+      locale: locale as 'ar' | 'en',
+      includeOrders: true,
+      includeAuditLog: auditLog.length > 0,
+    })
+  }
+
   if (loading) {
     return (
       <>
@@ -525,14 +596,24 @@ export default function SettlementDetailPage() {
       />
 
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          {/* Back Button */}
-          <Link
-            href={`/${locale}/admin/settlements`}
-            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6"
-          >
-            {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-            <span>{locale === 'ar' ? 'العودة للقائمة' : 'Back to List'}</span>
-          </Link>
+          {/* Back Button & Actions */}
+          <div className="flex items-center justify-between mb-6">
+            <Link
+              href={`/${locale}/admin/settlements`}
+              className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900"
+            >
+              {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+              <span>{locale === 'ar' ? 'العودة للقائمة' : 'Back to List'}</span>
+            </Link>
+            <Button
+              variant="outline"
+              onClick={handleExportPDF}
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              {locale === 'ar' ? 'تصدير PDF' : 'Export PDF'}
+            </Button>
+          </div>
 
           {/* Settlement Header */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">

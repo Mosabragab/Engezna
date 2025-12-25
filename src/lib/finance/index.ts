@@ -25,6 +25,16 @@ export {
   createProviderFinancialService,
 } from './financial-service';
 
+// Export Service for PDF/CSV reports
+export {
+  generateSettlementHTML,
+  exportSettlementToPDF,
+  downloadSettlementAsHTML,
+  exportSettlementsToCSV,
+  type ExportOptions,
+  type SettlementExportData,
+} from './export-service';
+
 // Re-export types from finance types
 export type {
   SettlementStatus,
