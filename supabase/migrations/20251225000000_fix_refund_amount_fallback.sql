@@ -15,12 +15,16 @@ CREATE OR REPLACE FUNCTION handle_refund_settlement_update()
 RETURNS TRIGGER AS $$
 DECLARE
   v_order RECORD;
+  v_provider RECORD;
   v_refund_percentage DECIMAL(5,2);
   v_commission_reduction DECIMAL(10,2);
   v_new_commission DECIMAL(10,2);
+  v_old_commission DECIMAL(10,2);
   v_settlement_id UUID;
   v_should_adjust BOOLEAN := FALSE;
-  v_refund_amount DECIMAL(10,2);  -- NEW: Actual refund amount to use
+  v_refund_amount DECIMAL(10,2);
+  v_net_for_commission DECIMAL(10,2);  -- صافي للعمولة
+  v_commission_rate DECIMAL(5,2);
 BEGIN
   -- ========================================================================
   -- TRIGGER CONDITION: ONLY when customer confirms receiving the refund
@@ -43,13 +47,23 @@ BEGIN
   -- ========================================================================
   IF v_should_adjust THEN
     -- Get order details
-    SELECT id, total, subtotal, discount, delivery_fee, platform_commission, settlement_adjusted, original_commission
+    SELECT id, total, subtotal, discount, delivery_fee, platform_commission, settlement_adjusted, original_commission, provider_id
     INTO v_order
     FROM orders
     WHERE id = NEW.order_id;
 
     -- Only adjust if not already adjusted for this refund
     IF NOT COALESCE(v_order.settlement_adjusted, false) THEN
+
+      -- ====================================================================
+      -- Get provider commission rate
+      -- ====================================================================
+      SELECT COALESCE(custom_commission_rate, commission_rate, 7), commission_status, grace_period_end
+      INTO v_provider
+      FROM providers
+      WHERE id = v_order.provider_id;
+
+      v_commission_rate := COALESCE(v_provider.custom_commission_rate, v_provider.commission_rate, 7);
 
       -- ====================================================================
       -- FIX: Use amount when processed_amount is 0 or NULL
@@ -60,35 +74,36 @@ BEGIN
         ELSE NEW.amount
       END;
 
-      -- Calculate refund percentage using the correct amount
+      -- Store old commission before update
+      v_old_commission := COALESCE(v_order.original_commission, v_order.platform_commission);
+
+      -- ====================================================================
+      -- CORRECT FORMULA: Commission on Net Amount
+      -- الصيغة الصحيحة: العمولة على صافي المبلغ
+      -- صافي للعمولة = إجمالي الطلب - المرتجع - التوصيل
+      -- العمولة = صافي للعمولة × النسبة
+      -- ====================================================================
+      v_net_for_commission := GREATEST(
+        v_order.total - v_refund_amount - COALESCE(v_order.delivery_fee, 0),
+        0
+      );
+
+      -- Calculate refund percentage for logging
       IF v_order.total > 0 THEN
         v_refund_percentage := ROUND((v_refund_amount / v_order.total) * 100, 2);
       ELSE
         v_refund_percentage := 100;
       END IF;
 
-      -- Store original commission before reduction (if not already stored)
-      IF v_order.original_commission IS NULL OR v_order.original_commission = 0 THEN
-        -- First time: store current commission as original
-        UPDATE orders
-        SET original_commission = platform_commission
-        WHERE id = NEW.order_id;
-
-        -- Re-fetch to get the value
-        SELECT platform_commission INTO v_order.original_commission
-        FROM orders WHERE id = NEW.order_id;
-      END IF;
-
-      -- Calculate proportional commission reduction
-      IF NEW.refund_type = 'full' OR v_refund_percentage >= 100 THEN
-        -- Full refund: zero out commission
-        v_commission_reduction := COALESCE(v_order.original_commission, v_order.platform_commission);
+      -- Calculate new commission on net amount
+      IF NEW.refund_type = 'full' OR v_net_for_commission <= 0 THEN
         v_new_commission := 0;
       ELSE
-        -- Partial refund: reduce commission proportionally
-        v_commission_reduction := ROUND(COALESCE(v_order.original_commission, v_order.platform_commission) * (v_refund_percentage / 100), 2);
-        v_new_commission := COALESCE(v_order.original_commission, v_order.platform_commission) - v_commission_reduction;
+        v_new_commission := ROUND(v_net_for_commission * (v_commission_rate / 100), 2);
       END IF;
+
+      -- Calculate reduction for settlement adjustment
+      v_commission_reduction := v_old_commission - v_new_commission;
 
       -- Update order with new commission
       -- IMPORTANT: Update BOTH platform_commission AND original_commission
@@ -107,10 +122,10 @@ BEGIN
             WHEN NEW.refund_type = 'full' THEN 'استرداد كامل'
             ELSE 'استرداد جزئي (' || v_refund_percentage || '%)'
           END ||
-          ' - مبلغ المرتجع: ' || v_refund_amount ||
-          ' - تخفيض العمولة من ' || COALESCE(v_order.original_commission, v_order.platform_commission) ||
-          ' إلى ' || v_new_commission ||
-          ' (تخفيض: ' || v_commission_reduction || ') - رقم الاسترداد: ' || NEW.id::TEXT
+          ' | المرتجع: ' || v_refund_amount ||
+          ' | صافي للعمولة: ' || v_net_for_commission ||
+          ' | العمولة: ' || v_old_commission || ' → ' || v_new_commission ||
+          ' (' || v_commission_rate || '%) - #' || NEW.id::TEXT
       WHERE id = NEW.order_id;
 
       -- Also update processed_amount if it was 0 (fix data issue)
@@ -143,13 +158,13 @@ BEGIN
           NEW.order_id,
           NEW.id,
           CASE WHEN NEW.refund_type = 'full' THEN 'refund_full' ELSE 'refund_partial' END,
-          COALESCE(v_order.original_commission, v_order.platform_commission),
+          v_old_commission,
           v_new_commission,
           v_commission_reduction,
-          v_refund_amount,  -- Use actual refund amount
+          v_refund_amount,
           v_order.total,
           v_refund_percentage,
-          'تعديل تلقائي عند تأكيد العميل - مبلغ المرتجع: ' || v_refund_amount
+          'صافي للعمولة: ' || v_net_for_commission || ' × ' || v_commission_rate || '% = ' || v_new_commission
         );
       END IF;
 
@@ -299,13 +314,14 @@ WHERE (processed_amount = 0 OR processed_amount IS NULL)
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- This fixes orders where refund was confirmed but original_commission wasn't updated
+-- Uses correct formula: commission = (total - refund - delivery) × rate
 DO $$
 DECLARE
   v_order RECORD;
-  v_refund RECORD;
   v_refund_amount DECIMAL(10,2);
-  v_refund_percentage DECIMAL(5,2);
-  v_base_commission DECIMAL(10,2);
+  v_net_for_commission DECIMAL(10,2);
+  v_commission_rate DECIMAL(5,2);
+  v_old_commission DECIMAL(10,2);
   v_new_commission DECIMAL(10,2);
   v_count INTEGER := 0;
 BEGIN
@@ -313,7 +329,8 @@ BEGIN
   FOR v_order IN
     SELECT DISTINCT o.id, o.total, o.subtotal, o.discount, o.delivery_fee,
            o.platform_commission, o.original_commission, o.settlement_adjusted,
-           p.commission_rate, p.custom_commission_rate, p.commission_status, p.grace_period_end
+           COALESCE(p.custom_commission_rate, p.commission_rate, 7) as commission_rate,
+           p.commission_status, p.grace_period_end
     FROM orders o
     JOIN providers p ON o.provider_id = p.id
     WHERE o.settlement_adjusted = true
@@ -333,37 +350,40 @@ BEGIN
       AND r.affects_settlement = true;
 
     IF v_refund_amount IS NOT NULL AND v_refund_amount > 0 AND v_order.total > 0 THEN
-      -- Calculate refund percentage
-      v_refund_percentage := ROUND((v_refund_amount / v_order.total) * 100, 2);
+      -- Store old commission
+      v_old_commission := COALESCE(v_order.original_commission, v_order.platform_commission);
+      v_commission_rate := v_order.commission_rate;
 
-      -- Calculate base commission (before any refund)
-      v_base_commission := ROUND(
-        (COALESCE(v_order.subtotal, v_order.total - COALESCE(v_order.delivery_fee, 0)) - COALESCE(v_order.discount, 0))
-        * (COALESCE(v_order.custom_commission_rate, v_order.commission_rate, 7) / 100),
-        2
+      -- ================================================================
+      -- CORRECT FORMULA: Commission on Net Amount
+      -- صافي للعمولة = إجمالي الطلب - المرتجع - التوصيل
+      -- العمولة = صافي للعمولة × النسبة
+      -- ================================================================
+      v_net_for_commission := GREATEST(
+        v_order.total - v_refund_amount - COALESCE(v_order.delivery_fee, 0),
+        0
       );
 
-      -- Calculate new commission after refund
-      IF v_refund_percentage >= 100 THEN
+      -- Calculate new commission on net amount
+      IF v_net_for_commission <= 0 THEN
         v_new_commission := 0;
       ELSE
-        v_new_commission := ROUND(v_base_commission * (1 - v_refund_percentage / 100), 2);
+        v_new_commission := ROUND(v_net_for_commission * (v_commission_rate / 100), 2);
       END IF;
 
-      -- Update the order's original_commission
+      -- Update the order's original_commission if it's different
       -- Note: platform_commission stays 0 for grace period merchants
-      UPDATE orders
-      SET original_commission = GREATEST(v_new_commission, 0),
-          settlement_notes = COALESCE(settlement_notes, '') ||
-            E'\n[' || NOW()::TEXT || '] [FIX] إعادة حساب العمولة: ' ||
-            v_base_commission || ' → ' || v_new_commission ||
-            ' (نسبة المرتجع: ' || v_refund_percentage || '%)'
-      WHERE id = v_order.id
-        AND (original_commission IS NULL OR original_commission != v_new_commission);
+      IF v_old_commission IS NULL OR v_old_commission != v_new_commission THEN
+        UPDATE orders
+        SET original_commission = GREATEST(v_new_commission, 0),
+            settlement_notes = COALESCE(settlement_notes, '') ||
+              E'\n[' || NOW()::TEXT || '] [FIX] صافي للعمولة: ' ||
+              v_net_for_commission || ' × ' || v_commission_rate || '% = ' || v_new_commission ||
+              ' (كان: ' || v_old_commission || ')'
+        WHERE id = v_order.id;
 
-      IF FOUND THEN
         v_count := v_count + 1;
-        RAISE NOTICE 'Fixed order %: commission % → %', v_order.id, v_base_commission, v_new_commission;
+        RAISE NOTICE 'Fixed order %: net=% commission % → %', v_order.id, v_net_for_commission, v_old_commission, v_new_commission;
       END IF;
     END IF;
   END LOOP;
@@ -376,9 +396,18 @@ END $$;
 -- ═══════════════════════════════════════════════════════════════════════════
 
 COMMENT ON FUNCTION handle_refund_settlement_update() IS
-'Refund Settlement Update Trigger - v3
+'Refund Settlement Update Trigger - v4
 
-FIX: Uses amount when processed_amount = 0
+CORRECT FORMULA:
+صافي للعمولة = إجمالي الطلب - المرتجع - التوصيل
+العمولة = صافي للعمولة × النسبة
+
+Example:
+- Order total: 358
+- Refund: 250
+- Delivery: 8
+- Net for commission: 358 - 250 - 8 = 100
+- Commission (7%): 100 × 7% = 7
 
 BUSINESS FLOW:
 1. Customer requests refund → no change
