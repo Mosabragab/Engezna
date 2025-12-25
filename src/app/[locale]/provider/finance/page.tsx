@@ -34,7 +34,6 @@ import {
   FileText,
   History,
   Truck,
-  Shield,
   Sparkles,
   PauseCircle,
   Gift,
@@ -170,6 +169,8 @@ interface Settlement {
   net_balance: number
   settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
   total_delivery_fees: number
+  // Order IDs included in this settlement
+  orders_included: string[] | null
 }
 
 type TabType = 'overview' | 'settlements'
@@ -236,14 +237,21 @@ export default function ProviderFinanceDashboard() {
   // Load Settlement Orders (Drill-down)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const loadSettlementOrders = useCallback(async (settlementId: string) => {
+  const loadSettlementOrders = useCallback(async (settlement: Settlement) => {
     setLoadingOrders(true)
     const supabase = createClient()
+
+    // Use orders_included array to fetch orders (correct approach)
+    if (!settlement.orders_included || settlement.orders_included.length === 0) {
+      setSettlementOrders([])
+      setLoadingOrders(false)
+      return
+    }
 
     const { data: ordersData, error } = await supabase
       .from('orders')
       .select('id, order_number, total, payment_method, platform_commission, delivery_fee, created_at, status')
-      .eq('settlement_id', settlementId)
+      .in('id', settlement.orders_included)
       .order('created_at', { ascending: false })
       .limit(50)
 
@@ -507,37 +515,35 @@ export default function ProviderFinanceDashboard() {
         {activeTab === 'overview' && financeData && (
           <>
             {/* ╔═══════════════════════════════════════════════════════════════════╗ */}
-            {/* ║ GRACE PERIOD ALERT - Purple Gradient                              ║ */}
+            {/* ║ GRACE PERIOD ALERT - Clear Green Card                             ║ */}
             {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
             {financeData.is_in_grace_period && (
-              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 border-0 text-white overflow-hidden relative">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-                <CardContent className="pt-6 relative">
+              <Card className="bg-green-50 border-green-200 border-2">
+                <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+                    <div className="w-14 h-14 bg-green-500 rounded-2xl flex items-center justify-center shrink-0">
                       <Gift className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Sparkles className="w-5 h-5" />
-                        <h3 className="font-bold text-lg">
+                        <Sparkles className="w-5 h-5 text-green-600" />
+                        <h3 className="font-bold text-lg text-green-800">
                           {locale === 'ar' ? 'فترة الدعم المجانية' : 'Free Support Period'}
                         </h3>
                       </div>
-                      <p className="text-purple-100 text-sm mb-3">
+                      <p className="text-green-700 text-sm mb-3">
                         {locale === 'ar'
                           ? 'أنت في فترة الدعم المجانية! لا يتم احتساب عمولة خلال هذه الفترة.'
                           : 'You are in the free support period! No commission is charged during this time.'}
                       </p>
                       <div className="flex flex-wrap gap-4">
-                        <div className="bg-white/20 rounded-xl px-4 py-2">
-                          <p className="text-purple-100 text-xs">{locale === 'ar' ? 'الأيام المتبقية' : 'Days Remaining'}</p>
-                          <p className="text-2xl font-bold">{financeData.grace_period_days_remaining}</p>
+                        <div className="bg-green-100 rounded-xl px-4 py-2 border border-green-200">
+                          <p className="text-green-600 text-xs">{locale === 'ar' ? 'الأيام المتبقية' : 'Days Remaining'}</p>
+                          <p className="text-2xl font-bold text-green-800">{financeData.grace_period_days_remaining}</p>
                         </div>
-                        <div className="bg-white/20 rounded-xl px-4 py-2">
-                          <p className="text-purple-100 text-xs">{locale === 'ar' ? 'وفرت حتى الآن' : 'Saved So Far'}</p>
-                          <p className="text-2xl font-bold">{formatCurrency(financeData.total_grace_period_discount)}</p>
+                        <div className="bg-green-100 rounded-xl px-4 py-2 border border-green-200">
+                          <p className="text-green-600 text-xs">{locale === 'ar' ? 'وفرت حتى الآن' : 'Saved So Far'}</p>
+                          <p className="text-2xl font-bold text-green-800">{formatCurrency(financeData.total_grace_period_discount)}</p>
                         </div>
                       </div>
                     </div>
@@ -576,13 +582,10 @@ export default function ProviderFinanceDashboard() {
                   )}
 
                   {/* Row 3: Delivery Fees */}
-                  <div className="flex items-center justify-between py-2 text-cyan-600">
+                  <div className="flex items-center justify-between py-2 text-green-600">
                     <span className="flex items-center gap-2">
-                      <span className="text-cyan-400">(+)</span>
+                      <span className="text-green-400">(+)</span>
                       {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
-                      <span className="text-[10px] bg-cyan-100 text-cyan-700 px-1.5 py-0.5 rounded">
-                        {locale === 'ar' ? 'حقك' : 'yours'}
-                      </span>
                     </span>
                     <span className="font-semibold">{formatCurrency(safeNumber(financeData.total_delivery_fees))}</span>
                   </div>
@@ -727,29 +730,21 @@ export default function ProviderFinanceDashboard() {
             </Card>
 
             {/* ╔═══════════════════════════════════════════════════════════════════╗ */}
-            {/* ║ DELIVERY FEES - YOUR RIGHT (Cyan Card)                            ║ */}
+            {/* ║ DELIVERY FEES - Simple Info Card                                  ║ */}
             {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
-            <Card className="bg-gradient-to-r from-cyan-500 to-cyan-600 border-0 text-white">
-              <CardContent className="pt-6">
+            <Card className="bg-slate-50 border-slate-200">
+              <CardContent className="py-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
-                      <Truck className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-cyan-100 text-sm">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</p>
-                      <p className="text-3xl font-bold">{formatCurrency(safeNumber(financeData.total_delivery_fees))}</p>
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <Truck className="w-5 h-5 text-slate-500" />
+                    <span className="text-slate-700">
+                      {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                    </span>
+                    <span className="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded">
+                      {locale === 'ar' ? 'غير مشمولة في العمولة' : 'excluded from commission'}
+                    </span>
                   </div>
-                  <div className="text-end">
-                    <div className="bg-white/20 rounded-xl px-3 py-1.5 inline-flex items-center gap-1">
-                      <Shield className="w-4 h-4" />
-                      <span className="text-sm font-medium">{locale === 'ar' ? 'حقك الكامل' : 'Your Right'}</span>
-                    </div>
-                    <p className="text-cyan-100 text-xs mt-2">
-                      {locale === 'ar' ? 'لا تخضع للعمولة أو الاسترداد' : 'Not subject to commission or refunds'}
-                    </p>
-                  </div>
+                  <span className="font-bold text-slate-900">{formatCurrency(safeNumber(financeData.total_delivery_fees))}</span>
                 </div>
               </CardContent>
             </Card>
@@ -996,7 +991,7 @@ export default function ProviderFinanceDashboard() {
                             setSettlementOrders([])
                           } else {
                             setSelectedSettlement(settlement)
-                            loadSettlementOrders(settlement.id)
+                            loadSettlementOrders(settlement)
                           }
                         }}
                         className="w-full text-start"
@@ -1106,15 +1101,15 @@ export default function ProviderFinanceDashboard() {
                               </div>
 
                               {/* Delivery Fees in Settlement */}
-                              <div className="p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <Truck className="w-4 h-4 text-cyan-600" />
-                                    <span className="font-medium text-cyan-800 text-sm">
-                                      {locale === 'ar' ? 'رسوم التوصيل (حقك)' : 'Delivery Fees (Your Right)'}
+                                    <Truck className="w-4 h-4 text-slate-500" />
+                                    <span className="text-slate-700 text-sm">
+                                      {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
                                     </span>
                                   </div>
-                                  <span className="font-bold text-cyan-700">{formatCurrency(settlement.total_delivery_fees || 0)}</span>
+                                  <span className="font-semibold text-slate-800">{formatCurrency(settlement.total_delivery_fees || 0)}</span>
                                 </div>
                               </div>
 
