@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import { AdminHeader, GeoFilter, useGeoFilter, useAdminSidebar } from '@/components/admin'
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
+import { exportSettlementsToCSV } from '@/lib/finance'
 import {
   Shield,
   Search,
@@ -29,6 +30,7 @@ import {
   ChevronUp,
   X,
   Users,
+  Download,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -50,6 +52,7 @@ interface Settlement {
   gross_revenue: number
   platform_commission: number
   net_payout: number
+  delivery_fees_collected: number | null
   // New fields from updated schema
   cod_orders_count: number | null
   cod_revenue: number | null
@@ -57,13 +60,17 @@ interface Settlement {
   online_orders_count: number | null
   online_revenue: number | null
   online_platform_owes: number | null
+  online_platform_commission: number | null
   net_amount_due: number | null
+  net_balance: number | null
   settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
   amount_paid: number | null
   status: 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
   paid_at: string | null
   payment_method: string | null
   payment_reference: string | null
+  due_date: string | null
+  is_overdue: boolean | null
   orders_included: string[] | null
   notes: string | null
   created_at: string
@@ -324,11 +331,13 @@ export default function AdminSettlementsPage() {
 
         // Get delivered orders for this provider in the period (including payment_method)
         // IMPORTANT: Use platform_commission from database (calculated by server-side trigger)
+        // Filter by settlement_status to only include eligible orders (not on_hold or excluded)
         const { data: allOrders } = await supabase
           .from('orders')
-          .select('id, total, subtotal, discount, payment_method, platform_commission')
+          .select('id, total, subtotal, discount, payment_method, platform_commission, settlement_status')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
+          .or('settlement_status.eq.eligible,settlement_status.is.null') // Only include eligible orders
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString())
 
@@ -419,6 +428,12 @@ export default function AdminSettlementsPage() {
             })
 
           if (!insertError) {
+            // Mark orders as settled
+            const orderIds = orders.map(o => o.id)
+            await supabase
+              .from('orders')
+              .update({ settlement_status: 'settled' })
+              .in('id', orderIds)
             createdCount++
           }
         }
@@ -495,11 +510,13 @@ export default function AdminSettlementsPage() {
 
       // Get delivered orders for this provider in the period (including payment_method)
       // IMPORTANT: Use platform_commission from database (calculated by server-side trigger)
+      // Filter by settlement_status to only include eligible orders (not on_hold or excluded)
       const { data: allOrders } = await supabase
         .from('orders')
-        .select('id, total, subtotal, discount, payment_method, platform_commission')
+        .select('id, total, subtotal, discount, payment_method, platform_commission, settlement_status')
         .eq('provider_id', generateForm.providerId)
         .eq('status', 'delivered')
+        .or('settlement_status.eq.eligible,settlement_status.is.null') // Only include eligible orders
         .gte('created_at', generateForm.periodStart)
         .lte('created_at', generateForm.periodEnd + 'T23:59:59')
 
@@ -590,6 +607,13 @@ export default function AdminSettlementsPage() {
       if (insertError) {
         alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء التسوية' : 'Error creating settlement')
       } else {
+        // Mark orders as settled
+        const orderIds = orders.map(o => o.id)
+        await supabase
+          .from('orders')
+          .update({ settlement_status: 'settled' })
+          .in('id', orderIds)
+
         alert(locale === 'ar' ? 'تم إنشاء التسوية بنجاح' : 'Settlement generated successfully')
         setShowGenerateModal(false)
         setGenerateForm({ providerId: '', periodStart: '', periodEnd: '' })
@@ -680,6 +704,58 @@ export default function AdminSettlementsPage() {
       case 'disputed': return <AlertTriangle className="w-3 h-3" />
       default: return null
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CSV Export Handler
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function handleExportCSV() {
+    if (filteredSettlements.length === 0) {
+      alert(locale === 'ar' ? 'لا توجد تسويات للتصدير' : 'No settlements to export')
+      return
+    }
+
+    // Convert settlements to Settlement type format
+    const exportData = filteredSettlements.map(s => ({
+      id: s.id,
+      providerId: s.provider_id,
+      providerName: {
+        ar: s.provider?.name_ar || '',
+        en: s.provider?.name_en || '',
+      },
+      periodStart: s.period_start,
+      periodEnd: s.period_end,
+      totalOrders: s.total_orders,
+      grossRevenue: s.gross_revenue,
+      platformCommission: s.platform_commission,
+      deliveryFeesCollected: s.delivery_fees_collected || 0,
+      netAmountDue: s.net_amount_due || 0,
+      netPayout: s.net_payout || 0,
+      netBalance: s.net_balance || s.net_amount_due || 0,
+      settlementDirection: (s.settlement_direction || 'balanced') as 'platform_pays_provider' | 'provider_pays_platform' | 'balanced',
+      status: s.status,
+      amountPaid: s.amount_paid || 0,
+      paymentDate: s.paid_at || null,
+      paidAt: s.paid_at || null,
+      paymentMethod: s.payment_method || null,
+      paymentReference: s.payment_reference || null,
+      dueDate: s.due_date || '',
+      isOverdue: s.is_overdue || false,
+      cod: {
+        ordersCount: s.cod_orders_count || 0,
+        grossRevenue: s.cod_revenue || 0,
+        commissionOwed: s.cod_commission_owed || 0,
+      },
+      online: {
+        ordersCount: s.online_orders_count || 0,
+        grossRevenue: s.online_revenue || 0,
+        platformCommission: s.online_platform_commission || 0,
+        payoutOwed: s.online_platform_owes || 0,
+      },
+    }))
+
+    exportSettlementsToCSV(exportData as never[], { locale: locale as 'ar' | 'en' })
   }
 
   if (loading) {
@@ -775,6 +851,15 @@ export default function AdminSettlementsPage() {
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 {locale === 'ar' ? 'تحديث' : 'Refresh'}
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={handleExportCSV}
+                disabled={filteredSettlements.length === 0}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {locale === 'ar' ? 'تصدير CSV' : 'Export CSV'}
               </Button>
 
               {/* Link to Settlement Groups */}
