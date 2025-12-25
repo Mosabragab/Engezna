@@ -442,7 +442,7 @@ WITH order_financials AS (
     CASE WHEN o.payment_method != 'cash' THEN TRUE ELSE FALSE END AS is_online
 
   FROM orders o
-  WHERE o.status IN ('delivered', 'completed', 'customer_confirmed')
+  WHERE o.status = 'delivered'
 ),
 provider_summary AS (
   SELECT
@@ -815,10 +815,10 @@ Use this for regional admin dashboards and geographic filtering.';
 -- ║ PART 11: Update existing orders to have default settlement_status              ║
 -- ╚═══════════════════════════════════════════════════════════════════════════════╝
 
--- Set delivered/completed orders as eligible (if not already settled)
+-- Set delivered orders as eligible (if not already settled)
 UPDATE orders
 SET settlement_status = 'eligible'
-WHERE status IN ('delivered', 'completed', 'customer_confirmed')
+WHERE status = 'delivered'
   AND settlement_status IS NULL;
 
 -- Set cancelled/rejected orders as excluded
@@ -830,7 +830,7 @@ WHERE status IN ('cancelled', 'rejected')
 -- Set pending orders as eligible (they'll be evaluated when delivered)
 UPDATE orders
 SET settlement_status = 'eligible'
-WHERE status NOT IN ('delivered', 'completed', 'customer_confirmed', 'cancelled', 'rejected')
+WHERE status NOT IN ('delivered', 'cancelled', 'rejected')
   AND settlement_status IS NULL;
 
 -- ╔═══════════════════════════════════════════════════════════════════════════════╗
