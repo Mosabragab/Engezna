@@ -8,7 +8,7 @@
  * the Single Source of Truth for all financial data.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { Money, sumMoney, getSettlementDirection } from './money';
 import type {
   FinancialEngineData,
@@ -27,8 +27,11 @@ import type {
 // Service Configuration
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnySupabaseClient = SupabaseClient<any, any, any>;
+
 interface FinancialServiceConfig {
-  supabase: ReturnType<typeof createClient>;
+  supabase: AnySupabaseClient;
   providerId?: string;           // For provider-specific queries
   governorateIds?: string[];     // For regional admin filtering
   isRegionalAdmin?: boolean;     // Whether user is regional admin
@@ -39,7 +42,7 @@ interface FinancialServiceConfig {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export class FinancialService {
-  private supabase: ReturnType<typeof createClient>;
+  private supabase: AnySupabaseClient;
   private providerId?: string;
   private governorateIds?: string[];
   private isRegionalAdmin: boolean;
@@ -531,7 +534,7 @@ export class FinancialService {
  * Create a financial service for admin dashboard
  */
 export function createAdminFinancialService(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   options?: {
     governorateIds?: string[];
     isRegionalAdmin?: boolean;
@@ -548,7 +551,7 @@ export function createAdminFinancialService(
  * Create a financial service for provider dashboard
  */
 export function createProviderFinancialService(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   providerId: string
 ): FinancialService {
   return new FinancialService({
