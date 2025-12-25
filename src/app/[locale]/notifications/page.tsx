@@ -34,12 +34,13 @@ export default function NotificationsPage() {
 
     try {
       // Get refund ID from order
+      // Note: customer_confirmed can be false or NULL, so we need to check both
       const { data: refund } = await supabase
         .from('refunds')
         .select('id')
         .eq('order_id', orderId)
         .eq('provider_action', 'cash_refund')
-        .eq('customer_confirmed', false)
+        .or('customer_confirmed.eq.false,customer_confirmed.is.null')
         .single()
 
       if (refund) {

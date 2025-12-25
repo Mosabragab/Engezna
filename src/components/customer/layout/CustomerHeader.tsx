@@ -140,13 +140,14 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
 
     try {
       // Find the refund for this order
+      // Note: customer_confirmed can be false or NULL, so we need to check both
       const { data: refund, error: refundError } = await supabase
         .from('refunds')
         .select('id')
         .eq('order_id', orderId)
         .eq('customer_id', user.id)
         .eq('provider_action', 'cash_refund')
-        .eq('customer_confirmed', false)
+        .or('customer_confirmed.eq.false,customer_confirmed.is.null')
         .single()
 
       if (refundError || !refund) {
