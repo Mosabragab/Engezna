@@ -29,6 +29,7 @@ import {
   Receipt,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   LayoutDashboard,
   FileText,
   History,
@@ -39,6 +40,7 @@ import {
   Gift,
   Scale,
   ShoppingBag,
+  Filter,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -49,55 +51,81 @@ export const dynamic = 'force-dynamic'
 
 interface FinancialEngineData {
   provider_id: string
-  provider_name: string
-  commission_rate: number
+  provider_name_ar: string
+  provider_name_en: string
+  governorate_id: string
+  city_id: string
 
-  // Order counts by status
-  eligible_orders_count: number
-  on_hold_orders_count: number
-  settled_orders_count: number
-  excluded_orders_count: number
+  // Commission info - IMPORTANT: commission_rate is stored as 7.00 not 0.07
+  commission_rate: number // e.g., 7.00 means 7%
+  commission_status: string
+  grace_period_end: string | null
+  delivery_responsibility: string
 
-  // COD breakdown
+  // Order counts
+  total_orders: number
   cod_orders_count: number
-  cod_gross_revenue: number
-  cod_net_sales: number
-  cod_total_delivery_fees: number
-  cod_commission_owed: number
-
-  // Online breakdown
   online_orders_count: number
+  eligible_orders_count: number
+  held_orders_count: number
+  settled_orders_count: number
+
+  // Gross Revenue
+  gross_revenue: number
+  cod_gross_revenue: number
   online_gross_revenue: number
-  online_net_sales: number
-  online_total_delivery_fees: number
-  online_platform_commission: number
-  online_payout_owed: number
 
-  // Totals
-  total_orders_count: number
-  total_gross_revenue: number
-  total_net_sales: number
+  // Subtotals (Without Delivery)
+  total_subtotal: number
+  cod_subtotal: number
+  online_subtotal: number
+
+  // Delivery Fees (Provider's right - NEVER touched by commission)
   total_delivery_fees: number
-  total_platform_commission: number
+  cod_delivery_fees: number
+  online_delivery_fees: number
 
-  // Grace period
-  is_in_grace_period: boolean
-  grace_period_days_remaining: number
+  // Discounts
+  total_discounts: number
+
+  // Commission (Theoretical - what would be without grace period)
+  theoretical_commission: number
+  cod_theoretical_commission: number
+  online_theoretical_commission: number
+
+  // Commission (Actual - respects grace period)
+  actual_commission: number
+  cod_actual_commission: number
+  online_actual_commission: number
+
+  // Grace Period Discount
   total_grace_period_discount: number
 
-  // Net balance (THE MAGIC NUMBER)
+  // Refunds
+  total_refunds: number
+  total_refund_commission_reduction: number
+  refund_percentage: number
+
+  // Net Commission (after refund adjustments)
+  net_commission: number
+
+  // COD: Commission owed to platform
+  cod_commission_owed: number
+
+  // Online: Payout owed to provider
+  online_payout_owed: number
+
+  // Net Balance (THE MAGIC NUMBER)
   net_balance: number
   settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced'
 
-  // Held orders
-  held_orders_count: number
-  held_orders_value: number
-
-  // Timestamps
-  period_start: string
-  period_end: string
-  calculated_at: string
+  // Grace Period Status
+  is_in_grace_period: boolean
+  grace_period_days_remaining: number
 }
+
+// Period filter type
+type PeriodFilter = 'today' | 'week' | 'month' | 'year' | 'all'
 
 interface SettlementOrder {
   id: string
@@ -160,6 +188,9 @@ export default function ProviderFinanceDashboard() {
   const [providerId, setProviderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+
+  // Period Filter
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all')
 
   // Financial Engine Data (Single Source of Truth)
   const [financeData, setFinanceData] = useState<FinancialEngineData | null>(null)
@@ -366,7 +397,28 @@ export default function ProviderFinanceDashboard() {
   ]
 
   // Commission rate as percentage
-  const commissionRatePercent = financeData ? Math.round(financeData.commission_rate * 100) : 7
+  // IMPORTANT: commission_rate is stored as 7.00 (not 0.07), so NO multiplication needed
+  const commissionRatePercent = financeData ? Math.round(financeData.commission_rate || 7) : 7
+
+  // Helper function for safe number display (prevents NaN)
+  const safeNumber = (value: number | undefined | null): number => {
+    if (value === undefined || value === null || isNaN(value)) return 0
+    return value
+  }
+
+  // Calculate net sales from available fields
+  const totalNetSales = financeData
+    ? safeNumber(financeData.gross_revenue) - safeNumber(financeData.total_refunds)
+    : 0
+
+  // Period filter options
+  const periodOptions: { key: PeriodFilter; label_ar: string; label_en: string }[] = [
+    { key: 'today', label_ar: 'اليوم', label_en: 'Today' },
+    { key: 'week', label_ar: 'هذا الأسبوع', label_en: 'This Week' },
+    { key: 'month', label_ar: 'هذا الشهر', label_en: 'This Month' },
+    { key: 'year', label_ar: 'هذه السنة', label_en: 'This Year' },
+    { key: 'all', label_ar: 'الكل', label_en: 'All Time' },
+  ]
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Loading State
@@ -396,7 +448,7 @@ export default function ProviderFinanceDashboard() {
     >
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Tab Navigation */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
             {tabs.map((tab) => {
               const Icon = tab.icon
@@ -419,16 +471,34 @@ export default function ProviderFinanceDashboard() {
             })}
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="text-slate-600"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'} ${refreshing ? 'animate-spin' : ''}`} />
-            {locale === 'ar' ? 'تحديث' : 'Refresh'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Period Filter */}
+            <div className="relative">
+              <select
+                value={periodFilter}
+                onChange={(e) => setPeriodFilter(e.target.value as PeriodFilter)}
+                className="appearance-none bg-white border border-slate-200 rounded-lg px-3 py-2 pr-8 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
+              >
+                {periodOptions.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {locale === 'ar' ? option.label_ar : option.label_en}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="text-slate-600"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'} ${refreshing ? 'animate-spin' : ''}`} />
+              {locale === 'ar' ? 'تحديث' : 'Refresh'}
+            </Button>
+          </div>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════════ */}
@@ -491,17 +561,17 @@ export default function ProviderFinanceDashboard() {
                   {/* Row 1: Gross Sales */}
                   <div className="flex items-center justify-between py-2">
                     <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Gross Sales'}</span>
-                    <span className="font-semibold text-slate-900">{formatCurrency(financeData.total_gross_revenue)}</span>
+                    <span className="font-semibold text-slate-900">{formatCurrency(safeNumber(financeData.gross_revenue))}</span>
                   </div>
 
                   {/* Row 2: Refunds (if any) */}
-                  {(financeData as any).total_refunds > 0 && (
+                  {safeNumber(financeData.total_refunds) > 0 && (
                     <div className="flex items-center justify-between py-2 text-red-600">
                       <span className="flex items-center gap-1">
                         <span className="text-red-400">(−)</span>
                         {locale === 'ar' ? 'المرتجعات' : 'Refunds'}
                       </span>
-                      <span className="font-semibold">({formatCurrency((financeData as any).total_refunds)})</span>
+                      <span className="font-semibold">({formatCurrency(safeNumber(financeData.total_refunds))})</span>
                     </div>
                   )}
 
@@ -514,7 +584,7 @@ export default function ProviderFinanceDashboard() {
                         {locale === 'ar' ? 'حقك' : 'yours'}
                       </span>
                     </span>
-                    <span className="font-semibold">{formatCurrency(financeData.total_delivery_fees)}</span>
+                    <span className="font-semibold">{formatCurrency(safeNumber(financeData.total_delivery_fees))}</span>
                   </div>
 
                   {/* Divider */}
@@ -523,7 +593,7 @@ export default function ProviderFinanceDashboard() {
                   {/* Row 4: Net Sales */}
                   <div className="flex items-center justify-between py-2">
                     <span className="font-medium text-slate-700">{locale === 'ar' ? '= صافي المبيعات' : '= Net Sales'}</span>
-                    <span className="font-bold text-slate-900">{formatCurrency(financeData.total_net_sales)}</span>
+                    <span className="font-bold text-slate-900">{formatCurrency(totalNetSales)}</span>
                   </div>
 
                   {/* Row 5: Commission - THE MARKETING TRICK */}
@@ -536,16 +606,16 @@ export default function ProviderFinanceDashboard() {
                     </div>
                     <div className="flex items-center gap-2">
                       {/* Theoretical Commission - Strikethrough */}
-                      {financeData.is_in_grace_period && financeData.total_grace_period_discount > 0 && (
+                      {financeData.is_in_grace_period && safeNumber(financeData.total_grace_period_discount) > 0 && (
                         <span className="text-slate-400 line-through text-sm">
-                          {formatCurrency(financeData.total_grace_period_discount + financeData.total_platform_commission)}
+                          {formatCurrency(safeNumber(financeData.theoretical_commission))}
                         </span>
                       )}
                       {/* Actual Commission */}
                       <span className={`font-bold ${financeData.is_in_grace_period ? 'text-green-600' : 'text-red-600'}`}>
-                        {financeData.is_in_grace_period && financeData.total_platform_commission === 0
+                        {financeData.is_in_grace_period && safeNumber(financeData.actual_commission) === 0
                           ? (locale === 'ar' ? '0 ج.م' : '0 EGP')
-                          : formatCurrency(financeData.total_platform_commission)
+                          : formatCurrency(safeNumber(financeData.actual_commission))
                         }
                       </span>
                       {/* Grace Period Badge */}
@@ -586,7 +656,7 @@ export default function ProviderFinanceDashboard() {
                           ? 'text-amber-700'
                           : 'text-slate-700'
                     }`}>
-                      {formatCurrency(financeData.net_balance)}
+                      {formatCurrency(safeNumber(financeData.net_balance))}
                     </span>
                   </div>
                 </div>
@@ -633,7 +703,7 @@ export default function ProviderFinanceDashboard() {
                         ? 'text-amber-700'
                         : 'text-slate-700'
                   }`}>
-                    {formatCurrency(financeData.net_balance)}
+                    {formatCurrency(safeNumber(financeData.net_balance))}
                   </p>
 
                   <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${
@@ -668,7 +738,7 @@ export default function ProviderFinanceDashboard() {
                     </div>
                     <div>
                       <p className="text-cyan-100 text-sm">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</p>
-                      <p className="text-3xl font-bold">{formatCurrency(financeData.total_delivery_fees)}</p>
+                      <p className="text-3xl font-bold">{formatCurrency(safeNumber(financeData.total_delivery_fees))}</p>
                     </div>
                   </div>
                   <div className="text-end">
@@ -687,7 +757,7 @@ export default function ProviderFinanceDashboard() {
             {/* ╔═══════════════════════════════════════════════════════════════════╗ */}
             {/* ║ HELD ORDERS ALERT (If Any)                                        ║ */}
             {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
-            {financeData.held_orders_count > 0 && (
+            {safeNumber(financeData.held_orders_count) > 0 && (
               <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-red-200">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
@@ -706,11 +776,7 @@ export default function ProviderFinanceDashboard() {
                       <div className="flex gap-4">
                         <div className="bg-white rounded-lg px-4 py-2 border border-red-200">
                           <p className="text-red-500 text-xs">{locale === 'ar' ? 'عدد الطلبات' : 'Orders Count'}</p>
-                          <p className="text-xl font-bold text-red-700">{financeData.held_orders_count}</p>
-                        </div>
-                        <div className="bg-white rounded-lg px-4 py-2 border border-red-200">
-                          <p className="text-red-500 text-xs">{locale === 'ar' ? 'القيمة المعلقة' : 'Held Value'}</p>
-                          <p className="text-xl font-bold text-red-700">{formatCurrency(financeData.held_orders_value)}</p>
+                          <p className="text-xl font-bold text-red-700">{safeNumber(financeData.held_orders_count)}</p>
                         </div>
                       </div>
                     </div>
@@ -735,7 +801,7 @@ export default function ProviderFinanceDashboard() {
                         {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
                       </p>
                       <p className="text-amber-600 text-sm">
-                        {financeData.cod_orders_count} {locale === 'ar' ? 'طلب' : 'orders'}
+                        {safeNumber(financeData.cod_orders_count)} {locale === 'ar' ? 'طلب' : 'orders'}
                       </p>
                     </div>
                   </div>
@@ -743,11 +809,11 @@ export default function ProviderFinanceDashboard() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-amber-700 text-sm">{locale === 'ar' ? 'إجمالي المبيعات' : 'Gross Revenue'}</span>
-                      <span className="font-bold text-amber-900">{formatCurrency(financeData.cod_gross_revenue)}</span>
+                      <span className="font-bold text-amber-900">{formatCurrency(safeNumber(financeData.cod_gross_revenue))}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-amber-700 text-sm">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</span>
-                      <span className="font-semibold text-cyan-600">+{formatCurrency(financeData.cod_total_delivery_fees)}</span>
+                      <span className="font-semibold text-cyan-600">+{formatCurrency(safeNumber(financeData.cod_delivery_fees))}</span>
                     </div>
                     <div className="border-t border-amber-200 pt-3">
                       <div className="flex justify-between items-center">
@@ -755,7 +821,7 @@ export default function ProviderFinanceDashboard() {
                           <ArrowUpRight className="w-4 h-4 text-amber-600" />
                           {locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}
                         </span>
-                        <span className="font-bold text-amber-700">{formatCurrency(financeData.cod_commission_owed)}</span>
+                        <span className="font-bold text-amber-700">{formatCurrency(safeNumber(financeData.cod_commission_owed))}</span>
                       </div>
                       <p className="text-xs text-amber-600 mt-1">
                         {locale === 'ar' ? 'تدفعها للمنصة' : 'You pay to platform'}
@@ -777,7 +843,7 @@ export default function ProviderFinanceDashboard() {
                         {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
                       </p>
                       <p className="text-blue-600 text-sm">
-                        {financeData.online_orders_count} {locale === 'ar' ? 'طلب' : 'orders'}
+                        {safeNumber(financeData.online_orders_count)} {locale === 'ar' ? 'طلب' : 'orders'}
                       </p>
                     </div>
                   </div>
@@ -785,11 +851,11 @@ export default function ProviderFinanceDashboard() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-blue-700 text-sm">{locale === 'ar' ? 'إجمالي المبيعات' : 'Gross Revenue'}</span>
-                      <span className="font-bold text-blue-900">{formatCurrency(financeData.online_gross_revenue)}</span>
+                      <span className="font-bold text-blue-900">{formatCurrency(safeNumber(financeData.online_gross_revenue))}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-blue-700 text-sm">{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</span>
-                      <span className="font-semibold text-red-500">-{formatCurrency(financeData.online_platform_commission)}</span>
+                      <span className="font-semibold text-red-500">-{formatCurrency(safeNumber(financeData.online_actual_commission))}</span>
                     </div>
                     <div className="border-t border-blue-200 pt-3">
                       <div className="flex justify-between items-center">
@@ -797,7 +863,7 @@ export default function ProviderFinanceDashboard() {
                           <ArrowDownRight className="w-4 h-4 text-green-600" />
                           {locale === 'ar' ? 'مستحق لك' : 'Due to You'}
                         </span>
-                        <span className="font-bold text-green-600">{formatCurrency(financeData.online_payout_owed)}</span>
+                        <span className="font-bold text-green-600">{formatCurrency(safeNumber(financeData.online_payout_owed))}</span>
                       </div>
                       <p className="text-xs text-blue-600 mt-1">
                         {locale === 'ar' ? 'المنصة تدفعها لك' : 'Platform pays to you'}
@@ -814,19 +880,19 @@ export default function ProviderFinanceDashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card className="bg-white border-slate-200">
                 <CardContent className="pt-4 pb-4 text-center">
-                  <p className="text-3xl font-bold text-primary">{financeData.eligible_orders_count}</p>
-                  <p className="text-xs text-slate-500 mt-1">{locale === 'ar' ? 'طلبات مؤهلة' : 'Eligible Orders'}</p>
+                  <p className="text-3xl font-bold text-primary">{safeNumber(financeData.total_orders)}</p>
+                  <p className="text-xs text-slate-500 mt-1">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
                 </CardContent>
               </Card>
               <Card className="bg-white border-slate-200">
                 <CardContent className="pt-4 pb-4 text-center">
-                  <p className="text-3xl font-bold text-green-600">{financeData.settled_orders_count}</p>
+                  <p className="text-3xl font-bold text-green-600">{safeNumber(financeData.settled_orders_count)}</p>
                   <p className="text-xs text-slate-500 mt-1">{locale === 'ar' ? 'تمت تسويتها' : 'Settled'}</p>
                 </CardContent>
               </Card>
               <Card className="bg-white border-slate-200">
                 <CardContent className="pt-4 pb-4 text-center">
-                  <p className="text-3xl font-bold text-amber-600">{financeData.on_hold_orders_count}</p>
+                  <p className="text-3xl font-bold text-amber-600">{safeNumber(financeData.held_orders_count)}</p>
                   <p className="text-xs text-slate-500 mt-1">{locale === 'ar' ? 'قيد الانتظار' : 'On Hold'}</p>
                 </CardContent>
               </Card>
