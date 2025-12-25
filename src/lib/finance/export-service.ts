@@ -17,8 +17,32 @@ export interface ExportOptions {
   dateFormat?: 'short' | 'long';
 }
 
+// Flexible settlement data for export (allows database field names)
 export interface SettlementExportData {
-  settlement: Settlement;
+  settlement: {
+    id: string;
+    periodStart: string;
+    periodEnd: string;
+    totalOrders: number;
+    grossRevenue: number;
+    platformCommission: number;
+    netBalance: number;
+    settlementDirection: string;
+    status: string;
+    amountPaid: number;
+    cod: {
+      ordersCount: number;
+      grossRevenue: number;
+      commissionOwed: number;
+    };
+    online: {
+      ordersCount: number;
+      grossRevenue: number;
+      platformCommission: number;
+      payoutOwed: number;
+    };
+    [key: string]: unknown; // Allow additional properties
+  };
   providerName?: { ar: string; en: string };
   orders?: {
     id: string;
