@@ -294,6 +294,84 @@ WHERE (processed_amount = 0 OR processed_amount IS NULL)
   AND status IN ('approved', 'processed');
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- 4B. FIX EXISTING DATA: Recalculate original_commission for refunded orders
+-- إصلاح البيانات الموجودة: إعادة حساب العمولة للطلبات المرتجعة
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- This fixes orders where refund was confirmed but original_commission wasn't updated
+DO $$
+DECLARE
+  v_order RECORD;
+  v_refund RECORD;
+  v_refund_amount DECIMAL(10,2);
+  v_refund_percentage DECIMAL(5,2);
+  v_base_commission DECIMAL(10,2);
+  v_new_commission DECIMAL(10,2);
+  v_count INTEGER := 0;
+BEGIN
+  -- Find orders with confirmed refunds that may have wrong commission
+  FOR v_order IN
+    SELECT DISTINCT o.id, o.total, o.subtotal, o.discount, o.delivery_fee,
+           o.platform_commission, o.original_commission, o.settlement_adjusted,
+           p.commission_rate, p.custom_commission_rate, p.commission_status, p.grace_period_end
+    FROM orders o
+    JOIN providers p ON o.provider_id = p.id
+    WHERE o.settlement_adjusted = true
+      AND EXISTS (
+        SELECT 1 FROM refunds r
+        WHERE r.order_id = o.id
+          AND r.customer_confirmed = true
+          AND r.affects_settlement = true
+      )
+  LOOP
+    -- Get total refund amount for this order
+    SELECT SUM(CASE WHEN COALESCE(r.processed_amount, 0) > 0 THEN r.processed_amount ELSE r.amount END)
+    INTO v_refund_amount
+    FROM refunds r
+    WHERE r.order_id = v_order.id
+      AND r.customer_confirmed = true
+      AND r.affects_settlement = true;
+
+    IF v_refund_amount IS NOT NULL AND v_refund_amount > 0 AND v_order.total > 0 THEN
+      -- Calculate refund percentage
+      v_refund_percentage := ROUND((v_refund_amount / v_order.total) * 100, 2);
+
+      -- Calculate base commission (before any refund)
+      v_base_commission := ROUND(
+        (COALESCE(v_order.subtotal, v_order.total - COALESCE(v_order.delivery_fee, 0)) - COALESCE(v_order.discount, 0))
+        * (COALESCE(v_order.custom_commission_rate, v_order.commission_rate, 7) / 100),
+        2
+      );
+
+      -- Calculate new commission after refund
+      IF v_refund_percentage >= 100 THEN
+        v_new_commission := 0;
+      ELSE
+        v_new_commission := ROUND(v_base_commission * (1 - v_refund_percentage / 100), 2);
+      END IF;
+
+      -- Update the order's original_commission
+      -- Note: platform_commission stays 0 for grace period merchants
+      UPDATE orders
+      SET original_commission = GREATEST(v_new_commission, 0),
+          settlement_notes = COALESCE(settlement_notes, '') ||
+            E'\n[' || NOW()::TEXT || '] [FIX] إعادة حساب العمولة: ' ||
+            v_base_commission || ' → ' || v_new_commission ||
+            ' (نسبة المرتجع: ' || v_refund_percentage || '%)'
+      WHERE id = v_order.id
+        AND (original_commission IS NULL OR original_commission != v_new_commission);
+
+      IF FOUND THEN
+        v_count := v_count + 1;
+        RAISE NOTICE 'Fixed order %: commission % → %', v_order.id, v_base_commission, v_new_commission;
+      END IF;
+    END IF;
+  END LOOP;
+
+  RAISE NOTICE 'Fixed % orders with incorrect original_commission', v_count;
+END $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- 5. DOCUMENTATION
 -- ═══════════════════════════════════════════════════════════════════════════
 
