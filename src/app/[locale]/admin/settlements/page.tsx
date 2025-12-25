@@ -324,11 +324,13 @@ export default function AdminSettlementsPage() {
 
         // Get delivered orders for this provider in the period (including payment_method)
         // IMPORTANT: Use platform_commission from database (calculated by server-side trigger)
+        // Filter by settlement_status to only include eligible orders (not on_hold or excluded)
         const { data: allOrders } = await supabase
           .from('orders')
-          .select('id, total, subtotal, discount, payment_method, platform_commission')
+          .select('id, total, subtotal, discount, payment_method, platform_commission, settlement_status')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
+          .or('settlement_status.eq.eligible,settlement_status.is.null') // Only include eligible orders
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString())
 
@@ -419,6 +421,12 @@ export default function AdminSettlementsPage() {
             })
 
           if (!insertError) {
+            // Mark orders as settled
+            const orderIds = orders.map(o => o.id)
+            await supabase
+              .from('orders')
+              .update({ settlement_status: 'settled' })
+              .in('id', orderIds)
             createdCount++
           }
         }
@@ -495,11 +503,13 @@ export default function AdminSettlementsPage() {
 
       // Get delivered orders for this provider in the period (including payment_method)
       // IMPORTANT: Use platform_commission from database (calculated by server-side trigger)
+      // Filter by settlement_status to only include eligible orders (not on_hold or excluded)
       const { data: allOrders } = await supabase
         .from('orders')
-        .select('id, total, subtotal, discount, payment_method, platform_commission')
+        .select('id, total, subtotal, discount, payment_method, platform_commission, settlement_status')
         .eq('provider_id', generateForm.providerId)
         .eq('status', 'delivered')
+        .or('settlement_status.eq.eligible,settlement_status.is.null') // Only include eligible orders
         .gte('created_at', generateForm.periodStart)
         .lte('created_at', generateForm.periodEnd + 'T23:59:59')
 
@@ -590,6 +600,13 @@ export default function AdminSettlementsPage() {
       if (insertError) {
         alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء التسوية' : 'Error creating settlement')
       } else {
+        // Mark orders as settled
+        const orderIds = orders.map(o => o.id)
+        await supabase
+          .from('orders')
+          .update({ settlement_status: 'settled' })
+          .in('id', orderIds)
+
         alert(locale === 'ar' ? 'تم إنشاء التسوية بنجاح' : 'Settlement generated successfully')
         setShowGenerateModal(false)
         setGenerateForm({ providerId: '', periodStart: '', periodEnd: '' })

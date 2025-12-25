@@ -31,6 +31,8 @@ import {
   DollarSign,
   Percent,
   Trash2,
+  History,
+  FileText,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -101,6 +103,19 @@ interface Order {
   refund_amount?: number
 }
 
+interface AuditLogEntry {
+  id: string
+  settlement_id: string
+  action: string
+  old_status: string | null
+  new_status: string | null
+  amount_changed: number | null
+  changed_by: string | null
+  notes: string | null
+  created_at: string
+  profile?: { full_name: string | null } | null
+}
+
 export default function SettlementDetailPage() {
   const locale = useLocale()
   const params = useParams()
@@ -115,6 +130,8 @@ export default function SettlementDetailPage() {
 
   const [settlement, setSettlement] = useState<Settlement | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([])
+  const [showAuditLog, setShowAuditLog] = useState(false)
 
   // Payment modal
   const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -222,6 +239,32 @@ export default function SettlementDetailPage() {
         ...prev,
         amount: (settlementData.platform_commission || 0).toString(),
       }))
+    }
+
+    // Load audit log
+    await loadAuditLog(supabase, settlementId)
+  }
+
+  async function loadAuditLog(supabase: ReturnType<typeof createClient>, settId: string) {
+    const { data: auditData } = await supabase
+      .from('settlement_audit_log')
+      .select(`
+        id,
+        settlement_id,
+        action,
+        old_status,
+        new_status,
+        amount_changed,
+        changed_by,
+        notes,
+        created_at,
+        profile:profiles!changed_by(full_name)
+      `)
+      .eq('settlement_id', settId)
+      .order('created_at', { ascending: false })
+
+    if (auditData) {
+      setAuditLog(auditData as unknown as AuditLogEntry[])
     }
   }
 
@@ -382,6 +425,35 @@ export default function SettlementDetailPage() {
       cancelled: { ar: 'ملغي', en: 'Cancelled' },
     }
     return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
+  }
+
+  const getAuditActionLabel = (action: string) => {
+    const labels: Record<string, { ar: string; en: string }> = {
+      created: { ar: 'تم الإنشاء', en: 'Created' },
+      status_changed: { ar: 'تغيير الحالة', en: 'Status Changed' },
+      payment_recorded: { ar: 'تسجيل دفعة', en: 'Payment Recorded' },
+      payment_updated: { ar: 'تحديث الدفع', en: 'Payment Updated' },
+      amount_adjusted: { ar: 'تعديل المبلغ', en: 'Amount Adjusted' },
+      notes_updated: { ar: 'تحديث الملاحظات', en: 'Notes Updated' },
+      disputed: { ar: 'نزاع', en: 'Disputed' },
+      resolved: { ar: 'تم الحل', en: 'Resolved' },
+      waived: { ar: 'تم الإعفاء', en: 'Waived' },
+    }
+    return labels[action]?.[locale === 'ar' ? 'ar' : 'en'] || action
+  }
+
+  const getAuditActionIcon = (action: string) => {
+    switch (action) {
+      case 'created': return <FileText className="w-4 h-4 text-blue-500" />
+      case 'status_changed': return <RefreshCw className="w-4 h-4 text-amber-500" />
+      case 'payment_recorded': return <CheckCircle2 className="w-4 h-4 text-green-500" />
+      case 'payment_updated': return <DollarSign className="w-4 h-4 text-blue-500" />
+      case 'amount_adjusted': return <TrendingUp className="w-4 h-4 text-purple-500" />
+      case 'disputed': return <AlertTriangle className="w-4 h-4 text-red-500" />
+      case 'resolved': return <CheckCircle2 className="w-4 h-4 text-green-500" />
+      case 'waived': return <XCircle className="w-4 h-4 text-slate-500" />
+      default: return <History className="w-4 h-4 text-slate-400" />
+    }
   }
 
   if (loading) {
@@ -879,6 +951,84 @@ export default function SettlementDetailPage() {
               </table>
             </div>
 
+          </div>
+
+          {/* Audit Trail Section */}
+          <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <button
+              onClick={() => setShowAuditLog(!showAuditLog)}
+              className="w-full p-4 border-b border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors"
+            >
+              <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <History className="w-5 h-5 text-slate-500" />
+                {locale === 'ar' ? 'سجل التغييرات' : 'Audit Trail'}
+                <span className="text-sm font-normal text-slate-500">
+                  ({auditLog.length})
+                </span>
+              </h3>
+              <RefreshCw className={`w-5 h-5 text-slate-400 transition-transform ${showAuditLog ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showAuditLog && (
+              <div className="p-4">
+                {auditLog.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500">
+                    <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>{locale === 'ar' ? 'لا يوجد سجل تغييرات' : 'No audit log entries'}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {auditLog.map((entry, index) => (
+                      <div
+                        key={entry.id}
+                        className={`flex items-start gap-3 p-3 rounded-lg ${
+                          index === 0 ? 'bg-blue-50 border border-blue-100' : 'bg-slate-50'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center flex-shrink-0">
+                          {getAuditActionIcon(entry.action)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-slate-900">
+                              {getAuditActionLabel(entry.action)}
+                            </span>
+                            {entry.old_status && entry.new_status && (
+                              <span className="text-xs text-slate-500">
+                                {getStatusLabel(entry.old_status)} → {getStatusLabel(entry.new_status)}
+                              </span>
+                            )}
+                          </div>
+                          {entry.amount_changed !== null && entry.amount_changed !== 0 && (
+                            <p className="text-sm text-slate-600 mt-1">
+                              {locale === 'ar' ? 'المبلغ:' : 'Amount:'}{' '}
+                              <span className="font-medium">
+                                {formatCurrency(entry.amount_changed, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              </span>
+                            </p>
+                          )}
+                          {entry.notes && (
+                            <p className="text-sm text-slate-500 mt-1">{entry.notes}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {formatDate(entry.created_at, locale)}
+                            </span>
+                            {entry.profile?.full_name && (
+                              <span className="flex items-center gap-1">
+                                <UserIcon className="w-3 h-3" />
+                                {entry.profile.full_name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Settlement Metadata */}
