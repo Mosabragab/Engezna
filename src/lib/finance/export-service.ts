@@ -356,7 +356,7 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
     </div>
     <div class="info-box">
       <div class="info-label">${labels.createdAt}</div>
-      <div class="info-value">${formatDate(settlement.createdAt, locale, 'long')}</div>
+      <div class="info-value">${formatDate(String(settlement.createdAt || new Date().toISOString()), locale, 'long')}</div>
     </div>
   </div>
 
@@ -372,7 +372,7 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
         <div class="summary-label">${labels.platformCommission}</div>
       </div>
       <div class="summary-box">
-        <div class="summary-value positive">${formatCurrency(settlement.netPayout, locale)}</div>
+        <div class="summary-value positive">${formatCurrency(Number(settlement.netPayout || 0), locale)}</div>
         <div class="summary-label">${labels.netPayout}</div>
       </div>
       <div class="summary-box">
@@ -392,7 +392,7 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
         </div>
         <div class="breakdown-row">
           <span>${labels.revenue}</span>
-          <span>${formatCurrency(settlement.cod?.revenue || 0, locale)}</span>
+          <span>${formatCurrency(settlement.cod?.grossRevenue || 0, locale)}</span>
         </div>
         <div class="breakdown-row" style="font-weight: bold; border-top: 1px solid #fbbf24; padding-top: 4px; margin-top: 4px;">
           <span>${labels.commissionOwed}</span>
@@ -407,7 +407,7 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
         </div>
         <div class="breakdown-row">
           <span>${labels.revenue}</span>
-          <span>${formatCurrency(settlement.online?.revenue || 0, locale)}</span>
+          <span>${formatCurrency(settlement.online?.grossRevenue || 0, locale)}</span>
         </div>
         <div class="breakdown-row" style="font-weight: bold; border-top: 1px solid #3b82f6; padding-top: 4px; margin-top: 4px;">
           <span>${labels.payoutOwed}</span>
@@ -427,15 +427,15 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
   <div class="info-grid" style="grid-template-columns: repeat(3, 1fr);">
     <div class="info-box">
       <div class="info-label">${labels.paidAt}</div>
-      <div class="info-value">${formatDate(settlement.paidAt, locale, 'long')}</div>
+      <div class="info-value">${formatDate(String(settlement.paidAt), locale, 'long')}</div>
     </div>
     <div class="info-box">
       <div class="info-label">${labels.paymentMethod}</div>
-      <div class="info-value">${settlement.paymentMethod || '-'}</div>
+      <div class="info-value">${String(settlement.paymentMethod || '-')}</div>
     </div>
     <div class="info-box">
       <div class="info-label">${labels.paymentReference}</div>
-      <div class="info-value">${settlement.paymentReference || '-'}</div>
+      <div class="info-value">${String(settlement.paymentReference || '-')}</div>
     </div>
   </div>
   ` : ''}
@@ -484,7 +484,7 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
         ${auditLog.map(entry => `
           <tr>
             <td>${entry.action}</td>
-            <td>${entry.changedBy || '-'}</td>
+            <td>${entry.adminName || '-'}</td>
             <td>${entry.notes || '-'}</td>
             <td>${formatDate(entry.createdAt, locale, 'long')}</td>
           </tr>

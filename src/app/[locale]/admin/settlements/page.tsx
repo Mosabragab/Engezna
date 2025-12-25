@@ -52,6 +52,7 @@ interface Settlement {
   gross_revenue: number
   platform_commission: number
   net_payout: number
+  delivery_fees_collected: number | null
   // New fields from updated schema
   cod_orders_count: number | null
   cod_revenue: number | null
@@ -59,13 +60,17 @@ interface Settlement {
   online_orders_count: number | null
   online_revenue: number | null
   online_platform_owes: number | null
+  online_platform_commission: number | null
   net_amount_due: number | null
+  net_balance: number | null
   settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
   amount_paid: number | null
   status: 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
   paid_at: string | null
   payment_method: string | null
   payment_reference: string | null
+  due_date: string | null
+  is_overdue: boolean | null
   orders_included: string[] | null
   notes: string | null
   created_at: string
