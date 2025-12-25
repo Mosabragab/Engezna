@@ -14,7 +14,6 @@ import {
   Tag,
   X,
   Star,
-  Receipt,
   Megaphone,
   RefreshCw,
   MessageSquare,
@@ -75,8 +74,8 @@ export function ProviderSidebar({
     },
     {
       icon: BarChart3,
-      label: { ar: 'التقارير', en: 'Reports' },
-      path: `/${locale}/provider/reports`,
+      label: { ar: 'التحليلات', en: 'Analytics' },
+      path: `/${locale}/provider/analytics`,
     },
     {
       icon: Star,
@@ -97,11 +96,6 @@ export function ProviderSidebar({
       icon: Wallet,
       label: { ar: 'المالية', en: 'Finance' },
       path: `/${locale}/provider/finance`,
-    },
-    {
-      icon: Receipt,
-      label: { ar: 'التسويات', en: 'Settlements' },
-      path: `/${locale}/provider/settlements`,
     },
     {
       icon: RefreshCw,

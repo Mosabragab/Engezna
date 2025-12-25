@@ -69,6 +69,7 @@ interface Settlement {
   // Net calculation
   net_balance: number
   settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
+  amount_paid: number | null
   status: 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
   paid_at: string | null
   payment_method: string | null
@@ -90,11 +91,14 @@ interface Order {
   total: number
   subtotal: number | null
   discount: number | null
+  delivery_fee: number | null
   platform_commission: number
   original_commission: number | null
   payment_method: string
   created_at: string
   customer: { full_name: string } | null
+  // Added from refunds table
+  refund_amount?: number
 }
 
 export default function SettlementDetailPage() {
@@ -163,7 +167,7 @@ export default function SettlementDetailPage() {
 
     // Load orders included in this settlement
     if (settlementData?.orders_included && settlementData.orders_included.length > 0) {
-      const { data: ordersData, error: ordersError } = await supabase
+      const { data: ordersData } = await supabase
         .from('orders')
         .select(`
           id,
@@ -172,6 +176,7 @@ export default function SettlementDetailPage() {
           total,
           subtotal,
           discount,
+          delivery_fee,
           platform_commission,
           original_commission,
           payment_method,
@@ -181,16 +186,41 @@ export default function SettlementDetailPage() {
         .in('id', settlementData.orders_included)
         .order('created_at', { ascending: false })
 
+      // Fetch refunds for these orders
+      const { data: refundsData } = await supabase
+        .from('refunds')
+        .select('order_id, amount, processed_amount, status')
+        .in('order_id', settlementData.orders_included)
+        .in('status', ['approved', 'processed'])
+
+      // Create a map of order_id -> refund amount
+      const refundMap = new Map<string, number>()
+      if (refundsData) {
+        for (const refund of refundsData) {
+          const amount = refund.processed_amount || refund.amount || 0
+          const existing = refundMap.get(refund.order_id) || 0
+          refundMap.set(refund.order_id, existing + amount)
+        }
+      }
+
       if (ordersData) {
-        setOrders(ordersData as unknown as Order[])
+        // Add refund_amount to each order (for display purposes)
+        const ordersWithRefunds = ordersData.map(order => {
+          const refundAmount = refundMap.get(order.id) || 0
+          return {
+            ...order,
+            refund_amount: refundAmount,
+          }
+        })
+        setOrders(ordersWithRefunds as unknown as Order[])
       }
     }
 
-    // Update payment form with net payout
+    // Update payment form with commission (amount to be paid by provider)
     if (settlementData) {
       setPaymentForm(prev => ({
         ...prev,
-        amount: (settlementData.net_payout || 0).toString(),
+        amount: (settlementData.platform_commission || 0).toString(),
       }))
     }
   }
@@ -204,12 +234,14 @@ export default function SettlementDetailPage() {
     setIsProcessingPayment(true)
     try {
       const supabase = createClient()
+      const paidAmount = parseFloat(paymentForm.amount)
 
       const { error } = await supabase
         .from('settlements')
         .update({
-          status: 'paid', // Use 'paid' to match database CHECK constraint
+          status: 'paid',
           paid_at: new Date().toISOString(),
+          amount_paid: paidAmount,
           payment_method: paymentForm.method,
           payment_reference: paymentForm.reference || null,
         })
@@ -519,63 +551,89 @@ export default function SettlementDetailPage() {
             return (
               <>
                 {/* Orders Summary */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Package className="w-5 h-5 text-blue-500" />
-                      <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</span>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900">
-                      {formatNumber(settlement.total_orders, locale)}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {locale === 'ar'
-                        ? `نقدي: ${settlement.cod_orders_count || 0} | إلكتروني: ${settlement.online_orders_count || 0}`
-                        : `COD: ${settlement.cod_orders_count || 0} | Online: ${settlement.online_orders_count || 0}`}
-                    </p>
-                  </div>
+                {(() => {
+                  // Calculate total refunds from orders
+                  const totalRefunds = orders.reduce((sum, order) => sum + (order.refund_amount || 0), 0)
+                  const netRevenue = (settlement.gross_revenue || 0) - totalRefunds
 
-                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-2">
-                      <DollarSign className="w-5 h-5 text-green-500" />
-                      <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Gross Revenue'}</span>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900">
-                      {formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                    </p>
-                  </div>
+                  return (
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+                      <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Package className="w-5 h-5 text-blue-500" />
+                          <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</span>
+                        </div>
+                        <p className="text-2xl font-bold text-slate-900">
+                          {formatNumber(settlement.total_orders, locale)}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {locale === 'ar'
+                            ? `نقدي: ${settlement.cod_orders_count || 0} | إلكتروني: ${settlement.online_orders_count || 0}`
+                            : `COD: ${settlement.cod_orders_count || 0} | Online: ${settlement.online_orders_count || 0}`}
+                        </p>
+                      </div>
 
-                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                    {(() => {
-                      const commissionRate = settlement.provider?.custom_commission_rate
-                        ?? settlement.provider?.commission_rate
-                        ?? 7
-                      const isGracePeriod = (settlement.platform_commission || 0) === 0 && settlement.provider?.commission_status === 'in_grace_period'
-
-                      return (
-                        <>
-                          <div className="flex items-center gap-3 mb-2">
-                            <Percent className="w-5 h-5 text-red-500" />
-                            <span className="text-sm text-slate-600">{locale === 'ar' ? `عمولة إنجزنا (${commissionRate}%)` : `Engezna Commission (${commissionRate}%)`}</span>
-                          </div>
-                          <p className={`text-2xl font-bold ${(settlement.platform_commission || 0) === 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                      <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                        <div className="flex items-center gap-3 mb-2">
+                          <DollarSign className="w-5 h-5 text-slate-400" />
+                          <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Gross Revenue'}</span>
+                        </div>
+                        <p className="text-2xl font-bold text-slate-500">
+                          {formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        </p>
+                        {totalRefunds > 0 && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {locale === 'ar' ? `المرتجعات: -${formatCurrency(totalRefunds, locale)}` : `Refunds: -${formatCurrency(totalRefunds, locale)}`}
                           </p>
-                          {isGracePeriod && (
-                            <p className="text-xs text-green-500 mt-1">
-                              {locale === 'ar' ? '✓ فترة سماح' : '✓ Grace period'}
-                              {settlement.provider?.grace_period_end && (
-                                <span className="text-slate-400">
-                                  {' '}({locale === 'ar' ? 'تنتهي: ' : 'ends: '}{formatDate(settlement.provider.grace_period_end, locale)})
-                                </span>
+                        )}
+                      </div>
+
+                      <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                        <div className="flex items-center gap-3 mb-2">
+                          <DollarSign className="w-5 h-5 text-green-500" />
+                          <span className="text-sm text-slate-600">{locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
+                        </div>
+                        <p className="text-2xl font-bold text-green-600">
+                          {formatCurrency(netRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {locale === 'ar' ? 'بعد المرتجعات' : 'After refunds'}
+                        </p>
+                      </div>
+
+                      <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                        {(() => {
+                          const commissionRate = settlement.provider?.custom_commission_rate
+                            ?? settlement.provider?.commission_rate
+                            ?? 7
+                          const isGracePeriod = (settlement.platform_commission || 0) === 0 && settlement.provider?.commission_status === 'in_grace_period'
+
+                          return (
+                            <>
+                              <div className="flex items-center gap-3 mb-2">
+                                <Percent className="w-5 h-5 text-red-500" />
+                                <span className="text-sm text-slate-600">{locale === 'ar' ? `عمولة إنجزنا (${commissionRate}%)` : `Engezna Commission (${commissionRate}%)`}</span>
+                              </div>
+                              <p className={`text-2xl font-bold ${(settlement.platform_commission || 0) === 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(settlement.platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              </p>
+                              {isGracePeriod && (
+                                <p className="text-xs text-green-500 mt-1">
+                                  {locale === 'ar' ? '✓ فترة سماح' : '✓ Grace period'}
+                                  {settlement.provider?.grace_period_end && (
+                                    <span className="text-slate-400">
+                                      {' '}({locale === 'ar' ? 'تنتهي: ' : 'ends: '}{formatDate(settlement.provider.grace_period_end, locale)})
+                                    </span>
+                                  )}
+                                </p>
                               )}
-                            </p>
-                          )}
-                        </>
-                      )
-                    })()}
-                  </div>
-                </div>
+                            </>
+                          )
+                        })()}
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* COD/Online Breakdown */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
@@ -699,7 +757,7 @@ export default function SettlementDetailPage() {
                 <div>
                   <p className="text-sm text-green-600">{locale === 'ar' ? 'المبلغ المدفوع' : 'Amount Paid'}</p>
                   <p className="font-bold text-green-800">
-                    {formatCurrency(settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                    {formatCurrency(settlement.amount_paid ?? settlement.platform_commission ?? 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                   </p>
                 </div>
               </div>
@@ -722,77 +780,91 @@ export default function SettlementDetailPage() {
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'رقم الطلب' : 'Order #'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'العميل' : 'Customer'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'طريقة الدفع' : 'Payment'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الإجمالي' : 'Total'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'عمولة إنجزنا' : 'Engezna Fee'}</th>
-                    <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
+                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'رقم الطلب' : 'Order #'}</th>
+                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'قيمة الطلب' : 'Order Value'}</th>
+                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'المرتجع' : 'Refund'}</th>
+                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'التوصيل' : 'Delivery'}</th>
+                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'صافي للعمولة' : 'Net for Commission'}</th>
+                    <th className="text-start px-3 py-3 text-xs font-medium text-slate-600">{locale === 'ar' ? 'العمولة' : 'Commission'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {orders.length > 0 ? (
                     orders.map((order) => {
                       const isCOD = order.payment_method === 'cash'
-                      return (
-                      <tr key={order.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-slate-900">#{order.order_number}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <UserIcon className="w-4 h-4 text-slate-400" />
-                            <span className="text-slate-700">
-                              {order.customer?.full_name || (locale === 'ar' ? 'عميل' : 'Customer')}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center text-xs px-2 py-1 rounded-full ${isCOD ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                            {isCOD ? (locale === 'ar' ? 'نقدي' : 'Cash') : (locale === 'ar' ? 'إلكتروني' : 'Online')}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-slate-900">
-                            {formatCurrency(order.total || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {(() => {
-                            const isGracePeriod = order.platform_commission === 0 && settlement.provider?.commission_status === 'in_grace_period'
-                            const hasOriginalCommission = isGracePeriod && (order.original_commission ?? 0) > 0
+                      const hasRefund = (order.refund_amount || 0) > 0
+                      const isGracePeriod = order.platform_commission === 0 && settlement.provider?.commission_status === 'in_grace_period'
 
-                            return (
-                              <div className="flex flex-col">
-                                <span className={order.platform_commission === 0 ? 'text-green-600' : 'text-red-600'}>
-                                  {formatCurrency(order.platform_commission ?? 0, locale)}
-                                  {hasOriginalCommission && (
-                                    <span className="text-slate-400 text-xs ms-1">
-                                      ({locale === 'ar' ? 'من ' : 'of '}{formatCurrency(order.original_commission ?? 0, locale)})
-                                    </span>
-                                  )}
+                      return (
+                        <tr key={order.id} className="hover:bg-slate-50 transition-colors">
+                          {/* Order Number + Customer + Payment Method */}
+                          <td className="px-3 py-3">
+                            <div>
+                              <span className="font-medium text-slate-900">#{order.order_number}</span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs text-slate-500">
+                                  {order.customer?.full_name || (locale === 'ar' ? 'عميل' : 'Customer')}
                                 </span>
-                                {isGracePeriod && (
-                                  <span className="text-xs text-green-500 mt-0.5">
-                                    {locale === 'ar' ? 'فترة سماح' : 'Grace period'}
-                                    {settlement.provider?.grace_period_end && (
-                                      <span className="text-slate-400">
-                                        {' '}({locale === 'ar' ? 'تنتهي: ' : 'ends: '}{formatDate(settlement.provider.grace_period_end, locale)})
-                                      </span>
-                                    )}
-                                  </span>
-                                )}
+                                <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full ${isCOD ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                  {isCOD ? (locale === 'ar' ? 'نقدي' : 'COD') : (locale === 'ar' ? 'إلكتروني' : 'Online')}
+                                </span>
                               </div>
-                            )
-                          })()}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center text-xs px-2 py-1 rounded-full ${getOrderStatusColor(order.status)}`}>
-                            {getOrderStatusLabel(order.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    )})
+                            </div>
+                          </td>
+
+                          {/* Original Order Value */}
+                          <td className="px-3 py-3">
+                            <span className="font-medium text-slate-900">
+                              {formatCurrency(order.total || 0, locale)}
+                            </span>
+                          </td>
+
+                          {/* Refund Amount */}
+                          <td className="px-3 py-3">
+                            {hasRefund ? (
+                              <span className="font-medium text-red-600">
+                                -{formatCurrency(order.refund_amount || 0, locale)}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </td>
+
+                          {/* Delivery Fee */}
+                          <td className="px-3 py-3">
+                            <span className="text-slate-600">
+                              {formatCurrency(order.delivery_fee || 0, locale)}
+                            </span>
+                          </td>
+
+                          {/* Net for Commission = Order Value - Refund - Delivery */}
+                          <td className="px-3 py-3">
+                            {(() => {
+                              const netForCommission = (order.total || 0) - (order.refund_amount || 0) - (order.delivery_fee || 0)
+                              return (
+                                <span className="font-medium text-blue-600">
+                                  {formatCurrency(Math.max(0, netForCommission), locale)}
+                                </span>
+                              )
+                            })()}
+                          </td>
+
+                          {/* Commission from database */}
+                          <td className="px-3 py-3">
+                            <div>
+                              <span className={`font-bold ${isGracePeriod ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(order.original_commission || order.platform_commission || 0, locale)}
+                              </span>
+                              {isGracePeriod && (
+                                <p className="text-[10px] text-green-500 mt-0.5">
+                                  {locale === 'ar' ? 'فترة سماح (معفى)' : 'Grace period (waived)'}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
                   ) : (
                     <tr>
                       <td colSpan={6} className="px-4 py-12 text-center">
@@ -806,6 +878,7 @@ export default function SettlementDetailPage() {
                 </tbody>
               </table>
             </div>
+
           </div>
 
           {/* Settlement Metadata */}
@@ -846,17 +919,33 @@ export default function SettlementDetailPage() {
               </button>
             </div>
             <div className="p-4 space-y-4">
-              <div className="bg-slate-50 rounded-lg p-3">
+              <div className="bg-slate-50 rounded-lg p-3 space-y-2">
                 <p className="text-sm text-slate-600">
                   {locale === 'ar' ? 'المزود:' : 'Provider:'} <span className="font-medium text-slate-900">
                     {locale === 'ar' ? settlement.provider?.name_ar : settlement.provider?.name_en}
                   </span>
-                </p>
-                <p className="text-sm text-slate-600">
-                  {locale === 'ar' ? 'صافي المزود:' : 'Net Payout:'} <span className="font-bold text-green-600">
-                    {formatCurrency(settlement.net_payout || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                  <span className="text-xs text-slate-500 ms-2">
+                    ({settlement.provider?.custom_commission_rate ?? settlement.provider?.commission_rate ?? 7}%)
                   </span>
                 </p>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
+                  <div>
+                    <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Gross Revenue'}</p>
+                    <p className="font-medium text-slate-900">{formatCurrency(settlement.gross_revenue || 0, locale)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</p>
+                    <p className="font-bold text-red-600">{formatCurrency(settlement.platform_commission || 0, locale)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">{locale === 'ar' ? 'صافي التاجر' : 'Net Payout'}</p>
+                    <p className="font-bold text-green-600">{formatCurrency(settlement.net_payout || 0, locale)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
+                    <p className="font-medium text-slate-900">{settlement.total_orders}</p>
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">

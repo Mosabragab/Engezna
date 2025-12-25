@@ -360,7 +360,7 @@ export default function OrderTrackingPage() {
       `)
       .eq('order_id', orderId)
       .eq('provider_action', 'cash_refund')
-      .eq('customer_confirmed', false)
+      .or('customer_confirmed.eq.false,customer_confirmed.is.null')
       .single()
 
     if (refundData) {

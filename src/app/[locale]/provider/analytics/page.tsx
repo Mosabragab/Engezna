@@ -70,7 +70,7 @@ type DailyRevenue = {
   orders: number
 }
 
-export default function ReportsPage() {
+export default function AnalyticsPage() {
   const locale = useLocale()
   const router = useRouter()
   const isRTL = locale === 'ar'
@@ -510,7 +510,7 @@ Payment Filter: ${paymentFilter === 'all' ? 'All' : paymentFilter === 'completed
 
   return (
     <ProviderLayout
-      pageTitle={{ ar: 'التقارير والإحصائيات', en: 'Reports & Analytics' }}
+      pageTitle={{ ar: 'التحليلات', en: 'Analytics' }}
       pageSubtitle={{ ar: 'عرض ملخص الأداء والإحصائيات', en: 'View performance summary and statistics' }}
     >
       <div className="max-w-6xl mx-auto space-y-6">
