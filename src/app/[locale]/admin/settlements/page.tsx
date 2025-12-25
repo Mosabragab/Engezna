@@ -31,9 +31,27 @@ import {
   X,
   Users,
   Download,
+  Package,
+  Undo2,
+  Truck,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SAFE NUMBER HELPER - حماية من NaN
+// ═══════════════════════════════════════════════════════════════════════════
+const safeNumber = (value: number | undefined | null): number => {
+  if (value === undefined || value === null || isNaN(value)) return 0
+  return value
+}
+
+// Safe percentage helper (for commission rates)
+const safePercentage = (value: number | undefined | null, fallback = 7): number => {
+  const num = safeNumber(value)
+  if (num < 0 || num > 100) return fallback
+  return num
+}
 
 interface Settlement {
   id: string
@@ -139,6 +157,64 @@ export default function AdminSettlementsPage() {
     overdueCount: 0,
     paidCount: 0,
   })
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // QUICK-EXPAND STATE - عرض الطلبات السريع داخل التسوية
+  // ═══════════════════════════════════════════════════════════════════════════
+  const [expandedSettlementId, setExpandedSettlementId] = useState<string | null>(null)
+  const [expandedOrders, setExpandedOrders] = useState<Array<{
+    id: string
+    order_number?: string
+    total: number
+    subtotal?: number
+    delivery_fee?: number
+    discount?: number
+    platform_commission?: number
+    status: string
+    payment_method: string
+    created_at: string
+    refunds?: Array<{ id: string; amount: number; status: string }>
+  }>>([])
+  const [isLoadingExpanded, setIsLoadingExpanded] = useState(false)
+
+  // Toggle Quick-expand for a settlement
+  const handleToggleExpand = async (settlementId: string) => {
+    if (expandedSettlementId === settlementId) {
+      // Collapse
+      setExpandedSettlementId(null)
+      setExpandedOrders([])
+      return
+    }
+
+    // Expand - load orders for this settlement
+    setExpandedSettlementId(settlementId)
+    setIsLoadingExpanded(true)
+
+    const supabase = createClient()
+
+    // Get settlement orders_included
+    const settlement = settlements.find(s => s.id === settlementId)
+    const orderIds = settlement?.orders_included || []
+
+    if (orderIds.length > 0) {
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select(`
+          id, order_number, total, subtotal, delivery_fee, discount, platform_commission,
+          status, payment_method, created_at,
+          refunds (id, amount, status)
+        `)
+        .in('id', orderIds)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      setExpandedOrders(ordersData || [])
+    } else {
+      setExpandedOrders([])
+    }
+
+    setIsLoadingExpanded(false)
+  }
 
   useEffect(() => {
     checkAuth()
@@ -329,12 +405,22 @@ export default function AdminSettlementsPage() {
           }
         }
 
+        // Get provider's delivery responsibility
+        const { data: providerDeliveryInfo } = await supabase
+          .from('providers')
+          .select('delivery_responsibility')
+          .eq('id', provider.id)
+          .single()
+
+        const deliveryResponsibility = providerDeliveryInfo?.delivery_responsibility || 'merchant_delivery'
+
         // Get delivered orders for this provider in the period (including payment_method)
         // IMPORTANT: Use platform_commission from database (calculated by server-side trigger)
         // Filter by settlement_status to only include eligible orders (not on_hold or excluded)
+        // FIXED: Added delivery_fee to support correct online_payout calculation
         const { data: allOrders } = await supabase
           .from('orders')
-          .select('id, total, subtotal, discount, payment_method, platform_commission, settlement_status')
+          .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, settlement_status')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
           .or('settlement_status.eq.eligible,settlement_status.is.null') // Only include eligible orders
@@ -368,13 +454,30 @@ export default function AdminSettlementsPage() {
           // ═══════════════════════════════════════════════════════════════════
 
           // COD breakdown - use actual commission from orders
-          const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-          const codCommissionOwed = codOrders.reduce((sum, o) => sum + (o.platform_commission || 0), 0)
+          const codGrossRevenue = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.total), 0))
+          const codSubtotal = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.subtotal), 0))
+          const codDiscount = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.discount), 0))
+          const codDeliveryFees = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.delivery_fee), 0))
+          const codCommissionOwed = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.platform_commission), 0))
 
           // Online breakdown - use actual commission from orders
-          const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-          const onlinePlatformCommission = onlineOrders.reduce((sum, o) => sum + (o.platform_commission || 0), 0)
-          const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
+          const onlineGrossRevenue = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.total), 0))
+          const onlineSubtotal = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.subtotal), 0))
+          const onlineDiscount = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.discount), 0))
+          const onlineDeliveryFees = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.delivery_fee), 0))
+          const onlinePlatformCommission = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.platform_commission), 0))
+
+          // ═══════════════════════════════════════════════════════════════════
+          // FIXED: online_payout_owed = (subtotal - discount) - commission + delivery_fees
+          // Matches SQL: GREATEST((online_subtotal - total_discounts) - online_actual_commission + online_delivery_fees, 0)
+          // Delivery fees are ALWAYS provider's right (if merchant_delivery)
+          // ═══════════════════════════════════════════════════════════════════
+          const onlinePayoutOwed = deliveryResponsibility === 'merchant_delivery'
+            ? Math.max((onlineSubtotal - onlineDiscount) - onlinePlatformCommission + onlineDeliveryFees, 0)
+            : Math.max((onlineSubtotal - onlineDiscount) - onlinePlatformCommission, 0)
+
+          // Total delivery fees collected
+          const totalDeliveryFees = codDeliveryFees + onlineDeliveryFees
 
           // Calculate totals from orders (source of truth)
           const grossRevenue = codGrossRevenue + onlineGrossRevenue
@@ -388,7 +491,7 @@ export default function AdminSettlementsPage() {
 
           // Net balance: What platform owes provider minus what provider owes platform
           // For COD: Provider collected cash, owes platform the commission
-          // For Online: Platform collected payment, owes provider (total - commission)
+          // For Online: Platform collected payment, owes provider (subtotal - discount - commission + delivery)
           // Positive = Platform pays provider, Negative = Provider pays platform
           const netBalance = onlinePayoutOwed - codCommissionOwed
 
@@ -411,6 +514,7 @@ export default function AdminSettlementsPage() {
               gross_revenue: grossRevenue,
               platform_commission: platformCommission,
               net_payout: netPayout,  // FIXED: = gross_revenue - platform_commission
+              delivery_fees_collected: totalDeliveryFees, // FIXED: Track delivery fees
               // COD breakdown
               cod_orders_count: codOrders.length,
               cod_gross_revenue: codGrossRevenue,
@@ -508,12 +612,22 @@ export default function AdminSettlementsPage() {
         }
       }
 
+      // Get provider's delivery responsibility
+      const { data: providerDeliveryInfo } = await supabase
+        .from('providers')
+        .select('delivery_responsibility')
+        .eq('id', generateForm.providerId)
+        .single()
+
+      const deliveryResponsibility = providerDeliveryInfo?.delivery_responsibility || 'merchant_delivery'
+
       // Get delivered orders for this provider in the period (including payment_method)
       // IMPORTANT: Use platform_commission from database (calculated by server-side trigger)
       // Filter by settlement_status to only include eligible orders (not on_hold or excluded)
+      // FIXED: Added delivery_fee to support correct online_payout calculation
       const { data: allOrders } = await supabase
         .from('orders')
-        .select('id, total, subtotal, discount, payment_method, platform_commission, settlement_status')
+        .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, settlement_status')
         .eq('provider_id', generateForm.providerId)
         .eq('status', 'delivered')
         .or('settlement_status.eq.eligible,settlement_status.is.null') // Only include eligible orders
@@ -545,13 +659,30 @@ export default function AdminSettlementsPage() {
       // ═══════════════════════════════════════════════════════════════════
 
       // COD breakdown - use actual commission from orders
-      const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const codCommissionOwed = codOrders.reduce((sum, o) => sum + (o.platform_commission || 0), 0)
+      const codGrossRevenue = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.total), 0))
+      const codSubtotal = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.subtotal), 0))
+      const codDiscount = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.discount), 0))
+      const codDeliveryFees = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.delivery_fee), 0))
+      const codCommissionOwed = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.platform_commission), 0))
 
       // Online breakdown - use actual commission from orders
-      const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const onlinePlatformCommission = onlineOrders.reduce((sum, o) => sum + (o.platform_commission || 0), 0)
-      const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
+      const onlineGrossRevenue = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.total), 0))
+      const onlineSubtotal = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.subtotal), 0))
+      const onlineDiscount = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.discount), 0))
+      const onlineDeliveryFees = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.delivery_fee), 0))
+      const onlinePlatformCommission = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.platform_commission), 0))
+
+      // ═══════════════════════════════════════════════════════════════════
+      // FIXED: online_payout_owed = (subtotal - discount) - commission + delivery_fees
+      // Matches SQL: GREATEST((online_subtotal - total_discounts) - online_actual_commission + online_delivery_fees, 0)
+      // Delivery fees are ALWAYS provider's right (if merchant_delivery)
+      // ═══════════════════════════════════════════════════════════════════
+      const onlinePayoutOwed = deliveryResponsibility === 'merchant_delivery'
+        ? Math.max((onlineSubtotal - onlineDiscount) - onlinePlatformCommission + onlineDeliveryFees, 0)
+        : Math.max((onlineSubtotal - onlineDiscount) - onlinePlatformCommission, 0)
+
+      // Total delivery fees collected
+      const totalDeliveryFees = codDeliveryFees + onlineDeliveryFees
 
       // Calculate totals from orders (source of truth)
       const grossRevenue = codGrossRevenue + onlineGrossRevenue
@@ -565,7 +696,7 @@ export default function AdminSettlementsPage() {
 
       // Net balance: What platform owes provider minus what provider owes platform
       // For COD: Provider collected cash, owes platform the commission
-      // For Online: Platform collected payment, owes provider (total - commission)
+      // For Online: Platform collected payment, owes provider (subtotal - discount - commission + delivery)
       // Positive = Platform pays provider, Negative = Provider pays platform
       const netBalance = onlinePayoutOwed - codCommissionOwed
 
@@ -588,6 +719,7 @@ export default function AdminSettlementsPage() {
           gross_revenue: grossRevenue,
           platform_commission: platformCommission,
           net_payout: netPayout,  // FIXED: = gross_revenue - platform_commission
+          delivery_fees_collected: totalDeliveryFees, // FIXED: Track delivery fees
           // COD breakdown
           cod_orders_count: codOrders.length,
           cod_gross_revenue: codGrossRevenue,
@@ -964,6 +1096,7 @@ export default function AdminSettlementsPage() {
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
+                    <th className="w-10 px-2 py-3"></th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'المزود' : 'Provider'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الفترة' : 'Period'}</th>
                     <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الطلبات' : 'Orders'}</th>
@@ -982,23 +1115,42 @@ export default function AdminSettlementsPage() {
                         ?? settlement.provider?.commission_rate
                         ?? 7
 
+                      const isExpanded = expandedSettlementId === settlement.id
+                      const hasOrders = (settlement.orders_included?.length || 0) > 0
+
                       return (
-                        <tr key={settlement.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                                <Building className="w-5 h-5 text-slate-500" />
+                        <>
+                          <tr key={settlement.id} className={`hover:bg-slate-50 transition-colors ${isExpanded ? 'bg-blue-50/50' : ''}`}>
+                            {/* Expand Button */}
+                            <td className="px-2 py-3">
+                              {hasOrders && (
+                                <button
+                                  onClick={() => handleToggleExpand(settlement.id)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 transition-colors"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-4 h-4 text-slate-500" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 text-slate-500" />
+                                  )}
+                                </button>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                                  <Building className="w-5 h-5 text-slate-500" />
+                                </div>
+                                <div>
+                                  <span className="font-medium text-slate-900">
+                                    {locale === 'ar' ? settlement.provider?.name_ar : settlement.provider?.name_en}
+                                  </span>
+                                  <p className="text-xs text-slate-500">
+                                    {locale === 'ar' ? `عمولة ${providerCommissionRate}%` : `${providerCommissionRate}% rate`}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <span className="font-medium text-slate-900">
-                                  {locale === 'ar' ? settlement.provider?.name_ar : settlement.provider?.name_en}
-                                </span>
-                                <p className="text-xs text-slate-500">
-                                  {locale === 'ar' ? `عمولة ${providerCommissionRate}%` : `${providerCommissionRate}% rate`}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
+                            </td>
                           <td className="px-4 py-3">
                             <div className="text-sm">
                               <p className="text-slate-900">{formatDate(settlement.period_start, locale)}</p>
@@ -1068,12 +1220,146 @@ export default function AdminSettlementsPage() {
                               </Link>
                             </div>
                           </td>
-                        </tr>
+                          </tr>
+
+                          {/* ═══════════════════════════════════════════════════════════════════ */}
+                          {/* QUICK-EXPAND ROW - عرض الطلبات داخل التسوية */}
+                          {/* ═══════════════════════════════════════════════════════════════════ */}
+                          {isExpanded && (
+                            <tr className="bg-blue-50/30">
+                              <td colSpan={9} className="px-4 py-3">
+                                <div className="border border-blue-200 rounded-xl overflow-hidden bg-white">
+                                  <div className="px-4 py-2 bg-blue-100/50 border-b border-blue-200 flex items-center justify-between">
+                                    <h4 className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+                                      <Package className="w-4 h-4" />
+                                      {locale === 'ar'
+                                        ? `الطلبات في هذه التسوية (${settlement.orders_included?.length || 0})`
+                                        : `Orders in this Settlement (${settlement.orders_included?.length || 0})`
+                                      }
+                                    </h4>
+                                    <span className="text-xs text-blue-600">
+                                      {locale === 'ar' ? 'آخر 10 طلبات' : 'Last 10 orders'}
+                                    </span>
+                                  </div>
+
+                                  {isLoadingExpanded ? (
+                                    <div className="p-6 text-center">
+                                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent mx-auto"></div>
+                                    </div>
+                                  ) : expandedOrders.length > 0 ? (
+                                    <div className="divide-y divide-slate-100">
+                                      {expandedOrders.map((order) => {
+                                        const hasRefunds = order.refunds && order.refunds.length > 0
+                                        const processedRefund = order.refunds?.find(r => r.status === 'processed')
+
+                                        return (
+                                          <div key={order.id} className="px-4 py-3 flex items-center gap-4 hover:bg-slate-50">
+                                            {/* Order Number & Status */}
+                                            <div className="flex-shrink-0 w-24">
+                                              <p className="text-sm font-mono text-slate-900">
+                                                #{order.order_number || order.id.slice(0, 8)}
+                                              </p>
+                                            </div>
+
+                                            {/* Order Status Badge */}
+                                            <div className="flex-shrink-0">
+                                              <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+                                                order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                                order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                order.status === 'refunded' ? 'bg-amber-100 text-amber-700' :
+                                                'bg-slate-100 text-slate-600'
+                                              }`}>
+                                                {order.status === 'delivered' && <CheckCircle2 className="w-3 h-3" />}
+                                                {order.status === 'cancelled' && <XCircle className="w-3 h-3" />}
+                                                {order.status === 'refunded' && <Undo2 className="w-3 h-3" />}
+                                                {locale === 'ar'
+                                                  ? order.status === 'delivered' ? 'مكتمل' :
+                                                    order.status === 'cancelled' ? 'ملغي' :
+                                                    order.status === 'refunded' ? 'مسترد' : order.status
+                                                  : order.status
+                                                }
+                                              </span>
+                                            </div>
+
+                                            {/* Payment Method */}
+                                            <div className="flex-shrink-0">
+                                              <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+                                                order.payment_method === 'cash' || order.payment_method === 'cod'
+                                                  ? 'bg-emerald-100 text-emerald-700'
+                                                  : 'bg-blue-100 text-blue-700'
+                                              }`}>
+                                                {order.payment_method === 'cash' || order.payment_method === 'cod'
+                                                  ? (locale === 'ar' ? 'نقدي' : 'COD')
+                                                  : (locale === 'ar' ? 'إلكتروني' : 'Online')
+                                                }
+                                              </span>
+                                            </div>
+
+                                            {/* Amounts */}
+                                            <div className="flex-1 grid grid-cols-4 gap-2 text-xs">
+                                              <div>
+                                                <span className="text-slate-500">{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
+                                                <p className="font-medium">{formatCurrency(order.total, locale)}</p>
+                                              </div>
+                                              <div>
+                                                <span className="text-slate-500 flex items-center gap-1">
+                                                  <Truck className="w-3 h-3" />
+                                                  {locale === 'ar' ? 'توصيل' : 'Delivery'}
+                                                </span>
+                                                <p className="font-medium text-purple-600">{formatCurrency(order.delivery_fee || 0, locale)}</p>
+                                              </div>
+                                              <div>
+                                                <span className="text-slate-500">{locale === 'ar' ? 'عمولة' : 'Commission'}</span>
+                                                <p className="font-medium text-red-600">{formatCurrency(order.platform_commission || 0, locale)}</p>
+                                              </div>
+                                              {hasRefunds && processedRefund && (
+                                                <div>
+                                                  <span className="text-amber-600 flex items-center gap-1">
+                                                    <Undo2 className="w-3 h-3" />
+                                                    {locale === 'ar' ? 'مرتجع' : 'Refund'}
+                                                  </span>
+                                                  <p className="font-medium text-amber-700">-{formatCurrency(processedRefund.amount, locale)}</p>
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            {/* Order Date */}
+                                            <div className="flex-shrink-0 text-xs text-slate-500">
+                                              {formatDate(order.created_at, locale)}
+                                            </div>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <div className="p-6 text-center text-slate-500">
+                                      {locale === 'ar' ? 'لا توجد طلبات' : 'No orders found'}
+                                    </div>
+                                  )}
+
+                                  {/* View All Link */}
+                                  {(settlement.orders_included?.length || 0) > 10 && (
+                                    <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 text-center">
+                                      <Link href={`/${locale}/admin/settlements/${settlement.id}`}>
+                                        <span className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                                          {locale === 'ar'
+                                            ? `عرض كل الـ ${settlement.orders_included?.length} طلب`
+                                            : `View all ${settlement.orders_included?.length} orders`
+                                          }
+                                        </span>
+                                      </Link>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       )
                     })
                   ) : (
                     <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center">
+                      <td colSpan={9} className="px-4 py-12 text-center">
                         <Wallet className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                         <p className="text-slate-500">
                           {locale === 'ar' ? 'لا توجد تسويات' : 'No settlements found'}
