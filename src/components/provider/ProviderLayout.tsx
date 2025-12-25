@@ -37,6 +37,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [pendingOrders, setPendingOrders] = useState(0)
   const [pendingRefunds, setPendingRefunds] = useState(0)
   const [pendingComplaints, setPendingComplaints] = useState(0)
+  const [onHoldOrders, setOnHoldOrders] = useState(0) // الطلبات المعلقة - on_hold في المحرك المالي
 
   // Load unread notifications count from provider_notifications table
   const loadUnreadCount = useCallback(async (providerId: string) => {
@@ -78,6 +79,16 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       .in('status', ['open', 'in_progress'])
 
     setPendingComplaints(complaintsCount || 0)
+
+    // Get on_hold orders count (orders with settlement_status = 'on_hold')
+    // مرتبط بالمحرك المالي - الطلبات المعلقة بسبب نزاعات أو استردادات
+    const { count: onHoldCount } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', providerId)
+      .eq('settlement_status', 'on_hold')
+
+    setOnHoldOrders(onHoldCount || 0)
   }, [])
 
   const checkAuth = useCallback(async () => {
@@ -305,13 +316,13 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
 
   // Update app badge when notification counts change
   useEffect(() => {
-    const totalBadge = unreadCount + pendingOrders + pendingRefunds + pendingComplaints
+    const totalBadge = unreadCount + pendingOrders + pendingRefunds + pendingComplaints + onHoldOrders
     if (totalBadge > 0) {
       setAppBadge(totalBadge)
     } else {
       clearAppBadge()
     }
-  }, [unreadCount, pendingOrders, pendingRefunds, pendingComplaints])
+  }, [unreadCount, pendingOrders, pendingRefunds, pendingComplaints, onHoldOrders])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -363,6 +374,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         pendingOrders={pendingOrders}
         unreadNotifications={unreadCount}
         pendingRefunds={pendingRefunds}
+        onHoldOrders={onHoldOrders}
         pendingComplaints={pendingComplaints}
       />
 

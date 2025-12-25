@@ -17,14 +17,25 @@ import {
   Megaphone,
   RefreshCw,
   MessageSquare,
+  TrendingUp,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Types
+// ═══════════════════════════════════════════════════════════════════════════
 
 interface NavItem {
   icon: React.ElementType
   label: { ar: string; en: string }
   path: string
   badge?: string
+  badgeColor?: 'red' | 'amber' | 'green'
+}
+
+interface NavGroup {
+  title: { ar: string; en: string }
+  items: NavItem[]
 }
 
 interface ProviderSidebarProps {
@@ -39,8 +50,13 @@ interface ProviderSidebarProps {
   pendingOrders?: number
   unreadNotifications?: number
   pendingRefunds?: number
+  onHoldOrders?: number // الطلبات المعلقة - مرتبطة بالمحرك المالي
   pendingComplaints?: number
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Component
+// ═══════════════════════════════════════════════════════════════════════════
 
 export function ProviderSidebar({
   isOpen,
@@ -49,77 +65,117 @@ export function ProviderSidebar({
   pendingOrders = 0,
   unreadNotifications = 0,
   pendingRefunds = 0,
+  onHoldOrders = 0,
   pendingComplaints = 0,
 }: ProviderSidebarProps) {
   const locale = useLocale()
   const pathname = usePathname()
   const isRTL = locale === 'ar'
 
-  const navItems: NavItem[] = [
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Navigation Groups - المجموعات المنظمة
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const navGroups: NavGroup[] = [
+    // ─────────────────────────────────────────────────────────────────────────
+    // مجموعة العمليات (Operations)
+    // ─────────────────────────────────────────────────────────────────────────
     {
-      icon: Home,
-      label: { ar: 'الرئيسية', en: 'Dashboard' },
-      path: `/${locale}/provider`,
+      title: { ar: 'العمليات', en: 'Operations' },
+      items: [
+        {
+          icon: Home,
+          label: { ar: 'الرئيسية', en: 'Dashboard' },
+          path: `/${locale}/provider`,
+        },
+        {
+          icon: ShoppingBag,
+          label: { ar: 'الطلبات', en: 'Orders' },
+          path: `/${locale}/provider/orders`,
+          badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
+          badgeColor: 'red',
+        },
+        {
+          icon: RefreshCw,
+          label: { ar: 'المرتجعات', en: 'Refunds' },
+          path: `/${locale}/provider/refunds`,
+          // نعرض عدد المرتجعات + الطلبات المعلقة (on_hold)
+          badge: (pendingRefunds + onHoldOrders) > 0
+            ? (pendingRefunds + onHoldOrders).toString()
+            : undefined,
+          badgeColor: 'amber',
+        },
+      ],
     },
+    // ─────────────────────────────────────────────────────────────────────────
+    // مجموعة المالية (Financials)
+    // ─────────────────────────────────────────────────────────────────────────
     {
-      icon: ShoppingBag,
-      label: { ar: 'الطلبات', en: 'Orders' },
-      path: `/${locale}/provider/orders`,
-      badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
+      title: { ar: 'المالية', en: 'Financials' },
+      items: [
+        {
+          icon: Wallet,
+          label: { ar: 'المحفظة والتسويات', en: 'Wallet & Settlements' },
+          path: `/${locale}/provider/finance`,
+        },
+        {
+          icon: TrendingUp,
+          label: { ar: 'التحليلات', en: 'Analytics' },
+          path: `/${locale}/provider/analytics`,
+        },
+      ],
     },
+    // ─────────────────────────────────────────────────────────────────────────
+    // مجموعة المتجر (Management)
+    // ─────────────────────────────────────────────────────────────────────────
     {
-      icon: Package,
-      label: { ar: 'المنتجات', en: 'Products' },
-      path: `/${locale}/provider/products`,
+      title: { ar: 'المتجر', en: 'Store' },
+      items: [
+        {
+          icon: Package,
+          label: { ar: 'المنتجات', en: 'Products' },
+          path: `/${locale}/provider/products`,
+        },
+        {
+          icon: Tag,
+          label: { ar: 'العروض والخصومات', en: 'Promotions' },
+          path: `/${locale}/provider/promotions`,
+        },
+        {
+          icon: Megaphone,
+          label: { ar: 'بانر العروض', en: 'Promo Banner' },
+          path: `/${locale}/provider/banner`,
+        },
+        {
+          icon: Star,
+          label: { ar: 'تقييمات العملاء', en: 'Reviews' },
+          path: `/${locale}/provider/reviews`,
+        },
+      ],
     },
+    // ─────────────────────────────────────────────────────────────────────────
+    // مجموعة الإعدادات (Settings)
+    // ─────────────────────────────────────────────────────────────────────────
     {
-      icon: BarChart3,
-      label: { ar: 'التحليلات', en: 'Analytics' },
-      path: `/${locale}/provider/analytics`,
-    },
-    {
-      icon: Star,
-      label: { ar: 'التقييمات', en: 'Reviews' },
-      path: `/${locale}/provider/reviews`,
-    },
-    {
-      icon: Tag,
-      label: { ar: 'العروض', en: 'Promotions' },
-      path: `/${locale}/provider/promotions`,
-    },
-    {
-      icon: Megaphone,
-      label: { ar: 'بانر العروض', en: 'Promo Banner' },
-      path: `/${locale}/provider/banner`,
-    },
-    {
-      icon: Wallet,
-      label: { ar: 'المالية', en: 'Finance' },
-      path: `/${locale}/provider/finance`,
-    },
-    {
-      icon: RefreshCw,
-      label: { ar: 'المرتجعات', en: 'Refunds' },
-      path: `/${locale}/provider/refunds`,
-      badge: pendingRefunds > 0 ? pendingRefunds.toString() : undefined,
-    },
-    {
-      icon: MessageSquare,
-      label: { ar: 'الشكاوى', en: 'Complaints' },
-      path: `/${locale}/provider/complaints`,
-      badge: pendingComplaints > 0 ? pendingComplaints.toString() : undefined,
-    },
-    {
-      icon: Clock,
-      label: { ar: 'ساعات العمل', en: 'Store Hours' },
-      path: `/${locale}/provider/store-hours`,
-    },
-    {
-      icon: Settings,
-      label: { ar: 'الإعدادات', en: 'Settings' },
-      path: `/${locale}/provider/settings`,
+      title: { ar: 'الإعدادات', en: 'Settings' },
+      items: [
+        {
+          icon: Clock,
+          label: { ar: 'ساعات العمل', en: 'Working Hours' },
+          path: `/${locale}/provider/store-hours`,
+        },
+        {
+          icon: Settings,
+          label: { ar: 'الملف الشخصي', en: 'Profile' },
+          path: `/${locale}/provider/settings`,
+        },
+      ],
     },
   ]
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Helpers
+  // ═══════════════════════════════════════════════════════════════════════════
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -149,6 +205,27 @@ export function ProviderSidebar({
         return 'bg-slate-500'
     }
   }
+
+  const getBadgeColor = (color?: 'red' | 'amber' | 'green') => {
+    switch (color) {
+      case 'amber':
+        return 'bg-amber-500'
+      case 'green':
+        return 'bg-green-500'
+      case 'red':
+      default:
+        return 'bg-red-500'
+    }
+  }
+
+  const isItemActive = (itemPath: string) => {
+    return pathname === itemPath ||
+      (itemPath !== `/${locale}/provider` && pathname.startsWith(itemPath))
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Render
+  // ═══════════════════════════════════════════════════════════════════════════
 
   return (
     <>
@@ -230,36 +307,55 @@ export function ProviderSidebar({
             </div>
           )}
 
-          {/* Navigation - Compact on mobile, full size on desktop */}
-          <nav className="p-2 lg:p-3 pb-6 space-y-0.5 lg:space-y-1">
-            {navItems.map((item) => {
-              const isActive = pathname === item.path ||
-                (item.path !== `/${locale}/provider` && pathname.startsWith(item.path))
-              return (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  onClick={onClose}
-                  className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                    max-lg:gap-2 max-lg:px-3 max-lg:py-2 max-lg:rounded-lg
-                    ${isActive
-                      ? 'bg-primary text-white shadow-md'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
-                  `}
-                >
-                  <item.icon className="w-5 h-5 max-lg:w-4 max-lg:h-4 flex-shrink-0" />
-                  <span className="font-medium text-sm max-lg:text-xs">
-                    {locale === 'ar' ? item.label.ar : item.label.en}
-                  </span>
-                  {item.badge && (
-                    <span className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs max-lg:text-[10px] px-2 max-lg:px-1.5 py-0.5 rounded-full`}>
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              )
-            })}
+          {/* Navigation - Organized in Groups */}
+          <nav className="p-2 lg:p-3 pb-6">
+            {navGroups.map((group, groupIndex) => (
+              <div key={group.title.en} className={groupIndex > 0 ? 'mt-4 lg:mt-5' : ''}>
+                {/* Group Title */}
+                <div className="px-3 lg:px-4 mb-1.5 lg:mb-2">
+                  <p className="text-[10px] lg:text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    {locale === 'ar' ? group.title.ar : group.title.en}
+                  </p>
+                </div>
+
+                {/* Group Items */}
+                <div className="space-y-0.5 lg:space-y-1">
+                  {group.items.map((item) => {
+                    const isActive = isItemActive(item.path)
+                    return (
+                      <Link
+                        key={item.path}
+                        href={item.path}
+                        onClick={onClose}
+                        className={`
+                          w-full flex items-center gap-3 px-4 py-2.5 lg:py-3 rounded-xl transition-all
+                          max-lg:gap-2 max-lg:px-3 max-lg:py-2 max-lg:rounded-lg
+                          ${isActive
+                            ? 'bg-primary text-white shadow-md'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
+                        `}
+                      >
+                        <item.icon className="w-5 h-5 max-lg:w-4 max-lg:h-4 flex-shrink-0" />
+                        <span className="font-medium text-sm max-lg:text-xs">
+                          {locale === 'ar' ? item.label.ar : item.label.en}
+                        </span>
+                        {item.badge && (
+                          <span
+                            className={`
+                              ${isRTL ? 'mr-auto' : 'ml-auto'}
+                              ${isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor)}
+                              text-white text-xs max-lg:text-[10px] px-2 max-lg:px-1.5 py-0.5 rounded-full
+                            `}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
         </div>
       </aside>
