@@ -15,7 +15,6 @@ CREATE OR REPLACE FUNCTION handle_refund_settlement_update()
 RETURNS TRIGGER AS $$
 DECLARE
   v_order RECORD;
-  v_provider RECORD;
   v_refund_percentage DECIMAL(5,2);
   v_commission_reduction DECIMAL(10,2);
   v_new_commission DECIMAL(10,2);
@@ -58,12 +57,15 @@ BEGIN
       -- ====================================================================
       -- Get provider commission rate
       -- ====================================================================
-      SELECT COALESCE(custom_commission_rate, commission_rate, 7), commission_status, grace_period_end
-      INTO v_provider
-      FROM providers
-      WHERE id = v_order.provider_id;
+      SELECT COALESCE(p.custom_commission_rate, p.commission_rate, 7)
+      INTO v_commission_rate
+      FROM providers p
+      WHERE p.id = v_order.provider_id;
 
-      v_commission_rate := COALESCE(v_provider.custom_commission_rate, v_provider.commission_rate, 7);
+      -- Default to 7% if not found
+      IF v_commission_rate IS NULL THEN
+        v_commission_rate := 7;
+      END IF;
 
       -- ====================================================================
       -- FIX: Use amount when processed_amount is 0 or NULL
