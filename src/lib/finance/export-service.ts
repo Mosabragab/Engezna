@@ -526,26 +526,41 @@ export function downloadSettlementAsHTML(data: SettlementExportData, options: Ex
  */
 export function exportSettlementsToCSV(
   settlements: Settlement[],
-  locale: 'ar' | 'en'
+  options: { locale: 'ar' | 'en' }
 ): void {
+  const { locale } = options;
   const headers = locale === 'ar'
     ? ['رقم التسوية', 'المزود', 'الفترة من', 'الفترة إلى', 'عدد الطلبات', 'الإيرادات', 'العمولة', 'صافي المزود', 'صافي الرصيد', 'الاتجاه', 'الحالة', 'تاريخ الدفع']
     : ['Settlement ID', 'Provider', 'Period Start', 'Period End', 'Orders', 'Revenue', 'Commission', 'Net Payout', 'Net Balance', 'Direction', 'Status', 'Paid At'];
 
-  const rows = settlements.map(s => [
-    s.id.slice(0, 8).toUpperCase(),
-    s.providerName?.[locale] || '',
-    formatDate(s.periodStart, locale),
-    formatDate(s.periodEnd, locale),
-    s.totalOrders.toString(),
-    s.grossRevenue.toFixed(2),
-    s.platformCommission.toFixed(2),
-    s.netPayout.toFixed(2),
-    s.netBalance.toFixed(2),
-    getDirectionLabel(s.settlementDirection, locale),
-    getStatusLabel(s.status, locale),
-    s.paidAt ? formatDate(s.paidAt, locale) : '',
-  ]);
+  const rows = settlements.map(s => {
+    // Handle both providerName object and string for backward compatibility
+    const providerNameStr = typeof s.providerName === 'object' && s.providerName
+      ? s.providerName[locale] || ''
+      : String(s.providerName || '');
+
+    // Handle paidAt with null safety
+    const paidAtDate = (s as unknown as Record<string, unknown>).paidAt as string | null;
+    const paymentDate = s.paymentDate || paidAtDate;
+
+    // Handle netPayout which may not exist in strict Settlement type
+    const netPayout = (s as unknown as Record<string, number | undefined>).netPayout ?? s.netAmountDue ?? 0;
+
+    return [
+      s.id.slice(0, 8).toUpperCase(),
+      providerNameStr,
+      formatDate(s.periodStart, locale),
+      formatDate(s.periodEnd, locale),
+      s.totalOrders.toString(),
+      s.grossRevenue.toFixed(2),
+      s.platformCommission.toFixed(2),
+      netPayout.toFixed(2),
+      s.netBalance.toFixed(2),
+      getDirectionLabel(s.settlementDirection, locale),
+      getStatusLabel(s.status, locale),
+      paymentDate ? formatDate(paymentDate, locale) : '',
+    ];
+  });
 
   const csvContent = [
     headers.join(','),

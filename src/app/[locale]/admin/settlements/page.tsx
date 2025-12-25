@@ -711,39 +711,46 @@ export default function AdminSettlementsPage() {
       return
     }
 
-    // Convert settlements to export format
+    // Convert settlements to Settlement type format
     const exportData = filteredSettlements.map(s => ({
       id: s.id,
       providerId: s.provider_id,
-      providerName: locale === 'ar' ? s.provider?.name_ar || '' : s.provider?.name_en || '',
+      providerName: {
+        ar: s.provider?.name_ar || '',
+        en: s.provider?.name_en || '',
+      },
       periodStart: s.period_start,
       periodEnd: s.period_end,
       totalOrders: s.total_orders,
       grossRevenue: s.gross_revenue,
       platformCommission: s.platform_commission,
-      netPayout: s.net_payout,
-      netBalance: s.net_amount_due || 0,
-      settlementDirection: s.settlement_direction || 'balanced',
+      deliveryFeesCollected: s.delivery_fees_collected || 0,
+      netAmountDue: s.net_amount_due || 0,
+      netPayout: s.net_payout || 0,
+      netBalance: s.net_balance || s.net_amount_due || 0,
+      settlementDirection: (s.settlement_direction || 'balanced') as 'platform_pays_provider' | 'provider_pays_platform' | 'balanced',
       status: s.status,
       amountPaid: s.amount_paid || 0,
+      paymentDate: s.paid_at || null,
       paidAt: s.paid_at || null,
       paymentMethod: s.payment_method || null,
       paymentReference: s.payment_reference || null,
-      createdAt: s.created_at,
-      updatedAt: s.updated_at,
+      dueDate: s.due_date || '',
+      isOverdue: s.is_overdue || false,
       cod: {
         ordersCount: s.cod_orders_count || 0,
-        revenue: s.cod_revenue || 0,
+        grossRevenue: s.cod_revenue || 0,
         commissionOwed: s.cod_commission_owed || 0,
       },
       online: {
         ordersCount: s.online_orders_count || 0,
-        revenue: s.online_revenue || 0,
+        grossRevenue: s.online_revenue || 0,
+        platformCommission: s.online_platform_commission || 0,
         payoutOwed: s.online_platform_owes || 0,
       },
     }))
 
-    exportSettlementsToCSV(exportData, { locale: locale as 'ar' | 'en' })
+    exportSettlementsToCSV(exportData as never[], { locale: locale as 'ar' | 'en' })
   }
 
   if (loading) {

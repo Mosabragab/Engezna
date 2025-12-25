@@ -486,12 +486,13 @@ export default function SettlementDetailPage() {
         updatedAt: settlement.updated_at,
         cod: {
           ordersCount: settlement.cod_orders_count || 0,
-          revenue: settlement.cod_gross_revenue || 0,
+          grossRevenue: settlement.cod_gross_revenue || 0,
           commissionOwed: settlement.cod_commission_owed || 0,
         },
         online: {
           ordersCount: settlement.online_orders_count || 0,
-          revenue: settlement.online_gross_revenue || 0,
+          grossRevenue: settlement.online_gross_revenue || 0,
+          platformCommission: settlement.online_platform_commission || 0,
           payoutOwed: settlement.online_payout_owed || 0,
         },
       },
