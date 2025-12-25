@@ -1,0 +1,1027 @@
+# 🏦 خطة إعادة بناء النظام المالي لمنصة إنجزنا
+## Financial Settlement Engine Rebuild Plan
+
+**التاريخ**: 25 ديسمبر 2025
+**الإصدار**: 2.0
+**الحالة**: في انتظار المراجعة
+
+---
+
+## 📋 الفهرس
+
+1. [المبدأ المحاسبي الأساسي](#1-المبدأ-المحاسبي-الأساسي)
+2. [هيكل قاعدة البيانات المقترح](#2-هيكل-قاعدة-البيانات-المقترح)
+3. [إعادة تصميم داشبورد التاجر](#3-إعادة-تصميم-داشبورد-التاجر)
+4. [صفحة التسويات الجديدة](#4-صفحة-التسويات-الجديدة)
+5. [لوحة تحكم الإدارة المالية](#5-لوحة-تحكم-الإدارة-المالية)
+6. [خطة التنفيذ المرحلية](#6-خطة-التنفيذ-المرحلية)
+
+---
+
+## 1. المبدأ المحاسبي الأساسي
+
+### 🎯 السؤال الجوهري: "أين توجد الكاش الآن؟"
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        تدفق الأموال في إنجزنا                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   💵 COD (الدفع عند الاستلام)          💳 Online (الدفع الإلكتروني)     │
+│   ─────────────────────────           ──────────────────────────────    │
+│                                                                         │
+│   العميل ──💵──► التاجر                العميل ──💳──► المنصة            │
+│                    │                                      │             │
+│                    │                                      │             │
+│            التاجر يدين                            المنصة تدين           │
+│            للمنصة بـ:                             للتاجر بـ:            │
+│            ┌──────────┐                          ┌──────────────────┐   │
+│            │ العمولة  │                          │ الإجمالي        │   │
+│            │ (7% max) │                          │ - العمولة       │   │
+│            └──────────┘                          │ - رسوم التوصيل  │   │
+│                                                  └──────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 📐 المعادلات الأساسية
+
+#### حالة COD:
+```
+صافي مبيعات التاجر = subtotal - discount
+العمولة المستحقة للمنصة = صافي مبيعات التاجر × نسبة_العمولة
+الكاش مع التاجر = subtotal + delivery_fee - discount
+مديونية التاجر للمنصة = العمولة المستحقة
+```
+
+#### حالة Online:
+```
+المبلغ المحصّل بواسطة المنصة = subtotal + delivery_fee - discount
+صافي مبيعات التاجر = subtotal - discount
+العمولة المستحقة للمنصة = صافي مبيعات التاجر × نسبة_العمولة
+مستحقات التاجر = صافي مبيعات التاجر - العمولة
+```
+
+### 🔄 معالجة المرتجعات
+
+#### COD + Refund:
+```
+1. التاجر يرد الكاش للعميل
+2. المنصة ترد العمولة التي خُصمت من رصيد التاجر
+3. القيد: تقليل مديونية التاجر بنسبة المرتجع
+```
+
+#### Online + Refund:
+```
+1. المنصة ترد المبلغ إلكترونياً للعميل
+2. يُعكس القيد المحاسبي للتاجر
+3. القيد: تقليل مستحقات التاجر بنسبة المرتجع
+```
+
+---
+
+## 2. هيكل قاعدة البيانات المقترح
+
+### 2.1 الـ View الرئيسي: `financial_settlement_engine`
+
+```sql
+-- Migration: 20251225_financial_settlement_engine.sql
+
+CREATE OR REPLACE VIEW financial_settlement_engine AS
+WITH order_financials AS (
+    SELECT
+        o.id AS order_id,
+        o.provider_id,
+        o.payment_method,
+        o.status AS order_status,
+        o.created_at AS order_date,
+
+        -- المبالغ الأساسية
+        COALESCE(o.subtotal, o.total - COALESCE(o.delivery_fee, 0)) AS subtotal,
+        COALESCE(o.delivery_fee, 0) AS delivery_fee,
+        COALESCE(o.discount, 0) AS discount,
+        o.total AS order_total,
+
+        -- حساب صافي المبيعات (بدون رسوم التوصيل)
+        (COALESCE(o.subtotal, o.total - COALESCE(o.delivery_fee, 0)) - COALESCE(o.discount, 0)) AS net_sales,
+
+        -- العمولة
+        COALESCE(o.platform_commission, 0) AS applied_commission,
+        COALESCE(o.original_commission, o.platform_commission, 0) AS theoretical_commission,
+
+        -- المرتجعات
+        COALESCE(r.total_refund, 0) AS refund_amount,
+        COALESCE(r.refund_confirmed, FALSE) AS refund_confirmed,
+
+        -- نسبة المرتجع
+        CASE
+            WHEN o.total > 0 AND r.total_refund > 0
+            THEN (r.total_refund::NUMERIC / o.total::NUMERIC)
+            ELSE 0
+        END AS refund_percentage,
+
+        -- فترة السماح
+        p.commission_status,
+        p.grace_period_end
+
+    FROM orders o
+    LEFT JOIN providers p ON o.provider_id = p.id
+    LEFT JOIN (
+        SELECT
+            order_id,
+            SUM(CASE WHEN customer_confirmed = TRUE THEN COALESCE(processed_amount, amount) ELSE 0 END) AS total_refund,
+            BOOL_OR(customer_confirmed) AS refund_confirmed
+        FROM refunds
+        WHERE status IN ('approved', 'processed')
+        GROUP BY order_id
+    ) r ON o.id = r.order_id
+    WHERE o.status = 'delivered'
+),
+
+-- تصنيف التدفق النقدي
+cash_flow_classified AS (
+    SELECT
+        *,
+
+        -- ═══════════════════════════════════════════════════════════════
+        -- 💵 COD: التاجر استلم الكاش
+        -- ═══════════════════════════════════════════════════════════════
+        CASE WHEN payment_method = 'cash' THEN
+            order_total - refund_amount  -- الكاش الفعلي مع التاجر بعد المرتجعات
+        ELSE 0 END AS cash_in_hand_merchant,
+
+        -- العمولة المستحقة للمنصة من طلبات COD
+        CASE WHEN payment_method = 'cash' THEN
+            applied_commission * (1 - refund_percentage)  -- تقليل العمولة بنسبة المرتجع
+        ELSE 0 END AS platform_receivables_from_cod,
+
+        -- ═══════════════════════════════════════════════════════════════
+        -- 💳 Online: المنصة استلمت الكاش
+        -- ═══════════════════════════════════════════════════════════════
+        CASE WHEN payment_method = 'online' THEN
+            order_total - refund_amount  -- الكاش الفعلي مع المنصة بعد المرتجعات
+        ELSE 0 END AS cash_held_by_platform,
+
+        -- مستحقات التاجر من طلبات الأونلاين
+        CASE WHEN payment_method = 'online' THEN
+            (net_sales - applied_commission) * (1 - refund_percentage)
+        ELSE 0 END AS merchant_receivables_from_online,
+
+        -- ═══════════════════════════════════════════════════════════════
+        -- 📊 الخلاصة: الميزان الصافي
+        -- ═══════════════════════════════════════════════════════════════
+        -- موجب = المنصة تدفع للتاجر
+        -- سالب = التاجر يدفع للمنصة
+        CASE
+            WHEN payment_method = 'online' THEN
+                (net_sales - applied_commission) * (1 - refund_percentage)  -- مستحقات التاجر
+            WHEN payment_method = 'cash' THEN
+                -1 * applied_commission * (1 - refund_percentage)  -- مديونية التاجر (سالبة)
+            ELSE 0
+        END AS net_balance_direction
+
+    FROM order_financials
+)
+
+SELECT
+    provider_id,
+
+    -- ═══════════════════════════════════════════════════════════════════
+    -- إحصائيات الطلبات
+    -- ═══════════════════════════════════════════════════════════════════
+    COUNT(*) AS total_orders,
+    COUNT(*) FILTER (WHERE payment_method = 'cash') AS cod_orders_count,
+    COUNT(*) FILTER (WHERE payment_method = 'online') AS online_orders_count,
+
+    -- ═══════════════════════════════════════════════════════════════════
+    -- إجماليات المبيعات
+    -- ═══════════════════════════════════════════════════════════════════
+    SUM(net_sales) AS total_net_sales,
+    SUM(order_total) AS total_gross_sales,
+    SUM(delivery_fee) AS total_delivery_fees,
+    SUM(discount) AS total_discounts,
+    SUM(refund_amount) AS total_refunds,
+
+    -- ═══════════════════════════════════════════════════════════════════
+    -- العمولات
+    -- ═══════════════════════════════════════════════════════════════════
+    SUM(theoretical_commission) AS total_theoretical_commission,
+    SUM(applied_commission * (1 - refund_percentage)) AS total_applied_commission,
+    SUM(theoretical_commission - applied_commission) AS grace_period_savings,
+
+    -- ═══════════════════════════════════════════════════════════════════
+    -- 💵 COD Section
+    -- ═══════════════════════════════════════════════════════════════════
+    SUM(cash_in_hand_merchant) AS cod_cash_with_merchant,
+    SUM(platform_receivables_from_cod) AS cod_commission_owed_to_platform,
+
+    -- ═══════════════════════════════════════════════════════════════════
+    -- 💳 Online Section
+    -- ═══════════════════════════════════════════════════════════════════
+    SUM(cash_held_by_platform) AS online_cash_with_platform,
+    SUM(merchant_receivables_from_online) AS online_payout_owed_to_merchant,
+
+    -- ═══════════════════════════════════════════════════════════════════
+    -- 📊 الميزان النهائي
+    -- ═══════════════════════════════════════════════════════════════════
+    SUM(net_balance_direction) AS final_net_balance,
+
+    -- اتجاه التسوية
+    CASE
+        WHEN SUM(net_balance_direction) > 0 THEN 'platform_pays_merchant'
+        WHEN SUM(net_balance_direction) < 0 THEN 'merchant_pays_platform'
+        ELSE 'balanced'
+    END AS settlement_direction,
+
+    -- المبلغ المطلوب تحويله
+    ABS(SUM(net_balance_direction)) AS settlement_amount_due,
+
+    -- معلومات فترة السماح
+    MAX(commission_status) AS commission_status,
+    MAX(grace_period_end) AS grace_period_end
+
+FROM cash_flow_classified
+GROUP BY provider_id;
+```
+
+### 2.2 جدول سجل التسويات المحسّن
+
+```sql
+-- تحديث جدول settlements
+
+ALTER TABLE settlements ADD COLUMN IF NOT EXISTS
+    settlement_direction TEXT CHECK (settlement_direction IN ('platform_pays_merchant', 'merchant_pays_platform', 'balanced'));
+
+ALTER TABLE settlements ADD COLUMN IF NOT EXISTS
+    cod_cash_collected DECIMAL(10,2) DEFAULT 0;
+
+ALTER TABLE settlements ADD COLUMN IF NOT EXISTS
+    online_cash_collected DECIMAL(10,2) DEFAULT 0;
+
+ALTER TABLE settlements ADD COLUMN IF NOT EXISTS
+    theoretical_commission DECIMAL(10,2) DEFAULT 0;
+
+ALTER TABLE settlements ADD COLUMN IF NOT EXISTS
+    grace_period_discount DECIMAL(10,2) DEFAULT 0;
+
+-- إضافة فهرس للأداء
+CREATE INDEX IF NOT EXISTS idx_settlements_direction ON settlements(settlement_direction);
+CREATE INDEX IF NOT EXISTS idx_settlements_provider_period ON settlements(provider_id, period_start, period_end);
+```
+
+---
+
+## 3. إعادة تصميم داشبورد التاجر
+
+### 3.1 كروت المعلومات السريعة (Quick Stats Cards)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         📊 لوحة المالية - اليوم                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐             │
+│  │ 💰 صافي المبيعات │  │ 📦 عدد الطلبات  │  │ ⚡ متوسط الطلب  │             │
+│  │                 │  │                 │  │                 │             │
+│  │    1,250 ج.م    │  │       15        │  │     83 ج.م      │             │
+│  │   ────────────  │  │   ────────────  │  │   ────────────  │             │
+│  │ بعد خصم العمولة │  │  12 COD | 3 Online│ │                 │             │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘             │
+│                                                                             │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐             │
+│  │ 🔄 المرتجعات    │  │ 🚚 رسوم التوصيل │  │ 📈 العمولة      │             │
+│  │                 │  │                 │  │                 │             │
+│  │    150 ج.م      │  │    200 ج.م      │  │    87.5 ج.م     │             │
+│  │   ────────────  │  │   ────────────  │  │   ────────────  │             │
+│  │   طلبين (2)     │  │  (لا تخصك)      │  │ 🎁 خصم 100%     │             │
+│  │                 │  │                 │  │ توفير: 87.5 ج   │             │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 كود مكون الإحصائيات
+
+```typescript
+// src/components/provider/finance/QuickStatsCards.tsx
+
+interface QuickStatsProps {
+  netSales: number;           // صافي المبيعات بعد العمولة
+  grossSales: number;         // إجمالي المبيعات
+  ordersCount: number;
+  codOrdersCount: number;
+  onlineOrdersCount: number;
+  avgOrderValue: number;
+  refundsAmount: number;
+  refundsCount: number;
+  deliveryFees: number;       // بند منفصل
+  appliedCommission: number;  // العمولة المطبقة فعلياً
+  theoreticalCommission: number; // العمولة النظرية (قبل فترة السماح)
+  isInGracePeriod: boolean;
+  gracePeriodEnd?: string;
+}
+
+const QuickStatsCards: React.FC<QuickStatsProps> = ({
+  netSales,
+  grossSales,
+  ordersCount,
+  codOrdersCount,
+  onlineOrdersCount,
+  avgOrderValue,
+  refundsAmount,
+  refundsCount,
+  deliveryFees,
+  appliedCommission,
+  theoreticalCommission,
+  isInGracePeriod,
+  gracePeriodEnd
+}) => {
+  const commissionSavings = theoreticalCommission - appliedCommission;
+  const discountPercentage = isInGracePeriod ? 100 : 0;
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+
+      {/* صافي المبيعات */}
+      <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Wallet className="w-5 h-5 text-emerald-600" />
+            <span className="text-sm text-emerald-700 font-medium">صافي المبيعات</span>
+          </div>
+          <div className="text-2xl font-bold text-emerald-800">
+            {formatCurrency(netSales)}
+          </div>
+          <div className="text-xs text-emerald-600 mt-1">
+            بعد خصم العمولة والمرتجعات
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* عدد الطلبات */}
+      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Package className="w-5 h-5 text-blue-600" />
+            <span className="text-sm text-blue-700 font-medium">عدد الطلبات</span>
+          </div>
+          <div className="text-2xl font-bold text-blue-800">
+            {ordersCount}
+          </div>
+          <div className="text-xs text-blue-600 mt-1">
+            💵 {codOrdersCount} COD | 💳 {onlineOrdersCount} Online
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* المرتجعات */}
+      <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <RotateCcw className="w-5 h-5 text-amber-600" />
+            <span className="text-sm text-amber-700 font-medium">المرتجعات</span>
+          </div>
+          <div className="text-2xl font-bold text-amber-800">
+            {formatCurrency(refundsAmount)}
+          </div>
+          <div className="text-xs text-amber-600 mt-1">
+            {refundsCount} طلب/طلبات
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* رسوم التوصيل */}
+      <Card className="bg-gradient-to-br from-slate-50 to-gray-50 border-slate-200">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Truck className="w-5 h-5 text-slate-600" />
+            <span className="text-sm text-slate-700 font-medium">رسوم التوصيل</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-800">
+            {formatCurrency(deliveryFees)}
+          </div>
+          <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <Info className="w-3 h-3" />
+            لا تُحسب ضمن مبيعاتك
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* العمولة - مع إظهار التوفير */}
+      <Card className={cn(
+        "border-2 col-span-2 md:col-span-1",
+        isInGracePeriod
+          ? "bg-gradient-to-br from-purple-50 to-violet-50 border-purple-300"
+          : "bg-gradient-to-br from-rose-50 to-pink-50 border-rose-200"
+      )}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Percent className="w-5 h-5 text-purple-600" />
+              <span className="text-sm text-purple-700 font-medium">العمولة</span>
+            </div>
+            {isInGracePeriod && (
+              <Badge className="bg-purple-100 text-purple-700 text-xs">
+                🎁 فترة السماح
+              </Badge>
+            )}
+          </div>
+
+          {/* العمولة النظرية (ما كان سيُخصم) */}
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              "text-lg font-bold",
+              isInGracePeriod ? "line-through text-slate-400" : "text-rose-700"
+            )}>
+              {formatCurrency(theoreticalCommission)}
+            </span>
+            {isInGracePeriod && (
+              <Badge variant="outline" className="text-purple-600 border-purple-300">
+                خصم {discountPercentage}%
+              </Badge>
+            )}
+          </div>
+
+          {/* العمولة الفعلية */}
+          {isInGracePeriod && (
+            <div className="mt-2 p-2 bg-white/50 rounded-lg">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">المطلوب فعلياً:</span>
+                <span className="font-bold text-emerald-600">{formatCurrency(appliedCommission)}</span>
+              </div>
+              <div className="flex justify-between text-sm mt-1">
+                <span className="text-slate-600">توفيرك:</span>
+                <span className="font-bold text-purple-600">+{formatCurrency(commissionSavings)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* تاريخ انتهاء فترة السماح */}
+          {isInGracePeriod && gracePeriodEnd && (
+            <div className="text-xs text-purple-600 mt-2 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              تنتهي في: {formatDate(gracePeriodEnd)}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+    </div>
+  );
+};
+```
+
+---
+
+## 4. صفحة التسويات الجديدة للتاجر
+
+### 4.1 معادلة التسوية الواضحة
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        📋 كشف حساب التسوية                                  │
+│                     الفترة: 20-25 ديسمبر 2025                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    💵 طلبات الدفع عند الاستلام (COD)                 │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │  إجمالي المبيعات (12 طلب)                           1,500.00 ج.م   │   │
+│  │  (-) رسوم التوصيل                                    - 150.00 ج.م   │   │
+│  │  (-) الخصومات والعروض                                 - 50.00 ج.م   │   │
+│  │  ─────────────────────────────────────────────────────────────────  │   │
+│  │  = صافي المبيعات                                    1,300.00 ج.م   │   │
+│  │                                                                     │   │
+│  │  العمولة المستحقة (7%)                                91.00 ج.م    │   │
+│  │  (-) خصم فترة السماح (100%)                          - 91.00 ج.م   │   │
+│  │  (-) تعديل مرتجعات (طلب #123)                         - 0.00 ج.م   │   │
+│  │  ─────────────────────────────────────────────────────────────────  │   │
+│  │  = العمولة المطلوب سدادها للمنصة                       0.00 ج.م    │   │
+│  │                                                                     │   │
+│  │  💡 الكاش معك: 1,300.00 ج.م | أنت مدين للمنصة بـ: 0.00 ج.م         │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    💳 طلبات الدفع الإلكتروني (Online)                │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │  إجمالي المحصّل (3 طلبات)                             500.00 ج.م   │   │
+│  │  (-) رسوم التوصيل                                     - 45.00 ج.م   │   │
+│  │  (-) الخصومات                                          - 0.00 ج.م   │   │
+│  │  ─────────────────────────────────────────────────────────────────  │   │
+│  │  = صافي المبيعات                                      455.00 ج.م   │   │
+│  │                                                                     │   │
+│  │  (-) العمولة (7%)                                     - 31.85 ج.م   │   │
+│  │  (+) خصم فترة السماح (100%)                          + 31.85 ج.م   │   │
+│  │  ─────────────────────────────────────────────────────────────────  │   │
+│  │  = مستحقاتك لدى المنصة                                455.00 ج.م   │   │
+│  │                                                                     │   │
+│  │  💡 الكاش مع المنصة: 500.00 ج.م | المنصة مدينة لك بـ: 455.00 ج.م   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ═══════════════════════════════════════════════════════════════════════   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                         📊 الخلاصة النهائية                          │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                     │   │
+│  │   مستحقاتك من المنصة (Online):              + 455.00 ج.م           │   │
+│  │   مديونيتك للمنصة (COD Commission):          - 0.00 ج.م            │   │
+│  │   ─────────────────────────────────────────────────────────────    │   │
+│  │                                                                     │   │
+│  │   ┌─────────────────────────────────────────────────────────┐      │   │
+│  │   │  💰 الميزان الصافي: + 455.00 ج.م                        │      │   │
+│  │   │  ⬅️ المنصة ستحول لك هذا المبلغ                          │      │   │
+│  │   └─────────────────────────────────────────────────────────┘      │   │
+│  │                                                                     │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 مكون عرض التسوية
+
+```typescript
+// src/components/provider/finance/SettlementBreakdown.tsx
+
+interface SettlementBreakdownProps {
+  settlement: {
+    // COD Section
+    cod_gross_sales: number;
+    cod_delivery_fees: number;
+    cod_discounts: number;
+    cod_net_sales: number;
+    cod_theoretical_commission: number;
+    cod_grace_discount: number;
+    cod_refund_adjustment: number;
+    cod_commission_due: number;
+
+    // Online Section
+    online_gross_collected: number;
+    online_delivery_fees: number;
+    online_discounts: number;
+    online_net_sales: number;
+    online_theoretical_commission: number;
+    online_grace_discount: number;
+    online_refund_adjustment: number;
+    online_payout_due: number;
+
+    // Summary
+    final_net_balance: number;
+    settlement_direction: 'platform_pays_merchant' | 'merchant_pays_platform' | 'balanced';
+
+    // Meta
+    period_start: string;
+    period_end: string;
+    orders_count: number;
+    cod_orders_count: number;
+    online_orders_count: number;
+    is_in_grace_period: boolean;
+  };
+}
+
+const SettlementBreakdown: React.FC<SettlementBreakdownProps> = ({ settlement }) => {
+  const isPositiveBalance = settlement.final_net_balance > 0;
+  const isNegativeBalance = settlement.final_net_balance < 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <Card className="bg-gradient-to-r from-primary/5 to-primary/10">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-6 h-6" />
+            كشف حساب التسوية
+          </CardTitle>
+          <CardDescription>
+            الفترة: {formatDate(settlement.period_start)} - {formatDate(settlement.period_end)}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      {/* COD Section */}
+      {settlement.cod_orders_count > 0 && (
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2 text-amber-800">
+              <Banknote className="w-5 h-5" />
+              💵 طلبات الدفع عند الاستلام (COD)
+              <Badge variant="outline" className="mr-auto">
+                {settlement.cod_orders_count} طلب
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CalculationTable
+              items={[
+                { label: 'إجمالي المبيعات', value: settlement.cod_gross_sales, type: 'neutral' },
+                { label: 'رسوم التوصيل', value: -settlement.cod_delivery_fees, type: 'subtract', note: 'لا تُحسب ضمن مبيعاتك' },
+                { label: 'الخصومات والعروض', value: -settlement.cod_discounts, type: 'subtract' },
+                { label: 'صافي المبيعات', value: settlement.cod_net_sales, type: 'subtotal' },
+                { type: 'divider' },
+                { label: 'العمولة المستحقة (7%)', value: settlement.cod_theoretical_commission, type: 'neutral' },
+                { label: 'خصم فترة السماح', value: -settlement.cod_grace_discount, type: 'subtract', highlight: settlement.is_in_grace_period },
+                { label: 'تعديل مرتجعات', value: -settlement.cod_refund_adjustment, type: 'subtract' },
+                { label: 'العمولة المطلوب سدادها', value: settlement.cod_commission_due, type: 'total' },
+              ]}
+            />
+            <div className="mt-4 p-3 bg-amber-100 rounded-lg flex items-center justify-between text-sm">
+              <span className="text-amber-800">💡 الكاش معك:</span>
+              <span className="font-bold text-amber-900">{formatCurrency(settlement.cod_net_sales)}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Online Section */}
+      {settlement.online_orders_count > 0 && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
+              <CreditCard className="w-5 h-5" />
+              💳 طلبات الدفع الإلكتروني (Online)
+              <Badge variant="outline" className="mr-auto">
+                {settlement.online_orders_count} طلب
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CalculationTable
+              items={[
+                { label: 'إجمالي المحصّل', value: settlement.online_gross_collected, type: 'neutral' },
+                { label: 'رسوم التوصيل', value: -settlement.online_delivery_fees, type: 'subtract' },
+                { label: 'الخصومات', value: -settlement.online_discounts, type: 'subtract' },
+                { label: 'صافي المبيعات', value: settlement.online_net_sales, type: 'subtotal' },
+                { type: 'divider' },
+                { label: 'العمولة (7%)', value: -settlement.online_theoretical_commission, type: 'subtract' },
+                { label: 'خصم فترة السماح', value: settlement.online_grace_discount, type: 'add', highlight: settlement.is_in_grace_period },
+                { label: 'مستحقاتك لدى المنصة', value: settlement.online_payout_due, type: 'total' },
+              ]}
+            />
+            <div className="mt-4 p-3 bg-blue-100 rounded-lg flex items-center justify-between text-sm">
+              <span className="text-blue-800">💡 الكاش مع المنصة:</span>
+              <span className="font-bold text-blue-900">{formatCurrency(settlement.online_gross_collected)}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Final Summary */}
+      <Card className={cn(
+        "border-2",
+        isPositiveBalance && "border-emerald-400 bg-emerald-50",
+        isNegativeBalance && "border-rose-400 bg-rose-50",
+        !isPositiveBalance && !isNegativeBalance && "border-slate-300 bg-slate-50"
+      )}>
+        <CardHeader>
+          <CardTitle className="text-lg">📊 الخلاصة النهائية</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span>مستحقاتك من المنصة (Online):</span>
+              <span className="font-medium text-emerald-600">+{formatCurrency(settlement.online_payout_due)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>مديونيتك للمنصة (COD Commission):</span>
+              <span className="font-medium text-rose-600">-{formatCurrency(settlement.cod_commission_due)}</span>
+            </div>
+            <Separator className="my-3" />
+            <div className={cn(
+              "p-4 rounded-lg text-center",
+              isPositiveBalance && "bg-emerald-100",
+              isNegativeBalance && "bg-rose-100",
+              !isPositiveBalance && !isNegativeBalance && "bg-slate-100"
+            )}>
+              <div className="text-sm text-muted-foreground mb-1">الميزان الصافي</div>
+              <div className={cn(
+                "text-3xl font-bold",
+                isPositiveBalance && "text-emerald-700",
+                isNegativeBalance && "text-rose-700"
+              )}>
+                {isPositiveBalance ? '+' : ''}{formatCurrency(settlement.final_net_balance)}
+              </div>
+              <div className="text-sm mt-2 flex items-center justify-center gap-2">
+                {isPositiveBalance && (
+                  <>
+                    <ArrowLeft className="w-4 h-4 text-emerald-600" />
+                    <span className="text-emerald-700">المنصة ستحول لك هذا المبلغ</span>
+                  </>
+                )}
+                {isNegativeBalance && (
+                  <>
+                    <ArrowRight className="w-4 h-4 text-rose-600" />
+                    <span className="text-rose-700">مطلوب سداد هذا المبلغ للمنصة</span>
+                  </>
+                )}
+                {!isPositiveBalance && !isNegativeBalance && (
+                  <span className="text-slate-600">✓ الحساب متوازن</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+```
+
+---
+
+## 5. لوحة تحكم الإدارة المالية
+
+### 5.1 جدول ملخص التجار
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│                              📊 ملخص التسويات المالية                                 │
+│                                  الفترة: هذا الأسبوع                                  │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│  اسم المتجر     │ مبيعات COD │ مبيعات Online │  العمولة  │ الصافي النهائي │ الاتجاه  │
+│  ─────────────────────────────────────────────────────────────────────────────────  │
+│  مطعم البركة   │ 1,000 ج.م  │    500 ج.م    │  105 ج.م  │  + 395 ج.م    │  ⬅️ لهم  │
+│  سوبر ماركت   │ 2,500 ج.م  │      0 ج.م    │  175 ج.م  │  - 175 ج.م    │  ➡️ علينا │
+│  صيدلية الشفاء │   800 ج.م  │  1,200 ج.م    │  140 ج.م  │  + 660 ج.م    │  ⬅️ لهم  │
+│  ─────────────────────────────────────────────────────────────────────────────────  │
+│                                                                                      │
+│  📈 إجمالي مستحقات التجار:     1,055 ج.م                                            │
+│  📉 إجمالي مستحقات المنصة:       175 ج.م                                            │
+│  💰 صافي التسوية:              + 880 ج.م (المنصة تدفع)                              │
+│                                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.2 كروت الإحصائيات السريعة للإدارة
+
+```typescript
+// src/components/admin/finance/AdminFinanceStats.tsx
+
+interface AdminFinanceStatsProps {
+  stats: {
+    total_gross_revenue: number;
+    total_net_sales: number;
+    total_delivery_fees: number;
+    total_theoretical_commission: number;
+    total_applied_commission: number;
+    total_grace_period_discount: number;
+    total_refunds: number;
+
+    // Cash Flow
+    cash_with_merchants: number;      // COD collected
+    cash_with_platform: number;       // Online collected
+
+    // Settlements
+    platform_receivables: number;     // من التجار (COD commission)
+    platform_payables: number;        // للتجار (Online payout)
+    net_settlement: number;           // الصافي
+
+    // Counts
+    total_orders: number;
+    cod_orders: number;
+    online_orders: number;
+    providers_count: number;
+  };
+}
+
+const AdminFinanceStats: React.FC<AdminFinanceStatsProps> = ({ stats }) => {
+  const isPlatformPaying = stats.net_settlement > 0;
+
+  return (
+    <div className="space-y-6">
+
+      {/* Row 1: Revenue Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          title="إجمالي الإيرادات"
+          value={stats.total_gross_revenue}
+          icon={<TrendingUp />}
+          color="primary"
+          subtitle={`${stats.total_orders} طلب`}
+        />
+        <StatCard
+          title="صافي المبيعات"
+          value={stats.total_net_sales}
+          icon={<DollarSign />}
+          color="success"
+          subtitle="بعد الخصومات"
+        />
+        <StatCard
+          title="إيرادات العمولات"
+          value={stats.total_applied_commission}
+          icon={<Percent />}
+          color="info"
+          subtitle={`نظري: ${formatCurrency(stats.total_theoretical_commission)}`}
+        />
+        <StatCard
+          title="خصم فترة السماح"
+          value={stats.total_grace_period_discount}
+          icon={<Gift />}
+          color="purple"
+          subtitle="توفير للتجار"
+        />
+      </div>
+
+      {/* Row 2: Cash Flow */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Banknote className="w-5 h-5 text-amber-600" />
+              💵 الكاش عند التجار (COD)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-amber-800">
+              {formatCurrency(stats.cash_with_merchants)}
+            </div>
+            <div className="mt-2 text-sm text-amber-700">
+              من {stats.cod_orders} طلب COD
+            </div>
+            <Separator className="my-3" />
+            <div className="flex justify-between text-sm">
+              <span>عمولات مستحقة لنا:</span>
+              <span className="font-bold text-amber-900">
+                {formatCurrency(stats.platform_receivables)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-blue-600" />
+              💳 الكاش عندنا (Online)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-800">
+              {formatCurrency(stats.cash_with_platform)}
+            </div>
+            <div className="mt-2 text-sm text-blue-700">
+              من {stats.online_orders} طلب Online
+            </div>
+            <Separator className="my-3" />
+            <div className="flex justify-between text-sm">
+              <span>مستحقات للتجار:</span>
+              <span className="font-bold text-blue-900">
+                {formatCurrency(stats.platform_payables)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 3: Net Settlement */}
+      <Card className={cn(
+        "border-2",
+        isPlatformPaying ? "border-rose-300 bg-rose-50" : "border-emerald-300 bg-emerald-50"
+      )}>
+        <CardContent className="py-6">
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground mb-2">صافي التسوية</div>
+            <div className={cn(
+              "text-4xl font-bold",
+              isPlatformPaying ? "text-rose-700" : "text-emerald-700"
+            )}>
+              {formatCurrency(Math.abs(stats.net_settlement))}
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-2 text-lg">
+              {isPlatformPaying ? (
+                <>
+                  <ArrowRight className="w-6 h-6 text-rose-600" />
+                  <span className="text-rose-700 font-medium">المنصة تدفع للتجار</span>
+                </>
+              ) : (
+                <>
+                  <ArrowLeft className="w-6 h-6 text-emerald-600" />
+                  <span className="text-emerald-700 font-medium">التجار يدفعون للمنصة</span>
+                </>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+    </div>
+  );
+};
+```
+
+---
+
+## 6. خطة التنفيذ المرحلية
+
+### المرحلة 1: قاعدة البيانات (يوم 1-2)
+
+| # | المهمة | الملف | الأولوية |
+|---|--------|-------|----------|
+| 1.1 | إنشاء View: `financial_settlement_engine` | `migrations/20251225_xxx.sql` | 🔴 حرجة |
+| 1.2 | تحديث جدول `settlements` بالأعمدة الجديدة | `migrations/20251225_xxx.sql` | 🔴 حرجة |
+| 1.3 | تحديث trigger حساب العمولة | `migrations/20251225_xxx.sql` | 🔴 حرجة |
+| 1.4 | إنشاء function: `generate_settlement_from_view` | `migrations/20251225_xxx.sql` | 🟡 متوسطة |
+
+### المرحلة 2: واجهة التاجر (يوم 3-4)
+
+| # | المهمة | الملف | الأولوية |
+|---|--------|-------|----------|
+| 2.1 | إنشاء `QuickStatsCards` component | `components/provider/finance/` | 🔴 حرجة |
+| 2.2 | إنشاء `SettlementBreakdown` component | `components/provider/finance/` | 🔴 حرجة |
+| 2.3 | تحديث صفحة `/provider/finance` | `app/[locale]/provider/finance/` | 🔴 حرجة |
+| 2.4 | تحديث صفحة `/provider/analytics` | `app/[locale]/provider/analytics/` | 🟡 متوسطة |
+| 2.5 | تحديث Dashboard الرئيسي | `app/[locale]/provider/page.tsx` | 🟡 متوسطة |
+
+### المرحلة 3: لوحة الإدارة (يوم 5-6)
+
+| # | المهمة | الملف | الأولوية |
+|---|--------|-------|----------|
+| 3.1 | إنشاء `AdminFinanceStats` component | `components/admin/finance/` | 🔴 حرجة |
+| 3.2 | تحديث صفحة `/admin/settlements` | `app/[locale]/admin/settlements/` | 🔴 حرجة |
+| 3.3 | تحديث صفحة `/admin/finance` | `app/[locale]/admin/finance/` | 🟡 متوسطة |
+| 3.4 | تحديث `/admin/settlements/[id]` | `app/[locale]/admin/settlements/[id]/` | 🟡 متوسطة |
+
+### المرحلة 4: الاختبارات والتوثيق (يوم 7)
+
+| # | المهمة | الملف | الأولوية |
+|---|--------|-------|----------|
+| 4.1 | اختبارات E2E للتسويات | `e2e/settlements.spec.ts` | 🟡 متوسطة |
+| 4.2 | تحديث التوثيق | `docs/SETTLEMENTS_GUIDE.md` | 🟢 منخفضة |
+| 4.3 | اختبار سيناريوهات المرتجعات | Manual testing | 🔴 حرجة |
+
+---
+
+## 7. سيناريوهات الاختبار
+
+### سيناريو 1: تاجر في فترة السماح مع COD فقط
+```
+Input:
+- 10 طلبات COD بإجمالي 1000 ج.م
+- رسوم توصيل 100 ج.م
+- فترة سماح نشطة
+
+Expected:
+- صافي المبيعات: 900 ج.م
+- العمولة النظرية: 63 ج.م (7%)
+- العمولة الفعلية: 0 ج.م
+- الكاش مع التاجر: 900 ج.م
+- مديونية التاجر: 0 ج.م
+```
+
+### سيناريو 2: تاجر بدون فترة سماح مع Online فقط
+```
+Input:
+- 5 طلبات Online بإجمالي 500 ج.م
+- رسوم توصيل 50 ج.م
+- بدون فترة سماح
+
+Expected:
+- صافي المبيعات: 450 ج.م
+- العمولة: 31.5 ج.م (7%)
+- الكاش مع المنصة: 500 ج.م
+- مستحقات التاجر: 418.5 ج.م
+```
+
+### سيناريو 3: مزيج COD + Online مع مرتجع
+```
+Input:
+- 5 طلبات COD بإجمالي 500 ج.م
+- 3 طلبات Online بإجمالي 300 ج.م
+- مرتجع 100 ج.م من طلب COD (تم تأكيده)
+
+Expected:
+- COD: 400 ج.م (بعد المرتجع)
+- عمولة COD: 28 ج.م (7% من 400)
+- Online: 300 ج.م
+- عمولة Online: 21 ج.م
+- مستحقات التاجر من Online: 279 ج.م
+- مديونية التاجر من COD: 28 ج.م
+- الصافي: 251 ج.م (المنصة تدفع للتاجر)
+```
+
+---
+
+## 8. ملاحظات مهمة
+
+### ⚠️ تنبيهات تقنية
+
+1. **رسوم التوصيل**: تُستبعد دائماً من حساب العمولة
+2. **فترة السماح**: تُعرض العمولة النظرية مع خصم 100% للشفافية
+3. **المرتجعات**: تُطبق فقط بعد تأكيد العميل
+4. **التسوية**: تُحسب بناءً على View وليس Frontend logic
+5. **Backward Compatibility**: الكود يدعم `payment_method = 'cash'` و `'cod'`
+
+### 📋 قائمة المراجعة قبل الإطلاق
+
+- [ ] اختبار View على بيانات حقيقية
+- [ ] التحقق من صحة حسابات المرتجعات
+- [ ] اختبار سيناريو فترة السماح المنتهية
+- [ ] التحقق من عرض الأرقام بالعربية
+- [ ] اختبار RTL layout
+- [ ] مراجعة الترجمات AR/EN
+
+---
+
+**تم إعداد هذه الخطة بواسطة**: Claude Code
+**للمراجعة من**: Mosab Ragab
+**الحالة**: في انتظار الموافقة ✍️
