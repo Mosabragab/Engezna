@@ -332,5 +332,95 @@ GRACE PERIOD:
 - original_commission = theoretical (for display)';
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- 6. AUTO-CONFIRM EXPIRED REFUNDS FUNCTION
+-- تأكيد تلقائي للمرتجعات التي انتهت مهلتها (48 ساعة)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+CREATE OR REPLACE FUNCTION auto_confirm_expired_refunds()
+RETURNS INTEGER AS $$
+DECLARE
+  v_count INTEGER := 0;
+  v_refund RECORD;
+BEGIN
+  -- Find all refunds where:
+  -- 1. Provider has paid (provider_action = 'cash_refund')
+  -- 2. Customer hasn't confirmed yet
+  -- 3. Deadline has passed (48 hours)
+  -- 4. Affects settlement
+  FOR v_refund IN
+    SELECT id, order_id, amount
+    FROM refunds
+    WHERE provider_action = 'cash_refund'
+      AND (customer_confirmed = false OR customer_confirmed IS NULL)
+      AND confirmation_deadline IS NOT NULL
+      AND confirmation_deadline < NOW()
+      AND affects_settlement = true
+      AND status IN ('approved', 'processed')
+  LOOP
+    -- Auto-confirm this refund
+    UPDATE refunds
+    SET
+      customer_confirmed = true,
+      customer_confirmed_at = NOW(),
+      notes = COALESCE(notes, '') || E'\n[AUTO] تأكيد تلقائي بعد انتهاء مهلة 48 ساعة - ' || NOW()::TEXT
+    WHERE id = v_refund.id;
+
+    v_count := v_count + 1;
+
+    RAISE NOTICE 'Auto-confirmed refund % for order %', v_refund.id, v_refund.order_id;
+  END LOOP;
+
+  RETURN v_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION auto_confirm_expired_refunds() IS
+'Auto-confirm refunds after 48 hours deadline
+تأكيد تلقائي للمرتجعات بعد انتهاء مهلة 48 ساعة
+
+Call this function via:
+1. Supabase pg_cron (recommended)
+2. External cron job
+3. Supabase Edge Function with schedule
+
+Example pg_cron setup:
+SELECT cron.schedule(
+  ''auto-confirm-refunds'',
+  ''0 * * * *'',  -- Every hour
+  $$SELECT auto_confirm_expired_refunds()$$
+);';
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 7. SET DEFAULT confirmation_deadline ON PROVIDER CASH REFUND
+-- ضبط مهلة التأكيد تلقائياً عند موافقة التاجر
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- This is already handled in handle_refund_settlement_update trigger
+-- When provider_action = 'cash_refund', confirmation_deadline is set to NOW() + 48 hours
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 8. CREATE pg_cron JOB (if pg_cron extension exists)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+DO $$
+BEGIN
+  -- Check if pg_cron extension exists
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    -- Schedule auto-confirm to run every hour
+    PERFORM cron.schedule(
+      'auto-confirm-expired-refunds',
+      '0 * * * *',  -- Every hour at minute 0
+      'SELECT auto_confirm_expired_refunds()'
+    );
+    RAISE NOTICE 'pg_cron job scheduled: auto-confirm-expired-refunds (hourly)';
+  ELSE
+    RAISE NOTICE 'pg_cron extension not found. Please call auto_confirm_expired_refunds() manually or via external cron.';
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE NOTICE 'Could not schedule pg_cron job: %. Please set up external cron.', SQLERRM;
+END $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- END OF MIGRATION
 -- ═══════════════════════════════════════════════════════════════════════════
