@@ -572,6 +572,34 @@ export default function ProviderFinanceDashboard() {
                     <span className="font-semibold text-slate-900">{formatCurrency(safeNumber(financeData.gross_revenue))}</span>
                   </div>
 
+                  {/* COD/Online Breakdown */}
+                  {(safeNumber(financeData.cod_orders_count) > 0 || safeNumber(financeData.online_orders_count) > 0) && (
+                    <div className="ml-4 space-y-1 text-sm border-l-2 border-slate-200 pl-3">
+                      {safeNumber(financeData.cod_orders_count) > 0 && (
+                        <div className="flex items-center justify-between py-1">
+                          <span className="flex items-center gap-2 text-amber-700">
+                            <Banknote className="w-3.5 h-3.5" />
+                            {locale === 'ar'
+                              ? `دفع عند الاستلام (${safeNumber(financeData.cod_orders_count)} طلب)`
+                              : `Cash on Delivery (${safeNumber(financeData.cod_orders_count)} orders)`}
+                          </span>
+                          <span className="font-medium text-amber-800">{formatCurrency(safeNumber(financeData.cod_gross_revenue))}</span>
+                        </div>
+                      )}
+                      {safeNumber(financeData.online_orders_count) > 0 && (
+                        <div className="flex items-center justify-between py-1">
+                          <span className="flex items-center gap-2 text-blue-700">
+                            <CreditCard className="w-3.5 h-3.5" />
+                            {locale === 'ar'
+                              ? `دفع إلكتروني (${safeNumber(financeData.online_orders_count)} طلب)`
+                              : `Online Payment (${safeNumber(financeData.online_orders_count)} orders)`}
+                          </span>
+                          <span className="font-medium text-blue-800">{formatCurrency(safeNumber(financeData.online_gross_revenue))}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Row 2: Refunds (red) */}
                   {safeNumber(financeData.total_refunds) > 0 && (
                     <div className="flex items-center justify-between py-2 text-red-600">
