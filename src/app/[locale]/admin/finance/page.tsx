@@ -240,6 +240,46 @@ export default function AdminFinancePage() {
           </div>
         )}
 
+        {/* ═══════════════════════════════════════════════════════════════════════ */}
+        {/* On-Hold Orders Alert - تنبيه الطلبات المعلقة */}
+        {/* ═══════════════════════════════════════════════════════════════════════ */}
+        {summary.heldOrders > 0 && (
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                <Clock className="w-6 h-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-bold text-amber-800">
+                    {locale === 'ar' ? 'طلبات معلقة تحتاج مراجعة' : 'Held Orders Need Review'}
+                  </h3>
+                  <span className="bg-amber-200 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {formatNumber(summary.heldOrders, locale)}
+                  </span>
+                </div>
+                <p className="text-amber-700 text-sm mb-3">
+                  {locale === 'ar'
+                    ? 'هذه الطلبات لم تدخل التسويات بعد بسبب نزاعات أو طلبات استرداد قيد المراجعة. يجب حلها لتضمينها في التسويات القادمة.'
+                    : 'These orders are not included in settlements due to pending disputes or refund requests. Resolve them to include in upcoming settlements.'}
+                </p>
+                <div className="flex items-center gap-3">
+                  <Link href={`/${locale}/admin/refunds?status=pending`}>
+                    <Button variant="outline" size="sm" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                      {locale === 'ar' ? 'مراجعة المرتجعات' : 'Review Refunds'}
+                    </Button>
+                  </Link>
+                  <Link href={`/${locale}/admin/resolution-center`}>
+                    <Button variant="outline" size="sm" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                      {locale === 'ar' ? 'مركز الحلول' : 'Resolution Center'}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Filters Section */}
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
           <div className="flex flex-col gap-4">
