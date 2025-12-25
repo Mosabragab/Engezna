@@ -23,24 +23,28 @@
  */
 
 export class Money {
-  private readonly piasters: number;
+  private readonly _piasters: number;
 
   /**
    * Create a Money instance from pounds (EGP)
    * @param amount - Amount in Egyptian Pounds
+   * @param _isPiasters - Internal flag: if true, amount is in piasters
    */
-  constructor(amount: number | string) {
-    if (typeof amount === 'string') {
+  constructor(amount: number | string, _isPiasters = false) {
+    if (_isPiasters) {
+      // Internal use: amount is already in piasters
+      this._piasters = Math.round(typeof amount === 'string' ? parseFloat(amount) || 0 : amount || 0);
+    } else if (typeof amount === 'string') {
       const parsed = parseFloat(amount);
       if (isNaN(parsed)) {
-        this.piasters = 0;
+        this._piasters = 0;
       } else {
-        this.piasters = Math.round(parsed * 100);
+        this._piasters = Math.round(parsed * 100);
       }
     } else if (isNaN(amount)) {
-      this.piasters = 0;
+      this._piasters = 0;
     } else {
-      this.piasters = Math.round(amount * 100);
+      this._piasters = Math.round(amount * 100);
     }
   }
 
@@ -53,9 +57,7 @@ export class Money {
    * @param piasters - Amount in piasters (100 piasters = 1 EGP)
    */
   static fromPiasters(piasters: number): Money {
-    const m = new Money(0);
-    (m as { piasters: number }).piasters = Math.round(piasters);
-    return m;
+    return new Money(piasters, true);
   }
 
   /**
@@ -90,14 +92,14 @@ export class Money {
    * Add another Money amount
    */
   add(other: Money): Money {
-    return Money.fromPiasters(this.piasters + other.piasters);
+    return Money.fromPiasters(this._piasters + other._piasters);
   }
 
   /**
    * Subtract another Money amount
    */
   subtract(other: Money): Money {
-    return Money.fromPiasters(this.piasters - other.piasters);
+    return Money.fromPiasters(this._piasters - other._piasters);
   }
 
   /**
@@ -105,7 +107,7 @@ export class Money {
    * Result is rounded to nearest piaster
    */
   multiply(factor: number): Money {
-    return Money.fromPiasters(Math.round(this.piasters * factor));
+    return Money.fromPiasters(Math.round(this._piasters * factor));
   }
 
   /**
@@ -116,7 +118,7 @@ export class Money {
     if (divisor === 0) {
       throw new Error('Cannot divide by zero');
     }
-    return Money.fromPiasters(Math.round(this.piasters / divisor));
+    return Money.fromPiasters(Math.round(this._piasters / divisor));
   }
 
   /**
@@ -131,35 +133,35 @@ export class Money {
    * Get the absolute value
    */
   abs(): Money {
-    return Money.fromPiasters(Math.abs(this.piasters));
+    return Money.fromPiasters(Math.abs(this._piasters));
   }
 
   /**
    * Negate the amount
    */
   negate(): Money {
-    return Money.fromPiasters(-this.piasters);
+    return Money.fromPiasters(-this._piasters);
   }
 
   /**
    * Get the maximum of this and another Money
    */
   max(other: Money): Money {
-    return this.piasters >= other.piasters ? this : other;
+    return this._piasters >= other._piasters ? this : other;
   }
 
   /**
    * Get the minimum of this and another Money
    */
   min(other: Money): Money {
-    return this.piasters <= other.piasters ? this : other;
+    return this._piasters <= other._piasters ? this : other;
   }
 
   /**
    * Ensure the amount is not negative (return 0 if negative)
    */
   nonNegative(): Money {
-    return this.piasters < 0 ? Money.zero() : this;
+    return this._piasters < 0 ? Money.zero() : this;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -170,56 +172,56 @@ export class Money {
    * Check if equal to another Money
    */
   equals(other: Money): boolean {
-    return this.piasters === other.piasters;
+    return this._piasters === other._piasters;
   }
 
   /**
    * Check if greater than another Money
    */
   greaterThan(other: Money): boolean {
-    return this.piasters > other.piasters;
+    return this._piasters > other._piasters;
   }
 
   /**
    * Check if greater than or equal to another Money
    */
   greaterThanOrEqual(other: Money): boolean {
-    return this.piasters >= other.piasters;
+    return this._piasters >= other._piasters;
   }
 
   /**
    * Check if less than another Money
    */
   lessThan(other: Money): boolean {
-    return this.piasters < other.piasters;
+    return this._piasters < other._piasters;
   }
 
   /**
    * Check if less than or equal to another Money
    */
   lessThanOrEqual(other: Money): boolean {
-    return this.piasters <= other.piasters;
+    return this._piasters <= other._piasters;
   }
 
   /**
    * Check if zero
    */
   isZero(): boolean {
-    return this.piasters === 0;
+    return this._piasters === 0;
   }
 
   /**
    * Check if positive (greater than zero)
    */
   isPositive(): boolean {
-    return this.piasters > 0;
+    return this._piasters > 0;
   }
 
   /**
    * Check if negative (less than zero)
    */
   isNegative(): boolean {
-    return this.piasters < 0;
+    return this._piasters < 0;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -230,14 +232,14 @@ export class Money {
    * Get the amount in pounds (EGP) as a number
    */
   toNumber(): number {
-    return this.piasters / 100;
+    return this._piasters / 100;
   }
 
   /**
    * Get the amount in piasters
    */
   toPiasters(): number {
-    return this.piasters;
+    return this._piasters;
   }
 
   /**
