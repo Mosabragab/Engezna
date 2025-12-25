@@ -36,6 +36,7 @@ export {
 } from './export-service';
 
 // Re-export types from finance types
+// Note: ExportOptions is exported from export-service.ts, so we use ExportOptions as FinanceExportOptions here
 export type {
   SettlementStatus,
   OrderSettlementStatus,
@@ -53,7 +54,7 @@ export type {
   FinancialFilters,
   FinancialDateRange,
   ExportFormat,
-  ExportOptions,
+  ExportOptions as FinanceExportOptions,
   PaymentMethodBreakdown,
 } from '@/types/finance';
 
