@@ -479,9 +479,9 @@ export default function SettlementDetailPage() {
         settlementDirection: settlement.settlement_direction || 'balanced',
         status: settlement.status,
         amountPaid: settlement.amount_paid || 0,
-        paidAt: settlement.paid_at || undefined,
-        paymentMethod: settlement.payment_method || undefined,
-        paymentReference: settlement.payment_reference || undefined,
+        paidAt: settlement.paid_at || null,
+        paymentMethod: settlement.payment_method || null,
+        paymentReference: settlement.payment_reference || null,
         createdAt: settlement.created_at,
         updatedAt: settlement.updated_at,
         cod: {

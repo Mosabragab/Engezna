@@ -726,9 +726,9 @@ export default function AdminSettlementsPage() {
       settlementDirection: s.settlement_direction || 'balanced',
       status: s.status,
       amountPaid: s.amount_paid || 0,
-      paidAt: s.paid_at || undefined,
-      paymentMethod: s.payment_method || undefined,
-      paymentReference: s.payment_reference || undefined,
+      paidAt: s.paid_at || null,
+      paymentMethod: s.payment_method || null,
+      paymentReference: s.payment_reference || null,
       createdAt: s.created_at,
       updatedAt: s.updated_at,
       cod: {
