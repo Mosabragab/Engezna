@@ -223,7 +223,9 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
   // Check if notification is a refund that needs confirmation
   function isRefundConfirmation(notification: { type: string; body_ar: string | null }) {
     return notification.type === 'refund_update' &&
-           notification.body_ar?.includes('تأكيد الاستلام')
+           (notification.body_ar?.includes('تأكيد استلام') ||
+            notification.body_ar?.includes('تأكيد الاستلام') ||
+            notification.body_ar?.includes('يرجى تأكيد'))
   }
 
   // Display text for location button
