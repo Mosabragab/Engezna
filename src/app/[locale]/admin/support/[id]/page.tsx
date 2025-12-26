@@ -236,15 +236,34 @@ export default function AdminSupportTicketDetailPage() {
     setSendingMessage(true)
     const supabase = createClient()
 
-    const { error } = await supabase
+    // Try to insert with recipient_type, fall back without it if column doesn't exist
+    let error = null
+
+    // First try with recipient_type
+    const result = await supabase
       .from('ticket_messages')
       .insert({
         ticket_id: ticketId,
         sender_id: user.id,
         sender_type: 'admin',
-        recipient_type: activeChat, // Send to current tab's recipient
+        recipient_type: activeChat,
         message: newMessage.trim(),
       })
+
+    // If error mentions recipient_type column, try without it
+    if (result.error?.message?.includes('recipient_type')) {
+      const fallbackResult = await supabase
+        .from('ticket_messages')
+        .insert({
+          ticket_id: ticketId,
+          sender_id: user.id,
+          sender_type: 'admin',
+          message: newMessage.trim(),
+        })
+      error = fallbackResult.error
+    } else {
+      error = result.error
+    }
 
     if (error) {
       console.error('Error sending message:', error)
