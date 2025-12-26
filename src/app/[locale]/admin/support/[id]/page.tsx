@@ -250,24 +250,36 @@ export default function AdminSupportTicketDetailPage() {
         message: newMessage.trim(),
       })
 
-    // If error mentions recipient_type column, try without it
-    if (result.error?.message?.includes('recipient_type')) {
-      const fallbackResult = await supabase
-        .from('ticket_messages')
-        .insert({
-          ticket_id: ticketId,
-          sender_id: user.id,
-          sender_type: 'admin',
-          message: newMessage.trim(),
-        })
-      error = fallbackResult.error
-    } else {
-      error = result.error
+    // Handle different error types
+    if (result.error) {
+      // If table doesn't exist
+      if (result.error.message?.includes('does not exist')) {
+        console.error('ticket_messages table does not exist:', result.error)
+        alert(locale === 'ar'
+          ? 'جدول الرسائل غير موجود. يرجى تطبيق الـ migration أولاً.'
+          : 'Messages table does not exist. Please apply the migration first.')
+        setSendingMessage(false)
+        return
+      }
+      // If recipient_type column doesn't exist, try without it
+      if (result.error.message?.includes('recipient_type')) {
+        const fallbackResult = await supabase
+          .from('ticket_messages')
+          .insert({
+            ticket_id: ticketId,
+            sender_id: user.id,
+            sender_type: 'admin',
+            message: newMessage.trim(),
+          })
+        error = fallbackResult.error
+      } else {
+        error = result.error
+      }
     }
 
     if (error) {
       console.error('Error sending message:', error)
-      alert(locale === 'ar' ? 'حدث خطأ أثناء إرسال الرسالة' : 'Error sending message')
+      alert(locale === 'ar' ? 'حدث خطأ أثناء إرسال الرسالة: ' + error.message : 'Error sending message: ' + error.message)
       setSendingMessage(false)
       return
     }
