@@ -87,6 +87,11 @@ interface FinancialEngineData {
   // Discounts
   total_discounts: number
 
+  // Net Revenue (gross - delivery fees) - calculated in database
+  total_net_revenue: number
+  cod_net_revenue: number
+  online_net_revenue: number
+
   // Commission (Theoretical - what would be without grace period)
   theoretical_commission: number
   cod_theoretical_commission: number
@@ -925,7 +930,7 @@ export default function ProviderFinanceDashboard() {
                     <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1.5 rounded">
                       <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
                       <span className="font-bold text-slate-900">
-                        {formatCurrency(safeNumber(financeData.cod_gross_revenue) - safeNumber(financeData.cod_delivery_fees))}
+                        {formatCurrency(safeNumber(financeData.cod_net_revenue))}
                       </span>
                     </div>
                     {/* Commission */}
@@ -999,7 +1004,7 @@ export default function ProviderFinanceDashboard() {
                     <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1.5 rounded">
                       <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
                       <span className="font-bold text-slate-900">
-                        {formatCurrency(safeNumber(financeData.online_gross_revenue) - safeNumber(financeData.online_delivery_fees))}
+                        {formatCurrency(safeNumber(financeData.online_net_revenue))}
                       </span>
                     </div>
                     {/* Commission */}
