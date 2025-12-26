@@ -115,7 +115,7 @@ export function ProviderSidebar({
       items: [
         {
           icon: Wallet,
-          label: { ar: 'المحفظة والتسويات', en: 'Wallet & Settlements' },
+          label: { ar: 'التسويات', en: 'Settlements' },
           path: `/${locale}/provider/finance`,
         },
         {

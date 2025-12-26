@@ -130,6 +130,70 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
     return () => clearInterval(interval)
   }, [isLoginPage, regionLoading, loadBadgeCounts])
 
+  // Real-time subscription for admin badge counts
+  useEffect(() => {
+    if (isLoginPage || regionLoading) return
+
+    const supabase = createClient()
+
+    // Subscribe to refunds changes
+    const refundsChannel = supabase
+      .channel('admin-refunds-badges')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'refunds',
+        },
+        () => {
+          // Reload badge counts when refunds change
+          loadBadgeCounts()
+        }
+      )
+      .subscribe()
+
+    // Subscribe to support_tickets changes
+    const ticketsChannel = supabase
+      .channel('admin-tickets-badges')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'support_tickets',
+        },
+        () => {
+          // Reload badge counts when tickets change
+          loadBadgeCounts()
+        }
+      )
+      .subscribe()
+
+    // Subscribe to providers changes (for pending approvals)
+    const providersChannel = supabase
+      .channel('admin-providers-badges')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'providers',
+        },
+        () => {
+          // Reload badge counts when providers change
+          loadBadgeCounts()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(refundsChannel)
+      supabase.removeChannel(ticketsChannel)
+      supabase.removeChannel(providersChannel)
+    }
+  }, [isLoginPage, regionLoading, loadBadgeCounts])
+
   // Login page - render without sidebar
   if (isLoginPage) {
     return <>{children}</>

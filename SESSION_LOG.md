@@ -1,5 +1,76 @@
 # Session Log
 
+## Session: 2025-12-26 - Settlement UI Consistency & Database Source of Truth
+
+### Summary
+Comprehensive update to settlement UI across admin and provider pages to ensure database is single source of truth for all financial data. Matched COD/Online card designs across all settlement views.
+
+### Completed Tasks
+
+#### 1. Commission Display Fix (22 vs 17.5 Issue) ✅
+**Issue**: Settlement details page showing incorrect commission (22 instead of 17.5 after refund)
+**Root Cause**: Trigger conflict between `calculate_order_commission` and `handle_refund_settlement_update`
+**Solution**:
+- Fixed `calculate_order_commission` to check only `NEW.settlement_adjusted = true`
+- Fixed `generate_provider_settlement` to include all eligible orders
+- Database now correctly calculates commission: `(subtotal - discount - refund) * rate`
+
+#### 2. Database as Single Source of Truth ✅
+**Principle**: All financial calculations done in backend, not frontend
+**Changes**:
+- Removed all frontend commission calculations
+- All displayed values come directly from database fields:
+  - `platform_commission` - actual commission
+  - `original_commission` - theoretical commission (for grace period)
+  - `cod_commission_owed`, `online_platform_commission` - from settlements table
+
+#### 3. Admin Settlement Details COD/Online Cards Redesign ✅
+**File**: `src/app/[locale]/admin/settlements/[id]/page.tsx`
+**Changes**:
+- Updated card design to match provider finance overview
+- White background with colored borders (amber for COD, blue for Online)
+- Icon in colored square header
+- Order count displayed under title
+- Grace period indicator when commission = 0 but revenue > 0
+- Final result box with directional arrows (ArrowUpRight/ArrowDownRight)
+- All values from database only (no frontend calculations)
+
+#### 4. Provider Finance Settlements Tab Update ✅
+**File**: `src/app/[locale]/provider/finance/page.tsx`
+**Changes**:
+- Matching card design when expanding settlement details
+- Consistent layout with overview tab cards
+- Database values only for all financial fields
+- Grace period waiver indicator
+
+#### 5. Provider Sidebar Label Change ✅
+**File**: `src/components/provider/ProviderSidebar.tsx`
+**Change**: Renamed from "المحفظة والتسويات" to "التسويات"
+
+### Database Functions Fixed (by user via SQL)
+- `calculate_order_commission` - Fixed to check only NEW.settlement_adjusted
+- `generate_provider_settlement` - Fixed to include all eligible orders
+
+### Key Principles Established
+1. **مصدر الحقيقة الواحد**: قاعدة البيانات هي المصدر الوحيد للحسابات المالية
+2. **لا حسابات في الواجهة**: Frontend displays only, calculations in backend
+3. **Grace Period Handling**: `platform_commission = 0`, `original_commission = theoretical value`
+
+### Files Modified
+- `src/app/[locale]/admin/settlements/[id]/page.tsx` - COD/Online cards redesign
+- `src/app/[locale]/provider/finance/page.tsx` - Settlements tab cards update
+- `src/components/provider/ProviderSidebar.tsx` - Label change
+
+### Commits
+```
+b9b5493 refactor: Use database values only for settlement COD/Online cards
+a95cf3a style: Match admin settlement COD/Online cards with provider finance design
+5456bc2 feat: Use database as single source of truth for commission display
+2c2cb17 refactor: Use database commission values instead of frontend calculation
+```
+
+---
+
 ## Session: 2025-12-23 - Code Polishing & Build Fixes
 
 ### Summary

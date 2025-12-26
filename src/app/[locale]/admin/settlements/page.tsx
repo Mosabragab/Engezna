@@ -420,7 +420,7 @@ export default function AdminSettlementsPage() {
         // FIXED: Added delivery_fee to support correct online_payout calculation
         const { data: allOrders } = await supabase
           .from('orders')
-          .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, settlement_status')
+          .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, original_commission, settlement_status')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
           .or('settlement_status.eq.eligible,settlement_status.is.null') // Only include eligible orders
@@ -458,14 +458,18 @@ export default function AdminSettlementsPage() {
           const codSubtotal = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.subtotal), 0))
           const codDiscount = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.discount), 0))
           const codDeliveryFees = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.delivery_fee), 0))
+          const codNetRevenue = codGrossRevenue - codDeliveryFees
           const codCommissionOwed = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.platform_commission), 0))
+          const codOriginalCommission = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber((o as any).original_commission || o.platform_commission), 0))
 
           // Online breakdown - use actual commission from orders
           const onlineGrossRevenue = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.total), 0))
           const onlineSubtotal = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.subtotal), 0))
           const onlineDiscount = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.discount), 0))
           const onlineDeliveryFees = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.delivery_fee), 0))
+          const onlineNetRevenue = onlineGrossRevenue - onlineDeliveryFees
           const onlinePlatformCommission = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.platform_commission), 0))
+          const onlineOriginalCommission = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber((o as any).original_commission || o.platform_commission), 0))
 
           // ═══════════════════════════════════════════════════════════════════
           // FIXED: online_payout_owed = (subtotal - discount) - commission + delivery_fees
@@ -518,11 +522,17 @@ export default function AdminSettlementsPage() {
               // COD breakdown
               cod_orders_count: codOrders.length,
               cod_gross_revenue: codGrossRevenue,
+              cod_delivery_fees: codDeliveryFees,
+              cod_net_revenue: codNetRevenue,
               cod_commission_owed: codCommissionOwed,
+              cod_original_commission: codOriginalCommission,
               // Online breakdown
               online_orders_count: onlineOrders.length,
               online_gross_revenue: onlineGrossRevenue,
+              online_delivery_fees: onlineDeliveryFees,
+              online_net_revenue: onlineNetRevenue,
               online_platform_commission: onlinePlatformCommission,
+              online_original_commission: onlineOriginalCommission,
               online_payout_owed: onlinePayoutOwed,
               // Net calculation
               net_balance: netBalance,
@@ -627,7 +637,7 @@ export default function AdminSettlementsPage() {
       // FIXED: Added delivery_fee to support correct online_payout calculation
       const { data: allOrders } = await supabase
         .from('orders')
-        .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, settlement_status')
+        .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, original_commission, settlement_status')
         .eq('provider_id', generateForm.providerId)
         .eq('status', 'delivered')
         .or('settlement_status.eq.eligible,settlement_status.is.null') // Only include eligible orders
@@ -663,14 +673,18 @@ export default function AdminSettlementsPage() {
       const codSubtotal = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.subtotal), 0))
       const codDiscount = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.discount), 0))
       const codDeliveryFees = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.delivery_fee), 0))
+      const codNetRevenue = codGrossRevenue - codDeliveryFees
       const codCommissionOwed = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber(o.platform_commission), 0))
+      const codOriginalCommission = safeNumber(codOrders.reduce((sum, o) => sum + safeNumber((o as any).original_commission || o.platform_commission), 0))
 
       // Online breakdown - use actual commission from orders
       const onlineGrossRevenue = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.total), 0))
       const onlineSubtotal = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.subtotal), 0))
       const onlineDiscount = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.discount), 0))
       const onlineDeliveryFees = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.delivery_fee), 0))
+      const onlineNetRevenue = onlineGrossRevenue - onlineDeliveryFees
       const onlinePlatformCommission = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber(o.platform_commission), 0))
+      const onlineOriginalCommission = safeNumber(onlineOrders.reduce((sum, o) => sum + safeNumber((o as any).original_commission || o.platform_commission), 0))
 
       // ═══════════════════════════════════════════════════════════════════
       // FIXED: online_payout_owed = (subtotal - discount) - commission + delivery_fees
@@ -723,11 +737,17 @@ export default function AdminSettlementsPage() {
           // COD breakdown
           cod_orders_count: codOrders.length,
           cod_gross_revenue: codGrossRevenue,
+          cod_delivery_fees: codDeliveryFees,
+          cod_net_revenue: codNetRevenue,
           cod_commission_owed: codCommissionOwed,
+          cod_original_commission: codOriginalCommission,
           // Online breakdown
           online_orders_count: onlineOrders.length,
           online_gross_revenue: onlineGrossRevenue,
+          online_delivery_fees: onlineDeliveryFees,
+          online_net_revenue: onlineNetRevenue,
           online_platform_commission: onlinePlatformCommission,
+          online_original_commission: onlineOriginalCommission,
           online_payout_owed: onlinePayoutOwed,
           // Net calculation
           net_balance: netBalance,

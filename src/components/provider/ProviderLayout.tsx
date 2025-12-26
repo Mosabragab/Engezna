@@ -183,7 +183,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       )
       .subscribe()
 
-    // Also subscribe to orders for pending count (sidebar badge)
+    // Also subscribe to orders for pending count and on_hold count (sidebar badge)
     const ordersChannel = supabase
       .channel(`layout-orders-${providerId}`)
       .on(
@@ -209,57 +209,52 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           table: 'orders',
           filter: `provider_id=eq.${providerId}`,
         },
-        (payload) => {
-          const oldOrder = payload.old as { status: string }
-          const newOrder = payload.new as { status: string }
+        async (payload) => {
+          const oldOrder = payload.old as { status: string; settlement_status?: string }
+          const newOrder = payload.new as { status: string; settlement_status?: string }
+
+          // Track pending orders count
           if (oldOrder.status === 'pending' && newOrder.status !== 'pending') {
             setPendingOrders(prev => Math.max(0, prev - 1))
           }
           if (oldOrder.status !== 'pending' && newOrder.status === 'pending') {
             setPendingOrders(prev => prev + 1)
           }
+
+          // Track on_hold orders count (part of refunds badge)
+          if (oldOrder.settlement_status !== newOrder.settlement_status) {
+            const { count: onHoldCount } = await supabase
+              .from('orders')
+              .select('*', { count: 'exact', head: true })
+              .eq('provider_id', providerId)
+              .eq('settlement_status', 'on_hold')
+            setOnHoldOrders(onHoldCount || 0)
+          }
         }
       )
       .subscribe()
 
     // Also subscribe to refunds for pending refunds count (sidebar badge)
+    // Use simpler approach: reload count on any refund change
     const refundsChannel = supabase
       .channel(`layout-refunds-${providerId}`)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'refunds',
           filter: `provider_id=eq.${providerId}`,
         },
-        (payload) => {
-          const newRefund = payload.new as { status: string; provider_action: string }
-          if (newRefund.status === 'pending' && newRefund.provider_action === 'pending') {
-            setPendingRefunds(prev => prev + 1)
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'refunds',
-          filter: `provider_id=eq.${providerId}`,
-        },
-        (payload) => {
-          const oldRefund = payload.old as { status: string; provider_action: string }
-          const newRefund = payload.new as { status: string; provider_action: string }
-          const wasPending = oldRefund.status === 'pending' && oldRefund.provider_action === 'pending'
-          const isPending = newRefund.status === 'pending' && newRefund.provider_action === 'pending'
-
-          if (wasPending && !isPending) {
-            setPendingRefunds(prev => Math.max(0, prev - 1))
-          }
-          if (!wasPending && isPending) {
-            setPendingRefunds(prev => prev + 1)
-          }
+        async () => {
+          // Reload pending refunds count
+          const { count } = await supabase
+            .from('refunds')
+            .select('*', { count: 'exact', head: true })
+            .eq('provider_id', providerId)
+            .eq('status', 'pending')
+            .eq('provider_action', 'pending')
+          setPendingRefunds(count || 0)
         }
       )
       .subscribe()

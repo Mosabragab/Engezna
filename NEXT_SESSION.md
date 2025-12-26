@@ -1,5 +1,52 @@
 # Next Session Plan
 
+## Date: 2025-12-26 (Completed - Session 22)
+
+## ✅ Completed Tasks (2025-12-26 - Session 22)
+
+### 1. Settlement System - Database as Source of Truth ✅
+**Status**: Completed
+
+#### What was done:
+- Fixed commission display issue (22 vs 17.5 after refund)
+- Fixed trigger conflict between `calculate_order_commission` and `handle_refund_settlement_update`
+- Removed all frontend commission calculations
+- All financial values now come directly from database
+
+#### Key Principle Established:
+**مصدر الحقيقة الواحد** - Database is the ONLY source for financial calculations
+
+### 2. Settlement UI Consistency ✅
+**Status**: Completed
+
+#### What was done:
+- Redesigned admin settlement details COD/Online cards
+- Updated provider finance settlements tab cards
+- Consistent design across all settlement views:
+  - White background with colored borders (amber/blue)
+  - Icon in colored square header
+  - Grace period waiver indicator
+  - Final result box with directional arrows
+
+#### Files Modified:
+- `src/app/[locale]/admin/settlements/[id]/page.tsx`
+- `src/app/[locale]/provider/finance/page.tsx`
+- `src/components/provider/ProviderSidebar.tsx`
+
+### 3. Provider Sidebar Update ✅
+**Status**: Completed
+- Changed label from "المحفظة والتسويات" to "التسويات"
+
+### 4. Commits This Session
+```
+b9b5493 refactor: Use database values only for settlement COD/Online cards
+a95cf3a style: Match admin settlement COD/Online cards with provider finance design
+5456bc2 feat: Use database as single source of truth for commission display
+2c2cb17 refactor: Use database commission values instead of frontend calculation
+```
+
+---
+
 ## Date: 2025-12-23 (Completed - Session 21)
 
 ## ✅ Completed Tasks (2025-12-23 - Session 21)

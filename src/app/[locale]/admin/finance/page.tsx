@@ -600,7 +600,7 @@ export default function AdminFinancePage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-2">
-                          <Link href={`/${locale}/admin/finance/settlements/${settlement.id}`}>
+                          <Link href={`/${locale}/admin/settlements/${settlement.id}`}>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                               <Eye className="w-4 h-4 text-slate-500" />
                             </Button>

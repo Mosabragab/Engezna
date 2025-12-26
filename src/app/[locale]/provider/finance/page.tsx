@@ -87,6 +87,11 @@ interface FinancialEngineData {
   // Discounts
   total_discounts: number
 
+  // Net Revenue (gross - delivery fees) - calculated in database
+  total_net_revenue: number
+  cod_net_revenue: number
+  online_net_revenue: number
+
   // Commission (Theoretical - what would be without grace period)
   theoretical_commission: number
   cod_theoretical_commission: number
@@ -132,6 +137,7 @@ interface SettlementOrder {
   total: number
   payment_method: string
   platform_commission: number
+  original_commission: number | null
   delivery_fee: number
   created_at: string
   status: string
@@ -162,11 +168,18 @@ interface Settlement {
   cod_orders_count: number
   cod_gross_revenue: number
   cod_commission_owed: number
+  cod_delivery_fees: number
+  cod_original_commission: number
+  cod_net_revenue: number
   online_orders_count: number
   online_gross_revenue: number
   online_platform_commission: number
+  online_delivery_fees: number
+  online_original_commission: number
   online_payout_owed: number
+  online_net_revenue: number
   net_balance: number
+  total_refunds: number
   settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
   total_delivery_fees: number
   // Order IDs included in this settlement
@@ -202,23 +215,69 @@ export default function ProviderFinanceDashboard() {
   const [loadingOrders, setLoadingOrders] = useState(false)
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Load Financial Data from SQL View
+  // Helper: Calculate date range from period filter
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const loadFinanceData = useCallback(async (provId: string) => {
-    const supabase = createClient()
+  const getDateRange = useCallback((period: PeriodFilter): { startDate: string | null; endDate: string | null } => {
+    const now = new Date()
+    const endDate = now.toISOString()
 
-    // Fetch from financial_settlement_engine view (Single Source of Truth)
+    switch (period) {
+      case 'today': {
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        return { startDate: startOfDay.toISOString(), endDate }
+      }
+      case 'week': {
+        const startOfWeek = new Date(now)
+        startOfWeek.setDate(now.getDate() - now.getDay()) // Start from Sunday
+        startOfWeek.setHours(0, 0, 0, 0)
+        return { startDate: startOfWeek.toISOString(), endDate }
+      }
+      case 'month': {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        return { startDate: startOfMonth.toISOString(), endDate }
+      }
+      case 'year': {
+        const startOfYear = new Date(now.getFullYear(), 0, 1)
+        return { startDate: startOfYear.toISOString(), endDate }
+      }
+      case 'all':
+      default:
+        return { startDate: null, endDate: null }
+    }
+  }, [])
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Load Financial Data from SQL Function (with date filtering)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const loadFinanceData = useCallback(async (provId: string, period: PeriodFilter = 'all') => {
+    const supabase = createClient()
+    const { startDate, endDate } = getDateRange(period)
+
+    // Call the get_provider_financial_data function with date parameters
     const { data: engineData, error: engineError } = await supabase
-      .from('financial_settlement_engine')
-      .select('*')
-      .eq('provider_id', provId)
+      .rpc('get_provider_financial_data', {
+        p_provider_id: provId,
+        p_start_date: startDate,
+        p_end_date: endDate
+      })
       .single()
 
     if (engineError) {
       console.error('Error loading financial engine data:', engineError)
-      // Fallback: create empty data structure
-      setFinanceData(null)
+      // Fallback: try the view without filtering
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('financial_settlement_engine')
+        .select('*')
+        .eq('provider_id', provId)
+        .single()
+
+      if (fallbackError) {
+        setFinanceData(null)
+      } else {
+        setFinanceData(fallbackData as FinancialEngineData)
+      }
     } else {
       setFinanceData(engineData as FinancialEngineData)
     }
@@ -232,7 +291,7 @@ export default function ProviderFinanceDashboard() {
       .limit(20)
 
     setSettlements((settlementsData || []) as Settlement[])
-  }, [])
+  }, [getDateRange])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Load Settlement Orders (Drill-down)
@@ -251,7 +310,7 @@ export default function ProviderFinanceDashboard() {
 
     const { data: ordersData, error } = await supabase
       .from('orders')
-      .select('id, order_number, total, payment_method, platform_commission, delivery_fee, created_at, status')
+      .select('id, order_number, total, payment_method, platform_commission, original_commission, delivery_fee, created_at, status')
       .in('id', settlement.orders_included)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -293,13 +352,20 @@ export default function ProviderFinanceDashboard() {
     }
 
     setProviderId(provider.id)
-    await loadFinanceData(provider.id)
+    await loadFinanceData(provider.id, periodFilter)
     setLoading(false)
-  }, [loadFinanceData, locale, router])
+  }, [loadFinanceData, locale, router, periodFilter])
 
   useEffect(() => {
     checkAuthAndLoad()
   }, [checkAuthAndLoad])
+
+  // Reload data when period filter changes
+  useEffect(() => {
+    if (providerId) {
+      loadFinanceData(providerId, periodFilter)
+    }
+  }, [periodFilter, providerId, loadFinanceData])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Realtime Subscription
@@ -318,7 +384,7 @@ export default function ProviderFinanceDashboard() {
         table: 'orders',
         filter: `provider_id=eq.${providerId}`
       }, () => {
-        loadFinanceData(providerId)
+        loadFinanceData(providerId, periodFilter)
       })
       .on('postgres_changes', {
         event: '*',
@@ -326,19 +392,19 @@ export default function ProviderFinanceDashboard() {
         table: 'settlements',
         filter: `provider_id=eq.${providerId}`
       }, () => {
-        loadFinanceData(providerId)
+        loadFinanceData(providerId, periodFilter)
       })
       .subscribe()
 
     return () => {
       supabase.removeChannel(subscription)
     }
-  }, [providerId, loadFinanceData])
+  }, [providerId, loadFinanceData, periodFilter])
 
   const handleRefresh = async () => {
     if (!providerId) return
     setRefreshing(true)
-    await loadFinanceData(providerId)
+    await loadFinanceData(providerId, periodFilter)
     setRefreshing(false)
   }
 
@@ -347,7 +413,11 @@ export default function ProviderFinanceDashboard() {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const formatCurrency = (amount: number) => {
-    return `${Math.abs(amount).toFixed(2)} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
+    const formatted = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Math.abs(amount))
+    return `${formatted} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
   }
 
   const getSettlementDirectionIcon = (direction: string | null) => {
@@ -414,11 +484,6 @@ export default function ProviderFinanceDashboard() {
     if (value === undefined || value === null || isNaN(value)) return 0
     return value
   }
-
-  // Calculate net sales from available fields
-  const totalNetSales = financeData
-    ? safeNumber(financeData.gross_revenue) - safeNumber(financeData.total_refunds)
-    : 0
 
   // Period filter options
   const periodOptions: { key: PeriodFilter; label_ar: string; label_en: string }[] = [
@@ -867,7 +932,7 @@ export default function ProviderFinanceDashboard() {
                     <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1.5 rounded">
                       <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
                       <span className="font-bold text-slate-900">
-                        {formatCurrency(safeNumber(financeData.cod_gross_revenue) - safeNumber(financeData.cod_delivery_fees))}
+                        {formatCurrency(safeNumber(financeData.cod_net_revenue))}
                       </span>
                     </div>
                     {/* Commission */}
@@ -941,7 +1006,7 @@ export default function ProviderFinanceDashboard() {
                     <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1.5 rounded">
                       <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
                       <span className="font-bold text-slate-900">
-                        {formatCurrency(safeNumber(financeData.online_gross_revenue) - safeNumber(financeData.online_delivery_fees))}
+                        {formatCurrency(safeNumber(financeData.online_net_revenue))}
                       </span>
                     </div>
                     {/* Commission */}
@@ -1157,58 +1222,198 @@ export default function ProviderFinanceDashboard() {
                           {/* Expanded Details */}
                           {selectedSettlement?.id === settlement.id && (
                             <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
-                              {/* COD/Online Breakdown */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {/* COD Section */}
-                                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Banknote className="w-4 h-4 text-amber-600" />
-                                    <span className="font-medium text-amber-800 text-sm">
-                                      {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
-                                    </span>
-                                  </div>
-                                  <div className="space-y-1 text-xs">
-                                    <div className="flex justify-between">
-                                      <span className="text-amber-700">{locale === 'ar' ? 'عدد الطلبات:' : 'Orders:'}</span>
-                                      <span className="font-medium text-amber-900">{settlement.cod_orders_count || 0}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-amber-700">{locale === 'ar' ? 'الإيرادات:' : 'Revenue:'}</span>
-                                      <span className="font-medium text-amber-900">{formatCurrency(settlement.cod_gross_revenue || 0)}</span>
-                                    </div>
-                                    <div className="flex justify-between border-t border-amber-200 pt-1 mt-1">
-                                      <span className="text-amber-700">{locale === 'ar' ? 'عمولة مستحقة للمنصة:' : 'Commission Due:'}</span>
-                                      <span className="font-bold text-amber-900">{formatCurrency(settlement.cod_commission_owed || 0)}</span>
-                                    </div>
-                                  </div>
-                                </div>
+                              {/* COD/Online Breakdown - Database Values Only (Single Source of Truth) */}
+                              {(() => {
+                                // ✅ ALL values directly from database - NO frontend calculations
+                                const codDeliveryFees = settlement.cod_delivery_fees || 0
+                                const codOriginalCommission = settlement.cod_original_commission || 0
+                                const onlineDeliveryFees = settlement.online_delivery_fees || 0
+                                const onlineOriginalCommission = settlement.online_original_commission || 0
 
-                                {/* Online Section */}
-                                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <CreditCard className="w-4 h-4 text-blue-600" />
-                                    <span className="font-medium text-blue-800 text-sm">
-                                      {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
-                                    </span>
-                                  </div>
-                                  <div className="space-y-1 text-xs">
-                                    <div className="flex justify-between">
-                                      <span className="text-blue-700">{locale === 'ar' ? 'عدد الطلبات:' : 'Orders:'}</span>
-                                      <span className="font-medium text-blue-900">{settlement.online_orders_count || 0}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-blue-700">{locale === 'ar' ? 'الإيرادات:' : 'Revenue:'}</span>
-                                      <span className="font-medium text-blue-900">{formatCurrency(settlement.online_gross_revenue || 0)}</span>
-                                    </div>
-                                    <div className="flex justify-between border-t border-blue-200 pt-1 mt-1">
-                                      <span className="text-blue-700">{locale === 'ar' ? 'مستحق للمزود:' : 'Due to Provider:'}</span>
-                                      <span className="font-bold text-blue-900">{formatCurrency(settlement.online_payout_owed || 0)}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+                                // ✅ Net revenue from database (NOT calculated in frontend)
+                                const codNetRevenue = settlement.cod_net_revenue || 0
+                                const onlineNetRevenue = settlement.online_net_revenue || 0
 
-                              {/* Delivery Fees in Settlement */}
+                                // Grace period detection: commission is 0 but original_commission > 0
+                                const codIsGracePeriod = (settlement.cod_commission_owed || 0) === 0 && codOriginalCommission > 0
+                                const onlineIsGracePeriod = (settlement.online_platform_commission || 0) === 0 && onlineOriginalCommission > 0
+
+                                return (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {/* COD Card - Database Values */}
+                                    <div className="bg-white border-2 border-amber-200 rounded-xl overflow-hidden">
+                                      <div className="p-4">
+                                        {/* Header with Icon */}
+                                        <div className="flex items-center gap-3 mb-3 pb-2 border-b border-amber-100">
+                                          <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
+                                            <Banknote className="w-4 h-4 text-white" />
+                                          </div>
+                                          <div>
+                                            <p className="font-bold text-amber-900 text-sm">
+                                              {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
+                                            </p>
+                                            <p className="text-amber-600 text-xs">
+                                              {settlement.cod_orders_count || 0} {locale === 'ar' ? 'طلب' : 'orders'}
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        {/* Financial Details - From Database */}
+                                        <div className="space-y-1.5 text-xs">
+                                          {/* Total Sales */}
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
+                                            <span className="font-semibold text-slate-900">{formatCurrency(settlement.cod_gross_revenue || 0)}</span>
+                                          </div>
+
+                                          {/* Delivery Fees - From DB */}
+                                          {codDeliveryFees > 0 && (
+                                            <div className="flex justify-between items-center text-slate-500">
+                                              <span>(−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</span>
+                                              <span className="font-semibold">{formatCurrency(codDeliveryFees)}</span>
+                                            </div>
+                                          )}
+
+                                          {/* Divider */}
+                                          <div className="border-t border-dashed border-slate-200 my-1" />
+
+                                          {/* Net Revenue */}
+                                          <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1 rounded">
+                                            <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
+                                            <span className="font-bold text-slate-900">{formatCurrency(codNetRevenue)}</span>
+                                          </div>
+
+                                          {/* Commission - with strikethrough if grace period */}
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</span>
+                                            {codIsGracePeriod ? (
+                                              <span className="font-semibold">
+                                                <span className="text-slate-400 line-through me-1">{formatCurrency(codOriginalCommission)}</span>
+                                                <span className="text-green-600">{formatNumber(0, locale)}</span>
+                                              </span>
+                                            ) : (
+                                              <span className="font-semibold text-red-500">{formatCurrency(settlement.cod_commission_owed || 0)}</span>
+                                            )}
+                                          </div>
+
+                                          {/* Grace Period Waiver */}
+                                          {codIsGracePeriod && (
+                                            <div className="flex justify-between items-center text-green-600 bg-green-50 -mx-2 px-2 py-1 rounded">
+                                              <span className="flex items-center gap-1">
+                                                <Gift className="w-3 h-3" />
+                                                {locale === 'ar' ? 'معفى (فترة السماح)' : 'Waived (Grace Period)'}
+                                              </span>
+                                              <span className="font-semibold">+{formatCurrency(codOriginalCommission)}</span>
+                                            </div>
+                                          )}
+
+                                          {/* Final Result */}
+                                          <div className="border-t-2 border-amber-200 pt-2 mt-2">
+                                            <div className={`flex justify-between items-center py-1.5 px-2 -mx-2 rounded-lg ${
+                                              (settlement.cod_commission_owed || 0) === 0 ? 'bg-green-100' : 'bg-amber-100'
+                                            }`}>
+                                              <span className="font-bold text-slate-800 flex items-center gap-1 text-xs">
+                                                <ArrowUpRight className="w-3 h-3" />
+                                                {locale === 'ar' ? 'تدفع للمنصة' : 'You Pay'}
+                                              </span>
+                                              <span className={`font-bold ${
+                                                (settlement.cod_commission_owed || 0) === 0 ? 'text-green-700' : 'text-amber-700'
+                                              }`}>
+                                                {formatCurrency(settlement.cod_commission_owed || 0)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Online Card - Database Values (dimmed if no orders) */}
+                                    <div className={`bg-white border-2 border-blue-200 rounded-xl overflow-hidden ${(settlement.online_orders_count || 0) === 0 ? 'opacity-40' : ''}`}>
+                                      <div className="p-4">
+                                        {/* Header with Icon */}
+                                        <div className="flex items-center gap-3 mb-3 pb-2 border-b border-blue-100">
+                                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${(settlement.online_orders_count || 0) === 0 ? 'bg-slate-300' : 'bg-blue-500'}`}>
+                                            <CreditCard className="w-4 h-4 text-white" />
+                                          </div>
+                                          <div>
+                                            <p className={`font-bold text-sm ${(settlement.online_orders_count || 0) === 0 ? 'text-slate-500' : 'text-blue-900'}`}>
+                                              {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+                                            </p>
+                                            <p className={`text-xs ${(settlement.online_orders_count || 0) === 0 ? 'text-slate-400' : 'text-blue-600'}`}>
+                                              {settlement.online_orders_count || 0} {locale === 'ar' ? 'طلب' : 'orders'}
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        {/* Financial Details - From Database */}
+                                        <div className="space-y-1.5 text-xs">
+                                          {/* Total Sales */}
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
+                                            <span className="font-semibold text-slate-900">{formatCurrency(settlement.online_gross_revenue || 0)}</span>
+                                          </div>
+
+                                          {/* Delivery Fees - From DB */}
+                                          {onlineDeliveryFees > 0 && (
+                                            <div className="flex justify-between items-center text-slate-500">
+                                              <span>(−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</span>
+                                              <span className="font-semibold">{formatCurrency(onlineDeliveryFees)}</span>
+                                            </div>
+                                          )}
+
+                                          {/* Divider */}
+                                          <div className="border-t border-dashed border-slate-200 my-1" />
+
+                                          {/* Net Revenue */}
+                                          <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1 rounded">
+                                            <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
+                                            <span className="font-bold text-slate-900">{formatCurrency(onlineNetRevenue)}</span>
+                                          </div>
+
+                                          {/* Commission - with strikethrough if grace period */}
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</span>
+                                            {onlineIsGracePeriod ? (
+                                              <span className="font-semibold">
+                                                <span className="text-slate-400 line-through me-1">-{formatCurrency(onlineOriginalCommission)}</span>
+                                                <span className="text-green-600">{formatNumber(0, locale)}</span>
+                                              </span>
+                                            ) : (
+                                              <span className="font-semibold text-red-500">-{formatCurrency(settlement.online_platform_commission || 0)}</span>
+                                            )}
+                                          </div>
+
+                                          {/* Grace Period Waiver */}
+                                          {onlineIsGracePeriod && (
+                                            <div className="flex justify-between items-center text-green-600 bg-green-50 -mx-2 px-2 py-1 rounded">
+                                              <span className="flex items-center gap-1">
+                                                <Gift className="w-3 h-3" />
+                                                {locale === 'ar' ? 'معفى (فترة السماح)' : 'Waived (Grace Period)'}
+                                              </span>
+                                              <span className="font-semibold">+{formatCurrency(onlineOriginalCommission)}</span>
+                                            </div>
+                                          )}
+
+                                          {/* Final Result */}
+                                          <div className="border-t-2 border-blue-200 pt-2 mt-2">
+                                            <div className="flex justify-between items-center py-1.5 px-2 -mx-2 rounded-lg bg-green-100">
+                                              <span className="font-bold text-slate-800 flex items-center gap-1 text-xs">
+                                                <ArrowDownRight className="w-3 h-3 text-green-600" />
+                                                {locale === 'ar' ? 'المنصة تدفع لك' : 'Platform Pays You'}
+                                              </span>
+                                              <span className="font-bold text-green-700">
+                                                {formatCurrency(settlement.online_payout_owed || 0)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              })()}
+
+                              {/* Delivery Fees in Settlement - From Database */}
                               <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">

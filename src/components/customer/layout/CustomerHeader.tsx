@@ -210,6 +210,8 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
         return <X className="h-4 w-4 text-red-500" />
       case 'new_message':
         return <MessageCircle className="h-4 w-4 text-primary" />
+      case 'support_message':
+        return <AlertCircle className="h-4 w-4 text-blue-600" />
       default:
         return <Bell className="h-4 w-4 text-slate-400" />
     }
@@ -218,6 +220,11 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
   // Check if notification is a message from provider
   function isMessageNotification(notification: { type: string }) {
     return notification.type === 'new_message'
+  }
+
+  // Check if notification is a support message
+  function isSupportNotification(notification: { type: string }) {
+    return notification.type === 'support_message'
   }
 
   // Check if notification is a refund that needs confirmation
@@ -401,6 +408,20 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
                                   >
                                     <Reply className="h-3.5 w-3.5" />
                                     {locale === 'ar' ? 'رد على الرسالة' : 'Reply to Message'}
+                                  </Link>
+                                </div>
+                              )}
+
+                              {/* View Support Ticket Button */}
+                              {isSupportNotification(notification) && (
+                                <div className="mt-2">
+                                  <Link
+                                    href={`/${locale}/profile/support`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+                                  >
+                                    <Reply className="h-3.5 w-3.5" />
+                                    {locale === 'ar' ? 'عرض الشكوى والرد' : 'View & Reply to Ticket'}
                                   </Link>
                                 </div>
                               )}

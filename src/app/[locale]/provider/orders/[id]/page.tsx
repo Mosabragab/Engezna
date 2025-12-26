@@ -61,8 +61,11 @@ type Order = {
   subtotal: number
   delivery_fee: number
   discount: number
+  promo_code: string | null
   total: number
   platform_commission: number
+  original_commission: number | null
+  settlement_notes: string | null
   payment_method: string
   payment_status: string
   delivery_address: {
@@ -719,9 +722,16 @@ export default function ProviderOrderDetailPage() {
                   <span className="text-slate-900">{order.delivery_fee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                 </div>
                 {order.discount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-green-600">{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
-                    <span className="text-green-600">-{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      {locale === 'ar' ? 'الخصم' : 'Discount'}
+                      {order.promo_code && (
+                        <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                          {order.promo_code}
+                        </span>
+                      )}
+                    </span>
+                    <span>-{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-slate-200">
@@ -797,7 +807,7 @@ export default function ProviderOrderDetailPage() {
                 </div>
               )}
 
-              {/* Provider earnings info */}
+              {/* Provider earnings info - Source of Truth from Database */}
               <div className="mt-4 pt-4 border-t border-slate-200 bg-green-50 rounded-lg p-4">
                 <p className="text-sm text-slate-600 mb-2">
                   {locale === 'ar' ? 'صافي الأرباح (بعد العمولة)' : 'Net Earnings (after commission)'}
@@ -805,9 +815,40 @@ export default function ProviderOrderDetailPage() {
                 <p className="text-2xl font-bold text-green-600">
                   {(order.total - (order.platform_commission || 0)).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {locale === 'ar' ? 'عمولة المنصة:' : 'Platform commission:'} {(order.platform_commission || 0).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                </p>
+
+                {/* Smart Commission Display */}
+                <div className="text-xs mt-2">
+                  {order.platform_commission === 0 && (order.original_commission || 0) > 0 ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500">{locale === 'ar' ? 'عمولة المنصة:' : 'Platform commission:'}</span>
+                      <span className="line-through text-slate-400">
+                        {(order.original_commission || 0).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                      </span>
+                      <span className="text-green-600 font-medium">
+                        0 {locale === 'ar' ? 'ج.م' : 'EGP'}
+                      </span>
+                      <span className="text-green-500 text-[10px]">
+                        ({locale === 'ar' ? 'فترة السماح' : 'Grace period'})
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-slate-500">
+                      {locale === 'ar' ? 'عمولة المنصة:' : 'Platform commission:'} {(order.platform_commission || 0).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Settlement Notes - Financial History for Provider */}
+                {order.settlement_notes && (
+                  <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
+                    <p className="text-[10px] font-medium text-blue-800 mb-1">
+                      {locale === 'ar' ? 'تفاصيل التسوية:' : 'Settlement Details:'}
+                    </p>
+                    <pre className="text-[9px] text-blue-700 whitespace-pre-wrap font-mono">
+                      {order.settlement_notes}
+                    </pre>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

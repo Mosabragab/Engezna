@@ -1,6 +1,6 @@
 # Engezna Project Status
 
-## Last Updated: 2025-12-23 (Session 20)
+## Last Updated: 2025-12-26 (Session 22)
 
 ## Project Overview
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
@@ -14,7 +14,24 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 
 ---
 
-## Current Status: Week 7 - PWA & Store Publishing Preparation
+## Current Status: Week 8 - Financial System Refinement
+
+### Session 22 Updates (December 26, 2025)
+
+#### Settlement System Refinements
+- [x] **Database as Single Source of Truth** - All financial values from database, no frontend calculations
+- [x] **Commission Display Fix** - Fixed 22 vs 17.5 issue after refunds
+- [x] **Trigger Conflict Resolution** - Fixed `calculate_order_commission` and `generate_provider_settlement`
+- [x] **Admin Settlement Details UI** - Redesigned COD/Online cards to match provider design
+- [x] **Provider Finance Settlements Tab** - Updated card design for consistency
+- [x] **Grace Period Display** - Shows waiver indicator when commission = 0 but revenue > 0
+
+#### Key Principles Established
+1. **مصدر الحقيقة الواحد**: Database is the only source for financial calculations
+2. **Backend Calculations Only**: Frontend displays values, never calculates them
+3. **Commission Formula**: `commission = (subtotal - discount - refund) * rate`
+
+---
 
 ### Session 20 Updates (December 23, 2025)
 
