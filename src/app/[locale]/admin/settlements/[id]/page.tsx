@@ -802,9 +802,9 @@ export default function SettlementDetailPage() {
                   )
                 })()}
 
-                {/* COD/Online Breakdown - Matching Provider Finance Design */}
+                {/* COD/Online Breakdown - Using Database Values Only */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                  {/* COD Card - Matching Provider Design */}
+                  {/* COD Card - Database Values Only */}
                   <div className="bg-white border-2 border-amber-200 rounded-xl overflow-hidden">
                     <div className="p-5">
                       {/* Header with Icon */}
@@ -822,28 +822,26 @@ export default function SettlementDetailPage() {
                         </div>
                       </div>
 
-                      {/* Financial Details */}
+                      {/* Financial Details - From Database */}
                       <div className="space-y-2 text-sm">
-                        {/* Total Revenue */}
+                        {/* Total Sales */}
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-600">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</span>
+                          <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
                           <span className="font-semibold text-slate-900">
                             {formatCurrency(settlement.cod_gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                           </span>
                         </div>
 
-                        {/* Commission */}
+                        {/* Commission from database */}
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-600">
-                            {locale === 'ar' ? `عمولة المنصة (${settlement.provider?.custom_commission_rate ?? settlement.provider?.commission_rate ?? 7}%)` : `Commission (${settlement.provider?.custom_commission_rate ?? settlement.provider?.commission_rate ?? 7}%)`}
-                          </span>
+                          <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</span>
                           <span className={`font-semibold ${(settlement.cod_commission_owed || 0) === 0 ? 'text-green-600' : 'text-red-500'}`}>
                             {formatCurrency(settlement.cod_commission_owed || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                           </span>
                         </div>
 
-                        {/* Grace Period Waiver */}
-                        {settlement.provider?.commission_status === 'in_grace_period' && (settlement.cod_commission_owed || 0) === 0 && (
+                        {/* Grace Period indicator if commission is 0 but has revenue */}
+                        {(settlement.cod_commission_owed || 0) === 0 && (settlement.cod_gross_revenue || 0) > 0 && (
                           <div className="flex justify-between items-center text-green-600">
                             <span className="flex items-center gap-1">
                               <Gift className="w-3 h-3" />
@@ -872,7 +870,7 @@ export default function SettlementDetailPage() {
                     </div>
                   </div>
 
-                  {/* Online Card - Matching Provider Design */}
+                  {/* Online Card - Database Values Only */}
                   <div className="bg-white border-2 border-blue-200 rounded-xl overflow-hidden">
                     <div className="p-5">
                       {/* Header with Icon */}
@@ -890,28 +888,26 @@ export default function SettlementDetailPage() {
                         </div>
                       </div>
 
-                      {/* Financial Details */}
+                      {/* Financial Details - From Database */}
                       <div className="space-y-2 text-sm">
-                        {/* Total Revenue */}
+                        {/* Total Sales */}
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-600">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</span>
+                          <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
                           <span className="font-semibold text-slate-900">
                             {formatCurrency(settlement.online_gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                           </span>
                         </div>
 
-                        {/* Commission Deducted */}
+                        {/* Commission from database */}
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-600">
-                            {locale === 'ar' ? `عمولة المنصة (${settlement.provider?.custom_commission_rate ?? settlement.provider?.commission_rate ?? 7}%)` : `Commission (${settlement.provider?.custom_commission_rate ?? settlement.provider?.commission_rate ?? 7}%)`}
-                          </span>
+                          <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</span>
                           <span className="font-semibold text-red-500">
                             -{formatCurrency(settlement.online_platform_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                           </span>
                         </div>
 
-                        {/* Grace Period Waiver */}
-                        {settlement.provider?.commission_status === 'in_grace_period' && (settlement.online_platform_commission || 0) === 0 && (
+                        {/* Grace Period indicator */}
+                        {(settlement.online_platform_commission || 0) === 0 && (settlement.online_gross_revenue || 0) > 0 && (
                           <div className="flex justify-between items-center text-green-600">
                             <span className="flex items-center gap-1">
                               <Gift className="w-3 h-3" />

@@ -1210,58 +1210,134 @@ export default function ProviderFinanceDashboard() {
                           {/* Expanded Details */}
                           {selectedSettlement?.id === settlement.id && (
                             <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
-                              {/* COD/Online Breakdown */}
+                              {/* COD/Online Breakdown - Using Database Values Only */}
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {/* COD Section */}
-                                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Banknote className="w-4 h-4 text-amber-600" />
-                                    <span className="font-medium text-amber-800 text-sm">
-                                      {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
-                                    </span>
-                                  </div>
-                                  <div className="space-y-1 text-xs">
-                                    <div className="flex justify-between">
-                                      <span className="text-amber-700">{locale === 'ar' ? 'عدد الطلبات:' : 'Orders:'}</span>
-                                      <span className="font-medium text-amber-900">{settlement.cod_orders_count || 0}</span>
+                                {/* COD Card - Matching Overview Design (Database Values) */}
+                                <div className="bg-white border-2 border-amber-200 rounded-xl overflow-hidden">
+                                  <div className="p-4">
+                                    {/* Header with Icon */}
+                                    <div className="flex items-center gap-3 mb-3 pb-2 border-b border-amber-100">
+                                      <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
+                                        <Banknote className="w-4 h-4 text-white" />
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-amber-900 text-sm">
+                                          {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
+                                        </p>
+                                        <p className="text-amber-600 text-xs">
+                                          {settlement.cod_orders_count || 0} {locale === 'ar' ? 'طلب' : 'orders'}
+                                        </p>
+                                      </div>
                                     </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-amber-700">{locale === 'ar' ? 'الإيرادات:' : 'Revenue:'}</span>
-                                      <span className="font-medium text-amber-900">{formatCurrency(settlement.cod_gross_revenue || 0)}</span>
-                                    </div>
-                                    <div className="flex justify-between border-t border-amber-200 pt-1 mt-1">
-                                      <span className="text-amber-700">{locale === 'ar' ? 'عمولة مستحقة للمنصة:' : 'Commission Due:'}</span>
-                                      <span className="font-bold text-amber-900">{formatCurrency(settlement.cod_commission_owed || 0)}</span>
+
+                                    {/* Financial Details - From Database */}
+                                    <div className="space-y-1.5 text-xs">
+                                      {/* Total Sales */}
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
+                                        <span className="font-semibold text-slate-900">{formatCurrency(settlement.cod_gross_revenue || 0)}</span>
+                                      </div>
+
+                                      {/* Commission from database */}
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</span>
+                                        <span className={`font-semibold ${(settlement.cod_commission_owed || 0) === 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                          {formatCurrency(settlement.cod_commission_owed || 0)}
+                                        </span>
+                                      </div>
+
+                                      {/* Grace Period indicator if commission is 0 */}
+                                      {(settlement.cod_commission_owed || 0) === 0 && (settlement.cod_gross_revenue || 0) > 0 && (
+                                        <div className="flex justify-between items-center text-green-600">
+                                          <span className="flex items-center gap-1">
+                                            <Gift className="w-3 h-3" />
+                                            {locale === 'ar' ? 'معفى (فترة السماح)' : 'Waived (Grace Period)'}
+                                          </span>
+                                        </div>
+                                      )}
+
+                                      {/* Final Result */}
+                                      <div className="border-t-2 border-amber-200 pt-2 mt-2">
+                                        <div className={`flex justify-between items-center py-1.5 px-2 -mx-2 rounded-lg ${
+                                          (settlement.cod_commission_owed || 0) === 0 ? 'bg-green-100' : 'bg-amber-100'
+                                        }`}>
+                                          <span className="font-bold text-slate-800 flex items-center gap-1 text-xs">
+                                            <ArrowUpRight className="w-3 h-3" />
+                                            {locale === 'ar' ? 'تدفع للمنصة' : 'You Pay'}
+                                          </span>
+                                          <span className={`font-bold ${
+                                            (settlement.cod_commission_owed || 0) === 0 ? 'text-green-700' : 'text-amber-700'
+                                          }`}>
+                                            {formatCurrency(settlement.cod_commission_owed || 0)}
+                                          </span>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
 
-                                {/* Online Section */}
-                                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <CreditCard className="w-4 h-4 text-blue-600" />
-                                    <span className="font-medium text-blue-800 text-sm">
-                                      {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
-                                    </span>
-                                  </div>
-                                  <div className="space-y-1 text-xs">
-                                    <div className="flex justify-between">
-                                      <span className="text-blue-700">{locale === 'ar' ? 'عدد الطلبات:' : 'Orders:'}</span>
-                                      <span className="font-medium text-blue-900">{settlement.online_orders_count || 0}</span>
+                                {/* Online Card - Matching Overview Design (Database Values) */}
+                                <div className="bg-white border-2 border-blue-200 rounded-xl overflow-hidden">
+                                  <div className="p-4">
+                                    {/* Header with Icon */}
+                                    <div className="flex items-center gap-3 mb-3 pb-2 border-b border-blue-100">
+                                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                                        <CreditCard className="w-4 h-4 text-white" />
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-blue-900 text-sm">
+                                          {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+                                        </p>
+                                        <p className="text-blue-600 text-xs">
+                                          {settlement.online_orders_count || 0} {locale === 'ar' ? 'طلب' : 'orders'}
+                                        </p>
+                                      </div>
                                     </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-blue-700">{locale === 'ar' ? 'الإيرادات:' : 'Revenue:'}</span>
-                                      <span className="font-medium text-blue-900">{formatCurrency(settlement.online_gross_revenue || 0)}</span>
-                                    </div>
-                                    <div className="flex justify-between border-t border-blue-200 pt-1 mt-1">
-                                      <span className="text-blue-700">{locale === 'ar' ? 'مستحق للمزود:' : 'Due to Provider:'}</span>
-                                      <span className="font-bold text-blue-900">{formatCurrency(settlement.online_payout_owed || 0)}</span>
+
+                                    {/* Financial Details - From Database */}
+                                    <div className="space-y-1.5 text-xs">
+                                      {/* Total Sales */}
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
+                                        <span className="font-semibold text-slate-900">{formatCurrency(settlement.online_gross_revenue || 0)}</span>
+                                      </div>
+
+                                      {/* Commission from database */}
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</span>
+                                        <span className="font-semibold text-red-500">
+                                          -{formatCurrency(settlement.online_platform_commission || 0)}
+                                        </span>
+                                      </div>
+
+                                      {/* Grace Period indicator */}
+                                      {(settlement.online_platform_commission || 0) === 0 && (settlement.online_gross_revenue || 0) > 0 && (
+                                        <div className="flex justify-between items-center text-green-600">
+                                          <span className="flex items-center gap-1">
+                                            <Gift className="w-3 h-3" />
+                                            {locale === 'ar' ? 'معفى (فترة السماح)' : 'Waived (Grace Period)'}
+                                          </span>
+                                        </div>
+                                      )}
+
+                                      {/* Final Result */}
+                                      <div className="border-t-2 border-blue-200 pt-2 mt-2">
+                                        <div className="flex justify-between items-center py-1.5 px-2 -mx-2 rounded-lg bg-green-100">
+                                          <span className="font-bold text-slate-800 flex items-center gap-1 text-xs">
+                                            <ArrowDownRight className="w-3 h-3 text-green-600" />
+                                            {locale === 'ar' ? 'المنصة تدفع لك' : 'Platform Pays You'}
+                                          </span>
+                                          <span className="font-bold text-green-700">
+                                            {formatCurrency(settlement.online_payout_owed || 0)}
+                                          </span>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
 
-                              {/* Delivery Fees in Settlement */}
+                              {/* Delivery Fees in Settlement - From Database */}
                               <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
