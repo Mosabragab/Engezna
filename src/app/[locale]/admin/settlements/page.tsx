@@ -419,7 +419,7 @@ export default function AdminSettlementsPage() {
         // Exclude only orders that are explicitly on_hold, settled, or excluded
         const { data: allOrders } = await supabase
           .from('orders')
-          .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, settlement_status')
+          .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, original_commission, settlement_status')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
           .gte('created_at', startDate.toISOString())
@@ -651,7 +651,7 @@ export default function AdminSettlementsPage() {
       // Include orders that are eligible or have no settlement_status set
       const { data: allOrders } = await supabase
         .from('orders')
-        .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, settlement_status')
+        .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, original_commission, settlement_status')
         .eq('provider_id', generateForm.providerId)
         .eq('status', 'delivered')
         .gte('created_at', generateForm.periodStart)
