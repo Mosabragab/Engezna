@@ -26,6 +26,8 @@ import {
   X,
   Star,
   MessageSquare,
+  DollarSign,
+  RotateCcw,
 } from 'lucide-react'
 import { OrderChat } from '@/components/shared/OrderChat'
 import { RefundRequestModal, RefundConfirmationCard, SupportOptionsModal } from '@/components/customer/support'
@@ -136,6 +138,18 @@ type OrderItem = {
   total_price: number
 }
 
+type OrderRefund = {
+  id: string
+  amount: number
+  processed_amount: number | null
+  reason: string
+  reason_ar: string | null
+  status: 'pending' | 'approved' | 'rejected' | 'processed' | 'failed'
+  refund_type: string | null
+  created_at: string
+  processed_at: string | null
+}
+
 type Provider = {
   name_ar: string
   name_en: string
@@ -178,6 +192,7 @@ export default function OrderTrackingPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [provider, setProvider] = useState<Provider | null>(null)
+  const [refunds, setRefunds] = useState<OrderRefund[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -331,6 +346,20 @@ export default function OrderTrackingPage() {
 
     if (!providerError) {
       setProvider(providerData)
+    }
+
+    // Fetch all refunds for this order
+    const { data: allRefundsData } = await supabase
+      .from('refunds')
+      .select(`
+        id, amount, processed_amount, reason, reason_ar, status,
+        refund_type, created_at, processed_at
+      `)
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: false })
+
+    if (allRefundsData) {
+      setRefunds(allRefundsData)
     }
 
     // Fetch existing review for this order
@@ -912,6 +941,68 @@ export default function OrderTrackingPage() {
             </p>
           </div>
         </div>
+
+        {/* Refunds Section */}
+        {refunds.length > 0 && (
+          <div className="bg-amber-50 rounded-2xl border border-amber-200 p-4 mb-4">
+            <h3 className="font-semibold text-amber-800 flex items-center gap-2 mb-3">
+              <RotateCcw className="w-5 h-5" />
+              {locale === 'ar' ? 'طلبات الاسترداد' : 'Refund Requests'}
+            </h3>
+            <div className="space-y-3">
+              {refunds.map((refund) => {
+                const statusConfig: Record<string, { label_ar: string; label_en: string; color: string }> = {
+                  pending: { label_ar: 'قيد المراجعة', label_en: 'Pending Review', color: 'bg-yellow-100 text-yellow-700' },
+                  approved: { label_ar: 'تم الموافقة', label_en: 'Approved', color: 'bg-blue-100 text-blue-700' },
+                  rejected: { label_ar: 'مرفوض', label_en: 'Rejected', color: 'bg-red-100 text-red-700' },
+                  processed: { label_ar: 'تم الاسترداد', label_en: 'Refunded', color: 'bg-green-100 text-green-700' },
+                  failed: { label_ar: 'فشل', label_en: 'Failed', color: 'bg-red-100 text-red-700' },
+                }
+                const status = statusConfig[refund.status] || statusConfig.pending
+
+                return (
+                  <div key={refund.id} className="bg-white rounded-xl p-3 border border-amber-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-amber-600" />
+                        <span className="font-semibold text-amber-800">
+                          {(refund.processed_amount || refund.amount).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        </span>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                        {locale === 'ar' ? status.label_ar : status.label_en}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-slate-600 mb-2">
+                      {locale === 'ar' ? (refund.reason_ar || refund.reason) : refund.reason}
+                    </p>
+
+                    <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {new Date(refund.created_at).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')}
+                      </span>
+                      {refund.refund_type && (
+                        <span className="bg-slate-100 px-2 py-0.5 rounded">
+                          {refund.refund_type === 'full' ? (locale === 'ar' ? 'كامل' : 'Full') :
+                           refund.refund_type === 'partial' ? (locale === 'ar' ? 'جزئي' : 'Partial') :
+                           refund.refund_type}
+                        </span>
+                      )}
+                      {refund.status === 'processed' && refund.processed_at && (
+                        <span className="flex items-center gap-1 text-green-600">
+                          <CheckCircle2 className="w-3 h-3" />
+                          {locale === 'ar' ? 'تم في' : 'Completed'} {new Date(refund.processed_at).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Cancel Order Button - Only show for pending orders */}
         {canCancelOrder && (

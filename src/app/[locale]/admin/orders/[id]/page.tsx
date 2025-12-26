@@ -32,6 +32,8 @@ import {
   Printer,
   Ban,
   FileText,
+  AlertTriangle,
+  RotateCcw,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -58,6 +60,22 @@ interface OrderItem {
   total_price: string
   customizations?: unknown
   special_instructions?: string | null
+}
+
+interface OrderRefund {
+  id: string
+  amount: number
+  processed_amount: number | null
+  reason: string
+  reason_ar: string | null
+  status: 'pending' | 'approved' | 'rejected' | 'processed' | 'failed'
+  refund_type: string | null
+  provider_action: string | null
+  review_notes: string | null
+  processing_notes: string | null
+  created_at: string
+  reviewed_at: string | null
+  processed_at: string | null
 }
 
 interface OrderDetails {
@@ -129,6 +147,7 @@ interface OrderDetails {
     address: string | null
   } | null
   items: OrderItem[]
+  refunds?: OrderRefund[]
 }
 
 export default function AdminOrderDetailsPage() {
@@ -155,7 +174,22 @@ export default function AdminOrderDetailsPage() {
       const result = await response.json()
 
       if (result.success && result.data) {
-        setOrder(result.data as OrderDetails)
+        const orderData = result.data as OrderDetails
+
+        // Fetch refunds for this order
+        const supabase = createClient()
+        const { data: refundsData } = await supabase
+          .from('refunds')
+          .select(`
+            id, amount, processed_amount, reason, reason_ar, status,
+            refund_type, provider_action, review_notes, processing_notes,
+            created_at, reviewed_at, processed_at
+          `)
+          .eq('order_id', orderId)
+          .order('created_at', { ascending: false })
+
+        orderData.refunds = refundsData || []
+        setOrder(orderData)
       }
     } catch {
       // Error handled silently
@@ -617,6 +651,105 @@ export default function AdminOrderDetailsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Refunds Section */}
+              {order.refunds && order.refunds.length > 0 && (
+                <div className="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-amber-100 bg-amber-50">
+                    <h2 className="font-semibold text-amber-800 flex items-center gap-2">
+                      <RotateCcw className="w-5 h-5" />
+                      {locale === 'ar' ? 'طلبات الاسترداد' : 'Refund Requests'}
+                      <span className="bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full text-xs">
+                        {order.refunds.length}
+                      </span>
+                    </h2>
+                  </div>
+                  <div className="divide-y divide-amber-100">
+                    {order.refunds.map((refund) => {
+                      const statusConfig: Record<string, { label_ar: string; label_en: string; color: string }> = {
+                        pending: { label_ar: 'قيد المراجعة', label_en: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
+                        approved: { label_ar: 'تم الموافقة', label_en: 'Approved', color: 'bg-blue-100 text-blue-700' },
+                        rejected: { label_ar: 'مرفوض', label_en: 'Rejected', color: 'bg-red-100 text-red-700' },
+                        processed: { label_ar: 'تم التنفيذ', label_en: 'Processed', color: 'bg-green-100 text-green-700' },
+                        failed: { label_ar: 'فشل', label_en: 'Failed', color: 'bg-red-100 text-red-700' },
+                      }
+                      const status = statusConfig[refund.status] || statusConfig.pending
+
+                      return (
+                        <div key={refund.id} className="p-4 space-y-3">
+                          {/* Refund Header */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="w-4 h-4 text-amber-600" />
+                              <span className="font-semibold text-amber-800">
+                                {formatCurrency(refund.processed_amount || refund.amount, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              </span>
+                            </div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                              {locale === 'ar' ? status.label_ar : status.label_en}
+                            </span>
+                          </div>
+
+                          {/* Refund Reason */}
+                          <div className="text-sm">
+                            <span className="text-slate-500">{locale === 'ar' ? 'السبب:' : 'Reason:'}</span>
+                            <p className="text-slate-700 mt-1">
+                              {locale === 'ar' ? (refund.reason_ar || refund.reason) : refund.reason}
+                            </p>
+                          </div>
+
+                          {/* Refund Type & Action */}
+                          <div className="flex flex-wrap gap-2 text-xs">
+                            {refund.refund_type && (
+                              <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded">
+                                {refund.refund_type === 'full' ? (locale === 'ar' ? 'استرداد كامل' : 'Full Refund') :
+                                 refund.refund_type === 'partial' ? (locale === 'ar' ? 'استرداد جزئي' : 'Partial Refund') :
+                                 refund.refund_type}
+                              </span>
+                            )}
+                            {refund.provider_action && (
+                              <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded">
+                                {refund.provider_action === 'accept_full' ? (locale === 'ar' ? 'قبول كامل' : 'Full Accept') :
+                                 refund.provider_action === 'accept_partial' ? (locale === 'ar' ? 'قبول جزئي' : 'Partial Accept') :
+                                 refund.provider_action === 'reject' ? (locale === 'ar' ? 'رفض' : 'Rejected') :
+                                 refund.provider_action}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Review/Processing Notes */}
+                          {(refund.review_notes || refund.processing_notes) && (
+                            <div className="text-sm bg-slate-50 p-2 rounded">
+                              <span className="text-slate-500">{locale === 'ar' ? 'ملاحظات:' : 'Notes:'}</span>
+                              <p className="text-slate-700 mt-1">{refund.processing_notes || refund.review_notes}</p>
+                            </div>
+                          )}
+
+                          {/* Timeline */}
+                          <div className="text-xs text-slate-500 space-y-1">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {locale === 'ar' ? 'تاريخ الطلب:' : 'Requested:'} {formatDateTime(refund.created_at, locale)}
+                            </div>
+                            {refund.reviewed_at && (
+                              <div className="flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" />
+                                {locale === 'ar' ? 'تاريخ المراجعة:' : 'Reviewed:'} {formatDateTime(refund.reviewed_at, locale)}
+                              </div>
+                            )}
+                            {refund.processed_at && (
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="w-3 h-3" />
+                                {locale === 'ar' ? 'تاريخ التنفيذ:' : 'Processed:'} {formatDateTime(refund.processed_at, locale)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Sidebar Info */}
