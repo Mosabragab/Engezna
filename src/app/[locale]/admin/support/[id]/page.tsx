@@ -57,6 +57,7 @@ interface SupportTicket {
   resolved_at: string | null
   user_id: string
   provider_id: string | null
+  order_id: string | null
   assigned_to: string | null
   user: { full_name: string; email: string; phone: string } | null
   provider: { name_ar: string; name_en: string } | null
@@ -357,6 +358,22 @@ export default function AdminSupportTicketDetailPage() {
       console.error('Error updating ticket status:', error)
       alert(locale === 'ar' ? 'حدث خطأ أثناء تحديث حالة التذكرة' : 'Error updating ticket status')
     } else {
+      // When ticket is resolved, release the associated order from hold
+      if (newStatus === 'resolved' && ticket?.order_id) {
+        const { error: orderError } = await supabase
+          .from('orders')
+          .update({
+            settlement_status: 'eligible',
+            hold_reason: null,
+            hold_until: null,
+          })
+          .eq('id', ticket.order_id)
+          .eq('settlement_status', 'on_hold') // Only update if currently on hold
+
+        if (orderError) {
+          console.error('Error releasing order from hold:', orderError)
+        }
+      }
       await loadTicket()
     }
 

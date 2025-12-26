@@ -295,6 +295,17 @@ export default function AdminRefundsPage() {
 
       if (error) throw error
 
+      // Release order from hold when refund is rejected
+      await supabase
+        .from('orders')
+        .update({
+          settlement_status: 'eligible',
+          hold_reason: null,
+          hold_until: null,
+        })
+        .eq('id', refund.order_id)
+        .eq('settlement_status', 'on_hold')
+
       setShowDetailModal(false)
       setReviewNotes('')
       await loadRefunds()
@@ -325,10 +336,15 @@ export default function AdminRefundsPage() {
 
       if (error) throw error
 
-      // Update order status
+      // Update order status and release from hold
       await supabase
         .from('orders')
-        .update({ payment_status: 'refunded' })
+        .update({
+          payment_status: 'refunded',
+          settlement_status: 'eligible',
+          hold_reason: null,
+          hold_until: null,
+        })
         .eq('id', refund.order_id)
 
       setShowDetailModal(false)
