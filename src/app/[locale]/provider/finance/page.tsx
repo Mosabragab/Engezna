@@ -202,23 +202,69 @@ export default function ProviderFinanceDashboard() {
   const [loadingOrders, setLoadingOrders] = useState(false)
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Load Financial Data from SQL View
+  // Helper: Calculate date range from period filter
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const loadFinanceData = useCallback(async (provId: string) => {
-    const supabase = createClient()
+  const getDateRange = useCallback((period: PeriodFilter): { startDate: string | null; endDate: string | null } => {
+    const now = new Date()
+    const endDate = now.toISOString()
 
-    // Fetch from financial_settlement_engine view (Single Source of Truth)
+    switch (period) {
+      case 'today': {
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        return { startDate: startOfDay.toISOString(), endDate }
+      }
+      case 'week': {
+        const startOfWeek = new Date(now)
+        startOfWeek.setDate(now.getDate() - now.getDay()) // Start from Sunday
+        startOfWeek.setHours(0, 0, 0, 0)
+        return { startDate: startOfWeek.toISOString(), endDate }
+      }
+      case 'month': {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        return { startDate: startOfMonth.toISOString(), endDate }
+      }
+      case 'year': {
+        const startOfYear = new Date(now.getFullYear(), 0, 1)
+        return { startDate: startOfYear.toISOString(), endDate }
+      }
+      case 'all':
+      default:
+        return { startDate: null, endDate: null }
+    }
+  }, [])
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Load Financial Data from SQL Function (with date filtering)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const loadFinanceData = useCallback(async (provId: string, period: PeriodFilter = 'all') => {
+    const supabase = createClient()
+    const { startDate, endDate } = getDateRange(period)
+
+    // Call the get_provider_financial_data function with date parameters
     const { data: engineData, error: engineError } = await supabase
-      .from('financial_settlement_engine')
-      .select('*')
-      .eq('provider_id', provId)
+      .rpc('get_provider_financial_data', {
+        p_provider_id: provId,
+        p_start_date: startDate,
+        p_end_date: endDate
+      })
       .single()
 
     if (engineError) {
       console.error('Error loading financial engine data:', engineError)
-      // Fallback: create empty data structure
-      setFinanceData(null)
+      // Fallback: try the view without filtering
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('financial_settlement_engine')
+        .select('*')
+        .eq('provider_id', provId)
+        .single()
+
+      if (fallbackError) {
+        setFinanceData(null)
+      } else {
+        setFinanceData(fallbackData as FinancialEngineData)
+      }
     } else {
       setFinanceData(engineData as FinancialEngineData)
     }
@@ -232,7 +278,7 @@ export default function ProviderFinanceDashboard() {
       .limit(20)
 
     setSettlements((settlementsData || []) as Settlement[])
-  }, [])
+  }, [getDateRange])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Load Settlement Orders (Drill-down)
@@ -293,13 +339,20 @@ export default function ProviderFinanceDashboard() {
     }
 
     setProviderId(provider.id)
-    await loadFinanceData(provider.id)
+    await loadFinanceData(provider.id, periodFilter)
     setLoading(false)
-  }, [loadFinanceData, locale, router])
+  }, [loadFinanceData, locale, router, periodFilter])
 
   useEffect(() => {
     checkAuthAndLoad()
   }, [checkAuthAndLoad])
+
+  // Reload data when period filter changes
+  useEffect(() => {
+    if (providerId) {
+      loadFinanceData(providerId, periodFilter)
+    }
+  }, [periodFilter, providerId, loadFinanceData])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Realtime Subscription
@@ -318,7 +371,7 @@ export default function ProviderFinanceDashboard() {
         table: 'orders',
         filter: `provider_id=eq.${providerId}`
       }, () => {
-        loadFinanceData(providerId)
+        loadFinanceData(providerId, periodFilter)
       })
       .on('postgres_changes', {
         event: '*',
@@ -326,19 +379,19 @@ export default function ProviderFinanceDashboard() {
         table: 'settlements',
         filter: `provider_id=eq.${providerId}`
       }, () => {
-        loadFinanceData(providerId)
+        loadFinanceData(providerId, periodFilter)
       })
       .subscribe()
 
     return () => {
       supabase.removeChannel(subscription)
     }
-  }, [providerId, loadFinanceData])
+  }, [providerId, loadFinanceData, periodFilter])
 
   const handleRefresh = async () => {
     if (!providerId) return
     setRefreshing(true)
-    await loadFinanceData(providerId)
+    await loadFinanceData(providerId, periodFilter)
     setRefreshing(false)
   }
 
