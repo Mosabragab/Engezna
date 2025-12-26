@@ -64,6 +64,8 @@ type Order = {
   promo_code: string | null
   total: number
   platform_commission: number
+  original_commission: number | null
+  settlement_notes: string | null
   payment_method: string
   payment_status: string
   delivery_address: {
@@ -805,7 +807,7 @@ export default function ProviderOrderDetailPage() {
                 </div>
               )}
 
-              {/* Provider earnings info */}
+              {/* Provider earnings info - Source of Truth from Database */}
               <div className="mt-4 pt-4 border-t border-slate-200 bg-green-50 rounded-lg p-4">
                 <p className="text-sm text-slate-600 mb-2">
                   {locale === 'ar' ? 'صافي الأرباح (بعد العمولة)' : 'Net Earnings (after commission)'}
@@ -813,9 +815,40 @@ export default function ProviderOrderDetailPage() {
                 <p className="text-2xl font-bold text-green-600">
                   {(order.total - (order.platform_commission || 0)).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {locale === 'ar' ? 'عمولة المنصة:' : 'Platform commission:'} {(order.platform_commission || 0).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                </p>
+
+                {/* Smart Commission Display */}
+                <div className="text-xs mt-2">
+                  {order.platform_commission === 0 && (order.original_commission || 0) > 0 ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500">{locale === 'ar' ? 'عمولة المنصة:' : 'Platform commission:'}</span>
+                      <span className="line-through text-slate-400">
+                        {(order.original_commission || 0).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                      </span>
+                      <span className="text-green-600 font-medium">
+                        0 {locale === 'ar' ? 'ج.م' : 'EGP'}
+                      </span>
+                      <span className="text-green-500 text-[10px]">
+                        ({locale === 'ar' ? 'فترة السماح' : 'Grace period'})
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-slate-500">
+                      {locale === 'ar' ? 'عمولة المنصة:' : 'Platform commission:'} {(order.platform_commission || 0).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Settlement Notes - Financial History for Provider */}
+                {order.settlement_notes && (
+                  <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
+                    <p className="text-[10px] font-medium text-blue-800 mb-1">
+                      {locale === 'ar' ? 'تفاصيل التسوية:' : 'Settlement Details:'}
+                    </p>
+                    <pre className="text-[9px] text-blue-700 whitespace-pre-wrap font-mono">
+                      {order.settlement_notes}
+                    </pre>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

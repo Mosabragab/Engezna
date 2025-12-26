@@ -88,6 +88,9 @@ interface OrderDetails {
   discount: number
   promo_code: string | null
   platform_commission: number
+  original_commission: number | null
+  settlement_adjusted: boolean | null
+  settlement_notes: string | null
   payment_method: string
   payment_status: string
   created_at: string
@@ -563,10 +566,42 @@ export default function AdminOrderDetailsPage() {
                         <span>-{formatCurrency(order.discount, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-sm text-red-600">
-                      <span>{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</span>
-                      <span>{formatCurrency(order.platform_commission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                    {/* Commission Display - Source of Truth from Database */}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</span>
+                      <div className="text-end">
+                        {order.platform_commission === 0 && (order.original_commission || 0) > 0 ? (
+                          <>
+                            <span className="line-through text-slate-400 text-xs mr-2">
+                              {formatCurrency(order.original_commission || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                            </span>
+                            <span className="text-green-600 font-medium">
+                              0 {locale === 'ar' ? 'ج.م' : 'EGP'}
+                            </span>
+                            <p className="text-[10px] text-green-500">
+                              {locale === 'ar' ? '(خصم فترة السماح)' : '(Grace period discount)'}
+                            </p>
+                          </>
+                        ) : (
+                          <span className="text-red-600">
+                            {formatCurrency(order.platform_commission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Settlement Notes - Financial History */}
+                    {order.settlement_notes && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-xs font-medium text-blue-800 mb-1 flex items-center gap-1">
+                          <FileText className="w-3 h-3" />
+                          {locale === 'ar' ? 'سجل التسوية المالية' : 'Settlement History'}
+                        </p>
+                        <pre className="text-[10px] text-blue-700 whitespace-pre-wrap font-mono leading-relaxed">
+                          {order.settlement_notes}
+                        </pre>
+                      </div>
+                    )}
                     <div className="flex justify-between font-bold text-lg pt-2 border-t border-slate-200">
                       <span>{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
                       <span className="text-red-600">{formatCurrency(order.total, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
