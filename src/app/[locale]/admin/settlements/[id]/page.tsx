@@ -748,9 +748,11 @@ export default function SettlementDetailPage() {
               <>
                 {/* Orders Summary */}
                 {(() => {
-                  // ✅ Total refunds from database (NOT calculated in frontend)
+                  // ✅ ALL values from database
                   const totalRefunds = settlement.total_refunds || 0
-                  const netRevenue = (settlement.gross_revenue || 0) - totalRefunds
+                  const totalDeliveryFees = settlement.delivery_fees_collected || 0
+                  // صافي الإيرادات الخاضعة للعمولة = إجمالي - توصيل - مرتجعات
+                  const netRevenueForCommission = (settlement.gross_revenue || 0) - totalDeliveryFees - totalRefunds
 
                   return (
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
@@ -764,8 +766,8 @@ export default function SettlementDetailPage() {
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
                           {locale === 'ar'
-                            ? `نقدي: ${settlement.cod_orders_count || 0} | إلكتروني: ${settlement.online_orders_count || 0}`
-                            : `COD: ${settlement.cod_orders_count || 0} | Online: ${settlement.online_orders_count || 0}`}
+                            ? `نقدي: ${formatNumber(settlement.cod_orders_count || 0, locale)} | إلكتروني: ${formatNumber(settlement.online_orders_count || 0, locale)}`
+                            : `COD: ${formatNumber(settlement.cod_orders_count || 0, locale)} | Online: ${formatNumber(settlement.online_orders_count || 0, locale)}`}
                         </p>
                       </div>
 
@@ -777,11 +779,18 @@ export default function SettlementDetailPage() {
                         <p className="text-2xl font-bold text-slate-500">
                           {formatCurrency(settlement.gross_revenue || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                         </p>
-                        {totalRefunds > 0 && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {locale === 'ar' ? `المرتجعات: -${formatCurrency(totalRefunds, locale)}` : `Refunds: -${formatCurrency(totalRefunds, locale)}`}
-                          </p>
-                        )}
+                        <div className="text-xs mt-1 space-y-0.5">
+                          {totalRefunds > 0 && (
+                            <p className="text-red-500">
+                              {locale === 'ar' ? `المرتجعات: ${formatCurrency(totalRefunds, locale)}-` : `Refunds: -${formatCurrency(totalRefunds, locale)}`}
+                            </p>
+                          )}
+                          {totalDeliveryFees > 0 && (
+                            <p className="text-slate-400">
+                              {locale === 'ar' ? `التوصيل: ${formatCurrency(totalDeliveryFees, locale)}-` : `Delivery: -${formatCurrency(totalDeliveryFees, locale)}`}
+                            </p>
+                          )}
+                        </div>
                       </div>
 
                       <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
@@ -790,10 +799,10 @@ export default function SettlementDetailPage() {
                           <span className="text-sm text-slate-600">{locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
                         </div>
                         <p className="text-2xl font-bold text-green-600">
-                          {formatCurrency(netRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                          {formatCurrency(netRevenueForCommission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
-                          {locale === 'ar' ? 'بعد المرتجعات' : 'After refunds'}
+                          {locale === 'ar' ? 'الخاضعة للعمولة' : 'Subject to commission'}
                         </p>
                       </div>
 
@@ -944,20 +953,20 @@ export default function SettlementDetailPage() {
                         </div>
                       </div>
 
-                      {/* Online Card - Database Values */}
-                      <div className="bg-white border-2 border-blue-200 rounded-xl overflow-hidden">
+                      {/* Online Card - Database Values (dimmed if no orders) */}
+                      <div className={`bg-white border-2 border-blue-200 rounded-xl overflow-hidden ${(settlement.online_orders_count || 0) === 0 ? 'opacity-40' : ''}`}>
                         <div className="p-5">
                           {/* Header with Icon */}
                           <div className="flex items-center gap-3 mb-4 pb-3 border-b border-blue-100">
-                            <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${(settlement.online_orders_count || 0) === 0 ? 'bg-slate-300' : 'bg-blue-500'}`}>
                               <CreditCard className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                              <p className="font-bold text-blue-900">
+                              <p className={`font-bold ${(settlement.online_orders_count || 0) === 0 ? 'text-slate-500' : 'text-blue-900'}`}>
                                 {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
                               </p>
-                              <p className="text-blue-600 text-xs">
-                                {settlement.online_orders_count || 0} {locale === 'ar' ? 'طلب' : 'orders'}
+                              <p className={`text-xs ${(settlement.online_orders_count || 0) === 0 ? 'text-slate-400' : 'text-blue-600'}`}>
+                                {formatNumber(settlement.online_orders_count || 0, locale)} {locale === 'ar' ? 'طلب' : 'orders'}
                               </p>
                             </div>
                           </div>

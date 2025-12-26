@@ -1323,19 +1323,19 @@ export default function ProviderFinanceDashboard() {
                                       </div>
                                     </div>
 
-                                    {/* Online Card - Database Values */}
-                                    <div className="bg-white border-2 border-blue-200 rounded-xl overflow-hidden">
+                                    {/* Online Card - Database Values (dimmed if no orders) */}
+                                    <div className={`bg-white border-2 border-blue-200 rounded-xl overflow-hidden ${(settlement.online_orders_count || 0) === 0 ? 'opacity-40' : ''}`}>
                                       <div className="p-4">
                                         {/* Header with Icon */}
                                         <div className="flex items-center gap-3 mb-3 pb-2 border-b border-blue-100">
-                                          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${(settlement.online_orders_count || 0) === 0 ? 'bg-slate-300' : 'bg-blue-500'}`}>
                                             <CreditCard className="w-4 h-4 text-white" />
                                           </div>
                                           <div>
-                                            <p className="font-bold text-blue-900 text-sm">
+                                            <p className={`font-bold text-sm ${(settlement.online_orders_count || 0) === 0 ? 'text-slate-500' : 'text-blue-900'}`}>
                                               {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
                                             </p>
-                                            <p className="text-blue-600 text-xs">
+                                            <p className={`text-xs ${(settlement.online_orders_count || 0) === 0 ? 'text-slate-400' : 'text-blue-600'}`}>
                                               {settlement.online_orders_count || 0} {locale === 'ar' ? 'طلب' : 'orders'}
                                             </p>
                                           </div>
