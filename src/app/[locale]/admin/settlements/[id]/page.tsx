@@ -69,10 +69,14 @@ interface Settlement {
   cod_orders_count: number
   cod_gross_revenue: number
   cod_commission_owed: number
+  cod_delivery_fees: number
+  cod_original_commission: number
   // Online breakdown
   online_orders_count: number
   online_gross_revenue: number
   online_platform_commission: number
+  online_delivery_fees: number
+  online_original_commission: number
   online_payout_owed: number
   // Net calculation
   net_balance: number
@@ -802,35 +806,25 @@ export default function SettlementDetailPage() {
                   )
                 })()}
 
-                {/* COD/Online Breakdown - Full Details Aggregated from Orders */}
+                {/* COD/Online Breakdown - Database Values Only (Single Source of Truth) */}
                 {(() => {
-                  // Aggregate values from loaded orders (database values)
-                  const codOrders = orders.filter(o => o.payment_method === 'cash' || o.payment_method === 'cod')
-                  const onlineOrders = orders.filter(o => o.payment_method !== 'cash' && o.payment_method !== 'cod')
+                  // All values directly from database - NO frontend calculations
+                  const codDeliveryFees = settlement.cod_delivery_fees || 0
+                  const codOriginalCommission = settlement.cod_original_commission || 0
+                  const onlineDeliveryFees = settlement.online_delivery_fees || 0
+                  const onlineOriginalCommission = settlement.online_original_commission || 0
 
-                  // Aggregate delivery fees from orders
-                  const codDeliveryFees = codOrders.reduce((sum, o) => sum + (o.delivery_fee || 0), 0)
-                  const onlineDeliveryFees = onlineOrders.reduce((sum, o) => sum + (o.delivery_fee || 0), 0)
-
-                  // Aggregate original_commission (theoretical) from orders
-                  const codOriginalCommission = codOrders.reduce((sum, o) => sum + (o.original_commission || o.platform_commission || 0), 0)
-                  const onlineOriginalCommission = onlineOrders.reduce((sum, o) => sum + (o.original_commission || o.platform_commission || 0), 0)
-
-                  // Net revenue (gross - delivery)
+                  // Net revenue (gross - delivery) - using DB values
                   const codNetRevenue = (settlement.cod_gross_revenue || 0) - codDeliveryFees
                   const onlineNetRevenue = (settlement.online_gross_revenue || 0) - onlineDeliveryFees
 
-                  // Check if in grace period
-                  const codIsGracePeriod = (settlement.cod_commission_owed || 0) === 0 && (settlement.cod_gross_revenue || 0) > 0
-                  const onlineIsGracePeriod = (settlement.online_platform_commission || 0) === 0 && (settlement.online_gross_revenue || 0) > 0
-
-                  // Waived amounts (only meaningful if in grace period)
-                  const codWaivedAmount = codIsGracePeriod ? codOriginalCommission : 0
-                  const onlineWaivedAmount = onlineIsGracePeriod ? onlineOriginalCommission : 0
+                  // Grace period detection: commission is 0 but original_commission > 0
+                  const codIsGracePeriod = (settlement.cod_commission_owed || 0) === 0 && codOriginalCommission > 0
+                  const onlineIsGracePeriod = (settlement.online_platform_commission || 0) === 0 && onlineOriginalCommission > 0
 
                   return (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                      {/* COD Card - Full Breakdown */}
+                      {/* COD Card - Database Values */}
                       <div className="bg-white border-2 border-amber-200 rounded-xl overflow-hidden">
                         <div className="p-5">
                           {/* Header with Icon */}
@@ -848,7 +842,7 @@ export default function SettlementDetailPage() {
                             </div>
                           </div>
 
-                          {/* Financial Details - Full Breakdown */}
+                          {/* Financial Details - From Database */}
                           <div className="space-y-2 text-sm">
                             {/* Total Sales */}
                             <div className="flex justify-between items-center">
@@ -858,7 +852,7 @@ export default function SettlementDetailPage() {
                               </span>
                             </div>
 
-                            {/* Delivery Fees */}
+                            {/* Delivery Fees - From DB */}
                             {codDeliveryFees > 0 && (
                               <div className="flex justify-between items-center text-slate-500">
                                 <span className="flex items-center gap-1">
@@ -880,7 +874,7 @@ export default function SettlementDetailPage() {
                             {/* Commission - with strikethrough if grace period */}
                             <div className="flex justify-between items-center">
                               <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</span>
-                              {codIsGracePeriod && codOriginalCommission > 0 ? (
+                              {codIsGracePeriod ? (
                                 <span className="font-semibold">
                                   <span className="line-through text-slate-400 me-2">
                                     {formatCurrency(codOriginalCommission, locale)}
@@ -895,13 +889,13 @@ export default function SettlementDetailPage() {
                             </div>
 
                             {/* Waived Amount if Grace Period */}
-                            {codIsGracePeriod && codWaivedAmount > 0 && (
+                            {codIsGracePeriod && (
                               <div className="flex justify-between items-center text-green-600 bg-green-50 py-1.5 px-2 -mx-2 rounded-lg">
                                 <span className="flex items-center gap-1.5">
                                   <Gift className="w-4 h-4" />
                                   {locale === 'ar' ? 'معفى (فترة السماح)' : 'Waived (Grace Period)'}
                                 </span>
-                                <span className="font-bold">+{formatCurrency(codWaivedAmount, locale)}</span>
+                                <span className="font-bold">+{formatCurrency(codOriginalCommission, locale)}</span>
                               </div>
                             )}
 
@@ -925,7 +919,7 @@ export default function SettlementDetailPage() {
                         </div>
                       </div>
 
-                      {/* Online Card - Full Breakdown */}
+                      {/* Online Card - Database Values */}
                       <div className="bg-white border-2 border-blue-200 rounded-xl overflow-hidden">
                         <div className="p-5">
                           {/* Header with Icon */}
@@ -943,7 +937,7 @@ export default function SettlementDetailPage() {
                             </div>
                           </div>
 
-                          {/* Financial Details - Full Breakdown */}
+                          {/* Financial Details - From Database */}
                           <div className="space-y-2 text-sm">
                             {/* Total Sales */}
                             <div className="flex justify-between items-center">
@@ -953,7 +947,7 @@ export default function SettlementDetailPage() {
                               </span>
                             </div>
 
-                            {/* Delivery Fees */}
+                            {/* Delivery Fees - From DB */}
                             {onlineDeliveryFees > 0 && (
                               <div className="flex justify-between items-center text-slate-500">
                                 <span className="flex items-center gap-1">
@@ -975,7 +969,7 @@ export default function SettlementDetailPage() {
                             {/* Commission - with strikethrough if grace period */}
                             <div className="flex justify-between items-center">
                               <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</span>
-                              {onlineIsGracePeriod && onlineOriginalCommission > 0 ? (
+                              {onlineIsGracePeriod ? (
                                 <span className="font-semibold">
                                   <span className="line-through text-slate-400 me-2">
                                     -{formatCurrency(onlineOriginalCommission, locale)}
@@ -990,13 +984,13 @@ export default function SettlementDetailPage() {
                             </div>
 
                             {/* Waived Amount if Grace Period */}
-                            {onlineIsGracePeriod && onlineWaivedAmount > 0 && (
+                            {onlineIsGracePeriod && (
                               <div className="flex justify-between items-center text-green-600 bg-green-50 py-1.5 px-2 -mx-2 rounded-lg">
                                 <span className="flex items-center gap-1.5">
                                   <Gift className="w-4 h-4" />
                                   {locale === 'ar' ? 'معفى (فترة السماح)' : 'Waived (Grace Period)'}
                                 </span>
-                                <span className="font-bold">+{formatCurrency(onlineWaivedAmount, locale)}</span>
+                                <span className="font-bold">+{formatCurrency(onlineOriginalCommission, locale)}</span>
                               </div>
                             )}
 
