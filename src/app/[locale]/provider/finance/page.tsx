@@ -132,6 +132,7 @@ interface SettlementOrder {
   total: number
   payment_method: string
   platform_commission: number
+  original_commission: number | null
   delivery_fee: number
   created_at: string
   status: string
@@ -297,7 +298,7 @@ export default function ProviderFinanceDashboard() {
 
     const { data: ordersData, error } = await supabase
       .from('orders')
-      .select('id, order_number, total, payment_method, platform_commission, delivery_fee, created_at, status')
+      .select('id, order_number, total, payment_method, platform_commission, original_commission, delivery_fee, created_at, status')
       .in('id', settlement.orders_included)
       .order('created_at', { ascending: false })
       .limit(50)
