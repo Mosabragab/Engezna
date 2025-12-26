@@ -1000,10 +1000,16 @@ export default function SettlementDetailPage() {
                             </span>
                           </td>
 
-                          {/* Net for Commission = Order Value - Refund - Delivery */}
+                          {/* Net for Commission = subtotal - discount - refund (NO delivery per source of truth) */}
                           <td className="px-3 py-3">
                             {(() => {
-                              const netForCommission = (order.total || 0) - (order.refund_amount || 0) - (order.delivery_fee || 0)
+                              // Source of truth: commission_base = subtotal - discount (NO delivery)
+                              // subtotal = total - delivery_fee OR stored subtotal
+                              const subtotal = order.subtotal ?? ((order.total || 0) - (order.delivery_fee || 0))
+                              const discount = order.discount || 0
+                              const refund = order.refund_amount || 0
+                              // Net for commission = subtotal - discount - refund
+                              const netForCommission = subtotal - discount - refund
                               return (
                                 <span className="font-medium text-blue-600">
                                   {formatCurrency(Math.max(0, netForCommission), locale)}
@@ -1012,18 +1018,34 @@ export default function SettlementDetailPage() {
                             })()}
                           </td>
 
-                          {/* Commission from database */}
+                          {/* Commission calculated from source of truth formula */}
                           <td className="px-3 py-3">
-                            <div>
-                              <span className={`font-bold ${isGracePeriod ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatCurrency(order.original_commission || order.platform_commission || 0, locale)}
-                              </span>
-                              {isGracePeriod && (
-                                <p className="text-[10px] text-green-500 mt-0.5">
-                                  {locale === 'ar' ? 'فترة سماح (معفى)' : 'Grace period (waived)'}
-                                </p>
-                              )}
-                            </div>
+                            {(() => {
+                              // Source of truth formula:
+                              // commission = (subtotal - discount - refund) * rate / 100
+                              const subtotal = order.subtotal ?? ((order.total || 0) - (order.delivery_fee || 0))
+                              const discount = order.discount || 0
+                              const refund = order.refund_amount || 0
+                              const netForCommission = Math.max(0, subtotal - discount - refund)
+                              const commissionRate = settlement.provider?.custom_commission_rate
+                                ?? settlement.provider?.commission_rate
+                                ?? 7
+                              // If grace period, commission is 0
+                              const calculatedCommission = isGracePeriod ? 0 : (netForCommission * commissionRate / 100)
+
+                              return (
+                                <div>
+                                  <span className={`font-bold ${isGracePeriod ? 'text-green-600' : 'text-red-600'}`}>
+                                    {formatCurrency(calculatedCommission, locale)}
+                                  </span>
+                                  {isGracePeriod && (
+                                    <p className="text-[10px] text-green-500 mt-0.5">
+                                      {locale === 'ar' ? 'فترة سماح (معفى)' : 'Grace period (waived)'}
+                                    </p>
+                                  )}
+                                </div>
+                              )
+                            })()}
                           </td>
                         </tr>
                       )
