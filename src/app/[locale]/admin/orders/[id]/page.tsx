@@ -67,6 +67,8 @@ interface OrderDetails {
   total: number
   subtotal: number
   delivery_fee: number
+  discount: number
+  promo_code: string | null
   platform_commission: number
   payment_method: string
   payment_status: string
@@ -514,6 +516,19 @@ export default function AdminOrderDetailsPage() {
                       <span className="text-slate-600">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
                       <span className="text-slate-900">{formatCurrency(order.delivery_fee, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                     </div>
+                    {order.discount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span className="flex items-center gap-1">
+                          {locale === 'ar' ? 'الخصم' : 'Discount'}
+                          {order.promo_code && (
+                            <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                              {order.promo_code}
+                            </span>
+                          )}
+                        </span>
+                        <span>-{formatCurrency(order.discount, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm text-red-600">
                       <span>{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</span>
                       <span>{formatCurrency(order.platform_commission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>

@@ -85,6 +85,7 @@ type Order = {
   subtotal: number
   delivery_fee: number
   discount: number
+  promo_code: string | null
   total: number
   payment_method: string
   payment_status: string
@@ -883,7 +884,14 @@ export default function OrderTrackingPage() {
             </div>
             {order.discount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
-                <span>{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
+                <span className="flex items-center gap-1">
+                  {locale === 'ar' ? 'الخصم' : 'Discount'}
+                  {order.promo_code && (
+                    <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                      {order.promo_code}
+                    </span>
+                  )}
+                </span>
                 <span>-{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
               </div>
             )}

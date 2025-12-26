@@ -61,6 +61,7 @@ type Order = {
   subtotal: number
   delivery_fee: number
   discount: number
+  promo_code: string | null
   total: number
   platform_commission: number
   payment_method: string
@@ -719,9 +720,16 @@ export default function ProviderOrderDetailPage() {
                   <span className="text-slate-900">{order.delivery_fee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                 </div>
                 {order.discount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-green-600">{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
-                    <span className="text-green-600">-{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      {locale === 'ar' ? 'الخصم' : 'Discount'}
+                      {order.promo_code && (
+                        <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                          {order.promo_code}
+                        </span>
+                      )}
+                    </span>
+                    <span>-{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-slate-200">
