@@ -340,21 +340,41 @@ export default function SettlementDetailPage() {
 
     const confirmed = confirm(
       locale === 'ar'
-        ? 'هل أنت متأكد من حذف هذه التسوية؟ لا يمكن التراجع عن هذا الإجراء.'
-        : 'Are you sure you want to delete this settlement? This action cannot be undone.'
+        ? 'هل أنت متأكد من حذف هذه التسوية؟ سيتم إعادة الطلبات لحالة "قابل للتسوية". لا يمكن التراجع عن هذا الإجراء.'
+        : 'Are you sure you want to delete this settlement? Orders will be reset to "eligible" status. This action cannot be undone.'
     )
     if (!confirmed) return
 
     const supabase = createClient()
+
+    // Step 1: Reset orders linked to this settlement
+    if (settlement.orders_included && settlement.orders_included.length > 0) {
+      const { error: ordersError } = await supabase
+        .from('orders')
+        .update({
+          settlement_id: null,
+          settlement_status: 'eligible'
+        })
+        .in('id', settlement.orders_included)
+
+      if (ordersError) {
+        console.error('Error resetting orders:', ordersError)
+        alert(locale === 'ar' ? 'حدث خطأ أثناء إعادة تعيين الطلبات' : 'Error resetting orders')
+        return
+      }
+    }
+
+    // Step 2: Delete the settlement
     const { error } = await supabase
       .from('settlements')
       .delete()
       .eq('id', settlement.id)
 
     if (error) {
-      alert(locale === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting settlement')
+      console.error('Error deleting settlement:', error)
+      alert(locale === 'ar' ? 'حدث خطأ أثناء الحذف: ' + error.message : 'Error deleting settlement: ' + error.message)
     } else {
-      alert(locale === 'ar' ? 'تم حذف التسوية بنجاح' : 'Settlement deleted successfully')
+      alert(locale === 'ar' ? 'تم حذف التسوية بنجاح وإعادة الطلبات لحالة قابل للتسوية' : 'Settlement deleted successfully and orders reset to eligible')
       router.push(`/${locale}/admin/settlements`)
     }
   }
