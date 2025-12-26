@@ -419,7 +419,7 @@ export default function AdminSettlementsPage() {
         // Exclude only orders that are explicitly on_hold, settled, or excluded
         const { data: allOrders } = await supabase
           .from('orders')
-          .select('id, total, subtotal, discount, payment_method, platform_commission, settlement_status')
+          .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, settlement_status')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
           .gte('created_at', startDate.toISOString())
@@ -444,30 +444,56 @@ export default function AdminSettlementsPage() {
             .in('order_id', orderIds)
             .eq('status', 'processed')
 
-          // Calculate total refunds that affect settlement
-          const totalRefunds = (refundsData || [])
-            .filter(r => r.affects_settlement !== false)
-            .reduce((sum, r) => sum + (r.processed_amount || r.amount || 0), 0)
+          // ═══════════════════════════════════════════════════════════════════
+          // SOURCE OF TRUTH: Build refund map per order for commission adjustment
+          // Formula: adjusted_commission = (commission_base - refund) * rate
+          // ═══════════════════════════════════════════════════════════════════
+          const refundMap = new Map<string, number>()
+          if (refundsData) {
+            for (const refund of refundsData) {
+              if (refund.affects_settlement !== false) {
+                const amount = refund.processed_amount || refund.amount || 0
+                const existing = refundMap.get(refund.order_id) || 0
+                refundMap.set(refund.order_id, existing + amount)
+              }
+            }
+          }
+
+          // Calculate total refunds for settlement record
+          const totalRefunds = Array.from(refundMap.values()).reduce((sum, v) => sum + v, 0)
 
           // Separate orders by payment method
           const codOrders = orders.filter(o => o.payment_method === 'cash' || o.payment_method === 'cod')
           const onlineOrders = orders.filter(o => o.payment_method !== 'cash' && o.payment_method !== 'cod')
 
           // ═══════════════════════════════════════════════════════════════════
-          // FIXED: Use platform_commission from orders (calculated by DB trigger)
-          // This respects grace period, refund adjustments, and custom rates
+          // SOURCE OF TRUTH FORMULA (from financial_settlement_engine.sql):
+          // commission_base = subtotal - discount (NO delivery)
+          // commission = (commission_base - refund_amount) * rate / 100
           // ═══════════════════════════════════════════════════════════════════
 
-          // COD breakdown - use actual commission from orders
+          // Helper function to calculate adjusted commission per order
+          const calculateOrderCommission = (order: typeof orders[0]): number => {
+            const subtotal = order.subtotal ?? ((order.total || 0) - (order.delivery_fee || 0))
+            const discount = order.discount || 0
+            const refund = refundMap.get(order.id) || 0
+            const commissionBase = subtotal - discount
+            const netForCommission = Math.max(0, commissionBase - refund)
+            // If grace period (commission = 0), respect that
+            if (providerCommissionRate === 0) return 0
+            return netForCommission * providerCommissionRate
+          }
+
+          // COD breakdown - calculate adjusted commission per order
           const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-          const codCommissionOwed = codOrders.reduce((sum, o) => sum + (o.platform_commission || 0), 0)
+          const codCommissionOwed = codOrders.reduce((sum, o) => sum + calculateOrderCommission(o), 0)
 
-          // Online breakdown - use actual commission from orders
+          // Online breakdown - calculate adjusted commission per order
           const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-          const onlinePlatformCommission = onlineOrders.reduce((sum, o) => sum + (o.platform_commission || 0), 0)
-          const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
+          const onlinePlatformCommission = onlineOrders.reduce((sum, o) => sum + calculateOrderCommission(o), 0)
+          const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission - totalRefunds
 
-          // Calculate totals from orders (source of truth)
+          // Calculate totals (adjusted for refunds)
           const grossRevenue = codGrossRevenue + onlineGrossRevenue
           const platformCommission = codCommissionOwed + onlinePlatformCommission
 
@@ -610,7 +636,7 @@ export default function AdminSettlementsPage() {
       // Include orders that are eligible or have no settlement_status set
       const { data: allOrders } = await supabase
         .from('orders')
-        .select('id, total, subtotal, discount, payment_method, platform_commission, settlement_status')
+        .select('id, total, subtotal, discount, delivery_fee, payment_method, platform_commission, settlement_status')
         .eq('provider_id', generateForm.providerId)
         .eq('status', 'delivered')
         .gte('created_at', generateForm.periodStart)
@@ -638,25 +664,64 @@ export default function AdminSettlementsPage() {
         return
       }
 
+      // Get processed refunds for these orders
+      const orderIds = orders.map(o => o.id)
+      const { data: refundsData } = await supabase
+        .from('refunds')
+        .select('order_id, processed_amount, amount, status, affects_settlement')
+        .in('order_id', orderIds)
+        .eq('status', 'processed')
+
+      // ═══════════════════════════════════════════════════════════════════
+      // SOURCE OF TRUTH: Build refund map per order for commission adjustment
+      // Formula: adjusted_commission = (commission_base - refund) * rate
+      // ═══════════════════════════════════════════════════════════════════
+      const refundMap = new Map<string, number>()
+      if (refundsData) {
+        for (const refund of refundsData) {
+          if (refund.affects_settlement !== false) {
+            const amount = refund.processed_amount || refund.amount || 0
+            const existing = refundMap.get(refund.order_id) || 0
+            refundMap.set(refund.order_id, existing + amount)
+          }
+        }
+      }
+
+      // Calculate total refunds for settlement record
+      const totalRefunds = Array.from(refundMap.values()).reduce((sum, v) => sum + v, 0)
+
       // Separate orders by payment method
       const codOrders = orders.filter(o => o.payment_method === 'cash' || o.payment_method === 'cod')
       const onlineOrders = orders.filter(o => o.payment_method !== 'cash' && o.payment_method !== 'cod')
 
       // ═══════════════════════════════════════════════════════════════════
-      // FIXED: Use platform_commission from orders (calculated by DB trigger)
-      // This respects grace period, refund adjustments, and custom rates
+      // SOURCE OF TRUTH FORMULA (from financial_settlement_engine.sql):
+      // commission_base = subtotal - discount (NO delivery)
+      // commission = (commission_base - refund_amount) * rate / 100
       // ═══════════════════════════════════════════════════════════════════
 
-      // COD breakdown - use actual commission from orders
+      // Helper function to calculate adjusted commission per order
+      const calculateOrderCommission = (order: typeof orders[0]): number => {
+        const subtotal = order.subtotal ?? ((order.total || 0) - (order.delivery_fee || 0))
+        const discount = order.discount || 0
+        const refund = refundMap.get(order.id) || 0
+        const commissionBase = subtotal - discount
+        const netForCommission = Math.max(0, commissionBase - refund)
+        // If grace period (commission = 0), respect that
+        if (providerCommissionRate === 0) return 0
+        return netForCommission * providerCommissionRate
+      }
+
+      // COD breakdown - calculate adjusted commission per order
       const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const codCommissionOwed = codOrders.reduce((sum, o) => sum + (o.platform_commission || 0), 0)
+      const codCommissionOwed = codOrders.reduce((sum, o) => sum + calculateOrderCommission(o), 0)
 
-      // Online breakdown - use actual commission from orders
+      // Online breakdown - calculate adjusted commission per order
       const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
-      const onlinePlatformCommission = onlineOrders.reduce((sum, o) => sum + (o.platform_commission || 0), 0)
-      const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
+      const onlinePlatformCommission = onlineOrders.reduce((sum, o) => sum + calculateOrderCommission(o), 0)
+      const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission - totalRefunds
 
-      // Calculate totals from orders (source of truth)
+      // Calculate totals (adjusted for refunds)
       const grossRevenue = codGrossRevenue + onlineGrossRevenue
       const platformCommission = codCommissionOwed + onlinePlatformCommission
 
