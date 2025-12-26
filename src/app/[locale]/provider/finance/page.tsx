@@ -170,13 +170,16 @@ interface Settlement {
   cod_commission_owed: number
   cod_delivery_fees: number
   cod_original_commission: number
+  cod_net_revenue: number
   online_orders_count: number
   online_gross_revenue: number
   online_platform_commission: number
   online_delivery_fees: number
   online_original_commission: number
   online_payout_owed: number
+  online_net_revenue: number
   net_balance: number
+  total_refunds: number
   settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
   total_delivery_fees: number
   // Order IDs included in this settlement
@@ -1217,15 +1220,15 @@ export default function ProviderFinanceDashboard() {
                             <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
                               {/* COD/Online Breakdown - Database Values Only (Single Source of Truth) */}
                               {(() => {
-                                // All values directly from database - NO frontend calculations
+                                // ✅ ALL values directly from database - NO frontend calculations
                                 const codDeliveryFees = settlement.cod_delivery_fees || 0
                                 const codOriginalCommission = settlement.cod_original_commission || 0
                                 const onlineDeliveryFees = settlement.online_delivery_fees || 0
                                 const onlineOriginalCommission = settlement.online_original_commission || 0
 
-                                // Net revenue (gross - delivery) - using DB values
-                                const codNetRevenue = (settlement.cod_gross_revenue || 0) - codDeliveryFees
-                                const onlineNetRevenue = (settlement.online_gross_revenue || 0) - onlineDeliveryFees
+                                // ✅ Net revenue from database (NOT calculated in frontend)
+                                const codNetRevenue = settlement.cod_net_revenue || 0
+                                const onlineNetRevenue = settlement.online_net_revenue || 0
 
                                 // Grace period detection: commission is 0 but original_commission > 0
                                 const codIsGracePeriod = (settlement.cod_commission_owed || 0) === 0 && codOriginalCommission > 0

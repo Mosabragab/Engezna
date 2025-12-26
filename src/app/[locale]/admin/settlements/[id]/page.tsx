@@ -507,7 +507,7 @@ export default function SettlementDetailPage() {
         totalOrders: settlement.total_orders,
         grossRevenue: settlement.gross_revenue,
         platformCommission: settlement.platform_commission,
-        netPayout: settlement.net_payout || (settlement.gross_revenue - settlement.platform_commission),
+        netPayout: settlement.net_payout || 0,
         netBalance: settlement.net_balance || 0,
         settlementDirection: settlement.settlement_direction || 'balanced',
         status: settlement.status,
