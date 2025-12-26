@@ -218,11 +218,18 @@ export default function AdminSupportTicketDetailPage() {
       setNewMessage('')
       // Update ticket status to in_progress if it was open
       if (ticket?.status === 'open') {
+        // Get admin_users ID (assigned_to references admin_users.id, not profiles.id)
+        const { data: adminUser } = await supabase
+          .from('admin_users')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+
         await supabase
           .from('support_tickets')
           .update({
             status: 'in_progress',
-            assigned_to: user.id,
+            assigned_to: adminUser?.id || null,
           })
           .eq('id', ticketId)
         await loadTicket()
@@ -240,16 +247,32 @@ export default function AdminSupportTicketDetailPage() {
     if (newStatus === 'resolved') {
       updateData.resolved_at = new Date().toISOString()
     }
+
+    // Get admin_users ID if assigning (assigned_to references admin_users.id, not profiles.id)
     if (newStatus === 'in_progress' && user) {
-      updateData.assigned_to = user.id
+      const { data: adminUser } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (adminUser) {
+        updateData.assigned_to = adminUser.id
+      }
     }
+
+    console.log('Updating ticket status:', { ticketId, updateData })
 
     const { error } = await supabase
       .from('support_tickets')
       .update(updateData)
       .eq('id', ticketId)
 
-    if (!error) {
+    if (error) {
+      console.error('Error updating ticket status:', error)
+      alert(locale === 'ar' ? 'حدث خطأ أثناء تحديث حالة التذكرة' : 'Error updating ticket status')
+    } else {
+      console.log('Ticket status updated successfully')
       await loadTicket()
     }
 
