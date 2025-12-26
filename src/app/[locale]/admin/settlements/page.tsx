@@ -331,18 +331,25 @@ export default function AdminSettlementsPage() {
 
         // Get delivered orders for this provider in the period (including payment_method)
         // IMPORTANT: Use platform_commission from database (calculated by server-side trigger)
-        // Filter by settlement_status to only include eligible orders (not on_hold or excluded)
+        // Include orders that are eligible or have no settlement_status set
+        // Exclude only orders that are explicitly on_hold, settled, or excluded
         const { data: allOrders } = await supabase
           .from('orders')
           .select('id, total, subtotal, discount, payment_method, platform_commission, settlement_status')
           .eq('provider_id', provider.id)
           .eq('status', 'delivered')
-          .or('settlement_status.eq.eligible,settlement_status.is.null') // Only include eligible orders
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString())
 
+        // Filter out orders that are on_hold, settled, or excluded (client-side for reliability)
+        const eligibleOrders = (allOrders || []).filter(o =>
+          !o.settlement_status ||
+          o.settlement_status === 'eligible' ||
+          o.settlement_status === null
+        )
+
         // Filter out orders that are already in previous settlements
-        const orders = allOrders?.filter(o => !settledOrderIds.has(o.id)) || []
+        const orders = eligibleOrders.filter(o => !settledOrderIds.has(o.id))
 
         if (orders && orders.length > 0) {
           // Get processed refunds for these orders
@@ -510,18 +517,24 @@ export default function AdminSettlementsPage() {
 
       // Get delivered orders for this provider in the period (including payment_method)
       // IMPORTANT: Use platform_commission from database (calculated by server-side trigger)
-      // Filter by settlement_status to only include eligible orders (not on_hold or excluded)
+      // Include orders that are eligible or have no settlement_status set
       const { data: allOrders } = await supabase
         .from('orders')
         .select('id, total, subtotal, discount, payment_method, platform_commission, settlement_status')
         .eq('provider_id', generateForm.providerId)
         .eq('status', 'delivered')
-        .or('settlement_status.eq.eligible,settlement_status.is.null') // Only include eligible orders
         .gte('created_at', generateForm.periodStart)
         .lte('created_at', generateForm.periodEnd + 'T23:59:59')
 
+      // Filter out orders that are on_hold, settled, or excluded (client-side for reliability)
+      const eligibleOrders = (allOrders || []).filter(o =>
+        !o.settlement_status ||
+        o.settlement_status === 'eligible' ||
+        o.settlement_status === null
+      )
+
       // Filter out orders that are already in previous settlements
-      const orders = allOrders?.filter(o => !settledOrderIds.has(o.id)) || []
+      const orders = eligibleOrders.filter(o => !settledOrderIds.has(o.id))
 
       if (!orders || orders.length === 0) {
         const hasOrdersButSettled = allOrders && allOrders.length > 0 && orders.length === 0
