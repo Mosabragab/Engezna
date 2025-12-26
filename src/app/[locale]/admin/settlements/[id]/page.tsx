@@ -71,6 +71,7 @@ interface Settlement {
   cod_commission_owed: number
   cod_delivery_fees: number
   cod_original_commission: number
+  cod_net_revenue: number
   // Online breakdown
   online_orders_count: number
   online_gross_revenue: number
@@ -78,6 +79,10 @@ interface Settlement {
   online_delivery_fees: number
   online_original_commission: number
   online_payout_owed: number
+  online_net_revenue: number
+  // Totals
+  total_refunds: number
+  delivery_fees_collected: number
   // Net calculation
   net_balance: number
   settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
@@ -743,8 +748,8 @@ export default function SettlementDetailPage() {
               <>
                 {/* Orders Summary */}
                 {(() => {
-                  // Calculate total refunds from orders
-                  const totalRefunds = orders.reduce((sum, order) => sum + (order.refund_amount || 0), 0)
+                  // ✅ Total refunds from database (NOT calculated in frontend)
+                  const totalRefunds = settlement.total_refunds || 0
                   const netRevenue = (settlement.gross_revenue || 0) - totalRefunds
 
                   return (
@@ -828,15 +833,15 @@ export default function SettlementDetailPage() {
 
                 {/* COD/Online Breakdown - Database Values Only (Single Source of Truth) */}
                 {(() => {
-                  // All values directly from database - NO frontend calculations
+                  // ✅ ALL values directly from database - NO frontend calculations
                   const codDeliveryFees = settlement.cod_delivery_fees || 0
                   const codOriginalCommission = settlement.cod_original_commission || 0
                   const onlineDeliveryFees = settlement.online_delivery_fees || 0
                   const onlineOriginalCommission = settlement.online_original_commission || 0
 
-                  // Net revenue (gross - delivery) - using DB values
-                  const codNetRevenue = (settlement.cod_gross_revenue || 0) - codDeliveryFees
-                  const onlineNetRevenue = (settlement.online_gross_revenue || 0) - onlineDeliveryFees
+                  // ✅ Net revenue from database (NOT calculated in frontend)
+                  const codNetRevenue = settlement.cod_net_revenue || 0
+                  const onlineNetRevenue = settlement.online_net_revenue || 0
 
                   // Grace period detection: commission is 0 but original_commission > 0
                   const codIsGracePeriod = (settlement.cod_commission_owed || 0) === 0 && codOriginalCommission > 0

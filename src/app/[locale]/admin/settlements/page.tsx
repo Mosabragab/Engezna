@@ -484,17 +484,24 @@ export default function AdminSettlementsPage() {
             return netForCommission * providerCommissionRate
           }
 
-          // COD breakdown - calculate adjusted commission per order
+          // COD breakdown - calculate all values
           const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+          const codDeliveryFees = codOrders.reduce((sum, o) => sum + (o.delivery_fee || 0), 0)
+          const codNetRevenue = codGrossRevenue - codDeliveryFees
           const codCommissionOwed = codOrders.reduce((sum, o) => sum + calculateOrderCommission(o), 0)
+          const codOriginalCommission = codOrders.reduce((sum, o) => sum + (o.original_commission || o.platform_commission || 0), 0)
 
-          // Online breakdown - calculate adjusted commission per order
+          // Online breakdown - calculate all values
           const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+          const onlineDeliveryFees = onlineOrders.reduce((sum, o) => sum + (o.delivery_fee || 0), 0)
+          const onlineNetRevenue = onlineGrossRevenue - onlineDeliveryFees
           const onlinePlatformCommission = onlineOrders.reduce((sum, o) => sum + calculateOrderCommission(o), 0)
+          const onlineOriginalCommission = onlineOrders.reduce((sum, o) => sum + (o.original_commission || o.platform_commission || 0), 0)
           const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission - totalRefunds
 
           // Calculate totals (adjusted for refunds)
           const grossRevenue = codGrossRevenue + onlineGrossRevenue
+          const deliveryFeesCollected = codDeliveryFees + onlineDeliveryFees
           const platformCommission = codCommissionOwed + onlinePlatformCommission
 
           // ═══════════════════════════════════════════════════════════════════
@@ -517,7 +524,7 @@ export default function AdminSettlementsPage() {
             settlementDirection = 'provider_pays_platform'
           }
 
-          // Create settlement with full breakdown
+          // Create settlement with full breakdown (ALL values calculated and stored)
           const { error: insertError } = await supabase
             .from('settlements')
             .insert({
@@ -527,15 +534,23 @@ export default function AdminSettlementsPage() {
               total_orders: orders.length,
               gross_revenue: grossRevenue,
               platform_commission: platformCommission,
-              net_payout: netPayout,  // FIXED: = gross_revenue - platform_commission
+              net_payout: netPayout,
+              delivery_fees_collected: deliveryFeesCollected,
+              total_refunds: totalRefunds,
               // COD breakdown
               cod_orders_count: codOrders.length,
               cod_gross_revenue: codGrossRevenue,
+              cod_delivery_fees: codDeliveryFees,
+              cod_net_revenue: codNetRevenue,
               cod_commission_owed: codCommissionOwed,
+              cod_original_commission: codOriginalCommission,
               // Online breakdown
               online_orders_count: onlineOrders.length,
               online_gross_revenue: onlineGrossRevenue,
+              online_delivery_fees: onlineDeliveryFees,
+              online_net_revenue: onlineNetRevenue,
               online_platform_commission: onlinePlatformCommission,
+              online_original_commission: onlineOriginalCommission,
               online_payout_owed: onlinePayoutOwed,
               // Net calculation
               net_balance: netBalance,
@@ -712,29 +727,30 @@ export default function AdminSettlementsPage() {
         return netForCommission * providerCommissionRate
       }
 
-      // COD breakdown - calculate adjusted commission per order
+      // COD breakdown - calculate all values
       const codGrossRevenue = codOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const codDeliveryFees = codOrders.reduce((sum, o) => sum + (o.delivery_fee || 0), 0)
+      const codNetRevenue = codGrossRevenue - codDeliveryFees
       const codCommissionOwed = codOrders.reduce((sum, o) => sum + calculateOrderCommission(o), 0)
+      const codOriginalCommission = codOrders.reduce((sum, o) => sum + (o.original_commission || o.platform_commission || 0), 0)
 
-      // Online breakdown - calculate adjusted commission per order
+      // Online breakdown - calculate all values
       const onlineGrossRevenue = onlineOrders.reduce((sum, o) => sum + (o.total || 0), 0)
+      const onlineDeliveryFees = onlineOrders.reduce((sum, o) => sum + (o.delivery_fee || 0), 0)
+      const onlineNetRevenue = onlineGrossRevenue - onlineDeliveryFees
       const onlinePlatformCommission = onlineOrders.reduce((sum, o) => sum + calculateOrderCommission(o), 0)
+      const onlineOriginalCommission = onlineOrders.reduce((sum, o) => sum + (o.original_commission || o.platform_commission || 0), 0)
       const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission - totalRefunds
 
       // Calculate totals (adjusted for refunds)
       const grossRevenue = codGrossRevenue + onlineGrossRevenue
+      const deliveryFeesCollected = codDeliveryFees + onlineDeliveryFees
       const platformCommission = codCommissionOwed + onlinePlatformCommission
 
-      // ═══════════════════════════════════════════════════════════════════
-      // FIXED: net_payout = gross_revenue - platform_commission
-      // This is what the merchant keeps after platform takes commission
-      // ═══════════════════════════════════════════════════════════════════
+      // net_payout = gross_revenue - platform_commission
       const netPayout = grossRevenue - platformCommission
 
-      // Net balance: What platform owes provider minus what provider owes platform
-      // For COD: Provider collected cash, owes platform the commission
-      // For Online: Platform collected payment, owes provider (total - commission)
-      // Positive = Platform pays provider, Negative = Provider pays platform
+      // Net balance: Platform owes provider minus provider owes platform
       const netBalance = onlinePayoutOwed - codCommissionOwed
 
       // Determine settlement direction
@@ -745,7 +761,7 @@ export default function AdminSettlementsPage() {
         settlementDirection = 'provider_pays_platform'
       }
 
-      // Create settlement with full breakdown
+      // Create settlement with full breakdown (ALL values calculated and stored)
       const { error: insertError } = await supabase
         .from('settlements')
         .insert({
@@ -755,15 +771,23 @@ export default function AdminSettlementsPage() {
           total_orders: orders.length,
           gross_revenue: grossRevenue,
           platform_commission: platformCommission,
-          net_payout: netPayout,  // FIXED: = gross_revenue - platform_commission
+          net_payout: netPayout,
+          delivery_fees_collected: deliveryFeesCollected,
+          total_refunds: totalRefunds,
           // COD breakdown
           cod_orders_count: codOrders.length,
           cod_gross_revenue: codGrossRevenue,
+          cod_delivery_fees: codDeliveryFees,
+          cod_net_revenue: codNetRevenue,
           cod_commission_owed: codCommissionOwed,
+          cod_original_commission: codOriginalCommission,
           // Online breakdown
           online_orders_count: onlineOrders.length,
           online_gross_revenue: onlineGrossRevenue,
+          online_delivery_fees: onlineDeliveryFees,
+          online_net_revenue: onlineNetRevenue,
           online_platform_commission: onlinePlatformCommission,
+          online_original_commission: onlineOriginalCommission,
           online_payout_owed: onlinePayoutOwed,
           // Net calculation
           net_balance: netBalance,

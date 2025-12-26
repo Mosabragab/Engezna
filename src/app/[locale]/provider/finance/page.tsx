@@ -478,11 +478,6 @@ export default function ProviderFinanceDashboard() {
     return value
   }
 
-  // Calculate net sales from available fields
-  const totalNetSales = financeData
-    ? safeNumber(financeData.gross_revenue) - safeNumber(financeData.total_refunds)
-    : 0
-
   // Period filter options
   const periodOptions: { key: PeriodFilter; label_ar: string; label_en: string }[] = [
     { key: 'today', label_ar: 'اليوم', label_en: 'Today' },
