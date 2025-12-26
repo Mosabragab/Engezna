@@ -1018,34 +1018,26 @@ export default function SettlementDetailPage() {
                             })()}
                           </td>
 
-                          {/* Commission calculated from source of truth formula */}
+                          {/* Commission from database (source of truth) */}
                           <td className="px-3 py-3">
-                            {(() => {
-                              // Source of truth formula:
-                              // commission = (subtotal - discount - refund) * rate / 100
-                              const subtotal = order.subtotal ?? ((order.total || 0) - (order.delivery_fee || 0))
-                              const discount = order.discount || 0
-                              const refund = order.refund_amount || 0
-                              const netForCommission = Math.max(0, subtotal - discount - refund)
-                              const commissionRate = settlement.provider?.custom_commission_rate
-                                ?? settlement.provider?.commission_rate
-                                ?? 7
-                              // If grace period, commission is 0
-                              const calculatedCommission = isGracePeriod ? 0 : (netForCommission * commissionRate / 100)
-
-                              return (
-                                <div>
-                                  <span className={`font-bold ${isGracePeriod ? 'text-green-600' : 'text-red-600'}`}>
-                                    {formatCurrency(calculatedCommission, locale)}
-                                  </span>
-                                  {isGracePeriod && (
-                                    <p className="text-[10px] text-green-500 mt-0.5">
-                                      {locale === 'ar' ? 'فترة سماح (معفى)' : 'Grace period (waived)'}
+                            <div>
+                              <span className={`font-bold ${isGracePeriod ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(order.platform_commission || 0, locale)}
+                              </span>
+                              {isGracePeriod && (
+                                <>
+                                  <p className="text-[10px] text-green-500 mt-0.5">
+                                    {locale === 'ar' ? 'فترة سماح (معفى)' : 'Grace period (waived)'}
+                                  </p>
+                                  {(order.original_commission || 0) > 0 && (
+                                    <p className="text-[10px] text-slate-400">
+                                      {locale === 'ar' ? 'كانت ستكون: ' : 'Would be: '}
+                                      {formatCurrency(order.original_commission || 0, locale)}
                                     </p>
                                   )}
-                                </div>
-                              )
-                            })()}
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       )
