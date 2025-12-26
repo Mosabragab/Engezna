@@ -287,6 +287,26 @@ export default function AdminSupportTicketDetailPage() {
     setNewMessage('')
     await loadTicket()
 
+    // Send notification to customer if message is to customer
+    if (activeChat === 'customer' && ticket?.user_id) {
+      try {
+        await supabase.from('notifications').insert({
+          user_id: ticket.user_id,
+          type: 'support_message',
+          title: locale === 'ar' ? 'رسالة جديدة من فريق الدعم' : 'New message from Support',
+          body: locale === 'ar'
+            ? `رد على شكواك: ${ticket.subject}`
+            : `Reply to your complaint: ${ticket.subject}`,
+          data: {
+            ticket_id: ticketId,
+            ticket_number: ticket.ticket_number,
+          },
+        })
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError)
+      }
+    }
+
     // Update ticket status if it was open
     if (ticket?.status === 'open') {
       const { data: adminUser } = await supabase

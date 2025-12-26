@@ -376,41 +376,46 @@ export default function CustomerSupportPage() {
                   const StatusIcon = statusConfig.icon
 
                   return (
-                    <Card key={ticket.id} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <StatusIcon className="w-4 h-4 text-slate-400" />
-                            <span className="text-xs text-slate-400 font-mono">
-                              {ticket.ticket_number}
-                            </span>
+                    <Link key={ticket.id} href={`/${locale}/profile/support/${ticket.id}`}>
+                      <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <StatusIcon className="w-4 h-4 text-slate-400" />
+                              <span className="text-xs text-slate-400 font-mono">
+                                {ticket.ticket_number}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={statusConfig.color}>
+                                {isArabic ? statusConfig.label_ar : statusConfig.label_en}
+                              </Badge>
+                              {isArabic ? <ChevronLeft className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                            </div>
                           </div>
-                          <Badge className={statusConfig.color}>
-                            {isArabic ? statusConfig.label_ar : statusConfig.label_en}
-                          </Badge>
-                        </div>
 
-                        <h4 className="font-semibold text-slate-900 mb-1">
-                          {ticket.subject}
-                        </h4>
+                          <h4 className="font-semibold text-slate-900 mb-1">
+                            {ticket.subject}
+                          </h4>
 
-                        {ticket.description && (
-                          <p className="text-sm text-slate-600 mb-3 line-clamp-2">
-                            {ticket.description}
-                          </p>
-                        )}
-
-                        <div className="flex items-center justify-between text-xs text-slate-400">
-                          <span>{formatDate(ticket.created_at)}</span>
-                          {ticket.order && (
-                            <span>
-                              {isArabic ? 'طلب #' : 'Order #'}
-                              {ticket.order.order_number}
-                            </span>
+                          {ticket.description && (
+                            <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                              {ticket.description}
+                            </p>
                           )}
-                        </div>
-                      </CardContent>
-                    </Card>
+
+                          <div className="flex items-center justify-between text-xs text-slate-400">
+                            <span>{formatDate(ticket.created_at)}</span>
+                            {ticket.order && (
+                              <span>
+                                {isArabic ? 'طلب #' : 'Order #'}
+                                {ticket.order.order_number}
+                              </span>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   )
                 })}
               </div>
