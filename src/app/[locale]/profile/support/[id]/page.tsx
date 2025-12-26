@@ -222,7 +222,7 @@ export default function CustomerTicketDetailPage() {
 
   if (authLoading || loading) {
     return (
-      <CustomerLayout showBottomNav={false}>
+      <CustomerLayout showBottomNav={true}>
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
@@ -232,7 +232,7 @@ export default function CustomerTicketDetailPage() {
 
   if (!ticket) {
     return (
-      <CustomerLayout showBottomNav={false}>
+      <CustomerLayout showBottomNav={true}>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
@@ -252,8 +252,8 @@ export default function CustomerTicketDetailPage() {
   const StatusIcon = statusConfig.icon
 
   return (
-    <CustomerLayout showBottomNav={false}>
-      <div className="flex flex-col h-screen bg-slate-50">
+    <CustomerLayout showBottomNav={true}>
+      <div className="flex flex-col min-h-screen bg-slate-50 pb-20">
         {/* Header */}
         <div className="bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-10">
           <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
