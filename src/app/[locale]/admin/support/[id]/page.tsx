@@ -84,14 +84,13 @@ export default function AdminSupportTicketDetailPage() {
   const loadTicket = useCallback(async () => {
     const supabase = createClient()
 
-    // Load ticket details
+    // Load ticket details - first get basic ticket data
     const { data: ticketData, error: ticketError } = await supabase
       .from('support_tickets')
       .select(`
         *,
         user:profiles!support_tickets_user_id_fkey(full_name, email, phone),
-        provider:providers(name_ar, name_en),
-        assignee:profiles!support_tickets_assigned_to_fkey(full_name)
+        provider:providers(name_ar, name_en)
       `)
       .eq('id', ticketId)
       .single()
@@ -101,7 +100,21 @@ export default function AdminSupportTicketDetailPage() {
       return
     }
 
-    setTicket(ticketData as SupportTicket)
+    // Get assignee separately if assigned_to exists
+    let assigneeData = null
+    if (ticketData?.assigned_to) {
+      const { data: assignee } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', ticketData.assigned_to)
+        .single()
+      assigneeData = assignee
+    }
+
+    setTicket({
+      ...ticketData,
+      assignee: assigneeData,
+    } as SupportTicket)
 
     // Load messages
     const { data: messagesData } = await supabase
