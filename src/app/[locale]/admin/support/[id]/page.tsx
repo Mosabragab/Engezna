@@ -205,6 +205,8 @@ export default function AdminSupportTicketDetailPage() {
     setSendingMessage(true)
     const supabase = createClient()
 
+    console.log('Sending message:', { ticketId, message: newMessage.trim() })
+
     const { error } = await supabase
       .from('ticket_messages')
       .insert({
@@ -214,26 +216,36 @@ export default function AdminSupportTicketDetailPage() {
         message: newMessage.trim(),
       })
 
-    if (!error) {
-      setNewMessage('')
-      // Update ticket status to in_progress if it was open
-      if (ticket?.status === 'open') {
-        // Get admin_users ID (assigned_to references admin_users.id, not profiles.id)
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('id')
-          .eq('user_id', user.id)
-          .single()
+    if (error) {
+      console.error('Error sending message:', error)
+      alert(locale === 'ar' ? 'حدث خطأ أثناء إرسال الرسالة' : 'Error sending message')
+      setSendingMessage(false)
+      return
+    }
 
-        await supabase
-          .from('support_tickets')
-          .update({
-            status: 'in_progress',
-            assigned_to: adminUser?.id || null,
-          })
-          .eq('id', ticketId)
-        await loadTicket()
-      }
+    console.log('Message sent successfully')
+    setNewMessage('')
+
+    // Reload messages to show the new one
+    await loadTicket()
+
+    // Update ticket status to in_progress if it was open
+    if (ticket?.status === 'open') {
+      // Get admin_users ID (assigned_to references admin_users.id, not profiles.id)
+      const { data: adminUser } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      await supabase
+        .from('support_tickets')
+        .update({
+          status: 'in_progress',
+          assigned_to: adminUser?.id || null,
+        })
+        .eq('id', ticketId)
+      await loadTicket()
     }
 
     setSendingMessage(false)
