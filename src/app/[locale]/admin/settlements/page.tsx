@@ -174,7 +174,7 @@ export default function AdminSettlementsPage() {
   async function loadData(supabase: ReturnType<typeof createClient>) {
     setDataLoading(true)
     // Load settlements with provider commission rates
-    const { data: settlementsData } = await supabase
+    const { data: settlementsData, error: settlementsError } = await supabase
       .from('settlements')
       .select(`
         *,
@@ -182,6 +182,12 @@ export default function AdminSettlementsPage() {
       `)
       .order('created_at', { ascending: false })
       .limit(100)
+
+    if (settlementsError) {
+      console.error('Error loading settlements:', settlementsError)
+    }
+
+    console.log('Loaded settlements:', settlementsData?.length || 0, settlementsData)
 
     const settlementsTyped = (settlementsData || []) as unknown as Settlement[]
     setSettlements(settlementsTyped)
@@ -277,10 +283,15 @@ export default function AdminSettlementsPage() {
       }
 
       // Get all order IDs already included in previous settlements
-      const { data: existingSettlements } = await supabase
+      const { data: existingSettlements, error: existingError } = await supabase
         .from('settlements')
-        .select('orders_included')
+        .select('id, orders_included, status, created_at')
         .not('orders_included', 'is', null)
+
+      console.log('[Weekly] Existing settlements:', existingSettlements?.length || 0, existingSettlements)
+      if (existingError) {
+        console.error('[Weekly] Error fetching existing settlements:', existingError)
+      }
 
       // Collect all order IDs that are already in settlements
       const settledOrderIds = new Set<string>()
@@ -293,6 +304,7 @@ export default function AdminSettlementsPage() {
           }
         }
       }
+      console.log('[Weekly] Settled order IDs:', settledOrderIds.size)
 
       let createdCount = 0
       const DEFAULT_COMMISSION_RATE = 0.07 // 7% max as fallback
@@ -498,10 +510,15 @@ export default function AdminSettlementsPage() {
       }
 
       // Get all order IDs already included in previous settlements
-      const { data: existingSettlements } = await supabase
+      const { data: existingSettlements, error: existingError } = await supabase
         .from('settlements')
-        .select('orders_included')
+        .select('id, orders_included, status, created_at')
         .not('orders_included', 'is', null)
+
+      console.log('[Custom] Existing settlements:', existingSettlements?.length || 0, existingSettlements)
+      if (existingError) {
+        console.error('[Custom] Error fetching existing settlements:', existingError)
+      }
 
       // Collect all order IDs that are already in settlements
       const settledOrderIds = new Set<string>()
@@ -514,6 +531,7 @@ export default function AdminSettlementsPage() {
           }
         }
       }
+      console.log('[Custom] Settled order IDs:', settledOrderIds.size, Array.from(settledOrderIds))
 
       // Get delivered orders for this provider in the period (including payment_method)
       // IMPORTANT: Use platform_commission from database (calculated by server-side trigger)
