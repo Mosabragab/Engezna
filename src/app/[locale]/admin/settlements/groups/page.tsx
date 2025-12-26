@@ -18,6 +18,8 @@ import {
   XCircle,
   Users,
   Shield,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react'
 
 interface SettlementGroup {
@@ -55,6 +57,8 @@ export default function SettlementGroupsPage() {
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<SettlementGroup | null>(null)
   const [editingGroup, setEditingGroup] = useState<SettlementGroup | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Form states
   const [formNameAr, setFormNameAr] = useState('')
@@ -118,54 +122,77 @@ export default function SettlementGroupsPage() {
   }, [checkAuth])
 
   async function handleSaveGroup() {
+    setSaving(true)
+    setActionMessage(null)
     const supabase = createClient()
 
-    if (editingGroup) {
-      const { error } = await supabase
-        .from('settlement_groups')
-        .update({
-          name_ar: formNameAr,
-          name_en: formNameEn,
-          description_ar: formDescAr || null,
-          description_en: formDescEn || null,
-          frequency: formFrequency,
-          is_default: formIsDefault,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', editingGroup.id)
+    try {
+      if (editingGroup) {
+        const { error } = await supabase
+          .from('settlement_groups')
+          .update({
+            name_ar: formNameAr,
+            name_en: formNameEn,
+            description_ar: formDescAr || null,
+            description_en: formDescEn || null,
+            frequency: formFrequency,
+            is_default: formIsDefault,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingGroup.id)
 
-      if (!error) {
+        if (error) throw error
+
         if (formIsDefault) {
           await supabase
             .from('settlement_groups')
             .update({ is_default: false })
             .neq('id', editingGroup.id)
         }
+
+        setActionMessage({
+          type: 'success',
+          text: isRTL ? 'تم تحديث المجموعة بنجاح' : 'Group updated successfully'
+        })
         loadData()
         resetForm()
-      }
-    } else {
-      const { error } = await supabase
-        .from('settlement_groups')
-        .insert({
-          name_ar: formNameAr,
-          name_en: formNameEn,
-          description_ar: formDescAr || null,
-          description_en: formDescEn || null,
-          frequency: formFrequency,
-          is_default: formIsDefault,
-        })
+      } else {
+        const { error } = await supabase
+          .from('settlement_groups')
+          .insert({
+            name_ar: formNameAr,
+            name_en: formNameEn,
+            description_ar: formDescAr || null,
+            description_en: formDescEn || null,
+            frequency: formFrequency,
+            is_default: formIsDefault,
+          })
 
-      if (!error) {
+        if (error) throw error
+
         if (formIsDefault) {
           await supabase
             .from('settlement_groups')
             .update({ is_default: false })
             .neq('name_ar', formNameAr)
         }
+
+        setActionMessage({
+          type: 'success',
+          text: isRTL ? 'تم إضافة المجموعة بنجاح' : 'Group added successfully'
+        })
         loadData()
         resetForm()
       }
+    } catch (error) {
+      console.error('Error saving group:', error)
+      setActionMessage({
+        type: 'error',
+        text: isRTL ? 'حدث خطأ أثناء حفظ المجموعة' : 'Error saving group'
+      })
+    } finally {
+      setSaving(false)
+      setTimeout(() => setActionMessage(null), 3000)
     }
   }
 
@@ -293,8 +320,16 @@ export default function SettlementGroupsPage() {
 
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
           <div className="space-y-6">
+            {/* Back Button */}
+            <Link href={`/${locale}/admin/settlements`}>
+              <Button variant="ghost" className={`gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+                {isRTL ? 'العودة للتسويات' : 'Back to Settlements'}
+              </Button>
+            </Link>
+
             {/* Header Actions */}
-            <div className="flex justify-between items-center">
+            <div className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-primary" />
                 <span className="text-sm text-slate-600">
@@ -455,6 +490,32 @@ export default function SettlementGroupsPage() {
 
               <div>
                 <label className="block text-sm font-medium mb-1">
+                  {isRTL ? 'الوصف بالعربية (اختياري)' : 'Description (Arabic) - Optional'}
+                </label>
+                <input
+                  type="text"
+                  value={formDescAr}
+                  onChange={(e) => setFormDescAr(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="وصف المجموعة"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  {isRTL ? 'الوصف بالإنجليزية (اختياري)' : 'Description (English) - Optional'}
+                </label>
+                <input
+                  type="text"
+                  value={formDescEn}
+                  onChange={(e) => setFormDescEn(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Group description"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
                   {isRTL ? 'دورة التسوية' : 'Settlement Frequency'}
                 </label>
                 <select
@@ -483,14 +544,35 @@ export default function SettlementGroupsPage() {
             </div>
 
             <div className="flex gap-3 mt-6">
-              <Button variant="outline" onClick={resetForm} className="flex-1">
+              <Button variant="outline" onClick={resetForm} className="flex-1" disabled={saving}>
                 {isRTL ? 'إلغاء' : 'Cancel'}
               </Button>
-              <Button onClick={handleSaveGroup} className="flex-1" disabled={!formNameAr || !formNameEn}>
-                {isRTL ? 'حفظ' : 'Save'}
+              <Button onClick={handleSaveGroup} className="flex-1" disabled={!formNameAr || !formNameEn || saving}>
+                {saving ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    {isRTL ? 'جاري الحفظ...' : 'Saving...'}
+                  </span>
+                ) : (
+                  isRTL ? 'حفظ' : 'Save'
+                )}
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {actionMessage && (
+        <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 ${
+          actionMessage.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {actionMessage.type === 'success' ? (
+            <CheckCircle className="w-5 h-5" />
+          ) : (
+            <XCircle className="w-5 h-5" />
+          )}
+          {actionMessage.text}
         </div>
       )}
 
