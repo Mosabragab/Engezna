@@ -913,7 +913,7 @@ export default function SettlementDetailPage() {
                                   <span className="line-through text-slate-400 me-2">
                                     {formatCurrency(codOriginalCommission, locale)}
                                   </span>
-                                  <span className="text-green-600">0 {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                                  <span className="text-green-600">{formatNumber(0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                                 </span>
                               ) : (
                                 <span className={`font-semibold ${(settlement.cod_commission_owed || 0) === 0 ? 'text-green-600' : 'text-red-500'}`}>
@@ -1008,7 +1008,7 @@ export default function SettlementDetailPage() {
                                   <span className="line-through text-slate-400 me-2">
                                     -{formatCurrency(onlineOriginalCommission, locale)}
                                   </span>
-                                  <span className="text-green-600">0 {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                                  <span className="text-green-600">{formatNumber(0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                                 </span>
                               ) : (
                                 <span className="font-semibold text-red-500">

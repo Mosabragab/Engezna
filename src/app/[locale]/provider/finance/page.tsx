@@ -413,7 +413,11 @@ export default function ProviderFinanceDashboard() {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const formatCurrency = (amount: number) => {
-    return `${Math.abs(amount).toFixed(2)} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
+    const formatted = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Math.abs(amount))
+    return `${formatted} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
   }
 
   const getSettlementDirectionIcon = (direction: string | null) => {
@@ -1285,7 +1289,7 @@ export default function ProviderFinanceDashboard() {
                                             {codIsGracePeriod ? (
                                               <span className="font-semibold">
                                                 <span className="text-slate-400 line-through me-1">{formatCurrency(codOriginalCommission)}</span>
-                                                <span className="text-green-600">0</span>
+                                                <span className="text-green-600">{formatNumber(0, locale)}</span>
                                               </span>
                                             ) : (
                                               <span className="font-semibold text-red-500">{formatCurrency(settlement.cod_commission_owed || 0)}</span>
@@ -1372,7 +1376,7 @@ export default function ProviderFinanceDashboard() {
                                             {onlineIsGracePeriod ? (
                                               <span className="font-semibold">
                                                 <span className="text-slate-400 line-through me-1">-{formatCurrency(onlineOriginalCommission)}</span>
-                                                <span className="text-green-600">0</span>
+                                                <span className="text-green-600">{formatNumber(0, locale)}</span>
                                               </span>
                                             ) : (
                                               <span className="font-semibold text-red-500">-{formatCurrency(settlement.online_platform_commission || 0)}</span>
