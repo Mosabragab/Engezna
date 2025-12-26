@@ -497,7 +497,7 @@ export default function AdminSettlementsPage() {
           const onlineNetRevenue = onlineGrossRevenue - onlineDeliveryFees
           const onlinePlatformCommission = onlineOrders.reduce((sum, o) => sum + calculateOrderCommission(o), 0)
           const onlineOriginalCommission = onlineOrders.reduce((sum, o) => sum + (o.original_commission || o.platform_commission || 0), 0)
-          const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission - totalRefunds
+          const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
 
           // Calculate totals (adjusted for refunds)
           const grossRevenue = codGrossRevenue + onlineGrossRevenue
@@ -740,7 +740,7 @@ export default function AdminSettlementsPage() {
       const onlineNetRevenue = onlineGrossRevenue - onlineDeliveryFees
       const onlinePlatformCommission = onlineOrders.reduce((sum, o) => sum + calculateOrderCommission(o), 0)
       const onlineOriginalCommission = onlineOrders.reduce((sum, o) => sum + (o.original_commission || o.platform_commission || 0), 0)
-      const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission - totalRefunds
+      const onlinePayoutOwed = onlineGrossRevenue - onlinePlatformCommission
 
       // Calculate totals (adjusted for refunds)
       const grossRevenue = codGrossRevenue + onlineGrossRevenue
