@@ -82,8 +82,12 @@ export function AdminSidebar({
     return hasResource(resource)
   }
 
-  // Main navigation items
-  const mainNavItems: NavItem[] = [
+  // ═══════════════════════════════════════════════════════════════════════════
+  // NAVIGATION GROUPS - المجموعات المنظمة (5 مجموعات)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // 1. العمليات (Operations) - الأكثر استخداماً
+  const operationsNavItems: NavItem[] = [
     {
       icon: Home,
       label: { ar: 'الرئيسية', en: 'Dashboard' },
@@ -109,9 +113,13 @@ export function AdminSidebar({
       path: `/${locale}/admin/customers`,
       resource: 'customers',
     },
+  ]
+
+  // 2. المالية (Financial) - مجمعة معاً لأهميتها
+  const financialNavItems: NavItem[] = [
     {
       icon: Wallet,
-      label: { ar: 'المالية', en: 'Finance' },
+      label: { ar: 'الإدارة المالية', en: 'Financial Overview' },
       path: `/${locale}/admin/finance`,
       resource: 'finance',
     },
@@ -122,17 +130,21 @@ export function AdminSidebar({
       resource: 'finance',
     },
     {
-      icon: BarChart3,
-      label: { ar: 'التحليلات', en: 'Analytics' },
-      path: `/${locale}/admin/analytics`,
-      resource: 'analytics',
-    },
-    {
       icon: Scale,
       label: { ar: 'مركز النزاعات', en: 'Resolution Center' },
       path: `/${locale}/admin/resolution-center`,
       badge: (openTickets + pendingRefunds) > 0 ? (openTickets + pendingRefunds).toString() : undefined,
       resource: 'disputes',
+    },
+  ]
+
+  // 3. التسويق (Marketing & Growth)
+  const marketingNavItems: NavItem[] = [
+    {
+      icon: BarChart3,
+      label: { ar: 'التحليلات', en: 'Analytics' },
+      path: `/${locale}/admin/analytics`,
+      resource: 'analytics',
     },
     {
       icon: MapPin,
@@ -155,7 +167,7 @@ export function AdminSidebar({
     },
   ]
 
-  // Team & Communication navigation items
+  // 4. الفريق والتواصل (Team & Communication)
   const teamNavItems: NavItem[] = [
     {
       icon: UserCog,
@@ -192,7 +204,7 @@ export function AdminSidebar({
     },
   ]
 
-  // System navigation items
+  // 5. النظام (System)
   const systemNavItems: NavItem[] = [
     {
       icon: Key,
@@ -220,9 +232,12 @@ export function AdminSidebar({
     },
   ]
 
+  // ═══════════════════════════════════════════════════════════════════════════
   // تصفية العناصر حسب الصلاحيات
-  // إذا كان isSuperAdmin، نعرض كل العناصر
-  const filteredMainNavItems = isSuperAdmin ? mainNavItems : mainNavItems.filter(item => canAccess(item.resource))
+  // ═══════════════════════════════════════════════════════════════════════════
+  const filteredOperationsNavItems = isSuperAdmin ? operationsNavItems : operationsNavItems.filter(item => canAccess(item.resource))
+  const filteredFinancialNavItems = isSuperAdmin ? financialNavItems : financialNavItems.filter(item => canAccess(item.resource))
+  const filteredMarketingNavItems = isSuperAdmin ? marketingNavItems : marketingNavItems.filter(item => canAccess(item.resource))
   const filteredTeamNavItems = isSuperAdmin ? teamNavItems : teamNavItems.filter(item => canAccess(item.resource))
   const filteredSystemNavItems = isSuperAdmin ? systemNavItems : systemNavItems.filter(item => canAccess(item.resource))
 
@@ -309,39 +324,68 @@ export function AdminSidebar({
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-6 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
             </div>
           ) : (
             <>
-              {/* Main Navigation */}
-              {filteredMainNavItems.length > 0 && (
-                <div className="space-y-1">
-                  {filteredMainNavItems.map(renderNavItem)}
+              {/* 1. العمليات (Operations) */}
+              {filteredOperationsNavItems.length > 0 && (
+                <div>
+                  <p className="px-4 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    {locale === 'ar' ? 'العمليات' : 'Operations'}
+                  </p>
+                  <div className="space-y-0.5">
+                    {filteredOperationsNavItems.map(renderNavItem)}
+                  </div>
                 </div>
               )}
 
-              {/* Team & Communication Section */}
+              {/* 2. المالية (Financial) */}
+              {filteredFinancialNavItems.length > 0 && (
+                <div>
+                  <p className="px-4 py-1.5 text-xs font-semibold text-amber-600 uppercase tracking-wider">
+                    {locale === 'ar' ? 'المالية' : 'Financial'}
+                  </p>
+                  <div className="space-y-0.5">
+                    {filteredFinancialNavItems.map(renderNavItem)}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. التسويق (Marketing) */}
+              {filteredMarketingNavItems.length > 0 && (
+                <div>
+                  <p className="px-4 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    {locale === 'ar' ? 'التسويق' : 'Marketing'}
+                  </p>
+                  <div className="space-y-0.5">
+                    {filteredMarketingNavItems.map(renderNavItem)}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. الفريق والتواصل (Team & Communication) */}
               {filteredTeamNavItems.length > 0 && (
                 <div>
-                  <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    {locale === 'ar' ? 'الفريق والتواصل' : 'Team & Communication'}
+                  <p className="px-4 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    {locale === 'ar' ? 'الفريق' : 'Team'}
                   </p>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {filteredTeamNavItems.map(renderNavItem)}
                   </div>
                 </div>
               )}
 
-              {/* System Section */}
+              {/* 5. النظام (System) */}
               {filteredSystemNavItems.length > 0 && (
                 <div>
-                  <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <p className="px-4 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     {locale === 'ar' ? 'النظام' : 'System'}
                   </p>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {filteredSystemNavItems.map(renderNavItem)}
                   </div>
                 </div>
