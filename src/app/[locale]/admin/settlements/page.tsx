@@ -31,6 +31,8 @@ import {
   X,
   Users,
   Download,
+  PauseCircle,
+  FileWarning,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -89,6 +91,23 @@ interface Provider {
   city_id: string | null
 }
 
+interface HeldOrder {
+  id: string
+  order_number: string
+  provider_id: string
+  provider: {
+    name_ar: string
+    name_en: string
+  } | null
+  total: number
+  platform_commission: number
+  hold_reason: string | null
+  hold_until: string | null
+  created_at: string
+  status: string
+  settlement_status: string
+}
+
 type FilterStatus = 'all' | 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
 
 export default function AdminSettlementsPage() {
@@ -138,7 +157,13 @@ export default function AdminSettlementsPage() {
     pendingCount: 0,
     overdueCount: 0,
     paidCount: 0,
+    heldOrdersCount: 0,
+    heldOrdersValue: 0,
   })
+
+  // Held orders state
+  const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([])
+  const [showHeldOrders, setShowHeldOrders] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -200,6 +225,28 @@ export default function AdminSettlementsPage() {
 
     setProviders((providersData || []) as Provider[])
 
+    // Load held orders (orders with settlement_status = 'on_hold')
+    const { data: heldOrdersData } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        order_number,
+        provider_id,
+        provider:providers(name_ar, name_en),
+        total,
+        platform_commission,
+        hold_reason,
+        hold_until,
+        created_at,
+        status,
+        settlement_status
+      `)
+      .eq('settlement_status', 'on_hold')
+      .order('created_at', { ascending: false })
+
+    const heldOrdersTyped = (heldOrdersData || []) as unknown as HeldOrder[]
+    setHeldOrders(heldOrdersTyped)
+
     // Calculate stats - use net_amount_due if available, otherwise fall back to platform_commission
     const pending = settlementsTyped.filter(s => s.status === 'pending' || s.status === 'partially_paid')
     const paid = settlementsTyped.filter(s => s.status === 'paid')
@@ -213,6 +260,9 @@ export default function AdminSettlementsPage() {
       return Math.max(0, due - paid)
     }
 
+    // Calculate held orders value
+    const heldOrdersValue = heldOrdersTyped.reduce((sum, o) => sum + (o.total || 0), 0)
+
     setStats({
       totalPending: pending.reduce((sum, s) => sum + getAmountDue(s), 0),
       totalOverdue: overdue.reduce((sum, s) => sum + getAmountDue(s), 0),
@@ -220,8 +270,30 @@ export default function AdminSettlementsPage() {
       pendingCount: pending.length,
       overdueCount: overdue.length,
       paidCount: paid.length,
+      heldOrdersCount: heldOrdersTyped.length,
+      heldOrdersValue: heldOrdersValue,
     })
     setDataLoading(false)
+  }
+
+  // Release order from hold (make it eligible for settlement)
+  async function handleReleaseOrder(orderId: string) {
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        settlement_status: 'eligible',
+        hold_reason: null,
+        hold_until: null,
+      })
+      .eq('id', orderId)
+
+    if (error) {
+      alert(locale === 'ar' ? 'حدث خطأ أثناء تحرير الطلب' : 'Error releasing order')
+    } else {
+      alert(locale === 'ar' ? 'تم تحرير الطلب بنجاح' : 'Order released successfully')
+      await handleRefresh()
+    }
   }
 
   function filterSettlements() {
@@ -904,7 +976,7 @@ export default function AdminSettlementsPage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* Paid - Green card */}
             <div className="bg-gradient-to-br from-[#22C55E] to-[#16A34A] rounded-xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between mb-3">
@@ -940,7 +1012,109 @@ export default function AdminSettlementsPage() {
               <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'مستحقات معلقة' : 'Pending Dues'}</p>
               <p className="text-2xl font-bold">{formatCurrency(stats.totalPending, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </div>
+
+            {/* Held Orders - Purple card */}
+            <div
+              className="bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] rounded-xl p-5 text-white shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+              onClick={() => setShowHeldOrders(!showHeldOrders)}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <PauseCircle className="w-6 h-6" />
+                </div>
+                <span className="text-white/80 text-sm">{stats.heldOrdersCount} {locale === 'ar' ? 'طلب' : 'orders'}</span>
+              </div>
+              <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'طلبات معلقة (نزاعات)' : 'Held Orders (Disputes)'}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-2xl font-bold">{formatCurrency(stats.heldOrdersValue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                {showHeldOrders ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+              </div>
+            </div>
           </div>
+
+          {/* Held Orders Section (Collapsible) */}
+          {showHeldOrders && heldOrders.length > 0 && (
+            <div className="bg-white rounded-xl border border-purple-200 shadow-sm overflow-hidden mb-6">
+              <div className="p-4 border-b border-purple-100 bg-purple-50">
+                <div className="flex items-center gap-2">
+                  <FileWarning className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-lg font-semibold text-purple-900">
+                    {locale === 'ar' ? 'الطلبات المعلقة بسبب النزاعات' : 'Orders Held Due to Disputes'}
+                  </h3>
+                </div>
+                <p className="text-sm text-purple-700 mt-1">
+                  {locale === 'ar'
+                    ? 'هذه الطلبات مستبعدة من التسويات حتى يتم حل النزاعات المرتبطة بها'
+                    : 'These orders are excluded from settlements until their associated disputes are resolved'}
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-purple-50/50 border-b border-purple-100">
+                    <tr>
+                      <th className="text-start px-4 py-3 text-sm font-medium text-purple-700">{locale === 'ar' ? 'رقم الطلب' : 'Order #'}</th>
+                      <th className="text-start px-4 py-3 text-sm font-medium text-purple-700">{locale === 'ar' ? 'المزود' : 'Provider'}</th>
+                      <th className="text-start px-4 py-3 text-sm font-medium text-purple-700">{locale === 'ar' ? 'المبلغ' : 'Amount'}</th>
+                      <th className="text-start px-4 py-3 text-sm font-medium text-purple-700">{locale === 'ar' ? 'سبب التعليق' : 'Hold Reason'}</th>
+                      <th className="text-start px-4 py-3 text-sm font-medium text-purple-700">{locale === 'ar' ? 'تاريخ الطلب' : 'Order Date'}</th>
+                      <th className="text-center px-4 py-3 text-sm font-medium text-purple-700">{locale === 'ar' ? 'إجراءات' : 'Actions'}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-purple-50">
+                    {heldOrders.map((order) => (
+                      <tr key={order.id} className="hover:bg-purple-50/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-sm text-slate-700">#{order.order_number}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-slate-900">
+                            {locale === 'ar' ? order.provider?.name_ar : order.provider?.name_en}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-medium text-slate-900">
+                            {formatCurrency(order.total || 0, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-purple-700 bg-purple-100 px-2 py-1 rounded">
+                            {order.hold_reason || (locale === 'ar' ? 'طلب استرداد قيد المراجعة' : 'Refund request pending')}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-slate-600">{formatDate(order.created_at, locale)}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-3 text-purple-600 hover:text-purple-800 hover:bg-purple-100"
+                              onClick={() => {
+                                if (confirm(locale === 'ar'
+                                  ? 'هل تريد تحرير هذا الطلب للتسوية؟ تأكد من حل النزاع أولاً.'
+                                  : 'Release this order for settlement? Make sure the dispute is resolved first.')) {
+                                  handleReleaseOrder(order.id)
+                                }
+                              }}
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-1" />
+                              {locale === 'ar' ? 'تحرير' : 'Release'}
+                            </Button>
+                            <Link href={`/${locale}/admin/orders/${order.id}`}>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <Eye className="w-4 h-4 text-slate-500" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Filters */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
