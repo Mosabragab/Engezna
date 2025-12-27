@@ -120,6 +120,12 @@ export default function AdminDashboard() {
           filters: assignedGovernorateIds.length > 0 ? { governorateIds: assignedGovernorateIds } : {},
         }),
       })
+
+      if (!statsResponse.ok) {
+        console.error('Stats API error:', statsResponse.status, statsResponse.statusText)
+        throw new Error(`HTTP error! status: ${statsResponse.status}`)
+      }
+
       const statsResult = await statsResponse.json()
 
       // Build queries with region filter

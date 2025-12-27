@@ -105,6 +105,44 @@ export interface FinancialEngineData {
   // Grace period status
   is_in_grace_period: boolean;
   grace_period_days_remaining: number;
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // Additional calculated fields for UI display (القيم المحسوبة للعرض)
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Net revenue subject to commission = gross_revenue - total_refunds - total_delivery_fees
+   * صافي الإيرادات الخاضعة للعمولة
+   */
+  net_revenue_for_commission: number;
+
+  /**
+   * Commission that was waived due to grace period (العمولة المعفاة)
+   */
+  commission_waived: number;
+
+  /**
+   * Total commission saved since provider joined (during grace period)
+   * إجمالي ما وفره التاجر من العمولات منذ الانضمام
+   */
+  total_saved_commission: number;
+
+  /**
+   * Final commission after all deductions (العمولة النهائية بعد الخصومات)
+   */
+  final_commission: number;
+
+  /**
+   * Amount provider needs to pay to platform (for COD orders)
+   * المبلغ الذي يدفعه التاجر للمنصة
+   */
+  amount_due_to_platform: number;
+
+  /**
+   * Amount platform needs to pay to provider (for Online orders)
+   * المبلغ الذي تدفعه المنصة للتاجر
+   */
+  amount_due_to_provider: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

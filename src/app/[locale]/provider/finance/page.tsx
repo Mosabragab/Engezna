@@ -126,6 +126,9 @@ interface FinancialEngineData {
   // Grace Period Status
   is_in_grace_period: boolean
   grace_period_days_remaining: number
+
+  // Additional calculated fields from SQL View (for UI display)
+  net_revenue_for_commission?: number  // صافي الإيرادات الخاضعة للعمولة
 }
 
 // Period filter type
@@ -715,16 +718,15 @@ export default function ProviderFinanceDashboard() {
                   {/* Divider */}
                   <div className="border-t border-dashed border-slate-300 my-2" />
 
-                  {/* Row 4: Net Revenue (Commission Base) */}
+                  {/* Row 4: Net Revenue (Commission Base) - From SQL View */}
                   <div className="flex items-center justify-between py-2 bg-slate-50 -mx-4 px-4 rounded">
                     <span className="font-medium text-slate-700">
                       {locale === 'ar' ? '= صافي الإيرادات الخاضعة للعمولة' : '= Net Revenue (Commission Base)'}
                     </span>
                     <span className="font-bold text-slate-900">
                       {formatCurrency(
-                        safeNumber(financeData.gross_revenue) -
-                        safeNumber(financeData.total_refunds) -
-                        safeNumber(financeData.total_delivery_fees)
+                        safeNumber(financeData.net_revenue_for_commission) ||
+                        (safeNumber(financeData.gross_revenue) - safeNumber(financeData.total_refunds) - safeNumber(financeData.total_delivery_fees))
                       )}
                     </span>
                   </div>
