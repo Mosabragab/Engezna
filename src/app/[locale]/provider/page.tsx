@@ -268,11 +268,15 @@ export default function ProviderDashboard() {
     const totalRefundsToday = (todayRefundsData || []).reduce((sum, r) => sum + (r.amount || 0), 0)
 
     // Filter unread messages for this provider
-    interface UnreadMessage {
-      id: string
-      orders?: { provider_id: string } | null
-    }
-    const providerUnreadMessages = (unreadMessagesData || []).filter((m: UnreadMessage) => m.orders?.provider_id === providerId)
+    // Note: Supabase join returns orders as an object (not array) for !inner single FK
+    const providerUnreadMessages = (unreadMessagesData || []).filter((m) => {
+      const orders = m.orders as { provider_id: string } | { provider_id: string }[] | null
+      if (!orders) return false
+      if (Array.isArray(orders)) {
+        return orders.some(o => o.provider_id === providerId)
+      }
+      return orders.provider_id === providerId
+    })
 
     // Calculate gross revenue and subtract refunds
     const grossRevenue = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
