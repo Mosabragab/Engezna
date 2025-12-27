@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Clock,
   TrendingUp,
+  TrendingDown,
   FileWarning,
   XCircle,
   Hourglass,
@@ -66,6 +67,33 @@ interface DashboardStats {
   todayCodRevenue: number
   todayOnlineOrders: number
   todayOnlineRevenue: number
+  // Yesterday's data for trend calculation
+  yesterdayOrders: number
+  yesterdayRevenue: number
+}
+
+// Helper function to format currency
+const formatCurrency = (amount: number, locale: string): string => {
+  return new Intl.NumberFormat(
+    locale === 'ar' ? 'ar-EG' : 'en-EG',
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+  ).format(amount)
+}
+
+// Helper function to format numbers with locale-specific digits
+const formatNumber = (num: number, locale: string): string => {
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG').format(num)
+}
+
+// Helper function to calculate trend percentage
+const calculateTrend = (current: number, previous: number): { value: string; isPositive: boolean } => {
+  if (previous === 0) {
+    return { value: current > 0 ? '+100%' : '0%', isPositive: current >= 0 }
+  }
+  const change = ((current - previous) / previous) * 100
+  const isPositive = change >= 0
+  const sign = isPositive ? '+' : ''
+  return { value: `${sign}${change.toFixed(1)}%`, isPositive }
 }
 
 export default function ProviderDashboard() {
@@ -88,6 +116,8 @@ export default function ProviderDashboard() {
     todayCodRevenue: 0,
     todayOnlineOrders: 0,
     todayOnlineRevenue: 0,
+    yesterdayOrders: 0,
+    yesterdayRevenue: 0,
   })
   const [commissionInfo, setCommissionInfo] = useState<CommissionInfo | null>(null)
 
@@ -159,6 +189,11 @@ export default function ProviderDashboard() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
+    // Calculate yesterday's date range
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayEnd = new Date(today)
+
     // Run all queries in parallel for faster loading
     const [
       { data: todayOrdersData },
@@ -168,7 +203,8 @@ export default function ProviderDashboard() {
       { data: unrespondedReviewsData },
       { data: unreadMessagesData },
       { count: pendingRefundsCount },
-      { data: todayRefundsData }
+      { data: todayRefundsData },
+      { data: yesterdayOrdersData }
     ] = await Promise.all([
       supabase
         .from('orders')
@@ -213,7 +249,14 @@ export default function ProviderDashboard() {
         .select('amount, order_id')
         .eq('provider_id', providerId)
         .in('status', ['approved', 'processed'])
-        .gte('created_at', today.toISOString())
+        .gte('created_at', today.toISOString()),
+      // Get yesterday's orders for trend calculation
+      supabase
+        .from('orders')
+        .select('id, total, status, payment_status')
+        .eq('provider_id', providerId)
+        .gte('created_at', yesterday.toISOString())
+        .lt('created_at', yesterdayEnd.toISOString())
     ])
 
     const uniqueCustomers = new Set(allOrdersData?.map(o => o.customer_id) || [])
@@ -230,12 +273,26 @@ export default function ProviderDashboard() {
     const totalRefundsToday = (todayRefundsData || []).reduce((sum, r) => sum + (r.amount || 0), 0)
 
     // Filter unread messages for this provider
-    const providerUnreadMessages = (unreadMessagesData || []).filter((m: any) => m.orders?.provider_id === providerId)
+    // Note: Supabase join returns orders as an object (not array) for !inner single FK
+    const providerUnreadMessages = (unreadMessagesData || []).filter((m) => {
+      const orders = m.orders as { provider_id: string } | { provider_id: string }[] | null
+      if (!orders) return false
+      if (Array.isArray(orders)) {
+        return orders.some(o => o.provider_id === providerId)
+      }
+      return orders.provider_id === providerId
+    })
 
     // Calculate gross revenue and subtract refunds
     const grossRevenue = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
     const grossCodRevenue = todayCodConfirmed.reduce((sum, o) => sum + (o.total || 0), 0)
     const grossOnlineRevenue = todayOnlineConfirmed.reduce((sum, o) => sum + (o.total || 0), 0)
+
+    // Calculate yesterday's stats for trend comparison
+    const yesterdayConfirmedOrders = yesterdayOrdersData?.filter(
+      o => o.status === 'delivered' && o.payment_status === 'completed'
+    ) || []
+    const yesterdayGrossRevenue = yesterdayConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0)
 
     setStats({
       todayOrders: todayOrdersData?.length || 0,
@@ -251,6 +308,8 @@ export default function ProviderDashboard() {
       todayCodRevenue: grossCodRevenue,
       todayOnlineOrders: todayOnlineOrders.length,
       todayOnlineRevenue: grossOnlineRevenue,
+      yesterdayOrders: yesterdayOrdersData?.length || 0,
+      yesterdayRevenue: yesterdayGrossRevenue,
     })
   }, [])
 
@@ -431,11 +490,17 @@ export default function ProviderDashboard() {
                 <div className="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center">
                   <ShoppingBag className="w-5 h-5 text-primary" strokeWidth={1.8} />
                 </div>
-                <span className="text-success text-xs flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" /> +0%
-                </span>
+                {(() => {
+                  const trend = calculateTrend(stats.todayOrders, stats.yesterdayOrders)
+                  return (
+                    <span className={`text-xs flex items-center gap-1 ${trend.isPositive ? 'text-success' : 'text-destructive'}`}>
+                      {trend.isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                      {trend.value}
+                    </span>
+                  )
+                })()}
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.todayOrders}</p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.todayOrders, locale)}</p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</p>
             </div>
 
@@ -445,11 +510,17 @@ export default function ProviderDashboard() {
                 <div className="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center">
                   <DollarSign className="w-5 h-5 text-success" strokeWidth={1.8} />
                 </div>
-                <span className="text-success text-xs flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" /> +0%
-                </span>
+                {(() => {
+                  const trend = calculateTrend(stats.todayRevenue, stats.yesterdayRevenue)
+                  return (
+                    <span className={`text-xs flex items-center gap-1 ${trend.isPositive ? 'text-success' : 'text-destructive'}`}>
+                      {trend.isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                      {trend.value}
+                    </span>
+                  )
+                })()}
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.todayRevenue} <span className="text-sm text-[hsl(var(--text-muted))]">EGP</span></p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatCurrency(stats.todayRevenue, locale)} <span className="text-sm text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'ج.م' : 'EGP'}</span></p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</p>
             </div>
 
@@ -460,7 +531,7 @@ export default function ProviderDashboard() {
                   <Clock className="w-5 h-5 text-[hsl(42_100%_40%)]" strokeWidth={1.8} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.pendingOrders}</p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.pendingOrders, locale)}</p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات قيد الانتظار' : 'Pending Orders'}</p>
             </div>
 
@@ -471,7 +542,7 @@ export default function ProviderDashboard() {
                   <Package className="w-5 h-5 text-primary" strokeWidth={1.8} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.activeProducts}</p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.activeProducts, locale)}</p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
             </div>
           </div>
@@ -502,8 +573,8 @@ export default function ProviderDashboard() {
                     <div>
                       <p className="text-emerald-600 text-sm mb-2">
                         {locale === 'ar'
-                          ? `متبقي ${commissionInfo.daysRemaining} يوم من فترة السماح المجانية (6 أشهر)`
-                          : `${commissionInfo.daysRemaining} days remaining in your free grace period (6 months)`
+                          ? `متبقي ${formatNumber(commissionInfo.daysRemaining || 0, locale)} يوم من فترة السماح المجانية (6 أشهر)`
+                          : `${formatNumber(commissionInfo.daysRemaining || 0, locale)} days remaining in your free grace period (6 months)`
                         }
                       </p>
                       <div className="flex items-center gap-4 text-xs text-slate-500">
@@ -512,7 +583,10 @@ export default function ProviderDashboard() {
                         </span>
                         {commissionInfo.gracePeriodEndDate && (
                           <span>
-                            {locale === 'ar' ? 'تنتهي:' : 'Ends:'} {commissionInfo.gracePeriodEndDate.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')}
+                            {locale === 'ar' ? 'تنتهي:' : 'Ends:'} {commissionInfo.gracePeriodEndDate?.toLocaleDateString(
+                              locale === 'ar' ? 'ar-EG' : 'en-US',
+                              { year: 'numeric', month: 'long', day: 'numeric' }
+                            ) || (locale === 'ar' ? 'غير محدد' : 'N/A')}
                           </span>
                         )}
                       </div>
@@ -542,12 +616,12 @@ export default function ProviderDashboard() {
           )}
 
           {/* Today's Payment Breakdown */}
-          {stats.todayOrders > 0 && (
-            <div className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm mb-6">
-              <h3 className="text-sm font-semibold text-[hsl(var(--text-primary))] mb-3 flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-primary" />
-                {locale === 'ar' ? 'طلبات اليوم حسب طريقة الدفع' : "Today's Orders by Payment Method"}
-              </h3>
+          <div className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm mb-6">
+            <h3 className="text-sm font-semibold text-[hsl(var(--text-primary))] mb-3 flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-primary" />
+              {locale === 'ar' ? 'طلبات اليوم حسب طريقة الدفع' : "Today's Orders by Payment Method"}
+            </h3>
+            {stats.todayOrders > 0 ? (
               <div className="grid grid-cols-2 gap-3">
                 {/* COD */}
                 <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
@@ -559,8 +633,8 @@ export default function ProviderDashboard() {
                       {locale === 'ar' ? 'كاش' : 'COD'}
                     </span>
                   </div>
-                  <p className="text-lg font-bold text-slate-900">{stats.todayCodOrders} {locale === 'ar' ? 'طلب' : 'orders'}</p>
-                  <p className="text-xs text-slate-500">{stats.todayCodRevenue} EGP {locale === 'ar' ? 'مؤكد' : 'confirmed'}</p>
+                  <p className="text-lg font-bold text-slate-900">{formatNumber(stats.todayCodOrders, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
+                  <p className="text-xs text-slate-500">{formatCurrency(stats.todayCodRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
                 </div>
                 {/* Online */}
                 <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
@@ -572,12 +646,25 @@ export default function ProviderDashboard() {
                       {locale === 'ar' ? 'إلكتروني' : 'Online'}
                     </span>
                   </div>
-                  <p className="text-lg font-bold text-slate-900">{stats.todayOnlineOrders} {locale === 'ar' ? 'طلب' : 'orders'}</p>
-                  <p className="text-xs text-slate-500">{stats.todayOnlineRevenue} EGP {locale === 'ar' ? 'مؤكد' : 'confirmed'}</p>
+                  <p className="text-lg font-bold text-slate-900">{formatNumber(stats.todayOnlineOrders, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
+                  <p className="text-xs text-slate-500">{formatCurrency(stats.todayOnlineRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
                 </div>
               </div>
-            </div>
-          )}
+            ) : (
+              // Empty State
+              <div className="text-center py-6">
+                <div className="w-16 h-16 mx-auto mb-3 bg-slate-100 rounded-full flex items-center justify-center">
+                  <ShoppingBag className="w-8 h-8 text-slate-300" />
+                </div>
+                <p className="text-slate-500 text-sm">
+                  {locale === 'ar' ? 'لا توجد طلبات اليوم بعد' : 'No orders today yet'}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {locale === 'ar' ? 'ستظهر الطلبات هنا عند استلامها' : 'Orders will appear here when received'}
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Performance Indicators - Using text hierarchy */}
           <div className="bg-white rounded-xl p-6 border border-[hsl(var(--border))] shadow-sm mb-6">
@@ -585,15 +672,15 @@ export default function ProviderDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
-                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.totalOrders}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.totalOrders, locale)}</p>
               </div>
               <div>
                 <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</p>
-                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.totalCustomers}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.totalCustomers, locale)}</p>
               </div>
               <div>
                 <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
-                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.activeProducts}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.activeProducts, locale)}</p>
               </div>
             </div>
           </div>
