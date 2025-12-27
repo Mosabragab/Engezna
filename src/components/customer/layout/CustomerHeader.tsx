@@ -252,25 +252,14 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             {!title ? (
               <button
                 onClick={() => router.push(`/${locale}/profile/governorate`)}
-                className={`group flex items-center gap-2.5 text-sm rounded-xl px-3 py-2 transition-all duration-200 ${
-                  !currentLocation
-                    ? 'border-2 border-dashed border-primary/40 hover:border-primary/60 hover:bg-primary/5'
-                    : 'hover:bg-slate-50 active:scale-[0.98]'
-                }`}
+                className="group flex items-center gap-2 text-sm rounded-full px-1 py-1 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98]"
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                  currentLocation ? 'bg-primary/10' : 'bg-primary/5 group-hover:bg-primary/10'
-                }`}>
-                  <MapPin className={`h-4 w-4 ${currentLocation ? 'text-primary' : 'text-primary/60'}`} />
+                <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-sm">
+                  <MapPin className="h-4.5 w-4.5 text-white" />
                 </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    {locale === 'ar' ? 'التوصيل إلى' : 'Deliver to'}
-                  </span>
-                  <span className={`font-semibold max-w-[120px] truncate text-sm ${currentLocation ? 'text-slate-800' : 'text-primary/70'}`}>
-                    {locationDisplayText}
-                  </span>
-                </div>
+                <span className={`font-semibold max-w-[120px] truncate text-sm ${currentLocation ? 'text-slate-800' : 'text-primary'}`}>
+                  {locationDisplayText}
+                </span>
               </button>
             ) : (
               // Empty placeholder to maintain layout balance
