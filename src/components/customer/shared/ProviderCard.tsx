@@ -62,19 +62,19 @@ export function ProviderCard({
 
   if (variant === 'compact') {
     return (
-      <Link href={`/${locale}/providers/${provider.id}`} className="block">
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden hover:shadow-md transition-all duration-200 active:scale-[0.98]">
+      <Link href={`/${locale}/providers/${provider.id}`} className="block group">
+        <div className="card-elegant overflow-hidden">
           {/* 16:9 aspect ratio */}
-          <div className="relative aspect-[16/9] bg-slate-100">
+          <div className="relative aspect-[16/9] bg-slate-100 img-zoom-container">
             {provider.cover_image_url ? (
               <img
                 src={provider.cover_image_url}
                 alt={name}
                 loading="lazy"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover img-zoom"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-primary/5">
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
                 <span className="text-4xl">🏪</span>
               </div>
             )}
@@ -82,18 +82,20 @@ export function ProviderCard({
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
             {/* Closed Overlay */}
             {isClosed && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <span className="text-white font-medium px-3 py-1 bg-red-500 rounded-full text-sm">
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                <span className="text-white font-medium px-3 py-1 bg-red-500 rounded-full text-sm shadow-lg">
                   {t('closed')}
                 </span>
               </div>
             )}
           </div>
-          <div className="p-3">
-            <h3 className="font-semibold text-sm truncate">{name}</h3>
-            <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
-              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-              <span>{provider.rating.toFixed(1)}</span>
+          <div className="p-3.5">
+            <h3 className="font-semibold text-sm truncate text-slate-800 group-hover:text-primary transition-colors">{name}</h3>
+            <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500">
+              <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <span className="font-medium text-amber-700">{provider.rating.toFixed(1)}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -103,15 +105,15 @@ export function ProviderCard({
 
   return (
     <Link href={`/${locale}/providers/${provider.id}`} className="block group">
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden hover:shadow-lg transition-all duration-300 active:scale-[0.98]">
+      <div className="card-product">
         {/* Cover Image - 16:9 aspect ratio */}
-        <div className="relative aspect-[16/9] bg-slate-100">
+        <div className="relative aspect-[16/9] bg-slate-100 img-zoom-container">
           {provider.cover_image_url ? (
             <img
               src={provider.cover_image_url}
               alt={name}
               loading="lazy"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover img-zoom"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
@@ -120,11 +122,11 @@ export function ProviderCard({
           )}
 
           {/* Gradient overlay for text clarity on images */}
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
           {/* Discount Badge */}
           {hasDiscount && (
-            <div className="absolute top-3 start-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
+            <div className="absolute top-3 start-3 badge-discount-elegant">
               -{discountPercentage}%
             </div>
           )}
@@ -133,26 +135,28 @@ export function ProviderCard({
           {onFavoriteToggle && (
             <button
               onClick={handleFavoriteClick}
-              className="absolute top-3 end-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors active:scale-[0.95]"
+              className="absolute top-3 end-3 w-9 h-9 bg-white/95 backdrop-blur-md rounded-xl flex items-center justify-center shadow-elegant hover:bg-white hover:shadow-elegant-lg transition-all duration-200 active:scale-95"
             >
               <Heart
-                className={`w-4 h-4 transition-colors ${
-                  favorite ? 'fill-red-500 text-red-500' : 'text-slate-400'
+                className={`w-4 h-4 transition-all duration-200 ${
+                  favorite ? 'fill-red-500 text-red-500 scale-110' : 'text-slate-400'
                 }`}
               />
             </button>
           )}
 
-          {/* Status Badge - positioned on gradient */}
-          <div className={`absolute bottom-3 start-3 px-2 py-1 rounded-full text-xs font-medium ${
-            isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+          {/* Status Badge - Elegant glassmorphism */}
+          <div className={`absolute bottom-3 start-3 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md shadow-sm ${
+            isOpen
+              ? 'bg-emerald-500/90 text-white'
+              : 'bg-red-500/90 text-white'
           }`}>
             {isOpen ? t('open') : t('closed')}
           </div>
 
-          {/* Logo */}
+          {/* Logo - Elegant floating */}
           {provider.logo_url && (
-            <div className="absolute bottom-3 end-3 w-12 h-12 bg-white rounded-full border-2 border-white shadow-lg overflow-hidden">
+            <div className="absolute bottom-3 end-3 w-14 h-14 bg-white rounded-2xl border-2 border-white shadow-elegant overflow-hidden">
               <img
                 src={provider.logo_url}
                 alt={name}
@@ -170,26 +174,30 @@ export function ProviderCard({
             {name}
           </h3>
 
-          {/* Rating */}
+          {/* Rating - Elegant pill */}
           <div className="flex items-center gap-2 mt-2">
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold text-sm">{provider.rating.toFixed(1)}</span>
+            <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-lg">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <span className="font-bold text-sm text-amber-700">{provider.rating.toFixed(1)}</span>
             </div>
             <span className="text-sm text-slate-400">
               ({provider.total_reviews} {t('reviews')})
             </span>
           </div>
 
-          {/* Details */}
-          <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-slate-500">
-            <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              <span>{provider.estimated_delivery_time_min} {locale === 'ar' ? 'د' : 'min'}</span>
+          {/* Details - Elegant pills */}
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg text-sm text-slate-600">
+              <Clock className="w-3.5 h-3.5 text-primary" />
+              <span className="font-medium">{provider.estimated_delivery_time_min} {locale === 'ar' ? 'د' : 'min'}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <Truck className="w-4 h-4" />
-              <span>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm ${
+              provider.delivery_fee === 0
+                ? 'bg-emerald-50 text-emerald-700'
+                : 'bg-slate-50 text-slate-600'
+            }`}>
+              <Truck className={`w-3.5 h-3.5 ${provider.delivery_fee === 0 ? 'text-emerald-500' : 'text-primary'}`} />
+              <span className="font-medium">
                 {provider.delivery_fee === 0
                   ? (locale === 'ar' ? 'مجاني' : 'Free')
                   : `${provider.delivery_fee} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
@@ -197,17 +205,18 @@ export function ProviderCard({
               </span>
             </div>
             {showDistance && distance && (
-              <div className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                <span>{distance.toFixed(1)} {locale === 'ar' ? 'كم' : 'km'}</span>
+              <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg text-sm text-slate-600">
+                <MapPin className="w-3.5 h-3.5 text-primary" />
+                <span className="font-medium">{distance.toFixed(1)} {locale === 'ar' ? 'كم' : 'km'}</span>
               </div>
             )}
           </div>
 
           {/* Popular Item */}
           {showPopularItem && (
-            <div className="mt-3 pt-3 border-t border-slate-100 text-sm text-slate-600">
-              <span className="text-amber-500">🔥</span> {showPopularItem}
+            <div className="mt-3 pt-3 border-t border-slate-100 text-sm text-slate-600 flex items-center gap-2">
+              <span className="text-amber-500">🔥</span>
+              <span className="font-medium">{showPopularItem}</span>
             </div>
           )}
         </div>

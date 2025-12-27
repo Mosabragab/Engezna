@@ -241,14 +241,14 @@ export function ProviderSidebar({
       <aside
         className={`
           fixed lg:static inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-50
-          w-64 bg-white border-${isRTL ? 'l' : 'r'} border-slate-200 shadow-sm
+          w-64 bg-white/95 backdrop-blur-md border-${isRTL ? 'l' : 'r'} border-slate-100/80 shadow-elegant
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0
           flex flex-col h-screen max-h-screen overflow-hidden
         `}
       >
         {/* Logo - Compact on mobile, normal on desktop */}
-        <div className="p-3 lg:p-4 border-b border-slate-200 flex-shrink-0">
+        <div className="p-3 lg:p-4 border-b border-slate-100 flex-shrink-0">
           <div className="flex items-center justify-between">
             <Link href={`/${locale}/provider`} className="flex flex-col">
               {/* Mobile logo - smaller */}
@@ -276,9 +276,9 @@ export function ProviderSidebar({
         <div className="flex-1 overflow-y-auto">
           {/* Store Info - Compact inline on mobile, card on desktop */}
           {provider && (
-            <div className="p-2 lg:p-4 border-b border-slate-200">
+            <div className="p-2 lg:p-4 border-b border-slate-100">
               {/* Mobile: inline compact */}
-              <div className="lg:hidden bg-slate-50 rounded-lg p-2 flex items-center gap-2">
+              <div className="lg:hidden bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-2.5 flex items-center gap-2 shadow-sm">
                 <p className="text-xs font-medium text-slate-900 truncate flex-1">
                   {locale === 'ar' ? provider.name_ar : provider.name_en}
                 </p>
@@ -290,7 +290,7 @@ export function ProviderSidebar({
                 </div>
               </div>
               {/* Desktop: full card */}
-              <div className="hidden lg:block bg-slate-50 rounded-xl p-3">
+              <div className="hidden lg:block bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-3 shadow-sm">
                 <p className="text-sm font-medium text-slate-900 truncate">
                   {locale === 'ar' ? provider.name_ar : provider.name_en}
                 </p>
@@ -328,11 +328,11 @@ export function ProviderSidebar({
                         href={item.path}
                         onClick={onClose}
                         className={`
-                          w-full flex items-center gap-3 px-4 py-2.5 lg:py-3 rounded-xl transition-all
+                          w-full flex items-center gap-3 px-4 py-2.5 lg:py-3 rounded-xl transition-all duration-200
                           max-lg:gap-2 max-lg:px-3 max-lg:py-2 max-lg:rounded-lg
                           ${isActive
-                            ? 'bg-primary text-white shadow-md'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
+                            ? 'bg-primary text-white shadow-elegant'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:shadow-sm active:scale-[0.98]'}
                         `}
                       >
                         <item.icon className="w-5 h-5 max-lg:w-4 max-lg:h-4 flex-shrink-0" />

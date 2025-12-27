@@ -244,23 +244,20 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
   const recentNotifications = notifications.slice(0, 5)
 
   return (
-    <header className={`sticky top-0 z-40 pt-[env(safe-area-inset-top,0px)] ${transparent ? 'bg-transparent' : 'bg-white border-b border-slate-100 shadow-sm'}`}>
+    <header className={`sticky top-0 z-40 pt-[env(safe-area-inset-top,0px)] ${transparent ? 'bg-transparent' : 'bg-white/95 backdrop-blur-md border-b border-slate-100/80'}`}>
       <div className="container mx-auto px-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-between h-16">
           {/* Left Section - Location (only on home page without title) */}
           <div className="flex items-center gap-3">
             {!title ? (
               <button
                 onClick={() => router.push(`/${locale}/profile/governorate`)}
-                className={`flex items-center gap-2 text-sm hover:bg-slate-50 rounded-lg px-2 py-1 transition-colors ${
-                  !currentLocation ? 'border border-dashed border-primary/50' : ''
-                }`}
+                className="group flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition-all duration-200 hover:bg-slate-100 active:scale-[0.98]"
               >
-                <MapPin className={`h-5 w-5 ${currentLocation ? 'text-primary' : 'text-primary/60'}`} />
-                <span className={`font-medium max-w-[150px] truncate ${currentLocation ? 'text-primary' : 'text-primary/60'}`}>
+                <MapPin className="h-5 w-5 text-primary" />
+                <span className="font-medium max-w-[100px] truncate text-sm text-primary">
                   {locationDisplayText}
                 </span>
-                <ChevronDown className="h-4 w-4 text-slate-400" />
               </button>
             ) : (
               // Empty placeholder to maintain layout balance
@@ -269,23 +266,23 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
           </div>
 
           {/* Center - Always show Animated Logo as link to home */}
-          <Link href={`/${locale}`} className="absolute left-1/2 -translate-x-1/2">
-            <EngeznaLogo size="md" showPen={false} bgColor="white" />
+          <Link href={`/${locale}`} className="absolute left-1/2 -translate-x-1/2 hover:scale-105 transition-transform duration-200">
+            <EngeznaLogo size="lg" showPen={false} bgColor="white" />
           </Link>
 
           {/* Right Section - Custom Action + Notifications & Profile */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {/* Custom Action (e.g., refresh button) */}
             {rightAction && rightAction}
 
             {/* Cart - Hidden on mobile (bottom nav has cart) */}
             <button
               onClick={() => router.push(`/${locale}/cart`)}
-              className="hidden md:flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors relative"
+              className="hidden md:flex h-10 w-10 items-center justify-center rounded-xl hover:bg-slate-100 active:scale-95 transition-all duration-200 relative group"
             >
-              <ShoppingCart className="h-5 w-5 text-slate-600" />
+              <ShoppingCart className="h-5 w-5 text-slate-500 group-hover:text-slate-700 transition-colors" />
               {cartItemCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-primary text-white text-[10px] font-bold rounded-full px-1">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-primary text-white text-[10px] font-bold rounded-full px-1 shadow-sm shadow-primary/30">
                   {cartItemCount > 9 ? '9+' : cartItemCount}
                 </span>
               )}
@@ -298,23 +295,21 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 relative"
+              <button
+                className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-slate-100 active:scale-95 transition-all duration-200 relative group"
                 onClick={() => router.push(`/${locale}/notifications`)}
               >
-                <Bell className="h-5 w-5 text-slate-600" />
+                <Bell className="h-5 w-5 text-slate-500 group-hover:text-slate-700 transition-colors" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 shadow-sm shadow-red-500/30 animate-pulse">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
-              </Button>
+              </button>
 
-              {/* Notification Dropdown */}
+              {/* Notification Dropdown - Elegant Design */}
               {showNotificationDropdown && (
-                <div className={`absolute top-full mt-2 ${locale === 'ar' ? 'left-0' : 'right-0'} w-80 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50`}>
+                <div className={`absolute top-full mt-3 ${locale === 'ar' ? 'left-0' : 'right-0'} w-80 bg-white rounded-2xl shadow-elegant-lg border border-slate-100 overflow-hidden z-50 animate-slide-up`}>
                   {/* Header */}
                   <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="font-semibold text-slate-800">
@@ -454,9 +449,9 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
 
             {/* Profile */}
             <Link href={user ? `/${locale}/profile` : `/${locale}/auth/login`}>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <User className="h-5 w-5 text-slate-600" />
-              </Button>
+              <button className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-slate-100 active:scale-95 transition-all duration-200 group">
+                <User className="h-5 w-5 text-slate-500 group-hover:text-slate-700 transition-colors" />
+              </button>
             </Link>
           </div>
         </div>

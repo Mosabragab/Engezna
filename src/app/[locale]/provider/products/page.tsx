@@ -358,10 +358,10 @@ export default function ProviderProductsPage() {
     >
       <div className="">
         {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
+        <div className="grid grid-cols-3 gap-4 lg:gap-5 mb-6">
+          <div className="bg-[hsl(var(--card-bg-primary))] rounded-2xl p-4 border border-primary/20 shadow-elegant hover:shadow-elegant-lg transition-all duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[hsl(198_100%_44%/0.2)] rounded-lg flex items-center justify-center">
+              <div className="w-11 h-11 bg-primary/15 rounded-xl flex items-center justify-center">
                 <Package className="w-5 h-5 text-primary" />
               </div>
               <div>
@@ -370,9 +370,9 @@ export default function ProviderProductsPage() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
+          <div className="bg-[hsl(var(--card-bg-success))] rounded-2xl p-4 border border-success/20 shadow-elegant hover:shadow-elegant-lg transition-all duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[hsl(158_100%_38%/0.2)] rounded-lg flex items-center justify-center">
+              <div className="w-11 h-11 bg-success/15 rounded-xl flex items-center justify-center">
                 <Eye className="w-5 h-5 text-deal" />
               </div>
               <div>
@@ -381,9 +381,9 @@ export default function ProviderProductsPage() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-slate-200">
+          <div className="bg-red-50 rounded-2xl p-4 border border-red-200/60 shadow-elegant hover:shadow-elegant-lg transition-all duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[hsl(358_100%_68%/0.2)] rounded-lg flex items-center justify-center">
+              <div className="w-11 h-11 bg-red-100 rounded-xl flex items-center justify-center">
                 <EyeOff className="w-5 h-5 text-error" />
               </div>
               <div>
@@ -397,13 +397,13 @@ export default function ProviderProductsPage() {
         {/* Search and Add Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute top-1/2 -translate-y-1/2 left-3 w-5 h-5 text-slate-500" />
+            <Search className="absolute top-1/2 -translate-y-1/2 left-3 w-5 h-5 text-slate-400" />
             <input
               type="text"
               placeholder={locale === 'ar' ? 'ابحث عن منتج...' : 'Search products...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl py-3 px-10 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full bg-white border border-slate-100 rounded-2xl py-3 px-10 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 shadow-elegant transition-all duration-200"
             />
           </div>
           <div className="flex gap-2 flex-wrap">
