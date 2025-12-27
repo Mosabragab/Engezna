@@ -527,11 +527,11 @@ export default function ProviderOrdersPage() {
 
       <div className="">
         {/* Stats Row - Using new semantic card backgrounds */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-5 mb-6">
           {/* New Orders - Warning Yellow */}
-          <div className="bg-[hsl(var(--card-bg-warning))] rounded-xl p-4 border border-warning/20">
+          <div className="bg-[hsl(var(--card-bg-warning))] rounded-2xl p-4 border border-warning/20 shadow-elegant hover:shadow-elegant-lg transition-all duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-warning/15 rounded-lg flex items-center justify-center">
+              <div className="w-11 h-11 bg-warning/15 rounded-xl flex items-center justify-center">
                 <Clock className="w-5 h-5 text-[hsl(48_97%_40%)]" strokeWidth={1.8} />
               </div>
               <div>
@@ -541,9 +541,9 @@ export default function ProviderOrdersPage() {
             </div>
           </div>
           {/* In Progress - Blue */}
-          <div className="bg-[hsl(217_91%_60%/0.08)] rounded-xl p-4 border border-[hsl(217_91%_60%/0.2)]">
+          <div className="bg-[hsl(217_91%_60%/0.08)] rounded-2xl p-4 border border-[hsl(217_91%_60%/0.2)] shadow-elegant hover:shadow-elegant-lg transition-all duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[hsl(217_91%_60%/0.15)] rounded-lg flex items-center justify-center">
+              <div className="w-11 h-11 bg-[hsl(217_91%_60%/0.15)] rounded-xl flex items-center justify-center">
                 <ChefHat className="w-5 h-5 text-[hsl(217_91%_60%)]" strokeWidth={1.8} />
               </div>
               <div>
@@ -553,9 +553,9 @@ export default function ProviderOrdersPage() {
             </div>
           </div>
           {/* Completed - Success Green */}
-          <div className="bg-[hsl(var(--card-bg-success))] rounded-xl p-4 border border-success/20">
+          <div className="bg-[hsl(var(--card-bg-success))] rounded-2xl p-4 border border-success/20 shadow-elegant hover:shadow-elegant-lg transition-all duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center">
+              <div className="w-11 h-11 bg-success/15 rounded-xl flex items-center justify-center">
                 <CheckCircle2 className="w-5 h-5 text-success" strokeWidth={1.8} />
               </div>
               <div>
@@ -565,9 +565,9 @@ export default function ProviderOrdersPage() {
             </div>
           </div>
           {/* Total Orders - Primary Blue */}
-          <div className="bg-[hsl(var(--card-bg-primary))] rounded-xl p-4 border border-primary/20">
+          <div className="bg-[hsl(var(--card-bg-primary))] rounded-2xl p-4 border border-primary/20 shadow-elegant hover:shadow-elegant-lg transition-all duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center">
+              <div className="w-11 h-11 bg-primary/15 rounded-xl flex items-center justify-center">
                 <ShoppingBag className="w-5 h-5 text-primary" strokeWidth={1.8} />
               </div>
               <div>
@@ -684,10 +684,10 @@ export default function ProviderOrdersPage() {
               const isLoading = actionLoading === order.id
 
               return (
-                <Card key={order.id} className="bg-white border-slate-200 overflow-hidden">
+                <Card key={order.id} className="bg-white border-slate-100 overflow-hidden shadow-elegant hover:shadow-elegant-lg transition-all duration-300 rounded-2xl">
                   <CardContent className="p-0">
                     {/* Order Header */}
-                    <div className={`p-4 border-b border-slate-200 ${order.status === 'pending' ? 'bg-[hsl(42_100%_70%/0.1)]' : ''}`}>
+                    <div className={`p-4 border-b border-slate-100 ${order.status === 'pending' ? 'bg-gradient-to-r from-amber-50/80 to-yellow-50/50' : ''}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <span className="font-mono font-bold text-primary text-lg">
@@ -725,7 +725,7 @@ export default function ProviderOrdersPage() {
                     </div>
 
                     {/* Order Items */}
-                    <div className="p-4 border-b border-slate-200">
+                    <div className="p-4 border-b border-slate-100">
                       <div className="space-y-2">
                         {order.items.slice(0, 3).map((item) => (
                           <div key={item.id} className="flex justify-between text-sm">
@@ -752,7 +752,7 @@ export default function ProviderOrdersPage() {
                     </div>
 
                     {/* Delivery Address */}
-                    <div className="p-4 border-b border-slate-200 bg-white/80">
+                    <div className="p-4 border-b border-slate-100 bg-slate-50/30">
                       <div className="flex items-start gap-2 text-sm">
                         <MapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
                         <div className="flex-1 space-y-1">

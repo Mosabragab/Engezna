@@ -200,7 +200,7 @@ export function ProviderHeader({
   const unreadNotifications = notifications.filter(n => !n.is_read)
 
   return (
-    <header className="bg-white border-b border-slate-200 px-4 lg:px-6 py-3 shadow-sm sticky top-0 z-40">
+    <header className="bg-white/95 backdrop-blur-md border-b border-slate-100/80 px-4 lg:px-6 py-3 shadow-elegant sticky top-0 z-40">
       <div className="flex items-center justify-between">
         {/* Right Side (RTL): Menu & Logo */}
         <div className="flex items-center gap-4">
@@ -242,7 +242,7 @@ export function ProviderHeader({
             onMouseLeave={() => setNotificationsOpen(false)}
           >
             <button
-              className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
+              className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-xl transition-all duration-200 active:scale-95"
             >
               <Bell className="w-5 h-5" />
               {(totalNotifications ?? pendingOrders) > 0 && (
@@ -254,10 +254,10 @@ export function ProviderHeader({
 
             {/* Notifications Dropdown Panel */}
             {notificationsOpen && (
-              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-80 sm:w-96 z-50`}>
-                <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
+              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full mt-2 w-80 sm:w-96 z-50 animate-slide-up`}>
+                <div className="bg-white rounded-2xl shadow-elegant-lg border border-slate-100 overflow-hidden">
                   {/* Header */}
-                  <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
+                  <div className="flex items-center justify-between px-4 py-3 bg-slate-50/80 border-b border-slate-100">
                     <div>
                       <h3 className="font-semibold text-slate-900">
                         {locale === 'ar' ? 'الإشعارات' : 'Notifications'}
@@ -374,7 +374,7 @@ export function ProviderHeader({
                   </div>
 
                   {/* Footer */}
-                  <div className="px-4 py-3 bg-slate-50 border-t border-slate-200">
+                  <div className="px-4 py-3 bg-slate-50/80 border-t border-slate-100">
                     <Link
                       href={`/${locale}/provider/orders`}
                       className="text-sm text-primary hover:underline font-medium"
@@ -393,8 +393,8 @@ export function ProviderHeader({
             onMouseEnter={() => setAccountMenuOpen(true)}
             onMouseLeave={() => setAccountMenuOpen(false)}
           >
-            <button className="flex items-center gap-2 p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+            <button className="flex items-center gap-2 p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200 active:scale-95">
+              <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center">
                 <UserIcon className="w-4 h-4 text-primary" />
               </div>
               <span className="hidden sm:inline text-sm font-medium text-slate-700">
@@ -404,8 +404,8 @@ export function ProviderHeader({
 
             {/* Dropdown Menu */}
             {accountMenuOpen && (
-              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-56 z-50`}>
-                <div className="bg-white rounded-xl shadow-lg border border-slate-200 py-2">
+              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full mt-2 w-56 z-50 animate-slide-up`}>
+                <div className="bg-white rounded-2xl shadow-elegant-lg border border-slate-100 py-2">
                   {/* User Info */}
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-sm font-medium text-slate-900">

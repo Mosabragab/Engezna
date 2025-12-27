@@ -483,9 +483,9 @@ export default function ProviderDashboard() {
       {(provider?.status === 'approved' || provider?.status === 'open' || provider?.status === 'closed' || provider?.status === 'temporarily_paused') && (
         <>
           {/* Stats Grid - Using brand color system */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6">
             {/* Today's Orders - Primary Blue Card */}
-            <div className="bg-[hsl(var(--card-bg-primary))] rounded-xl p-4 border border-primary/20 shadow-sm">
+            <div className="bg-[hsl(var(--card-bg-primary))] rounded-2xl p-4 lg:p-5 border border-primary/20 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center">
                   <ShoppingBag className="w-5 h-5 text-primary" strokeWidth={1.8} />
@@ -505,7 +505,7 @@ export default function ProviderDashboard() {
             </div>
 
             {/* Today's Revenue - Success Green Card */}
-            <div className="bg-[hsl(var(--card-bg-success))] rounded-xl p-4 border border-success/20 shadow-sm">
+            <div className="bg-[hsl(var(--card-bg-success))] rounded-2xl p-4 lg:p-5 border border-success/20 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center">
                   <DollarSign className="w-5 h-5 text-success" strokeWidth={1.8} />
@@ -525,7 +525,7 @@ export default function ProviderDashboard() {
             </div>
 
             {/* Pending Orders - Warning Yellow Card */}
-            <div className="bg-[hsl(var(--card-bg-warning))] rounded-xl p-4 border border-warning/20 shadow-sm">
+            <div className="bg-[hsl(var(--card-bg-warning))] rounded-2xl p-4 lg:p-5 border border-warning/20 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 bg-warning/15 rounded-lg flex items-center justify-center">
                   <Clock className="w-5 h-5 text-[hsl(42_100%_40%)]" strokeWidth={1.8} />
@@ -536,7 +536,7 @@ export default function ProviderDashboard() {
             </div>
 
             {/* Active Products - Info Cyan Card */}
-            <div className="bg-[hsl(var(--card-bg-info))] rounded-xl p-4 border border-info/20 shadow-sm">
+            <div className="bg-[hsl(var(--card-bg-info))] rounded-2xl p-4 lg:p-5 border border-info/20 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 bg-info/15 rounded-lg flex items-center justify-center">
                   <Package className="w-5 h-5 text-primary" strokeWidth={1.8} />
@@ -549,7 +549,7 @@ export default function ProviderDashboard() {
 
           {/* Grace Period / Commission Status Card */}
           {commissionInfo && (
-            <div className={`rounded-xl p-4 border shadow-sm mb-6 ${
+            <div className={`rounded-2xl p-5 border shadow-elegant hover:shadow-elegant-lg transition-all duration-300 mb-6 ${
               commissionInfo.isInGracePeriod
                 ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200'
                 : 'bg-gradient-to-br from-slate-50 to-gray-50 border-slate-200'
@@ -616,38 +616,38 @@ export default function ProviderDashboard() {
           )}
 
           {/* Today's Payment Breakdown */}
-          <div className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm mb-6">
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-elegant mb-6">
             <h3 className="text-sm font-semibold text-[hsl(var(--text-primary))] mb-3 flex items-center gap-2">
               <Wallet className="w-4 h-4 text-primary" />
               {locale === 'ar' ? 'طلبات اليوم حسب طريقة الدفع' : "Today's Orders by Payment Method"}
             </h3>
             {stats.todayOrders > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {/* COD */}
-                <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200/60 shadow-sm hover:shadow-elegant transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center">
                       <Wallet className="w-4 h-4 text-amber-600" />
                     </div>
-                    <span className="text-xs font-medium text-amber-700">
+                    <span className="text-xs font-semibold text-amber-700">
                       {locale === 'ar' ? 'كاش' : 'COD'}
                     </span>
                   </div>
-                  <p className="text-lg font-bold text-slate-900">{formatNumber(stats.todayCodOrders, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
-                  <p className="text-xs text-slate-500">{formatCurrency(stats.todayCodRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
+                  <p className="text-xl font-bold text-slate-900">{formatNumber(stats.todayCodOrders, locale)} <span className="text-sm font-medium text-slate-500">{locale === 'ar' ? 'طلب' : 'orders'}</span></p>
+                  <p className="text-xs text-slate-500 mt-1">{formatCurrency(stats.todayCodRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
                 </div>
                 {/* Online */}
-                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200/60 shadow-sm hover:shadow-elegant transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center">
                       <DollarSign className="w-4 h-4 text-blue-600" />
                     </div>
-                    <span className="text-xs font-medium text-blue-700">
+                    <span className="text-xs font-semibold text-blue-700">
                       {locale === 'ar' ? 'إلكتروني' : 'Online'}
                     </span>
                   </div>
-                  <p className="text-lg font-bold text-slate-900">{formatNumber(stats.todayOnlineOrders, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
-                  <p className="text-xs text-slate-500">{formatCurrency(stats.todayOnlineRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
+                  <p className="text-xl font-bold text-slate-900">{formatNumber(stats.todayOnlineOrders, locale)} <span className="text-sm font-medium text-slate-500">{locale === 'ar' ? 'طلب' : 'orders'}</span></p>
+                  <p className="text-xs text-slate-500 mt-1">{formatCurrency(stats.todayOnlineRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
                 </div>
               </div>
             ) : (
@@ -667,7 +667,7 @@ export default function ProviderDashboard() {
           </div>
 
           {/* Performance Indicators - Using text hierarchy */}
-          <div className="bg-white rounded-xl p-6 border border-[hsl(var(--border))] shadow-sm mb-6">
+          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-elegant mb-6">
             <h3 className="text-lg font-bold text-[hsl(var(--text-primary))] mb-4">{locale === 'ar' ? 'مؤشرات الأداء' : 'Performance Indicators'}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
@@ -687,28 +687,36 @@ export default function ProviderDashboard() {
 
           {/* Quick Actions - Using unified icon styling */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href={`/${locale}/provider/orders`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
-              <ShoppingBag className="w-8 h-8 text-primary mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
-              <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
-              <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'إدارة الطلبات' : 'Manage orders'}</p>
+            <Link href={`/${locale}/provider/orders`} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-1 hover:border-primary/30 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-6 h-6 text-primary" strokeWidth={1.8} />
+              </div>
+              <p className="font-semibold text-slate-800">{locale === 'ar' ? 'الطلبات' : 'Orders'}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{locale === 'ar' ? 'إدارة الطلبات' : 'Manage orders'}</p>
             </Link>
 
-            <Link href={`/${locale}/provider/products`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
-              <Package className="w-8 h-8 text-primary mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
-              <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'المنتجات' : 'Products'}</p>
-              <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'إدارة القائمة' : 'Manage menu'}</p>
+            <Link href={`/${locale}/provider/products`} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-1 hover:border-primary/30 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Package className="w-6 h-6 text-primary" strokeWidth={1.8} />
+              </div>
+              <p className="font-semibold text-slate-800">{locale === 'ar' ? 'المنتجات' : 'Products'}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{locale === 'ar' ? 'إدارة القائمة' : 'Manage menu'}</p>
             </Link>
 
-            <Link href={`/${locale}/provider/reports`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
-              <BarChart3 className="w-8 h-8 text-success mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
-              <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'التقارير' : 'Reports'}</p>
-              <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'عرض الإحصائيات' : 'View analytics'}</p>
+            <Link href={`/${locale}/provider/reports`} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-1 hover:border-success/30 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-success/10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <BarChart3 className="w-6 h-6 text-success" strokeWidth={1.8} />
+              </div>
+              <p className="font-semibold text-slate-800">{locale === 'ar' ? 'التقارير' : 'Reports'}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{locale === 'ar' ? 'عرض الإحصائيات' : 'View analytics'}</p>
             </Link>
 
-            <Link href={`/${locale}/provider/settings`} className="bg-white rounded-xl p-4 border border-[hsl(var(--border))] shadow-sm hover:border-primary hover:shadow-md transition-all group">
-              <Settings className="w-8 h-8 text-[hsl(var(--text-secondary))] mb-3 group-hover:scale-110 transition-transform" strokeWidth={1.8} />
-              <p className="font-medium text-[hsl(var(--text-primary))]">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</p>
-              <p className="text-xs text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'إعدادات المتجر' : 'Store settings'}</p>
+            <Link href={`/${locale}/provider/settings`} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-1 hover:border-slate-300 transition-all duration-300 group">
+              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Settings className="w-6 h-6 text-slate-600" strokeWidth={1.8} />
+              </div>
+              <p className="font-semibold text-slate-800">{locale === 'ar' ? 'الإعدادات' : 'Settings'}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{locale === 'ar' ? 'إعدادات المتجر' : 'Store settings'}</p>
             </Link>
           </div>
         </>
