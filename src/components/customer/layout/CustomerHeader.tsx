@@ -252,12 +252,10 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
             {!title ? (
               <button
                 onClick={() => router.push(`/${locale}/profile/governorate`)}
-                className="group flex items-center gap-2 text-sm rounded-full px-1 py-1 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98]"
+                className="group flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition-all duration-200 hover:bg-slate-100 active:scale-[0.98]"
               >
-                <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                  <MapPin className="h-4.5 w-4.5 text-white" />
-                </div>
-                <span className={`font-semibold max-w-[120px] truncate text-sm ${currentLocation ? 'text-slate-800' : 'text-primary'}`}>
+                <MapPin className="h-5 w-5 text-primary" />
+                <span className="font-medium max-w-[100px] truncate text-sm text-primary">
                   {locationDisplayText}
                 </span>
               </button>
