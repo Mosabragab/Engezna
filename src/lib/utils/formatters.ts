@@ -14,12 +14,13 @@ export function formatNumber(num: number, locale: string): string {
 
 /**
  * Format currency with the appropriate numeral system based on locale
+ * Shows 2 decimal places for precision (e.g., 17.50 not 18)
  */
 export function formatCurrency(amount: number, locale: string): string {
   return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', {
     style: 'decimal',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount)
 }
 
