@@ -573,8 +573,8 @@ export default function ProviderDashboard() {
                     <div>
                       <p className="text-emerald-600 text-sm mb-2">
                         {locale === 'ar'
-                          ? `متبقي ${formatNumber(commissionInfo.daysRemaining, locale)} يوم من فترة السماح المجانية (6 أشهر)`
-                          : `${formatNumber(commissionInfo.daysRemaining, locale)} days remaining in your free grace period (6 months)`
+                          ? `متبقي ${formatNumber(commissionInfo.daysRemaining || 0, locale)} يوم من فترة السماح المجانية (6 أشهر)`
+                          : `${formatNumber(commissionInfo.daysRemaining || 0, locale)} days remaining in your free grace period (6 months)`
                         }
                       </p>
                       <div className="flex items-center gap-4 text-xs text-slate-500">
