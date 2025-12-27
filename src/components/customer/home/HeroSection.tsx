@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { Search, MessageCircle } from 'lucide-react'
+import { Search, MessageCircle, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface HeroSectionProps {
@@ -13,7 +13,7 @@ interface HeroSectionProps {
 
 /**
  * Hero Section for the homepage with chat ordering CTA
- * Design: Gradient background from #E0F4FF to white with chat button
+ * Design: Elegant gradient with floating search bar - "Elegant Simplicity"
  */
 export function HeroSection({
   onChatClick,
@@ -27,51 +27,64 @@ export function HeroSection({
   return (
     <section
       className={cn(
-        'bg-gradient-to-b from-[#E0F4FF] to-white',
+        'relative overflow-hidden',
         className
       )}
     >
-      <div className="px-4 pt-6 pb-8">
+      {/* Elegant Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#E8F7FF] via-[#F0FAFF] to-white" />
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-primary/5 to-transparent" />
+
+      {/* Content */}
+      <div className="relative px-4 pt-8 pb-10">
         {/* Chat Order CTA */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-8">
           {/* CTA Text */}
-          <h2 className="text-xl font-bold text-slate-900 mb-1">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
             {isRTL ? 'عايز تطلب إيه؟' : 'What do you want to order?'}
           </h2>
-          <p className="text-slate-500 text-sm mb-4">
+          <p className="text-slate-500 text-sm md:text-base">
             {isRTL ? 'ابحث أو دردش مع مساعدنا الذكي' : 'Search or chat with our smart assistant'}
           </p>
         </div>
 
-        {/* Search Bar */}
+        {/* Elegant Search Bar */}
         <div
           onClick={onSearchClick}
-          className="relative bg-white rounded-xl shadow-sm border border-slate-100 cursor-pointer hover:border-primary/30 transition-colors"
+          className="relative max-w-2xl mx-auto group cursor-pointer"
         >
-          <div className="flex items-center px-4 py-3">
-            <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
-            <input
-              type="text"
-              readOnly
-              placeholder={isRTL ? 'ابحث عن مطعم أو أكلة...' : 'Search for restaurant or food...'}
-              className="flex-1 mx-3 bg-transparent text-slate-900 placeholder:text-slate-400 outline-none cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation()
-                onSearchClick?.()
-              }}
-            />
-            {onChatClick && (
-              <button
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="relative bg-white rounded-2xl shadow-elegant border border-slate-100/80 hover:border-primary/20 hover:shadow-elegant-lg transition-all duration-300">
+            <div className="flex items-center px-5 py-4">
+              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center flex-shrink-0">
+                <Search className="w-5 h-5 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                readOnly
+                placeholder={isRTL ? 'ابحث عن مطعم أو أكلة...' : 'Search for restaurant or food...'}
+                className="flex-1 mx-4 bg-transparent text-slate-900 placeholder:text-slate-400 text-base outline-none cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation()
-                  onChatClick?.()
+                  onSearchClick?.()
                 }}
-                className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center hover:bg-primary/20 transition-colors"
-                aria-label={isRTL ? 'دردش واطلب' : 'Chat & Order'}
-              >
-                <MessageCircle className="w-4 h-4 text-primary" />
-              </button>
-            )}
+              />
+              {onChatClick && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onChatClick?.()
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-primary/90 rounded-xl text-white text-sm font-medium hover:shadow-lg hover:shadow-primary/25 active:scale-95 transition-all duration-200"
+                  aria-label={isRTL ? 'دردش واطلب' : 'Chat & Order'}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span className="hidden sm:inline">
+                    {isRTL ? 'اطلب بالذكاء' : 'AI Order'}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

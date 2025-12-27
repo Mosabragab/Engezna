@@ -532,3 +532,418 @@ html.no-transition * {
  * - Primary Blue on Black: ~6.9:1 (AA for body text)
  * - Black on White: 21:1 (AAA)
  */
+
+/* ========================================
+ * ELEGANT SIMPLICITY DESIGN SYSTEM
+ * "Less is More" - Clean, Professional UI
+ * Updated: December 2025
+ * ======================================== */
+
+/* Elegant Shadows - Soft, Layered Depth */
+@layer utilities {
+  .shadow-elegant-sm {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 2px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  .shadow-elegant {
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.04),
+      0 4px 8px rgba(0, 0, 0, 0.06),
+      0 8px 16px rgba(0, 0, 0, 0.04);
+  }
+
+  .shadow-elegant-lg {
+    box-shadow:
+      0 4px 8px rgba(0, 0, 0, 0.04),
+      0 8px 16px rgba(0, 0, 0, 0.06),
+      0 16px 32px rgba(0, 0, 0, 0.08);
+  }
+
+  .shadow-elegant-xl {
+    box-shadow:
+      0 8px 16px rgba(0, 0, 0, 0.06),
+      0 16px 32px rgba(0, 0, 0, 0.08),
+      0 32px 64px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Floating Card Effect - For Featured Items */
+  .shadow-float {
+    box-shadow:
+      0 10px 40px rgba(0, 157, 224, 0.15),
+      0 4px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .shadow-float:hover {
+    box-shadow:
+      0 14px 48px rgba(0, 157, 224, 0.2),
+      0 6px 12px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* Elegant Gradients - Soft, Subtle Transitions */
+@layer components {
+  /* Category Card Gradients */
+  .gradient-category-blue {
+    background: linear-gradient(145deg, #E6F7FF 0%, #FFFFFF 100%);
+  }
+
+  .gradient-category-green {
+    background: linear-gradient(145deg, #E6FFF5 0%, #FFFFFF 100%);
+  }
+
+  .gradient-category-orange {
+    background: linear-gradient(145deg, #FFF7E6 0%, #FFFFFF 100%);
+  }
+
+  .gradient-category-purple {
+    background: linear-gradient(145deg, #F5F0FF 0%, #FFFFFF 100%);
+  }
+
+  .gradient-category-pink {
+    background: linear-gradient(145deg, #FFF0F5 0%, #FFFFFF 100%);
+  }
+
+  /* Promo Card Gradients */
+  .gradient-promo-orange {
+    background: linear-gradient(135deg, #FF6B35 0%, #F7941E 100%);
+  }
+
+  .gradient-promo-red {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  }
+
+  .gradient-promo-blue {
+    background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
+  }
+
+  .gradient-promo-green {
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+  }
+
+  /* Glass Morphism Effect */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-effect-dark {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Elegant Card Styles */
+@layer components {
+  /* Base Elegant Card */
+  .card-elegant {
+    @apply bg-white rounded-2xl border border-slate-100;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.02),
+      0 4px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-elegant:hover {
+    @apply border-slate-200;
+    box-shadow:
+      0 4px 8px rgba(0, 0, 0, 0.04),
+      0 8px 16px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+  }
+
+  /* Featured Card - More Prominent */
+  .card-featured {
+    @apply bg-white rounded-3xl border-0;
+    box-shadow:
+      0 8px 24px rgba(0, 0, 0, 0.08),
+      0 4px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-featured:hover {
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.12),
+      0 6px 12px rgba(0, 0, 0, 0.06);
+    transform: translateY(-4px);
+  }
+
+  /* Interactive Product Card */
+  .card-product {
+    @apply bg-white rounded-2xl overflow-hidden;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.25s ease-out;
+  }
+
+  .card-product:hover {
+    border-color: rgba(0, 157, 224, 0.2);
+    box-shadow:
+      0 4px 12px rgba(0, 157, 224, 0.1),
+      0 2px 4px rgba(0, 0, 0, 0.04);
+    transform: translateY(-2px);
+  }
+
+  .card-product:active {
+    transform: translateY(0) scale(0.98);
+  }
+}
+
+/* Elegant Buttons */
+@layer components {
+  .btn-elegant {
+    @apply px-6 py-3 rounded-xl font-medium;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-elegant-primary {
+    @apply btn-elegant text-white;
+    background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
+    box-shadow: 0 4px 12px rgba(0, 157, 224, 0.3);
+  }
+
+  .btn-elegant-primary:hover {
+    box-shadow: 0 6px 20px rgba(0, 157, 224, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-elegant-primary:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 8px rgba(0, 157, 224, 0.3);
+  }
+
+  .btn-elegant-secondary {
+    @apply btn-elegant bg-white text-slate-800 border border-slate-200;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  .btn-elegant-secondary:hover {
+    @apply border-primary/30;
+    box-shadow: 0 4px 12px rgba(0, 157, 224, 0.1);
+  }
+}
+
+/* Elegant Chip/Tag Styles */
+@layer components {
+  .chip-elegant {
+    @apply px-4 py-2 rounded-full text-sm font-medium;
+    transition: all 0.2s ease;
+  }
+
+  .chip-elegant-default {
+    @apply chip-elegant bg-slate-100 text-slate-600;
+  }
+
+  .chip-elegant-default:hover {
+    @apply bg-slate-200;
+  }
+
+  .chip-elegant-active {
+    @apply chip-elegant text-white;
+    background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
+    box-shadow: 0 2px 8px rgba(0, 157, 224, 0.3);
+  }
+
+  .chip-elegant-outline {
+    @apply chip-elegant bg-white border-2 border-slate-200 text-slate-600;
+  }
+
+  .chip-elegant-outline:hover {
+    @apply border-primary text-primary;
+  }
+}
+
+/* Elegant Search Bar */
+@layer components {
+  .search-elegant {
+    @apply w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100;
+    @apply text-base placeholder:text-slate-400;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30;
+    @apply focus:bg-white;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02) inset;
+  }
+
+  .search-elegant:hover {
+    @apply bg-slate-100/70 border-slate-200;
+  }
+
+  .search-elegant:focus {
+    box-shadow:
+      0 0 0 4px rgba(0, 157, 224, 0.1),
+      0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+}
+
+/* Elegant Badge Styles */
+@layer components {
+  .badge-elegant {
+    @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold;
+  }
+
+  .badge-discount-elegant {
+    @apply badge-elegant text-white;
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+  }
+
+  .badge-new-elegant {
+    @apply badge-elegant text-white;
+    background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
+    box-shadow: 0 2px 6px rgba(0, 157, 224, 0.3);
+  }
+
+  .badge-promo-elegant {
+    @apply badge-elegant text-white;
+    background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+    box-shadow: 0 2px 6px rgba(249, 115, 22, 0.3);
+  }
+}
+
+/* Smooth Micro-interactions */
+@keyframes elegant-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes elegant-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes elegant-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-elegant-bounce {
+  animation: elegant-bounce 0.5s ease-in-out;
+}
+
+.animate-elegant-pulse {
+  animation: elegant-pulse 2s ease-in-out infinite;
+}
+
+.animate-elegant-scale {
+  animation: elegant-scale 0.3s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.4s ease-out forwards;
+}
+
+/* Staggered Animation Delays */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+
+/* Text Gradients */
+@layer utilities {
+  .text-gradient-brand {
+    background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #FFD166 0%, #F59E0B 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* Elegant Dividers */
+@layer components {
+  .divider-elegant {
+    @apply h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent;
+  }
+
+  .divider-brand {
+    @apply h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent;
+  }
+}
+
+/* Section Spacing - Breathing Room */
+@layer utilities {
+  .section-padding {
+    @apply py-8 md:py-12 lg:py-16;
+  }
+
+  .section-padding-sm {
+    @apply py-6 md:py-8 lg:py-10;
+  }
+
+  .content-spacing {
+    @apply space-y-6 md:space-y-8;
+  }
+
+  .card-spacing {
+    @apply p-4 md:p-5 lg:p-6;
+  }
+}
+
+/* Hover Image Zoom Effect */
+@layer utilities {
+  .img-zoom-container {
+    @apply overflow-hidden;
+  }
+
+  .img-zoom {
+    @apply transition-transform duration-500 ease-out;
+  }
+
+  .img-zoom-container:hover .img-zoom {
+    transform: scale(1.08);
+  }
+}

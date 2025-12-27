@@ -79,29 +79,29 @@ export function Footer() {
   ]
 
   return (
-    <footer className="bg-[#F1F5F9] border-t border-[#E2E8F0]">
+    <footer className="bg-gradient-to-b from-slate-50 to-slate-100 border-t border-slate-200/50">
       {/* Main Footer Content */}
-      <div className="container mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 py-12 lg:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
           {/* Brand Section */}
-          <div className="space-y-4">
-            <Link href={`/${locale}`} className="inline-block">
-              <EngeznaLogo size="md" static showPen={false} />
+          <div className="space-y-5">
+            <Link href={`/${locale}`} className="inline-block hover:scale-105 transition-transform duration-200">
+              <EngeznaLogo size="lg" static showPen={false} />
             </Link>
-            <p className="text-[#475569] text-sm leading-relaxed">
+            <p className="text-slate-600 text-sm leading-relaxed">
               {t('tagline')}
             </p>
-            <p className="text-[#475569] text-sm">
+            <p className="text-slate-500 text-sm">
               {t('description')}
             </p>
 
-            {/* Social Links */}
-            <div className="flex items-center gap-3 pt-2">
+            {/* Social Links - Elegant */}
+            <div className="flex items-center gap-3 pt-3">
               <a
                 href="https://wa.me/201XXXXXXXXX"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all duration-200 shadow-sm"
+                className="w-11 h-11 bg-white rounded-xl flex items-center justify-center text-[#25D366] hover:bg-[#25D366] hover:text-white hover:shadow-lg hover:shadow-[#25D366]/25 transition-all duration-300 shadow-elegant-sm active:scale-95"
                 aria-label="WhatsApp"
               >
                 <MessageCircle className="w-5 h-5" strokeWidth={1.8} />
@@ -110,14 +110,14 @@ export function Footer() {
                 href="https://facebook.com/engezna"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition-all duration-200 shadow-sm"
+                className="w-11 h-11 bg-white rounded-xl flex items-center justify-center text-[#1877F2] hover:bg-[#1877F2] hover:text-white hover:shadow-lg hover:shadow-[#1877F2]/25 transition-all duration-300 shadow-elegant-sm active:scale-95"
                 aria-label="Facebook"
               >
                 <Facebook className="w-5 h-5" strokeWidth={1.8} />
               </a>
               <a
                 href="mailto:support@engezna.com"
-                className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#009DE0] hover:bg-[#009DE0] hover:text-white transition-all duration-200 shadow-sm"
+                className="w-11 h-11 bg-white rounded-xl flex items-center justify-center text-primary hover:bg-primary hover:text-white hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 shadow-elegant-sm active:scale-95"
                 aria-label="Email"
               >
                 <Mail className="w-5 h-5" strokeWidth={1.8} />
@@ -127,18 +127,20 @@ export function Footer() {
 
           {/* For Customers */}
           <div>
-            <h3 className="font-bold text-[#0F172A] mb-4 text-lg">
+            <h3 className="font-bold text-slate-900 mb-5 text-lg">
               {t('forCustomers')}
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-3.5">
               {customerLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="flex items-center gap-2 text-[#475569] hover:text-[#009DE0] transition-colors"
+                    className="group flex items-center gap-2.5 text-slate-600 hover:text-primary transition-all duration-200"
                   >
-                    <link.icon className="w-4 h-4" strokeWidth={1.8} />
-                    <span>{link.label}</span>
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                      <link.icon className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors" strokeWidth={1.8} />
+                    </div>
+                    <span className="font-medium text-sm">{link.label}</span>
                   </Link>
                 </li>
               ))}
@@ -147,27 +149,29 @@ export function Footer() {
 
           {/* For Partners */}
           <div>
-            <h3 className="font-bold text-[#0F172A] mb-4 text-lg">
+            <h3 className="font-bold text-slate-900 mb-5 text-lg">
               {t('forPartners')}
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-3.5">
               {partnerLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="flex items-center gap-2 text-[#475569] hover:text-[#009DE0] transition-colors"
+                    className="group flex items-center gap-2.5 text-slate-600 hover:text-primary transition-all duration-200"
                   >
-                    <link.icon className="w-4 h-4" strokeWidth={1.8} />
-                    <span>{link.label}</span>
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                      <link.icon className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors" strokeWidth={1.8} />
+                    </div>
+                    <span className="font-medium text-sm">{link.label}</span>
                   </Link>
                 </li>
               ))}
             </ul>
 
-            {/* Partner CTA */}
+            {/* Partner CTA - Elegant */}
             <Link
               href={`/${locale}/partner/register`}
-              className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-[#009DE0] text-white rounded-lg hover:bg-[#0086c3] transition-colors text-sm font-medium"
+              className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white rounded-xl hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 text-sm font-semibold active:scale-95"
             >
               <Store className="w-4 h-4" strokeWidth={1.8} />
               {t('registerNow')}
@@ -176,17 +180,19 @@ export function Footer() {
 
           {/* Contact Us */}
           <div>
-            <h3 className="font-bold text-[#0F172A] mb-4 text-lg">
+            <h3 className="font-bold text-slate-900 mb-5 text-lg">
               {t('contactUs')}
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-3.5">
               <li>
                 <a
                   href="tel:+201XXXXXXXXX"
-                  className="flex items-center gap-2 text-[#475569] hover:text-[#009DE0] transition-colors"
+                  className="group flex items-center gap-2.5 text-slate-600 hover:text-primary transition-all duration-200"
                 >
-                  <Phone className="w-4 h-4" strokeWidth={1.8} />
-                  <span dir="ltr">+20 1XX XXX XXXX</span>
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                    <Phone className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors" strokeWidth={1.8} />
+                  </div>
+                  <span dir="ltr" className="font-medium text-sm">+20 1XX XXX XXXX</span>
                 </a>
               </li>
               <li>
@@ -194,19 +200,23 @@ export function Footer() {
                   href="https://wa.me/201XXXXXXXXX"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-[#475569] hover:text-[#25D366] transition-colors"
+                  className="group flex items-center gap-2.5 text-slate-600 hover:text-[#25D366] transition-all duration-200"
                 >
-                  <MessageCircle className="w-4 h-4" strokeWidth={1.8} />
-                  <span>{t('whatsappSupport')}</span>
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-[#25D366]/10 flex items-center justify-center transition-colors">
+                    <MessageCircle className="w-4 h-4 text-slate-500 group-hover:text-[#25D366] transition-colors" strokeWidth={1.8} />
+                  </div>
+                  <span className="font-medium text-sm">{t('whatsappSupport')}</span>
                 </a>
               </li>
               <li>
                 <a
                   href="mailto:support@engezna.com"
-                  className="flex items-center gap-2 text-[#475569] hover:text-[#009DE0] transition-colors"
+                  className="group flex items-center gap-2.5 text-slate-600 hover:text-primary transition-all duration-200"
                 >
-                  <Mail className="w-4 h-4" strokeWidth={1.8} />
-                  <span>support@engezna.com</span>
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                    <Mail className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors" strokeWidth={1.8} />
+                  </div>
+                  <span className="font-medium text-sm">support@engezna.com</span>
                 </a>
               </li>
             </ul>
@@ -215,24 +225,26 @@ export function Footer() {
       </div>
 
       {/* Available Governorates - Dynamic from database */}
-      <div className="border-t border-[#E2E8F0] bg-white/50">
-        <div className="container mx-auto px-4 py-4">
+      <div className="border-t border-slate-200/50 bg-white/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-5">
           <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
-            <MapPin className="w-4 h-4 text-[#009DE0]" strokeWidth={1.8} />
-            <span className="text-[#475569] font-medium">{t('availableGovernorates')}:</span>
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+              <MapPin className="w-4 h-4 text-primary" strokeWidth={1.8} />
+            </div>
+            <span className="text-slate-600 font-semibold">{t('availableGovernorates')}:</span>
             {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-[#009DE0]" />
+              <Loader2 className="w-4 h-4 animate-spin text-primary" />
             ) : governorates.length > 0 ? (
               governorates.map((gov, index) => (
-                <span key={gov.id} className="text-[#0F172A]">
+                <span key={gov.id} className="text-slate-800 font-medium">
                   {locale === 'ar' ? gov.name_ar : gov.name_en}
                   {index < governorates.length - 1 && (
-                    <span className="text-[#94A3B8] mx-1">•</span>
+                    <span className="text-slate-300 mx-1.5">•</span>
                   )}
                 </span>
               ))
             ) : (
-              <span className="text-[#94A3B8]">
+              <span className="text-slate-400 italic">
                 {locale === 'ar' ? 'قريباً' : 'Coming soon'}
               </span>
             )}
@@ -240,31 +252,29 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Copyright */}
-      <div className="border-t border-[#E2E8F0] bg-[#0F172A]">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-sm">
+      {/* Copyright - Elegant Dark */}
+      <div className="bg-slate-900">
+        <div className="container mx-auto px-4 py-5">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
             <p className="text-slate-400">
               {t('copyright')}
             </p>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               <Link
                 href={`/${locale}/privacy`}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-slate-400 hover:text-white transition-colors font-medium"
               >
                 {t('privacy')}
               </Link>
-              <span className="text-slate-600">|</span>
               <Link
                 href={`/${locale}/terms`}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-slate-400 hover:text-white transition-colors font-medium"
               >
                 {t('terms')}
               </Link>
-              <span className="text-slate-600">|</span>
               <Link
                 href={`/${locale}/admin/login`}
-                className="text-slate-500 hover:text-white transition-colors text-xs"
+                className="text-slate-500 hover:text-slate-300 transition-colors text-xs"
               >
                 {locale === 'ar' ? 'المشرفين' : 'Admin'}
               </Link>

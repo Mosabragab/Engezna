@@ -654,16 +654,16 @@ export function OffersCarousel({
 
   if (isLoading) {
     return (
-      <section className={`bg-slate-50 px-4 py-6 ${className}`}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="h-6 w-24 bg-slate-200 rounded animate-pulse" />
+      <section className={`bg-white px-4 py-6 ${className}`}>
+        <div className="flex items-center justify-between mb-5">
+          <div className="h-7 w-28 bg-slate-100 rounded-lg animate-pulse" />
         </div>
         <div className="flex gap-4 overflow-hidden">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
               className={`
-                flex-shrink-0 rounded-2xl bg-slate-200 animate-pulse
+                flex-shrink-0 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 animate-pulse
                 ${isDesktop ? 'w-[calc(33.333%-11px)]' : 'w-[85%]'}
                 aspect-[16/9]
               `}
@@ -689,33 +689,34 @@ export function OffersCarousel({
     : banners
 
   return (
-    <section className={`bg-slate-50 px-4 py-6 ${className}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-slate-900">{sectionTitle}</h2>
-        <div className="flex items-center gap-2">
+    <section className={`bg-white px-4 py-6 ${className}`}>
+      {/* Header - Elegant */}
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-xl font-bold text-slate-900">{sectionTitle}</h2>
+        <div className="flex items-center gap-3">
           {showViewAll && onViewAll && (
             <button
               onClick={onViewAll}
-              className="text-sm text-primary font-medium hover:underline"
+              className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
             >
               {locale === 'ar' ? 'عرض الكل' : 'View All'}
+              <span className={`${locale === 'ar' ? 'rotate-180' : ''}`}>→</span>
             </button>
           )}
 
-          {/* Desktop Navigation Arrows */}
+          {/* Desktop Navigation Arrows - Elegant */}
           {isDesktop && banners.length > 3 && (
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePrev}
-                className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm group"
+                className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center hover:bg-primary hover:border-primary hover:text-white text-slate-500 transition-all duration-200 shadow-sm group active:scale-95"
                 aria-label={locale === 'ar' ? 'السابق' : 'Previous'}
               >
                 <ChevronLeft className="w-5 h-5 group-hover:scale-110 transition-transform" />
               </button>
               <button
                 onClick={handleNext}
-                className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary transition-colors shadow-sm group"
+                className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center hover:bg-primary hover:border-primary hover:text-white text-slate-500 transition-all duration-200 shadow-sm group active:scale-95"
                 aria-label={locale === 'ar' ? 'التالي' : 'Next'}
               >
                 <ChevronRight className="w-5 h-5 group-hover:scale-110 transition-transform" />

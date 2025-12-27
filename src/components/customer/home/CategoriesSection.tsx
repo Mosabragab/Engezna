@@ -71,63 +71,61 @@ export function CategoriesSection({
   const sectionTitle = locale === 'ar' ? 'الأقسام' : 'Categories'
 
   return (
-    <section className={cn('py-5 px-4 bg-slate-50', className)}>
-      {/* Section Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold text-slate-900">{sectionTitle}</h2>
+    <section className={cn('py-6 px-4 bg-white', className)}>
+      {/* Section Header - Elegant */}
+      <div className="flex justify-between items-center mb-5">
+        <h2 className="text-xl font-bold text-slate-900">{sectionTitle}</h2>
         {showViewAll && (
           <button
             onClick={onViewAll}
-            className="text-sm font-medium text-[#009DE0] hover:underline"
+            className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
           >
             {locale === 'ar' ? 'عرض الكل' : 'View All'}
+            <span className={`${locale === 'ar' ? 'rotate-180' : ''}`}>→</span>
           </button>
         )}
       </div>
 
-      {/* Categories Grid - Responsive: 4 columns, larger cards */}
-      <div className="grid grid-cols-4 gap-2 sm:gap-3">
-        {categories.map((category) => {
+      {/* Categories Grid - Elegant Design with Hover Effects */}
+      <div className="grid grid-cols-4 gap-3 sm:gap-4">
+        {categories.map((category, index) => {
           const isSelected = selectedCategory === category.key
 
           const cardContent = (
-            <div className="flex flex-col items-center">
-              {/* Card - Larger responsive sizes */}
+            <div className={`flex flex-col items-center animate-slide-up opacity-0 stagger-${index + 1}`}
+                 style={{ animationFillMode: 'forwards' }}>
+              {/* Card - Elegant floating design */}
               <div
                 className={cn(
-                  'w-[72px] h-[72px] sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28',
-                  'rounded-2xl md:rounded-[20px] flex items-center justify-center',
-                  'transition-all duration-300 cursor-pointer',
-                  'hover:scale-105 hover:-translate-y-0.5',
-                  isSelected && 'scale-105'
+                  'w-[76px] h-[76px] sm:w-[88px] sm:h-[88px] md:w-[100px] md:h-[100px] lg:w-[120px] lg:h-[120px]',
+                  'rounded-2xl md:rounded-3xl flex items-center justify-center',
+                  'transition-all duration-300 cursor-pointer relative',
+                  'hover:scale-[1.08] hover:-translate-y-1',
+                  'active:scale-[0.98]',
+                  isSelected && 'scale-[1.05]'
                 )}
                 style={{
                   background: category.gradient,
                   boxShadow: isSelected
-                    ? '0 0 0 2.5px #009DE0, 0 8px 25px rgba(0,157,224,0.2)'
-                    : '0 2px 8px rgba(0,0,0,0.04)',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) {
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'
-                  }
+                    ? '0 0 0 3px #009DE0, 0 12px 32px rgba(0,157,224,0.25)'
+                    : '0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04)',
                 }}
               >
+                {/* Subtle inner glow */}
+                <div className="absolute inset-0 rounded-2xl md:rounded-3xl bg-gradient-to-br from-white/30 to-transparent pointer-events-none" />
                 <span
-                  className="text-[28px] sm:text-[32px] md:text-[38px] lg:text-[44px] leading-none select-none"
-                  style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
+                  className="text-[32px] sm:text-[38px] md:text-[44px] lg:text-[52px] leading-none select-none relative z-10"
+                  style={{ filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.12))' }}
                 >
                   {category.emoji}
                 </span>
               </div>
 
-              {/* Label - Responsive text */}
-              <span className="mt-2 text-[11px] sm:text-xs md:text-sm font-medium text-slate-600 text-center leading-tight line-clamp-2">
+              {/* Label - Elegant typography */}
+              <span className={cn(
+                'mt-3 text-xs sm:text-sm font-semibold text-center leading-tight line-clamp-2',
+                isSelected ? 'text-primary' : 'text-slate-700'
+              )}>
                 {locale === 'ar' ? category.nameAr : category.nameEn}
               </span>
             </div>
@@ -138,7 +136,7 @@ export function CategoriesSection({
               <button
                 key={category.id}
                 onClick={() => onCategoryClick(category.key)}
-                className="focus:outline-none"
+                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl"
               >
                 {cardContent}
               </button>
@@ -149,6 +147,7 @@ export function CategoriesSection({
             <Link
               key={category.id}
               href={`/${locale}/providers?category=${category.key}`}
+              className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl"
             >
               {cardContent}
             </Link>
