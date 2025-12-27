@@ -271,7 +271,6 @@ export function CustomerHeader({ showBackButton = false, title, transparent = fa
                     {locationDisplayText}
                   </span>
                 </div>
-                <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
               </button>
             ) : (
               // Empty placeholder to maintain layout balance
