@@ -852,6 +852,16 @@ export default function SettlementDetailPage() {
                   const codNetRevenue = settlement.cod_net_revenue || 0
                   const onlineNetRevenue = settlement.online_net_revenue || 0
 
+                  // ✅ Refunds - proportionally allocated based on gross revenue
+                  const totalRefunds = settlement.total_refunds || 0
+                  const totalGross = (settlement.cod_gross_revenue || 0) + (settlement.online_gross_revenue || 0)
+                  const codRefunds = totalGross > 0 ? totalRefunds * ((settlement.cod_gross_revenue || 0) / totalGross) : 0
+                  const onlineRefunds = totalGross > 0 ? totalRefunds * ((settlement.online_gross_revenue || 0) / totalGross) : 0
+
+                  // ✅ Net Revenue for Commission = Net Revenue - Refunds
+                  const codNetRevenueForCommission = codNetRevenue - codRefunds
+                  const onlineNetRevenueForCommission = onlineNetRevenue - onlineRefunds
+
                   // Grace period detection: commission is 0 but original_commission > 0
                   const codIsGracePeriod = (settlement.cod_commission_owed || 0) === 0 && codOriginalCommission > 0
                   const onlineIsGracePeriod = (settlement.online_platform_commission || 0) === 0 && onlineOriginalCommission > 0
@@ -886,22 +896,36 @@ export default function SettlementDetailPage() {
                               </span>
                             </div>
 
-                            {/* Delivery Fees - From DB */}
-                            {codDeliveryFees > 0 && (
-                              <div className="flex justify-between items-center text-slate-500">
+                            {/* Refunds - if any */}
+                            {codRefunds > 0 && (
+                              <div className="flex justify-between items-center text-red-600">
                                 <span className="flex items-center gap-1">
                                   <span className="text-xs">(−)</span>
-                                  {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                                  {locale === 'ar' ? 'المرتجعات' : 'Refunds'}
                                 </span>
-                                <span>{formatCurrency(codDeliveryFees, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                                <span className="font-semibold">{formatCurrency(codRefunds, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                               </div>
                             )}
 
-                            {/* Net Revenue */}
-                            <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-2">
-                              <span className="text-slate-700 font-medium">{locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
+                            {/* Delivery Fees - From DB */}
+                            {codDeliveryFees > 0 && (
+                              <div className="flex justify-between items-center text-red-600">
+                                <span className="flex items-center gap-1">
+                                  <span className="text-xs">(−)</span>
+                                  {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                                  <span className="text-[9px] bg-red-100 text-red-500 px-1 py-0.5 rounded">
+                                    {locale === 'ar' ? 'لا عمولة' : 'no comm'}
+                                  </span>
+                                </span>
+                                <span className="font-semibold">{formatCurrency(codDeliveryFees, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                              </div>
+                            )}
+
+                            {/* Net Revenue for Commission */}
+                            <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-2 bg-slate-50 -mx-2 px-2 py-1.5 rounded">
+                              <span className="text-slate-700 font-medium">{locale === 'ar' ? 'صافي الإيرادات الخاضعة للعمولة' : 'Commission Base'}</span>
                               <span className="font-semibold text-slate-900">
-                                {formatCurrency(codNetRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                                {formatCurrency(codNetRevenueForCommission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                               </span>
                             </div>
 
@@ -981,22 +1005,36 @@ export default function SettlementDetailPage() {
                               </span>
                             </div>
 
-                            {/* Delivery Fees - From DB */}
-                            {onlineDeliveryFees > 0 && (
-                              <div className="flex justify-between items-center text-slate-500">
+                            {/* Refunds - if any */}
+                            {onlineRefunds > 0 && (
+                              <div className="flex justify-between items-center text-red-600">
                                 <span className="flex items-center gap-1">
                                   <span className="text-xs">(−)</span>
-                                  {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                                  {locale === 'ar' ? 'المرتجعات' : 'Refunds'}
                                 </span>
-                                <span>{formatCurrency(onlineDeliveryFees, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                                <span className="font-semibold">{formatCurrency(onlineRefunds, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
                               </div>
                             )}
 
-                            {/* Net Revenue */}
-                            <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-2">
-                              <span className="text-slate-700 font-medium">{locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
+                            {/* Delivery Fees - From DB */}
+                            {onlineDeliveryFees > 0 && (
+                              <div className="flex justify-between items-center text-red-600">
+                                <span className="flex items-center gap-1">
+                                  <span className="text-xs">(−)</span>
+                                  {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                                  <span className="text-[9px] bg-red-100 text-red-500 px-1 py-0.5 rounded">
+                                    {locale === 'ar' ? 'لا عمولة' : 'no comm'}
+                                  </span>
+                                </span>
+                                <span className="font-semibold">{formatCurrency(onlineDeliveryFees, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                              </div>
+                            )}
+
+                            {/* Net Revenue for Commission */}
+                            <div className="flex justify-between items-center border-t border-dashed border-slate-200 pt-2 bg-slate-50 -mx-2 px-2 py-1.5 rounded">
+                              <span className="text-slate-700 font-medium">{locale === 'ar' ? 'صافي الإيرادات الخاضعة للعمولة' : 'Commission Base'}</span>
                               <span className="font-semibold text-slate-900">
-                                {formatCurrency(onlineNetRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                                {formatCurrency(onlineNetRevenueForCommission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                               </span>
                             </div>
 
