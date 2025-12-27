@@ -923,18 +923,39 @@ export default function ProviderFinanceDashboard() {
                       <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
                       <span className="font-semibold text-slate-900">{formatCurrency(safeNumber(financeData.cod_gross_revenue))}</span>
                     </div>
+                    {/* Refunds - if any */}
+                    {safeNumber(financeData.total_refunds) > 0 && safeNumber(financeData.cod_orders_count) > 0 && (
+                      <div className="flex justify-between items-center text-red-600">
+                        <span>(−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}</span>
+                        <span className="font-semibold">
+                          {formatCurrency(
+                            safeNumber(financeData.total_refunds) *
+                            (safeNumber(financeData.cod_gross_revenue) / safeNumber(financeData.gross_revenue || 1))
+                          )}
+                        </span>
+                      </div>
+                    )}
                     {/* Delivery Fees */}
                     <div className="flex justify-between items-center text-red-600">
-                      <span>(−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</span>
+                      <span className="flex items-center gap-1">
+                        (−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                        <span className="text-[10px] bg-red-100 text-red-500 px-1 py-0.5 rounded">
+                          {locale === 'ar' ? 'لا تخضع للعمولة' : 'no commission'}
+                        </span>
+                      </span>
                       <span className="font-semibold">{formatCurrency(safeNumber(financeData.cod_delivery_fees))}</span>
                     </div>
                     {/* Divider */}
                     <div className="border-t border-dashed border-slate-200 my-1" />
-                    {/* Net Revenue */}
+                    {/* Net Revenue for Commission */}
                     <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1.5 rounded">
-                      <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
+                      <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات الخاضعة للعمولة' : 'Net Revenue (Commission Base)'}</span>
                       <span className="font-bold text-slate-900">
-                        {formatCurrency(safeNumber(financeData.cod_net_revenue))}
+                        {formatCurrency(
+                          safeNumber(financeData.cod_gross_revenue) -
+                          safeNumber(financeData.cod_delivery_fees) -
+                          (safeNumber(financeData.total_refunds) * (safeNumber(financeData.cod_gross_revenue) / safeNumber(financeData.gross_revenue || 1)))
+                        )}
                       </span>
                     </div>
                     {/* Commission */}
@@ -997,18 +1018,39 @@ export default function ProviderFinanceDashboard() {
                       <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
                       <span className="font-semibold text-slate-900">{formatCurrency(safeNumber(financeData.online_gross_revenue))}</span>
                     </div>
+                    {/* Refunds - if any */}
+                    {safeNumber(financeData.total_refunds) > 0 && safeNumber(financeData.online_orders_count) > 0 && (
+                      <div className="flex justify-between items-center text-red-600">
+                        <span>(−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}</span>
+                        <span className="font-semibold">
+                          {formatCurrency(
+                            safeNumber(financeData.total_refunds) *
+                            (safeNumber(financeData.online_gross_revenue) / safeNumber(financeData.gross_revenue || 1))
+                          )}
+                        </span>
+                      </div>
+                    )}
                     {/* Delivery Fees */}
                     <div className="flex justify-between items-center text-red-600">
-                      <span>(−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</span>
+                      <span className="flex items-center gap-1">
+                        (−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                        <span className="text-[10px] bg-red-100 text-red-500 px-1 py-0.5 rounded">
+                          {locale === 'ar' ? 'لا تخضع للعمولة' : 'no commission'}
+                        </span>
+                      </span>
                       <span className="font-semibold">{formatCurrency(safeNumber(financeData.online_delivery_fees))}</span>
                     </div>
                     {/* Divider */}
                     <div className="border-t border-dashed border-slate-200 my-1" />
-                    {/* Net Revenue */}
+                    {/* Net Revenue for Commission */}
                     <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1.5 rounded">
-                      <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
+                      <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات الخاضعة للعمولة' : 'Net Revenue (Commission Base)'}</span>
                       <span className="font-bold text-slate-900">
-                        {formatCurrency(safeNumber(financeData.online_net_revenue))}
+                        {formatCurrency(
+                          safeNumber(financeData.online_gross_revenue) -
+                          safeNumber(financeData.online_delivery_fees) -
+                          (safeNumber(financeData.total_refunds) * (safeNumber(financeData.online_gross_revenue) / safeNumber(financeData.gross_revenue || 1)))
+                        )}
                       </span>
                     </div>
                     {/* Commission */}
@@ -1236,6 +1278,16 @@ export default function ProviderFinanceDashboard() {
                                 const codNetRevenue = settlement.cod_net_revenue || 0
                                 const onlineNetRevenue = settlement.online_net_revenue || 0
 
+                                // ✅ Refunds - proportionally allocated based on gross revenue
+                                const totalRefunds = settlement.total_refunds || 0
+                                const totalGross = (settlement.cod_gross_revenue || 0) + (settlement.online_gross_revenue || 0)
+                                const codRefunds = totalGross > 0 ? totalRefunds * ((settlement.cod_gross_revenue || 0) / totalGross) : 0
+                                const onlineRefunds = totalGross > 0 ? totalRefunds * ((settlement.online_gross_revenue || 0) / totalGross) : 0
+
+                                // ✅ Net Revenue for Commission = Net Revenue - Refunds
+                                const codNetRevenueForCommission = codNetRevenue - codRefunds
+                                const onlineNetRevenueForCommission = onlineNetRevenue - onlineRefunds
+
                                 // Grace period detection: commission is 0 but original_commission > 0
                                 const codIsGracePeriod = (settlement.cod_commission_owed || 0) === 0 && codOriginalCommission > 0
                                 const onlineIsGracePeriod = (settlement.online_platform_commission || 0) === 0 && onlineOriginalCommission > 0
@@ -1268,10 +1320,23 @@ export default function ProviderFinanceDashboard() {
                                             <span className="font-semibold text-slate-900">{formatCurrency(settlement.cod_gross_revenue || 0)}</span>
                                           </div>
 
+                                          {/* Refunds - if any */}
+                                          {codRefunds > 0 && (
+                                            <div className="flex justify-between items-center text-red-600">
+                                              <span>(−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}</span>
+                                              <span className="font-semibold">{formatCurrency(codRefunds)}</span>
+                                            </div>
+                                          )}
+
                                           {/* Delivery Fees - From DB */}
                                           {codDeliveryFees > 0 && (
-                                            <div className="flex justify-between items-center text-slate-500">
-                                              <span>(−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</span>
+                                            <div className="flex justify-between items-center text-red-600">
+                                              <span className="flex items-center gap-1">
+                                                (−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                                                <span className="text-[8px] bg-red-100 text-red-500 px-1 rounded">
+                                                  {locale === 'ar' ? 'لا عمولة' : 'no comm'}
+                                                </span>
+                                              </span>
                                               <span className="font-semibold">{formatCurrency(codDeliveryFees)}</span>
                                             </div>
                                           )}
@@ -1279,10 +1344,10 @@ export default function ProviderFinanceDashboard() {
                                           {/* Divider */}
                                           <div className="border-t border-dashed border-slate-200 my-1" />
 
-                                          {/* Net Revenue */}
+                                          {/* Net Revenue for Commission */}
                                           <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1 rounded">
-                                            <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
-                                            <span className="font-bold text-slate-900">{formatCurrency(codNetRevenue)}</span>
+                                            <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات الخاضعة للعمولة' : 'Commission Base'}</span>
+                                            <span className="font-bold text-slate-900">{formatCurrency(codNetRevenueForCommission)}</span>
                                           </div>
 
                                           {/* Commission - with strikethrough if grace period */}
@@ -1355,10 +1420,23 @@ export default function ProviderFinanceDashboard() {
                                             <span className="font-semibold text-slate-900">{formatCurrency(settlement.online_gross_revenue || 0)}</span>
                                           </div>
 
+                                          {/* Refunds - if any */}
+                                          {onlineRefunds > 0 && (
+                                            <div className="flex justify-between items-center text-red-600">
+                                              <span>(−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}</span>
+                                              <span className="font-semibold">{formatCurrency(onlineRefunds)}</span>
+                                            </div>
+                                          )}
+
                                           {/* Delivery Fees - From DB */}
                                           {onlineDeliveryFees > 0 && (
-                                            <div className="flex justify-between items-center text-slate-500">
-                                              <span>(−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</span>
+                                            <div className="flex justify-between items-center text-red-600">
+                                              <span className="flex items-center gap-1">
+                                                (−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                                                <span className="text-[8px] bg-red-100 text-red-500 px-1 rounded">
+                                                  {locale === 'ar' ? 'لا عمولة' : 'no comm'}
+                                                </span>
+                                              </span>
                                               <span className="font-semibold">{formatCurrency(onlineDeliveryFees)}</span>
                                             </div>
                                           )}
@@ -1366,10 +1444,10 @@ export default function ProviderFinanceDashboard() {
                                           {/* Divider */}
                                           <div className="border-t border-dashed border-slate-200 my-1" />
 
-                                          {/* Net Revenue */}
+                                          {/* Net Revenue for Commission */}
                                           <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1 rounded">
-                                            <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات' : 'Net Revenue'}</span>
-                                            <span className="font-bold text-slate-900">{formatCurrency(onlineNetRevenue)}</span>
+                                            <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات الخاضعة للعمولة' : 'Commission Base'}</span>
+                                            <span className="font-bold text-slate-900">{formatCurrency(onlineNetRevenueForCommission)}</span>
                                           </div>
 
                                           {/* Commission - with strikethrough if grace period */}

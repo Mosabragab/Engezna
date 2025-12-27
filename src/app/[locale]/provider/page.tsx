@@ -80,6 +80,11 @@ const formatCurrency = (amount: number, locale: string): string => {
   ).format(amount)
 }
 
+// Helper function to format numbers with locale-specific digits
+const formatNumber = (num: number, locale: string): string => {
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG').format(num)
+}
+
 // Helper function to calculate trend percentage
 const calculateTrend = (current: number, previous: number): { value: string; isPositive: boolean } => {
   if (previous === 0) {
@@ -495,7 +500,7 @@ export default function ProviderDashboard() {
                   )
                 })()}
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.todayOrders}</p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.todayOrders, locale)}</p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</p>
             </div>
 
@@ -526,7 +531,7 @@ export default function ProviderDashboard() {
                   <Clock className="w-5 h-5 text-[hsl(42_100%_40%)]" strokeWidth={1.8} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.pendingOrders}</p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.pendingOrders, locale)}</p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات قيد الانتظار' : 'Pending Orders'}</p>
             </div>
 
@@ -537,7 +542,7 @@ export default function ProviderDashboard() {
                   <Package className="w-5 h-5 text-primary" strokeWidth={1.8} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{stats.activeProducts}</p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.activeProducts, locale)}</p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
             </div>
           </div>
@@ -568,8 +573,8 @@ export default function ProviderDashboard() {
                     <div>
                       <p className="text-emerald-600 text-sm mb-2">
                         {locale === 'ar'
-                          ? `متبقي ${commissionInfo.daysRemaining} يوم من فترة السماح المجانية (6 أشهر)`
-                          : `${commissionInfo.daysRemaining} days remaining in your free grace period (6 months)`
+                          ? `متبقي ${formatNumber(commissionInfo.daysRemaining, locale)} يوم من فترة السماح المجانية (6 أشهر)`
+                          : `${formatNumber(commissionInfo.daysRemaining, locale)} days remaining in your free grace period (6 months)`
                         }
                       </p>
                       <div className="flex items-center gap-4 text-xs text-slate-500">
@@ -628,7 +633,7 @@ export default function ProviderDashboard() {
                       {locale === 'ar' ? 'كاش' : 'COD'}
                     </span>
                   </div>
-                  <p className="text-lg font-bold text-slate-900">{stats.todayCodOrders} {locale === 'ar' ? 'طلب' : 'orders'}</p>
+                  <p className="text-lg font-bold text-slate-900">{formatNumber(stats.todayCodOrders, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
                   <p className="text-xs text-slate-500">{formatCurrency(stats.todayCodRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
                 </div>
                 {/* Online */}
@@ -641,7 +646,7 @@ export default function ProviderDashboard() {
                       {locale === 'ar' ? 'إلكتروني' : 'Online'}
                     </span>
                   </div>
-                  <p className="text-lg font-bold text-slate-900">{stats.todayOnlineOrders} {locale === 'ar' ? 'طلب' : 'orders'}</p>
+                  <p className="text-lg font-bold text-slate-900">{formatNumber(stats.todayOnlineOrders, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
                   <p className="text-xs text-slate-500">{formatCurrency(stats.todayOnlineRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
                 </div>
               </div>
@@ -667,15 +672,15 @@ export default function ProviderDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
-                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.totalOrders}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.totalOrders, locale)}</p>
               </div>
               <div>
                 <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</p>
-                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.totalCustomers}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.totalCustomers, locale)}</p>
               </div>
               <div>
                 <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
-                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{stats.activeProducts}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.activeProducts, locale)}</p>
               </div>
             </div>
           </div>
