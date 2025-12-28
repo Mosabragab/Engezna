@@ -3,9 +3,10 @@
 -- Run this AFTER the initial team management migration
 -- ============================================================================
 
--- Drop existing functions first
+-- Drop existing functions first (including accept_provider_invitation)
 DROP FUNCTION IF EXISTS public.create_provider_invitation(uuid, text, boolean, boolean, boolean, boolean, boolean);
 DROP FUNCTION IF EXISTS public.deactivate_staff_member(uuid);
+DROP FUNCTION IF EXISTS public.accept_provider_invitation(uuid);
 
 -- ============================================================================
 -- 1. FIXED: create_provider_invitation - Returns JSON with success, user_exists, user_name
