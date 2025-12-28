@@ -488,6 +488,8 @@ export default function TeamManagementPage() {
 
   // Resend invitation
   const handleResendInvitation = async (invitation: PendingInvitation) => {
+    if (!providerId) return
+
     const supabase = createClient()
 
     try {
@@ -497,7 +499,8 @@ export default function TeamManagementPage() {
         .delete()
         .eq('id', invitation.id)
 
-      const { error } = await supabase.rpc('create_provider_invitation', {
+      const { data, error } = await supabase.rpc('create_provider_invitation', {
+        p_provider_id: providerId,
         p_email: invitation.email,
         p_can_manage_orders: invitation.can_manage_orders,
         p_can_manage_menu: invitation.can_manage_menu,
@@ -507,6 +510,11 @@ export default function TeamManagementPage() {
       })
 
       if (error) throw error
+
+      if (!data?.success) {
+        alert(data?.error || (locale === 'ar' ? 'حدث خطأ' : 'An error occurred'))
+        return
+      }
 
       await loadTeamData()
       alert(locale === 'ar' ? 'تم إعادة إرسال الدعوة' : 'Invitation resent successfully')
@@ -662,9 +670,10 @@ export default function TeamManagementPage() {
       )}
 
       {/* Add Staff Modal */}
-      {showAddModal && (
+      {showAddModal && providerId && (
         <AddStaffModal
           locale={locale}
+          providerId={providerId}
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
             setShowAddModal(false)

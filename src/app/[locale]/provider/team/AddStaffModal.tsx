@@ -21,6 +21,7 @@ import {
 
 interface AddStaffModalProps {
   locale: string
+  providerId: string
   onClose: () => void
   onSuccess: () => void
 }
@@ -71,7 +72,7 @@ const permissionOptions: PermissionOption[] = [
   },
 ]
 
-export function AddStaffModal({ locale, onClose, onSuccess }: AddStaffModalProps) {
+export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddStaffModalProps) {
   const [email, setEmail] = useState('')
   const [permissions, setPermissions] = useState<Record<string, boolean>>({
     can_manage_orders: true,
@@ -93,6 +94,7 @@ export function AddStaffModal({ locale, onClose, onSuccess }: AddStaffModalProps
 
     try {
       const { data, error: rpcError } = await supabase.rpc('create_provider_invitation', {
+        p_provider_id: providerId,
         p_email: email.toLowerCase().trim(),
         p_can_manage_orders: permissions.can_manage_orders,
         p_can_manage_menu: permissions.can_manage_menu,
