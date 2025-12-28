@@ -477,7 +477,7 @@ export default function AdminDashboard() {
             </Link>
 
             {/* Pending Settlements */}
-            <Link href={`/${locale}/admin/finance/settlements`} className="bg-card-bg-purple rounded-xl p-4 border border-purple/30 hover:border-purple/50 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+            <Link href={`/${locale}/admin/settlements`} className="bg-card-bg-purple rounded-xl p-4 border border-purple/30 hover:border-purple/50 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
               <div className="flex items-center gap-3 mb-2">
                 <Wallet className="w-5 h-5 text-purple" />
                 <span className="text-sm font-medium text-purple">
