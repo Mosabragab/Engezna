@@ -325,20 +325,20 @@ export default function PromotionsPage() {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3">
-            <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
-              <p className="text-2xl font-bold text-deal">{stats.active}</p>
+            <div className="bg-white rounded-xl p-4 text-center border border-slate-200 shadow-elegant-sm card-hover">
+              <p className="text-2xl font-bold text-deal font-numbers">{stats.active}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'نشط' : 'Active'}</p>
             </div>
-            <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
-              <p className="text-2xl font-bold text-info">{stats.upcoming}</p>
+            <div className="bg-white rounded-xl p-4 text-center border border-slate-200 shadow-elegant-sm card-hover">
+              <p className="text-2xl font-bold text-info font-numbers">{stats.upcoming}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'قادم' : 'Upcoming'}</p>
             </div>
-            <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
-              <p className="text-2xl font-bold text-slate-500">{stats.expired}</p>
+            <div className="bg-white rounded-xl p-4 text-center border border-slate-200 shadow-elegant-sm card-hover">
+              <p className="text-2xl font-bold text-slate-500 font-numbers">{stats.expired}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'منتهي' : 'Expired'}</p>
             </div>
-            <div className="bg-white rounded-xl p-4 text-center border border-slate-200">
-              <p className="text-2xl font-bold text-primary">{stats.total}</p>
+            <div className="bg-white rounded-xl p-4 text-center border border-slate-200 shadow-elegant-sm card-hover">
+              <p className="text-2xl font-bold text-primary font-numbers">{stats.total}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'الإجمالي' : 'Total'}</p>
             </div>
           </div>
@@ -391,7 +391,7 @@ export default function PromotionsPage() {
               {filteredPromotions.map((promo) => {
                 const status = getPromotionStatus(promo)
                 return (
-                  <Card key={promo.id} className="bg-white border-slate-200 overflow-hidden">
+                  <Card key={promo.id} className="bg-white border-slate-200 overflow-hidden shadow-elegant-sm hover:shadow-elegant transition-all duration-300">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">

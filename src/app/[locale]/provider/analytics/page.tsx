@@ -366,34 +366,34 @@ export default function AnalyticsPage() {
         {/* ║ QUICK STATS - 4 Simple Cards                                      ║ */}
         {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-5 pb-5 text-center">
               <ShoppingBag className="w-7 h-7 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-slate-900">{data.totalOrders}</p>
+              <p className="text-2xl font-bold text-slate-900 font-numbers">{data.totalOrders}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-5 pb-5 text-center">
               <CheckCircle2 className="w-7 h-7 text-green-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-green-600">{completionRate}%</p>
+              <p className="text-2xl font-bold text-green-600 font-numbers">{completionRate}%</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'معدل الإكمال' : 'Completion Rate'}</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-5 pb-5 text-center">
               <Users className="w-7 h-7 text-blue-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-slate-900">{data.totalCustomers}</p>
+              <p className="text-2xl font-bold text-slate-900 font-numbers">{data.totalCustomers}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'عملاء' : 'Customers'}</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-5 pb-5 text-center">
               <DollarSign className="w-7 h-7 text-amber-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-slate-900">{formatCurrency(data.avgOrderValue)}</p>
+              <p className="text-2xl font-bold text-slate-900 font-numbers">{formatCurrency(data.avgOrderValue)}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'متوسط الطلب' : 'Avg Order'}</p>
             </CardContent>
           </Card>
@@ -404,7 +404,7 @@ export default function AnalyticsPage() {
         {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* COD */}
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-5 pb-5">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center">
@@ -414,10 +414,10 @@ export default function AnalyticsPage() {
                   <p className="text-sm text-amber-700">
                     {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
                   </p>
-                  <p className="text-2xl font-bold text-amber-900">{formatCurrency(data.codRevenue)}</p>
+                  <p className="text-2xl font-bold text-amber-900 font-numbers">{formatCurrency(data.codRevenue)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold text-amber-800">{data.codOrders}</p>
+                  <p className="text-lg font-semibold text-amber-800 font-numbers">{data.codOrders}</p>
                   <p className="text-xs text-amber-600">{locale === 'ar' ? 'طلب' : 'orders'}</p>
                 </div>
               </div>
@@ -425,7 +425,7 @@ export default function AnalyticsPage() {
           </Card>
 
           {/* Online */}
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-5 pb-5">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
@@ -435,10 +435,10 @@ export default function AnalyticsPage() {
                   <p className="text-sm text-blue-700">
                     {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
                   </p>
-                  <p className="text-2xl font-bold text-blue-900">{formatCurrency(data.onlineRevenue)}</p>
+                  <p className="text-2xl font-bold text-blue-900 font-numbers">{formatCurrency(data.onlineRevenue)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold text-blue-800">{data.onlineOrders}</p>
+                  <p className="text-lg font-semibold text-blue-800 font-numbers">{data.onlineOrders}</p>
                   <p className="text-xs text-blue-600">{locale === 'ar' ? 'طلب' : 'orders'}</p>
                 </div>
               </div>
@@ -449,7 +449,7 @@ export default function AnalyticsPage() {
         {/* ╔═══════════════════════════════════════════════════════════════════╗ */}
         {/* ║ ORDER STATUS BREAKDOWN                                            ║ */}
         {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-slate-200 shadow-elegant-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-slate-900 flex items-center gap-2 text-base">
               <Package className="w-5 h-5 text-primary" />
@@ -504,7 +504,7 @@ export default function AnalyticsPage() {
         {/* ╔═══════════════════════════════════════════════════════════════════╗ */}
         {/* ║ TOP PRODUCTS - What Merchants Care About Most                     ║ */}
         {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-slate-200 shadow-elegant-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-slate-900 flex items-center gap-2 text-base">
               <Award className="w-5 h-5 text-yellow-500" />
@@ -553,14 +553,14 @@ export default function AnalyticsPage() {
         {/* ╔═══════════════════════════════════════════════════════════════════╗ */}
         {/* ║ LAST MONTH COMPARISON                                             ║ */}
         {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
-        <Card className="bg-slate-50 border-slate-200">
+        <Card className="bg-slate-50 border-slate-200 shadow-elegant-sm">
           <CardContent className="pt-5 pb-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500">
                   {locale === 'ar' ? 'مقارنة بالشهر الماضي' : 'Compared to last month'}
                 </p>
-                <p className="text-xl font-bold text-slate-700 mt-1">
+                <p className="text-xl font-bold text-slate-700 mt-1 font-numbers">
                   {formatCurrency(data.lastMonthRevenue)}
                 </p>
               </div>
@@ -574,7 +574,7 @@ export default function AnalyticsPage() {
                 ) : (
                   <TrendingDown className="w-5 h-5" />
                 )}
-                <span className="font-bold text-lg">
+                <span className="font-bold text-lg font-numbers">
                   {getGrowthPercent() >= 0 ? '+' : ''}{getGrowthPercent().toFixed(0)}%
                 </span>
               </div>

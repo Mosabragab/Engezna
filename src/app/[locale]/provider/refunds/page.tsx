@@ -302,13 +302,13 @@ export default function ProviderRefundsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-yellow-200 bg-yellow-50 shadow-elegant-sm card-hover">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
               <Clock className="w-6 h-6 text-yellow-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-yellow-700">{pendingCount}</p>
+              <p className="text-2xl font-bold text-yellow-700 font-numbers">{pendingCount}</p>
               <p className="text-sm text-yellow-600">
                 {isArabic ? 'بانتظار ردك' : 'Pending Your Action'}
               </p>
@@ -316,13 +316,13 @@ export default function ProviderRefundsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-200 bg-blue-50 shadow-elegant-sm card-hover">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
               <RefreshCw className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-blue-700">{inProgressCount}</p>
+              <p className="text-2xl font-bold text-blue-700 font-numbers">{inProgressCount}</p>
               <p className="text-sm text-blue-600">
                 {isArabic ? 'قيد التنفيذ' : 'In Progress'}
               </p>
@@ -330,13 +330,13 @@ export default function ProviderRefundsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-green-200 bg-green-50 shadow-elegant-sm card-hover">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
               <CheckCircle2 className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-green-700">{completedCount}</p>
+              <p className="text-2xl font-bold text-green-700 font-numbers">{completedCount}</p>
               <p className="text-sm text-green-600">
                 {isArabic ? 'مكتمل' : 'Completed'}
               </p>
