@@ -191,23 +191,23 @@ export default async function WelcomePage({ params }: PageProps) {
         </section>
 
         {/* Categories Section */}
-        <section className="py-12 px-4 bg-slate-50">
+        <section className="py-12 px-4 bg-white">
           <div className="container mx-auto">
             <h2 className="text-2xl font-bold text-center text-slate-900 mb-8">
               {isRTL ? 'ماذا نقدم؟' : 'What We Offer'}
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
-              {categories.map((category) => (
+              {categories.map((category, index) => (
                 <div
                   key={category.id}
-                  className="flex flex-col items-center p-4 text-center"
+                  className={`flex flex-col items-center p-4 text-center animate-slide-up opacity-0`}
+                  style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
                 >
                   <div
-                    className="w-20 h-20 md:w-24 md:h-24 rounded-2xl flex items-center justify-center mb-3 transition-all duration-300 hover:scale-105 hover:-translate-y-1"
+                    className="w-20 h-20 md:w-24 md:h-24 rounded-2xl flex items-center justify-center mb-3 transition-all duration-300 hover:scale-105 hover:-translate-y-1 shadow-elegant hover:shadow-elegant-lg"
                     style={{
                       background: category.gradient,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                     }}
                   >
                     <span
@@ -227,7 +227,7 @@ export default async function WelcomePage({ params }: PageProps) {
         </section>
 
         {/* Features Section */}
-        <section className="py-12 px-4">
+        <section className="py-12 px-4 bg-slate-50/50">
           <div className="container mx-auto">
             <h2 className="text-2xl font-bold text-center text-slate-900 mb-3">
               {isRTL ? 'ليه إنجزنا؟' : 'Why Engezna?'}
@@ -242,9 +242,9 @@ export default async function WelcomePage({ params }: PageProps) {
               {features.map((feature, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-xl p-6 border border-slate-100 hover:border-primary/20 hover:shadow-md transition-all"
+                  className="bg-white rounded-2xl p-6 border border-slate-100 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-1 transition-all duration-300 group"
                 >
-                  <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4`}>
+                  <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
                     <feature.icon className="w-6 h-6" />
                   </div>
                   <h3 className="font-bold text-slate-900 mb-2">
@@ -260,7 +260,7 @@ export default async function WelcomePage({ params }: PageProps) {
         </section>
 
         {/* How It Works Section */}
-        <section className="py-12 px-4 bg-gradient-to-b from-slate-50 to-white">
+        <section className="py-12 px-4 bg-white">
           <div className="container mx-auto">
             <h2 className="text-2xl font-bold text-center text-slate-900 mb-3">
               {isRTL ? 'كيف يعمل؟' : 'How It Works'}
@@ -275,11 +275,11 @@ export default async function WelcomePage({ params }: PageProps) {
                   <div key={index} className="text-center relative">
                     {/* Connector line */}
                     {index < steps.length - 1 && (
-                      <div className="hidden md:block absolute top-8 left-1/2 w-full h-0.5 bg-slate-200" />
+                      <div className="hidden md:block absolute top-8 left-1/2 w-full h-0.5 bg-gradient-to-r from-primary/30 to-primary/10" />
                     )}
 
                     {/* Step number */}
-                    <div className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4 relative z-10 shadow-lg shadow-primary/20">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4 relative z-10 shadow-elegant-lg">
                       {step.number}
                     </div>
 
@@ -297,11 +297,13 @@ export default async function WelcomePage({ params }: PageProps) {
         </section>
 
         {/* Available Governorates Section - Streamed with Suspense */}
-        <section className="py-12 px-4 bg-white">
+        <section className="py-12 px-4 bg-slate-50/50">
           <div className="container mx-auto">
-            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-8 text-center">
+            <div className="bg-white rounded-2xl p-8 text-center shadow-elegant border border-slate-100">
               <div className="flex items-center justify-center gap-2 mb-4">
-                <MapPin className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-primary" />
+                </div>
                 <h2 className="text-2xl font-bold text-slate-900">
                   {isRTL ? 'متاحين في' : 'Available In'}
                 </h2>

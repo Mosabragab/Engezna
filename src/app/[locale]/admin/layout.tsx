@@ -194,26 +194,26 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
     }
   }, [isLoginPage, regionLoading, loadBadgeCounts])
 
-  // Login page - render without sidebar
-  if (isLoginPage) {
-    return <>{children}</>
-  }
-
+  // Always render sidebar to prevent mounting issues on navigation
+  // Hide via CSS on login page for smooth transitions
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar - rendered at layout level, persists across page navigations */}
-      <AdminSidebar
-        isOpen={isOpen}
-        onClose={close}
-        pendingProviders={pendingProviders}
-        openTickets={openTickets}
-        pendingBannerApprovals={pendingBannerApprovals}
-        pendingRefunds={pendingRefunds}
-        hasMounted={hasMounted}
-      />
+    <div className={`min-h-screen bg-slate-50 ${isLoginPage ? '' : 'flex'}`}>
+      {/* Sidebar - always rendered but hidden on login page */}
+      {/* This prevents remounting issues when navigating from login to dashboard */}
+      <div className={isLoginPage ? 'hidden' : ''}>
+        <AdminSidebar
+          isOpen={isOpen}
+          onClose={close}
+          pendingProviders={pendingProviders}
+          openTickets={openTickets}
+          pendingBannerApprovals={pendingBannerApprovals}
+          pendingRefunds={pendingRefunds}
+          hasMounted={hasMounted}
+        />
+      </div>
 
       {/* Main content area - pages render here */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div className={`flex-1 flex flex-col min-h-screen ${isLoginPage ? '' : 'overflow-hidden'}`}>
         {children}
       </div>
     </div>

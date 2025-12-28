@@ -398,54 +398,54 @@ export default function AdminDashboard() {
           {/* KPI Cards - Row 1 */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* GMV */}
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-elegant-sm card-hover">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 bg-card-bg-success rounded-lg flex items-center justify-center">
                   <DollarSign className="w-5 h-5 text-success" />
                 </div>
-                <span className={`text-xs flex items-center gap-1 ${stats.gmvChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <span className={`text-xs flex items-center gap-1 font-numbers ${stats.gmvChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {stats.gmvChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                   {formatNumber(Math.abs(stats.gmvChange), locale)}%
                 </span>
               </div>
-              <p className="text-2xl font-bold text-slate-900">{formatCurrency(stats.gmvMonth, locale)}</p>
+              <p className="text-2xl font-bold text-slate-900 font-numbers">{formatCurrency(stats.gmvMonth, locale)}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي المبيعات (الشهر)' : 'GMV (Month)'}</p>
             </div>
 
             {/* Orders Today */}
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-elegant-sm card-hover">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 bg-card-bg-primary rounded-lg flex items-center justify-center">
                   <ShoppingBag className="w-5 h-5 text-primary" />
                 </div>
-                <span className={`text-xs flex items-center gap-1 ${stats.ordersChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <span className={`text-xs flex items-center gap-1 font-numbers ${stats.ordersChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {stats.ordersChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                   {formatNumber(Math.abs(stats.ordersChange), locale)}%
                 </span>
               </div>
-              <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.ordersToday, locale)}</p>
+              <p className="text-2xl font-bold text-slate-900 font-numbers">{formatNumber(stats.ordersToday, locale)}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</p>
             </div>
 
             {/* Active Providers */}
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-elegant-sm card-hover">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 bg-card-bg-purple rounded-lg flex items-center justify-center">
                   <Store className="w-5 h-5 text-purple" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.activeProviders, locale)}</p>
+              <p className="text-2xl font-bold text-slate-900 font-numbers">{formatNumber(stats.activeProviders, locale)}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'المتاجر النشطة' : 'Active Providers'}</p>
             </div>
 
             {/* New Customers */}
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-elegant-sm card-hover">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 bg-card-bg-info rounded-lg flex items-center justify-center">
                   <Users className="w-5 h-5 text-info" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-slate-900">+{formatNumber(stats.newCustomersToday, locale)}</p>
+              <p className="text-2xl font-bold text-slate-900 font-numbers">+{formatNumber(stats.newCustomersToday, locale)}</p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'عملاء جدد اليوم' : 'New Customers Today'}</p>
             </div>
           </div>
@@ -453,50 +453,50 @@ export default function AdminDashboard() {
           {/* Attention Required Cards - Row 2 */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* Pending Providers */}
-            <Link href={`/${locale}/admin/providers?status=pending`} className="bg-card-bg-amber rounded-xl p-4 border border-amber/30 hover:border-amber/50 transition-colors">
+            <Link href={`/${locale}/admin/providers?status=pending`} className="bg-card-bg-amber rounded-xl p-4 border border-amber/30 hover:border-amber/50 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
               <div className="flex items-center gap-3 mb-2">
                 <Hourglass className="w-5 h-5 text-amber" />
                 <span className="text-sm font-medium text-amber">
                   {locale === 'ar' ? 'متاجر جديدة' : 'New Providers'}
                 </span>
               </div>
-              <p className="text-3xl font-bold text-amber">{formatNumber(stats.pendingProviders, locale)}</p>
+              <p className="text-3xl font-bold text-amber font-numbers">{formatNumber(stats.pendingProviders, locale)}</p>
               <p className="text-xs text-amber/80">{locale === 'ar' ? 'تنتظر الموافقة' : 'Awaiting Approval'}</p>
             </Link>
 
             {/* Open Disputes - Resolution Center */}
-            <Link href={`/${locale}/admin/resolution-center`} className="bg-card-bg-primary rounded-xl p-4 border border-primary/30 hover:border-primary/50 transition-colors">
+            <Link href={`/${locale}/admin/resolution-center`} className="bg-card-bg-primary rounded-xl p-4 border border-primary/30 hover:border-primary/50 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
               <div className="flex items-center gap-3 mb-2">
                 <Scale className="w-5 h-5 text-primary" />
                 <span className="text-sm font-medium text-primary">
                   {locale === 'ar' ? 'النزاعات المفتوحة' : 'Open Disputes'}
                 </span>
               </div>
-              <p className="text-3xl font-bold text-primary">{formatNumber(stats.openTickets, locale)}</p>
+              <p className="text-3xl font-bold text-primary font-numbers">{formatNumber(stats.openTickets, locale)}</p>
               <p className="text-xs text-primary/80">{locale === 'ar' ? 'تذاكر + مرتجعات' : 'Tickets + Refunds'}</p>
             </Link>
 
             {/* Pending Settlements */}
-            <Link href={`/${locale}/admin/finance/settlements`} className="bg-card-bg-purple rounded-xl p-4 border border-purple/30 hover:border-purple/50 transition-colors">
+            <Link href={`/${locale}/admin/settlements`} className="bg-card-bg-purple rounded-xl p-4 border border-purple/30 hover:border-purple/50 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
               <div className="flex items-center gap-3 mb-2">
                 <Wallet className="w-5 h-5 text-purple" />
                 <span className="text-sm font-medium text-purple">
                   {locale === 'ar' ? 'تسويات معلقة' : 'Pending Settlements'}
                 </span>
               </div>
-              <p className="text-3xl font-bold text-purple">{formatCurrency(stats.pendingSettlements, locale)}</p>
+              <p className="text-3xl font-bold text-purple font-numbers">{formatCurrency(stats.pendingSettlements, locale)}</p>
               <p className="text-xs text-purple/80">{locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             </Link>
 
             {/* Commissions */}
-            <div className="bg-card-bg-success rounded-xl p-4 border border-success/30">
+            <div className="bg-card-bg-success rounded-xl p-4 border border-success/30 card-hover">
               <div className="flex items-center gap-3 mb-2">
                 <DollarSign className="w-5 h-5 text-success" />
                 <span className="text-sm font-medium text-success">
                   {locale === 'ar' ? 'العمولات' : 'Commissions'}
                 </span>
               </div>
-              <p className="text-3xl font-bold text-success">{formatCurrency(stats.commissionsMonth, locale)}</p>
+              <p className="text-3xl font-bold text-success font-numbers">{formatCurrency(stats.commissionsMonth, locale)}</p>
               <p className="text-xs text-success/80">{locale === 'ar' ? 'هذا الشهر' : 'This Month'}</p>
             </div>
           </div>
@@ -585,26 +585,26 @@ export default function AdminDashboard() {
           </div>
 
           {/* Quick Stats Summary */}
-          <div className="mt-6 bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+          <div className="mt-6 bg-white rounded-xl p-6 border border-slate-200 shadow-elegant-sm">
             <h3 className="font-semibold text-slate-900 mb-4">
               {locale === 'ar' ? 'ملخص المنصة' : 'Platform Summary'}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
                 <p className="text-sm text-slate-500 mb-1">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</p>
-                <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.totalCustomers, locale)}</p>
+                <p className="text-2xl font-bold text-slate-900 font-numbers">{formatNumber(stats.totalCustomers, locale)}</p>
               </div>
               <div>
                 <p className="text-sm text-slate-500 mb-1">{locale === 'ar' ? 'طلبات الأسبوع' : 'Weekly Orders'}</p>
-                <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.ordersWeek, locale)}</p>
+                <p className="text-2xl font-bold text-slate-900 font-numbers">{formatNumber(stats.ordersWeek, locale)}</p>
               </div>
               <div>
                 <p className="text-sm text-slate-500 mb-1">{locale === 'ar' ? 'المتاجر النشطة' : 'Active Providers'}</p>
-                <p className="text-2xl font-bold text-slate-900">{formatNumber(stats.activeProviders, locale)}</p>
+                <p className="text-2xl font-bold text-slate-900 font-numbers">{formatNumber(stats.activeProviders, locale)}</p>
               </div>
               <div>
                 <p className="text-sm text-slate-500 mb-1">{locale === 'ar' ? 'العمولات (الشهر)' : 'Commissions (Month)'}</p>
-                <p className="text-2xl font-bold text-slate-900">{formatCurrency(stats.commissionsMonth, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                <p className="text-2xl font-bold text-slate-900 font-numbers">{formatCurrency(stats.commissionsMonth, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
               </div>
             </div>
           </div>

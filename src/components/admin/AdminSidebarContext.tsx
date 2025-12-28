@@ -1,6 +1,7 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 interface AdminSidebarContextType {
   isOpen: boolean
@@ -17,19 +18,40 @@ export function AdminSidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
   const [hasMounted, setHasMounted] = useState(false)
 
-  // Check if we're on a large screen and should show sidebar by default
-  useEffect(() => {
-    // On large screens (lg: 1024px+), sidebar is always visible via CSS
-    // This state only controls mobile sidebar visibility
+  // Initialize sidebar state based on screen size
+  const initializeSidebar = useCallback(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)')
     if (mediaQuery.matches) {
       setIsOpen(true)
     }
+  }, [])
+
+  // Check if we're on a large screen and should show sidebar by default
+  useEffect(() => {
+    // On large screens (lg: 1024px+), sidebar is always visible via CSS
+    // This state only controls mobile sidebar visibility
+    initializeSidebar()
+
     // Delay setting hasMounted to allow initial state to settle without animation
     requestAnimationFrame(() => {
       setHasMounted(true)
     })
-  }, [])
+  }, [initializeSidebar])
+
+  // Listen for auth state changes to re-initialize sidebar
+  useEffect(() => {
+    const supabase = createClient()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        // Re-initialize sidebar state when user signs in
+        // This ensures sidebar is visible after login navigation
+        initializeSidebar()
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [initializeSidebar])
 
   const toggle = () => setIsOpen(prev => !prev)
   const close = () => {

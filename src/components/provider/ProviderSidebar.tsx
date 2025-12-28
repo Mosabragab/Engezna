@@ -273,7 +273,7 @@ export function ProviderSidebar({
         </div>
 
         {/* Scrollable Content - Store Info + Navigation */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto sidebar-scroll">
           {/* Store Info - Compact inline on mobile, card on desktop */}
           {provider && (
             <div className="p-2 lg:p-4 border-b border-slate-100">
@@ -331,8 +331,8 @@ export function ProviderSidebar({
                           w-full flex items-center gap-3 px-4 py-2.5 lg:py-3 rounded-xl transition-all duration-200
                           max-lg:gap-2 max-lg:px-3 max-lg:py-2 max-lg:rounded-lg
                           ${isActive
-                            ? 'bg-primary text-white shadow-elegant'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:shadow-sm active:scale-[0.98]'}
+                            ? 'bg-gradient-to-r from-[#009DE0] to-[#0077B6] text-white shadow-primary-glow'
+                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]'}
                         `}
                       >
                         <item.icon className="w-5 h-5 max-lg:w-4 max-lg:h-4 flex-shrink-0" />
@@ -344,7 +344,7 @@ export function ProviderSidebar({
                             className={`
                               ${isRTL ? 'mr-auto' : 'ml-auto'}
                               ${isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor)}
-                              text-white text-xs max-lg:text-[10px] px-2 max-lg:px-1.5 py-0.5 rounded-full
+                              text-white text-xs max-lg:text-[10px] px-2 max-lg:px-1.5 py-0.5 rounded-full font-numbers
                             `}
                           >
                             {item.badge}

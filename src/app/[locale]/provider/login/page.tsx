@@ -122,8 +122,9 @@ export default function ProviderLoginPage() {
         return
       }
 
-      // Redirect to provider dashboard
-      router.push(`/${locale}/provider`)
+      // Nuclear fix: Use window.location.href to ensure full page reload
+      // This guarantees all cookies are sent to server and Layout rebuilds completely
+      window.location.href = `/${locale}/provider`
 
     } catch (err) {
       setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')

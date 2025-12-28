@@ -258,8 +258,9 @@ export default function AdminLoginPage() {
       // Clear failed login attempts on successful login
       clearAttempts()
 
-      // Redirect to admin dashboard
-      router.push(`/${locale}/admin`)
+      // Nuclear fix: Use window.location.href to ensure full page reload
+      // This guarantees all cookies are sent to server and Layout rebuilds completely
+      window.location.href = `/${locale}/admin`
 
     } catch {
       setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
