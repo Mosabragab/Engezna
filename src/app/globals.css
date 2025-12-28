@@ -580,6 +580,67 @@ html.no-transition * {
       0 14px 48px rgba(0, 157, 224, 0.2),
       0 6px 12px rgba(0, 0, 0, 0.08);
   }
+
+  /* Primary Glow - For CTAs and Important Elements */
+  .shadow-primary-glow {
+    box-shadow: 0 4px 20px rgba(0, 157, 224, 0.25);
+  }
+
+  .shadow-primary-glow-lg {
+    box-shadow: 0 8px 32px rgba(0, 157, 224, 0.35);
+  }
+
+  /* Dashboard Card with Hover Glow Effect */
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 8px 24px rgba(0, 157, 224, 0.15),
+      0 4px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Dashboard Number Font - Inter for Professional Stats */
+  .font-numbers {
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+}
+
+/* ========================================
+ * SIDEBAR CUSTOM SCROLLBAR
+ * Minimal, elegant scrollbar for sidebars
+ * ======================================== */
+
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 157, 224, 0.3) transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 157, 224, 0.3);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 157, 224, 0.5);
+}
+
+/* Hide scrollbar when not hovering */
+.sidebar-scroll:not(:hover)::-webkit-scrollbar-thumb {
+  background: transparent;
 }
 
 /* Elegant Gradients - Soft, Subtle Transitions */

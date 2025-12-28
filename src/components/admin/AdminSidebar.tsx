@@ -249,16 +249,16 @@ export function AdminSidebar({
         href={item.path}
         onClick={onClose}
         className={`
-          w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all
+          w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200
           ${isActive
-            ? 'bg-[#009DE0] text-white shadow-md'
-            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
+            ? 'bg-gradient-to-r from-[#009DE0] to-[#0077B6] text-white shadow-primary-glow'
+            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
         `}
       >
         <item.icon className="w-5 h-5" />
         <span className="font-medium text-sm">{item.label[locale === 'ar' ? 'ar' : 'en']}</span>
         {item.badge && (
-          <span className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs px-2 py-0.5 rounded-full`}>
+          <span className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-numbers`}>
             {item.badge}
           </span>
         )}
@@ -276,19 +276,19 @@ export function AdminSidebar({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Glassmorphism Design */}
       <aside
         className={`
           fixed lg:static inset-y-0 z-50
-          w-64 bg-white shadow-sm
+          w-64 bg-white/95 backdrop-blur-md shadow-elegant
           transform flex flex-col overflow-hidden
           ${hasMounted ? 'transition-transform duration-300 ease-in-out' : ''}
-          ${isRTL ? 'right-0 border-l border-slate-200' : 'left-0 border-r border-slate-200'}
+          ${isRTL ? 'right-0 border-l border-slate-200/50' : 'left-0 border-r border-slate-200/50'}
           ${isOpen ? 'translate-x-0' : isRTL ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Logo */}
-        <div className="p-4 border-b border-slate-200">
+        <div className="p-4 border-b border-slate-100">
           <div className="flex items-center justify-between">
             <Link href={`/${locale}/admin`} className="flex flex-col">
               <EngeznaLogo size="md" static showPen={false} />
@@ -324,7 +324,7 @@ export function AdminSidebar({
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-4 overflow-y-auto sidebar-scroll">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />

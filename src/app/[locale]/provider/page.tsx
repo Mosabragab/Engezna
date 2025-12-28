@@ -500,7 +500,7 @@ export default function ProviderDashboard() {
                   )
                 })()}
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.todayOrders, locale)}</p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))] font-numbers">{formatNumber(stats.todayOrders, locale)}</p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات اليوم' : "Today's Orders"}</p>
             </div>
 
@@ -520,7 +520,7 @@ export default function ProviderDashboard() {
                   )
                 })()}
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatCurrency(stats.todayRevenue, locale)} <span className="text-sm text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'ج.م' : 'EGP'}</span></p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))] font-numbers">{formatCurrency(stats.todayRevenue, locale)} <span className="text-sm text-[hsl(var(--text-muted))]">{locale === 'ar' ? 'ج.م' : 'EGP'}</span></p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'إيرادات اليوم' : "Today's Revenue"}</p>
             </div>
 
@@ -531,7 +531,7 @@ export default function ProviderDashboard() {
                   <Clock className="w-5 h-5 text-[hsl(42_100%_40%)]" strokeWidth={1.8} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.pendingOrders, locale)}</p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))] font-numbers">{formatNumber(stats.pendingOrders, locale)}</p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'طلبات قيد الانتظار' : 'Pending Orders'}</p>
             </div>
 
@@ -542,7 +542,7 @@ export default function ProviderDashboard() {
                   <Package className="w-5 h-5 text-primary" strokeWidth={1.8} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.activeProducts, locale)}</p>
+              <p className="text-2xl font-bold text-[hsl(var(--text-primary))] font-numbers">{formatNumber(stats.activeProducts, locale)}</p>
               <p className="text-xs text-[hsl(var(--text-secondary))]">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
             </div>
           </div>
@@ -633,8 +633,8 @@ export default function ProviderDashboard() {
                       {locale === 'ar' ? 'كاش' : 'COD'}
                     </span>
                   </div>
-                  <p className="text-xl font-bold text-slate-900">{formatNumber(stats.todayCodOrders, locale)} <span className="text-sm font-medium text-slate-500">{locale === 'ar' ? 'طلب' : 'orders'}</span></p>
-                  <p className="text-xs text-slate-500 mt-1">{formatCurrency(stats.todayCodRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
+                  <p className="text-xl font-bold text-slate-900 font-numbers">{formatNumber(stats.todayCodOrders, locale)} <span className="text-sm font-medium text-slate-500">{locale === 'ar' ? 'طلب' : 'orders'}</span></p>
+                  <p className="text-xs text-slate-500 mt-1 font-numbers">{formatCurrency(stats.todayCodRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
                 </div>
                 {/* Online */}
                 <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200/60 shadow-sm hover:shadow-elegant transition-all duration-300">
@@ -646,8 +646,8 @@ export default function ProviderDashboard() {
                       {locale === 'ar' ? 'إلكتروني' : 'Online'}
                     </span>
                   </div>
-                  <p className="text-xl font-bold text-slate-900">{formatNumber(stats.todayOnlineOrders, locale)} <span className="text-sm font-medium text-slate-500">{locale === 'ar' ? 'طلب' : 'orders'}</span></p>
-                  <p className="text-xs text-slate-500 mt-1">{formatCurrency(stats.todayOnlineRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
+                  <p className="text-xl font-bold text-slate-900 font-numbers">{formatNumber(stats.todayOnlineOrders, locale)} <span className="text-sm font-medium text-slate-500">{locale === 'ar' ? 'طلب' : 'orders'}</span></p>
+                  <p className="text-xs text-slate-500 mt-1 font-numbers">{formatCurrency(stats.todayOnlineRevenue, locale)} {locale === 'ar' ? 'ج.م مؤكد' : 'EGP confirmed'}</p>
                 </div>
               </div>
             ) : (
@@ -672,15 +672,15 @@ export default function ProviderDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
-                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.totalOrders, locale)}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--text-primary))] font-numbers">{formatNumber(stats.totalOrders, locale)}</p>
               </div>
               <div>
                 <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</p>
-                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.totalCustomers, locale)}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--text-primary))] font-numbers">{formatNumber(stats.totalCustomers, locale)}</p>
               </div>
               <div>
                 <p className="text-sm text-[hsl(var(--text-secondary))] mb-1">{locale === 'ar' ? 'المنتجات النشطة' : 'Active Products'}</p>
-                <p className="text-3xl font-bold text-[hsl(var(--text-primary))]">{formatNumber(stats.activeProducts, locale)}</p>
+                <p className="text-3xl font-bold text-[hsl(var(--text-primary))] font-numbers">{formatNumber(stats.activeProducts, locale)}</p>
               </div>
             </div>
           </div>
