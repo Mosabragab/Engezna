@@ -216,11 +216,11 @@ export default function ProviderReviewsPage() {
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Average Rating Card */}
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-6 text-center">
               <div className="flex items-center justify-center gap-1 mb-2">
                 <Star className="w-8 h-8 text-yellow-400 fill-yellow-400" />
-                <span className="text-4xl font-bold text-slate-900">
+                <span className="text-4xl font-bold text-slate-900 font-numbers">
                   {ratingStats.average.toFixed(1)}
                 </span>
               </div>
@@ -231,10 +231,10 @@ export default function ProviderReviewsPage() {
           </Card>
 
           {/* Total Reviews Card */}
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-6 text-center">
               <MessageSquare className="w-8 h-8 text-primary mx-auto mb-2" />
-              <p className="text-3xl font-bold text-slate-900">{ratingStats.total}</p>
+              <p className="text-3xl font-bold text-slate-900 font-numbers">{ratingStats.total}</p>
               <p className="text-sm text-slate-500">
                 {locale === 'ar' ? 'إجمالي التقييمات' : 'Total Reviews'}
               </p>
@@ -242,10 +242,10 @@ export default function ProviderReviewsPage() {
           </Card>
 
           {/* Response Rate Card */}
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-6 text-center">
               <TrendingUp className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-              <p className="text-3xl font-bold text-emerald-600">
+              <p className="text-3xl font-bold text-emerald-600 font-numbers">
                 {ratingStats.total > 0
                   ? ((reviews.filter(r => r.provider_response).length / ratingStats.total) * 100).toFixed(0)
                   : 0}%
@@ -258,7 +258,7 @@ export default function ProviderReviewsPage() {
         </div>
 
         {/* Rating Distribution */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-slate-200 shadow-elegant-sm">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-slate-900">
               {locale === 'ar' ? 'توزيع التقييمات' : 'Rating Distribution'}
@@ -307,7 +307,7 @@ export default function ProviderReviewsPage() {
         </Card>
 
         {/* Reviews List */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-slate-200 shadow-elegant-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold text-slate-900">
