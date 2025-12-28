@@ -59,7 +59,7 @@ export default function ProviderLoginPage() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-      // Check if user is provider_owner
+      // Check if user is provider_owner or provider_staff
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -69,6 +69,21 @@ export default function ProviderLoginPage() {
       if (profile?.role === 'provider_owner') {
         router.push(`/${locale}/provider`)
         return
+      }
+
+      // If provider_staff, check if they are active
+      if (profile?.role === 'provider_staff') {
+        const { data: staffData } = await supabase
+          .from('provider_staff')
+          .select('id, is_active')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .single()
+
+        if (staffData) {
+          router.push(`/${locale}/provider`)
+          return
+        }
       }
     }
 
@@ -108,18 +123,38 @@ export default function ProviderLoginPage() {
         return
       }
 
-      // Check if user has provider_owner role
+      // Check if user has provider_owner or provider_staff role
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', authData.user.id)
         .single()
 
-      if (profile?.role !== 'provider_owner') {
+      // Validate role is either provider_owner or provider_staff
+      if (profile?.role !== 'provider_owner' && profile?.role !== 'provider_staff') {
         await supabase.auth.signOut()
-        setError(locale === 'ar' ? t('notProviderTitle') : t('notProviderTitle'))
+        setError(locale === 'ar' ? 'هذا الحساب غير مسجل كشريك أو مشرف' : 'This account is not registered as a partner or staff')
         setLoading(false)
         return
+      }
+
+      // For staff members, verify they are active in provider_staff
+      if (profile?.role === 'provider_staff') {
+        const { data: staffData } = await supabase
+          .from('provider_staff')
+          .select('id, is_active, providers(name_ar, name_en)')
+          .eq('user_id', authData.user.id)
+          .eq('is_active', true)
+          .single()
+
+        if (!staffData) {
+          await supabase.auth.signOut()
+          setError(locale === 'ar'
+            ? 'حسابك كمشرف غير نشط. تواصل مع مالك المتجر.'
+            : 'Your staff account is inactive. Contact the store owner.')
+          setLoading(false)
+          return
+        }
       }
 
       // Nuclear fix: Use window.location.href to ensure full page reload
