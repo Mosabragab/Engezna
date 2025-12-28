@@ -165,7 +165,8 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           .single()
 
         if (staffData && staffData.providers) {
-          const providerInfo = staffData.providers as Provider
+          // Type assertion for the joined provider data
+          const providerInfo = staffData.providers as unknown as Provider
           setProvider(providerInfo)
           setPermissions({
             isOwner: false,
