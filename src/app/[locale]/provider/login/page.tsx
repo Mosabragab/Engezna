@@ -122,8 +122,9 @@ export default function ProviderLoginPage() {
         return
       }
 
-      // Redirect to provider dashboard
+      // Redirect to provider dashboard with full state refresh
       router.push(`/${locale}/provider`)
+      router.refresh() // Force layout re-render to sync auth state
 
     } catch (err) {
       setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')

@@ -258,8 +258,9 @@ export default function AdminLoginPage() {
       // Clear failed login attempts on successful login
       clearAttempts()
 
-      // Redirect to admin dashboard
+      // Redirect to admin dashboard with full state refresh
       router.push(`/${locale}/admin`)
+      router.refresh() // Force layout re-render to sync auth state
 
     } catch {
       setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')

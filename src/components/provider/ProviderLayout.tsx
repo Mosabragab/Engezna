@@ -116,6 +116,24 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     checkAuth()
   }, [checkAuth])
 
+  // Listen for auth state changes to re-check authentication
+  useEffect(() => {
+    const supabase = createClient()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        // Re-check authentication when user signs in
+        // This ensures provider data is loaded after login navigation
+        checkAuth()
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setProvider(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [checkAuth])
+
   // Realtime subscription for provider_notifications
   useEffect(() => {
     if (!provider?.id) return
