@@ -175,7 +175,8 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
           .single()
 
         if (staffData && staffData.providers) {
-          const provider = staffData.providers as {
+          // Type assertion for joined provider data (Supabase types this as array)
+          const provider = staffData.providers as unknown as {
             id: string
             name_ar: string
             name_en: string
