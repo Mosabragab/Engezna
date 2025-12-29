@@ -25,6 +25,8 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
+  Copy,
+  Check,
 } from 'lucide-react'
 import { AddStaffModal } from './AddStaffModal'
 import { EditPermissionsModal } from './EditPermissionsModal'
@@ -57,6 +59,7 @@ interface PendingInvitation {
   status: string
   expires_at: string
   created_at: string
+  invitation_token: string
   can_manage_orders: boolean
   can_manage_menu: boolean
   can_manage_customers: boolean
@@ -259,16 +262,25 @@ function PendingInvitationCard({
   locale,
   onCancel,
   onResend,
+  onCopyLink,
 }: {
   invitation: PendingInvitation
   locale: string
   onCancel: () => void
   onResend: () => void
+  onCopyLink: () => void
 }) {
+  const [copied, setCopied] = useState(false)
   const expiresAt = new Date(invitation.expires_at)
   const now = new Date()
   const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
   const isExpired = daysLeft <= 0
+
+  const handleCopyLink = () => {
+    onCopyLink()
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <div className={`
@@ -295,6 +307,28 @@ function PendingInvitationCard({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Copy Link Button - Always available for non-expired invitations */}
+          {!isExpired && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyLink}
+              className="text-primary border-primary/20 hover:bg-primary/5"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4 me-1" />
+                  {locale === 'ar' ? 'تم النسخ' : 'Copied!'}
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 me-1" />
+                  {locale === 'ar' ? 'نسخ الرابط' : 'Copy Link'}
+                </>
+              )}
+            </Button>
+          )}
+
           {isExpired ? (
             <Button
               variant="outline"
@@ -486,6 +520,22 @@ export default function TeamManagementPage() {
     }
   }
 
+  // Copy invitation link
+  const handleCopyInvitationLink = (invitation: PendingInvitation) => {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    const invitationLink = `${baseUrl}/${locale}/provider/join?token=${invitation.invitation_token}`
+
+    navigator.clipboard.writeText(invitationLink).catch(() => {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = invitationLink
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+    })
+  }
+
   // Resend invitation
   const handleResendInvitation = async (invitation: PendingInvitation) => {
     if (!providerId) return
@@ -663,6 +713,7 @@ export default function TeamManagementPage() {
                 locale={locale}
                 onCancel={() => handleCancelInvitation(invitation)}
                 onResend={() => handleResendInvitation(invitation)}
+                onCopyLink={() => handleCopyInvitationLink(invitation)}
               />
             ))}
           </div>
