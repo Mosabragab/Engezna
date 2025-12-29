@@ -313,7 +313,7 @@ function PendingInvitationCard({
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
-              className="text-primary border-primary bg-primary/5 hover:bg-primary/10 hover:border-primary"
+              className="text-primary border-primary bg-primary/5 hover:bg-primary/10 hover:border-primary hover:text-primary active:text-primary focus:text-primary"
             >
               {copied ? (
                 <>
@@ -334,7 +334,7 @@ function PendingInvitationCard({
               variant="outline"
               size="sm"
               onClick={onResend}
-              className="text-amber-600 border-amber-200 hover:bg-amber-50"
+              className="text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-600 active:text-amber-600"
             >
               <RefreshCw className="w-4 h-4 me-1" />
               {locale === 'ar' ? 'إعادة إرسال' : 'Resend'}
@@ -344,7 +344,7 @@ function PendingInvitationCard({
               variant="ghost"
               size="sm"
               onClick={onCancel}
-              className="text-red-500 hover:bg-red-50"
+              className="text-red-500 hover:bg-red-50 hover:text-red-500 active:text-red-500 focus:text-red-500"
             >
               <Trash2 className="w-4 h-4 me-1" />
               {locale === 'ar' ? 'إلغاء' : 'Cancel'}
