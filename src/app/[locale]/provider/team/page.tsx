@@ -313,7 +313,7 @@ function PendingInvitationCard({
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
-              className="text-primary border-primary/20 hover:bg-primary/5"
+              className="text-primary border-primary bg-primary/5 hover:bg-primary/10 hover:border-primary"
             >
               {copied ? (
                 <>
