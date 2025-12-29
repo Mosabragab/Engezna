@@ -315,7 +315,9 @@ export interface Database {
           role: string;
           can_manage_menu: boolean;
           can_manage_orders: boolean;
+          can_manage_customers: boolean;
           can_view_analytics: boolean;
+          can_manage_offers: boolean;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -327,7 +329,9 @@ export interface Database {
           role?: string;
           can_manage_menu?: boolean;
           can_manage_orders?: boolean;
+          can_manage_customers?: boolean;
           can_view_analytics?: boolean;
+          can_manage_offers?: boolean;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -339,10 +343,66 @@ export interface Database {
           role?: string;
           can_manage_menu?: boolean;
           can_manage_orders?: boolean;
+          can_manage_customers?: boolean;
           can_view_analytics?: boolean;
+          can_manage_offers?: boolean;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+
+      // --------------------------------------------------------------------
+      // Provider Invitations - Pending staff invitations
+      // --------------------------------------------------------------------
+      provider_invitations: {
+        Row: {
+          id: string;
+          provider_id: string;
+          email: string;
+          invited_by: string;
+          can_manage_orders: boolean;
+          can_manage_menu: boolean;
+          can_manage_customers: boolean;
+          can_view_analytics: boolean;
+          can_manage_offers: boolean;
+          status: 'pending' | 'accepted' | 'expired' | 'cancelled';
+          token: string;
+          expires_at: string;
+          created_at: string;
+          accepted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          provider_id: string;
+          email: string;
+          invited_by: string;
+          can_manage_orders?: boolean;
+          can_manage_menu?: boolean;
+          can_manage_customers?: boolean;
+          can_view_analytics?: boolean;
+          can_manage_offers?: boolean;
+          status?: 'pending' | 'accepted' | 'expired' | 'cancelled';
+          token?: string;
+          expires_at?: string;
+          created_at?: string;
+          accepted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          provider_id?: string;
+          email?: string;
+          invited_by?: string;
+          can_manage_orders?: boolean;
+          can_manage_menu?: boolean;
+          can_manage_customers?: boolean;
+          can_view_analytics?: boolean;
+          can_manage_offers?: boolean;
+          status?: 'pending' | 'accepted' | 'expired' | 'cancelled';
+          token?: string;
+          expires_at?: string;
+          created_at?: string;
+          accepted_at?: string | null;
         };
       };
 

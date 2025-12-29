@@ -18,6 +18,7 @@ import {
   RefreshCw,
   MessageSquare,
   TrendingUp,
+  Users,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
@@ -38,6 +39,17 @@ interface NavGroup {
   items: NavItem[]
 }
 
+// Staff permissions interface
+interface StaffPermissions {
+  isOwner: boolean
+  canManageOrders: boolean
+  canManageMenu: boolean
+  canManageCustomers: boolean
+  canViewAnalytics: boolean
+  canManageOffers: boolean
+  canManageTeam: boolean
+}
+
 interface ProviderSidebarProps {
   isOpen: boolean
   onClose: () => void
@@ -52,6 +64,7 @@ interface ProviderSidebarProps {
   pendingRefunds?: number
   onHoldOrders?: number // الطلبات المعلقة - مرتبطة بالمحرك المالي
   pendingComplaints?: number
+  permissions?: StaffPermissions
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -67,111 +80,173 @@ export function ProviderSidebar({
   pendingRefunds = 0,
   onHoldOrders = 0,
   pendingComplaints = 0,
+  permissions,
 }: ProviderSidebarProps) {
   const locale = useLocale()
   const pathname = usePathname()
   const isRTL = locale === 'ar'
 
+  // Default permissions (all true for backward compatibility if not provided)
+  const perms = permissions || {
+    isOwner: true,
+    canManageOrders: true,
+    canManageMenu: true,
+    canManageCustomers: true,
+    canViewAnalytics: true,
+    canManageOffers: true,
+    canManageTeam: true,
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Navigation Groups - المجموعات المنظمة
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const navGroups: NavGroup[] = [
+  // Build navigation groups based on permissions
+  const buildNavGroups = (): NavGroup[] => {
+    const groups: NavGroup[] = []
+
     // ─────────────────────────────────────────────────────────────────────────
-    // مجموعة العمليات (Operations)
+    // مجموعة العمليات (Operations) - Dashboard always visible
     // ─────────────────────────────────────────────────────────────────────────
-    {
+    const operationsItems: NavItem[] = [
+      {
+        icon: Home,
+        label: { ar: 'الرئيسية', en: 'Dashboard' },
+        path: `/${locale}/provider`,
+      },
+    ]
+
+    // Orders - requires canManageOrders
+    if (perms.canManageOrders) {
+      operationsItems.push({
+        icon: ShoppingBag,
+        label: { ar: 'الطلبات', en: 'Orders' },
+        path: `/${locale}/provider/orders`,
+        badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
+        badgeColor: 'red',
+      })
+      operationsItems.push({
+        icon: RefreshCw,
+        label: { ar: 'المرتجعات', en: 'Refunds' },
+        path: `/${locale}/provider/refunds`,
+        badge: (pendingRefunds + onHoldOrders) > 0
+          ? (pendingRefunds + onHoldOrders).toString()
+          : undefined,
+        badgeColor: 'amber',
+      })
+    }
+
+    groups.push({
       title: { ar: 'العمليات', en: 'Operations' },
-      items: [
-        {
-          icon: Home,
-          label: { ar: 'الرئيسية', en: 'Dashboard' },
-          path: `/${locale}/provider`,
-        },
-        {
-          icon: ShoppingBag,
-          label: { ar: 'الطلبات', en: 'Orders' },
-          path: `/${locale}/provider/orders`,
-          badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
-          badgeColor: 'red',
-        },
-        {
-          icon: RefreshCw,
-          label: { ar: 'المرتجعات', en: 'Refunds' },
-          path: `/${locale}/provider/refunds`,
-          // نعرض عدد المرتجعات + الطلبات المعلقة (on_hold)
-          badge: (pendingRefunds + onHoldOrders) > 0
-            ? (pendingRefunds + onHoldOrders).toString()
-            : undefined,
-          badgeColor: 'amber',
-        },
-      ],
-    },
+      items: operationsItems,
+    })
+
     // ─────────────────────────────────────────────────────────────────────────
-    // مجموعة المالية (Financials)
+    // مجموعة المالية (Financials) - requires canViewAnalytics or isOwner
     // ─────────────────────────────────────────────────────────────────────────
-    {
-      title: { ar: 'المالية', en: 'Financials' },
-      items: [
-        {
+    if (perms.canViewAnalytics || perms.isOwner) {
+      const financialItems: NavItem[] = []
+
+      if (perms.isOwner) {
+        financialItems.push({
           icon: Wallet,
           label: { ar: 'التسويات', en: 'Settlements' },
           path: `/${locale}/provider/finance`,
-        },
-        {
+        })
+      }
+
+      if (perms.canViewAnalytics) {
+        financialItems.push({
           icon: TrendingUp,
           label: { ar: 'التحليلات', en: 'Analytics' },
           path: `/${locale}/provider/analytics`,
-        },
-      ],
-    },
+        })
+      }
+
+      if (financialItems.length > 0) {
+        groups.push({
+          title: { ar: 'المالية', en: 'Financials' },
+          items: financialItems,
+        })
+      }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
-    // مجموعة المتجر (Management)
+    // مجموعة المتجر (Store Management)
     // ─────────────────────────────────────────────────────────────────────────
-    {
-      title: { ar: 'المتجر', en: 'Store' },
-      items: [
-        {
-          icon: Package,
-          label: { ar: 'المنتجات', en: 'Products' },
-          path: `/${locale}/provider/products`,
-        },
-        {
-          icon: Tag,
-          label: { ar: 'العروض والخصومات', en: 'Promotions' },
-          path: `/${locale}/provider/promotions`,
-        },
-        {
-          icon: Megaphone,
-          label: { ar: 'بانر العروض', en: 'Promo Banner' },
-          path: `/${locale}/provider/banner`,
-        },
-        {
-          icon: Star,
-          label: { ar: 'تقييمات العملاء', en: 'Reviews' },
-          path: `/${locale}/provider/reviews`,
-        },
-      ],
-    },
+    const storeItems: NavItem[] = []
+
+    // Products - requires canManageMenu
+    if (perms.canManageMenu) {
+      storeItems.push({
+        icon: Package,
+        label: { ar: 'المنتجات', en: 'Products' },
+        path: `/${locale}/provider/products`,
+      })
+    }
+
+    // Promotions & Banners - requires canManageOffers
+    if (perms.canManageOffers) {
+      storeItems.push({
+        icon: Tag,
+        label: { ar: 'العروض والخصومات', en: 'Promotions' },
+        path: `/${locale}/provider/promotions`,
+      })
+      storeItems.push({
+        icon: Megaphone,
+        label: { ar: 'بانر العروض', en: 'Promo Banner' },
+        path: `/${locale}/provider/banner`,
+      })
+    }
+
+    // Reviews - visible to all (read-only for staff without specific permission)
+    storeItems.push({
+      icon: Star,
+      label: { ar: 'تقييمات العملاء', en: 'Reviews' },
+      path: `/${locale}/provider/reviews`,
+    })
+
+    if (storeItems.length > 0) {
+      groups.push({
+        title: { ar: 'المتجر', en: 'Store' },
+        items: storeItems,
+      })
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // مجموعة الإعدادات (Settings)
     // ─────────────────────────────────────────────────────────────────────────
-    {
+    const settingsItems: NavItem[] = [
+      {
+        icon: Clock,
+        label: { ar: 'ساعات العمل', en: 'Working Hours' },
+        path: `/${locale}/provider/store-hours`,
+      },
+      {
+        icon: Settings,
+        label: { ar: 'الملف الشخصي', en: 'Profile' },
+        path: `/${locale}/provider/settings`,
+      },
+    ]
+
+    // Team Management - only for owners
+    if (perms.canManageTeam) {
+      settingsItems.push({
+        icon: Users,
+        label: { ar: 'إدارة الفريق', en: 'Team Management' },
+        path: `/${locale}/provider/team`,
+      })
+    }
+
+    groups.push({
       title: { ar: 'الإعدادات', en: 'Settings' },
-      items: [
-        {
-          icon: Clock,
-          label: { ar: 'ساعات العمل', en: 'Working Hours' },
-          path: `/${locale}/provider/store-hours`,
-        },
-        {
-          icon: Settings,
-          label: { ar: 'الملف الشخصي', en: 'Profile' },
-          path: `/${locale}/provider/settings`,
-        },
-      ],
-    },
-  ]
+      items: settingsItems,
+    })
+
+    return groups
+  }
+
+  const navGroups = buildNavGroups()
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Helpers

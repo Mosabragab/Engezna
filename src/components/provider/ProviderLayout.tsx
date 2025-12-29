@@ -21,6 +21,27 @@ interface Provider {
   category: string
 }
 
+// Staff permissions interface
+interface StaffPermissions {
+  isOwner: boolean
+  canManageOrders: boolean
+  canManageMenu: boolean
+  canManageCustomers: boolean
+  canViewAnalytics: boolean
+  canManageOffers: boolean
+  canManageTeam: boolean
+}
+
+const defaultPermissions: StaffPermissions = {
+  isOwner: false,
+  canManageOrders: false,
+  canManageMenu: false,
+  canManageCustomers: false,
+  canViewAnalytics: false,
+  canManageOffers: false,
+  canManageTeam: false,
+}
+
 interface ProviderLayoutProps {
   children: ReactNode
   pageTitle?: { ar: string; en: string }
@@ -38,6 +59,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [pendingRefunds, setPendingRefunds] = useState(0)
   const [pendingComplaints, setPendingComplaints] = useState(0)
   const [onHoldOrders, setOnHoldOrders] = useState(0) // الطلبات المعلقة - on_hold في المحرك المالي
+  const [permissions, setPermissions] = useState<StaffPermissions>(defaultPermissions)
 
   // Load unread notifications count from provider_notifications table
   const loadUnreadCount = useCallback(async (providerId: string) => {
@@ -97,6 +119,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     setUser(user)
 
     if (user) {
+      // First, check if user is a provider owner
       const { data: providerData } = await supabase
         .from('providers')
         .select('id, name_ar, name_en, logo_url, status, category')
@@ -104,8 +127,58 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         .limit(1)
 
       if (providerData && providerData.length > 0) {
+        // User is a provider owner - has all permissions
         setProvider(providerData[0])
+        setPermissions({
+          isOwner: true,
+          canManageOrders: true,
+          canManageMenu: true,
+          canManageCustomers: true,
+          canViewAnalytics: true,
+          canManageOffers: true,
+          canManageTeam: true,
+        })
         await loadUnreadCount(providerData[0].id)
+      } else {
+        // Check if user is a staff member
+        const { data: staffData } = await supabase
+          .from('provider_staff')
+          .select(`
+            id,
+            is_active,
+            can_manage_orders,
+            can_manage_menu,
+            can_manage_customers,
+            can_view_analytics,
+            can_manage_offers,
+            providers (
+              id,
+              name_ar,
+              name_en,
+              logo_url,
+              status,
+              category
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .single()
+
+        if (staffData && staffData.providers) {
+          // Type assertion for the joined provider data
+          const providerInfo = staffData.providers as unknown as Provider
+          setProvider(providerInfo)
+          setPermissions({
+            isOwner: false,
+            canManageOrders: staffData.can_manage_orders ?? false,
+            canManageMenu: staffData.can_manage_menu ?? false,
+            canManageCustomers: staffData.can_manage_customers ?? false,
+            canViewAnalytics: staffData.can_view_analytics ?? false,
+            canManageOffers: staffData.can_manage_offers ?? false,
+            canManageTeam: false, // Staff cannot manage team
+          })
+          await loadUnreadCount(providerInfo.id)
+        }
       }
     }
 
@@ -389,6 +462,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         pendingRefunds={pendingRefunds}
         onHoldOrders={onHoldOrders}
         pendingComplaints={pendingComplaints}
+        permissions={permissions}
       />
 
       {/* Main Content */}
