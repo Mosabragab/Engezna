@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { notoSans, notoSansArabic } from '@/lib/fonts'
 import { ThemeProvider } from '@/components/shared/ThemeProvider'
 import { LocationProvider } from '@/lib/contexts'
+import { PushNotificationProvider } from '@/components/providers/PushNotificationProvider'
 import { locales } from '@/i18n/config'
 import '../globals.css'
 
@@ -99,7 +100,9 @@ export default async function LocaleLayout({
         >
           <NextIntlClientProvider locale={locale} messages={messages}>
             <LocationProvider>
-              {children}
+              <PushNotificationProvider>
+                {children}
+              </PushNotificationProvider>
             </LocationProvider>
           </NextIntlClientProvider>
         </ThemeProvider>
