@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getToken, onMessage, MessagePayload } from 'firebase/messaging'
 import { getFirebaseMessaging } from '@/lib/firebase/config'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 
 // VAPID key for Firebase Cloud Messaging
 // This is the public key used for web push
