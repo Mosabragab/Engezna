@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -44,6 +44,8 @@ export default function SignupPage() {
   const t = useTranslations('auth.signup')
   const locale = useLocale()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -137,7 +139,12 @@ export default function SignupPage() {
 
         setSuccess(true)
         setTimeout(() => {
-          router.push(`/${locale}/auth/login`)
+          // If there's a redirect URL, go to login with that redirect preserved
+          if (redirectTo) {
+            router.push(`/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}`)
+          } else {
+            router.push(`/${locale}/auth/login`)
+          }
         }, 2000)
       }
     } catch (err) {
