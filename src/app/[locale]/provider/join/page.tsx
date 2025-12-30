@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import Link from 'next/link'
 import {
   CheckCircle,
@@ -232,9 +233,7 @@ export default function JoinProviderPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href={`/${locale}`} className="inline-block">
-            <h1 className="text-3xl font-black bg-gradient-to-r from-primary to-cyan-500 bg-clip-text text-transparent">
-              {locale === 'ar' ? 'انجزنا' : 'Engezna'}
-            </h1>
+            <EngeznaLogo size="lg" static showPen={false} />
           </Link>
         </div>
 
@@ -514,7 +513,7 @@ export default function JoinProviderPage() {
 
         {/* Footer */}
         <p className="text-center mt-6 text-sm text-slate-400">
-          {locale === 'ar' ? 'انجزنا - منصة توصيل الطعام' : 'Engezna - Food Delivery Platform'}
+          {locale === 'ar' ? 'انجزنا - منصة توصيل' : 'Engezna - Delivery Platform'}
         </p>
       </div>
     </div>
