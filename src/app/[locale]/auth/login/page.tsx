@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -28,6 +28,8 @@ export default function LoginPage() {
   const t = useTranslations('auth.login')
   const locale = useLocale()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -122,9 +124,13 @@ export default function LoginPage() {
           guestLocationStorage.clear()
         }
 
-        // Customer - redirect to home page
+        // Customer - redirect to specified URL or home page
         setTimeout(() => {
-          window.location.href = `/${locale}`
+          if (redirectTo) {
+            window.location.href = redirectTo
+          } else {
+            window.location.href = `/${locale}`
+          }
         }, 500)
       }
     } catch (err) {
@@ -218,7 +224,7 @@ export default function LoginPage() {
           <div className="text-sm text-center text-muted-foreground">
             {t('noAccount')}{' '}
             <Link
-              href={`/${locale}/auth/signup`}
+              href={redirectTo ? `/${locale}/auth/signup?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/signup`}
               className="text-primary hover:underline font-medium"
             >
               {t('signupLink')}

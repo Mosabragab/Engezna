@@ -271,7 +271,7 @@ export default function JoinProviderPage() {
                   asChild
                   className="w-full"
                 >
-                  <Link href={`/${locale}/provider/login?redirect=/provider/join?token=${token}`}>
+                  <Link href={`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/provider/join?token=${token}`)}`}>
                     <LogIn className="w-5 h-5 me-2" />
                     {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
                   </Link>
@@ -281,7 +281,7 @@ export default function JoinProviderPage() {
                   variant="outline"
                   className="w-full"
                 >
-                  <Link href={`/${locale}/auth/register?redirect=/provider/join?token=${token}`}>
+                  <Link href={`/${locale}/auth/signup?redirect=${encodeURIComponent(`/${locale}/provider/join?token=${token}`)}`}>
                     <UserPlus className="w-5 h-5 me-2" />
                     {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
                   </Link>
@@ -368,7 +368,7 @@ export default function JoinProviderPage() {
                 }
               </p>
               <Button asChild variant="outline">
-                <Link href={`/${locale}/provider/login?redirect=/provider/join?token=${token}`}>
+                <Link href={`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/provider/join?token=${token}`)}`}>
                   {locale === 'ar' ? 'تسجيل الدخول بحساب آخر' : 'Login with Different Account'}
                 </Link>
               </Button>
