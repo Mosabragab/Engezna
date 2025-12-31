@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
@@ -284,129 +283,122 @@ export default function SignupPage() {
   const isLoading = isGoogleLoading || isFacebookLoading
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460]">
-      {/* Top Section with Logo */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 pt-12 pb-8">
-        <Link href={`/${locale}`} className="inline-block mb-8">
-          <EngeznaLogo size="lg" static showPen={false} />
-        </Link>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
+      {/* Logo */}
+      <Link href={`/${locale}`} className="mb-12">
+        <EngeznaLogo size="lg" static showPen={false} />
+      </Link>
 
-        <h1 className="text-3xl font-bold text-white mb-2">
-          {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
-        </h1>
-        <p className="text-slate-300 text-lg">
-          {locale === 'ar' ? 'سجّل للاستمتاع بخدماتنا' : 'Sign up to enjoy our services'}
-        </p>
-      </div>
+      {/* Content */}
+      <div className="w-full max-w-[340px]">
+        {/* Welcome Text */}
+        <div className="text-center mb-10">
+          <h1 className="text-2xl font-bold text-[#0F172A] mb-2">
+            {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
+          </h1>
+          <p className="text-slate-500">
+            {locale === 'ar' ? 'سجّل للاستمتاع بخدماتنا' : 'Sign up to enjoy our services'}
+          </p>
+        </div>
 
-      {/* Bottom Card */}
-      <div className="bg-white rounded-t-[2.5rem] px-6 pt-8 pb-10 shadow-2xl">
-        <div className="max-w-sm mx-auto">
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-6 text-center">
-              {error}
-            </div>
-          )}
-
-          {/* Social Signup Buttons */}
-          <div className="space-y-4">
-            {/* Google Button */}
-            <button
-              type="button"
-              onClick={() => handleGoogleSignup()}
-              disabled={isLoading}
-              className="w-full h-14 flex items-center justify-center gap-3 bg-white border-2 border-slate-200 rounded-2xl text-slate-700 font-medium text-base transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGoogleLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin text-slate-600" />
-              ) : (
-                <>
-                  <GoogleIcon />
-                  <span>{locale === 'ar' ? 'التسجيل عبر جوجل' : 'Sign up with Google'}</span>
-                </>
-              )}
-            </button>
-
-            {/* Facebook Button */}
-            <button
-              type="button"
-              onClick={handleFacebookSignup}
-              disabled={isLoading}
-              className="w-full h-14 flex items-center justify-center gap-3 bg-[#1877F2] rounded-2xl text-white font-medium text-base transition-all duration-200 hover:bg-[#166FE5] hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isFacebookLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                  <span>{locale === 'ar' ? 'التسجيل عبر فيسبوك' : 'Sign up with Facebook'}</span>
-                </>
-              )}
-            </button>
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm mb-6 text-center">
+            {error}
           </div>
+        )}
 
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-slate-200"></div>
-            <span className="text-slate-400 text-sm">{locale === 'ar' ? 'أو' : 'or'}</span>
-            <div className="flex-1 h-px bg-slate-200"></div>
-          </div>
-
-          {/* Terms Notice */}
-          <p className="text-xs text-slate-400 text-center leading-relaxed">
-            {locale === 'ar' ? (
-              <>
-                بالتسجيل، أنت توافق على{' '}
-                <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
-                  الشروط والأحكام
-                </Link>{' '}
-                و{' '}
-                <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
-                  سياسة الخصوصية
-                </Link>
-              </>
+        {/* Social Signup Buttons */}
+        <div className="space-y-3">
+          {/* Google Button */}
+          <button
+            type="button"
+            onClick={() => handleGoogleSignup()}
+            disabled={isLoading}
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-white border border-slate-300 rounded-xl text-[#0F172A] font-medium transition-all hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] disabled:opacity-50"
+          >
+            {isGoogleLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
             ) : (
               <>
-                By signing up, you agree to our{' '}
-                <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
-                  Terms
-                </Link>{' '}
-                and{' '}
-                <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
-                  Privacy Policy
-                </Link>
+                <GoogleIcon />
+                <span>{locale === 'ar' ? 'التسجيل عبر Google' : 'Sign up with Google'}</span>
               </>
             )}
-          </p>
+          </button>
 
-          {/* Login Link */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p className="text-slate-500">
-              {locale === 'ar' ? 'لديك حساب بالفعل؟' : 'Already have an account?'}{' '}
-              <Link
-                href={redirectTo ? `/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/login`}
-                className="text-[#009DE0] font-medium hover:underline"
-              >
-                {locale === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
+          {/* Facebook Button */}
+          <button
+            type="button"
+            onClick={handleFacebookSignup}
+            disabled={isLoading}
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#1877F2] rounded-xl text-white font-medium transition-all hover:bg-[#0b5fcc] active:scale-[0.98] disabled:opacity-50"
+          >
+            {isFacebookLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+                <span>{locale === 'ar' ? 'التسجيل عبر Facebook' : 'Sign up with Facebook'}</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Terms Notice */}
+        <p className="text-xs text-slate-400 text-center mt-8 leading-relaxed">
+          {locale === 'ar' ? (
+            <>
+              بالتسجيل، أنت توافق على{' '}
+              <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
+                الشروط والأحكام
+              </Link>{' '}
+              و{' '}
+              <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
+                سياسة الخصوصية
               </Link>
-            </p>
-          </div>
+            </>
+          ) : (
+            <>
+              By signing up, you agree to our{' '}
+              <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
+                Terms
+              </Link>{' '}
+              and{' '}
+              <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
+                Privacy Policy
+              </Link>
+            </>
+          )}
+        </p>
 
-          {/* Back to Home Link */}
-          <div className="mt-6 text-center">
+        {/* Divider */}
+        <div className="my-8 border-t border-slate-100"></div>
+
+        {/* Login Link */}
+        <div className="text-center">
+          <p className="text-slate-500">
+            {locale === 'ar' ? 'لديك حساب بالفعل؟' : 'Already have an account?'}{' '}
             <Link
-              href={`/${locale}`}
-              className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
+              href={redirectTo ? `/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/login`}
+              className="text-[#009DE0] font-medium hover:underline"
             >
-              {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-              {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
+              {locale === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
             </Link>
-          </div>
+          </p>
         </div>
       </div>
+
+      {/* Back to Home */}
+      <Link
+        href={`/${locale}`}
+        className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
+      >
+        {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+        {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
+      </Link>
     </div>
   )
 }
