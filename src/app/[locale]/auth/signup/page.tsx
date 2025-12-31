@@ -1,19 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useTranslations, useLocale } from 'next-intl'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { useSearchParams } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { ArrowLeft, ArrowRight, MapPin, ChevronDown, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 import { useGoogleLogin } from '@react-oauth/google'
 
 // Google Icon Component
@@ -38,43 +33,63 @@ const GoogleIcon = () => (
   </svg>
 )
 
-interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
-  is_active: boolean
+// Facebook Icon Component
+const FacebookIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+  </svg>
+)
+
+declare global {
+  interface Window {
+    FB: {
+      init: (params: { appId: string; cookie: boolean; xfbml: boolean; version: string }) => void
+      login: (callback: (response: { authResponse?: { accessToken: string } }) => void, options: { scope: string }) => void
+      getLoginStatus: (callback: (response: { status: string; authResponse?: { accessToken: string } }) => void) => void
+    }
+    fbAsyncInit: () => void
+  }
 }
 
-// Form validation schema
-const signupSchema = z.object({
-  fullName: z.string().min(2, 'Name must be at least 2 characters'),
-  phone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'Please enter a valid Egyptian phone number'),
-  email: z.string().email('Invalid email address'),
-  governorateId: z.string().min(1, 'Please select your governorate'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
-  agreeToTerms: z.boolean().refine((val) => val === true, {
-    message: 'You must agree to the terms and conditions',
-  }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-})
-
-type SignupFormData = z.infer<typeof signupSchema>
-
 export default function SignupPage() {
-  const t = useTranslations('auth.signup')
   const locale = useLocale()
-  const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect')
-  const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [isFacebookLoading, setIsFacebookLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [loadingGovernorates, setLoadingGovernorates] = useState(true)
+  const [fbReady, setFbReady] = useState(false)
+
+  // Initialize Facebook SDK
+  useEffect(() => {
+    const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
+    if (!appId) return
+
+    // Load Facebook SDK
+    if (!document.getElementById('facebook-jssdk')) {
+      const script = document.createElement('script')
+      script.id = 'facebook-jssdk'
+      script.src = 'https://connect.facebook.net/en_US/sdk.js'
+      script.async = true
+      script.defer = true
+      document.body.appendChild(script)
+    }
+
+    window.fbAsyncInit = () => {
+      window.FB.init({
+        appId: appId,
+        cookie: true,
+        xfbml: true,
+        version: 'v18.0'
+      })
+      setFbReady(true)
+    }
+
+    // Check if already loaded
+    if (window.FB) {
+      setFbReady(true)
+    }
+  }, [])
 
   // Handle Google signup with authorization code flow
   const handleGoogleSignup = useGoogleLogin({
@@ -114,36 +129,7 @@ export default function SignupPage() {
           return
         }
 
-        if (data.user) {
-          // Check if profile exists, if not create one
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('governorate_id, phone, role')
-            .eq('id', data.user.id)
-            .single()
-
-          if (!profile) {
-            // Create profile for new Google user
-            await supabase.from('profiles').insert({
-              id: data.user.id,
-              email: data.user.email,
-              full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || '',
-              role: 'customer',
-            })
-          }
-
-          // Check if profile is complete - always redirect to complete profile for new signups
-          if (!profile?.governorate_id || !profile?.phone) {
-            const completeProfileUrl = redirectTo
-              ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
-              : `/${locale}/auth/complete-profile`
-            window.location.href = completeProfileUrl
-            return
-          }
-
-          // Profile is complete - redirect
-          window.location.href = redirectTo || `/${locale}`
-        }
+        await handlePostSignup(supabase, data.user)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unexpected error occurred')
       } finally {
@@ -156,370 +142,266 @@ export default function SignupPage() {
     },
   })
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-  } = useForm<SignupFormData>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      governorateId: '',
-      agreeToTerms: false,
-    },
-  })
-
-  const selectedGovernorateId = watch('governorateId')
-
-  // Fetch governorates on mount
-  useEffect(() => {
-    async function fetchGovernorates() {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('governorates')
-        .select('id, name_ar, name_en, is_active')
-        .eq('is_active', true)
-        .order('name_ar')
-
-      if (!error && data) {
-        setGovernorates(data)
-      }
-      setLoadingGovernorates(false)
+  // Handle Facebook signup
+  const handleFacebookSignup = () => {
+    if (!window.FB || !fbReady) {
+      setError(locale === 'ar' ? 'جاري تحميل Facebook...' : 'Loading Facebook...')
+      return
     }
-    fetchGovernorates()
-  }, [])
 
-  const onSubmit = async (data: SignupFormData) => {
-    setIsLoading(true)
+    setIsFacebookLoading(true)
     setError(null)
 
-    try {
-      const supabase = createClient()
-
-      // Create user account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            full_name: data.fullName,
-            phone: data.phone,
-          },
-        },
-      })
-
-      if (authError) {
-        setError(authError.message)
+    window.FB.login(async (response) => {
+      if (!response.authResponse) {
+        setError(locale === 'ar' ? 'تم إلغاء التسجيل بـ Facebook' : 'Facebook sign-up was cancelled')
+        setIsFacebookLoading(false)
         return
       }
 
-      if (authData.user) {
-        // Insert user profile data with governorate_id
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            email: data.email,
-            phone: data.phone,
-            full_name: data.fullName,
-            role: 'customer',
-            governorate_id: data.governorateId,
-          })
+      try {
+        const accessToken = response.authResponse.accessToken
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError)
-          // Profile creation failed - show error to user
-          setError(
-            locale === 'ar'
-              ? 'فشل في إنشاء الملف الشخصي. يرجى المحاولة مرة أخرى.'
-              : 'Failed to create profile. Please try again.'
-          )
-          // Delete the auth user since profile creation failed
-          // This prevents orphaned auth users without profiles
-          await supabase.auth.signOut()
+        // Verify token and get user data from our API
+        const verifyResponse = await fetch('/api/auth/facebook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessToken }),
+        })
+
+        const userData = await verifyResponse.json()
+
+        if (!verifyResponse.ok) {
+          setError(userData.error || (locale === 'ar' ? 'فشل التحقق من Facebook' : 'Facebook verification failed'))
+          setIsFacebookLoading(false)
           return
         }
 
-        setSuccess(true)
-        setTimeout(() => {
-          // If there's a redirect URL, go to login with that redirect preserved
-          if (redirectTo) {
-            router.push(`/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}`)
-          } else {
-            router.push(`/${locale}/auth/login`)
+        const supabase = createClient()
+
+        // Check if user exists with this email
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', userData.email)
+          .single()
+
+        if (existingUser) {
+          // User already exists - redirect to login
+          setError(locale === 'ar' ? 'هذا الحساب موجود بالفعل. قم بتسجيل الدخول.' : 'This account already exists. Please sign in.')
+          setIsFacebookLoading(false)
+          return
+        }
+
+        // New user - create account
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: userData.email,
+          password: `fb_${userData.id}_${Date.now()}`, // Generate random password for Facebook users
+          options: {
+            data: {
+              full_name: userData.name,
+              avatar_url: userData.picture,
+              provider: 'facebook',
+            }
           }
-        }, 2000)
+        })
+
+        if (signUpError) {
+          if (signUpError.message.includes('already registered')) {
+            setError(locale === 'ar' ? 'هذا البريد مسجل بطريقة أخرى. جرب Google.' : 'This email is registered with another method. Try Google.')
+          } else {
+            setError(signUpError.message)
+          }
+          setIsFacebookLoading(false)
+          return
+        }
+
+        if (signUpData.user) {
+          // Create profile
+          await supabase.from('profiles').upsert({
+            id: signUpData.user.id,
+            email: userData.email,
+            full_name: userData.name,
+            role: 'customer',
+          })
+
+          // Redirect to complete profile
+          const completeProfileUrl = redirectTo
+            ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
+            : `/${locale}/auth/complete-profile`
+          window.location.href = completeProfileUrl
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+        setIsFacebookLoading(false)
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
-    } finally {
-      setIsLoading(false)
-    }
+    }, { scope: 'email,public_profile' })
   }
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold">{t('successTitle')}</h2>
-              <p className="text-muted-foreground">{t('successMessage')}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  // Common post-signup handler
+  const handlePostSignup = async (supabase: ReturnType<typeof createClient>, user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null) => {
+    if (!user) return
+
+    // Check if profile exists, if not create one
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('governorate_id, phone, role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile) {
+      // Create profile for new user
+      await supabase.from('profiles').insert({
+        id: user.id,
+        email: user.email,
+        full_name: (user.user_metadata?.full_name || user.user_metadata?.name || '') as string,
+        role: 'customer',
+      })
+    }
+
+    // Sync guest location if exists
+    const guestLocation = guestLocationStorage.get()
+    if (guestLocation?.governorateId) {
+      await supabase
+        .from('profiles')
+        .update({
+          governorate_id: guestLocation.governorateId,
+          city_id: guestLocation.cityId || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+      guestLocationStorage.clear()
+    }
+
+    // Always redirect to complete profile for new signups
+    const completeProfileUrl = redirectTo
+      ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
+      : `/${locale}/auth/complete-profile`
+    window.location.href = completeProfileUrl
   }
 
   const isRTL = locale === 'ar'
+  const isLoading = isGoogleLoading || isFacebookLoading
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-      {/* Logo - Links back to home */}
-      <div className="mb-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 p-4">
+      {/* Logo */}
+      <div className="mb-8">
         <Link href={`/${locale}`} className="inline-block">
           <EngeznaLogo size="lg" static showPen={false} />
         </Link>
       </div>
 
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            {t('title')}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {t('description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+      {/* Main Card */}
+      <div className="w-full max-w-sm">
+        {/* Welcome Text */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
+          </h1>
+          <p className="text-slate-500">
+            {locale === 'ar' ? 'سجّل للاستمتاع بخدماتنا' : 'Sign up to enjoy our services'}
+          </p>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="fullName">{t('fullName')}</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder={t('fullNamePlaceholder')}
-                {...register('fullName')}
-                disabled={isLoading}
-                className={errors.fullName ? 'border-destructive' : ''}
-              />
-              {errors.fullName && (
-                <p className="text-sm text-destructive">{errors.fullName.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">{t('phone')}</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder={t('phonePlaceholder')}
-                {...register('phone')}
-                disabled={isLoading}
-                className={errors.phone ? 'border-destructive' : ''}
-              />
-              {errors.phone && (
-                <p className="text-sm text-destructive">{errors.phone.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('email')}</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder={t('emailPlaceholder')}
-                {...register('email')}
-                disabled={isLoading}
-                className={errors.email ? 'border-destructive' : ''}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Governorate Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="governorateId" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" />
-                {locale === 'ar' ? 'المحافظة' : 'Governorate'}
-              </Label>
-              <div className="relative">
-                <select
-                  id="governorateId"
-                  {...register('governorateId')}
-                  disabled={isLoading || loadingGovernorates}
-                  className={`w-full h-10 px-3 py-2 text-sm rounded-md border bg-background appearance-none cursor-pointer
-                    ${errors.governorateId ? 'border-destructive' : 'border-input'}
-                    focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
-                    disabled:cursor-not-allowed disabled:opacity-50`}
-                >
-                  <option value="">
-                    {loadingGovernorates
-                      ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
-                      : (locale === 'ar' ? 'اختر المحافظة' : 'Select governorate')
-                    }
-                  </option>
-                  {governorates.map((gov) => (
-                    <option key={gov.id} value={gov.id}>
-                      {locale === 'ar' ? gov.name_ar : gov.name_en}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none`} />
-              </div>
-              {errors.governorateId && (
-                <p className="text-sm text-destructive">
-                  {locale === 'ar' ? 'يرجى اختيار المحافظة' : errors.governorateId.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">{t('password')}</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder={t('passwordPlaceholder')}
-                {...register('password')}
-                disabled={isLoading}
-                className={errors.password ? 'border-destructive' : ''}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder={t('confirmPasswordPlaceholder')}
-                {...register('confirmPassword')}
-                disabled={isLoading}
-                className={errors.confirmPassword ? 'border-destructive' : ''}
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-              )}
-            </div>
-
-            {/* Terms Agreement Checkbox */}
-            <div className="space-y-2">
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  id="agreeToTerms"
-                  {...register('agreeToTerms')}
-                  disabled={isLoading}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                />
-                <label htmlFor="agreeToTerms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
-                  {locale === 'ar' ? (
-                    <>
-                      أوافق على{' '}
-                      <Link href={`/${locale}/terms`} className="text-primary hover:underline font-medium" target="_blank">
-                        الشروط والأحكام
-                      </Link>
-                      {' '}و{' '}
-                      <Link href={`/${locale}/privacy`} className="text-primary hover:underline font-medium" target="_blank">
-                        سياسة الخصوصية
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      I agree to the{' '}
-                      <Link href={`/${locale}/terms`} className="text-primary hover:underline font-medium" target="_blank">
-                        Terms & Conditions
-                      </Link>
-                      {' '}and{' '}
-                      <Link href={`/${locale}/privacy`} className="text-primary hover:underline font-medium" target="_blank">
-                        Privacy Policy
-                      </Link>
-                    </>
-                  )}
-                </label>
-              </div>
-              {errors.agreeToTerms && (
-                <p className="text-sm text-destructive">
-                  {locale === 'ar' ? 'يجب الموافقة على الشروط والأحكام' : errors.agreeToTerms.message}
-                </p>
-              )}
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading || isGoogleLoading}
-            >
-              {isLoading ? t('signingUp') : t('signupButton')}
-            </Button>
-          </form>
-
-          {/* Divider */}
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                {locale === 'ar' ? 'أو' : 'OR'}
-              </span>
-            </div>
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-6 text-center">
+            {error}
           </div>
+        )}
 
-          {/* Google Sign-Up Button */}
+        {/* Social Signup Buttons */}
+        <div className="space-y-3">
+          {/* Google Button */}
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full h-14 text-base font-medium border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl"
             onClick={() => handleGoogleSignup()}
-            disabled={isLoading || isGoogleLoading}
+            disabled={isLoading}
           >
             {isGoogleLoading ? (
-              <Loader2 className="w-5 h-5 me-2 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              <GoogleIcon />
+              <>
+                <GoogleIcon />
+                <span className="ms-3">
+                  {locale === 'ar' ? 'التسجيل عبر جوجل' : 'Sign up with Google'}
+                </span>
+              </>
             )}
-            <span className="ms-2">
-              {locale === 'ar' ? 'التسجيل عبر جوجل' : 'Sign up with Google'}
-            </span>
           </Button>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-sm text-center text-muted-foreground">
-            {t('hasAccount')}{' '}
+
+          {/* Facebook Button */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-14 text-base font-medium border-2 border-slate-200 hover:border-[#1877F2] hover:bg-blue-50 rounded-xl"
+            onClick={handleFacebookSignup}
+            disabled={isLoading}
+          >
+            {isFacebookLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <FacebookIcon />
+                <span className="ms-3">
+                  {locale === 'ar' ? 'التسجيل عبر فيسبوك' : 'Sign up with Facebook'}
+                </span>
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Terms Notice */}
+        <p className="text-xs text-slate-400 text-center mt-6 leading-relaxed">
+          {locale === 'ar' ? (
+            <>
+              بالتسجيل، أنت توافق على{' '}
+              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+                الشروط والأحكام
+              </Link>{' '}
+              و{' '}
+              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+                سياسة الخصوصية
+              </Link>
+            </>
+          ) : (
+            <>
+              By signing up, you agree to our{' '}
+              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+                Terms
+              </Link>{' '}
+              and{' '}
+              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+                Privacy Policy
+              </Link>
+            </>
+          )}
+        </p>
+
+        {/* Login Link */}
+        <div className="mt-8 pt-6 border-t border-slate-200 text-center">
+          <p className="text-slate-500">
+            {locale === 'ar' ? 'لديك حساب بالفعل؟' : 'Already have an account?'}{' '}
             <Link
               href={redirectTo ? `/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/login`}
-              className="text-primary hover:underline font-medium"
+              className="text-primary font-medium hover:underline"
             >
-              {t('loginLink')}
+              {locale === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
             </Link>
-          </div>
-        </CardFooter>
-      </Card>
+          </p>
+        </div>
+      </div>
 
       {/* Back to Home Link */}
       <Link
         href={`/${locale}`}
-        className="mt-6 inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+        className="mt-8 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
       >
         {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-        {locale === 'ar' ? 'العودة للصفحة الرئيسية' : 'Back to Home'}
+        {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
       </Link>
     </div>
   )

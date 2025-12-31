@@ -1,16 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useTranslations, useLocale } from 'next-intl'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
@@ -39,23 +33,63 @@ const GoogleIcon = () => (
   </svg>
 )
 
-// Form validation schema
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-})
+// Facebook Icon Component
+const FacebookIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+  </svg>
+)
 
-type LoginFormData = z.infer<typeof loginSchema>
+declare global {
+  interface Window {
+    FB: {
+      init: (params: { appId: string; cookie: boolean; xfbml: boolean; version: string }) => void
+      login: (callback: (response: { authResponse?: { accessToken: string } }) => void, options: { scope: string }) => void
+      getLoginStatus: (callback: (response: { status: string; authResponse?: { accessToken: string } }) => void) => void
+    }
+    fbAsyncInit: () => void
+  }
+}
 
 export default function LoginPage() {
-  const t = useTranslations('auth.login')
   const locale = useLocale()
-  const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect')
-  const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [isFacebookLoading, setIsFacebookLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fbReady, setFbReady] = useState(false)
+
+  // Initialize Facebook SDK
+  useEffect(() => {
+    const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
+    if (!appId) return
+
+    // Load Facebook SDK
+    if (!document.getElementById('facebook-jssdk')) {
+      const script = document.createElement('script')
+      script.id = 'facebook-jssdk'
+      script.src = 'https://connect.facebook.net/en_US/sdk.js'
+      script.async = true
+      script.defer = true
+      document.body.appendChild(script)
+    }
+
+    window.fbAsyncInit = () => {
+      window.FB.init({
+        appId: appId,
+        cookie: true,
+        xfbml: true,
+        version: 'v18.0'
+      })
+      setFbReady(true)
+    }
+
+    // Check if already loaded
+    if (window.FB) {
+      setFbReady(true)
+    }
+  }, [])
 
   // Handle Google login with authorization code flow
   const handleGoogleLogin = useGoogleLogin({
@@ -95,36 +129,7 @@ export default function LoginPage() {
           return
         }
 
-        if (data.user) {
-          // Check if profile exists, if not create one
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('governorate_id, phone, role')
-            .eq('id', data.user.id)
-            .single()
-
-          if (!profile) {
-            // Create profile for new Google user
-            await supabase.from('profiles').insert({
-              id: data.user.id,
-              email: data.user.email,
-              full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || '',
-              role: 'customer',
-            })
-          }
-
-          // Check if profile is complete
-          if (!profile?.governorate_id || !profile?.phone) {
-            const completeProfileUrl = redirectTo
-              ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
-              : `/${locale}/auth/complete-profile`
-            window.location.href = completeProfileUrl
-            return
-          }
-
-          // Profile is complete - redirect
-          window.location.href = redirectTo || `/${locale}`
-        }
+        await handlePostLogin(supabase, data.user)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unexpected error occurred')
       } finally {
@@ -137,279 +142,298 @@ export default function LoginPage() {
     },
   })
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  })
+  // Handle Facebook login
+  const handleFacebookLogin = () => {
+    if (!window.FB || !fbReady) {
+      setError(locale === 'ar' ? 'جاري تحميل Facebook...' : 'Loading Facebook...')
+      return
+    }
 
-  const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true)
+    setIsFacebookLoading(true)
     setError(null)
 
-    try {
-      const supabase = createClient()
-
-      // Sign in with email and password
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: data.email.toLowerCase().trim(),
-        password: data.password,
-      })
-
-      if (authError) {
-        // Provide more specific error messages
-        if (authError.message.includes('Invalid login credentials')) {
-          setError('البريد الإلكتروني أو كلمة المرور غير صحيحة / Invalid email or password')
-        } else if (authError.message.includes('Email not confirmed')) {
-          setError('يرجى تأكيد بريدك الإلكتروني أولاً / Please confirm your email first')
-        } else {
-          setError(authError.message)
-        }
+    window.FB.login(async (response) => {
+      if (!response.authResponse) {
+        setError(locale === 'ar' ? 'تم إلغاء تسجيل الدخول بـ Facebook' : 'Facebook login was cancelled')
+        setIsFacebookLoading(false)
         return
       }
 
-      if (authData.user) {
-        // Fetch user profile to get role
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role, full_name')
-          .eq('id', authData.user.id)
-          .single()
+      try {
+        const accessToken = response.authResponse.accessToken
 
-        // Check if user is a customer - this login page is for customers only
-        if (profile?.role && profile.role !== 'customer') {
-          // Sign out non-customer users
-          await supabase.auth.signOut()
+        // Verify token and get user data from our API
+        const verifyResponse = await fetch('/api/auth/facebook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessToken }),
+        })
 
-          // Show appropriate message based on role
-          if (profile.role === 'admin') {
-            setError(
-              locale === 'ar'
-                ? 'هذه الصفحة للعملاء فقط. يرجى استخدام صفحة تسجيل دخول المشرفين'
-                : 'This page is for customers only. Please use the admin login page'
-            )
-          } else if (profile.role === 'provider_owner' || profile.role === 'provider_staff') {
-            setError(
-              locale === 'ar'
-                ? 'هذه الصفحة للعملاء فقط. يرجى استخدام صفحة تسجيل دخول مقدمي الخدمة'
-                : 'This page is for customers only. Please use the provider login page'
-            )
-          }
+        const userData = await verifyResponse.json()
+
+        if (!verifyResponse.ok) {
+          setError(userData.error || (locale === 'ar' ? 'فشل التحقق من Facebook' : 'Facebook verification failed'))
+          setIsFacebookLoading(false)
           return
         }
 
-        // Sync guest location to profile if exists
-        const guestLocation = guestLocationStorage.get()
-        if (guestLocation?.governorateId) {
-          // Check if user has no location set
-          const hasLocation = profile?.role === 'customer' // Will refetch below
+        const supabase = createClient()
 
-          const { data: currentProfile } = await supabase
-            .from('profiles')
-            .select('governorate_id, city_id')
-            .eq('id', authData.user.id)
-            .single()
-
-          // Only sync if user doesn't have a location set
-          if (!currentProfile?.governorate_id) {
-            await supabase
-              .from('profiles')
-              .update({
-                governorate_id: guestLocation.governorateId,
-                city_id: guestLocation.cityId || null,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', authData.user.id)
-          }
-
-          // Clear guest location after sync
-          guestLocationStorage.clear()
-        }
-
-        // Check if profile is complete (has governorate and phone)
-        const { data: fullProfile } = await supabase
+        // Check if user exists with this email
+        const { data: existingUser } = await supabase
           .from('profiles')
-          .select('governorate_id, phone')
-          .eq('id', authData.user.id)
+          .select('id')
+          .eq('email', userData.email)
           .single()
 
-        // If profile is incomplete, redirect to complete-profile page
-        if (!fullProfile?.governorate_id || !fullProfile?.phone) {
-          const completeProfileUrl = redirectTo
-            ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
-            : `/${locale}/auth/complete-profile`
-          window.location.href = completeProfileUrl
-          return
-        }
+        if (existingUser) {
+          // User exists - sign in with magic link (auto-confirm for social login)
+          // For now, we'll use a workaround by setting the session
+          const { data: authData, error: authError } = await supabase.auth.signInWithOtp({
+            email: userData.email,
+            options: {
+              shouldCreateUser: false,
+            }
+          })
 
-        // Customer with complete profile - redirect to specified URL or home page
-        setTimeout(() => {
-          if (redirectTo) {
-            window.location.href = redirectTo
-          } else {
-            window.location.href = `/${locale}`
+          // Since OTP requires email verification, we need a different approach
+          // Let's use admin API to create a session
+          // For now, redirect to a special handler
+          window.location.href = `/${locale}/auth/facebook-callback?email=${encodeURIComponent(userData.email)}&name=${encodeURIComponent(userData.name)}&id=${userData.id}`
+          return
+        } else {
+          // New user - create account
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: userData.email,
+            password: `fb_${userData.id}_${Date.now()}`, // Generate random password for Facebook users
+            options: {
+              data: {
+                full_name: userData.name,
+                avatar_url: userData.picture,
+                provider: 'facebook',
+              }
+            }
+          })
+
+          if (signUpError) {
+            // If user already exists with different provider
+            if (signUpError.message.includes('already registered')) {
+              setError(locale === 'ar' ? 'هذا البريد مسجل بطريقة أخرى. جرب Google.' : 'This email is registered with another method. Try Google.')
+            } else {
+              setError(signUpError.message)
+            }
+            setIsFacebookLoading(false)
+            return
           }
-        }, 500)
+
+          if (signUpData.user) {
+            // Create profile
+            await supabase.from('profiles').upsert({
+              id: signUpData.user.id,
+              email: userData.email,
+              full_name: userData.name,
+              role: 'customer',
+            })
+
+            // Redirect to complete profile
+            const completeProfileUrl = redirectTo
+              ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
+              : `/${locale}/auth/complete-profile`
+            window.location.href = completeProfileUrl
+          }
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+        setIsFacebookLoading(false)
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
-    } finally {
-      setIsLoading(false)
+    }, { scope: 'email,public_profile' })
+  }
+
+  // Common post-login handler
+  const handlePostLogin = async (supabase: ReturnType<typeof createClient>, user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null) => {
+    if (!user) return
+
+    // Check if profile exists, if not create one
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('governorate_id, phone, role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile) {
+      // Create profile for new user
+      await supabase.from('profiles').insert({
+        id: user.id,
+        email: user.email,
+        full_name: (user.user_metadata?.full_name || user.user_metadata?.name || '') as string,
+        role: 'customer',
+      })
     }
+
+    // Sync guest location if exists
+    const guestLocation = guestLocationStorage.get()
+    if (guestLocation?.governorateId && !profile?.governorate_id) {
+      await supabase
+        .from('profiles')
+        .update({
+          governorate_id: guestLocation.governorateId,
+          city_id: guestLocation.cityId || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+      guestLocationStorage.clear()
+    }
+
+    // Check if profile is complete
+    const { data: fullProfile } = await supabase
+      .from('profiles')
+      .select('governorate_id, phone')
+      .eq('id', user.id)
+      .single()
+
+    if (!fullProfile?.governorate_id || !fullProfile?.phone) {
+      const completeProfileUrl = redirectTo
+        ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
+        : `/${locale}/auth/complete-profile`
+      window.location.href = completeProfileUrl
+      return
+    }
+
+    // Profile is complete - redirect
+    window.location.href = redirectTo || `/${locale}`
   }
 
   const isRTL = locale === 'ar'
+  const isLoading = isGoogleLoading || isFacebookLoading
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-      {/* Logo - Links back to home */}
-      <div className="mb-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 p-4">
+      {/* Logo */}
+      <div className="mb-8">
         <Link href={`/${locale}`} className="inline-block">
           <EngeznaLogo size="lg" static showPen={false} />
         </Link>
       </div>
 
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            {t('title')}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {t('description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+      {/* Main Card */}
+      <div className="w-full max-w-sm">
+        {/* Welcome Text */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            {locale === 'ar' ? 'مرحباً بك!' : 'Welcome!'}
+          </h1>
+          <p className="text-slate-500">
+            {locale === 'ar' ? 'سجّل دخولك للمتابعة' : 'Sign in to continue'}
+          </p>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('email')}</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder={t('emailPlaceholder')}
-                {...register('email')}
-                disabled={isLoading}
-                className={errors.email ? 'border-destructive' : ''}
-                autoComplete="email"
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">{t('password')}</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder={t('passwordPlaceholder')}
-                {...register('password')}
-                disabled={isLoading}
-                className={errors.password ? 'border-destructive' : ''}
-                autoComplete="current-password"
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end">
-              <Link
-                href={`/${locale}/auth/forgot-password`}
-                className="text-sm text-primary hover:underline"
-              >
-                {t('forgotPassword')}
-              </Link>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading || isGoogleLoading}
-            >
-              {isLoading ? t('loggingIn') : t('loginButton')}
-            </Button>
-          </form>
-
-          {/* Divider */}
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                {locale === 'ar' ? 'أو' : 'OR'}
-              </span>
-            </div>
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-6 text-center">
+            {error}
           </div>
+        )}
 
-          {/* Google Sign-In Button */}
+        {/* Social Login Buttons */}
+        <div className="space-y-3">
+          {/* Google Button */}
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full h-14 text-base font-medium border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl"
             onClick={() => handleGoogleLogin()}
-            disabled={isLoading || isGoogleLoading}
+            disabled={isLoading}
           >
             {isGoogleLoading ? (
-              <Loader2 className="w-5 h-5 me-2 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              <GoogleIcon />
+              <>
+                <GoogleIcon />
+                <span className="ms-3">
+                  {locale === 'ar' ? 'المتابعة عبر جوجل' : 'Continue with Google'}
+                </span>
+              </>
             )}
-            <span className="ms-2">
-              {locale === 'ar' ? 'إستمرار عبر جوجل' : 'Continue with Google'}
-            </span>
           </Button>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-sm text-center text-muted-foreground">
-            {t('noAccount')}{' '}
+
+          {/* Facebook Button */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-14 text-base font-medium border-2 border-slate-200 hover:border-[#1877F2] hover:bg-blue-50 rounded-xl"
+            onClick={handleFacebookLogin}
+            disabled={isLoading}
+          >
+            {isFacebookLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <FacebookIcon />
+                <span className="ms-3">
+                  {locale === 'ar' ? 'المتابعة عبر فيسبوك' : 'Continue with Facebook'}
+                </span>
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Terms Notice */}
+        <p className="text-xs text-slate-400 text-center mt-6 leading-relaxed">
+          {locale === 'ar' ? (
+            <>
+              بالمتابعة، أنت توافق على{' '}
+              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+                الشروط والأحكام
+              </Link>{' '}
+              و{' '}
+              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+                سياسة الخصوصية
+              </Link>
+            </>
+          ) : (
+            <>
+              By continuing, you agree to our{' '}
+              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+                Terms
+              </Link>{' '}
+              and{' '}
+              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+                Privacy Policy
+              </Link>
+            </>
+          )}
+        </p>
+
+        {/* Provider/Admin Links */}
+        <div className="mt-8 pt-6 border-t border-slate-200">
+          <p className="text-xs text-center text-slate-400 mb-3">
+            {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
+          </p>
+          <div className="flex justify-center gap-4 text-sm">
             <Link
-              href={redirectTo ? `/${locale}/auth/signup?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/signup`}
-              className="text-primary hover:underline font-medium"
+              href={`/${locale}/provider/login`}
+              className="text-[#009DE0] hover:underline"
             >
-              {t('signupLink')}
+              {locale === 'ar' ? 'مقدمي الخدمة' : 'Providers'}
+            </Link>
+            <span className="text-slate-300">|</span>
+            <Link
+              href={`/${locale}/admin/login`}
+              className="text-slate-500 hover:underline"
+            >
+              {locale === 'ar' ? 'المشرفين' : 'Admins'}
             </Link>
           </div>
-
-          {/* Links for providers and admins */}
-          <div className="w-full pt-4 border-t border-border">
-            <p className="text-xs text-center text-muted-foreground mb-2">
-              {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
-            </p>
-            <div className="flex justify-center gap-4 text-xs">
-              <Link
-                href={`/${locale}/provider/login`}
-                className="text-[#009DE0] hover:underline"
-              >
-                {locale === 'ar' ? 'دخول مقدمي الخدمة' : 'Provider Login'}
-              </Link>
-              <span className="text-muted-foreground">|</span>
-              <Link
-                href={`/${locale}/admin/login`}
-                className="text-slate-500 hover:underline"
-              >
-                {locale === 'ar' ? 'دخول المشرفين' : 'Admin Login'}
-              </Link>
-            </div>
-          </div>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
 
       {/* Back to Home Link */}
       <Link
         href={`/${locale}`}
-        className="mt-6 inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+        className="mt-8 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
       >
         {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-        {locale === 'ar' ? 'العودة للصفحة الرئيسية' : 'Back to Home'}
+        {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
       </Link>
     </div>
   )
