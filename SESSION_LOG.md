@@ -1,5 +1,107 @@
 # Session Log
 
+## Session: 2025-12-31 - Native Google Sign-In Implementation
+
+### Summary
+Implemented native Google Sign-In to show "engezna.com" in Google consent screen instead of Supabase URL. Created custom Arabic button design matching the app styling.
+
+### Problem Statement
+- Google Sign-In was showing "cmxpvzqrmptfnuymhxmr.supabase.co" instead of "engezna.com" in the consent screen
+- This happened because OAuth flow went through Supabase's default OAuth implementation
+- User wanted custom Arabic button "إستمرار عبر جوجل" matching Talabat app design
+
+### Solution Implemented
+
+#### 1. Native Google OAuth with Authorization Code Flow ✅
+**Library**: `@react-oauth/google`
+**Flow**: Authorization code flow instead of implicit flow
+
+**Why this approach**:
+- Using `signInWithOAuth` goes through Supabase, showing Supabase URL
+- Native Google Sign-In with `useGoogleLogin` shows our configured app name (engezna.com)
+- Authorization code flow requires server-side token exchange for security
+
+#### 2. API Endpoint for Token Exchange ✅
+**File**: `src/app/api/auth/google/route.ts`
+- Receives authorization code from Google popup
+- Exchanges code for ID token using Google OAuth endpoint
+- Uses `redirect_uri: 'postmessage'` for popup flow
+- Returns ID token for Supabase authentication
+
+#### 3. GoogleOAuthProvider Wrapper ✅
+**File**: `src/components/providers/GoogleOAuthProvider.tsx`
+- Wraps app with Google OAuth context
+- Uses `NEXT_PUBLIC_GOOGLE_CLIENT_ID` environment variable
+- Added to layout.tsx provider hierarchy
+
+#### 4. Custom Google Button ✅
+**Files**: Login and Signup pages
+- Custom button with Google icon (multi-color official logo)
+- Arabic text: "إستمرار عبر جوجل"
+- Matches styling of main login button (variant="outline")
+- Loading state with spinner
+
+#### 5. Profile Completion Flow ✅
+- After Google sign-in, checks if profile has phone and governorate
+- If incomplete, redirects to `/auth/complete-profile`
+- Creates profile for new Google users automatically
+
+### Files Created
+- `src/components/providers/GoogleOAuthProvider.tsx` - OAuth context provider
+- `src/app/api/auth/google/route.ts` - Token exchange endpoint
+
+### Files Modified
+- `src/app/[locale]/auth/login/page.tsx` - Custom Google button with useGoogleLogin
+- `src/app/[locale]/auth/signup/page.tsx` - Same implementation for signup
+- `src/app/[locale]/layout.tsx` - Added GoogleOAuthProvider
+- `.env.example` - Added GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET variables
+- `.env.local` - Added Google Client ID
+
+### Environment Variables Required
+```
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+### Google Cloud Console Configuration
+1. OAuth consent screen: App name set to "Engezna"
+2. Authorized domains: engezna.com, vercel.app
+3. Authorized JavaScript origins: https://www.engezna.com, https://engezna.com
+
+### Key Technical Details
+
+#### Token Exchange Flow
+```
+1. User clicks "إستمرار عبر جوجل"
+2. Google popup opens (shows engezna.com)
+3. User authorizes
+4. We receive authorization code
+5. POST /api/auth/google with code
+6. Server exchanges code for ID token (using client secret)
+7. Client uses ID token with Supabase signInWithIdToken
+8. User authenticated
+```
+
+#### Why Not Direct ID Token?
+- `GoogleLogin` component returns ID token directly but shows default "Sign in with Google" button
+- To customize button appearance and text, we must use `useGoogleLogin`
+- `useGoogleLogin` with `flow: 'auth-code'` is more secure and flexible
+
+### Commits
+```
+62c1f10 style: Match Google button styling with login button
+59b1a80 feat: Add custom Google Sign-In button with Arabic text
+7acdff2 fix: Remove unsupported locale and width props from GoogleLogin
+e69ea47 fix: Use GoogleLogin component with ID token for proper Engezna branding
+2896e64 feat: Implement native Google Sign-In to show Engezna instead of Supabase URL
+```
+
+### Future Work
+- [ ] Add Facebook Sign-In (same approach - native implementation)
+- [ ] Consider removing email/password form (Google + Facebook only)
+
+---
+
 ## Session: 2025-12-26 - Settlement UI Consistency & Database Source of Truth
 
 ### Summary
