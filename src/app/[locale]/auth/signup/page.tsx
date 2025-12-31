@@ -293,7 +293,7 @@ export default function SignupPage() {
       <div className="w-full max-w-[340px]">
         {/* Welcome Text */}
         <div className="text-center mb-10">
-          <h1 className="text-2xl font-bold text-[#0F172A] mb-2">
+          <h1 className="text-2xl font-bold text-[#009DE0] mb-2">
             {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
           </h1>
           <p className="text-slate-500">
@@ -332,7 +332,7 @@ export default function SignupPage() {
             type="button"
             onClick={handleFacebookSignup}
             disabled={isLoading}
-            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#1877F2] rounded-xl text-white font-medium transition-all hover:bg-[#0b5fcc] active:scale-[0.98] disabled:opacity-50"
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#1877F2] border border-[#1877F2] rounded-xl text-white font-medium transition-all hover:bg-[#0b5fcc] hover:border-[#0b5fcc] active:scale-[0.98] disabled:opacity-50"
           >
             {isFacebookLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
