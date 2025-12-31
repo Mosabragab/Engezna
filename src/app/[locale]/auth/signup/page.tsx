@@ -332,7 +332,7 @@ export default function SignupPage() {
             type="button"
             onClick={handleFacebookSignup}
             disabled={isLoading}
-            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#1877F2] rounded-xl text-white font-medium transition-all hover:bg-[#0b5fcc] active:scale-[0.98] disabled:opacity-50"
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#1877F2] border border-[#1877F2] rounded-xl text-white font-medium transition-all hover:bg-[#0b5fcc] hover:border-[#0b5fcc] active:scale-[0.98] disabled:opacity-50"
           >
             {isFacebookLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
