@@ -316,7 +316,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[340px]">
         {/* Welcome Text */}
         <div className="text-center mb-10">
-          <h1 className="text-2xl font-bold text-[#0F172A] mb-2">
+          <h1 className="text-2xl font-bold text-[#009DE0] mb-2">
             {locale === 'ar' ? 'أهلاً بك في إنجزنا' : 'Welcome to Engezna'}
           </h1>
           <p className="text-slate-500">
