@@ -3,7 +3,7 @@
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { CustomerLayout } from '@/components/customer/layout'
-import { ArrowLeft, ArrowRight, Shield, Database, Share2, Lock, UserCheck, Clock, Mail } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Shield, Database, Share2, Lock, UserCheck, Clock, Mail, Trash2 } from 'lucide-react'
 
 export default function PrivacyPage() {
   const locale = useLocale()
@@ -71,13 +71,37 @@ export default function PrivacyPage() {
 لممارسة هذه الحقوق، تواصل معنا على: privacy@engezna.com`
         },
         {
+          icon: Trash2,
+          title: '٦. حذف البيانات',
+          content: `كيفية حذف حسابك وبياناتك:
+
+🔹 من التطبيق:
+١. اذهب إلى الملف الشخصي → الحساب
+٢. انزل للأسفل واضغط على "حذف الحساب"
+٣. أكد عملية الحذف
+
+🔹 عبر البريد الإلكتروني:
+أرسل طلب حذف إلى: privacy@engezna.com
+مع ذكر البريد الإلكتروني المسجل به
+
+⏱️ مدة المعالجة: خلال 7 أيام عمل
+
+⚠️ ما يتم حذفه:
+• معلومات الحساب (الاسم، البريد، رقم الهاتف)
+• عناوين التوصيل
+• سجل الطلبات
+• المفضلات
+
+📌 ملاحظة: بعض البيانات قد نحتفظ بها لفترة محدودة للامتثال للمتطلبات القانونية والضريبية.`
+        },
+        {
           icon: Clock,
-          title: '٦. الاحتفاظ بالبيانات',
+          title: '٧. الاحتفاظ بالبيانات',
           content: `نحتفظ بمعلوماتك الشخصية طالما حسابك نشط أو حسب الحاجة لتقديم الخدمات. يمكنك طلب حذف حسابك والبيانات المرتبطة به في أي وقت عن طريق التواصل مع فريق الدعم.`
         },
         {
           icon: Mail,
-          title: '٧. تواصل معنا',
+          title: '٨. تواصل معنا',
           content: `إذا كانت لديك أسئلة حول سياسة الخصوصية:
 
 🏢 الشركة: سويفكم للتجارة والتصدير (ذ.م.م)
@@ -148,13 +172,37 @@ Service providers are contractually obligated to use this information solely for
 To exercise these rights, contact us at: privacy@engezna.com`
         },
         {
+          icon: Trash2,
+          title: '6. Data Deletion',
+          content: `How to delete your account and data:
+
+From the App:
+1. Go to Profile → Account
+2. Scroll down and tap "Delete Account"
+3. Confirm the deletion
+
+Via Email:
+Send a deletion request to: privacy@engezna.com
+Include the email address registered with your account
+
+Processing Time: Within 7 business days
+
+What Gets Deleted:
+• Account information (name, email, phone)
+• Delivery addresses
+• Order history
+• Favorites
+
+Note: Some data may be retained for a limited period to comply with legal and tax requirements.`
+        },
+        {
           icon: Clock,
-          title: '6. Data Retention',
+          title: '7. Data Retention',
           content: `We retain your personal information for as long as your account is active or as needed to provide services. You may request deletion of your account and associated data at any time by contacting our support team.`
         },
         {
           icon: Mail,
-          title: '7. Contact Us',
+          title: '8. Contact Us',
           content: `If you have questions about this Privacy Policy:
 
 🏢 Company: Sweifcom for Trade and Export (LLC)
