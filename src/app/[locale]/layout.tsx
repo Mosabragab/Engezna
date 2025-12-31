@@ -4,6 +4,7 @@ import { notoSans, notoSansArabic } from '@/lib/fonts'
 import { ThemeProvider } from '@/components/shared/ThemeProvider'
 import { LocationProvider } from '@/lib/contexts'
 import { PushNotificationProvider } from '@/components/providers/PushNotificationProvider'
+import { GoogleOAuthProvider } from '@/components/providers/GoogleOAuthProvider'
 import { locales } from '@/i18n/config'
 import '../globals.css'
 
@@ -101,7 +102,9 @@ export default async function LocaleLayout({
           <NextIntlClientProvider locale={locale} messages={messages}>
             <LocationProvider>
               <PushNotificationProvider>
-                {children}
+                <GoogleOAuthProvider>
+                  {children}
+                </GoogleOAuthProvider>
               </PushNotificationProvider>
             </LocationProvider>
           </NextIntlClientProvider>

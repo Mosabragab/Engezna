@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
+import { useGoogleLogin } from '@react-oauth/google'
 
 // Google Icon Component
 const GoogleIcon = () => (
@@ -56,40 +57,100 @@ export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Google Sign-In handler
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true)
-    setError(null)
-
+  // Handle successful Google login - exchange access token for user info and sign in to Supabase
+  const handleGoogleSuccess = async (accessToken: string) => {
     try {
       const supabase = createClient()
 
-      // Build the redirect URL with the original redirect parameter
-      const baseCallbackUrl = `${window.location.origin}/${locale}/auth/callback`
-      const callbackUrl = redirectTo
-        ? `${baseCallbackUrl}?redirect=${encodeURIComponent(redirectTo)}`
-        : baseCallbackUrl
+      // Get user info from Google using access token
+      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      const userInfo = await userInfoResponse.json()
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Sign in to Supabase with Google OAuth token
+      const { data, error: signInError } = await supabase.auth.signInWithIdToken({
         provider: 'google',
-        options: {
-          redirectTo: callbackUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
+        token: accessToken,
+        access_token: accessToken,
       })
 
-      if (error) {
-        setError(error.message)
-        setIsGoogleLoading(false)
+      if (signInError) {
+        // If signInWithIdToken doesn't work, fall back to signInWithOAuth
+        const baseCallbackUrl = `${window.location.origin}/${locale}/auth/callback`
+        const callbackUrl = redirectTo
+          ? `${baseCallbackUrl}?redirect=${encodeURIComponent(redirectTo)}`
+          : baseCallbackUrl
+
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: callbackUrl,
+          },
+        })
+
+        if (error) {
+          setError(error.message)
+          setIsGoogleLoading(false)
+        }
+        return
       }
-      // If successful, user will be redirected to Google
+
+      if (data.user) {
+        // Check if profile exists, if not create one
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('governorate_id, phone, role')
+          .eq('id', data.user.id)
+          .single()
+
+        if (!profile) {
+          // Create profile for new Google user
+          await supabase.from('profiles').insert({
+            id: data.user.id,
+            email: data.user.email,
+            full_name: userInfo.name || data.user.user_metadata?.full_name || '',
+            role: 'customer',
+          })
+        }
+
+        // Check if profile is complete
+        if (!profile?.governorate_id || !profile?.phone) {
+          const completeProfileUrl = redirectTo
+            ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
+            : `/${locale}/auth/complete-profile`
+          window.location.href = completeProfileUrl
+          return
+        }
+
+        // Profile is complete - redirect
+        window.location.href = redirectTo || `/${locale}`
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+    } finally {
       setIsGoogleLoading(false)
     }
+  }
+
+  // Native Google Sign-In using @react-oauth/google
+  const googleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      setIsGoogleLoading(true)
+      handleGoogleSuccess(tokenResponse.access_token)
+    },
+    onError: (error) => {
+      console.error('Google login error:', error)
+      setError(locale === 'ar' ? 'فشل تسجيل الدخول بـ Google' : 'Google sign-in failed')
+      setIsGoogleLoading(false)
+    },
+  })
+
+  // Google Sign-In handler
+  const handleGoogleSignIn = () => {
+    setIsGoogleLoading(true)
+    setError(null)
+    googleLogin()
   }
 
   const {
