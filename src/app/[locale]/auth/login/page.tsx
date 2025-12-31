@@ -354,7 +354,7 @@ export default function LoginPage() {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-12 text-base font-medium"
+            className="w-full"
             onClick={() => handleGoogleLogin()}
             disabled={isLoading || isGoogleLoading}
           >
