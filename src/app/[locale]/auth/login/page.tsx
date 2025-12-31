@@ -307,134 +307,137 @@ export default function LoginPage() {
   const isLoading = isGoogleLoading || isFacebookLoading
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 p-4">
-      {/* Logo */}
-      <div className="mb-8">
-        <Link href={`/${locale}`} className="inline-block">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460]">
+      {/* Top Section with Logo */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 pt-12 pb-8">
+        <Link href={`/${locale}`} className="inline-block mb-8">
           <EngeznaLogo size="lg" static showPen={false} />
         </Link>
-      </div>
 
-      {/* Main Card */}
-      <div className="w-full max-w-sm">
-        {/* Welcome Text */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            {locale === 'ar' ? 'مرحباً بك!' : 'Welcome!'}
-          </h1>
-          <p className="text-slate-500">
-            {locale === 'ar' ? 'سجّل دخولك للمتابعة' : 'Sign in to continue'}
-          </p>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-6 text-center">
-            {error}
-          </div>
-        )}
-
-        {/* Social Login Buttons */}
-        <div className="space-y-3">
-          {/* Google Button */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full h-14 text-base font-medium border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl"
-            onClick={() => handleGoogleLogin()}
-            disabled={isLoading}
-          >
-            {isGoogleLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                <GoogleIcon />
-                <span className="ms-3">
-                  {locale === 'ar' ? 'المتابعة عبر جوجل' : 'Continue with Google'}
-                </span>
-              </>
-            )}
-          </Button>
-
-          {/* Facebook Button */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full h-14 text-base font-medium border-2 border-slate-200 hover:border-[#1877F2] hover:bg-blue-50 rounded-xl"
-            onClick={handleFacebookLogin}
-            disabled={isLoading}
-          >
-            {isFacebookLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                <FacebookIcon />
-                <span className="ms-3">
-                  {locale === 'ar' ? 'المتابعة عبر فيسبوك' : 'Continue with Facebook'}
-                </span>
-              </>
-            )}
-          </Button>
-        </div>
-
-        {/* Terms Notice */}
-        <p className="text-xs text-slate-400 text-center mt-6 leading-relaxed">
-          {locale === 'ar' ? (
-            <>
-              بالمتابعة، أنت توافق على{' '}
-              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
-                الشروط والأحكام
-              </Link>{' '}
-              و{' '}
-              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
-                سياسة الخصوصية
-              </Link>
-            </>
-          ) : (
-            <>
-              By continuing, you agree to our{' '}
-              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
-                Terms
-              </Link>{' '}
-              and{' '}
-              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
-                Privacy Policy
-              </Link>
-            </>
-          )}
+        <h1 className="text-3xl font-bold text-white mb-2">
+          {locale === 'ar' ? 'مرحباً بك!' : 'Welcome!'}
+        </h1>
+        <p className="text-slate-300 text-lg">
+          {locale === 'ar' ? 'سجّل دخولك للمتابعة' : 'Sign in to continue'}
         </p>
+      </div>
 
-        {/* Provider/Admin Links */}
-        <div className="mt-8 pt-6 border-t border-slate-200">
-          <p className="text-xs text-center text-slate-400 mb-3">
-            {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
+      {/* Bottom Card */}
+      <div className="bg-white rounded-t-[2.5rem] px-6 pt-8 pb-10 shadow-2xl">
+        <div className="max-w-sm mx-auto">
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-6 text-center">
+              {error}
+            </div>
+          )}
+
+          {/* Social Login Buttons */}
+          <div className="space-y-4">
+            {/* Google Button */}
+            <button
+              type="button"
+              onClick={() => handleGoogleLogin()}
+              disabled={isLoading}
+              className="w-full h-14 flex items-center justify-center gap-3 bg-white border-2 border-slate-200 rounded-2xl text-slate-700 font-medium text-base transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGoogleLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin text-slate-600" />
+              ) : (
+                <>
+                  <GoogleIcon />
+                  <span>{locale === 'ar' ? 'المتابعة عبر جوجل' : 'Continue with Google'}</span>
+                </>
+              )}
+            </button>
+
+            {/* Facebook Button */}
+            <button
+              type="button"
+              onClick={handleFacebookLogin}
+              disabled={isLoading}
+              className="w-full h-14 flex items-center justify-center gap-3 bg-[#1877F2] rounded-2xl text-white font-medium text-base transition-all duration-200 hover:bg-[#166FE5] hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isFacebookLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                  <span>{locale === 'ar' ? 'المتابعة عبر فيسبوك' : 'Continue with Facebook'}</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-slate-200"></div>
+            <span className="text-slate-400 text-sm">{locale === 'ar' ? 'أو' : 'or'}</span>
+            <div className="flex-1 h-px bg-slate-200"></div>
+          </div>
+
+          {/* Terms Notice */}
+          <p className="text-xs text-slate-400 text-center leading-relaxed">
+            {locale === 'ar' ? (
+              <>
+                بالمتابعة، أنت توافق على{' '}
+                <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
+                  الشروط والأحكام
+                </Link>{' '}
+                و{' '}
+                <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
+                  سياسة الخصوصية
+                </Link>
+              </>
+            ) : (
+              <>
+                By continuing, you agree to our{' '}
+                <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
+                  Terms
+                </Link>{' '}
+                and{' '}
+                <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
+                  Privacy Policy
+                </Link>
+              </>
+            )}
           </p>
-          <div className="flex justify-center gap-4 text-sm">
+
+          {/* Provider/Admin Links */}
+          <div className="mt-8 pt-6 border-t border-slate-100">
+            <p className="text-xs text-center text-slate-400 mb-3">
+              {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
+            </p>
+            <div className="flex justify-center gap-6 text-sm">
+              <Link
+                href={`/${locale}/provider/login`}
+                className="text-[#009DE0] font-medium hover:underline"
+              >
+                {locale === 'ar' ? 'مقدمي الخدمة' : 'Providers'}
+              </Link>
+              <Link
+                href={`/${locale}/admin/login`}
+                className="text-slate-500 font-medium hover:underline"
+              >
+                {locale === 'ar' ? 'المشرفين' : 'Admins'}
+              </Link>
+            </div>
+          </div>
+
+          {/* Back to Home Link */}
+          <div className="mt-6 text-center">
             <Link
-              href={`/${locale}/provider/login`}
-              className="text-[#009DE0] hover:underline"
+              href={`/${locale}`}
+              className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
             >
-              {locale === 'ar' ? 'مقدمي الخدمة' : 'Providers'}
-            </Link>
-            <span className="text-slate-300">|</span>
-            <Link
-              href={`/${locale}/admin/login`}
-              className="text-slate-500 hover:underline"
-            >
-              {locale === 'ar' ? 'المشرفين' : 'Admins'}
+              {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+              {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
             </Link>
           </div>
         </div>
       </div>
-
-      {/* Back to Home Link */}
-      <Link
-        href={`/${locale}`}
-        className="mt-8 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
-      >
-        {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-        {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
-      </Link>
     </div>
   )
 }
