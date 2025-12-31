@@ -484,9 +484,7 @@ export default function SignupPage() {
                 onError={handleGoogleError}
                 theme="outline"
                 size="large"
-                width="100%"
-                text={locale === 'ar' ? 'signup_with' : 'signup_with'}
-                locale={locale === 'ar' ? 'ar' : 'en'}
+                text="signup_with"
               />
             )}
           </div>

@@ -352,9 +352,7 @@ export default function LoginPage() {
                 onError={handleGoogleError}
                 theme="outline"
                 size="large"
-                width="100%"
-                text={locale === 'ar' ? 'signin_with' : 'signin_with'}
-                locale={locale === 'ar' ? 'ar' : 'en'}
+                text="signin_with"
               />
             )}
           </div>
