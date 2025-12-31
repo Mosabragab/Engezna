@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 
 // Google Icon Component
 const GoogleIcon = () => (
@@ -56,40 +57,73 @@ export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Google Sign-In handler
-  const handleGoogleSignIn = async () => {
+  // Handle successful Google login with ID token
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      setError(locale === 'ar' ? 'فشل الحصول على بيانات Google' : 'Failed to get Google credentials')
+      return
+    }
+
     setIsGoogleLoading(true)
     setError(null)
 
     try {
       const supabase = createClient()
 
-      // Build the redirect URL with the original redirect parameter
-      const baseCallbackUrl = `${window.location.origin}/${locale}/auth/callback`
-      const callbackUrl = redirectTo
-        ? `${baseCallbackUrl}?redirect=${encodeURIComponent(redirectTo)}`
-        : baseCallbackUrl
-
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Sign in to Supabase with Google ID token
+      const { data, error: signInError } = await supabase.auth.signInWithIdToken({
         provider: 'google',
-        options: {
-          redirectTo: callbackUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
+        token: credentialResponse.credential,
       })
 
-      if (error) {
-        setError(error.message)
+      if (signInError) {
+        console.error('Supabase signInWithIdToken error:', signInError)
+        setError(signInError.message)
         setIsGoogleLoading(false)
+        return
       }
-      // If successful, user will be redirected to Google
+
+      if (data.user) {
+        // Check if profile exists, if not create one
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('governorate_id, phone, role')
+          .eq('id', data.user.id)
+          .single()
+
+        if (!profile) {
+          // Create profile for new Google user
+          await supabase.from('profiles').insert({
+            id: data.user.id,
+            email: data.user.email,
+            full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || '',
+            role: 'customer',
+          })
+        }
+
+        // Check if profile is complete
+        if (!profile?.governorate_id || !profile?.phone) {
+          const completeProfileUrl = redirectTo
+            ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
+            : `/${locale}/auth/complete-profile`
+          window.location.href = completeProfileUrl
+          return
+        }
+
+        // Profile is complete - redirect
+        window.location.href = redirectTo || `/${locale}`
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+    } finally {
       setIsGoogleLoading(false)
     }
+  }
+
+  // Handle Google login error
+  const handleGoogleError = () => {
+    setError(locale === 'ar' ? 'فشل تسجيل الدخول بـ Google' : 'Google sign-in failed')
+    setIsGoogleLoading(false)
   }
 
   const {
@@ -306,22 +340,22 @@ export default function LoginPage() {
           </div>
 
           {/* Google Sign-In Button */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading || isGoogleLoading}
-          >
+          <div className="flex justify-center">
             {isGoogleLoading ? (
-              <Loader2 className="w-5 h-5 me-2 animate-spin" />
+              <Button variant="outline" className="w-full" disabled>
+                <Loader2 className="w-5 h-5 me-2 animate-spin" />
+                <span>{locale === 'ar' ? 'جاري تسجيل الدخول...' : 'Signing in...'}</span>
+              </Button>
             ) : (
-              <GoogleIcon />
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+                text="signin_with"
+              />
             )}
-            <span className="me-2">
-              {locale === 'ar' ? 'تسجيل الدخول بـ Google' : 'Sign in with Google'}
-            </span>
-          </Button>
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-sm text-center text-muted-foreground">
