@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
@@ -284,19 +283,17 @@ export default function SignupPage() {
   const isLoading = isGoogleLoading || isFacebookLoading
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
       {/* Logo */}
-      <div className="mb-8">
-        <Link href={`/${locale}`} className="inline-block">
-          <EngeznaLogo size="lg" static showPen={false} />
-        </Link>
-      </div>
+      <Link href={`/${locale}`} className="mb-12">
+        <EngeznaLogo size="lg" static showPen={false} />
+      </Link>
 
-      {/* Main Card */}
-      <div className="w-full max-w-sm">
+      {/* Content */}
+      <div className="w-full max-w-[340px]">
         {/* Welcome Text */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+        <div className="text-center mb-10">
+          <h1 className="text-2xl font-bold text-[#0F172A] mb-2">
             {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
           </h1>
           <p className="text-slate-500">
@@ -306,7 +303,7 @@ export default function SignupPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-6 text-center">
+          <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm mb-6 text-center">
             {error}
           </div>
         )}
@@ -314,80 +311,79 @@ export default function SignupPage() {
         {/* Social Signup Buttons */}
         <div className="space-y-3">
           {/* Google Button */}
-          <Button
+          <button
             type="button"
-            variant="outline"
-            className="w-full h-14 text-base font-medium border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl"
             onClick={() => handleGoogleSignup()}
             disabled={isLoading}
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-white border border-slate-300 rounded-xl text-[#0F172A] font-medium transition-all hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] disabled:opacity-50"
           >
             {isGoogleLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin text-slate-500" />
             ) : (
               <>
                 <GoogleIcon />
-                <span className="ms-3">
-                  {locale === 'ar' ? 'التسجيل عبر جوجل' : 'Sign up with Google'}
-                </span>
+                <span>{locale === 'ar' ? 'التسجيل عبر Google' : 'Sign up with Google'}</span>
               </>
             )}
-          </Button>
+          </button>
 
           {/* Facebook Button */}
-          <Button
+          <button
             type="button"
-            variant="outline"
-            className="w-full h-14 text-base font-medium border-2 border-slate-200 hover:border-[#1877F2] hover:bg-blue-50 rounded-xl"
             onClick={handleFacebookSignup}
             disabled={isLoading}
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#1877F2] rounded-xl text-white font-medium transition-all hover:bg-[#0b5fcc] active:scale-[0.98] disabled:opacity-50"
           >
             {isFacebookLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
-                <FacebookIcon />
-                <span className="ms-3">
-                  {locale === 'ar' ? 'التسجيل عبر فيسبوك' : 'Sign up with Facebook'}
-                </span>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+                <span>{locale === 'ar' ? 'التسجيل عبر Facebook' : 'Sign up with Facebook'}</span>
               </>
             )}
-          </Button>
+          </button>
         </div>
 
         {/* Terms Notice */}
-        <p className="text-xs text-slate-400 text-center mt-6 leading-relaxed">
+        <p className="text-xs text-slate-400 text-center mt-8 leading-relaxed">
           {locale === 'ar' ? (
             <>
               بالتسجيل، أنت توافق على{' '}
-              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+              <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
                 الشروط والأحكام
               </Link>{' '}
               و{' '}
-              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
                 سياسة الخصوصية
               </Link>
             </>
           ) : (
             <>
               By signing up, you agree to our{' '}
-              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+              <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
                 Terms
               </Link>{' '}
               and{' '}
-              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
                 Privacy Policy
               </Link>
             </>
           )}
         </p>
 
+        {/* Divider */}
+        <div className="my-8 border-t border-slate-100"></div>
+
         {/* Login Link */}
-        <div className="mt-8 pt-6 border-t border-slate-200 text-center">
+        <div className="text-center">
           <p className="text-slate-500">
             {locale === 'ar' ? 'لديك حساب بالفعل؟' : 'Already have an account?'}{' '}
             <Link
               href={redirectTo ? `/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/login`}
-              className="text-primary font-medium hover:underline"
+              className="text-[#009DE0] font-medium hover:underline"
             >
               {locale === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
             </Link>
@@ -395,10 +391,10 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* Back to Home Link */}
+      {/* Back to Home */}
       <Link
         href={`/${locale}`}
-        className="mt-8 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
+        className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
       >
         {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
         {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
