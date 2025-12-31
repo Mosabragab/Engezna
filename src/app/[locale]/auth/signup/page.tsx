@@ -14,7 +14,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { ArrowLeft, ArrowRight, MapPin, ChevronDown, Loader2 } from 'lucide-react'
-import { useGoogleLogin } from '@react-oauth/google'
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 
 // Google Icon Component
 const GoogleIcon = () => (
@@ -76,42 +76,29 @@ export default function SignupPage() {
   const [governorates, setGovernorates] = useState<Governorate[]>([])
   const [loadingGovernorates, setLoadingGovernorates] = useState(true)
 
-  // Handle successful Google signup - exchange access token for user info and sign in to Supabase
-  const handleGoogleSuccess = async (accessToken: string) => {
+  // Handle successful Google signup with ID token
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      setError(locale === 'ar' ? 'فشل الحصول على بيانات Google' : 'Failed to get Google credentials')
+      return
+    }
+
+    setIsGoogleLoading(true)
+    setError(null)
+
     try {
       const supabase = createClient()
 
-      // Get user info from Google using access token
-      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      const userInfo = await userInfoResponse.json()
-
-      // Sign in to Supabase with Google OAuth token
+      // Sign in to Supabase with Google ID token
       const { data, error: signInError } = await supabase.auth.signInWithIdToken({
         provider: 'google',
-        token: accessToken,
-        access_token: accessToken,
+        token: credentialResponse.credential,
       })
 
       if (signInError) {
-        // If signInWithIdToken doesn't work, fall back to signInWithOAuth
-        const baseCallbackUrl = `${window.location.origin}/${locale}/auth/callback`
-        const callbackUrl = redirectTo
-          ? `${baseCallbackUrl}?redirect=${encodeURIComponent(redirectTo)}`
-          : baseCallbackUrl
-
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: callbackUrl,
-          },
-        })
-
-        if (error) {
-          setError(error.message)
-          setIsGoogleLoading(false)
-        }
+        console.error('Supabase signInWithIdToken error:', signInError)
+        setError(signInError.message)
+        setIsGoogleLoading(false)
         return
       }
 
@@ -128,7 +115,7 @@ export default function SignupPage() {
           await supabase.from('profiles').insert({
             id: data.user.id,
             email: data.user.email,
-            full_name: userInfo.name || data.user.user_metadata?.full_name || '',
+            full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || '',
             role: 'customer',
           })
         }
@@ -152,24 +139,10 @@ export default function SignupPage() {
     }
   }
 
-  // Native Google Sign-Up using @react-oauth/google
-  const googleLogin = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      setIsGoogleLoading(true)
-      handleGoogleSuccess(tokenResponse.access_token)
-    },
-    onError: (error) => {
-      console.error('Google signup error:', error)
-      setError(locale === 'ar' ? 'فشل التسجيل بـ Google' : 'Google sign-up failed')
-      setIsGoogleLoading(false)
-    },
-  })
-
-  // Google Sign-Up handler
-  const handleGoogleSignUp = () => {
-    setIsGoogleLoading(true)
-    setError(null)
-    googleLogin()
+  // Handle Google signup error
+  const handleGoogleError = () => {
+    setError(locale === 'ar' ? 'فشل التسجيل بـ Google' : 'Google sign-up failed')
+    setIsGoogleLoading(false)
   }
 
   const {
@@ -499,22 +472,24 @@ export default function SignupPage() {
           </div>
 
           {/* Google Sign-Up Button */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleSignUp}
-            disabled={isLoading || isGoogleLoading}
-          >
+          <div className="flex justify-center">
             {isGoogleLoading ? (
-              <Loader2 className="w-5 h-5 me-2 animate-spin" />
+              <Button variant="outline" className="w-full" disabled>
+                <Loader2 className="w-5 h-5 me-2 animate-spin" />
+                <span>{locale === 'ar' ? 'جاري التسجيل...' : 'Signing up...'}</span>
+              </Button>
             ) : (
-              <GoogleIcon />
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+                width="100%"
+                text={locale === 'ar' ? 'signup_with' : 'signup_with'}
+                locale={locale === 'ar' ? 'ar' : 'en'}
+              />
             )}
-            <span className="me-2">
-              {locale === 'ar' ? 'التسجيل بـ Google' : 'Sign up with Google'}
-            </span>
-          </Button>
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-sm text-center text-muted-foreground">
