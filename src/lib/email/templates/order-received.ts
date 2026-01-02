@@ -1,23 +1,28 @@
-import type { SettlementData } from '../resend'
+export interface OrderReceivedData {
+  to: string
+  merchantName: string
+  storeName: string
+  orderId: string
+  orderNumber: string
+  customerName: string
+  itemsCount: number
+  totalAmount: number
+  deliveryAddress: string
+  orderUrl: string
+}
 
-export function settlementTemplate(data: SettlementData): string {
+export function orderReceivedTemplate(data: OrderReceivedData): string {
   const formattedAmount = new Intl.NumberFormat('ar-EG', {
     style: 'currency',
     currency: 'EGP',
-  }).format(data.amount)
-
-  const formattedDate = new Intl.DateTimeFormat('ar-EG', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(data.settlementDate))
+  }).format(data.totalAmount)
 
   return `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسوية مالية - إنجزنا</title>
+    <title>طلب جديد #${data.orderNumber} - إنجزنا</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif; background-color: #F1F5F9; direction: rtl;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F1F5F9; padding: 24px 16px;">
@@ -39,67 +44,71 @@ export function settlementTemplate(data: SettlementData): string {
                     <tr>
                         <td style="padding: 40px 28px; text-align: center; background-color: #ffffff;">
                             <!-- Icon -->
-                            <div style="display: inline-block; width: 72px; height: 72px; background-color: #E0F4FF; border-radius: 50%; line-height: 72px; font-size: 32px; margin-bottom: 24px;">💰</div>
+                            <div style="display: inline-block; width: 72px; height: 72px; background-color: #DCFCE7; border-radius: 50%; line-height: 72px; font-size: 32px; margin-bottom: 24px;">🔔</div>
 
-                            <h2 style="color: #0F172A; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.4;">تم تحويل مستحقاتك!</h2>
-
-                            <p style="color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 32px 0;">
-                                مرحباً ${data.merchantName}!<br>
-                                تم تحويل مستحقاتك من متجر <strong style="color: #009DE0;">"${data.storeName}"</strong> بنجاح.
+                            <h2 style="color: #0F172A; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.4;">طلب جديد! 🎉</h2>
+                            <p style="color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 24px 0;">
+                                مرحباً ${data.merchantName}، لديك طلب جديد في متجر "${data.storeName}"
                             </p>
 
-                            <!-- Amount Card -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 16px; margin-bottom: 24px;">
+                            <!-- Order Info -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F0FDF4; border-radius: 12px; margin-bottom: 24px; border-right: 4px solid #22C55E;">
                                 <tr>
-                                    <td style="padding: 28px; text-align: center;">
-                                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #64748B; font-weight: 500;">المبلغ المحوّل</p>
-                                        <p style="margin: 0; font-size: 36px; color: #009DE0; font-weight: 700;" dir="ltr">${formattedAmount}</p>
-                                    </td>
-                                </tr>
-                            </table>
-
-                            <!-- Details Box -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; border-radius: 12px; margin-bottom: 24px;">
-                                <tr>
-                                    <td style="padding: 16px 20px; text-align: right;">
+                                    <td style="padding: 20px; text-align: right;">
+                                        <p style="margin: 0 0 12px 0; font-size: 18px; color: #166534; font-weight: 700;">
+                                            طلب #${data.orderNumber}
+                                        </p>
                                         <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                             <tr>
-                                                <td style="padding: 8px 0; font-size: 13px; color: #64748B;">رقم التسوية:</td>
-                                                <td style="padding: 8px 0; font-size: 13px; color: #0F172A; font-weight: 600; text-align: left;" dir="ltr">#${data.settlementId}</td>
+                                                <td style="padding: 4px 0; font-size: 14px; color: #475569;">
+                                                    <strong>العميل:</strong> ${data.customerName}
+                                                </td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 8px 0; font-size: 13px; color: #64748B;">تاريخ التحويل:</td>
-                                                <td style="padding: 8px 0; font-size: 13px; color: #0F172A; font-weight: 600; text-align: left;">${formattedDate}</td>
+                                                <td style="padding: 4px 0; font-size: 14px; color: #475569;">
+                                                    <strong>عدد الأصناف:</strong> ${data.itemsCount} صنف
+                                                </td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 8px 0; font-size: 13px; color: #64748B;">عدد الطلبات:</td>
-                                                <td style="padding: 8px 0; font-size: 13px; color: #0F172A; font-weight: 600; text-align: left;">${data.ordersCount} طلب</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="padding: 8px 0; font-size: 13px; color: #64748B;">الفترة:</td>
-                                                <td style="padding: 8px 0; font-size: 13px; color: #0F172A; font-weight: 600; text-align: left;">${data.period}</td>
+                                                <td style="padding: 4px 0; font-size: 14px; color: #475569;">
+                                                    <strong>الإجمالي:</strong> <span style="color: #166534; font-weight: 700;">${formattedAmount}</span>
+                                                </td>
                                             </tr>
                                         </table>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- Note -->
+                            <!-- Delivery Address -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; border-radius: 12px; margin-bottom: 24px;">
                                 <tr>
                                     <td style="padding: 16px 20px; text-align: right;">
-                                        <p style="margin: 0; font-size: 13px; color: #64748B; line-height: 1.7;">
-                                            <strong style="color: #0F172A;">⏰ ملاحظة:</strong> سيظهر المبلغ في حسابك البنكي خلال ١-٣ أيام عمل حسب البنك الخاص بك.
+                                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748B; font-weight: 600;">
+                                            📍 عنوان التوصيل
+                                        </p>
+                                        <p style="margin: 0; font-size: 14px; color: #0F172A; line-height: 1.6;">
+                                            ${data.deliveryAddress}
                                         </p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- CTA Button -->
+                            <!-- Button -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                 <tr>
                                     <td align="center" style="padding: 0 0 32px 0;">
-                                        <a href="${data.dashboardUrl}" style="display: inline-block; background-color: #009DE0; color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 700; font-size: 16px;">عرض التفاصيل ←</a>
+                                        <a href="${data.orderUrl}" style="display: inline-block; background-color: #22C55E; color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 700; font-size: 16px;">عرض تفاصيل الطلب ←</a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Urgent Notice -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FEF3C7; border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 16px 20px; text-align: center;">
+                                        <p style="margin: 0; font-size: 14px; color: #92400E; font-weight: 600;">
+                                            ⏰ يرجى قبول الطلب وبدء التجهيز في أسرع وقت
+                                        </p>
                                     </td>
                                 </tr>
                             </table>
