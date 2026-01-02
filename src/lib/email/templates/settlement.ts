@@ -29,7 +29,7 @@ export function settlementTemplate(data: SettlementData): string {
                     <tr>
                         <td align="center" style="background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%); padding: 36px 24px;">
                             <a href="https://www.engezna.com" style="text-decoration: none;">
-                                <h1 style="color: #ffffff; font-size: 36px; font-weight: 700; margin: 0; font-family: -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif;">إنجزنا</h1>
+                                <img src="https://pub-d5c502abfebf4696b788ed0496257a40.r2.dev/engezna-transparent-white-transparent.png" alt="إنجزنا | Engezna" width="140" style="height: auto; display: block; margin: 0 auto;">
                             </a>
                             <p style="color: rgba(255,255,255,0.95); margin: 16px 0 0 0; font-size: 15px; font-weight: 500;">بوابة الشركاء</p>
                         </td>
@@ -119,7 +119,7 @@ export function settlementTemplate(data: SettlementData): string {
                     <tr>
                         <td align="center" style="background-color: #0F172A; padding: 28px 24px;">
                             <a href="https://www.engezna.com" style="text-decoration: none;">
-                                <p style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0; font-family: -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif;">إنجزنا</p>
+                                <img src="https://pub-d5c502abfebf4696b788ed0496257a40.r2.dev/engezna-transparent-white-transparent.png" alt="إنجزنا" width="100" style="height: auto; display: block; margin: 0 auto;">
                             </a>
                             <p style="color: #009DE0; font-size: 13px; font-weight: 500; margin: 14px 0;">منصة توصيل محلية حديثة لجمهورية مصر العربية</p>
                             <p style="font-size: 12px; color: #64748B; margin: 10px 0;">لكل محافظات مصر 🇪🇬</p>
