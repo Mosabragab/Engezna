@@ -274,6 +274,21 @@ export default function PartnerRegisterPage() {
           return
         }
 
+        // Send welcome email (non-blocking)
+        try {
+          await fetch('/api/emails/merchant-welcome', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              merchantId: authData.user.id,
+              storeName: businessCategories.find(c => c.value === data.businessCategory)?.labelAr || 'متجرك',
+            }),
+          })
+        } catch (emailError) {
+          // Log but don't block registration
+          console.error('Failed to send welcome email:', emailError)
+        }
+
         setSuccess(true)
         // Redirect to provider dashboard after 2 seconds
         setTimeout(() => {

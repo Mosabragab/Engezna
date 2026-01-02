@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, Mail, CheckCircle } from 'lucide-react'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 import { useGoogleLogin } from '@react-oauth/google'
 
@@ -32,63 +32,19 @@ const GoogleIcon = () => (
   </svg>
 )
 
-// Facebook Icon Component
-const FacebookIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-  </svg>
-)
-
-declare global {
-  interface Window {
-    FB: {
-      init: (params: { appId: string; cookie: boolean; xfbml: boolean; version: string }) => void
-      login: (callback: (response: { authResponse?: { accessToken: string } }) => void, options: { scope: string }) => void
-      getLoginStatus: (callback: (response: { status: string; authResponse?: { accessToken: string } }) => void) => void
-    }
-    fbAsyncInit: () => void
-  }
-}
-
 export default function SignupPage() {
   const locale = useLocale()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect')
+
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [isFacebookLoading, setIsFacebookLoading] = useState(false)
+  const [isEmailLoading, setIsEmailLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [fbReady, setFbReady] = useState(false)
 
-  // Initialize Facebook SDK
-  useEffect(() => {
-    const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
-    if (!appId) return
-
-    // Load Facebook SDK
-    if (!document.getElementById('facebook-jssdk')) {
-      const script = document.createElement('script')
-      script.id = 'facebook-jssdk'
-      script.src = 'https://connect.facebook.net/en_US/sdk.js'
-      script.async = true
-      script.defer = true
-      document.body.appendChild(script)
-    }
-
-    window.fbAsyncInit = () => {
-      window.FB.init({
-        appId: appId,
-        cookie: true,
-        xfbml: true,
-        version: 'v18.0'
-      })
-      setFbReady(true)
-    }
-
-    // Check if already loaded
-    if (window.FB) {
-      setFbReady(true)
-    }
-  }, [])
+  // Email Magic Link states
+  const [showEmailInput, setShowEmailInput] = useState(false)
+  const [email, setEmail] = useState('')
+  const [emailSent, setEmailSent] = useState(false)
 
   // Handle Google signup with authorization code flow
   const handleGoogleSignup = useGoogleLogin({
@@ -141,100 +97,48 @@ export default function SignupPage() {
     },
   })
 
-  // Handle Facebook signup
-  const handleFacebookSignup = () => {
-    if (!window.FB || !fbReady) {
-      setError(locale === 'ar' ? 'جاري تحميل Facebook...' : 'Loading Facebook...')
+  // Handle Email Magic Link
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!email || !email.includes('@')) {
+      setError(locale === 'ar' ? 'يرجى إدخال إيميل صحيح' : 'Please enter a valid email')
       return
     }
 
-    setIsFacebookLoading(true)
+    setIsEmailLoading(true)
     setError(null)
 
-    window.FB.login(async (response) => {
-      if (!response.authResponse) {
-        setError(locale === 'ar' ? 'تم إلغاء التسجيل بـ Facebook' : 'Facebook sign-up was cancelled')
-        setIsFacebookLoading(false)
+    try {
+      const supabase = createClient()
+
+      // Build the redirect URL for magic link
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+      const redirectUrl = redirectTo
+        ? `${siteUrl}/${locale}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
+        : `${siteUrl}/${locale}/auth/callback`
+
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: redirectUrl,
+        },
+      })
+
+      if (otpError) {
+        console.error('OTP error:', otpError)
+        setError(otpError.message)
+        setIsEmailLoading(false)
         return
       }
 
-      try {
-        const accessToken = response.authResponse.accessToken
-
-        // Verify token and get user data from our API
-        const verifyResponse = await fetch('/api/auth/facebook', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessToken }),
-        })
-
-        const userData = await verifyResponse.json()
-
-        if (!verifyResponse.ok) {
-          setError(userData.error || (locale === 'ar' ? 'فشل التحقق من Facebook' : 'Facebook verification failed'))
-          setIsFacebookLoading(false)
-          return
-        }
-
-        const supabase = createClient()
-
-        // Check if user exists with this email
-        const { data: existingUser } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', userData.email)
-          .single()
-
-        if (existingUser) {
-          // User already exists - redirect to login
-          setError(locale === 'ar' ? 'هذا الحساب موجود بالفعل. قم بتسجيل الدخول.' : 'This account already exists. Please sign in.')
-          setIsFacebookLoading(false)
-          return
-        }
-
-        // New user - create account
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: userData.email,
-          password: `fb_${userData.id}_${Date.now()}`, // Generate random password for Facebook users
-          options: {
-            data: {
-              full_name: userData.name,
-              avatar_url: userData.picture,
-              provider: 'facebook',
-            }
-          }
-        })
-
-        if (signUpError) {
-          if (signUpError.message.includes('already registered')) {
-            setError(locale === 'ar' ? 'هذا البريد مسجل بطريقة أخرى. جرب Google.' : 'This email is registered with another method. Try Google.')
-          } else {
-            setError(signUpError.message)
-          }
-          setIsFacebookLoading(false)
-          return
-        }
-
-        if (signUpData.user) {
-          // Create profile
-          await supabase.from('profiles').upsert({
-            id: signUpData.user.id,
-            email: userData.email,
-            full_name: userData.name,
-            role: 'customer',
-          })
-
-          // Redirect to complete profile
-          const completeProfileUrl = redirectTo
-            ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
-            : `/${locale}/auth/complete-profile`
-          window.location.href = completeProfileUrl
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred')
-        setIsFacebookLoading(false)
-      }
-    }, { scope: 'email,public_profile' })
+      // Success - show confirmation message
+      setEmailSent(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+    } finally {
+      setIsEmailLoading(false)
+    }
   }
 
   // Common post-signup handler
@@ -280,7 +184,67 @@ export default function SignupPage() {
   }
 
   const isRTL = locale === 'ar'
-  const isLoading = isGoogleLoading || isFacebookLoading
+  const isLoading = isGoogleLoading || isEmailLoading
+
+  // Email sent success state
+  if (emailSent) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
+        {/* Logo */}
+        <Link href={`/${locale}`} className="mb-12">
+          <EngeznaLogo size="lg" static showPen={false} />
+        </Link>
+
+        {/* Success Message */}
+        <div className="w-full max-w-[340px] text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-[#009DE0] mb-3">
+            {locale === 'ar' ? 'تفقد الإيميل' : 'Check Your Email'}
+          </h1>
+
+          <p className="text-slate-500 mb-2">
+            {locale === 'ar'
+              ? 'أرسلنا رابط التسجيل إلى:'
+              : 'We sent a signup link to:'}
+          </p>
+
+          <p className="text-[#0F172A] font-medium mb-6" dir="ltr">
+            {email}
+          </p>
+
+          <p className="text-slate-400 text-sm mb-8">
+            {locale === 'ar'
+              ? 'اضغط على الرابط في الإيميل لإكمال التسجيل'
+              : 'Click the link in the email to complete your registration'}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setEmailSent(false)
+              setEmail('')
+              setShowEmailInput(false)
+            }}
+            className="text-[#009DE0] font-medium hover:underline"
+          >
+            {locale === 'ar' ? 'استخدام إيميل آخر' : 'Use a different email'}
+          </button>
+        </div>
+
+        {/* Back to Home */}
+        <Link
+          href={`/${locale}`}
+          className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
+        >
+          {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+          {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
@@ -308,7 +272,7 @@ export default function SignupPage() {
           </div>
         )}
 
-        {/* Social Signup Buttons */}
+        {/* Signup Buttons */}
         <div className="space-y-3">
           {/* Google Button */}
           <button
@@ -327,24 +291,42 @@ export default function SignupPage() {
             )}
           </button>
 
-          {/* Facebook Button */}
-          <button
-            type="button"
-            onClick={handleFacebookSignup}
-            disabled={isLoading}
-            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#1877F2] border border-[#1877F2] rounded-xl text-white font-medium transition-all hover:bg-[#0b5fcc] hover:border-[#0b5fcc] active:scale-[0.98] disabled:opacity-50"
-          >
-            {isFacebookLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-                <span>{locale === 'ar' ? 'التسجيل عبر Facebook' : 'Sign up with Facebook'}</span>
-              </>
-            )}
-          </button>
+          {/* Email Button / Input */}
+          {!showEmailInput ? (
+            <button
+              type="button"
+              onClick={() => setShowEmailInput(true)}
+              disabled={isLoading}
+              className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
+            >
+              <Mail className="w-5 h-5" />
+              <span>{locale === 'ar' ? 'التسجيل عبر الإيميل' : 'Sign up with Email'}</span>
+            </button>
+          ) : (
+            <form onSubmit={handleEmailSignup} className="space-y-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
+                disabled={isEmailLoading}
+                className="w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
+                dir="ltr"
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={isEmailLoading || !email}
+                className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
+              >
+                {isEmailLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <span>{locale === 'ar' ? 'أرسل رابط التسجيل' : 'Send Signup Link'}</span>
+                )}
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Terms Notice */}
