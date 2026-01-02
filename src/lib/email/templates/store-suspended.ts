@@ -31,7 +31,7 @@ export function storeSuspendedTemplate(data: StoreSuspendedData): string {
                     <tr>
                         <td align="center" style="background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); padding: 36px 24px;">
                             <a href="https://www.engezna.com" style="text-decoration: none;">
-                                <img src="https://cmxpvzqrmptfnuymhxmr.supabase.co/storage/v1/object/public/Logos/engezna-transparent-white-transparent.png" alt="إنجزنا | Engezna" width="140" style="height: auto; display: block; margin: 0 auto;">
+                                <img src="https://www.engezna.com/api/logo" alt="إنجزنا | Engezna" width="140" style="height: auto; display: block; margin: 0 auto;">
                             </a>
                             <p style="color: rgba(255,255,255,0.95); margin: 16px 0 0 0; font-size: 15px; font-weight: 500;">إشعار مهم</p>
                         </td>
@@ -138,7 +138,7 @@ export function storeSuspendedTemplate(data: StoreSuspendedData): string {
                     <tr>
                         <td align="center" style="background-color: #0F172A; padding: 28px 24px;">
                             <a href="https://www.engezna.com" style="text-decoration: none;">
-                                <img src="https://cmxpvzqrmptfnuymhxmr.supabase.co/storage/v1/object/public/Logos/engezna-transparent-white-transparent.png" alt="إنجزنا" width="100" style="height: auto; display: block; margin: 0 auto;">
+                                <img src="https://www.engezna.com/api/logo" alt="إنجزنا" width="100" style="height: auto; display: block; margin: 0 auto;">
                             </a>
                             <p style="color: #009DE0; font-size: 13px; font-weight: 500; margin: 14px 0;">منصة توصيل محلية حديثة لجمهورية مصر العربية</p>
                             <p style="font-size: 12px; color: #64748B; margin: 10px 0;">لكل محافظات مصر 🇪🇬</p>
