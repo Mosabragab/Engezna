@@ -6,7 +6,7 @@ export function merchantWelcomeTemplate(data: MerchantWelcomeData): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أهلاً بك في إنجزنا</title>
+    <title>أهلاً بك في إنجزنا - بوابة الشركاء</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif; background-color: #F1F5F9; direction: rtl;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F1F5F9; padding: 24px 16px;">
@@ -28,16 +28,16 @@ export function merchantWelcomeTemplate(data: MerchantWelcomeData): string {
                     <tr>
                         <td style="padding: 40px 28px; text-align: center; background-color: #ffffff;">
                             <!-- Icon -->
-                            <div style="display: inline-block; width: 72px; height: 72px; background-color: #DCFCE7; border-radius: 50%; line-height: 72px; font-size: 32px; margin-bottom: 24px;">🎉</div>
+                            <div style="display: inline-block; width: 72px; height: 72px; background-color: #E0F4FF; border-radius: 50%; line-height: 72px; font-size: 32px; margin-bottom: 24px;">🎉</div>
 
                             <h2 style="color: #0F172A; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.4;">أهلاً بك ${data.merchantName}!</h2>
-                            <p style="color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 24px 0;">تم إنشاء حسابك كشريك في منصة إنجزنا بنجاح! 🚀</p>
+                            <p style="color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 32px 0;">تم إنشاء حسابك كشريك في منصة إنجزنا بنجاح! 🚀</p>
 
                             <!-- Store Info -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; border-radius: 12px; margin-bottom: 24px;">
                                 <tr>
-                                    <td style="padding: 20px; text-align: center;">
-                                        <p style="margin: 0; font-size: 14px; color: #64748B;">
+                                    <td style="padding: 16px 20px; text-align: right;">
+                                        <p style="margin: 0; font-size: 13px; color: #64748B; line-height: 1.7;">
                                             <strong style="color: #0F172A;">🏪 نوع النشاط:</strong> ${data.storeName}
                                         </p>
                                     </td>
@@ -72,7 +72,7 @@ export function merchantWelcomeTemplate(data: MerchantWelcomeData): string {
                             <!-- Button -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                 <tr>
-                                    <td align="center" style="padding: 8px 0 32px 0;">
+                                    <td align="center" style="padding: 0 0 32px 0;">
                                         <a href="${data.dashboardUrl}" style="display: inline-block; background-color: #009DE0; color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 700; font-size: 16px;">الدخول للوحة التحكم ←</a>
                                     </td>
                                 </tr>
@@ -84,8 +84,7 @@ export function merchantWelcomeTemplate(data: MerchantWelcomeData): string {
                             <!-- Help -->
                             <p style="font-size: 13px; color: #64748B; line-height: 1.7; margin: 0;">
                                 محتاج مساعدة؟ تواصل معانا عبر
-                                <a href="https://www.engezna.com/ar/help" style="color: #009DE0; text-decoration: none; font-weight: 500;">مركز المساعدة</a>
-                                أو راسلنا على <a href="mailto:partners@engezna.com" style="color: #009DE0; text-decoration: none;">partners@engezna.com</a>
+                                <a href="https://www.engezna.com/ar/provider/help" style="color: #009DE0; text-decoration: none; font-weight: 500;">مركز مساعدة الشركاء</a>
                             </p>
                         </td>
                     </tr>
@@ -99,6 +98,11 @@ export function merchantWelcomeTemplate(data: MerchantWelcomeData): string {
                             <p style="color: #009DE0; font-size: 13px; font-weight: 500; margin: 14px 0;">منصة توصيل محلية حديثة لجمهورية مصر العربية</p>
                             <p style="font-size: 12px; color: #64748B; margin: 10px 0;">لكل محافظات مصر 🇪🇬</p>
                             <p style="font-size: 11px; color: #475569; margin: 14px 0 0 0;">صنع بـ 💚 في مصر</p>
+                            <p style="font-size: 11px; color: #64748B; margin: 14px 0 0 0;">
+                                <a href="https://www.engezna.com/ar/privacy" style="color: #009DE0; text-decoration: none; margin: 0 6px;">سياسة الخصوصية</a> •
+                                <a href="https://www.engezna.com/ar/terms" style="color: #009DE0; text-decoration: none; margin: 0 6px;">الشروط والأحكام</a> •
+                                <a href="https://www.engezna.com/ar/provider/help" style="color: #009DE0; text-decoration: none; margin: 0 6px;">دعم الشركاء</a>
+                            </p>
                         </td>
                     </tr>
 

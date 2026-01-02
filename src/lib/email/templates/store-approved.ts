@@ -6,7 +6,7 @@ export function storeApprovedTemplate(data: StoreApprovedData): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تم تفعيل متجرك!</title>
+    <title>تم تفعيل متجرك! - إنجزنا</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif; background-color: #F1F5F9; direction: rtl;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F1F5F9; padding: 24px 16px;">
@@ -16,11 +16,11 @@ export function storeApprovedTemplate(data: StoreApprovedData): string {
 
                     <!-- Header -->
                     <tr>
-                        <td align="center" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 36px 24px;">
+                        <td align="center" style="background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%); padding: 36px 24px;">
                             <a href="https://www.engezna.com" style="text-decoration: none;">
                                 <img src="https://cmxpvzqrmptfnuymhxmr.supabase.co/storage/v1/object/public/Logos/engezna-transparent-white-transparent.png" alt="إنجزنا | Engezna" width="140" style="height: auto; display: block; margin: 0 auto;">
                             </a>
-                            <p style="color: rgba(255,255,255,0.95); margin: 16px 0 0 0; font-size: 15px; font-weight: 500;">تهانينا! 🎊</p>
+                            <p style="color: rgba(255,255,255,0.95); margin: 16px 0 0 0; font-size: 15px; font-weight: 500;">بوابة الشركاء</p>
                         </td>
                     </tr>
 
@@ -28,27 +28,27 @@ export function storeApprovedTemplate(data: StoreApprovedData): string {
                     <tr>
                         <td style="padding: 40px 28px; text-align: center; background-color: #ffffff;">
                             <!-- Icon -->
-                            <div style="display: inline-block; width: 72px; height: 72px; background-color: #DCFCE7; border-radius: 50%; line-height: 72px; font-size: 32px; margin-bottom: 24px;">✅</div>
+                            <div style="display: inline-block; width: 72px; height: 72px; background-color: #E0F4FF; border-radius: 50%; line-height: 72px; font-size: 32px; margin-bottom: 24px;">✅</div>
 
-                            <h2 style="color: #0F172A; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.4;">متجرك أصبح جاهزاً!</h2>
+                            <h2 style="color: #0F172A; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.4;">متجرك أصبح جاهزاً! 🎊</h2>
 
-                            <p style="color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 24px 0;">
-                                مبروك يا ${data.merchantName}! 🎉<br>
-                                تمت الموافقة على متجرك <strong style="color: #10B981;">"${data.storeName}"</strong> وأصبح متاحاً للعملاء الآن!
+                            <p style="color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 32px 0;">
+                                مبروك يا ${data.merchantName}!<br>
+                                تمت الموافقة على متجرك <strong style="color: #009DE0;">"${data.storeName}"</strong> وأصبح متاحاً للعملاء الآن!
                             </p>
 
-                            <!-- Stats Preview -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; margin-bottom: 24px;">
+                            <!-- Status Box -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; border-radius: 12px; margin-bottom: 24px;">
                                 <tr>
-                                    <td style="padding: 20px; text-align: center;">
-                                        <p style="margin: 0; font-size: 14px; color: #166534; font-weight: 600;">
-                                            🟢 المتجر نشط ومتاح للطلبات
+                                    <td style="padding: 16px 20px; text-align: right;">
+                                        <p style="margin: 0; font-size: 13px; color: #64748B; line-height: 1.7;">
+                                            <strong style="color: #0F172A;">🟢 المتجر نشط ومتاح للطلبات</strong>
                                         </p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- What's Next -->
+                            <!-- Tips -->
                             <div style="text-align: right; margin-bottom: 24px;">
                                 <p style="color: #0F172A; font-size: 15px; font-weight: 600; margin: 0 0 12px 0;">نصائح للبداية:</p>
                                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
@@ -79,11 +79,11 @@ export function storeApprovedTemplate(data: StoreApprovedData): string {
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                 <tr>
                                     <td align="center" style="padding: 0 0 16px 0;">
-                                        <a href="${data.dashboardUrl}" style="display: inline-block; background-color: #10B981; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 700; font-size: 16px;">لوحة التحكم ←</a>
+                                        <a href="${data.dashboardUrl}" style="display: inline-block; background-color: #009DE0; color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 700; font-size: 16px;">لوحة التحكم ←</a>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td align="center" style="padding: 0 0 24px 0;">
+                                    <td align="center" style="padding: 0 0 32px 0;">
                                         <a href="${data.storeUrl}" style="display: inline-block; background-color: #ffffff; color: #009DE0; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 2px solid #009DE0;">شاهد متجرك على الموقع</a>
                                     </td>
                                 </tr>
@@ -94,8 +94,8 @@ export function storeApprovedTemplate(data: StoreApprovedData): string {
 
                             <!-- Help -->
                             <p style="font-size: 13px; color: #64748B; line-height: 1.7; margin: 0;">
-                                محتاج مساعدة؟ فريق الدعم جاهز لمساعدتك!
-                                <a href="https://www.engezna.com/ar/help" style="color: #009DE0; text-decoration: none; font-weight: 500;">مركز المساعدة</a>
+                                محتاج مساعدة؟ تواصل معانا عبر
+                                <a href="https://www.engezna.com/ar/provider/help" style="color: #009DE0; text-decoration: none; font-weight: 500;">مركز مساعدة الشركاء</a>
                             </p>
                         </td>
                     </tr>
@@ -107,7 +107,13 @@ export function storeApprovedTemplate(data: StoreApprovedData): string {
                                 <img src="https://cmxpvzqrmptfnuymhxmr.supabase.co/storage/v1/object/public/Logos/engezna-transparent-white-transparent.png" alt="إنجزنا" width="100" style="height: auto; display: block; margin: 0 auto;">
                             </a>
                             <p style="color: #009DE0; font-size: 13px; font-weight: 500; margin: 14px 0;">منصة توصيل محلية حديثة لجمهورية مصر العربية</p>
+                            <p style="font-size: 12px; color: #64748B; margin: 10px 0;">لكل محافظات مصر 🇪🇬</p>
                             <p style="font-size: 11px; color: #475569; margin: 14px 0 0 0;">صنع بـ 💚 في مصر</p>
+                            <p style="font-size: 11px; color: #64748B; margin: 14px 0 0 0;">
+                                <a href="https://www.engezna.com/ar/privacy" style="color: #009DE0; text-decoration: none; margin: 0 6px;">سياسة الخصوصية</a> •
+                                <a href="https://www.engezna.com/ar/terms" style="color: #009DE0; text-decoration: none; margin: 0 6px;">الشروط والأحكام</a> •
+                                <a href="https://www.engezna.com/ar/provider/help" style="color: #009DE0; text-decoration: none; margin: 0 6px;">دعم الشركاء</a>
+                            </p>
                         </td>
                     </tr>
 

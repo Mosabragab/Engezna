@@ -4,6 +4,9 @@ import withSerwistInit from "@serwist/next";
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+// Suppress Serwist + Turbopack warning (Serwist works in production builds)
+process.env.SERWIST_SUPPRESS_TURBOPACK_WARNING = "1";
+
 // Serwist configuration for PWA
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
