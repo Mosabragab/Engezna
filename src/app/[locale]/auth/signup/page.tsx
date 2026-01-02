@@ -102,7 +102,7 @@ export default function SignupPage() {
     e.preventDefault()
 
     if (!email || !email.includes('@')) {
-      setError(locale === 'ar' ? 'يرجى إدخال بريد إلكتروني صحيح' : 'Please enter a valid email')
+      setError(locale === 'ar' ? 'يرجى إدخال إيميل صحيح' : 'Please enter a valid email')
       return
     }
 
@@ -202,12 +202,12 @@ export default function SignupPage() {
           </div>
 
           <h1 className="text-2xl font-bold text-[#009DE0] mb-3">
-            {locale === 'ar' ? 'تفقد بريدك الإلكتروني' : 'Check Your Email'}
+            {locale === 'ar' ? 'تفقد الإيميل' : 'Check Your Email'}
           </h1>
 
           <p className="text-slate-500 mb-2">
             {locale === 'ar'
-              ? 'لقد أرسلنا رابط التسجيل إلى:'
+              ? 'أرسلنا رابط التسجيل إلى:'
               : 'We sent a signup link to:'}
           </p>
 
@@ -217,7 +217,7 @@ export default function SignupPage() {
 
           <p className="text-slate-400 text-sm mb-8">
             {locale === 'ar'
-              ? 'اضغط على الرابط في البريد لإكمال التسجيل'
+              ? 'اضغط على الرابط في الإيميل لإكمال التسجيل'
               : 'Click the link in the email to complete your registration'}
           </p>
 
@@ -230,7 +230,7 @@ export default function SignupPage() {
             }}
             className="text-[#009DE0] font-medium hover:underline"
           >
-            {locale === 'ar' ? 'استخدام بريد آخر' : 'Use a different email'}
+            {locale === 'ar' ? 'استخدام إيميل آخر' : 'Use a different email'}
           </button>
         </div>
 
@@ -300,7 +300,7 @@ export default function SignupPage() {
               className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
             >
               <Mail className="w-5 h-5" />
-              <span>{locale === 'ar' ? 'التسجيل عبر البريد' : 'Sign up with Email'}</span>
+              <span>{locale === 'ar' ? 'التسجيل عبر الإيميل' : 'Sign up with Email'}</span>
             </button>
           ) : (
             <form onSubmit={handleEmailSignup} className="space-y-3">
@@ -308,7 +308,7 @@ export default function SignupPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={locale === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
+                placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
                 disabled={isEmailLoading}
                 className="w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
                 dir="ltr"
@@ -322,7 +322,7 @@ export default function SignupPage() {
                 {isEmailLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  <span>{locale === 'ar' ? 'إرسال رابط التسجيل' : 'Send Signup Link'}</span>
+                  <span>{locale === 'ar' ? 'أرسل رابط التسجيل' : 'Send Signup Link'}</span>
                 )}
               </button>
             </form>

@@ -102,7 +102,7 @@ export default function LoginPage() {
     e.preventDefault()
 
     if (!email || !email.includes('@')) {
-      setError(locale === 'ar' ? 'يرجى إدخال بريد إلكتروني صحيح' : 'Please enter a valid email')
+      setError(locale === 'ar' ? 'يرجى إدخال إيميل صحيح' : 'Please enter a valid email')
       return
     }
 
@@ -214,12 +214,12 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-2xl font-bold text-[#009DE0] mb-3">
-            {locale === 'ar' ? 'تفقد بريدك الإلكتروني' : 'Check Your Email'}
+            {locale === 'ar' ? 'تفقد الإيميل' : 'Check Your Email'}
           </h1>
 
           <p className="text-slate-500 mb-2">
             {locale === 'ar'
-              ? 'لقد أرسلنا رابط الدخول إلى:'
+              ? 'أرسلنا رابط الدخول إلى:'
               : 'We sent a login link to:'}
           </p>
 
@@ -229,7 +229,7 @@ export default function LoginPage() {
 
           <p className="text-slate-400 text-sm mb-8">
             {locale === 'ar'
-              ? 'اضغط على الرابط في البريد للدخول إلى حسابك'
+              ? 'اضغط على الرابط في الإيميل للدخول لحسابك'
               : 'Click the link in the email to sign in to your account'}
           </p>
 
@@ -242,7 +242,7 @@ export default function LoginPage() {
             }}
             className="text-[#009DE0] font-medium hover:underline"
           >
-            {locale === 'ar' ? 'استخدام بريد آخر' : 'Use a different email'}
+            {locale === 'ar' ? 'استخدام إيميل آخر' : 'Use a different email'}
           </button>
         </div>
 
@@ -312,7 +312,7 @@ export default function LoginPage() {
               className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
             >
               <Mail className="w-5 h-5" />
-              <span>{locale === 'ar' ? 'الدخول عبر البريد' : 'Continue with Email'}</span>
+              <span>{locale === 'ar' ? 'الدخول عبر الإيميل' : 'Continue with Email'}</span>
             </button>
           ) : (
             <form onSubmit={handleEmailLogin} className="space-y-3">
@@ -320,7 +320,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={locale === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
+                placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
                 disabled={isEmailLoading}
                 className="w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
                 dir="ltr"
@@ -334,7 +334,7 @@ export default function LoginPage() {
                 {isEmailLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  <span>{locale === 'ar' ? 'إرسال رابط الدخول' : 'Send Login Link'}</span>
+                  <span>{locale === 'ar' ? 'أرسل رابط الدخول' : 'Send Login Link'}</span>
                 )}
               </button>
             </form>
