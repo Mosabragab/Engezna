@@ -12,14 +12,21 @@ export default function AuthCallbackPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
+    // Prevent double execution
+    if (isProcessing) return
+    setIsProcessing(true)
+
     const handleCallback = async () => {
       const code = searchParams.get('code')
       const errorParam = searchParams.get('error')
       const errorDescription = searchParams.get('error_description')
       const redirectParam = searchParams.get('redirect')
       const next = searchParams.get('next') ?? redirectParam ?? '/'
+
+      const supabase = createClient()
 
       // Handle error from Supabase (e.g., expired link)
       if (errorParam) {
@@ -29,43 +36,51 @@ export default function AuthCallbackPage() {
         return
       }
 
-      if (!code) {
-        console.error('Auth callback: No code provided')
-        router.push(`/${locale}/auth/login?error=no_code`)
-        return
+      // First, check if user is already logged in (session might be set automatically)
+      let { data: { user } } = await supabase.auth.getUser()
+
+      // If no user and we have a code, try to exchange it
+      if (!user && code) {
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+
+        if (exchangeError) {
+          console.error('Auth callback: Code exchange error:', exchangeError.message)
+          // Try getting user again - sometimes session is set but exchange fails
+          const { data: { user: retryUser } } = await supabase.auth.getUser()
+          if (retryUser) {
+            user = retryUser
+          } else {
+            setError(locale === 'ar' ? 'فشل التحقق من الرابط' : 'Failed to verify link')
+            setTimeout(() => {
+              router.push(`/${locale}/auth/login?error=exchange_failed${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`)
+            }, 2000)
+            return
+          }
+        } else {
+          user = data.user
+        }
       }
 
-      const supabase = createClient()
-      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-
-      if (exchangeError) {
-        console.error('Auth callback: Code exchange error:', exchangeError.message)
-        setError(locale === 'ar' ? 'فشل التحقق من الرابط' : 'Failed to verify link')
-        setTimeout(() => {
-          router.push(`/${locale}/auth/login?error=exchange_failed${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`)
-        }, 2000)
-        return
-      }
-
-      if (!data.user) {
-        console.error('Auth callback: No user returned')
+      // If still no user, redirect to login
+      if (!user) {
+        console.error('Auth callback: No user found')
         router.push(`/${locale}/auth/login?error=no_user`)
         return
       }
 
-      // Check if user profile is complete
+      // Check if user profile exists and is complete
       const { data: profile } = await supabase
         .from('profiles')
         .select('governorate_id, phone, role')
-        .eq('id', data.user.id)
+        .eq('id', user.id)
         .single()
 
       // If profile doesn't exist, create it
       if (!profile) {
         await supabase.from('profiles').insert({
-          id: data.user.id,
-          email: data.user.email,
-          full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || '',
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
           role: 'customer',
         })
 
@@ -92,7 +107,7 @@ export default function AuthCallbackPage() {
     }
 
     handleCallback()
-  }, [searchParams, locale, router])
+  }, [searchParams, locale, router, isProcessing])
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
