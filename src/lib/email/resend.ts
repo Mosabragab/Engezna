@@ -1,7 +1,18 @@
 import { Resend } from 'resend'
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy initialization - only create client when needed (not at build time)
+let resendClient: Resend | null = null
+
+function getResendClient(): Resend {
+  if (!resendClient) {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is not set')
+    }
+    resendClient = new Resend(apiKey)
+  }
+  return resendClient
+}
 
 // Email sender configuration
 const FROM_EMAIL = 'إنجزنا | Engezna <noreply@engezna.com>'
@@ -50,6 +61,7 @@ export interface SettlementData {
 
 export async function sendEmail({ to, subject, html, replyTo }: SendEmailOptions) {
   try {
+    const resend = getResendClient()
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: Array.isArray(to) ? to : [to],
@@ -66,7 +78,7 @@ export async function sendEmail({ to, subject, html, replyTo }: SendEmailOptions
     return { success: true, data }
   } catch (error) {
     console.error('Email send error:', error)
-    return { success: false, error: 'Failed to send email' }
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to send email' }
   }
 }
 
@@ -114,7 +126,7 @@ export async function sendSettlementEmail(data: SettlementData) {
 }
 
 // ============================================================================
-// Export default instance
+// Export getter for advanced use cases
 // ============================================================================
 
-export default resend
+export { getResendClient }
