@@ -32,14 +32,46 @@ const GoogleIcon = () => (
   </svg>
 )
 
+// Error messages mapping
+const getErrorMessage = (errorCode: string | null, locale: string): string | null => {
+  if (!errorCode) return null
+
+  const messages: Record<string, { ar: string; en: string }> = {
+    link_expired: {
+      ar: 'انتهت صلاحية الرابط. يرجى طلب رابط جديد.',
+      en: 'The link has expired. Please request a new one.',
+    },
+    exchange_failed: {
+      ar: 'فشل التحقق من الرابط. يرجى المحاولة مرة أخرى.',
+      en: 'Failed to verify the link. Please try again.',
+    },
+    no_code: {
+      ar: 'رابط غير صالح. يرجى طلب رابط جديد.',
+      en: 'Invalid link. Please request a new one.',
+    },
+    no_user: {
+      ar: 'فشل في إنشاء الجلسة. يرجى المحاولة مرة أخرى.',
+      en: 'Failed to create session. Please try again.',
+    },
+    access_denied: {
+      ar: 'تم رفض الوصول. يرجى المحاولة مرة أخرى.',
+      en: 'Access denied. Please try again.',
+    },
+  }
+
+  const message = messages[errorCode]
+  return message ? (locale === 'ar' ? message.ar : message.en) : null
+}
+
 export default function LoginPage() {
   const locale = useLocale()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect')
+  const urlError = searchParams.get('error')
 
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [isEmailLoading, setIsEmailLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(() => getErrorMessage(urlError, locale))
 
   // Email Magic Link states
   const [showEmailInput, setShowEmailInput] = useState(false)
