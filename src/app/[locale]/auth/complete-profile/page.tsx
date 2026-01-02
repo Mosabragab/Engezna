@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import Link from 'next/link'
-import { MapPin, Phone, Loader2, CheckCircle, ChevronDown } from 'lucide-react'
+import { MapPin, Phone, Loader2, CheckCircle, User } from 'lucide-react'
 
 // ============================================================================
 // Types
@@ -46,6 +46,8 @@ interface City {
 // ============================================================================
 
 const completeProfileSchema = z.object({
+  firstName: z.string().min(2, 'الاسم الأول مطلوب'),
+  lastName: z.string().min(2, 'اسم العائلة مطلوب'),
   phone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'رقم هاتف مصري غير صالح'),
   governorateId: z.string().min(1, 'يرجى اختيار المحافظة'),
   cityId: z.string().min(1, 'يرجى اختيار المدينة'),
@@ -76,7 +78,7 @@ export default function CompleteProfilePage() {
   // User data
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [userName, setUserName] = useState<string | null>(null)
+  const [hasExistingName, setHasExistingName] = useState(false)
 
   const {
     register,
@@ -87,6 +89,8 @@ export default function CompleteProfilePage() {
   } = useForm<CompleteProfileFormData>({
     resolver: zodResolver(completeProfileSchema),
     defaultValues: {
+      firstName: '',
+      lastName: '',
       phone: '',
       governorateId: '',
       cityId: '',
@@ -124,16 +128,21 @@ export default function CompleteProfilePage() {
         .single()
 
       if (profile) {
-        setUserName(profile.full_name)
-
         // If profile is already complete, redirect
-        if (profile.governorate_id && profile.phone) {
+        if (profile.governorate_id && profile.phone && profile.full_name) {
           const destination = redirectTo || `/${locale}`
           router.push(destination)
           return
         }
 
-        // Pre-fill phone if exists
+        // Pre-fill existing data
+        if (profile.full_name) {
+          setHasExistingName(true)
+          const nameParts = profile.full_name.split(' ')
+          setValue('firstName', nameParts[0] || '')
+          setValue('lastName', nameParts.slice(1).join(' ') || '')
+        }
+
         if (profile.phone) {
           setValue('phone', profile.phone)
         }
@@ -192,10 +201,14 @@ export default function CompleteProfilePage() {
     try {
       const supabase = createClient()
 
-      // Update profile with phone and location
+      // Combine first and last name
+      const fullName = `${data.firstName} ${data.lastName}`.trim()
+
+      // Update profile with all data
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
+          full_name: fullName,
           phone: data.phone,
           governorate_id: data.governorateId,
           city_id: data.cityId,
@@ -226,8 +239,6 @@ export default function CompleteProfilePage() {
       setIsLoading(false)
     }
   }
-
-  const isRTL = locale === 'ar'
 
   // Loading state
   if (isCheckingAuth) {
@@ -279,23 +290,64 @@ export default function CompleteProfilePage() {
           </CardTitle>
           <CardDescription>
             {locale === 'ar'
-              ? 'أدخل موقعك ورقم هاتفك للمتابعة'
-              : 'Enter your location and phone number to continue'}
+              ? 'أدخل بياناتك للمتابعة'
+              : 'Enter your details to continue'}
           </CardDescription>
-          {userName && (
-            <p className="text-sm text-primary font-medium pt-2">
-              {locale === 'ar' ? `مرحباً ${userName}` : `Welcome ${userName}`}
-            </p>
-          )}
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
+
+            {/* Name Fields Row */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* First Name */}
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-primary" />
+                  {locale === 'ar' ? 'الاسم الأول' : 'First Name'}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  placeholder={locale === 'ar' ? 'أحمد' : 'Ahmed'}
+                  {...register('firstName')}
+                  disabled={isLoading}
+                  className={errors.firstName ? 'border-destructive' : ''}
+                />
+                {errors.firstName && (
+                  <p className="text-xs text-destructive">
+                    {locale === 'ar' ? 'مطلوب' : 'Required'}
+                  </p>
+                )}
+              </div>
+
+              {/* Last Name */}
+              <div className="space-y-2">
+                <Label htmlFor="lastName">
+                  {locale === 'ar' ? 'اسم العائلة' : 'Last Name'}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder={locale === 'ar' ? 'محمد' : 'Mohamed'}
+                  {...register('lastName')}
+                  disabled={isLoading}
+                  className={errors.lastName ? 'border-destructive' : ''}
+                />
+                {errors.lastName && (
+                  <p className="text-xs text-destructive">
+                    {locale === 'ar' ? 'مطلوب' : 'Required'}
+                  </p>
+                )}
+              </div>
+            </div>
 
             {/* Phone Number */}
             <div className="space-y-2">
@@ -398,8 +450,8 @@ export default function CompleteProfilePage() {
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm text-muted-foreground">
               <p>
                 {locale === 'ar'
-                  ? '📍 سيتم استخدام موقعك لعرض المتاجر القريبة منك. يمكنك تغييره لاحقاً من الصفحة الرئيسية.'
-                  : '📍 Your location will be used to show nearby stores. You can change it later from the home page.'}
+                  ? '📍 سيتم استخدام موقعك لعرض المتاجر القريبة منك.'
+                  : '📍 Your location will be used to show nearby stores.'}
               </p>
             </div>
 
