@@ -1,12 +1,18 @@
-import type { StoreApprovedData } from '../resend'
+export interface StoreRejectionData {
+  to: string
+  merchantName: string
+  storeName: string
+  rejectionReason: string
+  supportUrl: string
+}
 
-export function storeApprovedTemplate(data: StoreApprovedData): string {
+export function storeRejectionTemplate(data: StoreRejectionData): string {
   return `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تم تفعيل متجرك! - إنجزنا</title>
+    <title>تحديث حالة طلب المتجر - إنجزنا</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif; background-color: #F1F5F9; direction: rtl;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F1F5F9; padding: 24px 16px;">
@@ -28,63 +34,52 @@ export function storeApprovedTemplate(data: StoreApprovedData): string {
                     <tr>
                         <td style="padding: 40px 28px; text-align: center; background-color: #ffffff;">
                             <!-- Icon -->
-                            <div style="display: inline-block; width: 72px; height: 72px; background-color: #E0F4FF; border-radius: 50%; line-height: 72px; font-size: 32px; margin-bottom: 24px;">✅</div>
+                            <div style="display: inline-block; width: 72px; height: 72px; background-color: #FEF2F2; border-radius: 50%; line-height: 72px; font-size: 32px; margin-bottom: 24px;">📋</div>
 
-                            <h2 style="color: #0F172A; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.4;">متجرك أصبح جاهزاً! 🎊</h2>
-
-                            <p style="color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 32px 0;">
-                                مبروك يا ${data.merchantName}!<br>
-                                تمت الموافقة على متجرك <strong style="color: #009DE0;">"${data.storeName}"</strong> وأصبح متاحاً للعملاء الآن!
+                            <h2 style="color: #0F172A; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.4;">تحديث حالة طلبك</h2>
+                            <p style="color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 24px 0;">
+                                مرحباً ${data.merchantName}، شكراً لاهتمامك بالانضمام لمنصة إنجزنا.
                             </p>
 
-                            <!-- Status Box -->
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; border-radius: 12px; margin-bottom: 24px;">
+                            <!-- Rejection Info -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FEF2F2; border-radius: 12px; margin-bottom: 24px; border-right: 4px solid #EF4444;">
                                 <tr>
-                                    <td style="padding: 16px 20px; text-align: right;">
-                                        <p style="margin: 0; font-size: 13px; color: #64748B; line-height: 1.7;">
-                                            <strong style="color: #0F172A;">🟢 المتجر نشط ومتاح للطلبات</strong>
+                                    <td style="padding: 20px; text-align: right;">
+                                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #991B1B; font-weight: 600;">
+                                            للأسف، لم نتمكن من قبول طلب متجر "${data.storeName}" في الوقت الحالي
+                                        </p>
+                                        <p style="margin: 0; font-size: 14px; color: #7F1D1D; line-height: 1.7;">
+                                            <strong>السبب:</strong> ${data.rejectionReason}
                                         </p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- Tips -->
+                            <!-- What to do next -->
                             <div style="text-align: right; margin-bottom: 24px;">
-                                <p style="color: #0F172A; font-size: 15px; font-weight: 600; margin: 0 0 12px 0;">نصائح للبداية:</p>
-                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <p style="color: #0F172A; font-size: 15px; font-weight: 600; margin: 0 0 12px 0;">ماذا يمكنك فعله؟</p>
+                                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F0F9FF; border-radius: 12px;">
                                     <tr>
-                                        <td style="padding: 8px 0; font-size: 14px; color: #475569;">
-                                            ✨ تأكد من تحديث أوقات العمل
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 8px 0; font-size: 14px; color: #475569;">
-                                            📸 أضف صور جذابة لمنتجاتك
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 8px 0; font-size: 14px; color: #475569;">
-                                            💰 راجع أسعارك ورسوم التوصيل
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 8px 0; font-size: 14px; color: #475569;">
-                                            🔔 فعّل الإشعارات لتلقي الطلبات فوراً
+                                        <td style="padding: 16px 20px;">
+                                            <p style="margin: 0 0 8px 0; font-size: 14px; color: #475569; line-height: 1.7;">
+                                                ✓ راجع المتطلبات وأكمل البيانات الناقصة
+                                            </p>
+                                            <p style="margin: 0 0 8px 0; font-size: 14px; color: #475569; line-height: 1.7;">
+                                                ✓ تواصل مع فريق الدعم للاستفسار
+                                            </p>
+                                            <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.7;">
+                                                ✓ أعد تقديم الطلب بعد استيفاء المتطلبات
+                                            </p>
                                         </td>
                                     </tr>
                                 </table>
                             </div>
 
-                            <!-- Buttons -->
+                            <!-- Button -->
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                 <tr>
-                                    <td align="center" style="padding: 0 0 16px 0;">
-                                        <a href="${data.dashboardUrl}" style="display: inline-block; background-color: #009DE0; color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 700; font-size: 16px;">لوحة التحكم ←</a>
-                                    </td>
-                                </tr>
-                                <tr>
                                     <td align="center" style="padding: 0 0 32px 0;">
-                                        <a href="${data.storeUrl}" style="display: inline-block; background-color: #ffffff; color: #009DE0; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 14px; border: 2px solid #009DE0;">شاهد متجرك على الموقع</a>
+                                        <a href="${data.supportUrl}" style="display: inline-block; background-color: #009DE0; color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 700; font-size: 16px;">تواصل مع الدعم ←</a>
                                     </td>
                                 </tr>
                             </table>
@@ -94,7 +89,7 @@ export function storeApprovedTemplate(data: StoreApprovedData): string {
 
                             <!-- Help -->
                             <p style="font-size: 13px; color: #64748B; line-height: 1.7; margin: 0;">
-                                محتاج مساعدة؟ تواصل معانا عبر
+                                نحن هنا لمساعدتك! تواصل معنا عبر
                                 <a href="https://www.engezna.com/ar/provider/help" style="color: #009DE0; text-decoration: none; font-weight: 500;">مركز مساعدة الشركاء</a>
                             </p>
                         </td>
