@@ -210,14 +210,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Send verification email using our custom template
+    console.log('[Register] Sending verification email to:', email)
+    console.log('[Register] Verification URL:', verificationUrl)
+
     const emailResult = await sendEmailVerificationEmail({
       to: email,
       userName: firstName,
       verificationUrl,
     })
 
+    console.log('[Register] Email result:', emailResult)
+
     if (!emailResult.success) {
-      console.error('Email send error:', emailResult.error)
+      console.error('[Register] Email send error:', emailResult.error)
       // Don't fail registration if email fails, user can request resend
     }
 
