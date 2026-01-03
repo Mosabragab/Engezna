@@ -21,9 +21,12 @@ export default function AuthCallbackPage() {
 
     const handleCallback = async () => {
       const code = searchParams.get('code')
+      const tokenHash = searchParams.get('token_hash')
+      const type = searchParams.get('type')
       const errorParam = searchParams.get('error')
       const errorDescription = searchParams.get('error_description')
       const redirectParam = searchParams.get('redirect')
+      const verified = searchParams.get('verified')
       const next = searchParams.get('next') ?? redirectParam ?? '/'
 
       const supabase = createClient()
@@ -38,6 +41,26 @@ export default function AuthCallbackPage() {
 
       // First, check if user is already logged in (session might be set automatically)
       let { data: { user } } = await supabase.auth.getUser()
+
+      // Handle token_hash verification (from email verification link)
+      let isSignupVerification = false
+      if (!user && tokenHash && type) {
+        const { data, error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: type as 'signup' | 'recovery' | 'email',
+        })
+
+        if (verifyError) {
+          console.error('Auth callback: Token verification error:', verifyError.message)
+          setError(locale === 'ar' ? 'فشل التحقق من الرابط. قد يكون منتهي الصلاحية.' : 'Failed to verify link. It may have expired.')
+          setTimeout(() => {
+            router.push(`/${locale}/auth/login?error=verification_failed${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`)
+          }, 3000)
+          return
+        }
+        user = data.user
+        isSignupVerification = type === 'signup'
+      }
 
       // If no user and we have a code, try to exchange it
       if (!user && code) {
@@ -99,6 +122,20 @@ export default function AuthCallbackPage() {
           : `/${locale}/auth/complete-profile`
         router.push(completeProfileUrl)
         return
+      }
+
+      // Send welcome email if this is a signup verification
+      if (isSignupVerification && user) {
+        try {
+          await fetch('/api/auth/send-welcome-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id }),
+          })
+        } catch (emailError) {
+          // Don't block the flow if welcome email fails
+          console.error('Failed to send welcome email:', emailError)
+        }
       }
 
       // Profile complete - redirect to destination

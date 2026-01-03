@@ -1,57 +1,47 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations, useLocale } from 'next-intl'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
-
-// Form validation schema
-const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email address'),
-})
-
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
+import { ArrowLeft, ArrowRight, Loader2, Mail, CheckCircle } from 'lucide-react'
 
 export default function ForgotPasswordPage() {
-  const t = useTranslations('auth.forgotPassword')
   const locale = useLocale()
+  const isRTL = locale === 'ar'
+
+  const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ForgotPasswordFormData>({
-    resolver: zodResolver(forgotPasswordSchema),
-  })
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
 
-  const onSubmit = async (data: ForgotPasswordFormData) => {
+    if (!email || !email.includes('@')) {
+      setError(locale === 'ar' ? 'يرجى إدخال إيميل صحيح' : 'Please enter a valid email')
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
     try {
       const supabase = createClient()
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/${locale}/auth/reset-password`,
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl}/${locale}/auth/reset-password`,
       })
 
       if (resetError) {
+        console.error('Reset password error:', resetError)
         setError(resetError.message)
         return
       }
 
-      setSuccess(true)
+      setEmailSent(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
@@ -59,105 +49,143 @@ export default function ForgotPasswordPage() {
     }
   }
 
-  if (success) {
+  // Email sent success state
+  if (emailSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold">{t('successTitle')}</h2>
-              <p className="text-muted-foreground">{t('successMessage')}</p>
-              <div className="pt-4">
-                <Link href={`/${locale}/auth/login`}>
-                  <Button variant="outline" className="w-full">
-                    {t('backToLogin')}
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
+        <Link href={`/${locale}`} className="mb-12">
+          <EngeznaLogo size="lg" static showPen={false} />
+        </Link>
+
+        <div className="w-full max-w-[340px] text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-[#009DE0] mb-3">
+            {locale === 'ar' ? 'تفقد الإيميل' : 'Check Your Email'}
+          </h1>
+
+          <p className="text-slate-500 mb-2">
+            {locale === 'ar'
+              ? 'أرسلنا رابط استعادة كلمة المرور إلى:'
+              : 'We sent a password reset link to:'}
+          </p>
+
+          <p className="text-[#0F172A] font-medium mb-6" dir="ltr">
+            {email}
+          </p>
+
+          <p className="text-slate-400 text-sm mb-8">
+            {locale === 'ar'
+              ? 'اضغط على الرابط في الإيميل لإعادة تعيين كلمة المرور'
+              : 'Click the link in the email to reset your password'}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setEmailSent(false)
+              setEmail('')
+            }}
+            className="text-[#009DE0] font-medium hover:underline"
+          >
+            {locale === 'ar' ? 'استخدام إيميل آخر' : 'Use a different email'}
+          </button>
+        </div>
+
+        <Link
+          href={`/${locale}/auth/login`}
+          className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
+        >
+          {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+          {locale === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
+        </Link>
       </div>
     )
   }
 
-  const isRTL = locale === 'ar'
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-      {/* Logo - Links back to home */}
-      <div className="mb-6">
-        <Link href={`/${locale}`} className="inline-block">
-          <EngeznaLogo size="lg" static showPen={false} />
-        </Link>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
+      {/* Logo */}
+      <Link href={`/${locale}`} className="mb-12">
+        <EngeznaLogo size="lg" static showPen={false} />
+      </Link>
+
+      {/* Content */}
+      <div className="w-full max-w-[340px]">
+        {/* Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-[#009DE0] mb-2">
+            {locale === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot Password?'}
+          </h1>
+          <p className="text-slate-500">
+            {locale === 'ar'
+              ? 'أدخل إيميلك وسنرسل لك رابط استعادة كلمة المرور'
+              : 'Enter your email and we will send you a reset link'}
+          </p>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm mb-6 text-center">
+            {error}
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email Input */}
+          <div className="space-y-2">
+            <label htmlFor="email" className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <Mail className="w-4 h-4 text-[#009DE0]" />
+              {locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
+              disabled={isLoading}
+              className="w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
+              dir="ltr"
+              autoFocus
+            />
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isLoading || !email}
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
+          >
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <span>{locale === 'ar' ? 'إرسال رابط الاستعادة' : 'Send Reset Link'}</span>
+            )}
+          </button>
+        </form>
+
+        {/* Back to Login Link */}
+        <div className="text-center mt-8">
+          <Link
+            href={`/${locale}/auth/login`}
+            className="text-[#009DE0] font-medium hover:underline"
+          >
+            {locale === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
+          </Link>
+        </div>
       </div>
 
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            {t('title')}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {t('description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('email')}</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder={t('emailPlaceholder')}
-                {...register('email')}
-                disabled={isLoading}
-                className={errors.email ? 'border-destructive' : ''}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? t('sending') : t('sendButton')}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-sm text-center text-muted-foreground">
-            {t('rememberPassword')}{' '}
-            <Link
-              href={`/${locale}/auth/login`}
-              className="text-primary hover:underline font-medium"
-            >
-              {t('loginLink')}
-            </Link>
-          </div>
-        </CardFooter>
-      </Card>
-
-      {/* Back to Home Link */}
+      {/* Back to Home */}
       <Link
         href={`/${locale}`}
-        className="mt-6 inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+        className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
       >
         {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-        {locale === 'ar' ? 'العودة للصفحة الرئيسية' : 'Back to Home'}
+        {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
       </Link>
     </div>
   )

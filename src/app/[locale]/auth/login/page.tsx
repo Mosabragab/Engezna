@@ -6,7 +6,7 @@ import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { ArrowLeft, ArrowRight, Loader2, Mail, CheckCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, Mail, Eye, EyeOff } from 'lucide-react'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 import { useGoogleLogin } from '@react-oauth/google'
 
@@ -57,6 +57,10 @@ const getErrorMessage = (errorCode: string | null, locale: string): string | nul
       ar: 'تم رفض الوصول. يرجى المحاولة مرة أخرى.',
       en: 'Access denied. Please try again.',
     },
+    invalid_credentials: {
+      ar: 'الإيميل أو كلمة المرور غير صحيحة',
+      en: 'Invalid email or password',
+    },
   }
 
   const message = messages[errorCode]
@@ -73,10 +77,11 @@ export default function LoginPage() {
   const [isEmailLoading, setIsEmailLoading] = useState(false)
   const [error, setError] = useState<string | null>(() => getErrorMessage(urlError, locale))
 
-  // Email Magic Link states
-  const [showEmailInput, setShowEmailInput] = useState(false)
+  // Email + Password states
+  const [showEmailForm, setShowEmailForm] = useState(false)
   const [email, setEmail] = useState('')
-  const [emailSent, setEmailSent] = useState(false)
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   // Handle Google login with authorization code flow
   const handleGoogleLogin = useGoogleLogin({
@@ -129,12 +134,17 @@ export default function LoginPage() {
     },
   })
 
-  // Handle Email Magic Link
+  // Handle Email + Password Login
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!email || !email.includes('@')) {
       setError(locale === 'ar' ? 'يرجى إدخال إيميل صحيح' : 'Please enter a valid email')
+      return
+    }
+
+    if (!password || password.length < 6) {
+      setError(locale === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters')
       return
     }
 
@@ -144,28 +154,25 @@ export default function LoginPage() {
     try {
       const supabase = createClient()
 
-      // Build the redirect URL for magic link
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-      const redirectUrl = redirectTo
-        ? `${siteUrl}/${locale}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
-        : `${siteUrl}/${locale}/auth/callback`
-
-      const { error: otpError } = await supabase.auth.signInWithOtp({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
+        password,
       })
 
-      if (otpError) {
-        console.error('OTP error:', otpError)
-        setError(otpError.message)
+      if (signInError) {
+        console.error('Sign in error:', signInError)
+        if (signInError.message.includes('Invalid login credentials')) {
+          setError(locale === 'ar' ? 'الإيميل أو كلمة المرور غير صحيحة' : 'Invalid email or password')
+        } else if (signInError.message.includes('Email not confirmed')) {
+          setError(locale === 'ar' ? 'يرجى تأكيد الإيميل أولاً. تحقق من بريدك الإلكتروني' : 'Please confirm your email first. Check your inbox')
+        } else {
+          setError(signInError.message)
+        }
         setIsEmailLoading(false)
         return
       }
 
-      // Success - show confirmation message
-      setEmailSent(true)
+      await handlePostLogin(supabase, data.user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
@@ -230,66 +237,6 @@ export default function LoginPage() {
   const isRTL = locale === 'ar'
   const isLoading = isGoogleLoading || isEmailLoading
 
-  // Email sent success state
-  if (emailSent) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
-        {/* Logo */}
-        <Link href={`/${locale}`} className="mb-12">
-          <EngeznaLogo size="lg" static showPen={false} />
-        </Link>
-
-        {/* Success Message */}
-        <div className="w-full max-w-[340px] text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-
-          <h1 className="text-2xl font-bold text-[#009DE0] mb-3">
-            {locale === 'ar' ? 'تفقد الإيميل' : 'Check Your Email'}
-          </h1>
-
-          <p className="text-slate-500 mb-2">
-            {locale === 'ar'
-              ? 'أرسلنا رابط الدخول إلى:'
-              : 'We sent a login link to:'}
-          </p>
-
-          <p className="text-[#0F172A] font-medium mb-6" dir="ltr">
-            {email}
-          </p>
-
-          <p className="text-slate-400 text-sm mb-8">
-            {locale === 'ar'
-              ? 'اضغط على الرابط في الإيميل للدخول لحسابك'
-              : 'Click the link in the email to sign in to your account'}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              setEmailSent(false)
-              setEmail('')
-              setShowEmailInput(false)
-            }}
-            className="text-[#009DE0] font-medium hover:underline"
-          >
-            {locale === 'ar' ? 'استخدام إيميل آخر' : 'Use a different email'}
-          </button>
-        </div>
-
-        {/* Back to Home */}
-        <Link
-          href={`/${locale}`}
-          className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
-        >
-          {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-          {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
-        </Link>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
       {/* Logo */}
@@ -335,11 +282,11 @@ export default function LoginPage() {
             )}
           </button>
 
-          {/* Email Button / Input */}
-          {!showEmailInput ? (
+          {/* Email Button / Form */}
+          {!showEmailForm ? (
             <button
               type="button"
-              onClick={() => setShowEmailInput(true)}
+              onClick={() => setShowEmailForm(true)}
               disabled={isLoading}
               className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
             >
@@ -348,29 +295,97 @@ export default function LoginPage() {
             </button>
           ) : (
             <form onSubmit={handleEmailLogin} className="space-y-3">
+              {/* Email Input */}
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
                 disabled={isEmailLoading}
-                className="w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
-                dir="ltr"
+                className={`w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
                 autoFocus
               />
+
+              {/* Password Input */}
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={locale === 'ar' ? 'كلمة المرور' : 'Password'}
+                  disabled={isEmailLoading}
+                  className={`w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-400 hover:text-slate-600`}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+
+              {/* Forgot Password Link */}
+              <div className="text-end">
+                <Link
+                  href={`/${locale}/auth/forgot-password`}
+                  className="text-sm text-[#009DE0] hover:underline"
+                >
+                  {locale === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
+                </Link>
+              </div>
+
+              {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isEmailLoading || !email}
+                disabled={isEmailLoading || !email || !password}
                 className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
               >
                 {isEmailLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  <span>{locale === 'ar' ? 'أرسل رابط الدخول' : 'Send Login Link'}</span>
+                  <span>{locale === 'ar' ? 'تسجيل الدخول' : 'Sign In'}</span>
                 )}
               </button>
             </form>
           )}
+        </div>
+
+        {/* Create Account Link */}
+        <div className="text-center mt-8">
+          <p className="text-slate-500">
+            {locale === 'ar' ? 'ليس لديك حساب؟' : "Don't have an account?"}{' '}
+            <Link
+              href={redirectTo ? `/${locale}/auth/register?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/register`}
+              className="text-[#009DE0] font-medium hover:underline"
+            >
+              {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
+            </Link>
+          </p>
+        </div>
+
+        {/* Divider */}
+        <div className="my-6 border-t border-slate-100"></div>
+
+        {/* Provider/Admin Links */}
+        <div className="text-center">
+          <p className="text-xs text-slate-400 mb-3">
+            {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
+          </p>
+          <div className="flex justify-center gap-6 text-sm">
+            <Link
+              href={`/${locale}/provider/login`}
+              className="text-[#009DE0] font-medium hover:underline"
+            >
+              {locale === 'ar' ? 'مقدمي الخدمة' : 'Providers'}
+            </Link>
+            <Link
+              href={`/${locale}/admin/login`}
+              className="text-slate-500 font-medium hover:underline"
+            >
+              {locale === 'ar' ? 'المشرفين' : 'Admins'}
+            </Link>
+          </div>
         </div>
 
         {/* Terms Notice */}
@@ -399,30 +414,6 @@ export default function LoginPage() {
             </>
           )}
         </p>
-
-        {/* Divider */}
-        <div className="my-8 border-t border-slate-100"></div>
-
-        {/* Provider/Admin Links */}
-        <div className="text-center">
-          <p className="text-xs text-slate-400 mb-3">
-            {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
-          </p>
-          <div className="flex justify-center gap-6 text-sm">
-            <Link
-              href={`/${locale}/provider/login`}
-              className="text-[#009DE0] font-medium hover:underline"
-            >
-              {locale === 'ar' ? 'مقدمي الخدمة' : 'Providers'}
-            </Link>
-            <Link
-              href={`/${locale}/admin/login`}
-              className="text-slate-500 font-medium hover:underline"
-            >
-              {locale === 'ar' ? 'المشرفين' : 'Admins'}
-            </Link>
-          </div>
-        </div>
       </div>
 
       {/* Back to Home */}
