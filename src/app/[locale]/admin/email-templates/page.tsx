@@ -26,6 +26,9 @@ import {
   Variable,
   Copy,
   Check,
+  Power,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -56,6 +59,7 @@ interface TemplateVersion {
 
 // Sample data for previewing templates
 const sampleData: Record<string, Record<string, string | number>> = {
+  // Merchant templates
   'merchant-welcome': {
     merchantName: 'أحمد محمد',
     storeName: 'مطاعم',
@@ -108,6 +112,92 @@ const sampleData: Record<string, Record<string, string | number>> = {
     suspensionReason: 'تلقينا عدة شكاوى من العملاء بخصوص جودة الطعام وتأخر التوصيل.',
     supportUrl: 'https://www.engezna.com/ar/provider/help',
   },
+  // Customer templates
+  'customer-order-confirmation': {
+    customerName: 'محمد علي',
+    orderNumber: '1234',
+    storeName: 'مطعم الشرق',
+    itemsCount: 3,
+    formattedAmount: '285.50 ج.م',
+    paymentMethod: 'الدفع عند الاستلام',
+    deliveryAddress: 'شارع التحرير، المنصورة، الدقهلية',
+    estimatedDelivery: '30-45 دقيقة',
+    orderUrl: 'https://www.engezna.com/ar/orders/1234',
+  },
+  'customer-order-delivered': {
+    customerName: 'محمد علي',
+    orderNumber: '1234',
+    storeName: 'مطعم الشرق',
+    deliveryTime: '12:45 م',
+    reviewUrl: 'https://www.engezna.com/ar/orders/1234/review',
+  },
+  'customer-order-shipped': {
+    customerName: 'محمد علي',
+    orderNumber: '1234',
+    storeName: 'مطعم الشرق',
+    driverName: 'أحمد السائق',
+    driverPhone: '01012345678',
+    estimatedArrival: '15 دقيقة',
+    trackingUrl: 'https://www.engezna.com/ar/orders/1234/track',
+  },
+  'customer-order-cancelled': {
+    customerName: 'محمد علي',
+    orderNumber: '1234',
+    storeName: 'مطعم الشرق',
+    cancellationReason: 'المتجر غير متاح حالياً',
+    refundMessage: 'سيتم إرجاع المبلغ خلال 3-5 أيام عمل',
+    reorderUrl: 'https://www.engezna.com/ar/store/el-sharq',
+  },
+  'password-reset': {
+    userName: 'محمد علي',
+    resetUrl: 'https://www.engezna.com/ar/auth/reset-password?token=abc123',
+    expiryTime: '60 دقيقة',
+  },
+  'email-verification': {
+    userName: 'محمد علي',
+    verificationUrl: 'https://www.engezna.com/ar/auth/verify-email?token=abc123',
+  },
+  'customer-welcome': {
+    customerName: 'محمد علي',
+    browseUrl: 'https://www.engezna.com/ar',
+  },
+  // Marketing templates
+  'promotional-offer': {
+    customerName: 'محمد علي',
+    offerTitle: 'عرض نهاية الأسبوع',
+    discountPercent: 25,
+    couponCode: 'WEEKEND25',
+    expiryDate: '31 يناير 2024',
+    offerDescription: 'استمتع بخصم 25% على جميع طلباتك من مطاعمنا المفضلة',
+    shopUrl: 'https://www.engezna.com/ar',
+    minimumOrder: '50 ج.م',
+    unsubscribeUrl: 'https://www.engezna.com/ar/unsubscribe?token=abc123',
+  },
+  'abandoned-cart': {
+    customerName: 'محمد علي',
+    itemsCount: 3,
+    storeName: 'مطعم الشرق',
+    formattedAmount: '285.50 ج.م',
+    cartUrl: 'https://www.engezna.com/ar/cart',
+    unsubscribeUrl: 'https://www.engezna.com/ar/unsubscribe?token=abc123',
+  },
+  'review-request': {
+    customerName: 'محمد علي',
+    storeName: 'مطعم الشرق',
+    orderNumber: '1234',
+    reviewUrl: 'https://www.engezna.com/ar/orders/1234/review',
+  },
+  // Admin templates
+  'admin-new-store-application': {
+    storeName: 'مطعم النيل',
+    merchantName: 'سامي محمود',
+    merchantEmail: 'sami@example.com',
+    merchantPhone: '01234567890',
+    city: 'المنصورة',
+    category: 'مطاعم',
+    submittedAt: '15 يناير 2024 - 10:30 ص',
+    reviewUrl: 'https://www.engezna.com/ar/admin/stores/pending/123',
+  },
 }
 
 const categoryLabels: Record<string, { ar: string; en: string }> = {
@@ -156,6 +246,9 @@ export default function AdminEmailTemplatesPage() {
 
   // Copy feedback
   const [copiedVar, setCopiedVar] = useState<string | null>(null)
+
+  // Toggle loading state
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   const loadTemplates = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     const { data, error } = await supabase
@@ -340,6 +433,21 @@ export default function AdminEmailTemplatesPage() {
     navigator.clipboard.writeText(`{{${variable}}}`)
     setCopiedVar(variable)
     setTimeout(() => setCopiedVar(null), 2000)
+  }
+
+  async function toggleTemplateStatus(template: EmailTemplate) {
+    setTogglingId(template.id)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('email_templates')
+      .update({ is_active: !template.is_active })
+      .eq('id', template.id)
+
+    if (!error) {
+      await loadTemplates(supabase)
+    }
+    setTogglingId(null)
   }
 
   if (loading) {
@@ -570,6 +678,35 @@ export default function AdminEmailTemplatesPage() {
                         >
                           <History className="w-4 h-4" />
                           {locale === 'ar' ? 'السجل' : 'History'}
+                        </Button>
+
+                        {/* Toggle Active/Inactive */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleTemplateStatus(template)}
+                          disabled={togglingId === template.id}
+                          className={`flex items-center gap-2 ${
+                            template.is_active
+                              ? 'hover:bg-red-50 hover:text-red-600 hover:border-red-200'
+                              : 'hover:bg-green-50 hover:text-green-600 hover:border-green-200'
+                          }`}
+                          title={template.is_active
+                            ? (locale === 'ar' ? 'إيقاف القالب' : 'Deactivate template')
+                            : (locale === 'ar' ? 'تفعيل القالب' : 'Activate template')
+                          }
+                        >
+                          {togglingId === template.id ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : template.is_active ? (
+                            <ToggleRight className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="w-4 h-4 text-slate-400" />
+                          )}
+                          {template.is_active
+                            ? (locale === 'ar' ? 'إيقاف' : 'Deactivate')
+                            : (locale === 'ar' ? 'تفعيل' : 'Activate')
+                          }
                         </Button>
                       </>
                     )}
