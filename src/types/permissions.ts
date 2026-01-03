@@ -35,7 +35,8 @@ export type ResourceCode =
   | 'settings'
   | 'activity_log'
   | 'roles'
-  | 'escalation_rules';
+  | 'escalation_rules'
+  | 'email_templates';
 
 // الإجراءات المتاحة
 export type ActionCode =
@@ -367,6 +368,12 @@ export const RESOURCE_CONFIG: Record<ResourceCode, {
     href: '/admin/escalation-rules',
     label: { ar: 'قواعد التصعيد', en: 'Escalation Rules' },
     category: 'system',
+  },
+  email_templates: {
+    icon: 'Mail',
+    href: '/admin/email-templates',
+    label: { ar: 'قوالب الإيميل', en: 'Email Templates' },
+    category: 'main',
   },
 };
 

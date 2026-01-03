@@ -27,6 +27,7 @@ import {
   Receipt,
   Image,
   Scale,
+  Mail,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import { usePermissions } from '@/lib/permissions/use-permissions'
@@ -164,6 +165,12 @@ export function AdminSidebar({
       path: `/${locale}/admin/banners`,
       badge: pendingBannerApprovals > 0 ? pendingBannerApprovals.toString() : undefined,
       resource: 'promotions',
+    },
+    {
+      icon: Mail,
+      label: { ar: 'قوالب الإيميل', en: 'Email Templates' },
+      path: `/${locale}/admin/email-templates`,
+      resource: 'email_templates',
     },
   ]
 
