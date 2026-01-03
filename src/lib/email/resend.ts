@@ -377,10 +377,11 @@ async function getTemplateFromDB(slug: string): Promise<EmailTemplate | null> {
   try {
     const supabase = getSupabaseClient()
     if (!supabase) {
-      console.warn('Supabase client not available, using code templates')
+      console.error('[getTemplateFromDB] Supabase client not available - check SUPABASE_SERVICE_ROLE_KEY env var')
       return null
     }
 
+    console.log(`[getTemplateFromDB] Querying template: ${slug}`)
     const { data, error } = await supabase
       .from('email_templates')
       .select('slug, subject, html_content, is_active')
@@ -388,14 +389,20 @@ async function getTemplateFromDB(slug: string): Promise<EmailTemplate | null> {
       .eq('is_active', true)
       .single()
 
-    if (error || !data) {
-      console.warn(`Template "${slug}" not found in DB or is inactive`)
+    if (error) {
+      console.error(`[getTemplateFromDB] Query error for "${slug}":`, error.message)
       return null
     }
 
+    if (!data) {
+      console.warn(`[getTemplateFromDB] Template "${slug}" not found in DB or is inactive`)
+      return null
+    }
+
+    console.log(`[getTemplateFromDB] Template "${slug}" found successfully`)
     return data
   } catch (error) {
-    console.error('Error fetching template from DB:', error)
+    console.error('[getTemplateFromDB] Error:', error)
     return null
   }
 }
@@ -469,18 +476,22 @@ async function sendTemplateEmail(
   variables: Record<string, string | number>,
   fallbackSubject: string
 ): Promise<SendEmailResult> {
+  console.log(`[sendTemplateEmail] Fetching template: ${slug}`)
   const dbTemplate = await getTemplateFromDB(slug)
 
   if (!dbTemplate) {
-    console.warn(`Template "${slug}" not available, email not sent`)
+    console.error(`[sendTemplateEmail] Template "${slug}" not available, email not sent`)
     return { success: false, error: `Template "${slug}" not found or inactive` }
   }
 
-  return sendEmail({
+  console.log(`[sendTemplateEmail] Template found, sending email to: ${to}`)
+  const result = await sendEmail({
     to,
     subject: replaceVariables(dbTemplate.subject, variables),
     html: replaceVariables(dbTemplate.html_content, variables),
   })
+  console.log(`[sendTemplateEmail] Email send result:`, result)
+  return result
 }
 
 // ============================================================================
