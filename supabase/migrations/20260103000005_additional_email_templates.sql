@@ -6,7 +6,7 @@
 -- =====================================================
 
 -- Customer: Refund Initiated
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'customer-refund-initiated',
   'إشعار بدء الاسترداد',
@@ -91,7 +91,7 @@ VALUES (
   updated_at = NOW();
 
 -- Customer: Refund Completed
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'customer-refund-completed',
   'تم اكتمال الاسترداد',
@@ -183,7 +183,7 @@ VALUES (
 -- =====================================================
 
 -- Merchant: Order Cancelled
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'merchant-order-cancelled',
   'إلغاء طلب للتاجر',
@@ -264,7 +264,7 @@ VALUES (
   updated_at = NOW();
 
 -- Merchant: Low Rating Alert
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'merchant-low-rating-alert',
   'تنبيه تقييم منخفض',
@@ -345,7 +345,7 @@ VALUES (
   updated_at = NOW();
 
 -- Merchant: New Review
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'merchant-new-review',
   'تقييم جديد',
@@ -425,7 +425,7 @@ VALUES (
   updated_at = NOW();
 
 -- Merchant: Store Reactivated
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'merchant-store-reactivated',
   'إعادة تفعيل المتجر',
@@ -508,7 +508,7 @@ VALUES (
 -- =====================================================
 
 -- Support: Ticket Created
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'ticket-created',
   'تأكيد إنشاء تذكرة دعم',
@@ -593,7 +593,7 @@ VALUES (
   updated_at = NOW();
 
 -- Support: Ticket Replied
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'ticket-replied',
   'رد على تذكرة الدعم',
@@ -670,7 +670,7 @@ VALUES (
   updated_at = NOW();
 
 -- Support: Ticket Resolved
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'ticket-resolved',
   'تم حل التذكرة',
@@ -764,7 +764,7 @@ VALUES (
   updated_at = NOW();
 
 -- Support: Dispute Opened
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'dispute-opened',
   'فتح نزاع جديد',
@@ -848,7 +848,7 @@ VALUES (
   updated_at = NOW();
 
 -- Support: Dispute Resolved
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'dispute-resolved',
   'تم حل النزاع',
@@ -935,7 +935,7 @@ VALUES (
 -- =====================================================
 
 -- Admin: Daily Report
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'admin-daily-report',
   'التقرير اليومي',
@@ -1032,7 +1032,7 @@ VALUES (
   updated_at = NOW();
 
 -- Admin: Escalation Alert
-INSERT INTO email_templates (slug, name, description, subject, html_content, variables, category, is_active)
+INSERT INTO email_templates (slug, name, description, subject, html_content, available_variables, category, is_active)
 VALUES (
   'admin-escalation-alert',
   'تنبيه تصعيد عاجل',
