@@ -174,8 +174,26 @@ export interface EmailVerificationData {
 
 export interface CustomerWelcomeData {
   to: string
-  customerName: string
+  userName: string
   browseUrl: string
+  supportUrl?: string
+}
+
+export interface CustomerRefundInitiatedData {
+  to: string
+  userName: string
+  orderNumber: string
+  refundAmount: number
+  refundReason: string
+  trackUrl: string
+}
+
+export interface CustomerRefundCompletedData {
+  to: string
+  userName: string
+  orderNumber: string
+  refundAmount: number
+  refundMethod: string
 }
 
 // ============================================================================
@@ -227,6 +245,110 @@ export interface AdminNewStoreApplicationData {
   category: string
   submittedAt: string
   reviewUrl: string
+}
+
+export interface AdminDailyReportData {
+  to: string | string[]
+  reportDate: string
+  totalOrders: number
+  totalRevenue: number
+  newCustomers: number
+  newStores: number
+  cancelledOrders: number
+  refundRequests: number
+  avgOrderValue: number
+  dashboardUrl: string
+}
+
+export interface AdminEscalationAlertData {
+  to: string | string[]
+  alertType: string
+  alertDetails: string
+  priority: string
+  actionUrl: string
+}
+
+// ============================================================================
+// Merchant Additional Email Data Types
+// ============================================================================
+
+export interface MerchantOrderCancelledData {
+  to: string
+  storeName: string
+  orderNumber: string
+  cancellationReason: string
+  cancelledBy: string
+  dashboardUrl: string
+}
+
+export interface MerchantLowRatingAlertData {
+  to: string
+  storeName: string
+  rating: number
+  reviewComment: string
+  reviewsUrl: string
+}
+
+export interface MerchantNewReviewData {
+  to: string
+  storeName: string
+  rating: number
+  customerName: string
+  reviewComment: string
+  reviewsUrl: string
+}
+
+export interface MerchantStoreReactivatedData {
+  to: string
+  storeName: string
+  dashboardUrl: string
+}
+
+// ============================================================================
+// Support Email Data Types
+// ============================================================================
+
+export interface TicketCreatedData {
+  to: string
+  userName: string
+  ticketNumber: string
+  ticketSubject: string
+  ticketUrl: string
+}
+
+export interface TicketRepliedData {
+  to: string
+  userName: string
+  ticketNumber: string
+  agentName: string
+  replyPreview: string
+  ticketUrl: string
+}
+
+export interface TicketResolvedData {
+  to: string
+  userName: string
+  ticketNumber: string
+  ticketUrl: string
+  feedbackUrl: string
+}
+
+export interface DisputeOpenedData {
+  to: string
+  userName: string
+  orderNumber: string
+  disputeType: string
+  disputeDescription: string
+  disputeUrl: string
+}
+
+export interface DisputeResolvedData {
+  to: string
+  userName: string
+  orderNumber: string
+  resolution: string
+  resolutionDetails: string
+  disputeUrl: string
 }
 
 // ============================================================================
@@ -657,8 +779,9 @@ export async function sendEmailVerificationEmail(data: EmailVerificationData): P
  */
 export async function sendCustomerWelcomeEmail(data: CustomerWelcomeData): Promise<SendEmailResult> {
   const variables = {
-    customerName: data.customerName,
+    userName: data.userName,
     browseUrl: data.browseUrl,
+    supportUrl: data.supportUrl || data.browseUrl + '/support',
   }
 
   return sendTemplateEmail(
@@ -666,6 +789,49 @@ export async function sendCustomerWelcomeEmail(data: CustomerWelcomeData): Promi
     data.to,
     variables,
     'أهلاً بك في إنجزنا! 🎉'
+  )
+}
+
+/**
+ * Send refund initiated notification to customer
+ */
+export async function sendCustomerRefundInitiatedEmail(data: CustomerRefundInitiatedData): Promise<SendEmailResult> {
+  const formattedAmount = formatCurrency(data.refundAmount)
+
+  const variables = {
+    userName: data.userName,
+    orderNumber: data.orderNumber,
+    refundAmount: formattedAmount,
+    refundReason: data.refundReason,
+    trackUrl: data.trackUrl,
+  }
+
+  return sendTemplateEmail(
+    'customer-refund-initiated',
+    data.to,
+    variables,
+    `تم استلام طلب الاسترداد - طلب #${data.orderNumber}`
+  )
+}
+
+/**
+ * Send refund completed notification to customer
+ */
+export async function sendCustomerRefundCompletedEmail(data: CustomerRefundCompletedData): Promise<SendEmailResult> {
+  const formattedAmount = formatCurrency(data.refundAmount)
+
+  const variables = {
+    userName: data.userName,
+    orderNumber: data.orderNumber,
+    refundAmount: formattedAmount,
+    refundMethod: data.refundMethod,
+  }
+
+  return sendTemplateEmail(
+    'customer-refund-completed',
+    data.to,
+    variables,
+    `تم استرداد المبلغ بنجاح - طلب #${data.orderNumber}`
   )
 }
 
@@ -763,6 +929,234 @@ export async function sendAdminNewStoreApplicationEmail(data: AdminNewStoreAppli
     data.to,
     variables,
     `🆕 طلب متجر جديد: ${data.storeName} - يحتاج مراجعة`
+  )
+}
+
+/**
+ * Send daily report to admin
+ */
+export async function sendAdminDailyReportEmail(data: AdminDailyReportData): Promise<SendEmailResult> {
+  const formattedRevenue = formatCurrency(data.totalRevenue)
+  const formattedAvgOrder = formatCurrency(data.avgOrderValue)
+
+  const variables = {
+    reportDate: data.reportDate,
+    totalOrders: data.totalOrders,
+    totalRevenue: formattedRevenue,
+    newCustomers: data.newCustomers,
+    newStores: data.newStores,
+    cancelledOrders: data.cancelledOrders,
+    refundRequests: data.refundRequests,
+    avgOrderValue: formattedAvgOrder,
+    dashboardUrl: data.dashboardUrl,
+  }
+
+  return sendTemplateEmail(
+    'admin-daily-report',
+    data.to,
+    variables,
+    `📊 التقرير اليومي - ${data.reportDate}`
+  )
+}
+
+/**
+ * Send escalation alert to admin
+ */
+export async function sendAdminEscalationAlertEmail(data: AdminEscalationAlertData): Promise<SendEmailResult> {
+  const variables = {
+    alertType: data.alertType,
+    alertDetails: data.alertDetails,
+    priority: data.priority,
+    actionUrl: data.actionUrl,
+  }
+
+  return sendTemplateEmail(
+    'admin-escalation-alert',
+    data.to,
+    variables,
+    `🚨 تنبيه عاجل: ${data.alertType}`
+  )
+}
+
+// ============================================================================
+// Merchant Additional Email Functions
+// ============================================================================
+
+/**
+ * Send order cancelled notification to merchant
+ */
+export async function sendMerchantOrderCancelledEmail(data: MerchantOrderCancelledData): Promise<SendEmailResult> {
+  const variables = {
+    storeName: data.storeName,
+    orderNumber: data.orderNumber,
+    cancellationReason: data.cancellationReason,
+    cancelledBy: data.cancelledBy,
+    dashboardUrl: data.dashboardUrl,
+  }
+
+  return sendTemplateEmail(
+    'merchant-order-cancelled',
+    data.to,
+    variables,
+    `تم إلغاء الطلب #${data.orderNumber}`
+  )
+}
+
+/**
+ * Send low rating alert to merchant
+ */
+export async function sendMerchantLowRatingAlertEmail(data: MerchantLowRatingAlertData): Promise<SendEmailResult> {
+  const variables = {
+    storeName: data.storeName,
+    rating: data.rating,
+    reviewComment: data.reviewComment,
+    reviewsUrl: data.reviewsUrl,
+  }
+
+  return sendTemplateEmail(
+    'merchant-low-rating-alert',
+    data.to,
+    variables,
+    '⚠️ تنبيه: تقييم جديد منخفض لمتجرك'
+  )
+}
+
+/**
+ * Send new review notification to merchant
+ */
+export async function sendMerchantNewReviewEmail(data: MerchantNewReviewData): Promise<SendEmailResult> {
+  const variables = {
+    storeName: data.storeName,
+    rating: data.rating,
+    customerName: data.customerName,
+    reviewComment: data.reviewComment,
+    reviewsUrl: data.reviewsUrl,
+  }
+
+  return sendTemplateEmail(
+    'merchant-new-review',
+    data.to,
+    variables,
+    `⭐ تقييم جديد لمتجرك ${data.storeName}`
+  )
+}
+
+/**
+ * Send store reactivated notification to merchant
+ */
+export async function sendMerchantStoreReactivatedEmail(data: MerchantStoreReactivatedData): Promise<SendEmailResult> {
+  const variables = {
+    storeName: data.storeName,
+    dashboardUrl: data.dashboardUrl,
+  }
+
+  return sendTemplateEmail(
+    'merchant-store-reactivated',
+    data.to,
+    variables,
+    '🎉 تم إعادة تفعيل متجرك على إنجزنا!'
+  )
+}
+
+// ============================================================================
+// Support Email Functions
+// ============================================================================
+
+/**
+ * Send ticket created confirmation to user
+ */
+export async function sendTicketCreatedEmail(data: TicketCreatedData): Promise<SendEmailResult> {
+  const variables = {
+    userName: data.userName,
+    ticketNumber: data.ticketNumber,
+    ticketSubject: data.ticketSubject,
+    ticketUrl: data.ticketUrl,
+  }
+
+  return sendTemplateEmail(
+    'ticket-created',
+    data.to,
+    variables,
+    `تم استلام طلب الدعم #${data.ticketNumber}`
+  )
+}
+
+/**
+ * Send ticket reply notification to user
+ */
+export async function sendTicketRepliedEmail(data: TicketRepliedData): Promise<SendEmailResult> {
+  const variables = {
+    userName: data.userName,
+    ticketNumber: data.ticketNumber,
+    agentName: data.agentName,
+    replyPreview: data.replyPreview,
+    ticketUrl: data.ticketUrl,
+  }
+
+  return sendTemplateEmail(
+    'ticket-replied',
+    data.to,
+    variables,
+    `رد جديد على طلب الدعم #${data.ticketNumber}`
+  )
+}
+
+/**
+ * Send ticket resolved notification to user
+ */
+export async function sendTicketResolvedEmail(data: TicketResolvedData): Promise<SendEmailResult> {
+  const variables = {
+    userName: data.userName,
+    ticketNumber: data.ticketNumber,
+    ticketUrl: data.ticketUrl,
+    feedbackUrl: data.feedbackUrl,
+  }
+
+  return sendTemplateEmail(
+    'ticket-resolved',
+    data.to,
+    variables,
+    `✓ تم حل طلب الدعم #${data.ticketNumber}`
+  )
+}
+
+/**
+ * Send dispute opened notification
+ */
+export async function sendDisputeOpenedEmail(data: DisputeOpenedData): Promise<SendEmailResult> {
+  const variables = {
+    userName: data.userName,
+    orderNumber: data.orderNumber,
+    disputeType: data.disputeType,
+    disputeDescription: data.disputeDescription,
+    disputeUrl: data.disputeUrl,
+  }
+
+  return sendTemplateEmail(
+    'dispute-opened',
+    data.to,
+    variables,
+    `تم فتح نزاع جديد - الطلب #${data.orderNumber}`
+  )
+}
+
+/**
+ * Send dispute resolved notification
+ */
+export async function sendDisputeResolvedEmail(data: DisputeResolvedData): Promise<SendEmailResult> {
+  const variables = {
+    userName: data.userName,
+    orderNumber: data.orderNumber,
+    resolution: data.resolution,
+    resolutionDetails: data.resolutionDetails,
+    disputeUrl: data.disputeUrl,
+  }
+
+  return sendTemplateEmail(
+    'dispute-resolved',
+    data.to,
+    variables,
+    `✓ تم حل النزاع - الطلب #${data.orderNumber}`
   )
 }
 
