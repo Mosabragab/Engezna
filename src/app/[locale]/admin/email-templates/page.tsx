@@ -726,9 +726,9 @@ export default function AdminEmailTemplatesPage() {
         </div>
       </main>
 
-      {/* Preview Modal */}
+      {/* Preview Modal - z-[60] to appear above edit modal */}
       {showPreviewModal && previewTemplate && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full my-8">
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
               <div>
