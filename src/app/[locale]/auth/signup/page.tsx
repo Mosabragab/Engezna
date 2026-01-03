@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { ArrowLeft, ArrowRight, Loader2, Mail, CheckCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, Mail } from 'lucide-react'
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 import { useGoogleLogin } from '@react-oauth/google'
 
@@ -34,17 +34,12 @@ const GoogleIcon = () => (
 
 export default function SignupPage() {
   const locale = useLocale()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect')
 
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [isEmailLoading, setIsEmailLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Email Magic Link states
-  const [showEmailInput, setShowEmailInput] = useState(false)
-  const [email, setEmail] = useState('')
-  const [emailSent, setEmailSent] = useState(false)
 
   // Handle Google signup with authorization code flow
   const handleGoogleSignup = useGoogleLogin({
@@ -97,48 +92,12 @@ export default function SignupPage() {
     },
   })
 
-  // Handle Email Magic Link
-  const handleEmailSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!email || !email.includes('@')) {
-      setError(locale === 'ar' ? 'يرجى إدخال إيميل صحيح' : 'Please enter a valid email')
-      return
-    }
-
-    setIsEmailLoading(true)
-    setError(null)
-
-    try {
-      const supabase = createClient()
-
-      // Build the redirect URL for magic link
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-      const redirectUrl = redirectTo
-        ? `${siteUrl}/${locale}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
-        : `${siteUrl}/${locale}/auth/callback`
-
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
-      })
-
-      if (otpError) {
-        console.error('OTP error:', otpError)
-        setError(otpError.message)
-        setIsEmailLoading(false)
-        return
-      }
-
-      // Success - show confirmation message
-      setEmailSent(true)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
-    } finally {
-      setIsEmailLoading(false)
-    }
+  // Handle Email Signup - redirect to register page
+  const handleEmailSignup = () => {
+    const registerUrl = redirectTo
+      ? `/${locale}/auth/register?redirect=${encodeURIComponent(redirectTo)}`
+      : `/${locale}/auth/register`
+    router.push(registerUrl)
   }
 
   // Common post-signup handler
@@ -184,67 +143,6 @@ export default function SignupPage() {
   }
 
   const isRTL = locale === 'ar'
-  const isLoading = isGoogleLoading || isEmailLoading
-
-  // Email sent success state
-  if (emailSent) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
-        {/* Logo */}
-        <Link href={`/${locale}`} className="mb-12">
-          <EngeznaLogo size="lg" static showPen={false} />
-        </Link>
-
-        {/* Success Message */}
-        <div className="w-full max-w-[340px] text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-
-          <h1 className="text-2xl font-bold text-[#009DE0] mb-3">
-            {locale === 'ar' ? 'تفقد الإيميل' : 'Check Your Email'}
-          </h1>
-
-          <p className="text-slate-500 mb-2">
-            {locale === 'ar'
-              ? 'أرسلنا رابط التسجيل إلى:'
-              : 'We sent a signup link to:'}
-          </p>
-
-          <p className="text-[#0F172A] font-medium mb-6" dir="ltr">
-            {email}
-          </p>
-
-          <p className="text-slate-400 text-sm mb-8">
-            {locale === 'ar'
-              ? 'اضغط على الرابط في الإيميل لإكمال التسجيل'
-              : 'Click the link in the email to complete your registration'}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              setEmailSent(false)
-              setEmail('')
-              setShowEmailInput(false)
-            }}
-            className="text-[#009DE0] font-medium hover:underline"
-          >
-            {locale === 'ar' ? 'استخدام إيميل آخر' : 'Use a different email'}
-          </button>
-        </div>
-
-        {/* Back to Home */}
-        <Link
-          href={`/${locale}`}
-          className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
-        >
-          {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
-          {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
-        </Link>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
@@ -278,7 +176,7 @@ export default function SignupPage() {
           <button
             type="button"
             onClick={() => handleGoogleSignup()}
-            disabled={isLoading}
+            disabled={isGoogleLoading}
             className="w-full h-[52px] flex items-center justify-center gap-3 bg-white border border-slate-300 rounded-xl text-[#0F172A] font-medium transition-all hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] disabled:opacity-50"
           >
             {isGoogleLoading ? (
@@ -291,42 +189,16 @@ export default function SignupPage() {
             )}
           </button>
 
-          {/* Email Button / Input */}
-          {!showEmailInput ? (
-            <button
-              type="button"
-              onClick={() => setShowEmailInput(true)}
-              disabled={isLoading}
-              className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
-            >
-              <Mail className="w-5 h-5" />
-              <span>{locale === 'ar' ? 'التسجيل عبر الإيميل' : 'Sign up with Email'}</span>
-            </button>
-          ) : (
-            <form onSubmit={handleEmailSignup} className="space-y-3">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
-                disabled={isEmailLoading}
-                className="w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
-                dir="ltr"
-                autoFocus
-              />
-              <button
-                type="submit"
-                disabled={isEmailLoading || !email}
-                className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
-              >
-                {isEmailLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <span>{locale === 'ar' ? 'أرسل رابط التسجيل' : 'Send Signup Link'}</span>
-                )}
-              </button>
-            </form>
-          )}
+          {/* Email Button - Redirects to register page */}
+          <button
+            type="button"
+            onClick={handleEmailSignup}
+            disabled={isGoogleLoading}
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
+          >
+            <Mail className="w-5 h-5" />
+            <span>{locale === 'ar' ? 'التسجيل عبر الإيميل' : 'Sign up with Email'}</span>
+          </button>
         </div>
 
         {/* Terms Notice */}
