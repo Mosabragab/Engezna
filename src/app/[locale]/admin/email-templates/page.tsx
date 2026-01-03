@@ -392,6 +392,7 @@ export default function AdminEmailTemplatesPage() {
       .update({
         subject: formData.subject,
         html_content: formData.html_content,
+        updated_by: user?.id,
       })
       .eq('id', editingTemplate.id)
 
