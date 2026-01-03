@@ -302,8 +302,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
                 disabled={isEmailLoading}
-                className="w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
-                dir="ltr"
+                className={`w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
                 autoFocus
               />
 
@@ -315,8 +314,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={locale === 'ar' ? 'كلمة المرور' : 'Password'}
                   disabled={isEmailLoading}
-                  className="w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
-                  dir="ltr"
+                  className={`w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
                 <button
                   type="button"
@@ -353,6 +351,43 @@ export default function LoginPage() {
           )}
         </div>
 
+        {/* Create Account Link */}
+        <div className="text-center mt-8">
+          <p className="text-slate-500">
+            {locale === 'ar' ? 'ليس لديك حساب؟' : "Don't have an account?"}{' '}
+            <Link
+              href={redirectTo ? `/${locale}/auth/register?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/register`}
+              className="text-[#009DE0] font-medium hover:underline"
+            >
+              {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
+            </Link>
+          </p>
+        </div>
+
+        {/* Divider */}
+        <div className="my-6 border-t border-slate-100"></div>
+
+        {/* Provider/Admin Links */}
+        <div className="text-center">
+          <p className="text-xs text-slate-400 mb-3">
+            {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
+          </p>
+          <div className="flex justify-center gap-6 text-sm">
+            <Link
+              href={`/${locale}/provider/login`}
+              className="text-[#009DE0] font-medium hover:underline"
+            >
+              {locale === 'ar' ? 'مقدمي الخدمة' : 'Providers'}
+            </Link>
+            <Link
+              href={`/${locale}/admin/login`}
+              className="text-slate-500 font-medium hover:underline"
+            >
+              {locale === 'ar' ? 'المشرفين' : 'Admins'}
+            </Link>
+          </div>
+        </div>
+
         {/* Terms Notice */}
         <p className="text-xs text-slate-400 text-center mt-8 leading-relaxed">
           {locale === 'ar' ? (
@@ -379,43 +414,6 @@ export default function LoginPage() {
             </>
           )}
         </p>
-
-        {/* Divider */}
-        <div className="my-8 border-t border-slate-100"></div>
-
-        {/* Create Account Link */}
-        <div className="text-center mb-6">
-          <p className="text-slate-500">
-            {locale === 'ar' ? 'ليس لديك حساب؟' : "Don't have an account?"}{' '}
-            <Link
-              href={redirectTo ? `/${locale}/auth/register?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/register`}
-              className="text-[#009DE0] font-medium hover:underline"
-            >
-              {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
-            </Link>
-          </p>
-        </div>
-
-        {/* Provider/Admin Links */}
-        <div className="text-center">
-          <p className="text-xs text-slate-400 mb-3">
-            {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
-          </p>
-          <div className="flex justify-center gap-6 text-sm">
-            <Link
-              href={`/${locale}/provider/login`}
-              className="text-[#009DE0] font-medium hover:underline"
-            >
-              {locale === 'ar' ? 'مقدمي الخدمة' : 'Providers'}
-            </Link>
-            <Link
-              href={`/${locale}/admin/login`}
-              className="text-slate-500 font-medium hover:underline"
-            >
-              {locale === 'ar' ? 'المشرفين' : 'Admins'}
-            </Link>
-          </div>
-        </div>
       </div>
 
       {/* Back to Home */}
