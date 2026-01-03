@@ -184,10 +184,10 @@ CREATE POLICY "Admin users can view email_template_versions"
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'permissions') THEN
-    INSERT INTO permissions (code, name, description, category)
+    INSERT INTO permissions (code, resource_code, action_code, name_ar, name_en, description_ar, description_en, severity)
     VALUES
-      ('email_templates.view', 'عرض قوالب الإيميل', 'عرض جميع قوالب البريد الإلكتروني', 'email'),
-      ('email_templates.edit', 'تعديل قوالب الإيميل', 'تعديل قوالب البريد الإلكتروني', 'email')
+      ('email_templates.view', 'email_templates', 'view', 'عرض قوالب الإيميل', 'View Email Templates', 'عرض جميع قوالب البريد الإلكتروني', 'View all email templates', 'low'),
+      ('email_templates.edit', 'email_templates', 'edit', 'تعديل قوالب الإيميل', 'Edit Email Templates', 'تعديل قوالب البريد الإلكتروني', 'Edit email templates', 'medium')
     ON CONFLICT (code) DO NOTHING;
   END IF;
 END $$;
