@@ -16,7 +16,7 @@ function getResendClient(): Resend {
 }
 
 // Email sender configuration
-const FROM_EMAIL = 'Engezna <noreply@engezna.com>'
+const FROM_EMAIL = 'إنجزنا <noreply@engezna.com>'
 const SUPPORT_EMAIL = 'support@engezna.com'
 
 // ============================================================================
@@ -790,6 +790,8 @@ export async function sendEmailVerificationEmail(data: EmailVerificationData): P
  */
 export async function sendCustomerWelcomeEmail(data: CustomerWelcomeData): Promise<SendEmailResult> {
   const variables = {
+    // Template uses {{customerName}} - map from userName for consistency
+    customerName: data.userName,
     userName: data.userName,
     browseUrl: data.browseUrl,
     supportUrl: data.supportUrl || data.browseUrl + '/support',
