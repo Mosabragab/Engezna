@@ -584,8 +584,7 @@ export default function RegisterPage() {
                 placeholder={locale === 'ar' ? '8 أحرف على الأقل' : 'At least 8 characters'}
                 {...register('password')}
                 disabled={isLoading}
-                className={`h-[44px] pe-10 ${errors.password ? 'border-red-300' : ''}`}
-                dir="ltr"
+                className={`h-[44px] pe-10 ${errors.password ? 'border-red-300' : ''} ${isRTL ? 'text-right' : 'text-left'}`}
               />
               <button
                 type="button"
@@ -614,8 +613,7 @@ export default function RegisterPage() {
                 placeholder={locale === 'ar' ? 'أعد كتابة كلمة المرور' : 'Re-enter password'}
                 {...register('confirmPassword')}
                 disabled={isLoading}
-                className={`h-[44px] pe-10 ${errors.confirmPassword ? 'border-red-300' : ''}`}
-                dir="ltr"
+                className={`h-[44px] pe-10 ${errors.confirmPassword ? 'border-red-300' : ''} ${isRTL ? 'text-right' : 'text-left'}`}
               />
               <button
                 type="button"
