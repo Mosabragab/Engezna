@@ -76,8 +76,6 @@ const partnerSignupSchema = z.object({
   partnerRole: z.string().min(1, 'Please select your role'),
   governorateId: z.string().min(1, 'Please select your governorate'),
   cityId: z.string().optional(),
-  customCityNameAr: z.string().optional(),
-  customCityNameEn: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -98,7 +96,6 @@ export default function PartnerRegisterPage() {
   const [loadingGovernorates, setLoadingGovernorates] = useState(true)
   const [cities, setCities] = useState<City[]>([])
   const [loadingCities, setLoadingCities] = useState(false)
-  const [isAddingNewCity, setIsAddingNewCity] = useState(false)
 
   const {
     register,
@@ -114,8 +111,6 @@ export default function PartnerRegisterPage() {
       partnerRole: '',
       governorateId: '',
       cityId: '',
-      customCityNameAr: '',
-      customCityNameEn: '',
     }
   })
 
@@ -149,7 +144,6 @@ export default function PartnerRegisterPage() {
     if (!governorateId) {
       setCities([])
       setValue('cityId', '')
-      setIsAddingNewCity(false)
       return
     }
 
@@ -203,11 +197,6 @@ export default function PartnerRegisterPage() {
           businessCategory: data.businessCategory,
           partnerRole: data.partnerRole,
           locale,
-          // Custom city data if adding new city
-          ...(isAddingNewCity && {
-            customCityNameAr: data.customCityNameAr,
-            customCityNameEn: data.customCityNameEn,
-          }),
         }),
       })
 
@@ -490,80 +479,29 @@ export default function PartnerRegisterPage() {
                       <MapPin className="w-4 h-4 text-primary" />
                       {locale === 'ar' ? 'المدينة' : 'City'}
                     </Label>
-
-                    {!isAddingNewCity ? (
-                      <>
-                        <div className="relative">
-                          <select
-                            value={cityId}
-                            onChange={(e) => {
-                              if (e.target.value === 'ADD_NEW') {
-                                setIsAddingNewCity(true)
-                                setValue('cityId', '')
-                              } else {
-                                setValue('cityId', e.target.value)
-                              }
-                            }}
-                            disabled={isLoading || loadingCities}
-                            className={`w-full h-10 px-3 py-2 text-sm rounded-md border bg-background appearance-none cursor-pointer border-input
-                              focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
-                              disabled:cursor-not-allowed disabled:opacity-50`}
-                          >
-                            <option value="">
-                              {loadingCities
-                                ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
-                                : (locale === 'ar' ? 'اختر المدينة' : 'Select city')
-                              }
-                            </option>
-                            {cities.map((city) => (
-                              <option key={city.id} value={city.id}>
-                                {locale === 'ar' ? city.name_ar : city.name_en}
-                              </option>
-                            ))}
-                            <option value="ADD_NEW" className="font-medium text-primary">
-                              ➕ {locale === 'ar' ? 'أضف مدينتك' : 'Add your city'}
-                            </option>
-                          </select>
-                          <ChevronDown className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none`} />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-slate-700">
-                            {locale === 'ar' ? 'إضافة مدينة جديدة' : 'Add new city'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsAddingNewCity(false)
-                              setValue('customCityNameAr', '')
-                              setValue('customCityNameEn', '')
-                            }}
-                            className="text-xs text-primary hover:underline"
-                          >
-                            {locale === 'ar' ? 'إلغاء' : 'Cancel'}
-                          </button>
-                        </div>
-                        <Input
-                          placeholder={locale === 'ar' ? 'اسم المدينة بالعربية' : 'City name in Arabic'}
-                          {...register('customCityNameAr')}
-                          disabled={isLoading}
-                          dir="rtl"
-                        />
-                        <Input
-                          placeholder={locale === 'ar' ? 'اسم المدينة بالإنجليزية' : 'City name in English'}
-                          {...register('customCityNameEn')}
-                          disabled={isLoading}
-                          dir="ltr"
-                        />
-                        <p className="text-xs text-amber-600">
-                          {locale === 'ar'
-                            ? 'سيتم مراجعة المدينة من قبل الإدارة قبل تفعيلها'
-                            : 'City will be reviewed by admin before activation'}
-                        </p>
-                      </div>
-                    )}
+                    <div className="relative">
+                      <select
+                        value={cityId}
+                        onChange={(e) => setValue('cityId', e.target.value)}
+                        disabled={isLoading || loadingCities}
+                        className={`w-full h-10 px-3 py-2 text-sm rounded-md border bg-background appearance-none cursor-pointer border-input
+                          focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
+                          disabled:cursor-not-allowed disabled:opacity-50`}
+                      >
+                        <option value="">
+                          {loadingCities
+                            ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
+                            : (locale === 'ar' ? 'اختر المدينة' : 'Select city')
+                          }
+                        </option>
+                        {cities.map((city) => (
+                          <option key={city.id} value={city.id}>
+                            {locale === 'ar' ? city.name_ar : city.name_en}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none`} />
+                    </div>
                   </div>
                 )}
 

@@ -29,9 +29,6 @@ interface PartnerRegisterRequest {
   businessCategory: string
   partnerRole: string
   locale: string
-  // Custom city fields (when adding a new city)
-  customCityNameAr?: string
-  customCityNameEn?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -47,8 +44,6 @@ export async function POST(request: NextRequest) {
       businessCategory,
       partnerRole,
       locale = 'ar',
-      customCityNameAr,
-      customCityNameEn,
     } = body
 
     // Validate required fields
@@ -115,30 +110,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Handle custom city creation if provided
-    let finalCityId = cityId
-    if (customCityNameAr && customCityNameEn) {
-      const { data: newCity, error: cityError } = await supabase
-        .from('cities')
-        .insert({
-          governorate_id: governorateId,
-          name_ar: customCityNameAr,
-          name_en: customCityNameEn,
-          is_active: false, // Needs admin approval
-        })
-        .select('id')
-        .single()
-
-      if (cityError) {
-        console.error('City creation error:', cityError)
-        return NextResponse.json(
-          { error: locale === 'ar' ? 'حدث خطأ أثناء إضافة المدينة' : 'Error adding city' },
-          { status: 500 }
-        )
-      }
-      finalCityId = newCity.id
-    }
-
     // Get the site URL for verification link
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.engezna.com'
 
@@ -185,7 +156,7 @@ export async function POST(request: NextRequest) {
       full_name: fullName,
       phone,
       governorate_id: governorateId,
-      city_id: finalCityId || null,
+      city_id: cityId || null,
       role: 'provider_owner',
       partner_role: partnerRole,
       is_active: true,
@@ -228,7 +199,7 @@ export async function POST(request: NextRequest) {
       delivery_fee: 0,
       status: 'incomplete',
       governorate_id: governorateId,
-      city_id: finalCityId || null,
+      city_id: cityId || null,
     })
 
     if (providerError) {
