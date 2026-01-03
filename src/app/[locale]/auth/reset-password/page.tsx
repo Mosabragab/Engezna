@@ -1,80 +1,79 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useTranslations, useLocale } from 'next-intl'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { useSearchParams } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import Link from 'next/link'
-import { CheckCircle2, AlertCircle, KeyRound, Eye, EyeOff } from 'lucide-react'
-
-// Form validation schema
-const resetPasswordSchema = z.object({
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-})
-
-type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
+import { ArrowLeft, ArrowRight, Loader2, Lock, CheckCircle, Eye, EyeOff } from 'lucide-react'
 
 export default function ResetPasswordPage() {
-  const t = useTranslations('auth.resetPassword')
   const locale = useLocale()
-  const router = useRouter()
+  const searchParams = useSearchParams()
+  const isRTL = locale === 'ar'
+
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [isValidSession, setIsValidSession] = useState<boolean | null>(null)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ResetPasswordFormData>({
-    resolver: zodResolver(resetPasswordSchema),
-  })
+  const [isValidSession, setIsValidSession] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
 
   // Check if user has a valid recovery session
   useEffect(() => {
-    const checkSession = async () => {
+    async function checkSession() {
       const supabase = createClient()
+      
+      // Check for hash fragment (Supabase sends recovery link with hash)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = hashParams.get('access_token')
+      const type = hashParams.get('type')
 
-      // Get session - if user clicked the reset link, they should have a session
-      const { data: { session } } = await supabase.auth.getSession()
-
-      if (session) {
-        setIsValidSession(true)
-      } else {
-        // Listen for auth state changes (user might be redirected with tokens in URL)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
-            setIsValidSession(true)
-          }
+      if (accessToken && type === 'recovery') {
+        // Set the session from the recovery token
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: hashParams.get('refresh_token') || '',
         })
 
-        // If no session after a short delay, show invalid link
-        setTimeout(() => {
-          setIsValidSession(prev => prev === null ? false : prev)
-        }, 2000)
-
-        return () => subscription.unsubscribe()
+        if (!error) {
+          setIsValidSession(true)
+        } else {
+          setError(locale === 'ar' ? 'رابط غير صالح أو منتهي الصلاحية' : 'Invalid or expired link')
+        }
+      } else {
+        // Check if there's an existing session
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          setIsValidSession(true)
+        } else {
+          setError(locale === 'ar' ? 'رابط غير صالح أو منتهي الصلاحية' : 'Invalid or expired link')
+        }
       }
+
+      setCheckingSession(false)
     }
 
     checkSession()
-  }, [])
+  }, [locale])
 
-  const onSubmit = async (data: ResetPasswordFormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (password.length < 8) {
+      setError(locale === 'ar' ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError(locale === 'ar' ? 'كلمة المرور غير متطابقة' : 'Passwords do not match')
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
@@ -82,21 +81,16 @@ export default function ResetPasswordPage() {
       const supabase = createClient()
 
       const { error: updateError } = await supabase.auth.updateUser({
-        password: data.password
+        password: password,
       })
 
       if (updateError) {
+        console.error('Update password error:', updateError)
         setError(updateError.message)
         return
       }
 
       setSuccess(true)
-
-      // Sign out and redirect to login after 3 seconds
-      setTimeout(async () => {
-        await supabase.auth.signOut()
-        router.push(`/${locale}/auth/login`)
-      }, 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
@@ -105,42 +99,16 @@ export default function ResetPasswordPage() {
   }
 
   // Loading state while checking session
-  if (isValidSession === null) {
+  if (checkingSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  // Invalid or expired link
-  if (isValidSession === false) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
-                <AlertCircle className="w-8 h-8 text-destructive" />
-              </div>
-              <h2 className="text-2xl font-bold">{t('invalidLink')}</h2>
-              <p className="text-muted-foreground">{t('invalidLinkMessage')}</p>
-              <div className="pt-4">
-                <Link href={`/${locale}/auth/forgot-password`}>
-                  <Button className="w-full">
-                    {t('requestNewLink')}
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
+        <Link href={`/${locale}`} className="mb-12">
+          <EngeznaLogo size="lg" static showPen={false} />
+        </Link>
+        <Loader2 className="w-8 h-8 animate-spin text-[#009DE0]" />
+        <p className="mt-4 text-slate-500">
+          {locale === 'ar' ? 'جاري التحقق...' : 'Verifying...'}
+        </p>
       </div>
     )
   }
@@ -148,111 +116,186 @@ export default function ResetPasswordPage() {
   // Success state
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold">{t('successTitle')}</h2>
-              <p className="text-muted-foreground">{t('successMessage')}</p>
-              <div className="pt-4">
-                <Link href={`/${locale}/auth/login`}>
-                  <Button className="w-full">
-                    {t('goToLogin')}
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
+        <Link href={`/${locale}`} className="mb-12">
+          <EngeznaLogo size="lg" static showPen={false} />
+        </Link>
+
+        <div className="w-full max-w-[340px] text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-[#009DE0] mb-3">
+            {locale === 'ar' ? 'تم تغيير كلمة المرور!' : 'Password Changed!'}
+          </h1>
+
+          <p className="text-slate-500 mb-8">
+            {locale === 'ar'
+              ? 'تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول.'
+              : 'Your password has been changed successfully. You can now log in.'}
+          </p>
+
+          <Link
+            href={`/${locale}/auth/login`}
+            className="inline-flex items-center justify-center w-full h-[52px] bg-[#009DE0] text-white font-medium rounded-xl hover:bg-[#0080b8] transition-all"
+          >
+            {locale === 'ar' ? 'تسجيل الدخول' : 'Go to Login'}
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Invalid session error state
+  if (!isValidSession && error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
+        <Link href={`/${locale}`} className="mb-12">
+          <EngeznaLogo size="lg" static showPen={false} />
+        </Link>
+
+        <div className="w-full max-w-[340px] text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-red-600" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-red-600 mb-3">
+            {locale === 'ar' ? 'رابط غير صالح' : 'Invalid Link'}
+          </h1>
+
+          <p className="text-slate-500 mb-8">
+            {locale === 'ar'
+              ? 'هذا الرابط غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.'
+              : 'This link is invalid or has expired. Please request a new one.'}
+          </p>
+
+          <Link
+            href={`/${locale}/auth/forgot-password`}
+            className="inline-flex items-center justify-center w-full h-[52px] bg-[#009DE0] text-white font-medium rounded-xl hover:bg-[#0080b8] transition-all"
+          >
+            {locale === 'ar' ? 'طلب رابط جديد' : 'Request New Link'}
+          </Link>
+        </div>
+
+        <Link
+          href={`/${locale}/auth/login`}
+          className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
+        >
+          {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+          {locale === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
+        </Link>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-              <KeyRound className="w-8 h-8 text-primary" />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
+      {/* Logo */}
+      <Link href={`/${locale}`} className="mb-12">
+        <EngeznaLogo size="lg" static showPen={false} />
+      </Link>
+
+      {/* Content */}
+      <div className="w-full max-w-[340px]">
+        {/* Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-[#009DE0] mb-2">
+            {locale === 'ar' ? 'إعادة تعيين كلمة المرور' : 'Reset Password'}
+          </h1>
+          <p className="text-slate-500">
+            {locale === 'ar'
+              ? 'أدخل كلمة المرور الجديدة'
+              : 'Enter your new password'}
+          </p>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm mb-6 text-center">
+            {error}
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* New Password */}
+          <div className="space-y-2">
+            <label htmlFor="password" className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <Lock className="w-4 h-4 text-[#009DE0]" />
+              {locale === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={locale === 'ar' ? '8 أحرف على الأقل' : 'At least 8 characters'}
+                disabled={isLoading}
+                className="w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
+                dir="ltr"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-400 hover:text-slate-600`}
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-center">
-            {t('title')}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {t('description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
+
+          {/* Confirm Password */}
+          <div className="space-y-2">
+            <label htmlFor="confirmPassword" className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <Lock className="w-4 h-4 text-[#009DE0]" />
+              {locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
+            </label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder={locale === 'ar' ? 'أعد كتابة كلمة المرور' : 'Re-enter password'}
+                disabled={isLoading}
+                className="w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
+                dir="ltr"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-400 hover:text-slate-600`}
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isLoading || !password || !confirmPassword}
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
+          >
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <span>{locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}</span>
             )}
+          </button>
+        </form>
+      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">{t('newPassword')}</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder={t('newPasswordPlaceholder')}
-                  {...register('password')}
-                  disabled={isLoading}
-                  className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder={t('confirmPasswordPlaceholder')}
-                  {...register('confirmPassword')}
-                  disabled={isLoading}
-                  className={errors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-              )}
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? t('resetting') : t('resetButton')}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {/* Back to Login */}
+      <Link
+        href={`/${locale}/auth/login`}
+        className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
+      >
+        {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+        {locale === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
+      </Link>
     </div>
   )
 }
