@@ -87,7 +87,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- Customer: Refund Completed
@@ -175,7 +175,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- =====================================================
@@ -260,7 +260,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- Merchant: Low Rating Alert
@@ -341,7 +341,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- Merchant: New Review
@@ -421,7 +421,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- Merchant: Store Reactivated
@@ -500,7 +500,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- =====================================================
@@ -589,7 +589,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- Support: Ticket Replied
@@ -666,7 +666,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- Support: Ticket Resolved
@@ -760,7 +760,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- Support: Dispute Opened
@@ -844,7 +844,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- Support: Dispute Resolved
@@ -927,7 +927,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- =====================================================
@@ -1028,7 +1028,7 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
 
 -- Admin: Escalation Alert
@@ -1109,5 +1109,5 @@ VALUES (
   description = EXCLUDED.description,
   subject = EXCLUDED.subject,
   html_content = EXCLUDED.html_content,
-  variables = EXCLUDED.variables,
+  available_variables = EXCLUDED.available_variables,
   updated_at = NOW();
