@@ -27,6 +27,7 @@ interface PartnerRegisterRequest {
   governorateId: string
   cityId?: string
   businessCategory: string
+  storeName: string
   partnerRole: string
   locale: string
 }
@@ -42,12 +43,13 @@ export async function POST(request: NextRequest) {
       governorateId,
       cityId,
       businessCategory,
+      storeName,
       partnerRole,
       locale = 'ar',
     } = body
 
     // Validate required fields
-    if (!email || !password || !fullName || !phone || !governorateId || !businessCategory || !partnerRole) {
+    if (!email || !password || !fullName || !phone || !governorateId || !businessCategory || !storeName || !partnerRole) {
       return NextResponse.json(
         { error: locale === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required' },
         { status: 400 }
@@ -191,8 +193,8 @@ export async function POST(request: NextRequest) {
     // Create provider record with status "incomplete"
     const { error: providerError } = await supabase.from('providers').insert({
       owner_id: authData.user.id,
-      name_ar: '',
-      name_en: '',
+      name_ar: storeName,
+      name_en: storeName, // Can be updated later in dashboard
       category: businessCategory,
       phone,
       address_ar: '',
@@ -232,20 +234,11 @@ export async function POST(request: NextRequest) {
     // Send verification email using our custom template
     console.log('[Partner Register] Sending verification email to:', email)
 
-    // Get category label for welcome email
-    const categoryLabels: Record<string, string> = {
-      restaurant_cafe: 'مطاعم',
-      coffee_patisserie: 'البن والحلويات',
-      grocery: 'سوبر ماركت',
-      vegetables_fruits: 'خضروات وفواكه',
-    }
-    const storeName = categoryLabels[businessCategory] || 'متجرك'
-
     // Send merchant welcome email (includes verification link)
     const emailResult = await sendMerchantWelcomeEmail({
       to: email,
       merchantName: fullName,
-      storeName,
+      storeName: storeName,
       dashboardUrl: verificationUrl, // Use verification URL as dashboard link
     })
 
