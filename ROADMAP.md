@@ -6,12 +6,13 @@
 
 ## High Priority (Before Launch)
 
-### 1. Payment Integration (Fawry)
-- [ ] Fawry account setup and API credentials
-- [ ] Integrate Fawry Egyptian payment gateway
-- [ ] Online payment support for customers
-- [ ] Payment status webhooks
-- [ ] Payment confirmation page
+### 1. Payment Integration (Kashier) ✅
+- [x] Kashier account setup and API credentials
+- [x] Integrate Kashier Egyptian payment gateway
+- [x] Online payment support for customers
+- [x] Payment status webhooks
+- [x] Payment result page
+- [ ] Account activation (pending Kashier approval)
 
 ### 2. App Store Preparation
 - [ ] Generate app screenshots (Arabic/English)

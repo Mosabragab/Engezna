@@ -91,7 +91,7 @@ To bring modern delivery services to Egyptian governorates outside major cities,
 
 #### **Third-Party Services**
 - **Maps:** HERE Maps API
-- **Payments:** Fawry (Egyptian payment gateway)
+- **Payments:** Kashier (Egyptian payment gateway)
 - **SMS:** Twilio or local Egyptian provider
 - **Push Notifications:** Firebase Cloud Messaging
 
@@ -175,7 +175,7 @@ This project is in **active development** (Week 5 - Complete Feature Set ✅). W
 
 **Doesn't Work Yet:**
 - ⚠️ **Admin backend integration** (Phase 0 complete - providers/users connected, advanced analytics pending)
-- ❌ **Online payment** (Fawry NOT integrated, only Cash on Delivery)
+- ✅ **Online payment** (Kashier integrated - pending account activation)
 - ❌ **Real-time push notifications** (no Firebase/SMS integration)
 - ✅ **Order cancellation** (Session 12 - customers can cancel pending/confirmed/accepted orders)
 - ✅ **Reviews/Ratings** (Session 12 - customers can rate providers and leave reviews)
@@ -706,7 +706,7 @@ npm run type-check   # TypeScript type checking
 
 **What's NOT Working Yet ⚠️**
 - ⚠️ **Admin backend integration** - Phase 0 complete (providers, users), advanced analytics pending
-- ❌ **Online payment** - Fawry NOT integrated (only Cash on Delivery works)
+- ✅ **Online payment** - Kashier integrated (pending account activation)
 - ❌ **Push notifications** - No Firebase/SMS integration
 - ✅ **Order cancellation** - Customers can cancel pending/confirmed/accepted orders (Session 12)
 - ✅ **Reviews/Ratings** - Customers can rate providers and leave reviews (Session 12)
@@ -798,7 +798,7 @@ Proprietary - All rights reserved. This project is not open source.
 - **الواجهة الأمامية:** Next.js 16.0.3، TypeScript، Tailwind CSS 3.4.17
 - **الخلفية:** Supabase (PostgreSQL، المصادقة، الوقت الفعلي)
 - **الاستضافة:** Vercel
-- **المدفوعات:** Fawry
+- **المدفوعات:** Kashier (بوابة دفع مصرية)
 - **الخرائط:** Google Maps API
 - **الألوان:** الأزرق (#009DE0) - هوية العلامة التجارية الجديدة
 
@@ -963,7 +963,7 @@ npm run dev
 
 **ما لا يعمل بعد ⚠️**
 - ❌ **تكامل الخلفية للإدارة** - الواجهة مكتملة لكن غير متصلة بقاعدة البيانات
-- ❌ **الدفع الإلكتروني** - فوري غير مدمج (فقط الدفع عند الاستلام)
+- ✅ **الدفع الإلكتروني** - Kashier مدمج (في انتظار تفعيل الحساب)
 - ❌ **الإشعارات الفورية** - لا يوجد تكامل Firebase/SMS
 - ✅ **إلغاء الطلبات** - يمكن للعملاء إلغاء الطلبات المعلقة/المؤكدة/المقبولة (الجلسة 12)
 - ✅ **التقييمات والمراجعات** - يمكن تقييم المتاجر وكتابة المراجعات (الجلسة 12)

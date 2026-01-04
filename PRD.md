@@ -444,7 +444,7 @@ fair, transparent pricing.
 - ✅ **Logo and product image uploads** - Functional
 
 **Payment Integration:**
-- ⚠️ **Online payment (Fawry)** - NOT integrated, only Cash on Delivery works
+- ✅ **Online payment (Kashier)** - Integrated, pending account activation
 - ⚠️ Card payments - NOT available
 - ⚠️ Vodafone Cash - NOT available
 
@@ -512,7 +512,7 @@ fair, transparent pricing.
 3. ✅ **UI/UX Improvements** - Auth pages, Footer, Partner page, Logo unification
 
 **High Priority (Current):**
-4. **Payment Integration (Fawry)** - Online payment support
+4. ✅ **Payment Integration (Kashier)** - Online payment support (pending account activation)
 5. **Advanced Analytics** - Time-series charts, performance metrics
 
 **Medium Priority (Completed ✅):**
@@ -682,9 +682,9 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
 
 #### **Third-Party Integrations** 🔄 ALL PLANNED (Week 2+)
 - **Maps:** Google Maps API (navigation, geocoding) - Week 2-3
-- **Payments:** Week 3-4
-  - Fawry (Egyptian payment gateway)
-  - Cash on Delivery (COD) - primary method
+- **Payments:** ✅ INTEGRATED
+  - Kashier (Egyptian payment gateway) - pending account activation
+  - Cash on Delivery (COD) - primary method ✅
   - Vodafone Cash (future consideration)
 - **SMS:** Twilio or local Egyptian SMS provider - Week 1-2 (for OTP)
 - **Push Notifications:** Firebase Cloud Messaging - Week 4
@@ -1515,12 +1515,13 @@ reviews (
   - [ ] Time-series revenue/orders charts
   - [ ] Performance metrics and trends
 
-**📅 Pending:**
-- [ ] **Payment Integration (Fawry)**
-  - [ ] Fawry account setup and API credentials
-  - [ ] Integrate Fawry Egyptian payment gateway
-  - [ ] Online payment support for customers
-  - [ ] Payment status webhooks
+**✅ Completed:**
+- [x] **Payment Integration (Kashier)**
+  - [x] Kashier account setup and API credentials
+  - [x] Integrate Kashier Egyptian payment gateway
+  - [x] Online payment support for customers
+  - [x] Payment status webhooks
+  - [ ] Account activation (pending Kashier approval)
 
 ### **Week 7-8 (Dec 16-29, 2025): Notifications & Customer Features** 🔄 PLANNED
 
@@ -2042,7 +2043,7 @@ engezna/
     - ✅ Product categories (provider-specific)
   - **What's NOT Working (Documented):**
     - ❌ Admin panel (UI only, no functionality)
-    - ❌ Online payment (Fawry NOT integrated)
+    - ✅ Online payment (Kashier integrated, pending activation)
     - ❌ Push/SMS notifications
     - ❌ Order cancellation
     - ❌ Reviews/Ratings
