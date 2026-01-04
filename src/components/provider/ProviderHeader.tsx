@@ -15,7 +15,6 @@ import {
   Check,
   Trash2,
   AlertTriangle,
-  ExternalLink,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User } from '@supabase/supabase-js'
@@ -397,14 +396,11 @@ export function ProviderHeader({
               <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center">
                 <UserIcon className="w-4 h-4 text-primary" />
               </div>
-              <span className="hidden sm:inline text-sm font-medium text-slate-700">
-                {locale === 'ar' ? 'حسابي' : 'My Account'}
-              </span>
             </button>
 
             {/* Dropdown Menu */}
             {accountMenuOpen && (
-              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full mt-2 w-56 z-50 animate-slide-up`}>
+              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-1 w-56 z-50 animate-slide-up`}>
                 <div className="bg-white rounded-2xl shadow-elegant-lg border border-slate-100 py-2">
                   {/* User Info */}
                   <div className="px-4 py-2 border-b border-slate-100">
@@ -422,18 +418,8 @@ export function ProviderHeader({
                       className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                       <UserIcon className="w-4 h-4" />
-                      {locale === 'ar' ? 'حسابي' : 'My Account'}
+                      {locale === 'ar' ? 'إعدادات المتجر' : 'Store Settings'}
                     </Link>
-                    <a
-                      href={providerId ? `/${locale}/providers/${providerId}` : `/${locale}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setAccountMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      {locale === 'ar' ? 'معاينة المتجر' : 'Preview Store'}
-                    </a>
                   </div>
 
                   {/* Logout */}

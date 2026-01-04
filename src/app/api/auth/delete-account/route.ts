@@ -47,6 +47,57 @@ export async function DELETE() {
       }
     )
 
+    // Check if user is a provider owner
+    const { data: providerData } = await supabaseAdmin
+      .from('providers')
+      .select('id')
+      .eq('owner_id', userId)
+      .single()
+
+    // Delete provider-related data if user is a provider owner
+    if (providerData) {
+      const providerId = providerData.id
+
+      // Delete provider notifications
+      await supabaseAdmin
+        .from('provider_notifications')
+        .delete()
+        .eq('provider_id', providerId)
+
+      // Delete menu items (products)
+      await supabaseAdmin
+        .from('menu_items')
+        .delete()
+        .eq('provider_id', providerId)
+
+      // Delete store hours
+      await supabaseAdmin
+        .from('store_hours')
+        .delete()
+        .eq('provider_id', providerId)
+
+      // Delete promotions
+      await supabaseAdmin
+        .from('promotions')
+        .delete()
+        .eq('provider_id', providerId)
+
+      // Delete reviews (or anonymize)
+      await supabaseAdmin
+        .from('reviews')
+        .delete()
+        .eq('provider_id', providerId)
+
+      // Note: Orders are kept for business records
+      // Refunds are kept for business records
+
+      // Delete provider record
+      await supabaseAdmin
+        .from('providers')
+        .delete()
+        .eq('id', providerId)
+    }
+
     // Delete user data in order (respecting foreign key constraints)
     // 1. Delete favorites
     await supabaseAdmin
