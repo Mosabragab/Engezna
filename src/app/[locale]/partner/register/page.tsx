@@ -73,6 +73,7 @@ const partnerSignupSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
   businessCategory: z.string().min(1, 'Please select a business category'),
+  storeName: z.string().min(2, 'Store name must be at least 2 characters'),
   partnerRole: z.string().min(1, 'Please select your role'),
   governorateId: z.string().min(1, 'Please select your governorate'),
   cityId: z.string().optional(),
@@ -108,6 +109,7 @@ export default function PartnerRegisterPage() {
     resolver: zodResolver(partnerSignupSchema),
     defaultValues: {
       businessCategory: '',
+      storeName: '',
       partnerRole: '',
       governorateId: '',
       cityId: '',
@@ -195,6 +197,7 @@ export default function PartnerRegisterPage() {
           governorateId: data.governorateId,
           cityId: data.cityId || undefined,
           businessCategory: data.businessCategory,
+          storeName: data.storeName,
           partnerRole: data.partnerRole,
           locale,
         }),
@@ -531,6 +534,25 @@ export default function PartnerRegisterPage() {
                   </Select>
                   {errors.businessCategory && (
                     <p className="text-sm text-destructive">{errors.businessCategory.message}</p>
+                  )}
+                </div>
+
+                {/* Store Name */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Store className="w-4 h-4 text-primary" />
+                    {locale === 'ar' ? 'اسم المتجر' : 'Store Name'}
+                  </Label>
+                  <Input
+                    placeholder={locale === 'ar' ? 'أدخل اسم متجرك' : 'Enter your store name'}
+                    {...register('storeName')}
+                    disabled={isLoading}
+                    className={errors.storeName ? 'border-destructive' : ''}
+                  />
+                  {errors.storeName && (
+                    <p className="text-sm text-destructive">
+                      {locale === 'ar' ? 'اسم المتجر مطلوب (حرفين على الأقل)' : errors.storeName.message}
+                    </p>
                   )}
                 </div>
 
