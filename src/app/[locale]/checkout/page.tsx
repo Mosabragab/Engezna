@@ -915,7 +915,7 @@ export default function CheckoutPage() {
                             <select
                               value={selectedGovernorateId}
                               onChange={(e) => setSelectedGovernorateId(e.target.value)}
-                              className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background text-sm appearance-none cursor-pointer"
+                              className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background text-sm appearance-none cursor-pointer pe-10"
                               disabled={isLoading}
                             >
                               <option value="">{locale === 'ar' ? 'اختر المحافظة' : 'Select Governorate'}</option>
@@ -925,7 +925,7 @@ export default function CheckoutPage() {
                                 </option>
                               ))}
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                           </div>
                         </div>
 
@@ -936,7 +936,7 @@ export default function CheckoutPage() {
                             <select
                               value={selectedCityId}
                               onChange={(e) => setSelectedCityId(e.target.value)}
-                              className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background text-sm appearance-none cursor-pointer"
+                              className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background text-sm appearance-none cursor-pointer pe-10"
                               disabled={isLoading || !selectedGovernorateId}
                             >
                               <option value="">{locale === 'ar' ? 'اختر المدينة' : 'Select City'}</option>
@@ -946,7 +946,7 @@ export default function CheckoutPage() {
                                 </option>
                               ))}
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                           </div>
                         </div>
                       </div>
