@@ -398,9 +398,9 @@ export default function ProviderDashboard() {
                   : 'Your store information is incomplete. Complete the following to get approved and start receiving orders:'}
               </p>
               <Link href={`/${locale}/provider/complete-profile`}>
-                <Button className="bg-amber-500 hover:bg-amber-600 text-white">
+                <Button className="!bg-amber-500 hover:!bg-amber-600 !text-white shadow-md">
                   {locale === 'ar' ? 'إكمال الملف' : 'Complete Profile'}
-                  <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
+                  <ArrowRight className={`w-4 h-4 !text-white ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                 </Button>
               </Link>
             </div>
@@ -442,9 +442,9 @@ export default function ProviderDashboard() {
                 {locale === 'ar' ? 'سبب الرفض:' : 'Reason:'} {provider.rejection_reason || (locale === 'ar' ? 'لم يتم تحديد سبب' : 'No reason provided')}
               </p>
               <Link href={`/${locale}/provider/complete-profile`}>
-                <Button className="bg-red-500 hover:bg-red-600 text-white">
+                <Button className="!bg-red-500 hover:!bg-red-600 !text-white shadow-md">
                   {locale === 'ar' ? 'تعديل وإعادة الإرسال' : 'Edit & Resubmit'}
-                  <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
+                  <ArrowRight className={`w-4 h-4 !text-white ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                 </Button>
               </Link>
             </div>
@@ -469,9 +469,9 @@ export default function ProviderDashboard() {
                   : 'It seems you haven\'t completed your partner registration. Would you like to register now?'}
               </p>
               <Link href={`/${locale}/partner/register`}>
-                <Button className="bg-primary hover:bg-primary/90 text-white">
+                <Button className="!bg-primary hover:!bg-primary/90 !text-white shadow-md">
                   {locale === 'ar' ? 'سجل كشريك' : 'Register as Partner'}
-                  <ArrowRight className={`w-4 h-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
+                  <ArrowRight className={`w-4 h-4 !text-white ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                 </Button>
               </Link>
             </div>

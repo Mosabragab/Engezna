@@ -210,11 +210,10 @@ export default function PartnerRegisterPage() {
         return
       }
 
+      // Save email for display in success state
+      setRegisteredEmail(data.email)
       setSuccess(true)
-      // Redirect to success page or show email verification message
-      setTimeout(() => {
-        router.push(`/${locale}/provider/login?registered=true`)
-      }, 2000)
+      // Don't redirect - show check email message
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
@@ -222,7 +221,12 @@ export default function PartnerRegisterPage() {
     }
   }
 
-  // Success state
+  // State for resend email
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
+  const [registeredEmail, setRegisteredEmail] = useState('')
+
+  // Success state - Check your email page
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
@@ -236,18 +240,95 @@ export default function PartnerRegisterPage() {
 
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden p-8">
             <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-10 h-10 text-green-600" />
+              {/* Email Icon */}
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                <Mail className="w-10 h-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900">{t('successTitle')}</h2>
-              <p className="text-slate-600">{t('successMessage')}</p>
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-amber-800 text-start">
-                    {t('completeProfileNote')}
+
+              <h2 className="text-2xl font-bold text-slate-900">
+                {locale === 'ar' ? 'تحقق من بريدك الإلكتروني' : 'Check Your Email'}
+              </h2>
+
+              <p className="text-slate-600">
+                {locale === 'ar'
+                  ? 'أرسلنا رابط تأكيد إلى بريدك الإلكتروني. يرجى الضغط على الرابط لتفعيل حسابك.'
+                  : 'We sent a verification link to your email. Please click the link to activate your account.'}
+              </p>
+
+              {/* Email sent to */}
+              <div className="bg-slate-50 rounded-xl p-4 mt-4">
+                <p className="text-sm text-slate-500 mb-1">
+                  {locale === 'ar' ? 'تم الإرسال إلى:' : 'Sent to:'}
+                </p>
+                <p className="font-medium text-slate-900 dir-ltr">{registeredEmail || watch('email')}</p>
+              </div>
+
+              {/* Steps */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-4 text-start">
+                <p className="text-sm font-medium text-blue-900 mb-2">
+                  {locale === 'ar' ? 'الخطوات التالية:' : 'Next steps:'}
+                </p>
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>{locale === 'ar' ? 'افتح بريدك الإلكتروني' : 'Open your email'}</li>
+                  <li>{locale === 'ar' ? 'اضغط على رابط التأكيد' : 'Click the verification link'}</li>
+                  <li>{locale === 'ar' ? 'أكمل بيانات متجرك' : 'Complete your store details'}</li>
+                  <li>{locale === 'ar' ? 'انتظر موافقة الإدارة' : 'Wait for admin approval'}</li>
+                </ol>
+              </div>
+
+              {/* Resend email button */}
+              <div className="pt-4 space-y-3">
+                {resendSuccess ? (
+                  <p className="text-sm text-green-600 flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    {locale === 'ar' ? 'تم إعادة الإرسال بنجاح!' : 'Email resent successfully!'}
                   </p>
-                </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={resendLoading}
+                    onClick={async () => {
+                      setResendLoading(true)
+                      try {
+                        await fetch('/api/auth/resend-verification', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ email: registeredEmail || watch('email') }),
+                        })
+                        setResendSuccess(true)
+                        setTimeout(() => setResendSuccess(false), 5000)
+                      } catch (e) {
+                        console.error('Resend failed:', e)
+                      } finally {
+                        setResendLoading(false)
+                      }
+                    }}
+                  >
+                    {resendLoading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin me-2" />
+                    ) : (
+                      <Mail className="w-4 h-4 me-2" />
+                    )}
+                    {locale === 'ar' ? 'إعادة إرسال الرابط' : 'Resend verification link'}
+                  </Button>
+                )}
+
+                <p className="text-xs text-slate-500">
+                  {locale === 'ar'
+                    ? 'لم يصلك البريد؟ تحقق من مجلد الرسائل غير المرغوب فيها (Spam)'
+                    : "Didn't receive the email? Check your spam folder"}
+                </p>
+              </div>
+
+              {/* Login link */}
+              <div className="pt-4 border-t border-slate-200">
+                <p className="text-sm text-slate-600">
+                  {locale === 'ar' ? 'قمت بتأكيد بريدك؟' : 'Already verified?'}{' '}
+                  <Link href={`/${locale}/provider/login`} className="text-primary font-medium hover:underline">
+                    {locale === 'ar' ? 'سجل دخولك' : 'Sign in'}
+                  </Link>
+                </p>
               </div>
             </div>
           </div>
@@ -481,6 +562,9 @@ export default function PartnerRegisterPage() {
                     <Label className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-primary" />
                       {locale === 'ar' ? 'المدينة' : 'City'}
+                      <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                        {locale === 'ar' ? 'غير قابل للتغيير' : 'Cannot be changed'}
+                      </span>
                     </Label>
                     <div className="relative">
                       <select
