@@ -683,6 +683,7 @@ export default function CheckoutPage() {
           })
 
           const paymentData = await paymentResponse.json()
+          console.log('Payment initiation response:', paymentData)
 
           if (paymentData.success && paymentData.checkoutUrl) {
             // Clear cart before redirecting to payment
@@ -691,7 +692,16 @@ export default function CheckoutPage() {
             window.location.href = paymentData.checkoutUrl
             return
           } else {
-            throw new Error(paymentData.error || 'Payment initiation failed')
+            // Show specific error message
+            const errorMsg = paymentData.error || 'Payment initiation failed'
+            console.error('Payment initiation failed:', errorMsg)
+            setError(
+              locale === 'ar'
+                ? `فشل بدء الدفع: ${errorMsg}`
+                : `Payment initiation failed: ${errorMsg}`
+            )
+            setIsLoading(false)
+            return
           }
         } catch (paymentError) {
           console.error('Payment initiation error:', paymentError)

@@ -4,6 +4,19 @@ import { buildKashierCheckoutUrl, kashierConfig } from '@/lib/payment/kashier'
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate Kashier configuration
+    if (!kashierConfig.merchantId || !kashierConfig.apiKey || !kashierConfig.secretKey) {
+      console.error('Kashier configuration missing:', {
+        hasMerchantId: !!kashierConfig.merchantId,
+        hasApiKey: !!kashierConfig.apiKey,
+        hasSecretKey: !!kashierConfig.secretKey,
+      })
+      return NextResponse.json(
+        { error: 'Payment gateway not configured. Please contact support.' },
+        { status: 500 }
+      )
+    }
+
     const supabase = await createClient()
 
     // Check authentication
@@ -99,8 +112,9 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Payment initiation error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to initiate payment' },
+      { error: `Failed to initiate payment: ${errorMessage}` },
       { status: 500 }
     )
   }
