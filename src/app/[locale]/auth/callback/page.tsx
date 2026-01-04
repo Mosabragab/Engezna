@@ -117,6 +117,12 @@ export default function AuthCallbackPage() {
 
       // Check if profile is incomplete
       if (!profile.governorate_id || !profile.phone) {
+        // For providers, redirect to provider complete-profile
+        if (profile.role === 'provider_owner') {
+          router.push(`/${locale}/provider/complete-profile`)
+          return
+        }
+        // For customers, redirect to customer complete-profile
         const completeProfileUrl = next !== '/'
           ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(next)}`
           : `/${locale}/auth/complete-profile`
@@ -138,7 +144,24 @@ export default function AuthCallbackPage() {
         }
       }
 
-      // Profile complete - redirect to destination
+      // Profile complete - redirect based on role
+      if (profile.role === 'provider_owner') {
+        // Check if provider has completed their store setup
+        const { data: provider } = await supabase
+          .from('providers')
+          .select('status')
+          .eq('owner_id', user.id)
+          .single()
+
+        if (provider?.status === 'incomplete') {
+          router.push(`/${locale}/provider/complete-profile`)
+          return
+        }
+        router.push(`/${locale}/provider`)
+        return
+      }
+
+      // For customers, redirect to destination
       const redirectUrl = next.startsWith('/') ? next : `/${locale}${next.startsWith('/') ? '' : '/'}${next}`
       router.push(redirectUrl)
     }

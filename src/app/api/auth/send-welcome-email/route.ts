@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendCustomerWelcomeEmail } from '@/lib/email/resend'
+import { sendCustomerWelcomeEmail, sendMerchantWelcomeEmail } from '@/lib/email/resend'
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -33,10 +33,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin()
 
-    // Get user profile
+    // Get user profile with role
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('email, full_name, welcome_email_sent')
+      .select('email, full_name, role, welcome_email_sent')
       .eq('id', userId)
       .single()
 
@@ -55,14 +55,33 @@ export async function POST(request: NextRequest) {
     // Get site URL for links
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.engezna.com'
 
-    // Send welcome email
     const firstName = profile.full_name?.split(' ')[0] || 'عميلنا الكريم'
-    const emailResult = await sendCustomerWelcomeEmail({
-      to: profile.email,
-      userName: firstName,
-      browseUrl: `${siteUrl}/ar`,
-      supportUrl: `${siteUrl}/ar/support`,
-    })
+    let emailResult
+
+    // Send appropriate welcome email based on role
+    if (profile.role === 'provider_owner') {
+      // Get provider/store info for merchant welcome email
+      const { data: provider } = await supabase
+        .from('providers')
+        .select('name_ar')
+        .eq('owner_id', userId)
+        .single()
+
+      emailResult = await sendMerchantWelcomeEmail({
+        to: profile.email,
+        merchantName: firstName,
+        storeName: provider?.name_ar || 'متجرك',
+        dashboardUrl: `${siteUrl}/ar/provider`,
+      })
+    } else {
+      // Send customer welcome email
+      emailResult = await sendCustomerWelcomeEmail({
+        to: profile.email,
+        userName: firstName,
+        browseUrl: `${siteUrl}/ar`,
+        supportUrl: `${siteUrl}/ar/support`,
+      })
+    }
 
     if (emailResult.success) {
       // Mark welcome email as sent
