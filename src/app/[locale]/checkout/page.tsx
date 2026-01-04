@@ -672,7 +672,37 @@ export default function CheckoutPage() {
       // Mark order as placed to prevent useEffect from redirecting
       setOrderPlaced(true)
 
-      // Clear cart and redirect to confirmation page
+      // Handle payment based on method
+      if (paymentMethod === 'online') {
+        // Initiate Kashier payment
+        try {
+          const paymentResponse = await fetch('/api/payment/kashier/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: order.id }),
+          })
+
+          const paymentData = await paymentResponse.json()
+
+          if (paymentData.success && paymentData.checkoutUrl) {
+            // Clear cart before redirecting to payment
+            clearCart()
+            // Redirect to Kashier checkout
+            window.location.href = paymentData.checkoutUrl
+            return
+          } else {
+            throw new Error(paymentData.error || 'Payment initiation failed')
+          }
+        } catch (paymentError) {
+          console.error('Payment initiation error:', paymentError)
+          // Order created but payment failed - redirect to order page
+          clearCart()
+          router.push(`/${locale}/orders/${order.id}?payment_error=true`)
+          return
+        }
+      }
+
+      // For cash payment, redirect to confirmation page
       clearCart()
       router.push(`/${locale}/orders/${order.id}/confirmation`)
     } catch (err) {
@@ -1040,8 +1070,13 @@ export default function CheckoutPage() {
 
                   <button
                     type="button"
-                    disabled={true}
-                    className="w-full p-4 rounded-lg border-2 border-border opacity-50 cursor-not-allowed"
+                    onClick={() => setPaymentMethod('online')}
+                    disabled={isLoading}
+                    className={`w-full p-4 rounded-lg border-2 transition-all ${
+                      paymentMethod === 'online'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
                       <CreditCard className="w-5 h-5" />
@@ -1050,7 +1085,7 @@ export default function CheckoutPage() {
                           {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {locale === 'ar' ? 'قريباً' : 'Coming Soon'}
+                          {locale === 'ar' ? 'ادفع ببطاقتك الائتمانية أو المحفظة' : 'Pay with card or wallet'}
                         </div>
                       </div>
                     </div>
