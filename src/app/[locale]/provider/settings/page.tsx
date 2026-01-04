@@ -32,6 +32,7 @@ import {
   LogOut,
   User,
   Loader2,
+  Trash2,
 } from 'lucide-react'
 
 // Force dynamic rendering
@@ -74,6 +75,11 @@ export default function ProviderSettingsPage() {
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
+
+  // Delete account states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   // Form states
   const [nameAr, setNameAr] = useState('')
@@ -317,6 +323,37 @@ export default function ProviderSettingsPage() {
     const supabase = createClient()
     await supabase.auth.signOut()
     window.location.href = `/${locale}`
+  }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE' && deleteConfirmText !== 'حذف') {
+      return
+    }
+
+    setDeletingAccount(true)
+
+    try {
+      // Call API to delete account
+      const response = await fetch('/api/auth/delete-account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (response.ok) {
+        // Sign out and redirect
+        const supabase = createClient()
+        await supabase.auth.signOut()
+        window.location.href = `/${locale}`
+      } else {
+        const data = await response.json()
+        alert(data.error || (locale === 'ar' ? 'فشل حذف الحساب' : 'Failed to delete account'))
+      }
+    } catch (error) {
+      console.error('Delete account error:', error)
+      alert(locale === 'ar' ? 'حدث خطأ أثناء حذف الحساب' : 'An error occurred while deleting account')
+    } finally {
+      setDeletingAccount(false)
+    }
   }
 
   const tabs = [
@@ -923,6 +960,105 @@ export default function ProviderSettingsPage() {
                           </>
                         )}
                       </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Delete Account Section */}
+              <Card className="bg-white border-red-200">
+                <CardHeader>
+                  <CardTitle className="text-red-600 flex items-center gap-2">
+                    <Trash2 className="w-5 h-5" />
+                    {locale === 'ar' ? 'حذف الحساب' : 'Delete Account'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!showDeleteConfirm ? (
+                    <div>
+                      <p className="text-sm text-slate-600 mb-4">
+                        {locale === 'ar'
+                          ? 'حذف حسابك سيؤدي إلى إزالة جميع بياناتك بشكل نهائي. هذا الإجراء لا يمكن التراجع عنه.'
+                          : 'Deleting your account will permanently remove all your data. This action cannot be undone.'}
+                      </p>
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="w-full p-4 rounded-xl border border-red-300 hover:border-red-400 hover:bg-red-50 transition-all flex items-center justify-start"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-red-100">
+                            <Trash2 className="w-5 h-5 text-red-600" />
+                          </div>
+                          <div className={isRTL ? 'text-right' : 'text-left'}>
+                            <p className="font-medium text-red-600">{locale === 'ar' ? 'حذف حسابي' : 'Delete My Account'}</p>
+                            <p className="text-xs text-slate-500">
+                              {locale === 'ar' ? 'حذف الحساب والبيانات نهائياً' : 'Permanently delete account and data'}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-red-700">
+                              {locale === 'ar' ? 'تحذير: هذا الإجراء نهائي!' : 'Warning: This action is permanent!'}
+                            </p>
+                            <p className="text-sm text-red-600 mt-1">
+                              {locale === 'ar'
+                                ? 'سيتم حذف متجرك وجميع المنتجات والطلبات والتقييمات المرتبطة به.'
+                                : 'Your store and all associated products, orders, and reviews will be deleted.'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-slate-700">
+                          {locale === 'ar'
+                            ? 'اكتب "حذف" للتأكيد'
+                            : 'Type "DELETE" to confirm'}
+                        </label>
+                        <Input
+                          value={deleteConfirmText}
+                          onChange={(e) => setDeleteConfirmText(e.target.value)}
+                          className="bg-white border-slate-300"
+                          placeholder={locale === 'ar' ? 'حذف' : 'DELETE'}
+                        />
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => {
+                            setShowDeleteConfirm(false)
+                            setDeleteConfirmText('')
+                          }}
+                        >
+                          {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                        </Button>
+                        <Button
+                          className="flex-1 !bg-red-600 hover:!bg-red-700 !text-white"
+                          onClick={handleDeleteAccount}
+                          disabled={deletingAccount || (deleteConfirmText !== 'DELETE' && deleteConfirmText !== 'حذف')}
+                        >
+                          {deletingAccount ? (
+                            <>
+                              <Loader2 className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                              {locale === 'ar' ? 'جاري الحذف...' : 'Deleting...'}
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                              {locale === 'ar' ? 'حذف نهائياً' : 'Delete Permanently'}
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardContent>
