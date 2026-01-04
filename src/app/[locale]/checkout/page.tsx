@@ -617,7 +617,8 @@ export default function CheckoutPage() {
         .single()
 
       if (orderError) {
-        throw orderError
+        console.error('Order creation error:', orderError)
+        throw new Error(`Order creation failed: ${orderError.message}`)
       }
 
       // Record promo code usage if applied
@@ -729,10 +730,11 @@ export default function CheckoutPage() {
             : 'Sorry, your account is suspended and you cannot create new orders. Please contact Engezna customer service for assistance.'
         )
       } else {
+        console.error('Order placement error:', err)
         setError(
           locale === 'ar'
-            ? 'حدث خطأ أثناء تقديم الطلب. يرجى المحاولة مرة أخرى.'
-            : 'An error occurred while placing your order. Please try again.'
+            ? `حدث خطأ أثناء تقديم الطلب: ${errorMessage}`
+            : `An error occurred while placing your order: ${errorMessage}`
         )
       }
     } finally {
