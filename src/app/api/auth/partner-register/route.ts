@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendMerchantWelcomeEmail } from '@/lib/email/resend'
+import { sendEmailVerificationEmail } from '@/lib/email/resend'
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -231,15 +231,13 @@ export async function POST(request: NextRequest) {
       verificationUrl = linkData.properties.action_link
     }
 
-    // Send verification email using our custom template
+    // Send email verification email (user must verify before accessing dashboard)
     console.log('[Partner Register] Sending verification email to:', email)
 
-    // Send merchant welcome email (includes verification link)
-    const emailResult = await sendMerchantWelcomeEmail({
+    const emailResult = await sendEmailVerificationEmail({
       to: email,
-      merchantName: fullName,
-      storeName: storeName,
-      dashboardUrl: verificationUrl, // Use verification URL as dashboard link
+      userName: fullName,
+      verificationUrl: verificationUrl,
     })
 
     console.log('[Partner Register] Email result:', emailResult)
