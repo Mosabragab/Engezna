@@ -76,8 +76,6 @@ const partnerSignupSchema = z.object({
   partnerRole: z.string().min(1, 'Please select your role'),
   governorateId: z.string().min(1, 'Please select your governorate'),
   cityId: z.string().optional(),
-  customCityNameAr: z.string().optional(),
-  customCityNameEn: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -98,7 +96,6 @@ export default function PartnerRegisterPage() {
   const [loadingGovernorates, setLoadingGovernorates] = useState(true)
   const [cities, setCities] = useState<City[]>([])
   const [loadingCities, setLoadingCities] = useState(false)
-  const [isAddingNewCity, setIsAddingNewCity] = useState(false)
 
   const {
     register,
@@ -114,8 +111,6 @@ export default function PartnerRegisterPage() {
       partnerRole: '',
       governorateId: '',
       cityId: '',
-      customCityNameAr: '',
-      customCityNameEn: '',
     }
   })
 
@@ -149,7 +144,6 @@ export default function PartnerRegisterPage() {
     if (!governorateId) {
       setCities([])
       setValue('cityId', '')
-      setIsAddingNewCity(false)
       return
     }
 
@@ -189,112 +183,35 @@ export default function PartnerRegisterPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
-
-      // Handle custom city creation if needed
-      let finalCityId = data.cityId
-      if (isAddingNewCity && data.customCityNameAr && data.customCityNameEn) {
-        const { data: newCity, error: cityError } = await supabase
-          .from('cities')
-          .insert({
-            governorate_id: data.governorateId,
-            name_ar: data.customCityNameAr,
-            name_en: data.customCityNameEn,
-            is_active: false, // Needs admin approval
-          })
-          .select('id')
-          .single()
-
-        if (cityError) {
-          console.error('City creation error:', cityError)
-          setError(locale === 'ar' ? 'حدث خطأ أثناء إضافة المدينة' : 'Error adding city')
-          return
-        }
-        finalCityId = newCity.id
-      }
-
-      // 1. Create user account in auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            full_name: data.fullName,
-            phone: data.phone,
-            role: 'provider_owner',
-          },
-        },
+      // Call API route for partner registration (uses admin client to bypass RLS)
+      const response = await fetch('/api/auth/partner-register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          fullName: data.fullName,
+          phone: data.phone,
+          governorateId: data.governorateId,
+          cityId: data.cityId || undefined,
+          businessCategory: data.businessCategory,
+          partnerRole: data.partnerRole,
+          locale,
+        }),
       })
 
-      if (authError) {
-        setError(authError.message)
+      const result = await response.json()
+
+      if (!response.ok) {
+        setError(result.error || (locale === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'Registration failed'))
         return
       }
 
-      if (authData.user) {
-        // 2. Insert user profile as provider_owner
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            email: data.email,
-            phone: data.phone,
-            full_name: data.fullName,
-            role: 'provider_owner',
-            partner_role: data.partnerRole,
-            governorate_id: data.governorateId,
-            city_id: finalCityId || null,
-          })
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError)
-          setError(profileError.message)
-          return
-        }
-
-        // 3. Create provider record with status "incomplete" and governorate_id
-        const { error: providerError } = await supabase
-          .from('providers')
-          .insert({
-            owner_id: authData.user.id,
-            name_ar: '', // Will be completed later
-            name_en: '', // Will be completed later
-            category: data.businessCategory,
-            phone: data.phone,
-            address_ar: '', // Will be completed later
-            delivery_fee: 0, // Will be completed later
-            status: 'incomplete',
-            governorate_id: data.governorateId, // Save governorate (fixed, non-editable later)
-            city_id: finalCityId || null,
-          })
-
-        if (providerError) {
-          console.error('Provider creation error:', providerError)
-          setError(providerError.message)
-          return
-        }
-
-        // Send welcome email (non-blocking)
-        try {
-          await fetch('/api/emails/merchant-welcome', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              merchantId: authData.user.id,
-              storeName: businessCategories.find(c => c.value === data.businessCategory)?.labelAr || 'متجرك',
-            }),
-          })
-        } catch (emailError) {
-          // Log but don't block registration
-          console.error('Failed to send welcome email:', emailError)
-        }
-
-        setSuccess(true)
-        // Redirect to provider dashboard after 2 seconds
-        setTimeout(() => {
-          router.push(`/${locale}/provider`)
-        }, 2000)
-      }
+      setSuccess(true)
+      // Redirect to success page or show email verification message
+      setTimeout(() => {
+        router.push(`/${locale}/provider/login?registered=true`)
+      }, 2000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
     } finally {
@@ -562,80 +479,29 @@ export default function PartnerRegisterPage() {
                       <MapPin className="w-4 h-4 text-primary" />
                       {locale === 'ar' ? 'المدينة' : 'City'}
                     </Label>
-
-                    {!isAddingNewCity ? (
-                      <>
-                        <div className="relative">
-                          <select
-                            value={cityId}
-                            onChange={(e) => {
-                              if (e.target.value === 'ADD_NEW') {
-                                setIsAddingNewCity(true)
-                                setValue('cityId', '')
-                              } else {
-                                setValue('cityId', e.target.value)
-                              }
-                            }}
-                            disabled={isLoading || loadingCities}
-                            className={`w-full h-10 px-3 py-2 text-sm rounded-md border bg-background appearance-none cursor-pointer border-input
-                              focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
-                              disabled:cursor-not-allowed disabled:opacity-50`}
-                          >
-                            <option value="">
-                              {loadingCities
-                                ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
-                                : (locale === 'ar' ? 'اختر المدينة' : 'Select city')
-                              }
-                            </option>
-                            {cities.map((city) => (
-                              <option key={city.id} value={city.id}>
-                                {locale === 'ar' ? city.name_ar : city.name_en}
-                              </option>
-                            ))}
-                            <option value="ADD_NEW" className="font-medium text-primary">
-                              ➕ {locale === 'ar' ? 'أضف مدينتك' : 'Add your city'}
-                            </option>
-                          </select>
-                          <ChevronDown className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none`} />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-slate-700">
-                            {locale === 'ar' ? 'إضافة مدينة جديدة' : 'Add new city'}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsAddingNewCity(false)
-                              setValue('customCityNameAr', '')
-                              setValue('customCityNameEn', '')
-                            }}
-                            className="text-xs text-primary hover:underline"
-                          >
-                            {locale === 'ar' ? 'إلغاء' : 'Cancel'}
-                          </button>
-                        </div>
-                        <Input
-                          placeholder={locale === 'ar' ? 'اسم المدينة بالعربية' : 'City name in Arabic'}
-                          {...register('customCityNameAr')}
-                          disabled={isLoading}
-                          dir="rtl"
-                        />
-                        <Input
-                          placeholder={locale === 'ar' ? 'اسم المدينة بالإنجليزية' : 'City name in English'}
-                          {...register('customCityNameEn')}
-                          disabled={isLoading}
-                          dir="ltr"
-                        />
-                        <p className="text-xs text-amber-600">
-                          {locale === 'ar'
-                            ? 'سيتم مراجعة المدينة من قبل الإدارة قبل تفعيلها'
-                            : 'City will be reviewed by admin before activation'}
-                        </p>
-                      </div>
-                    )}
+                    <div className="relative">
+                      <select
+                        value={cityId}
+                        onChange={(e) => setValue('cityId', e.target.value)}
+                        disabled={isLoading || loadingCities}
+                        className={`w-full h-10 px-3 py-2 text-sm rounded-md border bg-background appearance-none cursor-pointer border-input
+                          focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
+                          disabled:cursor-not-allowed disabled:opacity-50`}
+                      >
+                        <option value="">
+                          {loadingCities
+                            ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
+                            : (locale === 'ar' ? 'اختر المدينة' : 'Select city')
+                          }
+                        </option>
+                        {cities.map((city) => (
+                          <option key={city.id} value={city.id}>
+                            {locale === 'ar' ? city.name_ar : city.name_en}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none`} />
+                    </div>
                   </div>
                 )}
 
