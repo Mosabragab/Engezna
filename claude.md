@@ -1,70 +1,86 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** December 23, 2025 (Session 20)
-**Status:** Week 7 - PWA & Store Publishing Preparation ✅
-**Branch:** `claude/pwa-conversion-review-5HHs6`
+**Last Updated:** January 4, 2026 (Session 24)
+**Status:** ~96% MVP Complete - Pre-Launch Phase
+**Branch:** `claude/review-project-database-plan-9mq6v`
 
 ---
 
-## 🆕 Session 20 Updates (December 23, 2025)
+## 🆕 Session 24 Updates (January 4, 2026)
 
-### Legal Compliance & Company Registration
-- ✅ **Privacy Policy Page** (`/privacy`) - Bilingual with Charcoal theme header
-- ✅ **Terms & Conditions Page** (`/terms`) - Tabbed interface (Customer/Provider)
-- ✅ **Company Information Integration** - سويفكم للتجارة والتصدير (ذ.م.م)
-  - Commercial Registry: 2767
-  - Address: ش صالح حمام بجوار مسجد الاباصيري - بني سويف
-  - Email: support@engezna.com
-- ✅ **Signup Terms Checkbox** - Required `agreeToTerms` with Zod validation
-- ✅ **Order Confirmation Legal Links** - Terms & Privacy links at bottom
-- ✅ **Manifest.json Privacy URL** - Added `privacy_policy_url` for PWA compliance
+### Documentation Cleanup & Organization
+- ✅ **Archived completed plans** - Moved 10 outdated plan files to `/archive`
+- ✅ **Reorganized docs folder** - Created `/docs/guides` and `/docs/features` subfolders
+- ✅ **Created CHANGELOG.md** - Consolidated session history
+- ✅ **Created ROADMAP.md** - Future tasks and priorities
 
-### E2E Testing Setup (Playwright)
-- ✅ **Playwright Configuration** (`playwright.config.ts`)
-  - Multi-browser: Mobile Chrome (Pixel 5), Mobile Safari (iPhone 13), Desktop Chrome
-  - Arabic locale (ar-EG) and Cairo timezone
-  - Web server auto-start for tests
-- ✅ **Customer Journey Tests** (`e2e/customer-journey.spec.ts`)
-  - Homepage display, providers navigation
-  - Store details, cart operations
-  - Footer legal links verification
-  - Signup terms checkbox requirement
-- ✅ **PWA Offline Tests** (`e2e/pwa-offline.spec.ts`)
-  - Service worker registration
-  - Offline page display
-  - Manifest.json validation (privacy_policy_url, theme_color, lang/dir)
-  - App installability meta tags
+### Provider Dashboard Fixes
+- ✅ **Button visibility fix** - Added `!important` prefix to override component defaults
+- ✅ **Dropdown menu sensitivity** - Fixed hover gap with padding bridge
 
-### Files Created
-| File | Purpose |
-|------|---------|
-| `src/app/[locale]/privacy/page.tsx` | Privacy Policy page |
-| `src/app/[locale]/terms/page.tsx` | Terms & Conditions page |
-| `docs/legal/COMPANY_INFO.md` | Internal company data reference |
-| `playwright.config.ts` | E2E testing configuration |
-| `e2e/customer-journey.spec.ts` | Customer flow smoke tests |
-| `e2e/pwa-offline.spec.ts` | PWA and offline functionality tests |
+### Provider Settings Updates
+- ✅ **Delete account functionality** - Full deletion with provider data cleanup
+- ✅ **Dropdown improvements** - Removed preview button, changed "حسابي" → "إعدادات المتجر"
+- ✅ **Header cleanup** - Removed redundant text next to account icon
 
 ### Files Modified
 | File | Changes |
 |------|---------|
-| `public/manifest.json` | Added `privacy_policy_url` |
-| `src/app/[locale]/auth/signup/page.tsx` | Terms checkbox with Zod validation |
-| `src/app/[locale]/orders/[id]/confirmation/page.tsx` | Legal links section |
-| `package.json` | Playwright dependency and test scripts |
+| `src/app/[locale]/provider/page.tsx` | Button `!bg-amber-500 !text-white` fix |
+| `src/components/provider/ProviderHeader.tsx` | Dropdown menu cleanup |
+| `src/app/[locale]/provider/settings/page.tsx` | Delete account section |
+| `src/app/api/auth/delete-account/route.ts` | Provider data cleanup |
 
-### NPM Scripts Added
-```bash
-npm run test:e2e        # Run all E2E tests
-npm run test:e2e:ui     # Interactive UI mode
-npm run test:e2e:headed # With visible browser
-npm run test:e2e:debug  # Debug mode
+---
+
+## 🆕 Session 23 Updates (December 31, 2025)
+
+### Native Google Sign-In Implementation
+- ✅ **Native Google OAuth** - Shows "engezna.com" instead of Supabase URL
+- ✅ **Custom Arabic Button** - "إستمرار عبر جوجل" (Talabat-style design)
+- ✅ **Authorization Code Flow** - Secure token exchange via `/api/auth/google`
+- ✅ **Profile Completion Flow** - New Google users directed to complete profile
+
+### Environment Variables Added
+```env
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
-### Commits
-- `3a4fc0c` - feat(legal): Implement Privacy Policy and Terms & Conditions pages
-- `ce5fa31` - docs(legal): Add company information to legal pages and documents
-- `8d1b3a9` - docs(legal): Add LLC designation to company name
+---
+
+## 🆕 Session 22 Updates (December 26, 2025)
+
+### Settlement System - Database as Source of Truth
+- ✅ **All financial values from database** - No frontend calculations
+- ✅ **Commission display fix** - Fixed 22 vs 17.5 issue after refunds
+- ✅ **Trigger conflict resolution** - Fixed competing database triggers
+- ✅ **UI consistency** - Matched COD/Online cards across admin/provider
+
+**Key Principle:** مصدر الحقيقة الواحد - Database is the ONLY source for financial calculations
+
+---
+
+## 🆕 Session 21 Updates (December 23, 2025)
+
+### Code Polishing - Zero ESLint Errors
+- ✅ Fixed 78 hoisting errors with `useCallback` conversion
+- ✅ Build error fixes - Removed duplicate function definitions
+- ✅ **Final Result:** 0 errors, 454 warnings (acceptable)
+
+---
+
+## 🆕 Session 20 Updates (December 22, 2025)
+
+### Legal Compliance
+- ✅ Privacy Policy page (`/privacy`)
+- ✅ Terms & Conditions page (`/terms`)
+- ✅ Company info: سويفكم للتجارة والتصدير (ذ.م.م)
+
+### E2E Testing (Playwright)
+- ✅ Customer journey tests
+- ✅ PWA offline tests
+- ✅ Multi-browser configuration
 
 ---
 
