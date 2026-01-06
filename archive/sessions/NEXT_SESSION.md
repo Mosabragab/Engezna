@@ -203,11 +203,12 @@ supabase db push
 - [ ] Create a partner banner
 - [ ] Verify it appears on partner page
 
-#### 3. Payment Integration (Fawry)
-- Fawry account setup and API credentials
-- Integrate Fawry Egyptian payment gateway
-- Online payment support for customers
-- Payment status webhooks
+#### 3. Payment Integration (Kashier) ✅ COMPLETED
+- [x] Kashier account setup and API credentials
+- [x] Integrate Kashier Egyptian payment gateway
+- [x] Online payment support for customers
+- [x] Payment status webhooks
+- [ ] Account activation (pending Kashier approval)
 
 ### 🟡 Medium Priority
 
@@ -385,11 +386,12 @@ supabase db push
 ### Remaining MVP Tasks (Technical)
 
 #### High Priority
-1. **Payment Integration (Fawry)** - Online payment gateway
-   - Fawry account setup and API credentials
-   - Integrate Fawry Egyptian payment gateway
-   - Online payment support for customers
-   - Payment status webhooks
+1. **Payment Integration (Kashier)** ✅ COMPLETED - Online payment gateway
+   - [x] Kashier account setup and API credentials
+   - [x] Integrate Kashier Egyptian payment gateway
+   - [x] Online payment support for customers
+   - [x] Payment status webhooks
+   - [ ] Account activation (pending Kashier approval)
 
 2. **Admin Promo Code UI** - Create promo codes in admin panel
    - Promo code creation form
