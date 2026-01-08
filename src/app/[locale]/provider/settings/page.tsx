@@ -702,8 +702,8 @@ export default function ProviderSettingsPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Enable Pickup Toggle */}
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                  <div>
+                <div className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className={isRTL ? 'text-right' : ''}>
                     <Label className="text-slate-900 font-medium">
                       {locale === 'ar' ? 'دعم الاستلام من المتجر' : 'Support Customer Pickup'}
                     </Label>
@@ -719,6 +719,7 @@ export default function ProviderSettingsPage() {
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       supportsPickup ? 'bg-primary' : 'bg-slate-300'
                     }`}
+                    dir="ltr"
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -733,7 +734,7 @@ export default function ProviderSettingsPage() {
                   <div className="space-y-4 pt-4 border-t border-slate-200">
                     {/* Estimated Pickup Time */}
                     <div>
-                      <Label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
+                      <Label className={`block text-sm text-slate-500 mb-1 flex items-center gap-1 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
                         <Clock className="w-4 h-4" />
                         {locale === 'ar' ? 'وقت التحضير المتوقع (دقيقة)' : 'Estimated Preparation Time (minutes)'}
                       </Label>
@@ -746,7 +747,7 @@ export default function ProviderSettingsPage() {
                         min="5"
                         max="120"
                       />
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className={`text-xs text-slate-400 mt-1 ${isRTL ? 'text-right' : ''}`}>
                         {locale === 'ar'
                           ? 'الوقت المتوقع لتجهيز الطلب للاستلام'
                           : 'Expected time to prepare order for pickup'}
@@ -755,7 +756,7 @@ export default function ProviderSettingsPage() {
 
                     {/* Pickup Instructions AR */}
                     <div>
-                      <Label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
+                      <Label className={`block text-sm text-slate-500 mb-1 flex items-center gap-1 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
                         <MapPin className="w-4 h-4" />
                         {locale === 'ar' ? 'تعليمات الاستلام (عربي)' : 'Pickup Instructions (Arabic)'}
                       </Label>
@@ -788,8 +789,8 @@ export default function ProviderSettingsPage() {
 
                     {/* Info Box */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div className={`flex items-start gap-2 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+                        <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
                         <div className="text-sm text-blue-800">
                           <p className="font-medium mb-1">
                             {locale === 'ar' ? 'ملاحظة' : 'Note'}
