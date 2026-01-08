@@ -33,7 +33,10 @@ import {
   User,
   Loader2,
   Trash2,
+  Package,
 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -51,6 +54,11 @@ type Provider = {
   estimated_delivery_time_min: number | null
   min_order_amount: number | null
   delivery_radius_km: number | null
+  // Pickup settings
+  supports_pickup: boolean
+  pickup_instructions_ar: string | null
+  pickup_instructions_en: string | null
+  estimated_pickup_time_min: number | null
 }
 
 
@@ -63,7 +71,7 @@ export default function ProviderSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [activeTab, setActiveTab] = useState<'store' | 'delivery' | 'status' | 'account'>('store')
+  const [activeTab, setActiveTab] = useState<'store' | 'delivery' | 'pickup' | 'status' | 'account'>('store')
   const [userEmail, setUserEmail] = useState<string | null>(null)
 
   // Password change states
@@ -93,6 +101,14 @@ export default function ProviderSettingsPage() {
   const [deliveryRadius, setDeliveryRadius] = useState('')
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+
+  // Pickup settings
+  const [supportsPickup, setSupportsPickup] = useState(false)
+  const [pickupInstructionsAr, setPickupInstructionsAr] = useState('')
+  const [pickupInstructionsEn, setPickupInstructionsEn] = useState('')
+  const [estimatedPickupTime, setEstimatedPickupTime] = useState('')
+  const [savingPickup, setSavingPickup] = useState(false)
+  const [savedPickup, setSavedPickup] = useState(false)
 
   const checkAuthAndLoadProvider = useCallback(async () => {
     setLoading(true)
@@ -129,6 +145,12 @@ export default function ProviderSettingsPage() {
     setMinimumOrder(providerData.min_order_amount?.toString() || '')
     setDeliveryRadius(providerData.delivery_radius_km?.toString() || '')
     setLogoPreview(providerData.logo_url)
+
+    // Load pickup settings
+    setSupportsPickup(providerData.supports_pickup || false)
+    setPickupInstructionsAr(providerData.pickup_instructions_ar || '')
+    setPickupInstructionsEn(providerData.pickup_instructions_en || '')
+    setEstimatedPickupTime(providerData.estimated_pickup_time_min?.toString() || '15')
 
     setLoading(false)
   }, [locale, router])
@@ -219,6 +241,38 @@ export default function ProviderSettingsPage() {
     }
 
     setSaving(false)
+  }
+
+  const handleSavePickup = async () => {
+    if (!provider) return
+
+    setSavingPickup(true)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('providers')
+      .update({
+        supports_pickup: supportsPickup,
+        pickup_instructions_ar: pickupInstructionsAr || null,
+        pickup_instructions_en: pickupInstructionsEn || null,
+        estimated_pickup_time_min: estimatedPickupTime ? parseInt(estimatedPickupTime) : 15,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', provider.id)
+
+    if (!error) {
+      setSavedPickup(true)
+      setTimeout(() => setSavedPickup(false), 3000)
+      setProvider(prev => prev ? {
+        ...prev,
+        supports_pickup: supportsPickup,
+        pickup_instructions_ar: pickupInstructionsAr || null,
+        pickup_instructions_en: pickupInstructionsEn || null,
+        estimated_pickup_time_min: estimatedPickupTime ? parseInt(estimatedPickupTime) : 15,
+      } : null)
+    }
+
+    setSavingPickup(false)
   }
 
   const handleToggleStatus = async (newStatus: 'open' | 'closed' | 'temporarily_paused') => {
@@ -359,6 +413,7 @@ export default function ProviderSettingsPage() {
   const tabs = [
     { key: 'store', label_ar: 'معلومات المتجر', label_en: 'Store Info', icon: Store },
     { key: 'delivery', label_ar: 'التوصيل', label_en: 'Delivery', icon: Truck },
+    { key: 'pickup', label_ar: 'الاستلام', label_en: 'Pickup', icon: Package },
     { key: 'status', label_ar: 'حالة المتجر', label_en: 'Store Status', icon: Power },
     { key: 'account', label_ar: 'الحساب', label_en: 'Account', icon: User },
   ]
@@ -390,7 +445,7 @@ export default function ProviderSettingsPage() {
               return (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key as 'store' | 'delivery' | 'status' | 'account')}
+                  onClick={() => setActiveTab(tab.key as 'store' | 'delivery' | 'pickup' | 'status' | 'account')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
                     activeTab === tab.key
                       ? 'bg-primary text-white'
@@ -616,6 +671,151 @@ export default function ProviderSettingsPage() {
                       {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
                     </>
                   ) : saved ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      {locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pickup Tab */}
+          {activeTab === 'pickup' && (
+            <Card className="bg-white border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-slate-900 flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  {locale === 'ar' ? 'إعدادات الاستلام من المتجر' : 'Pickup Settings'}
+                </CardTitle>
+                <p className="text-sm text-slate-500 mt-1">
+                  {locale === 'ar'
+                    ? 'فعّل هذا الخيار للسماح للعملاء باستلام طلباتهم من المتجر مباشرة'
+                    : 'Enable this option to allow customers to pick up their orders from your store'}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Enable Pickup Toggle */}
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                  <div>
+                    <Label className="text-slate-900 font-medium">
+                      {locale === 'ar' ? 'دعم الاستلام من المتجر' : 'Support Customer Pickup'}
+                    </Label>
+                    <p className="text-sm text-slate-500 mt-1">
+                      {locale === 'ar'
+                        ? 'السماح للعملاء باختيار استلام الطلب بأنفسهم'
+                        : 'Allow customers to collect their orders themselves'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSupportsPickup(!supportsPickup)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      supportsPickup ? 'bg-primary' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        supportsPickup ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Pickup Settings - Only show if enabled */}
+                {supportsPickup && (
+                  <div className="space-y-4 pt-4 border-t border-slate-200">
+                    {/* Estimated Pickup Time */}
+                    <div>
+                      <Label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {locale === 'ar' ? 'وقت التحضير المتوقع (دقيقة)' : 'Estimated Preparation Time (minutes)'}
+                      </Label>
+                      <Input
+                        type="number"
+                        value={estimatedPickupTime}
+                        onChange={(e) => setEstimatedPickupTime(e.target.value)}
+                        className="bg-white border-slate-200 text-slate-900"
+                        placeholder="15"
+                        min="5"
+                        max="120"
+                      />
+                      <p className="text-xs text-slate-400 mt-1">
+                        {locale === 'ar'
+                          ? 'الوقت المتوقع لتجهيز الطلب للاستلام'
+                          : 'Expected time to prepare order for pickup'}
+                      </p>
+                    </div>
+
+                    {/* Pickup Instructions AR */}
+                    <div>
+                      <Label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        {locale === 'ar' ? 'تعليمات الاستلام (عربي)' : 'Pickup Instructions (Arabic)'}
+                      </Label>
+                      <Textarea
+                        value={pickupInstructionsAr}
+                        onChange={(e) => setPickupInstructionsAr(e.target.value)}
+                        className="bg-white border-slate-200 text-slate-900"
+                        dir="rtl"
+                        rows={3}
+                        placeholder={locale === 'ar'
+                          ? 'مثال: الاستلام من الباب الخلفي، اذكر رقم الطلب عند الوصول'
+                          : 'Example: Pickup from back door, mention order number on arrival'}
+                      />
+                    </div>
+
+                    {/* Pickup Instructions EN */}
+                    <div>
+                      <Label className="block text-sm text-slate-500 mb-1">
+                        {locale === 'ar' ? 'تعليمات الاستلام (إنجليزي)' : 'Pickup Instructions (English)'}
+                      </Label>
+                      <Textarea
+                        value={pickupInstructionsEn}
+                        onChange={(e) => setPickupInstructionsEn(e.target.value)}
+                        className="bg-white border-slate-200 text-slate-900"
+                        dir="ltr"
+                        rows={3}
+                        placeholder="Example: Pick up from counter, please show order confirmation"
+                      />
+                    </div>
+
+                    {/* Info Box */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                        <div className="text-sm text-blue-800">
+                          <p className="font-medium mb-1">
+                            {locale === 'ar' ? 'ملاحظة' : 'Note'}
+                          </p>
+                          <p>
+                            {locale === 'ar'
+                              ? 'عند تفعيل هذا الخيار، سيتمكن العملاء من اختيار "استلام من المتجر" عند الطلب، وسيتم تصفير رسوم التوصيل تلقائياً.'
+                              : 'When enabled, customers can choose "Pickup" at checkout, and delivery fees will be automatically waived.'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  className="w-full"
+                  onClick={handleSavePickup}
+                  disabled={savingPickup}
+                >
+                  {savingPickup ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
+                    </>
+                  ) : savedPickup ? (
                     <>
                       <Check className="w-4 h-4 mr-2" />
                       {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}

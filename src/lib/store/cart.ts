@@ -65,12 +65,23 @@ export type AddItemResult = {
   newProviderName?: string
 }
 
+/**
+ * Pending Online Order tracking
+ * Used to prevent clearing cart during online payment flow
+ */
+export type PendingOnlineOrder = {
+  orderId: string
+  createdAt: string // ISO timestamp
+}
+
 type CartState = {
   cart: CartItem[]
   provider: Provider | null
   _hasHydrated: boolean
   // Pending item to add after confirmation
   pendingItem: { menuItem: MenuItem; provider: Provider; variant?: ProductVariant } | null
+  // Track pending online payment orders (don't clear cart until payment confirmed)
+  pendingOnlineOrder: PendingOnlineOrder | null
   setHasHydrated: (state: boolean) => void
   // Returns result indicating if confirmation is needed
   addItem: (menuItem: MenuItem, provider: Provider, variant?: ProductVariant) => AddItemResult
@@ -82,6 +93,12 @@ type CartState = {
   removeItemCompletely: (menuItemId: string, variantId?: string) => void // Removes entire item regardless of quantity
   updateQuantity: (menuItemId: string, quantity: number, variantId?: string) => void
   clearCart: () => void
+  // Safe clear - only clears if no pending online order
+  safeClearCart: () => boolean
+  // Pending online order management
+  setPendingOnlineOrder: (orderId: string) => void
+  clearPendingOnlineOrder: () => void
+  hasPendingOnlineOrder: () => boolean
   getItemQuantity: (menuItemId: string, variantId?: string) => number
   getSubtotal: () => number
   getTotal: () => number
@@ -95,6 +112,7 @@ export const useCart = create<CartState>()(
       provider: null,
       _hasHydrated: false,
       pendingItem: null,
+      pendingOnlineOrder: null,
       setHasHydrated: (state: boolean) => {
         set({ _hasHydrated: state })
       },
@@ -219,7 +237,50 @@ export const useCart = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ cart: [], provider: null })
+        set({ cart: [], provider: null, pendingOnlineOrder: null })
+      },
+
+      // Safe clear - only clears if no pending online order
+      // Returns true if cart was cleared, false if blocked
+      safeClearCart: () => {
+        const pending = get().pendingOnlineOrder
+        if (pending) {
+          // Check if pending order is older than 1 hour (expired)
+          const createdAt = new Date(pending.createdAt)
+          const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+          if (createdAt > oneHourAgo) {
+            // Pending order is still active, don't clear
+            return false
+          }
+          // Pending order expired, clear it
+        }
+        set({ cart: [], provider: null, pendingOnlineOrder: null })
+        return true
+      },
+
+      // Set pending online order (called when initiating online payment)
+      setPendingOnlineOrder: (orderId: string) => {
+        set({
+          pendingOnlineOrder: {
+            orderId,
+            createdAt: new Date().toISOString(),
+          },
+        })
+      },
+
+      // Clear pending online order (called after payment success or failure)
+      clearPendingOnlineOrder: () => {
+        set({ pendingOnlineOrder: null })
+      },
+
+      // Check if there's a pending online order
+      hasPendingOnlineOrder: () => {
+        const pending = get().pendingOnlineOrder
+        if (!pending) return false
+        // Check if not expired (1 hour)
+        const createdAt = new Date(pending.createdAt)
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+        return createdAt > oneHourAgo
       },
 
       getItemQuantity: (menuItemId, variantId) => {
