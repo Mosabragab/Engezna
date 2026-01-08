@@ -868,16 +868,26 @@ export default function CheckoutPage() {
         promo_code_id: appliedPromoCode?.id || null,
         promo_code_usage_count: appliedPromoCode?.usage_count || null,
         // Cart items for order_items creation
-        cart_items: cart.map(item => ({
-          item_id: item.id,
-          item_name_ar: item.name_ar,
-          item_name_en: item.name_en,
-          quantity: item.quantity,
-          unit_price: item.price,
-          total_price: item.price * item.quantity,
-          options: item.selectedOptions || null,
-          notes: item.notes || null,
-        })),
+        cart_items: cart.map(item => {
+          const itemPrice = item.selectedVariant?.price ?? item.menuItem.price
+          const variantName = item.selectedVariant
+            ? ` (${item.selectedVariant.name_ar})`
+            : ''
+          const variantNameEn = item.selectedVariant
+            ? ` (${item.selectedVariant.name_en || item.selectedVariant.name_ar})`
+            : ''
+          return {
+            item_id: item.menuItem.id,
+            item_name_ar: item.menuItem.name_ar + variantName,
+            item_name_en: item.menuItem.name_en + variantNameEn,
+            quantity: item.quantity,
+            unit_price: itemPrice,
+            total_price: itemPrice * item.quantity,
+            variant_id: item.selectedVariant?.id || null,
+            variant_name_ar: item.selectedVariant?.name_ar || null,
+            variant_name_en: item.selectedVariant?.name_en || null,
+          }
+        }),
         created_at: new Date().toISOString(),
       }
 

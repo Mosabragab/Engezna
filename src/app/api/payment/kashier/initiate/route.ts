@@ -70,7 +70,14 @@ export async function POST(request: NextRequest) {
     // Generate a unique temporary payment reference
     // Format: temp_YYYYMMDD_HHMMSS_randomhex
     const now = new Date()
-    const dateStr = now.toISOString().replace(/[-:T.Z]/g, '').slice(0, 14)
+    // Build date string manually to avoid regex that confuses Tailwind JIT
+    const year = now.getUTCFullYear()
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(now.getUTCDate()).padStart(2, '0')
+    const hours = String(now.getUTCHours()).padStart(2, '0')
+    const mins = String(now.getUTCMinutes()).padStart(2, '0')
+    const secs = String(now.getUTCSeconds()).padStart(2, '0')
+    const dateStr = `${year}${month}${day}${hours}${mins}${secs}`
     const randomHex = crypto.randomBytes(4).toString('hex')
     const paymentRef = `temp_${dateStr}_${randomHex}`
 
