@@ -178,10 +178,14 @@ export default function StoreHoursPage() {
     setSaved(false)
   }
 
+  // Save error state
+  const [saveError, setSaveError] = useState<string | null>(null)
+
   const handleSave = async () => {
     if (!providerId) return
 
     setSaving(true)
+    setSaveError(null)
     const supabase = createClient()
 
     const { error } = await supabase
@@ -192,7 +196,12 @@ export default function StoreHoursPage() {
       })
       .eq('id', providerId)
 
-    if (!error) {
+    if (error) {
+      console.error('Failed to save business hours:', error)
+      setSaveError(locale === 'ar'
+        ? 'فشل حفظ ساعات العمل. يرجى المحاولة مرة أخرى.'
+        : 'Failed to save business hours. Please try again.')
+    } else {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     }
@@ -394,6 +403,13 @@ export default function StoreHoursPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Error Message */}
+          {saveError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+              {saveError}
+            </div>
+          )}
 
           {/* Save Button */}
           <Button
