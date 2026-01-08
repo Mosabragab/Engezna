@@ -27,8 +27,24 @@ import {
   X,
   Loader2,
   FileText,
+  Truck,
+  Package,
+  Clock,
+  Calendar,
+  AlertCircle,
 } from 'lucide-react'
 import Link from 'next/link'
+import type { OrderType, DeliveryTiming } from '@/types/database'
+import {
+  type BusinessHours,
+  validateScheduledTime,
+  getAvailableTimeSlots,
+  getAvailableDates,
+  formatTimeForDisplay,
+  formatDateForDisplay,
+  combineDateAndTime,
+  DEFAULT_BUSINESS_HOURS,
+} from '@/lib/utils/business-hours'
 
 // Simplified district interface for saved addresses (backward compatibility)
 interface SavedAddressDistrict {
@@ -80,11 +96,40 @@ interface PromoCode {
   first_order_only: boolean
 }
 
+// Extended provider interface with pickup settings
+interface ProviderWithPickup {
+  id: string
+  name_ar: string
+  name_en: string
+  delivery_fee: number
+  min_order_amount: number
+  estimated_delivery_time_min: number
+  commission_rate?: number
+  category?: string
+  // Pickup settings
+  supports_pickup: boolean
+  pickup_instructions_ar: string | null
+  pickup_instructions_en: string | null
+  estimated_pickup_time_min: number
+  // Business hours for scheduling
+  business_hours: BusinessHours | null
+}
+
 export default function CheckoutPage() {
   const locale = useLocale()
   const router = useRouter()
   const { user, isAuthenticated, loading: authLoading } = useAuth()
-  const { cart, provider, getSubtotal, getTotal, clearCart, _hasHydrated } = useCart()
+  const {
+    cart,
+    provider,
+    getSubtotal,
+    getTotal,
+    clearCart,
+    _hasHydrated,
+    setPendingOnlineOrder,
+    clearPendingOnlineOrder,
+    pendingOnlineOrder,
+  } = useCart()
 
   // Get location data from context (no redundant queries!)
   const {
@@ -99,6 +144,19 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [orderPlaced, setOrderPlaced] = useState(false) // Prevent redirect after order is placed
+
+  // Extended provider data with pickup settings
+  const [providerData, setProviderData] = useState<ProviderWithPickup | null>(null)
+  const [loadingProviderData, setLoadingProviderData] = useState(true)
+
+  // Order type (delivery vs pickup)
+  const [orderType, setOrderType] = useState<OrderType>('delivery')
+
+  // Delivery timing (ASAP vs scheduled)
+  const [deliveryTiming, setDeliveryTiming] = useState<DeliveryTiming>('asap')
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [selectedTime, setSelectedTime] = useState<string>('')
+  const [scheduledTimeError, setScheduledTimeError] = useState<string | null>(null)
 
   // User information
   const [fullName, setFullName] = useState('')
@@ -140,12 +198,80 @@ export default function CheckoutPage() {
     return getDistrictsByCity(selectedCityId)
   }, [selectedCityId, getDistrictsByCity])
 
+  // Calculate delivery fee based on order type
+  const calculatedDeliveryFee = useMemo(() => {
+    if (orderType === 'pickup') return 0
+    return providerData?.delivery_fee || provider?.delivery_fee || 0
+  }, [orderType, providerData, provider])
+
+  // Available dates for scheduling (next 48 hours)
+  const availableDates = useMemo(() => {
+    return getAvailableDates(providerData?.business_hours || null)
+  }, [providerData?.business_hours])
+
+  // Available time slots for selected date
+  const availableTimeSlots = useMemo(() => {
+    if (!selectedDate) return []
+    const prepTime = orderType === 'pickup'
+      ? (providerData?.estimated_pickup_time_min || 15)
+      : (providerData?.estimated_delivery_time_min || 30)
+    return getAvailableTimeSlots(selectedDate, providerData?.business_hours || null, prepTime)
+  }, [selectedDate, providerData, orderType])
+
   const [addressLine1, setAddressLine1] = useState('')
   const [building, setBuilding] = useState('')
   const [floor, setFloor] = useState('')
   const [apartment, setApartment] = useState('')
   const [landmark, setLandmark] = useState('')
   const [deliveryInstructions, setDeliveryInstructions] = useState('')
+
+  // Load extended provider data (pickup settings, business hours)
+  useEffect(() => {
+    const loadProviderData = async () => {
+      if (!provider?.id) {
+        setLoadingProviderData(false)
+        return
+      }
+
+      setLoadingProviderData(true)
+      const supabase = createClient()
+
+      const { data, error } = await supabase
+        .from('providers')
+        .select(`
+          id,
+          name_ar,
+          name_en,
+          delivery_fee,
+          min_order_amount,
+          estimated_delivery_time_min,
+          commission_rate,
+          category,
+          supports_pickup,
+          pickup_instructions_ar,
+          pickup_instructions_en,
+          estimated_pickup_time_min,
+          business_hours
+        `)
+        .eq('id', provider.id)
+        .single()
+
+      if (data && !error) {
+        setProviderData({
+          ...data,
+          supports_pickup: data.supports_pickup ?? false,
+          pickup_instructions_ar: data.pickup_instructions_ar ?? null,
+          pickup_instructions_en: data.pickup_instructions_en ?? null,
+          estimated_pickup_time_min: data.estimated_pickup_time_min ?? 15,
+          business_hours: data.business_hours as BusinessHours | null,
+        })
+      }
+
+      setLoadingProviderData(false)
+    }
+
+    loadProviderData()
+  }, [provider?.id])
 
   useEffect(() => {
     // Don't redirect if order was just placed (cart cleared after success)
@@ -178,6 +304,37 @@ export default function CheckoutPage() {
   useEffect(() => {
     setSelectedDistrictId('')
   }, [selectedCityId])
+
+  // Reset scheduled time when order type or timing changes
+  useEffect(() => {
+    if (deliveryTiming === 'asap') {
+      setSelectedDate(null)
+      setSelectedTime('')
+      setScheduledTimeError(null)
+    } else if (availableDates.length > 0 && !selectedDate) {
+      // Auto-select first available date
+      setSelectedDate(availableDates[0])
+    }
+  }, [deliveryTiming, availableDates])
+
+  // Reset time when date changes
+  useEffect(() => {
+    setSelectedTime('')
+    setScheduledTimeError(null)
+  }, [selectedDate])
+
+  // Validate scheduled time when time is selected
+  useEffect(() => {
+    if (deliveryTiming === 'scheduled' && selectedDate && selectedTime) {
+      const scheduledDateTime = combineDateAndTime(selectedDate, selectedTime)
+      const validation = validateScheduledTime(scheduledDateTime, providerData?.business_hours || null)
+      if (!validation.valid && validation.error) {
+        setScheduledTimeError(locale === 'ar' ? validation.error.ar : validation.error.en)
+      } else {
+        setScheduledTimeError(null)
+      }
+    }
+  }, [selectedDate, selectedTime, deliveryTiming, providerData?.business_hours, locale])
 
   const loadUserData = async () => {
     if (!user) return
@@ -531,14 +688,36 @@ export default function CheckoutPage() {
       return false
     }
 
-    if (addressMode === 'saved') {
-      if (!selectedAddressId) {
-        setError(locale === 'ar' ? 'يرجى اختيار عنوان التوصيل' : 'Please select a delivery address')
+    // Address validation - only required for delivery orders
+    if (orderType === 'delivery') {
+      if (addressMode === 'saved') {
+        if (!selectedAddressId) {
+          setError(locale === 'ar' ? 'يرجى اختيار عنوان التوصيل' : 'Please select a delivery address')
+          return false
+        }
+      } else {
+        if (!selectedGovernorateId || !selectedCityId || !addressLine1) {
+          setError(locale === 'ar' ? 'يرجى ملء المحافظة والمدينة والعنوان' : 'Please fill governorate, city and address')
+          return false
+        }
+      }
+    }
+
+    // Scheduled time validation
+    if (deliveryTiming === 'scheduled') {
+      if (!selectedDate || !selectedTime) {
+        setError(
+          locale === 'ar'
+            ? 'يرجى تحديد تاريخ ووقت الاستلام/التوصيل'
+            : 'Please select a date and time for pickup/delivery'
+        )
         return false
       }
-    } else {
-      if (!selectedGovernorateId || !selectedCityId || !addressLine1) {
-        setError(locale === 'ar' ? 'يرجى ملء المحافظة والمدينة والعنوان' : 'Please fill governorate, city and address')
+
+      const scheduledDateTime = combineDateAndTime(selectedDate, selectedTime)
+      const validation = validateScheduledTime(scheduledDateTime, providerData?.business_hours || null)
+      if (!validation.valid && validation.error) {
+        setError(locale === 'ar' ? validation.error.ar : validation.error.en)
         return false
       }
     }
@@ -579,35 +758,144 @@ export default function CheckoutPage() {
     try {
       const supabase = createClient()
 
-      // Calculate final total with discount
-      const finalTotal = subtotal + (provider.delivery_fee || 0) - discountAmount
+      // Calculate final total with discount (use calculated delivery fee based on order type)
+      const finalTotal = subtotal + calculatedDeliveryFee - discountAmount
 
       // NOTE: platform_commission is calculated SERVER-SIDE by database trigger
       // This prevents any client-side manipulation of commission values
       // See: supabase/migrations/20251223100000_secure_commission_calculation.sql
 
-      // Build delivery address JSONB with full geographic data
-      const deliveryAddressJson = buildDeliveryAddressJson()
+      // Build delivery address JSONB - null for pickup orders
+      const deliveryAddressJson = orderType === 'pickup' ? null : buildDeliveryAddressJson()
 
-      // Calculate estimated delivery time
-      const estimatedDeliveryTime = new Date(
-        Date.now() + (provider.estimated_delivery_time_min || 30) * 60 * 1000
-      ).toISOString()
+      // Calculate scheduled time if applicable
+      let scheduledTimeValue: string | null = null
+      if (deliveryTiming === 'scheduled' && selectedDate && selectedTime) {
+        scheduledTimeValue = combineDateAndTime(selectedDate, selectedTime).toISOString()
+      }
 
-      // Create order - platform_commission will be set by database trigger
+      // Calculate estimated delivery/pickup time
+      const prepTime = orderType === 'pickup'
+        ? (providerData?.estimated_pickup_time_min || 15)
+        : (providerData?.estimated_delivery_time_min || 30)
+      const estimatedDeliveryTime = deliveryTiming === 'scheduled' && scheduledTimeValue
+        ? scheduledTimeValue
+        : new Date(Date.now() + prepTime * 60 * 1000).toISOString()
+
+      // ============================================================
+      // CASH (COD) FLOW: Create order immediately, clear cart
+      // ============================================================
+      if (paymentMethod === 'cash') {
+        // Create order with status 'pending'
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            customer_id: user.id,
+            provider_id: provider.id,
+            status: 'pending',
+            subtotal: subtotal,
+            delivery_fee: calculatedDeliveryFee,
+            discount: discountAmount,
+            total: finalTotal,
+            payment_method: paymentMethod,
+            payment_status: 'pending',
+            // New fields: order type, timing, scheduled time
+            order_type: orderType,
+            delivery_timing: deliveryTiming,
+            scheduled_time: scheduledTimeValue,
+            delivery_address: deliveryAddressJson,
+            customer_notes: additionalNotes || null,
+            estimated_delivery_time: estimatedDeliveryTime,
+            promo_code: appliedPromoCode?.code || null,
+          })
+          .select()
+          .single()
+
+        if (orderError) {
+          console.error('Order creation error:', orderError)
+          throw new Error(`Order creation failed: ${orderError.message}`)
+        }
+
+        // Record promo code usage if applied
+        if (appliedPromoCode) {
+          await supabase.from('promo_code_usage').insert({
+            promo_code_id: appliedPromoCode.id,
+            user_id: user.id,
+            order_id: order.id,
+            discount_amount: discountAmount,
+          })
+
+          await supabase
+            .from('promo_codes')
+            .update({ usage_count: appliedPromoCode.usage_count + 1 })
+            .eq('id', appliedPromoCode.id)
+        }
+
+        // Create order items
+        await createOrderItems(supabase, order.id)
+
+        // Mark order as placed and clear cart
+        setOrderPlaced(true)
+        clearCart()
+
+        // Redirect to confirmation page
+        router.push(`/${locale}/orders/${order.id}/confirmation`)
+        return
+      }
+
+      // ============================================================
+      // ONLINE PAYMENT FLOW: Create order, DON'T clear cart until success
+      // ============================================================
+
+      // Check if there's already a pending order for this session
+      // to prevent duplicate orders on retry
+      if (pendingOnlineOrder) {
+        // Check if pending order still exists and is in pending status
+        const { data: existingOrder } = await supabase
+          .from('orders')
+          .select('id, status, payment_status')
+          .eq('id', pendingOnlineOrder.orderId)
+          .single()
+
+        if (existingOrder && existingOrder.payment_status === 'pending') {
+          // Reuse existing order, just redirect to payment
+          const paymentResponse = await fetch('/api/payment/kashier/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: existingOrder.id }),
+          })
+
+          const paymentData = await paymentResponse.json()
+
+          if (paymentData.success && paymentData.checkoutUrl) {
+            // DON'T clear cart - redirect to payment
+            window.location.href = paymentData.checkoutUrl
+            return
+          }
+        } else {
+          // Pending order was completed or doesn't exist, clear it
+          clearPendingOnlineOrder()
+        }
+      }
+
+      // Create new order for online payment
+      // IMPORTANT: Use 'pending_payment' status so merchant doesn't see it until payment succeeds
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           customer_id: user.id,
           provider_id: provider.id,
-          status: 'pending',
+          status: 'pending_payment', // NOT visible to merchant until payment confirmed
           subtotal: subtotal,
-          delivery_fee: provider.delivery_fee,
+          delivery_fee: calculatedDeliveryFee,
           discount: discountAmount,
           total: finalTotal,
-          // platform_commission is calculated by trigger - DO NOT send from client
           payment_method: paymentMethod,
-          payment_status: 'pending',
+          payment_status: 'pending', // Will be updated by webhook
+          // New fields: order type, timing, scheduled time
+          order_type: orderType,
+          delivery_timing: deliveryTiming,
+          scheduled_time: scheduledTimeValue,
           delivery_address: deliveryAddressJson,
           customer_notes: additionalNotes || null,
           estimated_delivery_time: estimatedDeliveryTime,
@@ -630,92 +918,47 @@ export default function CheckoutPage() {
           discount_amount: discountAmount,
         })
 
-        // Increment promo code usage count
         await supabase
           .from('promo_codes')
           .update({ usage_count: appliedPromoCode.usage_count + 1 })
           .eq('id', appliedPromoCode.id)
       }
 
-      // Create order items - use variant price if selected, otherwise base price
-      const orderItems = cart.map((item) => {
-        const itemPrice = item.selectedVariant?.price ?? item.menuItem.price
-        const variantName = item.selectedVariant
-          ? ` (${item.selectedVariant.name_ar})`
-          : ''
-        const variantNameEn = item.selectedVariant
-          ? ` (${item.selectedVariant.name_en || item.selectedVariant.name_ar})`
-          : ''
+      // Create order items
+      await createOrderItems(supabase, order.id)
 
-        return {
-          order_id: order.id,
-          menu_item_id: item.menuItem.id,
-          item_name_ar: item.menuItem.name_ar + variantName,
-          item_name_en: item.menuItem.name_en + variantNameEn,
-          item_price: itemPrice,
-          quantity: item.quantity,
-          unit_price: itemPrice,
-          total_price: itemPrice * item.quantity,
-          variant_id: item.selectedVariant?.id || null,
-          variant_name_ar: item.selectedVariant?.name_ar || null,
-          variant_name_en: item.selectedVariant?.name_en || null,
-        }
-      })
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems)
-
-      if (itemsError) {
-        throw itemsError
-      }
-
-      // Mark order as placed to prevent useEffect from redirecting
+      // Save pending order ID - DON'T clear cart yet!
+      setPendingOnlineOrder(order.id)
       setOrderPlaced(true)
 
-      // Handle payment based on method
-      if (paymentMethod === 'online') {
-        // Initiate Kashier payment
-        try {
-          const paymentResponse = await fetch('/api/payment/kashier/initiate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: order.id }),
-          })
+      // Initiate Kashier payment
+      const paymentResponse = await fetch('/api/payment/kashier/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id }),
+      })
 
-          const paymentData = await paymentResponse.json()
-          console.log('Payment initiation response:', paymentData)
+      const paymentData = await paymentResponse.json()
+      console.log('Payment initiation response:', paymentData)
 
-          if (paymentData.success && paymentData.checkoutUrl) {
-            // Clear cart before redirecting to payment
-            clearCart()
-            // Redirect to Kashier checkout
-            window.location.href = paymentData.checkoutUrl
-            return
-          } else {
-            // Show specific error message
-            const errorMsg = paymentData.error || 'Payment initiation failed'
-            console.error('Payment initiation failed:', errorMsg)
-            setError(
-              locale === 'ar'
-                ? `فشل بدء الدفع: ${errorMsg}`
-                : `Payment initiation failed: ${errorMsg}`
-            )
-            setIsLoading(false)
-            return
-          }
-        } catch (paymentError) {
-          console.error('Payment initiation error:', paymentError)
-          // Order created but payment failed - redirect to order page
-          clearCart()
-          router.push(`/${locale}/orders/${order.id}?payment_error=true`)
-          return
-        }
+      if (paymentData.success && paymentData.checkoutUrl) {
+        // IMPORTANT: Don't clear cart here!
+        // Cart will be cleared in payment-result page on success
+        window.location.href = paymentData.checkoutUrl
+        return
+      } else {
+        // Payment initiation failed but order was created
+        const errorMsg = paymentData.error || 'Payment initiation failed'
+        console.error('Payment initiation failed:', errorMsg)
+        setError(
+          locale === 'ar'
+            ? `فشل بدء الدفع. يمكنك إعادة المحاولة.`
+            : `Payment initiation failed. You can try again.`
+        )
+        setOrderPlaced(false) // Allow retry
+        setIsLoading(false)
+        return
       }
-
-      // For cash payment, redirect to confirmation page
-      clearCart()
-      router.push(`/${locale}/orders/${order.id}/confirmation`)
     } catch (err) {
       // Check if error is due to RLS policy (banned customer)
       const errorMessage = err instanceof Error ? err.message : String(err)
@@ -742,6 +985,41 @@ export default function CheckoutPage() {
     }
   }
 
+  // Helper function to create order items
+  const createOrderItems = async (supabase: ReturnType<typeof createClient>, orderId: string) => {
+    const orderItems = cart.map((item) => {
+      const itemPrice = item.selectedVariant?.price ?? item.menuItem.price
+      const variantName = item.selectedVariant
+        ? ` (${item.selectedVariant.name_ar})`
+        : ''
+      const variantNameEn = item.selectedVariant
+        ? ` (${item.selectedVariant.name_en || item.selectedVariant.name_ar})`
+        : ''
+
+      return {
+        order_id: orderId,
+        menu_item_id: item.menuItem.id,
+        item_name_ar: item.menuItem.name_ar + variantName,
+        item_name_en: item.menuItem.name_en + variantNameEn,
+        item_price: itemPrice,
+        quantity: item.quantity,
+        unit_price: itemPrice,
+        total_price: itemPrice * item.quantity,
+        variant_id: item.selectedVariant?.id || null,
+        variant_name_ar: item.selectedVariant?.name_ar || null,
+        variant_name_en: item.selectedVariant?.name_en || null,
+      }
+    })
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems)
+
+    if (itemsError) {
+      throw itemsError
+    }
+  }
+
   // Show loading while auth is loading or cart is hydrating
   // Also show loading if order was placed (navigating to confirmation)
   if (authLoading || !_hasHydrated || orderPlaced) {
@@ -762,7 +1040,7 @@ export default function CheckoutPage() {
   }
 
   const subtotal = getSubtotal()
-  const deliveryFee = provider?.delivery_fee || 0
+  const deliveryFee = calculatedDeliveryFee
   const total = subtotal + deliveryFee - discountAmount
 
   return (
@@ -820,7 +1098,238 @@ export default function CheckoutPage() {
                 </CardContent>
               </Card>
 
-              {/* Delivery Address */}
+              {/* Order Type Selection - Only show if provider supports pickup */}
+              {providerData?.supports_pickup && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="w-5 h-5" />
+                      {locale === 'ar' ? 'نوع الطلب' : 'Order Type'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setOrderType('delivery')}
+                        disabled={isLoading}
+                        className={`flex-1 p-4 rounded-lg border-2 transition-all ${
+                          orderType === 'delivery'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <Truck className="w-6 h-6" />
+                          <span className="font-medium">
+                            {locale === 'ar' ? 'توصيل' : 'Delivery'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {locale === 'ar'
+                              ? `${providerData?.estimated_delivery_time_min || 30} دقيقة`
+                              : `${providerData?.estimated_delivery_time_min || 30} min`}
+                          </span>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOrderType('pickup')}
+                        disabled={isLoading}
+                        className={`flex-1 p-4 rounded-lg border-2 transition-all ${
+                          orderType === 'pickup'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <Package className="w-6 h-6" />
+                          <span className="font-medium">
+                            {locale === 'ar' ? 'استلام من المتجر' : 'Pickup'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {locale === 'ar'
+                              ? `${providerData?.estimated_pickup_time_min || 15} دقيقة`
+                              : `${providerData?.estimated_pickup_time_min || 15} min`}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Pickup Instructions */}
+                    {orderType === 'pickup' && (providerData?.pickup_instructions_ar || providerData?.pickup_instructions_en) && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div className="text-sm text-blue-800">
+                            <p className="font-medium mb-1">
+                              {locale === 'ar' ? 'تعليمات الاستلام:' : 'Pickup Instructions:'}
+                            </p>
+                            <p>
+                              {locale === 'ar'
+                                ? providerData?.pickup_instructions_ar
+                                : providerData?.pickup_instructions_en || providerData?.pickup_instructions_ar}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Free delivery fee notice for pickup */}
+                    {orderType === 'pickup' && (
+                      <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-2 rounded-lg">
+                        <Check className="w-4 h-4" />
+                        {locale === 'ar' ? 'بدون رسوم توصيل!' : 'No delivery fee!'}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Delivery Timing Selection */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    {locale === 'ar'
+                      ? `موعد ${orderType === 'pickup' ? 'الاستلام' : 'التوصيل'}`
+                      : `${orderType === 'pickup' ? 'Pickup' : 'Delivery'} Time`}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryTiming('asap')}
+                      disabled={isLoading}
+                      className={`flex-1 p-4 rounded-lg border-2 transition-all ${
+                        deliveryTiming === 'asap'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <Clock className="w-6 h-6" />
+                        <span className="font-medium">
+                          {locale === 'ar' ? 'الآن' : 'ASAP'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {locale === 'ar' ? 'في أقرب وقت ممكن' : 'As soon as possible'}
+                        </span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryTiming('scheduled')}
+                      disabled={isLoading}
+                      className={`flex-1 p-4 rounded-lg border-2 transition-all ${
+                        deliveryTiming === 'scheduled'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <Calendar className="w-6 h-6" />
+                        <span className="font-medium">
+                          {locale === 'ar' ? 'تحديد موعد' : 'Schedule'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {locale === 'ar' ? 'اختر الوقت المناسب' : 'Choose a time'}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Date and Time Selection for Scheduled */}
+                  {deliveryTiming === 'scheduled' && (
+                    <div className="mt-4 space-y-4">
+                      {/* Date Selection */}
+                      <div>
+                        <Label className="mb-2 block">
+                          {locale === 'ar' ? 'اختر اليوم' : 'Select Day'}
+                        </Label>
+                        <div className="flex gap-2 overflow-x-auto pb-2">
+                          {availableDates.length > 0 ? (
+                            availableDates.map((date, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => setSelectedDate(date)}
+                                className={`flex-shrink-0 px-4 py-3 rounded-lg border-2 transition-all ${
+                                  selectedDate?.toDateString() === date.toDateString()
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border hover:border-primary/50'
+                                }`}
+                              >
+                                <div className="text-center">
+                                  <div className="font-medium">
+                                    {formatDateForDisplay(date, locale as 'ar' | 'en')}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                    })}
+                                  </div>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              {locale === 'ar'
+                                ? 'لا توجد مواعيد متاحة حالياً'
+                                : 'No available dates at the moment'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Time Selection */}
+                      {selectedDate && (
+                        <div>
+                          <Label className="mb-2 block">
+                            {locale === 'ar' ? 'اختر الوقت' : 'Select Time'}
+                          </Label>
+                          {availableTimeSlots.length > 0 ? (
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                              {availableTimeSlots.map((time) => (
+                                <button
+                                  key={time}
+                                  type="button"
+                                  onClick={() => setSelectedTime(time)}
+                                  className={`px-3 py-2 rounded-lg border-2 text-sm transition-all ${
+                                    selectedTime === time
+                                      ? 'border-primary bg-primary/5'
+                                      : 'border-border hover:border-primary/50'
+                                  }`}
+                                >
+                                  {formatTimeForDisplay(time, locale as 'ar' | 'en')}
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              {locale === 'ar'
+                                ? 'لا توجد أوقات متاحة لهذا اليوم'
+                                : 'No available times for this day'}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Scheduled Time Error */}
+                      {scheduledTimeError && (
+                        <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-2 rounded-lg">
+                          <AlertCircle className="w-4 h-4" />
+                          {scheduledTimeError}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Delivery Address - Only show for delivery orders */}
+              {orderType === 'delivery' && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1047,6 +1556,7 @@ export default function CheckoutPage() {
                   </div>
                 </CardContent>
               </Card>
+              )}
 
               {/* Payment Method */}
               <Card>
@@ -1122,9 +1632,37 @@ export default function CheckoutPage() {
                       <p className="font-semibold">
                         {locale === 'ar' ? provider.name_ar : provider.name_en}
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        {provider.estimated_delivery_time_min} {locale === 'ar' ? 'دقيقة' : 'min'}
-                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        {orderType === 'pickup' ? (
+                          <>
+                            <Package className="w-4 h-4 text-primary" />
+                            <span className="text-sm text-muted-foreground">
+                              {locale === 'ar' ? 'استلام من المتجر' : 'Pickup'}
+                              {' - '}
+                              {providerData?.estimated_pickup_time_min || 15} {locale === 'ar' ? 'دقيقة' : 'min'}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Truck className="w-4 h-4 text-primary" />
+                            <span className="text-sm text-muted-foreground">
+                              {locale === 'ar' ? 'توصيل' : 'Delivery'}
+                              {' - '}
+                              {provider.estimated_delivery_time_min} {locale === 'ar' ? 'دقيقة' : 'min'}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {deliveryTiming === 'scheduled' && selectedDate && selectedTime && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Calendar className="w-4 h-4 text-primary" />
+                          <span className="text-sm text-muted-foreground">
+                            {formatDateForDisplay(selectedDate, locale as 'ar' | 'en')}
+                            {' - '}
+                            {formatTimeForDisplay(selectedTime, locale as 'ar' | 'en')}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
 

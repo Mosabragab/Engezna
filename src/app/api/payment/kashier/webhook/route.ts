@@ -87,6 +87,12 @@ export async function POST(request: NextRequest) {
       payment_completed_at: newPaymentStatus === 'paid' ? new Date().toISOString() : null,
     }
 
+    // CRITICAL: When payment succeeds, change order status from 'pending_payment' to 'pending'
+    // This makes the order visible to the merchant
+    if (newPaymentStatus === 'paid') {
+      updateData.status = 'pending'
+    }
+
     // Store transaction ID if available
     if (transactionId) {
       updateData.payment_transaction_id = transactionId

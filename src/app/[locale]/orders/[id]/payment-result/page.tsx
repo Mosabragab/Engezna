@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { CustomerLayout } from '@/components/customer/layout'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { useCart } from '@/lib/store/cart'
 import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react'
 
 interface PaymentResultPageProps {
@@ -17,10 +18,16 @@ export default function PaymentResultPage({ params }: PaymentResultPageProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  // Cart store for clearing cart on successful payment
+  const { clearCart, clearPendingOnlineOrder, pendingOnlineOrder } = useCart()
+
   const [orderId, setOrderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [paymentStatus, setPaymentStatus] = useState<'paid' | 'pending' | 'failed' | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Track if cart was already cleared to prevent duplicate clears
+  const cartClearedRef = useRef(false)
 
   useEffect(() => {
     const init = async () => {
@@ -119,6 +126,29 @@ export default function PaymentResultPage({ params }: PaymentResultPageProps) {
 
     return () => clearInterval(pollInterval)
   }, [paymentStatus, orderId])
+
+  // Handle cart clearing based on payment status
+  useEffect(() => {
+    if (paymentStatus === 'paid' && !cartClearedRef.current) {
+      // Payment successful - clear cart and pending order
+      cartClearedRef.current = true
+      clearCart()
+      clearPendingOnlineOrder()
+      console.log('Payment successful - cart cleared')
+    } else if (paymentStatus === 'failed') {
+      // Payment failed - clear pending order but keep cart for retry
+      clearPendingOnlineOrder()
+      console.log('Payment failed - pending order cleared, cart preserved for retry')
+    }
+  }, [paymentStatus, clearCart, clearPendingOnlineOrder])
+
+  // Verify this is the correct order (matches pending order)
+  useEffect(() => {
+    if (orderId && pendingOnlineOrder && pendingOnlineOrder.orderId !== orderId) {
+      // This shouldn't happen, but log it for debugging
+      console.warn('Order ID mismatch: URL order differs from pending order')
+    }
+  }, [orderId, pendingOnlineOrder])
 
   if (loading) {
     return (

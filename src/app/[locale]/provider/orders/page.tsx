@@ -174,11 +174,20 @@ export default function ProviderOrdersPage() {
     }
 
     if (ordersData) {
-      const orders = ordersData.map((order: any) => ({
-        ...order,
-        customer: Array.isArray(order.profiles) ? order.profiles[0] : order.profiles,
-        items: order.order_items || [],
-      }))
+      const orders = ordersData
+        .map((order: any) => ({
+          ...order,
+          customer: Array.isArray(order.profiles) ? order.profiles[0] : order.profiles,
+          items: order.order_items || [],
+        }))
+        // CRITICAL: Filter out unpaid online payment orders
+        // These should NOT appear in merchant dashboard until payment is confirmed
+        .filter((order: any) => {
+          // Cash orders are always visible
+          if (order.payment_method === 'cash') return true
+          // Online payment orders only visible when payment is completed/paid
+          return order.payment_status === 'paid' || order.payment_status === 'completed'
+        })
       setOrders(orders)
     }
   }, [])

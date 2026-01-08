@@ -51,6 +51,12 @@ export type MessageType = 'text' | 'image' | 'system';
 
 export type NotificationType = 'order_update' | 'promo' | 'system' | 'chat';
 
+// NEW: Order type enum (delivery vs pickup)
+export type OrderType = 'delivery' | 'pickup';
+
+// NEW: Delivery timing enum (ASAP vs scheduled)
+export type DeliveryTiming = 'asap' | 'scheduled';
+
 // NEW: Settlement status enum for consistency
 export type SettlementStatus = 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived';
 
@@ -205,6 +211,11 @@ export interface Database {
           // Other fields
           rejection_reason: string | null;
           settlement_group_id: string | null;
+          // Pickup settings
+          supports_pickup: boolean;
+          pickup_instructions_ar: string | null;
+          pickup_instructions_en: string | null;
+          estimated_pickup_time_min: number;
         };
         Insert: {
           id?: string;
@@ -253,6 +264,11 @@ export interface Database {
           // Other fields
           rejection_reason?: string | null;
           settlement_group_id?: string | null;
+          // Pickup settings
+          supports_pickup?: boolean;
+          pickup_instructions_ar?: string | null;
+          pickup_instructions_en?: string | null;
+          estimated_pickup_time_min?: number;
         };
         Update: {
           id?: string;
@@ -301,6 +317,11 @@ export interface Database {
           // Other fields
           rejection_reason?: string | null;
           settlement_group_id?: string | null;
+          // Pickup settings
+          supports_pickup?: boolean;
+          pickup_instructions_ar?: string | null;
+          pickup_instructions_en?: string | null;
+          estimated_pickup_time_min?: number;
         };
       };
 
@@ -796,6 +817,10 @@ export interface Database {
           platform_commission: number;
           payment_method: PaymentMethod;
           payment_status: PaymentStatus;
+          // Order type and timing
+          order_type: OrderType;
+          delivery_timing: DeliveryTiming;
+          scheduled_time: string | null;
           delivery_address: Json;
           delivery_instructions: string | null;
           estimated_delivery_time: string | null;
@@ -830,7 +855,11 @@ export interface Database {
           platform_commission: number;
           payment_method: PaymentMethod;
           payment_status?: PaymentStatus;
-          delivery_address: Json;
+          // Order type and timing
+          order_type?: OrderType;
+          delivery_timing?: DeliveryTiming;
+          scheduled_time?: string | null;
+          delivery_address?: Json;
           delivery_instructions?: string | null;
           estimated_delivery_time?: string | null;
           actual_delivery_time?: string | null;
@@ -864,6 +893,10 @@ export interface Database {
           platform_commission?: number;
           payment_method?: PaymentMethod;
           payment_status?: PaymentStatus;
+          // Order type and timing
+          order_type?: OrderType;
+          delivery_timing?: DeliveryTiming;
+          scheduled_time?: string | null;
           delivery_address?: Json;
           delivery_instructions?: string | null;
           estimated_delivery_time?: string | null;
@@ -1652,6 +1685,8 @@ export interface Database {
       settlement_status: SettlementStatus;
       settlement_direction: SettlementDirection;
       commission_status: CommissionStatus;
+      order_type: OrderType;
+      delivery_timing: DeliveryTiming;
     };
   };
 }

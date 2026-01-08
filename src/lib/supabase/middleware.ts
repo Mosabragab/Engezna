@@ -61,6 +61,8 @@ export async function updateSession(request: NextRequest) {
     '/provider/login',
     '/provider/register',
     '/partner',
+    '/payment-result',  // CRITICAL: Allow payment callbacks without auth redirect
+    '/confirmation',    // Order confirmation page
   ]
 
   // Check if the current path is protected
