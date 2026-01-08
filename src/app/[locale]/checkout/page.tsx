@@ -215,9 +215,7 @@ export default function CheckoutPage() {
     const prepTime = orderType === 'pickup'
       ? (providerData?.estimated_pickup_time_min || 15)
       : (providerData?.estimated_delivery_time_min || 30)
-    const slots = getAvailableTimeSlots(selectedDate, providerData?.business_hours || null, prepTime)
-    console.log('Available time slots:', slots.length, 'Business hours used:', providerData?.business_hours)
-    return slots
+    return getAvailableTimeSlots(selectedDate, providerData?.business_hours || null, prepTime)
   }, [selectedDate, providerData, orderType])
 
   const [addressLine1, setAddressLine1] = useState('')
@@ -259,10 +257,6 @@ export default function CheckoutPage() {
         .single()
 
       if (data && !error) {
-        // Debug: Log business hours data
-        console.log('Provider business_hours from DB:', data.business_hours)
-        console.log('Type:', typeof data.business_hours)
-
         setProviderData({
           ...data,
           supports_pickup: data.supports_pickup ?? false,
@@ -885,12 +879,13 @@ export default function CheckoutPage() {
       }
 
       // Create new order for online payment
+      // IMPORTANT: Use 'pending_payment' status so merchant doesn't see it until payment succeeds
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           customer_id: user.id,
           provider_id: provider.id,
-          status: 'pending',
+          status: 'pending_payment', // NOT visible to merchant until payment confirmed
           subtotal: subtotal,
           delivery_fee: calculatedDeliveryFee,
           discount: discountAmount,
