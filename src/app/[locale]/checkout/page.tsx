@@ -215,7 +215,9 @@ export default function CheckoutPage() {
     const prepTime = orderType === 'pickup'
       ? (providerData?.estimated_pickup_time_min || 15)
       : (providerData?.estimated_delivery_time_min || 30)
-    return getAvailableTimeSlots(selectedDate, providerData?.business_hours || null, prepTime)
+    const slots = getAvailableTimeSlots(selectedDate, providerData?.business_hours || null, prepTime)
+    console.log('Available time slots:', slots.length, 'Business hours used:', providerData?.business_hours)
+    return slots
   }, [selectedDate, providerData, orderType])
 
   const [addressLine1, setAddressLine1] = useState('')
@@ -257,6 +259,10 @@ export default function CheckoutPage() {
         .single()
 
       if (data && !error) {
+        // Debug: Log business hours data
+        console.log('Provider business_hours from DB:', data.business_hours)
+        console.log('Type:', typeof data.business_hours)
+
         setProviderData({
           ...data,
           supports_pickup: data.supports_pickup ?? false,

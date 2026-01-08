@@ -47,15 +47,15 @@ export const DAY_LABELS = {
 }
 
 // Default business hours (fallback when provider hasn't set hours)
-// Assumption: Store is always open as a fallback
+// Reasonable defaults: 9 AM - 11 PM, all days open
 export const DEFAULT_BUSINESS_HOURS: BusinessHours = {
-  saturday: { open: '00:00', close: '23:59', is_open: true },
-  sunday: { open: '00:00', close: '23:59', is_open: true },
-  monday: { open: '00:00', close: '23:59', is_open: true },
-  tuesday: { open: '00:00', close: '23:59', is_open: true },
-  wednesday: { open: '00:00', close: '23:59', is_open: true },
-  thursday: { open: '00:00', close: '23:59', is_open: true },
-  friday: { open: '00:00', close: '23:59', is_open: true },
+  saturday: { open: '09:00', close: '23:00', is_open: true },
+  sunday: { open: '09:00', close: '23:00', is_open: true },
+  monday: { open: '09:00', close: '23:00', is_open: true },
+  tuesday: { open: '09:00', close: '23:00', is_open: true },
+  wednesday: { open: '09:00', close: '23:00', is_open: true },
+  thursday: { open: '09:00', close: '23:00', is_open: true },
+  friday: { open: '09:00', close: '23:00', is_open: true },
 }
 
 /**
@@ -230,6 +230,16 @@ export function validateScheduledTime(
 }
 
 /**
+ * Check if business hours object is valid and has proper structure
+ */
+function isValidBusinessHours(bh: BusinessHours | null | undefined): bh is BusinessHours {
+  if (!bh || typeof bh !== 'object') return false
+  // Check if at least one day has proper structure
+  const sampleDay = bh.saturday || bh.sunday || bh.monday
+  return sampleDay && typeof sampleDay.open === 'string' && typeof sampleDay.close === 'string'
+}
+
+/**
  * Get available time slots for a specific date
  * Returns 30-minute intervals within business hours
  *
@@ -244,8 +254,8 @@ export function getAvailableTimeSlots(
 ): string[] {
   const dayKey = getDayKey(date)
 
-  // Use default hours if not set
-  const hours = businessHours || DEFAULT_BUSINESS_HOURS
+  // Use default hours if not set or invalid structure
+  const hours = isValidBusinessHours(businessHours) ? businessHours : DEFAULT_BUSINESS_HOURS
   const dayHours = hours[dayKey]
 
   // If day is closed, return empty
