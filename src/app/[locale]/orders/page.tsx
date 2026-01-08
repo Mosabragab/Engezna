@@ -29,6 +29,7 @@ type Order = {
   order_number: string
   provider_id: string
   status: string
+  payment_status: string
   subtotal: number
   delivery_fee: number
   total: number
@@ -76,6 +77,7 @@ export default function OrderHistoryPage() {
         order_number,
         provider_id,
         status,
+        payment_status,
         subtotal,
         delivery_fee,
         total,
@@ -88,10 +90,18 @@ export default function OrderHistoryPage() {
 
     if (!error) {
       // Transform provider from array to object
-      const transformedOrders = data?.map(order => ({
-        ...order,
-        provider: Array.isArray(order.provider) ? order.provider[0] : order.provider
-      })) || []
+      // CRITICAL: Filter out unpaid online payment orders (phantom orders)
+      const transformedOrders = data
+        ?.map(order => ({
+          ...order,
+          provider: Array.isArray(order.provider) ? order.provider[0] : order.provider
+        }))
+        .filter(order => {
+          // Cash orders are always visible
+          if (order.payment_method === 'cash') return true
+          // Online payment orders only visible when payment is completed/paid
+          return order.payment_status === 'paid' || order.payment_status === 'completed'
+        }) || []
       setOrders(transformedOrders)
     }
 

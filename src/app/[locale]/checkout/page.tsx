@@ -844,98 +844,64 @@ export default function CheckoutPage() {
       }
 
       // ============================================================
-      // ONLINE PAYMENT FLOW: Create order, DON'T clear cart until success
+      // ONLINE PAYMENT FLOW: DO NOT CREATE ORDER IN DATABASE!
+      // Order will be created by webhook or payment-result page on success
       // ============================================================
 
-      // Check if there's already a pending order for this session
-      // to prevent duplicate orders on retry
-      if (pendingOnlineOrder) {
-        // Check if pending order still exists and is in pending status
-        const { data: existingOrder } = await supabase
-          .from('orders')
-          .select('id, status, payment_status')
-          .eq('id', pendingOnlineOrder.orderId)
-          .single()
-
-        if (existingOrder && existingOrder.payment_status === 'pending') {
-          // Reuse existing order, just redirect to payment
-          const paymentResponse = await fetch('/api/payment/kashier/initiate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: existingOrder.id }),
-          })
-
-          const paymentData = await paymentResponse.json()
-
-          if (paymentData.success && paymentData.checkoutUrl) {
-            // DON'T clear cart - redirect to payment
-            window.location.href = paymentData.checkoutUrl
-            return
+      // Prepare order data to be stored temporarily
+      const pendingOrderData = {
+        customer_id: user.id,
+        provider_id: provider.id,
+        provider_name: locale === 'ar' ? provider.name_ar : provider.name_en,
+        subtotal: subtotal,
+        delivery_fee: calculatedDeliveryFee,
+        discount: discountAmount,
+        total: finalTotal,
+        payment_method: paymentMethod,
+        order_type: orderType,
+        delivery_timing: deliveryTiming,
+        scheduled_time: scheduledTimeValue,
+        delivery_address: deliveryAddressJson,
+        customer_notes: additionalNotes || null,
+        estimated_delivery_time: estimatedDeliveryTime,
+        promo_code: appliedPromoCode?.code || null,
+        promo_code_id: appliedPromoCode?.id || null,
+        promo_code_usage_count: appliedPromoCode?.usage_count || null,
+        // Cart items for order_items creation
+        cart_items: cart.map(item => {
+          const itemPrice = item.selectedVariant?.price ?? item.menuItem.price
+          const variantName = item.selectedVariant
+            ? ` (${item.selectedVariant.name_ar})`
+            : ''
+          const variantNameEn = item.selectedVariant
+            ? ` (${item.selectedVariant.name_en || item.selectedVariant.name_ar})`
+            : ''
+          return {
+            item_id: item.menuItem.id,
+            item_name_ar: item.menuItem.name_ar + variantName,
+            item_name_en: item.menuItem.name_en + variantNameEn,
+            quantity: item.quantity,
+            unit_price: itemPrice,
+            total_price: itemPrice * item.quantity,
+            variant_id: item.selectedVariant?.id || null,
+            variant_name_ar: item.selectedVariant?.name_ar || null,
+            variant_name_en: item.selectedVariant?.name_en || null,
           }
-        } else {
-          // Pending order was completed or doesn't exist, clear it
-          clearPendingOnlineOrder()
-        }
+        }),
+        created_at: new Date().toISOString(),
       }
 
-      // Create new order for online payment
-      // IMPORTANT: Use 'pending_payment' status so merchant doesn't see it until payment succeeds
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          customer_id: user.id,
-          provider_id: provider.id,
-          status: 'pending_payment', // NOT visible to merchant until payment confirmed
-          subtotal: subtotal,
-          delivery_fee: calculatedDeliveryFee,
-          discount: discountAmount,
-          total: finalTotal,
-          payment_method: paymentMethod,
-          payment_status: 'pending', // Will be updated by webhook
-          // New fields: order type, timing, scheduled time
-          order_type: orderType,
-          delivery_timing: deliveryTiming,
-          scheduled_time: scheduledTimeValue,
-          delivery_address: deliveryAddressJson,
-          customer_notes: additionalNotes || null,
-          estimated_delivery_time: estimatedDeliveryTime,
-          promo_code: appliedPromoCode?.code || null,
-        })
-        .select()
-        .single()
+      // Store order data in localStorage (NOT in database!)
+      localStorage.setItem('pendingOnlineOrderData', JSON.stringify(pendingOrderData))
 
-      if (orderError) {
-        console.error('Order creation error:', orderError)
-        throw new Error(`Order creation failed: ${orderError.message}`)
-      }
-
-      // Record promo code usage if applied
-      if (appliedPromoCode) {
-        await supabase.from('promo_code_usage').insert({
-          promo_code_id: appliedPromoCode.id,
-          user_id: user.id,
-          order_id: order.id,
-          discount_amount: discountAmount,
-        })
-
-        await supabase
-          .from('promo_codes')
-          .update({ usage_count: appliedPromoCode.usage_count + 1 })
-          .eq('id', appliedPromoCode.id)
-      }
-
-      // Create order items
-      await createOrderItems(supabase, order.id)
-
-      // Save pending order ID - DON'T clear cart yet!
-      setPendingOnlineOrder(order.id)
-      setOrderPlaced(true)
-
-      // Initiate Kashier payment
+      // Initiate payment WITHOUT creating order in database
       const paymentResponse = await fetch('/api/payment/kashier/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: order.id }),
+        body: JSON.stringify({
+          // Pass order data directly instead of orderId
+          orderData: pendingOrderData,
+        }),
       })
 
       const paymentData = await paymentResponse.json()
@@ -944,10 +910,13 @@ export default function CheckoutPage() {
       if (paymentData.success && paymentData.checkoutUrl) {
         // IMPORTANT: Don't clear cart here!
         // Cart will be cleared in payment-result page on success
+        // Order will be created by webhook or payment-result after payment succeeds
         window.location.href = paymentData.checkoutUrl
         return
       } else {
-        // Payment initiation failed but order was created
+        // Payment initiation failed - no order was created (good!)
+        // Clean up localStorage
+        localStorage.removeItem('pendingOnlineOrderData')
         const errorMsg = paymentData.error || 'Payment initiation failed'
         console.error('Payment initiation failed:', errorMsg)
         setError(
@@ -955,7 +924,6 @@ export default function CheckoutPage() {
             ? `فشل بدء الدفع. يمكنك إعادة المحاولة.`
             : `Payment initiation failed. You can try again.`
         )
-        setOrderPlaced(false) // Allow retry
         setIsLoading(false)
         return
       }
