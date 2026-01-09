@@ -19,7 +19,6 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { v4 as uuidv4 } from 'uuid';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -432,7 +431,7 @@ export function createCustomOrderStorageService(
  */
 export function generateUniqueFilename(originalName: string): string {
   const ext = originalName.split('.').pop() || '';
-  return `${uuidv4()}.${ext}`;
+  return `${crypto.randomUUID()}.${ext}`;
 }
 
 /**
