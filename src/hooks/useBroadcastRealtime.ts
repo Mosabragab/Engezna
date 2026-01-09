@@ -28,9 +28,21 @@ import type {
 // Types
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Request with provider data from Supabase join
+export interface RequestWithProvider extends CustomOrderRequest {
+  provider?: {
+    id: string;
+    name_ar: string;
+    name_en: string;
+    logo_url: string | null;
+    rating: number;
+    delivery_fee: number;
+  };
+}
+
 export interface BroadcastRealtimeState {
   broadcast: CustomOrderBroadcast | null;
-  requests: CustomOrderRequest[];
+  requests: RequestWithProvider[];
   isConnected: boolean;
   lastUpdate: Date | null;
   error: string | null;

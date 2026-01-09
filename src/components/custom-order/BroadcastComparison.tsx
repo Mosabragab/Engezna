@@ -22,12 +22,11 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useBroadcastRealtime } from '@/hooks/useBroadcastRealtime'
+import { useBroadcastRealtime, type RequestWithProvider } from '@/hooks/useBroadcastRealtime'
 import { usePriceComparison, formatCurrency } from '@/hooks/useCustomOrderFinancials'
 import type {
   BroadcastComparisonProps,
   BroadcastWithRequests,
-  CustomOrderRequestWithProvider,
 } from '@/types/custom-order'
 
 interface ExtendedBroadcastComparisonProps extends BroadcastComparisonProps {
@@ -90,7 +89,7 @@ function ComparisonCard({
   loading,
   isSelected,
 }: {
-  request: CustomOrderRequestWithProvider
+  request: RequestWithProvider
   isCheapest: boolean
   isFastest: boolean
   onSelect: () => Promise<void>
@@ -148,7 +147,7 @@ function ComparisonCard({
         {/* Provider Info */}
         <div className="flex items-center gap-3 mb-3">
           <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shrink-0">
-            {provider.logo_url ? (
+            {provider?.logo_url ? (
               <img
                 src={provider.logo_url}
                 alt={isRTL ? provider.name_ar : provider.name_en}
@@ -162,13 +161,13 @@ function ComparisonCard({
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-slate-800 truncate">
-              {isRTL ? provider.name_ar : provider.name_en}
+              {isRTL ? provider?.name_ar || '' : provider?.name_en || ''}
             </h4>
             <div className="flex items-center gap-2 mt-0.5">
               <div className="flex items-center gap-1">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                 <span className="text-xs font-medium text-slate-600">
-                  {provider.rating?.toFixed(1) || '0.0'}
+                  {provider?.rating?.toFixed(1) || '0.0'}
                 </span>
               </div>
               <StatusBadge status={request.status} />
@@ -410,7 +409,7 @@ export function BroadcastComparison({
           return (
             <ComparisonCard
               key={request.id}
-              request={request as CustomOrderRequestWithProvider}
+              request={request}
               isCheapest={isCheapest}
               isFastest={isFastest}
               onSelect={() => handleSelect(request.order_id || request.id)}
