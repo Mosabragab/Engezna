@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { CustomerLayout } from '@/components/customer/layout'
@@ -15,7 +15,7 @@ import {
 import { ChatFAB, SmartAssistant } from '@/components/customer/chat'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
-import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
+import { useLocation } from '@/lib/contexts/LocationContext'
 import { Loader2 } from 'lucide-react'
 
 
@@ -36,96 +36,97 @@ export default function HomePage() {
   const locale = useLocale()
   const router = useRouter()
   const { addItem, clearCart } = useCart()
+
+  // Use LocationContext for cached location data (single source of truth)
+  const {
+    userLocation,
+    isDataLoaded,
+    isUserLocationLoading,
+  } = useLocation()
+
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [lastOrder, setLastOrder] = useState<LastOrderDisplay | null>(null)
   const [nearbyProviders, setNearbyProviders] = useState<any[]>([])
   const [topRatedProviders, setTopRatedProviders] = useState<any[]>([])
-  const [userCityId, setUserCityId] = useState<string | null>(null)
-  const [userGovernorateId, setUserGovernorateId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | undefined>()
   const [isReordering, setIsReordering] = useState(false)
-  const [isCheckingLocation, setIsCheckingLocation] = useState(true)
+  const [isInitializing, setIsInitializing] = useState(true)
 
-  // Check if user has location set - redirect to welcome page if not
+  // Track if we've already loaded providers to avoid duplicate calls
+  const providersLoadedRef = useRef(false)
+  const lastLocationRef = useRef<string | null>(null)
+
+  // Single auth check on mount - just to get userId for orders
   useEffect(() => {
-    async function checkLocationAndAuth() {
+    async function initAuth() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-
       if (user) {
-        // Logged-in user - check profile for location
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('governorate_id')
-          .eq('id', user.id)
-          .single()
-
-        if (!profile?.governorate_id) {
-          // Logged-in user without location - redirect to select location
-          router.replace(`/${locale}/profile/governorate`)
-          return
-        }
-        // User has location, proceed
         setUserId(user.id)
-        setIsCheckingLocation(false)
+      }
+      setIsInitializing(false)
+    }
+    initAuth()
+  }, [])
+
+  // Check location and redirect if needed (using LocationContext data)
+  useEffect(() => {
+    if (isInitializing || !isDataLoaded || isUserLocationLoading) return
+
+    // No location set - redirect
+    if (!userLocation.governorateId) {
+      if (userId) {
+        // Logged-in user without location
+        router.replace(`/${locale}/profile/governorate`)
       } else {
-        // Guest user - check localStorage
-        const guestLocation = guestLocationStorage.get()
-        if (!guestLocation?.governorateId) {
-          // Guest without location - redirect to welcome page
-          router.replace(`/${locale}/welcome`)
-          return
-        }
-        // Guest has location, store it and proceed
-        if (guestLocation.cityId) {
-          setUserCityId(guestLocation.cityId)
-        }
-        if (guestLocation.governorateId) {
-          setUserGovernorateId(guestLocation.governorateId)
-        }
-        setIsCheckingLocation(false)
+        // Guest without location
+        router.replace(`/${locale}/welcome`)
       }
     }
+  }, [isInitializing, isDataLoaded, isUserLocationLoading, userLocation.governorateId, userId, locale, router])
 
-    checkLocationAndAuth()
-  }, [locale, router])
-
-  // Load user's city and providers
+  // Load providers when location changes (from LocationContext)
   useEffect(() => {
-    if (!isCheckingLocation) {
-      loadUserCityAndProviders()
-      loadLastOrder()
-    }
-  }, [isCheckingLocation])
+    if (!isDataLoaded || isUserLocationLoading || !userLocation.governorateId) return
 
-  // Listen for guest location changes
+    // Create a location key to track changes
+    const locationKey = `${userLocation.governorateId}-${userLocation.cityId || ''}`
+
+    // Only reload if location actually changed
+    if (lastLocationRef.current === locationKey && providersLoadedRef.current) return
+
+    lastLocationRef.current = locationKey
+    providersLoadedRef.current = true
+
+    // Fetch providers using cached location data
+    fetchNearbyProviders(userLocation.cityId, userLocation.governorateId)
+    fetchTopRatedProviders(userLocation.cityId, userLocation.governorateId)
+  }, [isDataLoaded, isUserLocationLoading, userLocation.governorateId, userLocation.cityId])
+
+  // Load last order only when userId is available
   useEffect(() => {
-    const handleLocationChange = (event: Event) => {
-      const customEvent = event as CustomEvent
-      const newLocation = customEvent.detail
-      if (newLocation?.cityId) {
-        setUserCityId(newLocation.cityId)
-      }
-      if (newLocation?.governorateId) {
-        setUserGovernorateId(newLocation.governorateId)
-      }
-      loadUserCityAndProviders()
+    if (userId) {
+      loadLastOrder(userId)
     }
+  }, [userId])
+
+  // Listen for location changes from context
+  useEffect(() => {
+    const handleLocationChange = () => {
+      // Reset the loaded flag to allow reload on location change
+      providersLoadedRef.current = false
+    }
+    window.addEventListener('locationChanged', handleLocationChange)
     window.addEventListener('guestLocationChanged', handleLocationChange)
     return () => {
+      window.removeEventListener('locationChanged', handleLocationChange)
       window.removeEventListener('guestLocationChanged', handleLocationChange)
     }
   }, [])
 
   // Load last completed order for reorder section
-  async function loadLastOrder() {
+  const loadLastOrder = useCallback(async (currentUserId: string) => {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      setLastOrder(null)
-      return
-    }
 
     // Fetch last delivered order with provider and items
     const { data: order, error } = await supabase
@@ -147,7 +148,7 @@ export default function HomePage() {
           item_name_en
         )
       `)
-      .eq('customer_id', user.id)
+      .eq('customer_id', currentUserId)
       .eq('status', 'delivered')
       .order('created_at', { ascending: false })
       .limit(1)
@@ -172,45 +173,7 @@ export default function HomePage() {
       total: order.total,
       createdAt: new Date(order.created_at),
     })
-  }
-
-  async function loadUserCityAndProviders() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    let cityId: string | null = null
-    let governorateId: string | null = null
-
-    if (user) {
-      // Logged-in user - get city and governorate from profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('city_id, governorate_id')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.city_id) {
-        cityId = profile.city_id
-        setUserCityId(cityId)
-      }
-      if (profile?.governorate_id) {
-        governorateId = profile.governorate_id
-      }
-    } else {
-      // Guest user - get city from localStorage
-      const guestLocation = guestLocationStorage.get()
-      if (guestLocation?.cityId) {
-        cityId = guestLocation.cityId
-        setUserCityId(cityId)
-      }
-      // Get governorate for fallback filtering
-      governorateId = guestLocation?.governorateId || null
-    }
-
-    // Fetch providers filtered by city (or governorate if no city)
-    fetchNearbyProviders(cityId, governorateId)
-    fetchTopRatedProviders(cityId, governorateId)
-  }
+  }, [])
 
   async function fetchNearbyProviders(cityId: string | null, governorateId: string | null = null) {
     const supabase = createClient()
@@ -371,8 +334,21 @@ export default function HomePage() {
     router.push(`/${locale}/orders/${orderId}`)
   }
 
-  // Show loading while checking location
-  if (isCheckingLocation) {
+  // Show loading while initializing or loading location data
+  const isLoading = isInitializing || !isDataLoaded || isUserLocationLoading
+
+  if (isLoading) {
+    return (
+      <CustomerLayout showHeader={false} showBottomNav={false}>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </CustomerLayout>
+    )
+  }
+
+  // If no location after loading, the useEffect will redirect - show loading in meantime
+  if (!userLocation.governorateId) {
     return (
       <CustomerLayout showHeader={false} showBottomNav={false}>
         <div className="min-h-screen flex items-center justify-center">
@@ -435,8 +411,8 @@ export default function HomePage() {
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         userId={userId}
-        cityId={userCityId || undefined}
-        governorateId={userGovernorateId || undefined}
+        cityId={userLocation.cityId || undefined}
+        governorateId={userLocation.governorateId || undefined}
       />
     </CustomerLayout>
   )
