@@ -86,7 +86,7 @@ END$$;
 ALTER TABLE providers
 ADD COLUMN IF NOT EXISTS operation_mode TEXT DEFAULT 'standard';
 
--- Add custom order settings
+-- Add custom order settings (updated with show_price_history)
 ALTER TABLE providers
 ADD COLUMN IF NOT EXISTS custom_order_settings JSONB DEFAULT '{
   "accepts_text": true,
@@ -95,7 +95,8 @@ ADD COLUMN IF NOT EXISTS custom_order_settings JSONB DEFAULT '{
   "max_items_per_order": 50,
   "pricing_timeout_hours": 24,
   "customer_approval_timeout_hours": 2,
-  "auto_cancel_after_hours": 48
+  "auto_cancel_after_hours": 48,
+  "show_price_history": true
 }'::jsonb;
 
 -- Set operation_mode based on category
@@ -271,6 +272,240 @@ CREATE TABLE IF NOT EXISTS custom_order_items (
 CREATE INDEX IF NOT EXISTS idx_custom_items_request ON custom_order_items(request_id);
 CREATE INDEX IF NOT EXISTS idx_custom_items_order ON custom_order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_custom_items_availability ON custom_order_items(availability_status);
+
+-- ============================================================================
+-- PART 5.1: PRICE HISTORY TABLE
+-- جدول تاريخ الأسعار - لميزة "تم شراؤه مسبقاً"
+-- ============================================================================
+
+-- Function to normalize Arabic text for fuzzy matching
+-- تطبيع النص العربي لمطابقة مرنة
+CREATE OR REPLACE FUNCTION normalize_arabic(input_text TEXT)
+RETURNS TEXT AS $$
+BEGIN
+  -- Handle NULL input
+  IF input_text IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN lower(
+    trim(
+      regexp_replace(
+        regexp_replace(
+          regexp_replace(
+            regexp_replace(
+              regexp_replace(
+                regexp_replace(
+                  regexp_replace(
+                    regexp_replace(input_text,
+                      '[ةه]', 'ه', 'g'),        -- Normalize ة to ه
+                    '[أإآا]', 'ا', 'g'),        -- Normalize alef variants
+                  '[يى]', 'ي', 'g'),            -- Normalize yaa variants
+                '[ؤ]', 'و', 'g'),               -- Normalize waw hamza
+              '[ئ]', 'ي', 'g'),                 -- Normalize yaa hamza
+            '[ً-ْ]', '', 'g'),                  -- Remove tashkeel (diacritics)
+          '\s+', ' ', 'g'),                     -- Normalize whitespace
+        '[0-9٠-٩]', '', 'g')                    -- Remove numbers (Arabic and English)
+    )
+  );
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+COMMENT ON FUNCTION normalize_arabic IS 'تطبيع النص العربي للمقارنة المرنة - يوحد الحروف المتشابهة ويزيل التشكيل';
+
+-- Price history table for "تم شراؤه مسبقاً" feature
+CREATE TABLE IF NOT EXISTS custom_order_price_history (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  -- Provider and Customer
+  provider_id UUID NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+  customer_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+
+  -- Item identification
+  item_name_normalized TEXT NOT NULL,           -- Normalized for matching (using normalize_arabic)
+  item_name_ar TEXT NOT NULL,                   -- Original display name
+  item_name_en TEXT,                            -- English name if available
+
+  -- Pricing info
+  unit_type TEXT,                               -- كيلو، علبة، قطعة، لتر
+  unit_price DECIMAL(10,2) NOT NULL,
+  quantity DECIMAL(10,2) DEFAULT 1,
+  total_price DECIMAL(10,2),
+
+  -- Source reference
+  order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+  request_id UUID REFERENCES custom_order_requests(id) ON DELETE SET NULL,
+  custom_item_id UUID REFERENCES custom_order_items(id) ON DELETE SET NULL,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Unique constraint: one price record per item per provider-customer pair
+  -- Uses normalized name for matching
+  CONSTRAINT unique_price_history UNIQUE (provider_id, customer_id, item_name_normalized)
+);
+
+-- Indexes for fast lookup
+CREATE INDEX IF NOT EXISTS idx_price_history_provider ON custom_order_price_history(provider_id);
+CREATE INDEX IF NOT EXISTS idx_price_history_customer ON custom_order_price_history(customer_id);
+CREATE INDEX IF NOT EXISTS idx_price_history_provider_customer ON custom_order_price_history(provider_id, customer_id);
+CREATE INDEX IF NOT EXISTS idx_price_history_normalized_name ON custom_order_price_history(item_name_normalized);
+CREATE INDEX IF NOT EXISTS idx_price_history_lookup ON custom_order_price_history(provider_id, customer_id, item_name_normalized);
+
+-- Enable RLS
+ALTER TABLE custom_order_price_history ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for price history
+
+-- Providers can view price history for their orders
+CREATE POLICY "providers_view_price_history"
+ON custom_order_price_history FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM providers p
+    WHERE p.owner_id = auth.uid()
+    AND p.id = custom_order_price_history.provider_id
+  )
+  OR EXISTS (
+    SELECT 1 FROM provider_staff ps
+    WHERE ps.user_id = auth.uid()
+    AND ps.is_active = true
+    AND ps.provider_id = custom_order_price_history.provider_id
+  )
+);
+
+-- System can insert/update price history (via service role)
+CREATE POLICY "system_manage_price_history"
+ON custom_order_price_history FOR ALL
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+-- Function to update price history when an order is completed
+CREATE OR REPLACE FUNCTION update_price_history_from_order()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_customer_id UUID;
+  v_provider_id UUID;
+  v_item RECORD;
+BEGIN
+  -- Only trigger when order is delivered (completed)
+  IF NEW.status = 'delivered' AND OLD.status != 'delivered' AND NEW.order_flow = 'custom' THEN
+
+    -- Get customer and provider from the order
+    v_customer_id := NEW.customer_id;
+    v_provider_id := NEW.provider_id;
+
+    -- Loop through custom order items and update price history
+    FOR v_item IN (
+      SELECT
+        coi.item_name_ar,
+        coi.item_name_en,
+        coi.unit_type,
+        coi.unit_price,
+        coi.quantity,
+        coi.total_price,
+        coi.request_id,
+        coi.id as custom_item_id
+      FROM custom_order_items coi
+      WHERE coi.order_id = NEW.id
+        AND coi.availability_status = 'available'
+    ) LOOP
+      -- Upsert into price history
+      INSERT INTO custom_order_price_history (
+        provider_id,
+        customer_id,
+        item_name_normalized,
+        item_name_ar,
+        item_name_en,
+        unit_type,
+        unit_price,
+        quantity,
+        total_price,
+        order_id,
+        request_id,
+        custom_item_id,
+        updated_at
+      ) VALUES (
+        v_provider_id,
+        v_customer_id,
+        normalize_arabic(v_item.item_name_ar),
+        v_item.item_name_ar,
+        v_item.item_name_en,
+        v_item.unit_type,
+        v_item.unit_price,
+        v_item.quantity,
+        v_item.total_price,
+        NEW.id,
+        v_item.request_id,
+        v_item.custom_item_id,
+        NOW()
+      )
+      ON CONFLICT (provider_id, customer_id, item_name_normalized)
+      DO UPDATE SET
+        item_name_ar = EXCLUDED.item_name_ar,
+        item_name_en = EXCLUDED.item_name_en,
+        unit_type = EXCLUDED.unit_type,
+        unit_price = EXCLUDED.unit_price,
+        quantity = EXCLUDED.quantity,
+        total_price = EXCLUDED.total_price,
+        order_id = EXCLUDED.order_id,
+        request_id = EXCLUDED.request_id,
+        custom_item_id = EXCLUDED.custom_item_id,
+        updated_at = NOW();
+    END LOOP;
+
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to auto-update price history
+CREATE TRIGGER trigger_update_price_history
+AFTER UPDATE ON orders
+FOR EACH ROW
+EXECUTE FUNCTION update_price_history_from_order();
+
+-- Function to get price history for a customer-provider pair
+CREATE OR REPLACE FUNCTION get_customer_price_history(
+  p_provider_id UUID,
+  p_customer_id UUID,
+  p_item_name TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+  id UUID,
+  item_name_ar TEXT,
+  item_name_en TEXT,
+  unit_type TEXT,
+  unit_price DECIMAL(10,2),
+  last_ordered_at TIMESTAMPTZ
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    coph.id,
+    coph.item_name_ar,
+    coph.item_name_en,
+    coph.unit_type,
+    coph.unit_price,
+    coph.updated_at as last_ordered_at
+  FROM custom_order_price_history coph
+  WHERE coph.provider_id = p_provider_id
+    AND coph.customer_id = p_customer_id
+    AND (
+      p_item_name IS NULL
+      OR coph.item_name_normalized LIKE '%' || normalize_arabic(p_item_name) || '%'
+    )
+  ORDER BY coph.updated_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON TABLE custom_order_price_history IS 'سجل الأسعار السابقة - لميزة "تم شراؤه مسبقاً" لمساعدة التاجر في التسعير';
+COMMENT ON COLUMN custom_order_price_history.item_name_normalized IS 'الاسم المطبّع للمطابقة المرنة';
+COMMENT ON COLUMN custom_order_price_history.unit_price IS 'آخر سعر للوحدة من هذا التاجر لهذا العميل';
 
 -- ============================================================================
 -- PART 6: ORDER TABLE UPDATES
@@ -718,7 +953,8 @@ SET
     "max_items_per_order": 50,
     "pricing_timeout_hours": 24,
     "customer_approval_timeout_hours": 2,
-    "auto_cancel_after_hours": 48
+    "auto_cancel_after_hours": 48,
+    "show_price_history": true
   }'::jsonb
 WHERE category IN ('grocery', 'vegetables_fruits');
 
