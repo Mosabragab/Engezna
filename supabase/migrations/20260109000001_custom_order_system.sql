@@ -939,7 +939,53 @@ COMMENT ON COLUMN custom_order_items.original_customer_text IS 'النص الأ�
 COMMENT ON COLUMN custom_order_items.item_name_ar IS 'اسم الصنف كما يحدده التاجر (قابل للتعديل لدقة الفاتورة)';
 
 -- ============================================================================
--- PART 12: SEED DATA (Optional)
+-- PART 12: STORAGE BUCKET CONFIGURATION
+-- ============================================================================
+
+-- Create storage bucket for custom order files (voice, images)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'custom-orders',
+  'custom-orders',
+  true,
+  10485760,  -- 10MB max file size
+  ARRAY['audio/webm', 'audio/mp4', 'audio/mpeg', 'image/jpeg', 'image/png', 'image/webp', 'application/json']
+)
+ON CONFLICT (id) DO UPDATE SET
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+-- RLS Policy: Users can upload to their own broadcasts
+DROP POLICY IF EXISTS "users_upload_to_own_broadcasts" ON storage.objects;
+CREATE POLICY "users_upload_to_own_broadcasts"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+  bucket_id = 'custom-orders'
+  AND (storage.foldername(name))[1] = 'broadcasts'
+  AND EXISTS (
+    SELECT 1 FROM custom_order_broadcasts b
+    WHERE b.id::text = (storage.foldername(name))[2]
+    AND b.customer_id = auth.uid()
+  )
+);
+
+-- RLS Policy: Anyone can view public files
+DROP POLICY IF EXISTS "public_read_custom_orders" ON storage.objects;
+CREATE POLICY "public_read_custom_orders"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'custom-orders');
+
+-- RLS Policy: Service role can delete files (for cleanup job)
+DROP POLICY IF EXISTS "service_delete_custom_orders" ON storage.objects;
+CREATE POLICY "service_delete_custom_orders"
+ON storage.objects FOR DELETE
+TO service_role
+USING (bucket_id = 'custom-orders');
+
+-- ============================================================================
+-- PART 13: SEED DATA (Optional)
 -- ============================================================================
 
 -- Update existing grocery/vegetables providers to custom mode

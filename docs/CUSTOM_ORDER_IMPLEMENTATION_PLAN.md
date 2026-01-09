@@ -860,7 +860,195 @@ export function getProviderFeatures(mode: OperationMode): ProviderFeatures {
 
 ## 8. Offline & Error Handling
 
-### 8.1 Voice Recording Offline Support
+### 8.1 Draft Auto-Save (Local Storage)
+
+**Problem:** Customer writes a long list, accidentally closes the app.
+
+**Solution: Auto-Save to localStorage**
+
+```typescript
+// src/lib/offline/draft-manager.ts
+
+interface CustomOrderDraft {
+  providerId: string;
+  providerName: string;
+  inputType: 'text' | 'voice' | 'image' | 'mixed';
+  text?: string;
+  voiceCacheId?: string;  // Reference to IndexedDB
+  imageDataUrls?: string[];  // Base64 for small previews
+  notes?: string;
+  savedAt: number;
+}
+
+const DRAFT_KEY_PREFIX = 'custom_order_draft_';
+const DRAFT_EXPIRY_HOURS = 72;  // 3 days
+
+export class DraftManager {
+  // Save draft automatically (debounced)
+  saveDraft(providerId: string, draft: Partial<CustomOrderDraft>): void {
+    const key = `${DRAFT_KEY_PREFIX}${providerId}`;
+    const existingDraft = this.getDraft(providerId);
+
+    const updatedDraft: CustomOrderDraft = {
+      ...existingDraft,
+      ...draft,
+      providerId,
+      savedAt: Date.now(),
+    };
+
+    localStorage.setItem(key, JSON.stringify(updatedDraft));
+  }
+
+  // Get draft for a provider
+  getDraft(providerId: string): CustomOrderDraft | null {
+    const key = `${DRAFT_KEY_PREFIX}${providerId}`;
+    const data = localStorage.getItem(key);
+
+    if (!data) return null;
+
+    const draft = JSON.parse(data) as CustomOrderDraft;
+
+    // Check if expired
+    const expiryTime = DRAFT_EXPIRY_HOURS * 60 * 60 * 1000;
+    if (Date.now() - draft.savedAt > expiryTime) {
+      this.clearDraft(providerId);
+      return null;
+    }
+
+    return draft;
+  }
+
+  // Check if draft exists (for showing banner)
+  hasDraft(providerId: string): boolean {
+    return this.getDraft(providerId) !== null;
+  }
+
+  // Clear draft after successful submission
+  clearDraft(providerId: string): void {
+    const key = `${DRAFT_KEY_PREFIX}${providerId}`;
+    localStorage.removeItem(key);
+  }
+
+  // Clear all expired drafts (called on app start)
+  cleanupExpiredDrafts(): void {
+    const keys = Object.keys(localStorage)
+      .filter(k => k.startsWith(DRAFT_KEY_PREFIX));
+
+    for (const key of keys) {
+      try {
+        const draft = JSON.parse(localStorage.getItem(key) || '{}');
+        const expiryTime = DRAFT_EXPIRY_HOURS * 60 * 60 * 1000;
+        if (Date.now() - draft.savedAt > expiryTime) {
+          localStorage.removeItem(key);
+        }
+      } catch {
+        localStorage.removeItem(key);
+      }
+    }
+  }
+}
+
+export const draftManager = new DraftManager();
+```
+
+**UI for Draft Recovery:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     📝 سوبر ماركت الأمل                      │
+├─────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  💾 لديك مسودة محفوظة (منذ 3 ساعات)                   │  │
+│  │                                                       │  │
+│  │  [استعادة المسودة]        [بدء طلب جديد]             │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 8.2 Supabase Realtime for Price Comparison
+
+**Problem:** Customer waits on comparison page while merchants price.
+
+**Solution: Realtime Subscription**
+
+```typescript
+// src/hooks/useBroadcastRealtime.ts
+
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import type { CustomOrderRequest } from '@/types/database';
+
+export function useBroadcastRealtime(broadcastId: string) {
+  const [requests, setRequests] = useState<CustomOrderRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Initial fetch
+    const fetchRequests = async () => {
+      const { data } = await supabase
+        .from('custom_order_requests')
+        .select('*, provider:providers(name_ar, name_en, logo_url)')
+        .eq('broadcast_id', broadcastId);
+
+      if (data) setRequests(data);
+      setLoading(false);
+    };
+
+    fetchRequests();
+
+    // Subscribe to changes
+    const channel = supabase
+      .channel(`broadcast_${broadcastId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'custom_order_requests',
+          filter: `broadcast_id=eq.${broadcastId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            setRequests(prev =>
+              prev.map(r =>
+                r.id === payload.new.id ? { ...r, ...payload.new } : r
+              )
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [broadcastId]);
+
+  return { requests, loading };
+}
+```
+
+**UI Auto-Update:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   مقارنة الأسعار                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  🔵 سوبر ماركت الأمل        ✅ 385 ج.م          [اختيار]   │
+│  ────────────────────────────────────────────────────────   │
+│  🔵 سوبر ماركت النور        ✅ 370 ج.م          [اختيار]   │
+│  ────────────────────────────────────────────────────────   │
+│  🔵 سوبر ماركت البركة       ⏳ جاري التسعير...             │ ← يتحدث تلقائياً
+│                              ┌─────────────────────────┐   │
+│                              │ ● ● ●                   │   │
+│                              └─────────────────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 8.3 Voice Recording Offline Support
 
 **Problem:** User records voice but internet is down.
 
@@ -927,7 +1115,7 @@ window.addEventListener('online', () => {
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 8.2 Error States
+### 8.4 Error States
 
 | Error | Message (AR) | Action |
 |-------|-------------|--------|
@@ -936,6 +1124,191 @@ window.addEventListener('online', () => {
 | Image upload failed | فشل رفع الصورة | Retry button |
 | Pricing timeout | انتهت مهلة التسعير | Show expired state |
 | Broadcast expired | انتهت صلاحية الطلب | Allow new submission |
+
+### 8.5 Storage File Management
+
+**Problem:** Voice/image files accumulate for cancelled/expired orders.
+
+**Solution: Structured Storage Paths + Cleanup Job**
+
+**Storage Path Convention:**
+```
+custom-orders/
+├── broadcasts/
+│   └── {broadcast_id}/
+│       ├── voice/
+│       │   └── original.webm          # Customer's voice recording
+│       └── images/
+│           ├── 001.jpg                # Customer's images
+│           ├── 002.jpg
+│           └── 003.jpg
+└── transcriptions/
+    └── {broadcast_id}.json            # Voice-to-text result
+```
+
+**File Naming Service:**
+```typescript
+// src/lib/storage/custom-order-storage.ts
+
+export const CustomOrderStorage = {
+  // Get path for voice recording
+  getVoicePath: (broadcastId: string) =>
+    `custom-orders/broadcasts/${broadcastId}/voice/original.webm`,
+
+  // Get path for images
+  getImagePath: (broadcastId: string, index: number) =>
+    `custom-orders/broadcasts/${broadcastId}/images/${String(index).padStart(3, '0')}.jpg`,
+
+  // Get all files for a broadcast (for deletion)
+  getBroadcastFolder: (broadcastId: string) =>
+    `custom-orders/broadcasts/${broadcastId}`,
+
+  // Upload voice recording
+  async uploadVoice(broadcastId: string, blob: Blob): Promise<string> {
+    const supabase = createClient();
+    const path = this.getVoicePath(broadcastId);
+
+    const { data, error } = await supabase.storage
+      .from('custom-orders')
+      .upload(path, blob, {
+        contentType: 'audio/webm',
+        upsert: true,
+      });
+
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage
+      .from('custom-orders')
+      .getPublicUrl(path);
+
+    return urlData.publicUrl;
+  },
+
+  // Upload images
+  async uploadImages(broadcastId: string, files: File[]): Promise<string[]> {
+    const supabase = createClient();
+    const urls: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const path = this.getImagePath(broadcastId, i + 1);
+
+      await supabase.storage
+        .from('custom-orders')
+        .upload(path, files[i], {
+          contentType: files[i].type,
+          upsert: true,
+        });
+
+      const { data: urlData } = supabase.storage
+        .from('custom-orders')
+        .getPublicUrl(path);
+
+      urls.push(urlData.publicUrl);
+    }
+
+    return urls;
+  },
+
+  // Delete all files for a broadcast
+  async deleteBroadcastFiles(broadcastId: string): Promise<void> {
+    const supabase = createAdminClient();
+
+    // List all files in the broadcast folder
+    const { data: files } = await supabase.storage
+      .from('custom-orders')
+      .list(`broadcasts/${broadcastId}`, { recursive: true });
+
+    if (files && files.length > 0) {
+      const paths = files.map(f =>
+        `broadcasts/${broadcastId}/${f.name}`
+      );
+
+      await supabase.storage
+        .from('custom-orders')
+        .remove(paths);
+    }
+  },
+};
+```
+
+**Cleanup Cron Job (Supabase Edge Function):**
+```typescript
+// supabase/functions/cleanup-expired-broadcasts/index.ts
+
+import { createClient } from '@supabase/supabase-js';
+
+Deno.serve(async () => {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  // Find broadcasts expired more than 7 days ago
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - 7);
+
+  const { data: expiredBroadcasts } = await supabase
+    .from('custom_order_broadcasts')
+    .select('id')
+    .in('status', ['expired', 'cancelled'])
+    .lt('updated_at', cutoffDate.toISOString());
+
+  let deletedCount = 0;
+
+  for (const broadcast of expiredBroadcasts || []) {
+    // Delete files from storage
+    const { data: files } = await supabase.storage
+      .from('custom-orders')
+      .list(`broadcasts/${broadcast.id}`, { recursive: true });
+
+    if (files && files.length > 0) {
+      const paths = files.map(f => `broadcasts/${broadcast.id}/${f.name}`);
+      await supabase.storage.from('custom-orders').remove(paths);
+      deletedCount += paths.length;
+    }
+  }
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      broadcastsProcessed: expiredBroadcasts?.length || 0,
+      filesDeleted: deletedCount,
+    }),
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+});
+
+// Schedule: Run daily at 3 AM
+// cron: 0 3 * * *
+```
+
+**Storage Bucket Configuration:**
+```sql
+-- Create bucket if not exists
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('custom-orders', 'custom-orders', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- RLS Policy: Users can upload to their own broadcasts
+CREATE POLICY "users_upload_to_own_broadcasts"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+  bucket_id = 'custom-orders'
+  AND (storage.foldername(name))[1] = 'broadcasts'
+  AND EXISTS (
+    SELECT 1 FROM custom_order_broadcasts b
+    WHERE b.id::text = (storage.foldername(name))[2]
+    AND b.customer_id = auth.uid()
+  )
+);
+
+-- RLS Policy: Anyone can view public files
+CREATE POLICY "public_read_custom_orders"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'custom-orders');
+```
 
 ---
 
@@ -1143,3 +1516,4 @@ GET    /api/provider/price-history                    # Get price history
 |---------|------|--------|---------|
 | 1.0 | Jan 2026 | Claude | Initial plan |
 | 2.0 | Jan 2026 | Claude | Added: Offline support, ActiveCartBanner, Price history, Feature toggles, Hybrid mode, Settings page, UX architecture |
+| 2.1 | Jan 2026 | Claude | Added: Draft auto-save (localStorage), Supabase Realtime subscription, Storage file management & cleanup job |
