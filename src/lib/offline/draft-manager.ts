@@ -483,7 +483,7 @@ export function useDraftManager(providerId: string, providerName: string) {
     (getDraftData: () => DraftInput | null) => {
       getDraftDataRef.current = getDraftData;
       manager.startAutoSave(providerId, () => {
-        const data = getDraftDataRef.current?.();
+        const data = getDraftDataRef.current?.() ?? null;
         if (data) {
           setLastSaved(new Date());
         }
