@@ -20,6 +20,12 @@ import {
   Copy,
   ChevronRight,
   RotateCcw,
+  ArrowDownToLine,
+  ZoomIn,
+  ZoomOut,
+  Move,
+  TrendingUp,
+  Wallet,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -98,7 +104,9 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
   const isRTL = locale === 'ar'
 
   const [isPlaying, setIsPlaying] = useState(false)
+  const [playbackRate, setPlaybackRate] = useState(1)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [imageZoom, setImageZoom] = useState(1)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   // Get display text
@@ -123,6 +131,18 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
       setIsPlaying(!isPlaying)
     }
   }
+
+  // Handle playback rate change
+  const changePlaybackRate = (rate: number) => {
+    setPlaybackRate(rate)
+    if (audioRef.current) {
+      audioRef.current.playbackRate = rate
+    }
+  }
+
+  // Handle image zoom
+  const handleZoomIn = () => setImageZoom(prev => Math.min(prev + 0.5, 3))
+  const handleZoomOut = () => setImageZoom(prev => Math.max(prev - 0.5, 1))
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full flex flex-col shadow-sm">
@@ -168,31 +188,49 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
-        {/* Voice Player */}
+        {/* Voice Player - Enhanced with Speed Controls */}
         {hasVoice && (
-          <div className="bg-purple-50 rounded-xl p-4">
+          <div className="bg-purple-50 rounded-xl p-4 sticky top-0 z-10 shadow-sm">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={toggleAudio}
-                className="w-12 h-12 bg-purple-500 hover:bg-purple-600 text-white rounded-xl flex items-center justify-center transition-colors"
+                className="w-14 h-14 bg-purple-500 hover:bg-purple-600 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg"
               >
                 {isPlaying ? (
-                  <Pause className="w-5 h-5" />
+                  <Pause className="w-6 h-6" />
                 ) : (
-                  <Play className="w-5 h-5 ms-0.5" />
+                  <Play className="w-6 h-6 ms-0.5" />
                 )}
               </button>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <Volume2 className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm font-medium text-purple-700">
+                  <span className="text-sm font-bold text-purple-700">
                     {isRTL ? 'تسجيل صوتي' : 'Voice Recording'}
                   </span>
                 </div>
-                <p className="text-xs text-purple-600 mt-0.5">
-                  {isRTL ? 'اضغط للاستماع' : 'Click to listen'}
-                </p>
+                {/* Speed Controls */}
+                <div className="flex items-center gap-1 mt-2">
+                  <span className="text-xs text-purple-600 me-1">
+                    {isRTL ? 'السرعة:' : 'Speed:'}
+                  </span>
+                  {[1, 1.5, 2].map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => changePlaybackRate(rate)}
+                      className={cn(
+                        'px-2 py-0.5 rounded text-xs font-medium transition-all',
+                        playbackRate === rate
+                          ? 'bg-purple-500 text-white'
+                          : 'bg-purple-200 text-purple-700 hover:bg-purple-300'
+                      )}
+                    >
+                      {rate}x
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             <audio
@@ -204,21 +242,43 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
           </div>
         )}
 
-        {/* Images */}
+        {/* Images - Enhanced with Zoom Controls */}
         {hasImages && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">
-                {isRTL ? 'الصور المرفقة' : 'Attached Images'}
-              </span>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">
+                  {isRTL ? 'الصور المرفقة' : 'Attached Images'}
+                </span>
+              </div>
+              {/* Zoom Controls */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  disabled={imageZoom <= 1}
+                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                >
+                  <ZoomOut className="w-4 h-4 text-gray-600" />
+                </button>
+                <span className="text-xs text-gray-500 px-1">{Math.round(imageZoom * 100)}%</span>
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  disabled={imageZoom >= 3}
+                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                >
+                  <ZoomIn className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {request.image_urls?.map((url, index) => (
                 <button
                   key={index}
                   type="button"
-                  onClick={() => setCurrentImageIndex(index)}
+                  onClick={() => { setCurrentImageIndex(index); setImageZoom(1); }}
                   className={cn(
                     'aspect-square rounded-lg overflow-hidden border-2 transition-all',
                     currentImageIndex === index
@@ -234,28 +294,46 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
                 </button>
               ))}
             </div>
-            {/* Larger preview of selected image */}
+            {/* Larger preview with zoom */}
             {request.image_urls?.[currentImageIndex] && (
-              <div className="aspect-video rounded-xl overflow-hidden border border-gray-200">
-                <img
-                  src={request.image_urls[currentImageIndex]}
-                  alt={`${isRTL ? 'معاينة' : 'Preview'}`}
-                  className="w-full h-full object-contain bg-gray-50"
-                />
+              <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                <div
+                  className="absolute inset-0 overflow-auto cursor-move"
+                  style={{ touchAction: 'pan-x pan-y' }}
+                >
+                  <img
+                    src={request.image_urls[currentImageIndex]}
+                    alt={`${isRTL ? 'معاينة' : 'Preview'}`}
+                    className="transition-transform duration-200"
+                    style={{
+                      transform: `scale(${imageZoom})`,
+                      transformOrigin: 'center center',
+                      minWidth: '100%',
+                      minHeight: '100%',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </div>
+                {imageZoom > 1 && (
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <Move className="w-3 h-3" />
+                    {isRTL ? 'اسحب للتحريك' : 'Drag to pan'}
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* Text Items */}
+        {/* Text Items - Enhanced with Prominent Quick Copy */}
         {displayText && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-bold text-gray-800">
                 {isRTL ? 'قائمة الطلب' : 'Order List'}
               </span>
-              <span className="text-xs text-gray-500">
-                {textItems.length} {isRTL ? 'عناصر' : 'items'}
+              <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+                {textItems.length} {isRTL ? 'صنف' : 'items'}
               </span>
             </div>
 
@@ -266,22 +344,24 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
                   initial={{ opacity: 0, x: isRTL ? 20 : -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="group flex items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors border border-gray-100 hover:border-blue-200"
                 >
-                  <span className="w-6 h-6 bg-primary/10 text-primary rounded-md flex items-center justify-center text-xs font-medium shrink-0">
+                  <span className="w-7 h-7 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-bold shrink-0">
                     {index + 1}
                   </span>
-                  <span className="flex-1 text-gray-700 text-sm">
+                  <span className="flex-1 text-gray-800 font-medium">
                     {item}
                   </span>
+                  {/* Prominent Quick Copy Button */}
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon"
+                    variant="outline"
+                    size="sm"
                     onClick={() => onCopyText(item)}
-                    className="opacity-0 group-hover:opacity-100 h-7 w-7 transition-opacity"
+                    className="h-8 gap-1.5 bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 shrink-0"
                   >
-                    <Copy className="w-3.5 h-3.5" />
+                    <ArrowDownToLine className="w-3.5 h-3.5" />
+                    {isRTL ? 'نقل' : 'Copy'}
                   </Button>
                 </motion.div>
               ))}
@@ -390,6 +470,16 @@ export function PricingNotepad({
     return sum + (item.total_price || 0)
   }, 0)
   const total = subtotal + deliveryFee
+
+  // Calculate commission and net profit (للشفافية مع التاجر)
+  const getCommissionRate = (amount: number): number => {
+    if (amount <= 100) return 0.07
+    if (amount <= 300) return 0.06
+    return 0.05
+  }
+  const commissionRate = getCommissionRate(subtotal)
+  const commission = subtotal * commissionRate
+  const netProfit = total - commission
 
   // Validation
   const isValid = items.some(
@@ -539,7 +629,7 @@ export function PricingNotepad({
           </div>
 
           {/* Delivery Fee (Fixed - Read Only) */}
-          <div className="flex justify-between items-center py-2 text-gray-600 border-b border-dashed border-gray-200">
+          <div className="flex justify-between items-center py-2 text-gray-600">
             <div className="flex items-center gap-2">
               <span>{isRTL ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
               <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
@@ -551,19 +641,42 @@ export function PricingNotepad({
             </span>
           </div>
 
-          {/* Total */}
-          <div className="flex justify-between items-center py-3">
-            <span className="text-lg font-bold text-gray-800">
+          {/* Total for Customer */}
+          <div className="flex justify-between items-center py-3 border-t border-dashed border-gray-200 mt-2">
+            <span className="text-xl font-bold text-gray-800">
               {isRTL ? 'الإجمالي للعميل' : 'Customer Total'}
             </span>
-            <span className="text-2xl font-bold text-primary">
+            <span className="text-3xl font-bold text-gray-900">
               {total.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
             </span>
           </div>
         </div>
 
-        {/* Sticky Footer - Action Buttons */}
-        <div className="border-t border-gray-200 bg-white px-6 py-4 sticky bottom-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        {/* Sticky Footer - Net Profit + Action Buttons */}
+        <div className="border-t border-gray-200 bg-white px-6 py-4 sticky bottom-0 shadow-[0_-8px_16px_-4px_rgba(0,0,0,0.08)]">
+          {/* Net Profit Display - Transparent Financials */}
+          <div className="flex items-center justify-between mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <Wallet className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs text-emerald-600">
+                  {isRTL ? 'صافي ربحك بعد العمولة' : 'Your net profit after commission'}
+                </p>
+                <p className="text-xs text-emerald-500">
+                  ({Math.round(commissionRate * 100)}% {isRTL ? 'عمولة' : 'commission'})
+                </p>
+              </div>
+            </div>
+            <div className="text-end">
+              <p className="text-2xl font-bold text-emerald-700">
+                {netProfit.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
           <div className="flex items-center gap-3">
             {/* Cancel Button */}
             <Button
@@ -571,26 +684,26 @@ export function PricingNotepad({
               variant="outline"
               onClick={onCancel}
               disabled={loading || submitting}
-              className="flex-1 gap-2 h-12 border-gray-300 text-gray-700 hover:bg-gray-100"
+              className="flex-1 gap-2 h-14 border-gray-300 text-gray-700 hover:bg-gray-100 text-base"
             >
               <X className="w-5 h-5" />
               {isRTL ? 'إلغاء' : 'Cancel'}
             </Button>
 
-            {/* Submit Button */}
+            {/* Submit Button - Large Green */}
             <Button
               type="button"
               onClick={() => setShowConfirmDialog(true)}
               disabled={!isValid || loading || submitting}
-              className="flex-[2] gap-2 h-12 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25"
+              className="flex-[2] gap-2 h-14 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 text-lg font-bold transition-all hover:scale-[1.02]"
             >
               {submitting ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-6 h-6 animate-spin" />
               ) : (
-                <Send className="w-5 h-5" />
+                <Send className="w-6 h-6" />
               )}
-              {isRTL ? 'إرسال التسعيرة للعميل' : 'Send Quote to Customer'}
-              <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+              {isRTL ? 'إرسال التسعيرة' : 'Send Quote'}
+              <ChevronRight className="w-6 h-6 rtl:rotate-180" />
             </Button>
           </div>
         </div>
@@ -636,15 +749,28 @@ export function PricingNotepad({
             </div>
             <div className="border-t border-dashed border-gray-200 pt-2 flex justify-between">
               <span className="font-semibold text-gray-800">
-                {isRTL ? 'الإجمالي' : 'Total'}
+                {isRTL ? 'إجمالي العميل' : 'Customer Total'}
               </span>
-              <span className="font-bold text-primary text-lg">
+              <span className="font-bold text-gray-900 text-xl">
                 {total.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
               </span>
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          {/* Net Profit in Dialog */}
+          <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-600" />
+              <span className="text-sm font-medium text-emerald-700">
+                {isRTL ? 'صافي ربحك' : 'Your profit'}
+              </span>
+            </div>
+            <span className="font-bold text-emerald-700 text-lg">
+              {netProfit.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+            </span>
+          </div>
+
+          <DialogFooter className="gap-2 mt-2">
             <Button
               variant="outline"
               onClick={() => setShowConfirmDialog(false)}
@@ -656,7 +782,7 @@ export function PricingNotepad({
             <Button
               onClick={handleSubmit}
               disabled={submitting}
-              className="gap-2 bg-primary hover:bg-primary/90"
+              className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg"
             >
               {submitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

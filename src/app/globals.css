@@ -186,6 +186,24 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Pulsating Badge Animation - For urgent notifications */
+  .animate-pulse-badge {
+    animation: pulse-badge 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-badge {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.1);
+      box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+  }
 }
 
 /* GRADIENTS */
