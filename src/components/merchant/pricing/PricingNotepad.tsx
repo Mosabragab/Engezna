@@ -110,10 +110,14 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
   const [imageZoom, setImageZoom] = useState(1)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Get display text
-  const displayText = request.original_text || request.transcribed_text || ''
-  const hasVoice = !!request.voice_url
-  const hasImages = request.image_urls && request.image_urls.length > 0
+  // Get display text - check both request and broadcast for data
+  const displayText = request.original_text || request.broadcast?.original_text || request.transcribed_text || request.broadcast?.transcribed_text || ''
+  const hasVoice = !!(request.voice_url || request.broadcast?.voice_url)
+  // Get image URLs from request or fall back to broadcast
+  const imageUrls = request.image_urls && request.image_urls.length > 0
+    ? request.image_urls
+    : request.broadcast?.image_urls || null
+  const hasImages = imageUrls && imageUrls.length > 0
 
   // Parse text into items (split by newlines or common separators)
   const textItems = displayText
@@ -236,7 +240,7 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
             </div>
             <audio
               ref={audioRef}
-              src={request.voice_url || ''}
+              src={request.voice_url || request.broadcast?.voice_url || ''}
               onEnded={() => setIsPlaying(false)}
               className="hidden"
             />
@@ -275,7 +279,7 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
-              {request.image_urls?.map((url, index) => (
+              {imageUrls?.map((url, index) => (
                 <button
                   key={index}
                   type="button"
@@ -296,14 +300,14 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
               ))}
             </div>
             {/* Larger preview with zoom */}
-            {request.image_urls?.[currentImageIndex] && (
+            {imageUrls?.[currentImageIndex] && (
               <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
                 <div
                   className="absolute inset-0 overflow-auto cursor-move"
                   style={{ touchAction: 'pan-x pan-y' }}
                 >
                   <img
-                    src={request.image_urls[currentImageIndex]}
+                    src={imageUrls[currentImageIndex]}
                     alt={`${isRTL ? 'معاينة' : 'Preview'}`}
                     className="transition-transform duration-200"
                     style={{
@@ -449,6 +453,7 @@ export function PricingNotepad({
   const deliveryFee = fixedDeliveryFee ?? request.delivery_fee ?? 0
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   // Track copied customer texts to prevent duplicates
   const [copiedTexts, setCopiedTexts] = useState<Set<string>>(new Set())
 
@@ -548,17 +553,34 @@ export function PricingNotepad({
 
   // Submit handling
   const handleSubmit = async () => {
+    // Clear previous errors
+    setSubmitError(null)
+
     // Double-check deadline before submission
     if (isDeadlineExpired) {
-      console.error('Cannot submit: deadline has expired')
+      setSubmitError(isRTL ? 'انتهت مهلة التسعير - لا يمكن الإرسال' : 'Pricing deadline has expired - cannot submit')
+      setShowConfirmDialog(false)
+      return
+    }
+
+    // Validate items
+    const validItems = items.filter((item) => item.item_name_ar)
+    if (validItems.length === 0) {
+      setSubmitError(isRTL ? 'يرجى إضافة صنف واحد على الأقل' : 'Please add at least one item')
+      setShowConfirmDialog(false)
+      return
+    }
+
+    const hasValidPricing = validItems.some((item) => item.quantity && item.unit_price)
+    if (!hasValidPricing) {
+      setSubmitError(isRTL ? 'يرجى إدخال الكمية والسعر لصنف واحد على الأقل' : 'Please enter quantity and price for at least one item')
       setShowConfirmDialog(false)
       return
     }
 
     setSubmitting(true)
     try {
-      const submitItems = items
-        .filter((item) => item.item_name_ar)
+      const submitItems = validItems
         .map((item, index) => ({
           original_customer_text: item.original_customer_text || null,
           item_name_ar: item.item_name_ar!,
@@ -585,6 +607,12 @@ export function PricingNotepad({
       setShowConfirmDialog(false)
     } catch (error) {
       console.error('Failed to submit pricing:', error)
+      setSubmitError(
+        isRTL
+          ? 'حدث خطأ أثناء إرسال التسعيرة. يرجى المحاولة مرة أخرى.'
+          : 'An error occurred while submitting the quote. Please try again.'
+      )
+      setShowConfirmDialog(false)
     } finally {
       setSubmitting(false)
     }
@@ -757,6 +785,28 @@ export function PricingNotepad({
             </div>
           </div>
 
+          {/* Error Message */}
+          <AnimatePresence>
+            {submitError && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center gap-3"
+              >
+                <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+                <p className="text-sm text-red-700 flex-1">{submitError}</p>
+                <button
+                  type="button"
+                  onClick={() => setSubmitError(null)}
+                  className="p-1 hover:bg-red-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4 text-red-600" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
             {/* Cancel Button */}
@@ -775,7 +825,7 @@ export function PricingNotepad({
             <Button
               type="button"
               variant="default"
-              onClick={() => setShowConfirmDialog(true)}
+              onClick={() => { setSubmitError(null); setShowConfirmDialog(true); }}
               disabled={!isValid || loading || submitting}
               className="flex-[2] gap-2 h-14 !bg-emerald-500 hover:!bg-emerald-600 !text-white shadow-xl shadow-emerald-500/30 text-lg font-bold transition-all hover:scale-[1.02] disabled:!bg-gray-300 disabled:!text-gray-500"
             >
