@@ -29,7 +29,7 @@ export default function CustomOrderReviewPage() {
   const params = useParams()
   const broadcastId = params.id as string
   const isRTL = locale === 'ar'
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -82,6 +82,9 @@ export default function CustomOrderReviewPage() {
 
   // Initial load
   useEffect(() => {
+    // Wait for auth to finish loading before checking user
+    if (authLoading) return
+
     if (!user) {
       router.push(`/${locale}/auth/login?redirect=/orders/custom-review/${broadcastId}`)
       return
@@ -94,7 +97,7 @@ export default function CustomOrderReviewPage() {
     }
 
     init()
-  }, [user, router, locale, broadcastId, loadBroadcast])
+  }, [user, authLoading, router, locale, broadcastId, loadBroadcast])
 
   // Realtime subscription
   useEffect(() => {
@@ -238,8 +241,8 @@ export default function CustomOrderReviewPage() {
     setLoading(false)
   }
 
-  // Loading state
-  if (loading) {
+  // Loading state (include auth loading)
+  if (loading || authLoading) {
     return (
       <CustomerLayout>
         <div className="min-h-[60vh] flex items-center justify-center">
