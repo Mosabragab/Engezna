@@ -51,8 +51,11 @@ type CustomOrderBroadcast = {
   original_text: string | null
   created_at: string
   pricing_deadline: string
+  // Calculated from requests relation
   requests_count: number
   priced_count: number
+  // Raw requests data from DB
+  requests?: { id: string; status: string }[]
 }
 
 const STATUS_CONFIG: Record<string, { icon: LucideIcon; color: string; label_ar: string; label_en: string }> = {
@@ -120,8 +123,8 @@ export default function OrderHistoryPage() {
       setOrders(transformedOrders)
     }
 
-    // Fetch pending custom order broadcasts
-    const { data: broadcastsData } = await supabase
+    // Fetch pending custom order broadcasts with related requests
+    const { data: broadcastsData, error: broadcastsError } = await supabase
       .from('custom_order_broadcasts')
       .select(`
         id,
@@ -130,15 +133,24 @@ export default function OrderHistoryPage() {
         original_text,
         created_at,
         pricing_deadline,
-        requests_count,
-        priced_count
+        requests:custom_order_requests(id, status)
       `)
       .eq('customer_id', user?.id)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
 
+    if (broadcastsError) {
+      console.error('Error fetching broadcasts:', broadcastsError)
+    }
+
     if (broadcastsData) {
-      setCustomBroadcasts(broadcastsData as CustomOrderBroadcast[])
+      // Transform to include calculated counts
+      const transformedBroadcasts = broadcastsData.map(broadcast => ({
+        ...broadcast,
+        requests_count: broadcast.requests?.length || 0,
+        priced_count: broadcast.requests?.filter((r: { status: string }) => r.status === 'priced').length || 0,
+      }))
+      setCustomBroadcasts(transformedBroadcasts as CustomOrderBroadcast[])
     }
 
     setLoading(false)

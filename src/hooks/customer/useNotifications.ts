@@ -34,7 +34,7 @@ const playNotificationSound = (type: 'notification' | 'new-order' = 'notificatio
 interface Notification {
   id: string
   customer_id: string
-  type: string // 'order_accepted', 'order_preparing', 'order_ready', 'order_delivered', 'order_cancelled', 'promo', 'system'
+  type: string // 'order_accepted', 'order_preparing', 'order_ready', 'order_delivered', 'order_cancelled', 'promo', 'system', 'custom_order_priced'
   title_ar: string
   title_en: string
   body_ar: string | null
@@ -44,6 +44,13 @@ interface Notification {
   is_read: boolean
   read_at: string | null
   created_at: string
+  // Custom order data from database triggers
+  data?: {
+    broadcast_id?: string
+    request_id?: string
+    provider_id?: string
+    total?: number
+  } | null
 }
 
 export function useNotifications() {
