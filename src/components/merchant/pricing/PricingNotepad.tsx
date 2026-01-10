@@ -536,13 +536,25 @@ export function PricingNotepad({
   const commission = subtotal * commissionRate
   const netProfit = total - commission
 
-  // Validation
+  // Check if deadline has expired
+  const isDeadlineExpired = request.pricing_expires_at
+    ? new Date(request.pricing_expires_at) < new Date()
+    : false
+
+  // Validation - also check deadline
   const isValid = items.some(
     (item) => item.item_name_ar && item.quantity && item.unit_price
-  )
+  ) && !isDeadlineExpired
 
   // Submit handling
   const handleSubmit = async () => {
+    // Double-check deadline before submission
+    if (isDeadlineExpired) {
+      console.error('Cannot submit: deadline has expired')
+      setShowConfirmDialog(false)
+      return
+    }
+
     setSubmitting(true)
     try {
       const submitItems = items
@@ -623,12 +635,26 @@ export function PricingNotepad({
 
           {/* Deadline Badge */}
           {request.pricing_expires_at && (
-            <div className="mt-3 flex items-center gap-2 text-sm">
-              <Clock className="w-4 h-4 text-amber-600" />
-              <span className="text-gray-600">
-                {isRTL ? 'المهلة:' : 'Deadline:'}
+            <div className={cn(
+              "mt-3 flex items-center gap-2 text-sm p-2 rounded-lg",
+              isDeadlineExpired ? "bg-red-100 border border-red-200" : ""
+            )}>
+              {isDeadlineExpired ? (
+                <AlertTriangle className="w-4 h-4 text-red-600" />
+              ) : (
+                <Clock className="w-4 h-4 text-amber-600" />
+              )}
+              <span className={isDeadlineExpired ? "text-red-700 font-medium" : "text-gray-600"}>
+                {isDeadlineExpired
+                  ? (isRTL ? 'انتهت المهلة!' : 'Deadline Expired!')
+                  : (isRTL ? 'المهلة:' : 'Deadline:')}
               </span>
-              <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+              <span className={cn(
+                "font-semibold px-2 py-0.5 rounded-md",
+                isDeadlineExpired
+                  ? "text-red-700 bg-red-200"
+                  : "text-amber-700 bg-amber-50"
+              )}>
                 {new Date(request.pricing_expires_at).toLocaleTimeString(locale)}
               </span>
             </div>
@@ -835,10 +861,36 @@ export function PricingNotepad({
             >
               {isRTL ? 'مراجعة' : 'Review'}
             </Button>
-            <Button
+            {/* Send Button - Using inline styles to guarantee emerald colors */}
+            <button
+              type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg"
+              style={{
+                backgroundColor: submitting ? '#d1d5db' : '#10b981',
+                color: submitting ? '#6b7280' : '#ffffff',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 500,
+                border: 'none',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!submitting) {
+                  e.currentTarget.style.backgroundColor = '#059669'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!submitting) {
+                  e.currentTarget.style.backgroundColor = '#10b981'
+                }
+              }}
             >
               {submitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -846,7 +898,7 @@ export function PricingNotepad({
                 <Send className="w-4 h-4" />
               )}
               {isRTL ? 'تأكيد الإرسال' : 'Confirm & Send'}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

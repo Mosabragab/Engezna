@@ -324,52 +324,117 @@ export function PricingItemRow({
               </div>
             </div>
 
-            {/* Status Selection */}
+            {/* Status Selection - Using inline styles to guarantee colors */}
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-slate-500">
                 {isRTL ? 'الحالة:' : 'Status:'}
               </span>
               <div className="flex gap-1">
+                {/* Available Button */}
                 <button
                   type="button"
                   onClick={() => handleStatusChange('available')}
                   disabled={disabled}
-                  className={cn(
-                    'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
-                    item.availability_status === 'available'
-                      ? '!bg-emerald-500 !text-white shadow-sm hover:!bg-emerald-600'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  )}
+                  style={{
+                    backgroundColor: item.availability_status === 'available' ? '#10b981' : '#f1f5f9',
+                    color: item.availability_status === 'available' ? '#ffffff' : '#334155',
+                    padding: '4px 10px',
+                    borderRadius: '9999px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    border: 'none',
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    opacity: disabled ? 0.5 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    boxShadow: item.availability_status === 'available' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!disabled) {
+                      e.currentTarget.style.backgroundColor = item.availability_status === 'available' ? '#059669' : '#e2e8f0'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!disabled) {
+                      e.currentTarget.style.backgroundColor = item.availability_status === 'available' ? '#10b981' : '#f1f5f9'
+                    }
+                  }}
                 >
-                  <Check className="w-3 h-3 inline-block me-1" />
+                  <Check className="w-3 h-3" />
                   {isRTL ? 'متوفر' : 'Available'}
                 </button>
+
+                {/* Unavailable Button */}
                 <button
                   type="button"
                   onClick={() => handleStatusChange('unavailable')}
                   disabled={disabled}
-                  className={cn(
-                    'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
-                    item.availability_status === 'unavailable'
-                      ? '!bg-red-500 !text-white shadow-sm hover:!bg-red-600'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  )}
+                  style={{
+                    backgroundColor: item.availability_status === 'unavailable' ? '#ef4444' : '#f1f5f9',
+                    color: item.availability_status === 'unavailable' ? '#ffffff' : '#334155',
+                    padding: '4px 10px',
+                    borderRadius: '9999px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    border: 'none',
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    opacity: disabled ? 0.5 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    boxShadow: item.availability_status === 'unavailable' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!disabled) {
+                      e.currentTarget.style.backgroundColor = item.availability_status === 'unavailable' ? '#dc2626' : '#e2e8f0'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!disabled) {
+                      e.currentTarget.style.backgroundColor = item.availability_status === 'unavailable' ? '#ef4444' : '#f1f5f9'
+                    }
+                  }}
                 >
-                  <X className="w-3 h-3 inline-block me-1" />
+                  <X className="w-3 h-3" />
                   {isRTL ? 'غير متوفر' : 'Unavailable'}
                 </button>
+
+                {/* Substitute Button */}
                 <button
                   type="button"
                   onClick={() => handleStatusChange('substituted')}
                   disabled={disabled}
-                  className={cn(
-                    'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
-                    item.availability_status === 'substituted'
-                      ? '!bg-amber-500 !text-white shadow-sm hover:!bg-amber-600'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  )}
+                  style={{
+                    backgroundColor: item.availability_status === 'substituted' ? '#f59e0b' : '#f1f5f9',
+                    color: item.availability_status === 'substituted' ? '#ffffff' : '#334155',
+                    padding: '4px 10px',
+                    borderRadius: '9999px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    border: 'none',
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    opacity: disabled ? 0.5 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    boxShadow: item.availability_status === 'substituted' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!disabled) {
+                      e.currentTarget.style.backgroundColor = item.availability_status === 'substituted' ? '#d97706' : '#e2e8f0'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!disabled) {
+                      e.currentTarget.style.backgroundColor = item.availability_status === 'substituted' ? '#f59e0b' : '#f1f5f9'
+                    }
+                  }}
                 >
-                  <RefreshCw className="w-3 h-3 inline-block me-1" />
+                  <RefreshCw className="w-3 h-3" />
                   {isRTL ? 'بديل' : 'Substitute'}
                 </button>
               </div>
