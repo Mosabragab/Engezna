@@ -1,10 +1,10 @@
 # Custom Order System - Implementation Plan v2.0
 ## نظام الطلب المفتوح - خطة التنفيذ النهائية
 
-**Version:** 2.0
+**Version:** 2.1
 **Date:** January 2026
 **Status:** In Progress
-**Last Updated:** 2026-01-09
+**Last Updated:** 2026-01-10
 
 ---
 
@@ -1499,14 +1499,59 @@ GET    /api/provider/price-history                    # Get price history
 | Phase | Duration | Status |
 |-------|----------|--------|
 | Phase 1: Database | 2-3 days | ✅ Migration created |
-| Phase 2: Types | 1 day | ⏳ Pending |
-| Phase 3: Backend | 3-4 days | ⏳ Pending |
-| Phase 4: Customer UI | 4-5 days | ⏳ Pending |
-| Phase 5: Merchant UI | 3-4 days | ⏳ Pending |
-| Phase 6: Testing | 2-3 days | ⏳ Pending |
+| Phase 2: Types | 1 day | ✅ Completed |
+| Phase 3: Backend | 3-4 days | ✅ Completed |
+| Phase 4: Customer UI | 4-5 days | ✅ Completed |
+| Phase 5: Merchant UI | 3-4 days | ✅ Completed (Session 25 fixes) |
+| Phase 6: Testing | 2-3 days | 🔄 In Progress |
 | Phase 7: Admin | 2-3 days | ⏳ Pending |
 
 **Total Estimated: 17-23 working days**
+
+---
+
+## 14. Session 25 Updates (2026-01-10)
+
+### Major UI Fixes for Pricing Interface
+
+#### Status Buttons Rebuild
+The status buttons (متوفر/غير متوفر/بديل) were turning white when clicked due to CSS class conflicts. **Solution**: Complete rebuild using inline styles instead of Tailwind classes.
+
+**Implementation** (`PricingItemRow.tsx:333-440`):
+```typescript
+<button
+  style={{
+    backgroundColor: item.availability_status === 'available' ? '#10b981' : '#f1f5f9',
+    color: item.availability_status === 'available' ? '#ffffff' : '#334155',
+    // ... full inline styles
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.backgroundColor = '...'
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.backgroundColor = '...'
+  }}
+>
+```
+
+#### Deadline Validation
+Prevents pricing submission after `pricing_expires_at` has passed:
+- `isDeadlineExpired` computed from `pricing_expires_at`
+- Submit button disabled when expired
+- Visual warning badge shows "انتهت المهلة!" in red
+- Double-check in `handleSubmit` function
+
+#### Dark Mode Complete Removal
+- Added `color-scheme: light` to `globals.css`
+- Removed all `dark:` classes from pricing components
+- Loading and error states use white backgrounds
+
+#### Additional Improvements
+- Number input spinners removed via CSS
+- "كرتونة" (Carton) unit type added
+- Copy button now fills first empty item (not add new)
+- Duplicate copy prevention with `Set<string>`
+- Confirmation dialog send button fixed with inline styles
 
 ---
 
@@ -1517,3 +1562,4 @@ GET    /api/provider/price-history                    # Get price history
 | 1.0 | Jan 2026 | Claude | Initial plan |
 | 2.0 | Jan 2026 | Claude | Added: Offline support, ActiveCartBanner, Price history, Feature toggles, Hybrid mode, Settings page, UX architecture |
 | 2.1 | Jan 2026 | Claude | Added: Draft auto-save (localStorage), Supabase Realtime subscription, Storage file management & cleanup job |
+| 2.2 | Jan 2026 | Claude | Session 25: Status buttons inline styles rebuild, deadline validation, dark mode removal, UI fixes |

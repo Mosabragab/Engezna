@@ -1,5 +1,171 @@
 # Session Log
 
+## Session: 2026-01-10 - Custom Order Pricing UI Major Fixes
+
+### Summary
+Fixed critical UI issues in the custom order pricing system, including status buttons that turned white when clicked, deadline validation, and complete dark mode removal.
+
+### Problem Statement
+1. **Status buttons broken** - When clicking "متوفر" (Available) or "بديل" (Substitute), buttons turned completely white instead of showing their colors
+2. **No deadline validation** - Merchants could submit pricing even after the `pricing_expires_at` deadline
+3. **Dark mode remnants** - Various components still showing dark mode styles
+4. **Confirmation dialog button** - Send button appeared white/invisible
+
+### Solution Implemented
+
+#### 1. Status Buttons Rebuild ✅
+**Problem**: Tailwind classes with `!important` (`!bg-emerald-500`) were being overridden by some CSS.
+
+**Solution**: Complete rebuild using inline styles instead of Tailwind classes.
+
+**File**: `src/components/merchant/pricing/PricingItemRow.tsx` (lines 333-440)
+
+```typescript
+<button
+  style={{
+    backgroundColor: item.availability_status === 'available' ? '#10b981' : '#f1f5f9',
+    color: item.availability_status === 'available' ? '#ffffff' : '#334155',
+    padding: '4px 10px',
+    borderRadius: '9999px',
+    fontSize: '12px',
+    fontWeight: 500,
+    border: 'none',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.5 : 1,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    boxShadow: item.availability_status === 'available' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+    transition: 'all 0.15s ease',
+  }}
+  onMouseEnter={(e) => {
+    if (!disabled) {
+      e.currentTarget.style.backgroundColor = item.availability_status === 'available' ? '#059669' : '#e2e8f0'
+    }
+  }}
+  onMouseLeave={(e) => {
+    if (!disabled) {
+      e.currentTarget.style.backgroundColor = item.availability_status === 'available' ? '#10b981' : '#f1f5f9'
+    }
+  }}
+>
+```
+
+**Colors Used**:
+- Available (متوفر): `#10b981` (emerald-500), hover: `#059669` (emerald-600)
+- Unavailable (غير متوفر): `#ef4444` (red-500), hover: `#dc2626` (red-600)
+- Substitute (بديل): `#f59e0b` (amber-500), hover: `#d97706` (amber-600)
+- Inactive: `#f1f5f9` (slate-100), hover: `#e2e8f0` (slate-200)
+
+#### 2. Deadline Validation ✅
+**File**: `src/components/merchant/pricing/PricingNotepad.tsx`
+
+```typescript
+// Check if deadline has expired
+const isDeadlineExpired = request.pricing_expires_at
+  ? new Date(request.pricing_expires_at) < new Date()
+  : false
+
+// Validation - also check deadline
+const isValid = items.some(
+  (item) => item.item_name_ar && item.quantity && item.unit_price
+) && !isDeadlineExpired
+
+// Double-check in submit handler
+const handleSubmit = async () => {
+  if (isDeadlineExpired) {
+    console.error('Cannot submit: deadline has expired')
+    setShowConfirmDialog(false)
+    return
+  }
+  // ... rest of submit logic
+}
+```
+
+**Visual Indicator**:
+```tsx
+{/* Deadline Badge */}
+{request.pricing_expires_at && (
+  <div className={cn(
+    "mt-3 flex items-center gap-2 text-sm p-2 rounded-lg",
+    isDeadlineExpired ? "bg-red-100 border border-red-200" : ""
+  )}>
+    {isDeadlineExpired ? (
+      <AlertTriangle className="w-4 h-4 text-red-600" />
+    ) : (
+      <Clock className="w-4 h-4 text-amber-600" />
+    )}
+    <span className={isDeadlineExpired ? "text-red-700 font-medium" : "text-gray-600"}>
+      {isDeadlineExpired ? 'انتهت المهلة!' : 'المهلة:'}
+    </span>
+    ...
+  </div>
+)}
+```
+
+#### 3. Confirmation Dialog Send Button ✅
+**File**: `src/components/merchant/pricing/PricingNotepad.tsx` (lines 865-901)
+
+Changed from Tailwind `<Button>` to native `<button>` with inline styles:
+```typescript
+<button
+  type="button"
+  onClick={handleSubmit}
+  disabled={submitting}
+  style={{
+    backgroundColor: submitting ? '#d1d5db' : '#10b981',
+    color: submitting ? '#6b7280' : '#ffffff',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    // ... full inline styles
+  }}
+>
+```
+
+#### 4. Dark Mode Removal ✅
+- Added `color-scheme: light` to `globals.css`
+- Removed `dark:bg-slate-800` from substitute dropdown SelectTrigger
+- Changed loading page background from `bg-slate-50 dark:bg-slate-900` to `bg-white`
+- Removed all `dark:` classes from PricingItemRow
+
+#### 5. Other UI Fixes ✅
+- **Number input spinners**: Added CSS to remove webkit/moz spinners
+- **Carton unit**: Added "كرتونة" (Carton) to UNIT_TYPES
+- **Copy button**: Now fills first empty item instead of adding new
+- **Duplicate prevention**: Using `Set<string>` to track copied items
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `src/components/merchant/pricing/PricingItemRow.tsx` | Status buttons rebuild with inline styles |
+| `src/components/merchant/pricing/PricingNotepad.tsx` | Deadline validation, dialog button fix |
+| `src/app/globals.css` | `color-scheme: light`, spinner removal CSS |
+| `src/types/custom-order.ts` | Added carton unit type |
+| `src/app/[locale]/provider/orders/custom/[id]/page.tsx` | Dark mode removal |
+
+### Commits
+```
+befaa88 fix: Rebuild status buttons with inline styles and add deadline validation
+c21d4d1 fix: Force status button colors with !important
+51b8255 fix: Remove dark mode class from substitute unit dropdown
+9f5e5c9 fix: Fix visual bugs in pricing UI - buttons, inputs, and spinners
+64acec1 fix: Fix pricing UI issues - light mode, copy order, button colors
+d128280 fix: Improve pricing UI with light mode, carton unit, and duplicate prevention
+```
+
+### Key Lessons Learned
+
+#### 1. Inline Styles vs Tailwind for Critical UI
+When Tailwind classes with `!important` still don't work, use inline styles. They have the highest specificity and cannot be overridden by CSS classes.
+
+#### 2. Hover Effects with Inline Styles
+Since inline styles can't use `:hover` pseudo-class, use `onMouseEnter` and `onMouseLeave` event handlers to change `e.currentTarget.style`.
+
+#### 3. Color-Scheme for Light Mode
+Adding `color-scheme: light` to `:root, html, body` prevents system dark mode preferences from affecting the app.
+
+---
+
 ## Session: 2025-12-31 - Native Google Sign-In Implementation
 
 ### Summary

@@ -1,6 +1,6 @@
 # Engezna Project Status
 
-## Last Updated: 2026-01-04 (Session 24)
+## Last Updated: 2026-01-10 (Session 25)
 
 ## Project Overview
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
@@ -15,7 +15,37 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 
 ---
 
-## Current Status: ~96% MVP Complete
+## Current Status: ~97% MVP Complete
+
+### Session 25 Updates (January 10, 2026)
+
+#### Custom Order Pricing System - Major UI Fixes
+
+##### Status Buttons System Rebuild
+- [x] **Complete rebuild using inline styles** - Fixed status buttons (متوفر/غير متوفر/بديل) that were turning white
+- [x] **Guaranteed color rendering** - Direct hex colors instead of Tailwind classes
+- [x] **Hover effects with JavaScript** - Reliable hover states using onMouseEnter/onMouseLeave
+
+##### Deadline Validation System
+- [x] **Prevent late submissions** - Check `pricing_expires_at` before submission
+- [x] **Visual deadline indicator** - Red "انتهت المهلة!" warning when expired
+- [x] **Double-check in submit** - Server-side validation backup
+
+##### Dark Mode Complete Removal
+- [x] **Forced light mode** - `color-scheme: light` in globals.css
+- [x] **All pricing components** - Removed dark: classes throughout
+
+##### UI Improvements
+- [x] **Number input spinners removed** - Clean pricing inputs
+- [x] **Carton unit type** - Added "كرتونة" to unit types
+- [x] **Duplicate copy prevention** - One-time copy per item
+- [x] **Fill first empty item** - Better UX for copy feature
+- [x] **Confirmation dialog button** - Fixed with inline styles
+- [x] **Net profit display** - Commission transparency
+- [x] **Audio speed controls** - 1x/1.5x/2x playback
+- [x] **Image zoom controls** - Customer image review
+
+---
 
 ### Session 24 Updates (January 4, 2026)
 
