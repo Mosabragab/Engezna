@@ -55,6 +55,7 @@ interface PricingNotepadProps {
   onCancel: () => void
   loading?: boolean
   className?: string
+  fixedDeliveryFee?: number // رسوم التوصيل الثابتة من بيانات التاجر
 }
 
 type ItemFormData = Partial<CustomOrderItem> & {
@@ -124,31 +125,31 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden h-full flex flex-col">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full flex flex-col shadow-sm">
       {/* Header */}
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 border-b border-slate-200 dark:border-slate-700">
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            <h3 className="font-semibold text-slate-800 dark:text-slate-200">
+            <FileText className="w-5 h-5 text-amber-600" />
+            <h3 className="font-semibold text-gray-800">
               {isRTL ? 'طلب العميل' : 'Customer Order'}
             </h3>
           </div>
           <div className="flex items-center gap-1.5">
             {request.input_type === 'text' && (
-              <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <FileText className="w-3 h-3" />
                 {isRTL ? 'نص' : 'Text'}
               </span>
             )}
             {request.input_type === 'voice' && (
-              <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Mic className="w-3 h-3" />
                 {isRTL ? 'صوت' : 'Voice'}
               </span>
             )}
             {request.input_type === 'image' && (
-              <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <ImageIcon className="w-3 h-3" />
                 {isRTL ? 'صور' : 'Images'}
               </span>
@@ -157,7 +158,7 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
         </div>
 
         {/* Customer Info */}
-        <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+        <div className="mt-2 text-sm text-gray-600">
           <span className="font-medium">{request.broadcast?.customer?.full_name}</span>
           {request.broadcast?.customer?.phone && (
             <span className="ms-2">({request.broadcast.customer.phone})</span>
@@ -166,10 +167,10 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
         {/* Voice Player */}
         {hasVoice && (
-          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
+          <div className="bg-purple-50 rounded-xl p-4">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -184,12 +185,12 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
               </button>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <Volume2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                  <Volume2 className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-medium text-purple-700">
                     {isRTL ? 'تسجيل صوتي' : 'Voice Recording'}
                   </span>
                 </div>
-                <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
+                <p className="text-xs text-purple-600 mt-0.5">
                   {isRTL ? 'اضغط للاستماع' : 'Click to listen'}
                 </p>
               </div>
@@ -207,8 +208,8 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
         {hasImages && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <ImageIcon className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">
                 {isRTL ? 'الصور المرفقة' : 'Attached Images'}
               </span>
             </div>
@@ -222,7 +223,7 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
                     'aspect-square rounded-lg overflow-hidden border-2 transition-all',
                     currentImageIndex === index
                       ? 'border-primary ring-2 ring-primary/20'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                      : 'border-gray-200 hover:border-gray-300'
                   )}
                 >
                   <img
@@ -235,11 +236,11 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
             </div>
             {/* Larger preview of selected image */}
             {request.image_urls?.[currentImageIndex] && (
-              <div className="aspect-video rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+              <div className="aspect-video rounded-xl overflow-hidden border border-gray-200">
                 <img
                   src={request.image_urls[currentImageIndex]}
                   alt={`${isRTL ? 'معاينة' : 'Preview'}`}
-                  className="w-full h-full object-contain bg-slate-50 dark:bg-slate-900"
+                  className="w-full h-full object-contain bg-gray-50"
                 />
               </div>
             )}
@@ -250,10 +251,10 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
         {displayText && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-gray-700">
                 {isRTL ? 'قائمة الطلب' : 'Order List'}
               </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
+              <span className="text-xs text-gray-500">
                 {textItems.length} {isRTL ? 'عناصر' : 'items'}
               </span>
             </div>
@@ -265,12 +266,12 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
                   initial={{ opacity: 0, x: isRTL ? 20 : -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="group flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="group flex items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                 >
-                  <span className="w-6 h-6 bg-primary/10 dark:bg-primary/20 text-primary rounded-md flex items-center justify-center text-xs font-medium shrink-0">
+                  <span className="w-6 h-6 bg-primary/10 text-primary rounded-md flex items-center justify-center text-xs font-medium shrink-0">
                     {index + 1}
                   </span>
-                  <span className="flex-1 text-slate-700 dark:text-slate-300 text-sm">
+                  <span className="flex-1 text-gray-700 text-sm">
                     {item}
                   </span>
                   <Button
@@ -290,14 +291,14 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
 
         {/* Customer Notes */}
         {request.customer_notes && (
-          <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 border border-amber-200 dark:border-amber-800">
+          <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
             <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <span className="text-sm font-medium text-amber-700">
                 {isRTL ? 'ملاحظات العميل' : 'Customer Notes'}
               </span>
             </div>
-            <p className="text-sm text-amber-800 dark:text-amber-300">
+            <p className="text-sm text-amber-800">
               {request.customer_notes}
             </p>
           </div>
@@ -318,6 +319,7 @@ export function PricingNotepad({
   onCancel,
   loading = false,
   className,
+  fixedDeliveryFee,
 }: PricingNotepadProps) {
   const locale = useLocale()
   const isRTL = locale === 'ar'
@@ -333,7 +335,8 @@ export function PricingNotepad({
     }
     return [createEmptyItem()]
   })
-  const [deliveryFee, setDeliveryFee] = useState(request.delivery_fee || 0)
+  // Use fixed delivery fee from provider settings, not editable
+  const deliveryFee = fixedDeliveryFee ?? request.delivery_fee ?? 0
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -433,7 +436,6 @@ export function PricingNotepad({
   // Reset form
   const handleReset = () => {
     setItems([createEmptyItem()])
-    setDeliveryFee(request.delivery_fee || 0)
   }
 
   return (
@@ -443,45 +445,53 @@ export function PricingNotepad({
         <CustomerOrderPanel request={request} onCopyText={handleCopyCustomerText} />
       </div>
 
-      {/* Right Panel - Pricing Form */}
-      <div className="lg:w-3/5 xl:w-2/3 flex flex-col gap-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
-              {isRTL ? 'جدول التسعير' : 'Pricing Table'}
-            </h2>
-            <span className="text-sm text-slate-500 dark:text-slate-400">
-              ({items.length} {isRTL ? 'صنف' : 'items'})
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
+      {/* Right Panel - Pricing Form (Clean Invoice Style) */}
+      <div className="lg:w-3/5 xl:w-2/3 flex flex-col bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        {/* Invoice Header - Paper Style */}
+        <div className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-100 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">
+                  {isRTL ? 'فاتورة التسعير' : 'Pricing Invoice'}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {items.length} {isRTL ? 'صنف' : 'items'}
+                </p>
+              </div>
+            </div>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={handleReset}
               disabled={loading || submitting}
-              className="gap-1"
+              className="gap-1.5 text-gray-500 hover:text-gray-700"
             >
               <RotateCcw className="w-4 h-4" />
               {isRTL ? 'إعادة' : 'Reset'}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onCancel}
-              disabled={loading || submitting}
-            >
-              <X className="w-4 h-4 me-1" />
-              {isRTL ? 'إلغاء' : 'Cancel'}
-            </Button>
           </div>
+
+          {/* Deadline Badge */}
+          {request.pricing_expires_at && (
+            <div className="mt-3 flex items-center gap-2 text-sm">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <span className="text-gray-600">
+                {isRTL ? 'المهلة:' : 'Deadline:'}
+              </span>
+              <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                {new Date(request.pricing_expires_at).toLocaleTimeString(locale)}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Items List */}
-        <div className="flex-1 overflow-y-auto space-y-3 pb-4">
+        {/* Items List - Scrollable */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-white">
           <AnimatePresence mode="popLayout">
             {items.map((item, index) => (
               <PricingItemRow
@@ -503,10 +513,9 @@ export function PricingNotepad({
             onClick={addItem}
             disabled={loading || submitting}
             className={cn(
-              'w-full p-4 rounded-xl border-2 border-dashed transition-all',
+              'w-full p-4 rounded-xl border-2 border-dashed border-gray-200 transition-all',
               'flex items-center justify-center gap-2',
-              'text-slate-500 hover:text-primary hover:border-primary',
-              'dark:text-slate-400 dark:hover:text-primary',
+              'text-gray-500 hover:text-primary hover:border-primary hover:bg-primary/5',
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
             whileHover={{ scale: 1.01 }}
@@ -519,100 +528,136 @@ export function PricingNotepad({
           </motion.button>
         </div>
 
-        {/* Summary */}
-        <PricingSummary
-          items={items as CustomOrderItem[]}
-          deliveryFee={deliveryFee}
-          onDeliveryFeeChange={setDeliveryFee}
-          showMerchantPayout={true}
-        />
-
-        {/* Actions */}
-        <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <div className="text-sm text-slate-500 dark:text-slate-400">
-            <Clock className="w-4 h-4 inline-block me-1" />
-            {isRTL ? 'المهلة: ' : 'Deadline: '}
-            <span className="font-medium text-slate-700 dark:text-slate-300">
-              {request.pricing_expires_at
-                ? new Date(request.pricing_expires_at).toLocaleTimeString(locale)
-                : '-'}
+        {/* Invoice Summary - Clean Paper Style */}
+        <div className="border-t border-gray-200 bg-gray-50/50 px-6 py-4">
+          {/* Subtotal */}
+          <div className="flex justify-between items-center py-2 text-gray-600">
+            <span>{isRTL ? 'مجموع المنتجات' : 'Subtotal'}</span>
+            <span className="font-medium text-gray-800">
+              {subtotal.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
             </span>
           </div>
 
-          <Button
-            type="button"
-            onClick={() => setShowConfirmDialog(true)}
-            disabled={!isValid || loading || submitting}
-            className="gap-2 px-6"
-          >
-            {submitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            {isRTL ? 'إرسال التسعيرة' : 'Send Quote'}
-            <ChevronRight className="w-4 h-4 rtl:rotate-180" />
-          </Button>
+          {/* Delivery Fee (Fixed - Read Only) */}
+          <div className="flex justify-between items-center py-2 text-gray-600 border-b border-dashed border-gray-200">
+            <div className="flex items-center gap-2">
+              <span>{isRTL ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
+              <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                {isRTL ? 'ثابت' : 'Fixed'}
+              </span>
+            </div>
+            <span className="font-medium text-gray-800">
+              {deliveryFee.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+            </span>
+          </div>
+
+          {/* Total */}
+          <div className="flex justify-between items-center py-3">
+            <span className="text-lg font-bold text-gray-800">
+              {isRTL ? 'الإجمالي للعميل' : 'Customer Total'}
+            </span>
+            <span className="text-2xl font-bold text-primary">
+              {total.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+            </span>
+          </div>
+        </div>
+
+        {/* Sticky Footer - Action Buttons */}
+        <div className="border-t border-gray-200 bg-white px-6 py-4 sticky bottom-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center gap-3">
+            {/* Cancel Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={loading || submitting}
+              className="flex-1 gap-2 h-12 border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
+              <X className="w-5 h-5" />
+              {isRTL ? 'إلغاء' : 'Cancel'}
+            </Button>
+
+            {/* Submit Button */}
+            <Button
+              type="button"
+              onClick={() => setShowConfirmDialog(true)}
+              disabled={!isValid || loading || submitting}
+              className="flex-[2] gap-2 h-12 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25"
+            >
+              {submitting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+              {isRTL ? 'إرسال التسعيرة للعميل' : 'Send Quote to Customer'}
+              <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Confirmation Dialog */}
+      {/* Confirmation Dialog - Clean Light Theme */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
+        <DialogContent className="bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-gray-800">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
               {isRTL ? 'تأكيد إرسال التسعيرة' : 'Confirm Quote Submission'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-gray-600">
               {isRTL
                 ? 'هل أنت متأكد من إرسال هذه التسعيرة للعميل؟ لا يمكن التراجع بعد الإرسال.'
                 : 'Are you sure you want to send this quote to the customer? This cannot be undone.'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 space-y-2">
+          <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100">
             <div className="flex justify-between">
-              <span className="text-slate-600 dark:text-slate-400">
+              <span className="text-gray-600">
                 {isRTL ? 'عدد الأصناف' : 'Items'}
               </span>
-              <span className="font-medium">{validItems.length}</span>
+              <span className="font-medium text-gray-800">{validItems.length}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-600 dark:text-slate-400">
+              <span className="text-gray-600">
                 {isRTL ? 'المجموع' : 'Subtotal'}
               </span>
-              <span className="font-medium">
+              <span className="font-medium text-gray-800">
                 {subtotal.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-600 dark:text-slate-400">
+              <span className="text-gray-600">
                 {isRTL ? 'التوصيل' : 'Delivery'}
               </span>
-              <span className="font-medium">
+              <span className="font-medium text-gray-800">
                 {deliveryFee.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
               </span>
             </div>
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between">
-              <span className="font-semibold">
+            <div className="border-t border-dashed border-gray-200 pt-2 flex justify-between">
+              <span className="font-semibold text-gray-800">
                 {isRTL ? 'الإجمالي' : 'Total'}
               </span>
-              <span className="font-bold text-primary">
+              <span className="font-bold text-primary text-lg">
                 {total.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
               </span>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               onClick={() => setShowConfirmDialog(false)}
               disabled={submitting}
+              className="border-gray-300 text-gray-700 hover:bg-gray-100"
             >
               {isRTL ? 'مراجعة' : 'Review'}
             </Button>
-            <Button onClick={handleSubmit} disabled={submitting} className="gap-2">
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="gap-2 bg-primary hover:bg-primary/90"
+            >
               {submitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (

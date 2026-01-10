@@ -36,6 +36,7 @@ export default function CustomOrderPricingPage() {
   const [request, setRequest] = useState<CustomOrderRequestWithItems | null>(null)
   const [priceHistory, setPriceHistory] = useState<PriceHistoryItem[]>([])
   const [providerId, setProviderId] = useState<string | null>(null)
+  const [providerDeliveryFee, setProviderDeliveryFee] = useState<number>(0)
 
   // Load custom order request
   const loadRequest = useCallback(async (provId: string, reqId: string) => {
@@ -148,6 +149,7 @@ export default function CustomOrderPricingPage() {
       }
 
       setProviderId(provider.id)
+      setProviderDeliveryFee(provider.delivery_fee || 0)
       await loadRequest(provider.id, requestId)
       setLoading(false)
     }
@@ -409,6 +411,7 @@ export default function CustomOrderPricingPage() {
           onSubmitPricing={handleSubmitPricing}
           onCancel={handleCancel}
           loading={submitting}
+          fixedDeliveryFee={providerDeliveryFee}
         />
       </div>
     </ProviderLayout>

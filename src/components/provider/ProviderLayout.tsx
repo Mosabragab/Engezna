@@ -402,23 +402,93 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       )
       .subscribe()
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Realtime subscription for custom_order_requests (الطلبات المفتوحة)
+    // عداد الإشعارات اللحظي - يظهر في القائمة الجانبية
+    // ═══════════════════════════════════════════════════════════════════════════
+    const customOrdersChannel = supabase
+      .channel(`layout-custom-orders-${providerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'custom_order_requests',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const newRequest = payload.new as { status: string }
+          // New pending custom order arrives - increment badge
+          if (newRequest.status === 'pending') {
+            setPendingCustomOrders(prev => prev + 1)
+            // Play notification sound for new custom order
+            try {
+              const audio = new Audio('/sounds/notification.mp3')
+              audio.volume = 0.5
+              audio.play().catch(() => {})
+            } catch {}
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'custom_order_requests',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const oldRequest = payload.old as { status: string }
+          const newRequest = payload.new as { status: string }
+
+          // Status changed from pending to something else (priced, expired, cancelled)
+          // Decrement badge when merchant sends pricing or order expires
+          if (oldRequest.status === 'pending' && newRequest.status !== 'pending') {
+            setPendingCustomOrders(prev => Math.max(0, prev - 1))
+          }
+          // Handle edge case: status changed back to pending
+          if (oldRequest.status !== 'pending' && newRequest.status === 'pending') {
+            setPendingCustomOrders(prev => prev + 1)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'custom_order_requests',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        (payload) => {
+          const deleted = payload.old as { status: string }
+          // If a pending request was deleted, decrement badge
+          if (deleted.status === 'pending') {
+            setPendingCustomOrders(prev => Math.max(0, prev - 1))
+          }
+        }
+      )
+      .subscribe()
+
     return () => {
       supabase.removeChannel(notificationsChannel)
       supabase.removeChannel(ordersChannel)
       supabase.removeChannel(refundsChannel)
       supabase.removeChannel(complaintsChannel)
+      supabase.removeChannel(customOrdersChannel)
     }
   }, [provider?.id])
 
   // Update app badge when notification counts change
   useEffect(() => {
-    const totalBadge = unreadCount + pendingOrders + pendingRefunds + pendingComplaints + onHoldOrders
+    const totalBadge = unreadCount + pendingOrders + pendingCustomOrders + pendingRefunds + pendingComplaints + onHoldOrders
     if (totalBadge > 0) {
       setAppBadge(totalBadge)
     } else {
       clearAppBadge()
     }
-  }, [unreadCount, pendingOrders, pendingRefunds, pendingComplaints, onHoldOrders])
+  }, [unreadCount, pendingOrders, pendingCustomOrders, pendingRefunds, pendingComplaints, onHoldOrders])
 
   async function handleSignOut() {
     const supabase = createClient()
