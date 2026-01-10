@@ -20,3 +20,8 @@ export { BroadcastComparison } from './BroadcastComparison'
 
 // UI components
 export { ActiveCartBanner, ActiveCartNotice } from './ActiveCartBanner'
+export {
+  CustomOrderWelcomeBanner,
+  CustomOrderBadge,
+  CustomOrderFloatingButton,
+} from './CustomOrderWelcomeBanner'

@@ -13,6 +13,7 @@ import { ProductCard, RatingStars, StatusBadge, EmptyState, ProductDetailModal }
 import { VoiceOrderFAB } from '@/components/customer/voice'
 import { ChatFAB, SmartAssistant } from '@/components/customer/chat'
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout'
+import { CustomOrderWelcomeBanner, CustomOrderFloatingButton } from '@/components/custom-order'
 import {
   Clock,
   Truck,
@@ -46,6 +47,17 @@ type Provider = {
   status: string
   commission_rate: number
   city_id: string | null
+  operation_mode?: 'standard' | 'custom' | 'hybrid'
+  custom_order_settings?: {
+    accepts_text?: boolean
+    accepts_voice?: boolean
+    accepts_image?: boolean
+    pricing_timeout_hours?: number
+    customer_approval_timeout_hours?: number
+    welcome_banner_enabled?: boolean
+    welcome_banner_text_ar?: string
+    welcome_banner_text_en?: string
+  }
 }
 
 type ProductVariant = {
@@ -601,6 +613,17 @@ export default function ProviderDetailPage() {
         </div>
       </div>
 
+      {/* Custom Order Welcome Banner - For hybrid/custom stores */}
+      {(provider.operation_mode === 'custom' || provider.operation_mode === 'hybrid') && (
+        <div className="px-4 py-3">
+          <CustomOrderWelcomeBanner
+            providerId={provider.id}
+            providerName={locale === 'ar' ? provider.name_ar : provider.name_en}
+            settings={provider.custom_order_settings}
+          />
+        </div>
+      )}
+
       {/* Reviews Section */}
       {reviews.length > 0 && (
         <div className="bg-white border-b">
@@ -903,6 +926,14 @@ export default function ProviderDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Custom Order Floating Button - For hybrid/custom stores */}
+      {(provider.operation_mode === 'custom' || provider.operation_mode === 'hybrid') && (
+        <CustomOrderFloatingButton
+          providerId={provider.id}
+          providerName={locale === 'ar' ? provider.name_ar : provider.name_en}
+        />
       )}
 
       {/* Bottom Navigation */}
