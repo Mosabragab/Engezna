@@ -56,6 +56,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [pendingOrders, setPendingOrders] = useState(0)
+  const [pendingCustomOrders, setPendingCustomOrders] = useState(0) // الطلبات المفتوحة المعلقة
   const [pendingRefunds, setPendingRefunds] = useState(0)
   const [pendingComplaints, setPendingComplaints] = useState(0)
   const [onHoldOrders, setOnHoldOrders] = useState(0) // الطلبات المعلقة - on_hold في المحرك المالي
@@ -111,6 +112,15 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       .eq('settlement_status', 'on_hold')
 
     setOnHoldOrders(onHoldCount || 0)
+
+    // Get pending custom orders count (طلبات مفتوحة تحتاج تسعير)
+    const { count: customOrdersCount } = await supabase
+      .from('custom_order_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', providerId)
+      .eq('status', 'pending')
+
+    setPendingCustomOrders(customOrdersCount || 0)
   }, [])
 
   const checkAuth = useCallback(async () => {
@@ -458,6 +468,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         onClose={() => setSidebarOpen(false)}
         provider={provider}
         pendingOrders={pendingOrders}
+        pendingCustomOrders={pendingCustomOrders}
         unreadNotifications={unreadCount}
         pendingRefunds={pendingRefunds}
         onHoldOrders={onHoldOrders}

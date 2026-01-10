@@ -19,6 +19,7 @@ import {
   MessageSquare,
   TrendingUp,
   Users,
+  ClipboardList,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
@@ -60,6 +61,7 @@ interface ProviderSidebarProps {
     status: string
   } | null
   pendingOrders?: number
+  pendingCustomOrders?: number // الطلبات المفتوحة المعلقة
   unreadNotifications?: number
   pendingRefunds?: number
   onHoldOrders?: number // الطلبات المعلقة - مرتبطة بالمحرك المالي
@@ -76,6 +78,7 @@ export function ProviderSidebar({
   onClose,
   provider,
   pendingOrders = 0,
+  pendingCustomOrders = 0,
   unreadNotifications = 0,
   pendingRefunds = 0,
   onHoldOrders = 0,
@@ -124,6 +127,14 @@ export function ProviderSidebar({
         path: `/${locale}/provider/orders`,
         badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
         badgeColor: 'red',
+      })
+      // Custom Orders - الطلبات المفتوحة
+      operationsItems.push({
+        icon: ClipboardList,
+        label: { ar: 'الطلبات المفتوحة', en: 'Custom Orders' },
+        path: `/${locale}/provider/orders/custom`,
+        badge: pendingCustomOrders > 0 ? pendingCustomOrders.toString() : undefined,
+        badgeColor: 'amber',
       })
       operationsItems.push({
         icon: RefreshCw,
