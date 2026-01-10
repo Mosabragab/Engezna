@@ -531,6 +531,31 @@ html.no-transition * {
   }
 }
 
+/* ========================================
+ * Number Input - Remove Spinners/Arrows
+ * Clean number inputs for pricing forms
+ * ======================================== */
+
+/* Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Clean number input styling for pricing */
+input[type="number"].price-input {
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Partner Landing Page Animations */
 @keyframes fade-in {
   from {

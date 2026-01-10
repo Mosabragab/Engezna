@@ -748,9 +748,10 @@ export function PricingNotepad({
             {/* Submit Button - Large Green */}
             <Button
               type="button"
+              variant="default"
               onClick={() => setShowConfirmDialog(true)}
               disabled={!isValid || loading || submitting}
-              className="flex-[2] gap-2 h-14 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 text-lg font-bold transition-all hover:scale-[1.02]"
+              className="flex-[2] gap-2 h-14 !bg-emerald-500 hover:!bg-emerald-600 !text-white shadow-xl shadow-emerald-500/30 text-lg font-bold transition-all hover:scale-[1.02] disabled:!bg-gray-300 disabled:!text-gray-500"
             >
               {submitting ? (
                 <Loader2 className="w-6 h-6 animate-spin" />

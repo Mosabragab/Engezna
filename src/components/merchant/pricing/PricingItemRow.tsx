@@ -265,7 +265,7 @@ export function PricingItemRow({
                   min="0"
                   step="0.5"
                   disabled={disabled || item.availability_status === 'unavailable'}
-                  className="text-center"
+                  className="text-center font-semibold tabular-nums focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
 
@@ -279,7 +279,7 @@ export function PricingItemRow({
                   onValueChange={(value) => onUpdate({ unit_type: value as UnitType })}
                   disabled={disabled || item.availability_status === 'unavailable'}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     <SelectValue
                       placeholder={isRTL ? 'اختر' : 'Select'}
                     />
@@ -309,7 +309,7 @@ export function PricingItemRow({
                   min="0"
                   step="0.5"
                   disabled={disabled || item.availability_status === 'unavailable'}
-                  className="text-center"
+                  className="text-center font-semibold tabular-nums focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
 
@@ -335,10 +335,10 @@ export function PricingItemRow({
                   onClick={() => handleStatusChange('available')}
                   disabled={disabled}
                   className={cn(
-                    'px-2.5 py-1 rounded-full text-xs font-medium transition-all',
+                    'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
                     item.availability_status === 'available'
-                      ? 'bg-emerald-500 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-emerald-500 text-white shadow-sm hover:bg-emerald-600'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-800'
                   )}
                 >
                   <Check className="w-3 h-3 inline-block me-1" />
@@ -349,10 +349,10 @@ export function PricingItemRow({
                   onClick={() => handleStatusChange('unavailable')}
                   disabled={disabled}
                   className={cn(
-                    'px-2.5 py-1 rounded-full text-xs font-medium transition-all',
+                    'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
                     item.availability_status === 'unavailable'
-                      ? 'bg-red-500 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-red-500 text-white shadow-sm hover:bg-red-600'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-800'
                   )}
                 >
                   <X className="w-3 h-3 inline-block me-1" />
@@ -363,10 +363,10 @@ export function PricingItemRow({
                   onClick={() => handleStatusChange('substituted')}
                   disabled={disabled}
                   className={cn(
-                    'px-2.5 py-1 rounded-full text-xs font-medium transition-all',
+                    'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
                     item.availability_status === 'substituted'
-                      ? 'bg-amber-500 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-amber-500 text-white shadow-sm hover:bg-amber-600'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-800'
                   )}
                 >
                   <RefreshCw className="w-3 h-3 inline-block me-1" />
