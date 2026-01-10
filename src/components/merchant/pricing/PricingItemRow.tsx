@@ -457,7 +457,7 @@ export function PricingItemRow({
                       }
                       disabled={disabled}
                     >
-                      <SelectTrigger className="bg-white dark:bg-slate-800">
+                      <SelectTrigger className="bg-white">
                         <SelectValue placeholder={isRTL ? 'الوحدة' : 'Unit'} />
                       </SelectTrigger>
                       <SelectContent>
