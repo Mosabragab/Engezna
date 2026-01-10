@@ -246,10 +246,9 @@ export class BroadcastService {
   ): Promise<ValidatedProvider[]> {
     const { data: providers, error } = await this.supabase
       .from('providers')
-      .select('id, name_ar, name_en, operation_mode, custom_order_settings, delivery_fee')
+      .select('id, name_ar, name_en, operation_mode, custom_order_settings, delivery_fee, status')
       .in('id', providerIds)
-      .eq('is_approved', true)
-      .eq('is_active', true);
+      .eq('status', 'open');
 
     if (error) {
       console.error('Error fetching providers:', error);
