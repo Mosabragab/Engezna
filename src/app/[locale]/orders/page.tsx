@@ -329,7 +329,7 @@ export default function OrderHistoryPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <h3 className="font-bold text-lg truncate">
-                                {locale === 'ar' ? 'طلب مفتوح' : 'Custom Order'}
+                                {locale === 'ar' ? 'طلب خاص' : 'Custom Order'}
                               </h3>
                               <span className="text-sm text-primary font-medium whitespace-nowrap">
                                 {broadcast.priced_count > 0

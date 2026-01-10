@@ -389,7 +389,7 @@ export function CustomOrderInterface({
                       {isRTL ? provider.name_ar : provider.name_en}
                     </h2>
                     <p className="text-sm text-slate-500">
-                      {isRTL ? 'طلب مفتوح' : 'Custom Order'}
+                      {isRTL ? 'طلب خاص' : 'Custom Order'}
                     </p>
                   </div>
                 </div>

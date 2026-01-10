@@ -193,7 +193,7 @@ function CustomOrderPageContent() {
             )}
           </button>
           <h1 className="flex-1 text-center font-semibold text-slate-800">
-            {isRTL ? 'طلب مفتوح' : 'Custom Order'}
+            {isRTL ? 'طلب خاص' : 'Custom Order'}
           </h1>
           <div className="w-10" /> {/* Spacer for balance */}
         </div>

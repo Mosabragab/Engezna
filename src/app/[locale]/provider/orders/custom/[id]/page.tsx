@@ -428,7 +428,7 @@ export default function CustomOrderPricingPage() {
   if (error || !request) {
     return (
       <ProviderLayout
-        pageTitle={{ ar: 'تسعير طلب مفتوح', en: 'Custom Order Pricing' }}
+        pageTitle={{ ar: 'تسعير طلب خاص', en: 'Custom Order Pricing' }}
       >
         <div className="flex flex-col items-center justify-center py-16">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
@@ -455,7 +455,7 @@ export default function CustomOrderPricingPage() {
   if (request.status !== 'pending') {
     return (
       <ProviderLayout
-        pageTitle={{ ar: 'تسعير طلب مفتوح', en: 'Custom Order Pricing' }}
+        pageTitle={{ ar: 'تسعير طلب خاص', en: 'Custom Order Pricing' }}
       >
         <div className="flex flex-col items-center justify-center py-16">
           <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
@@ -480,7 +480,7 @@ export default function CustomOrderPricingPage() {
 
   return (
     <ProviderLayout
-      pageTitle={{ ar: 'تسعير طلب مفتوح', en: 'Custom Order Pricing' }}
+      pageTitle={{ ar: 'تسعير طلب خاص', en: 'Custom Order Pricing' }}
       pageSubtitle={{
         ar: `طلب من ${request.broadcast?.customer?.full_name || 'عميل'}`,
         en: `Order from ${request.broadcast?.customer?.full_name || 'Customer'}`,

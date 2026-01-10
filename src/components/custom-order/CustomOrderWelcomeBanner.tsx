@@ -268,7 +268,7 @@ export function CustomOrderBadge({
       className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary to-emerald-500 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-shadow"
     >
       <Sparkles className="w-4 h-4" />
-      {isRTL ? 'طلب مفتوح متاح' : 'Custom Orders Available'}
+      {isRTL ? 'طلب خاص متاح' : 'Custom Orders Available'}
     </motion.button>
   )
 }
@@ -302,7 +302,7 @@ export function CustomOrderFloatingButton({
           <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-emerald-500 text-white rounded-full shadow-xl">
             <Mic className="w-5 h-5" />
             <span className="font-semibold text-sm whitespace-nowrap">
-              {isRTL ? 'طلب مفتوح' : 'Custom Order'}
+              {isRTL ? 'طلب خاص' : 'Custom Order'}
             </span>
           </div>
 
