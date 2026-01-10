@@ -337,8 +337,8 @@ export function PricingItemRow({
                   className={cn(
                     'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
                     item.availability_status === 'available'
-                      ? 'bg-emerald-500 text-white shadow-sm hover:bg-emerald-600'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-800'
+                      ? '!bg-emerald-500 !text-white shadow-sm hover:!bg-emerald-600'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   )}
                 >
                   <Check className="w-3 h-3 inline-block me-1" />
@@ -351,8 +351,8 @@ export function PricingItemRow({
                   className={cn(
                     'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
                     item.availability_status === 'unavailable'
-                      ? 'bg-red-500 text-white shadow-sm hover:bg-red-600'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-800'
+                      ? '!bg-red-500 !text-white shadow-sm hover:!bg-red-600'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   )}
                 >
                   <X className="w-3 h-3 inline-block me-1" />
@@ -365,8 +365,8 @@ export function PricingItemRow({
                   className={cn(
                     'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
                     item.availability_status === 'substituted'
-                      ? 'bg-amber-500 text-white shadow-sm hover:bg-amber-600'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-800'
+                      ? '!bg-amber-500 !text-white shadow-sm hover:!bg-amber-600'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   )}
                 >
                   <RefreshCw className="w-3 h-3 inline-block me-1" />
