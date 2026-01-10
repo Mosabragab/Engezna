@@ -937,16 +937,22 @@ export default function ProviderSettingsPage() {
                   </Label>
 
                   {/* Standard Mode */}
-                  <button
-                    type="button"
-                    onClick={() => setOperationMode('standard')}
-                    className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start ${
+                  <label
+                    className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start cursor-pointer ${
                       operationMode === 'standard'
                         ? 'border-primary bg-primary/5'
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                    <input
+                      type="radio"
+                      name="operationMode"
+                      value="standard"
+                      checked={operationMode === 'standard'}
+                      onChange={(e) => setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
                       operationMode === 'standard' ? 'border-primary bg-primary' : 'border-slate-300'
                     }`}>
                       {operationMode === 'standard' && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -961,25 +967,31 @@ export default function ProviderSettingsPage() {
                           : 'Customers order from displayed products only'}
                       </p>
                     </div>
-                  </button>
+                  </label>
 
                   {/* Hybrid Mode */}
-                  <button
-                    type="button"
-                    onClick={() => setOperationMode('hybrid')}
-                    className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start ${
+                  <label
+                    className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start cursor-pointer ${
                       operationMode === 'hybrid'
                         ? 'border-emerald-500 bg-emerald-50'
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                    <input
+                      type="radio"
+                      name="operationMode"
+                      value="hybrid"
+                      checked={operationMode === 'hybrid'}
+                      onChange={(e) => setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
                       operationMode === 'hybrid' ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'
                     }`}>
                       {operationMode === 'hybrid' && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <p className={`font-semibold ${operationMode === 'hybrid' ? 'text-emerald-700' : 'text-slate-700'}`}>
                           {locale === 'ar' ? 'هجين (قائمة المنتجات + الطلبات المفتوحة)' : 'Hybrid (Products + Custom Orders)'}
                         </p>
@@ -993,19 +1005,25 @@ export default function ProviderSettingsPage() {
                           : 'Customers can order from products or send custom orders for pricing'}
                       </p>
                     </div>
-                  </button>
+                  </label>
 
                   {/* Custom Only Mode */}
-                  <button
-                    type="button"
-                    onClick={() => setOperationMode('custom')}
-                    className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start ${
+                  <label
+                    className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start cursor-pointer ${
                       operationMode === 'custom'
                         ? 'border-amber-500 bg-amber-50'
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                    <input
+                      type="radio"
+                      name="operationMode"
+                      value="custom"
+                      checked={operationMode === 'custom'}
+                      onChange={(e) => setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
                       operationMode === 'custom' ? 'border-amber-500 bg-amber-500' : 'border-slate-300'
                     }`}>
                       {operationMode === 'custom' && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -1020,7 +1038,7 @@ export default function ProviderSettingsPage() {
                           : 'Hide products, customers only send orders for pricing'}
                       </p>
                     </div>
-                  </button>
+                  </label>
                 </div>
 
                 {/* Custom Order Settings - Only show if not standard */}
