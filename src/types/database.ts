@@ -79,6 +79,7 @@ export type CustomOrderInputType = 'text' | 'voice' | 'image' | 'mixed';
 // Custom order request status
 export type CustomRequestStatus =
   | 'pending'
+  | 'pricing_in_progress'  // Temporary lock during pricing submission
   | 'priced'
   | 'customer_approved'
   | 'customer_rejected'

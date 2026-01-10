@@ -259,13 +259,19 @@ export default function CustomOrderPricingPage() {
 
       // ═══════════════════════════════════════════════════════════════════════
       // ATOMIC UPDATE - Lock the request before creating order
+      // Use 'pricing_in_progress' status to prevent race conditions
+      // The 'priced' status will be set AFTER totals are calculated
       // ═══════════════════════════════════════════════════════════════════════
 
       // First, atomically update request to prevent race conditions
       // Only update if status is still 'pending' (optimistic locking)
+      // Using temporary status to avoid triggering notification prematurely
       const { data: lockResult, error: lockError } = await supabase
         .from('custom_order_requests')
-        .update({ status: 'priced' })
+        .update({
+          status: 'pricing_in_progress',  // Temporary status, won't trigger notification
+          updated_at: new Date().toISOString()
+        })
         .eq('id', request.id)
         .eq('status', 'pending') // Only update if still pending!
         .select('id')
@@ -343,10 +349,12 @@ export default function CustomOrderPricingPage() {
         throw new Error(itemsError.message)
       }
 
-      // Update request with full details
+      // Update request with full details AND set status to 'priced'
+      // This is when the notification trigger should fire (with correct total!)
       const { error: updateError } = await supabase
         .from('custom_order_requests')
         .update({
+          status: 'priced',  // NOW set to priced - trigger fires with correct total!
           order_id: orderData.id,
           items_count: items.filter((i) => i.availability_status !== 'unavailable').length,
           subtotal,

@@ -32,12 +32,13 @@ export type CustomOrderInputType = 'text' | 'voice' | 'image' | 'mixed';
  * حالة طلب التسعير
  */
 export type CustomRequestStatus =
-  | 'pending'           // بانتظار التسعير
-  | 'priced'            // تم التسعير
-  | 'customer_approved' // العميل وافق
-  | 'customer_rejected' // العميل رفض
-  | 'expired'           // انتهت المهلة
-  | 'cancelled';        // ألغي (تم اختيار تاجر آخر)
+  | 'pending'              // بانتظار التسعير
+  | 'pricing_in_progress'  // قيد التسعير (قفل مؤقت)
+  | 'priced'               // تم التسعير
+  | 'customer_approved'    // العميل وافق
+  | 'customer_rejected'    // العميل رفض
+  | 'expired'              // انتهت المهلة
+  | 'cancelled';           // ألغي (تم اختيار تاجر آخر)
 
 /**
  * Item availability status
