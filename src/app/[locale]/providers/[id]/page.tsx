@@ -13,7 +13,7 @@ import { ProductCard, RatingStars, StatusBadge, EmptyState, ProductDetailModal }
 // VoiceOrderFAB removed - voice ordering is only available inside custom order modal
 import { ChatFAB, SmartAssistant } from '@/components/customer/chat'
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout'
-import { CustomOrderWelcomeBanner, CustomOrderFloatingButton } from '@/components/custom-order'
+import { CustomOrderWelcomeBanner } from '@/components/custom-order'
 import {
   Clock,
   Truck,
@@ -929,13 +929,7 @@ export default function ProviderDetailPage() {
         </div>
       )}
 
-      {/* Custom Order Floating Button - For hybrid/custom stores */}
-      {(provider.operation_mode === 'custom' || provider.operation_mode === 'hybrid') && (
-        <CustomOrderFloatingButton
-          providerId={provider.id}
-          providerName={locale === 'ar' ? provider.name_ar : provider.name_en}
-        />
-      )}
+      {/* Custom Order Floating Button removed - customers can start orders from the welcome banner */}
 
       {/* Bottom Navigation */}
       <BottomNavigation />
