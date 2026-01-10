@@ -79,9 +79,9 @@ function CustomOrderPageContent() {
 
       const result = await broadcastService.createBroadcast(payload)
 
-      if (result.success && result.broadcastId) {
+      if (result.success && result.broadcast?.id) {
         // Navigate to the review page
-        router.push(`/${locale}/orders/custom-review/${result.broadcastId}`)
+        router.push(`/${locale}/orders/custom-review/${result.broadcast.id}`)
       } else {
         throw new Error(result.error || 'Unknown error')
       }
