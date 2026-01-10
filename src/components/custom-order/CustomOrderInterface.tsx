@@ -25,6 +25,7 @@ import { VoiceOrderInput } from './VoiceOrderInput'
 import { ImageOrderInput } from './ImageOrderInput'
 import { MerchantSelector } from './MerchantSelector'
 import { ActiveCartBanner, ActiveCartNotice } from './ActiveCartBanner'
+import { NotepadOrderInput, OrderItem, itemsToText, textToItems } from './NotepadOrderInput'
 
 // Services & hooks
 import { useDraftManager } from '@/lib/offline/draft-manager'
@@ -64,10 +65,15 @@ export function CustomOrderInterface({
 
   // Input state
   const [activeTab, setActiveTab] = useState<InputTab>('text')
-  const [textInput, setTextInput] = useState('')
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([
+    { id: crypto.randomUUID(), text: '' }
+  ])
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
   const [images, setImages] = useState<File[]>([])
   const [notes, setNotes] = useState('')
+
+  // Convert items to text for submission
+  const textInput = itemsToText(orderItems)
 
   // Provider selection (for broadcast)
   const [selectedProviders, setSelectedProviders] = useState<string[]>(
@@ -112,7 +118,8 @@ export function CustomOrderInterface({
   // Start auto-save
   useEffect(() => {
     startAutoSave(() => {
-      if (!textInput && !voiceBlob && images.length === 0) {
+      const text = itemsToText(orderItems)
+      if (!text && !voiceBlob && images.length === 0) {
         return null
       }
 
@@ -120,17 +127,19 @@ export function CustomOrderInterface({
         providerId: provider?.id || 'general',
         providerName: provider?.name_ar || 'General',
         inputType: determineInputType(),
-        text: textInput || undefined,
+        text: text || undefined,
         imageDataUrls: images.length > 0 ? [] : undefined, // Would need to convert to data URLs
         notes: notes || undefined,
       }
     })
-  }, [textInput, voiceBlob, images, notes, provider, startAutoSave])
+  }, [orderItems, voiceBlob, images, notes, provider, startAutoSave])
 
   // Restore draft
   const handleRestoreDraft = () => {
     if (draft) {
-      if (draft.text) setTextInput(draft.text)
+      if (draft.text) {
+        setOrderItems(textToItems(draft.text))
+      }
       if (draft.notes) setNotes(draft.notes)
       // Voice and images need special handling (IndexedDB/base64)
       setShowDraftBanner(false)
@@ -418,10 +427,11 @@ export function CustomOrderInterface({
                 <div className="mt-4">
                   {acceptedTypes.text && (
                     <TabsContent value="text">
-                      <TextOrderInput
-                        value={textInput}
-                        onChange={setTextInput}
+                      <NotepadOrderInput
+                        items={orderItems}
+                        onItemsChange={setOrderItems}
                         disabled={isSubmitting}
+                        maxItems={50}
                       />
                     </TabsContent>
                   )}
