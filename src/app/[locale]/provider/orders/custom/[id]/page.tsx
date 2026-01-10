@@ -37,6 +37,7 @@ export default function CustomOrderPricingPage() {
   const [priceHistory, setPriceHistory] = useState<PriceHistoryItem[]>([])
   const [providerId, setProviderId] = useState<string | null>(null)
   const [providerDeliveryFee, setProviderDeliveryFee] = useState<number>(0)
+  const [defaultProviderFee, setDefaultProviderFee] = useState<number>(0)
 
   // Load custom order request
   const loadRequest = useCallback(async (provId: string, reqId: string) => {
@@ -149,13 +150,29 @@ export default function CustomOrderPricingPage() {
       }
 
       setProviderId(provider.id)
-      setProviderDeliveryFee(provider.delivery_fee || 0)
+      setDefaultProviderFee(provider.delivery_fee || 0)
       await loadRequest(provider.id, requestId)
       setLoading(false)
     }
 
     init()
   }, [locale, router, requestId, loadRequest])
+
+  // Set delivery fee when request loads
+  // Priority: request.delivery_fee (stored at broadcast time) > provider's default fee
+  useEffect(() => {
+    if (request) {
+      // Use the delivery fee stored in the request (from broadcast creation time)
+      // This ensures the customer is charged the fee they were quoted
+      const storedFee = request.delivery_fee
+      if (storedFee !== null && storedFee !== undefined && storedFee >= 0) {
+        setProviderDeliveryFee(storedFee)
+      } else {
+        // Fall back to provider's current fee only if not stored in request
+        setProviderDeliveryFee(defaultProviderFee)
+      }
+    }
+  }, [request, defaultProviderFee])
 
   // Subscribe to realtime updates
   useEffect(() => {
@@ -204,6 +221,68 @@ export default function CustomOrderPricingPage() {
     try {
       const supabase = createClient()
 
+      // ═══════════════════════════════════════════════════════════════════════
+      // SERVER-SIDE VALIDATION - Prevent Race Conditions
+      // ═══════════════════════════════════════════════════════════════════════
+
+      // 1. Re-fetch current request status to prevent race conditions
+      const { data: currentRequest, error: checkError } = await supabase
+        .from('custom_order_requests')
+        .select('status, pricing_expires_at')
+        .eq('id', request.id)
+        .single()
+
+      if (checkError || !currentRequest) {
+        throw new Error(isRTL ? 'لم يتم العثور على الطلب' : 'Request not found')
+      }
+
+      // 2. Validate request is still pending (another merchant might have priced it)
+      if (currentRequest.status !== 'pending') {
+        throw new Error(
+          isRTL
+            ? 'تم تسعير هذا الطلب بالفعل من قبل تاجر آخر'
+            : 'This request has already been priced by another merchant'
+        )
+      }
+
+      // 3. Validate deadline has not expired (server-side check)
+      if (currentRequest.pricing_expires_at) {
+        const deadline = new Date(currentRequest.pricing_expires_at)
+        if (deadline < new Date()) {
+          throw new Error(
+            isRTL
+              ? 'انتهت مهلة التسعير لهذا الطلب'
+              : 'The pricing deadline for this request has expired'
+          )
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // ATOMIC UPDATE - Lock the request before creating order
+      // ═══════════════════════════════════════════════════════════════════════
+
+      // First, atomically update request to prevent race conditions
+      // Only update if status is still 'pending' (optimistic locking)
+      const { data: lockResult, error: lockError } = await supabase
+        .from('custom_order_requests')
+        .update({ status: 'priced' })
+        .eq('id', request.id)
+        .eq('status', 'pending') // Only update if still pending!
+        .select('id')
+        .single()
+
+      if (lockError || !lockResult) {
+        throw new Error(
+          isRTL
+            ? 'تم تسعير هذا الطلب بالفعل. يرجى تحديث الصفحة.'
+            : 'This request has already been priced. Please refresh the page.'
+        )
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // PROCEED WITH ORDER CREATION
+      // ═══════════════════════════════════════════════════════════════════════
+
       // Calculate totals
       const subtotal = items.reduce((sum, item) => {
         if (item.availability_status === 'unavailable') return sum
@@ -215,7 +294,7 @@ export default function CustomOrderPricingPage() {
 
       const total = subtotal + deliveryFee
 
-      // Start transaction - create order first
+      // Create order
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -234,6 +313,11 @@ export default function CustomOrderPricingPage() {
         .single()
 
       if (orderError || !orderData) {
+        // Rollback - reset request status
+        await supabase
+          .from('custom_order_requests')
+          .update({ status: 'pending' })
+          .eq('id', request.id)
         throw new Error(orderError?.message || 'Failed to create order')
       }
 
@@ -250,16 +334,19 @@ export default function CustomOrderPricingPage() {
         .insert(itemsToInsert)
 
       if (itemsError) {
-        // Rollback - delete the order
+        // Rollback - delete the order and reset request status
         await supabase.from('orders').delete().eq('id', orderData.id)
+        await supabase
+          .from('custom_order_requests')
+          .update({ status: 'pending' })
+          .eq('id', request.id)
         throw new Error(itemsError.message)
       }
 
-      // Update request status
+      // Update request with full details
       const { error: updateError } = await supabase
         .from('custom_order_requests')
         .update({
-          status: 'priced',
           order_id: orderData.id,
           items_count: items.filter((i) => i.availability_status !== 'unavailable').length,
           subtotal,

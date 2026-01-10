@@ -454,6 +454,8 @@ export function PricingNotepad({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  // Double-tap protection - ref-based lock to prevent duplicate submissions
+  const isSubmittingRef = useRef(false)
   // Track copied customer texts to prevent duplicates
   const [copiedTexts, setCopiedTexts] = useState<Set<string>>(new Set())
 
@@ -553,6 +555,13 @@ export function PricingNotepad({
 
   // Submit handling
   const handleSubmit = async () => {
+    // Double-tap protection - prevent multiple submissions
+    if (isSubmittingRef.current) {
+      console.warn('Submission already in progress')
+      return
+    }
+    isSubmittingRef.current = true
+
     // Clear previous errors
     setSubmitError(null)
 
@@ -560,6 +569,7 @@ export function PricingNotepad({
     if (isDeadlineExpired) {
       setSubmitError(isRTL ? 'انتهت مهلة التسعير - لا يمكن الإرسال' : 'Pricing deadline has expired - cannot submit')
       setShowConfirmDialog(false)
+      isSubmittingRef.current = false
       return
     }
 
@@ -568,6 +578,7 @@ export function PricingNotepad({
     if (validItems.length === 0) {
       setSubmitError(isRTL ? 'يرجى إضافة صنف واحد على الأقل' : 'Please add at least one item')
       setShowConfirmDialog(false)
+      isSubmittingRef.current = false
       return
     }
 
@@ -575,6 +586,7 @@ export function PricingNotepad({
     if (!hasValidPricing) {
       setSubmitError(isRTL ? 'يرجى إدخال الكمية والسعر لصنف واحد على الأقل' : 'Please enter quantity and price for at least one item')
       setShowConfirmDialog(false)
+      isSubmittingRef.current = false
       return
     }
 
@@ -615,6 +627,7 @@ export function PricingNotepad({
       setShowConfirmDialog(false)
     } finally {
       setSubmitting(false)
+      isSubmittingRef.current = false
     }
   }
 
