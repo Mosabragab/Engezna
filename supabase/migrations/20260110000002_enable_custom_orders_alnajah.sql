@@ -359,9 +359,12 @@ GRANT SELECT ON custom_order_commission_check TO authenticated, service_role;
 -- JOIN providers p ON cor.provider_id = p.id
 -- WHERE cor.status = 'pending';
 
-RAISE NOTICE '✅ Custom order system enabled for سوبر ماركت النجاح';
-RAISE NOTICE '📋 Next steps:';
-RAISE NOTICE '   1. Run: SELECT * FROM custom_order_enabled_providers;';
-RAISE NOTICE '   2. Test broadcast creation via the customer app';
-RAISE NOTICE '   3. Test pricing via the merchant dashboard';
-RAISE NOTICE '   4. Verify notifications are received';
+DO $$
+BEGIN
+  RAISE NOTICE '✅ Custom order system enabled for سوبر ماركت النجاح';
+  RAISE NOTICE '📋 Next steps:';
+  RAISE NOTICE '   1. Run: SELECT * FROM custom_order_enabled_providers;';
+  RAISE NOTICE '   2. Test broadcast creation via the customer app';
+  RAISE NOTICE '   3. Test pricing via the merchant dashboard';
+  RAISE NOTICE '   4. Verify notifications are received';
+END $$;
