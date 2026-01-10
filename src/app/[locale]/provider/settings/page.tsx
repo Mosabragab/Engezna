@@ -938,6 +938,7 @@ export default function ProviderSettingsPage() {
 
                   {/* Standard Mode */}
                   <button
+                    type="button"
                     onClick={() => setOperationMode('standard')}
                     className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start ${
                       operationMode === 'standard'
@@ -952,18 +953,19 @@ export default function ProviderSettingsPage() {
                     </div>
                     <div className="flex-1">
                       <p className={`font-semibold ${operationMode === 'standard' ? 'text-primary' : 'text-slate-700'}`}>
-                        {locale === 'ar' ? 'قياسي (المنيو فقط)' : 'Standard (Menu Only)'}
+                        {locale === 'ar' ? 'قياسي (قائمة المنتجات فقط)' : 'Standard (Product List Only)'}
                       </p>
                       <p className="text-sm text-slate-500 mt-1">
                         {locale === 'ar'
                           ? 'العملاء يطلبون من المنتجات المعروضة في القائمة فقط'
-                          : 'Customers order from displayed menu products only'}
+                          : 'Customers order from displayed products only'}
                       </p>
                     </div>
                   </button>
 
                   {/* Hybrid Mode */}
                   <button
+                    type="button"
                     onClick={() => setOperationMode('hybrid')}
                     className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start ${
                       operationMode === 'hybrid'
@@ -979,7 +981,7 @@ export default function ProviderSettingsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <p className={`font-semibold ${operationMode === 'hybrid' ? 'text-emerald-700' : 'text-slate-700'}`}>
-                          {locale === 'ar' ? 'هجين (المنيو + الطلبات المفتوحة)' : 'Hybrid (Menu + Custom Orders)'}
+                          {locale === 'ar' ? 'هجين (قائمة المنتجات + الطلبات المفتوحة)' : 'Hybrid (Products + Custom Orders)'}
                         </p>
                         <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
                           {locale === 'ar' ? 'موصى به' : 'Recommended'}
@@ -987,14 +989,15 @@ export default function ProviderSettingsPage() {
                       </div>
                       <p className="text-sm text-slate-500">
                         {locale === 'ar'
-                          ? 'العملاء يمكنهم الطلب من المنيو أو إرسال طلبات مفتوحة للتسعير'
-                          : 'Customers can order from menu or send custom orders for pricing'}
+                          ? 'العملاء يمكنهم الطلب من قائمة المنتجات أو إرسال طلبات مفتوحة للتسعير'
+                          : 'Customers can order from products or send custom orders for pricing'}
                       </p>
                     </div>
                   </button>
 
                   {/* Custom Only Mode */}
                   <button
+                    type="button"
                     onClick={() => setOperationMode('custom')}
                     className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start ${
                       operationMode === 'custom'
@@ -1013,8 +1016,8 @@ export default function ProviderSettingsPage() {
                       </p>
                       <p className="text-sm text-slate-500 mt-1">
                         {locale === 'ar'
-                          ? 'إخفاء المنيو، العملاء يرسلون طلباتهم فقط للتسعير'
-                          : 'Hide menu, customers only send orders for pricing'}
+                          ? 'إخفاء قائمة المنتجات، العملاء يرسلون طلباتهم فقط للتسعير'
+                          : 'Hide products, customers only send orders for pricing'}
                       </p>
                     </div>
                   </button>
