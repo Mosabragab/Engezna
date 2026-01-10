@@ -395,11 +395,11 @@ export default function CustomOrdersListPage() {
               ? isRTL ? 'لا توجد طلبات بانتظار التسعير' : 'No orders awaiting pricing'
               : filter === 'priced'
               ? isRTL ? 'لا توجد طلبات بانتظار الموافقة' : 'No orders awaiting approval'
-              : isRTL ? 'لا توجد طلبات مفتوحة' : 'No custom orders yet'}
+              : isRTL ? 'لا توجد طلبات خاصة' : 'No custom orders yet'}
           </h2>
           <p className="text-slate-500 text-sm">
             {isRTL
-              ? 'عندما يرسل العملاء طلبات مفتوحة، ستظهر هنا للتسعير'
+              ? 'عندما يرسل العملاء طلبات خاصة، ستظهر هنا للتسعير'
               : 'When customers send custom orders, they will appear here for pricing'}
           </p>
         </div>

@@ -296,7 +296,7 @@ export default function CustomOrderReviewPage() {
       <CustomerLayout
         headerTitle={isRTL ? 'مراجعة التسعيرات' : 'Review Quotes'}
         showBackButton
-        showBottomNav={false}
+        showBottomNav={true}
       >
         <div className="flex items-center justify-center h-[60vh]">
           <div className="text-center">
@@ -316,7 +316,7 @@ export default function CustomOrderReviewPage() {
       <CustomerLayout
         headerTitle={isRTL ? 'مراجعة التسعيرات' : 'Review Quotes'}
         showBackButton
-        showBottomNav={false}
+        showBottomNav={true}
       >
         <div className="flex flex-col items-center justify-center py-16 px-4">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
@@ -343,7 +343,7 @@ export default function CustomOrderReviewPage() {
     <CustomerLayout
       headerTitle={isRTL ? 'مراجعة التسعيرات' : 'Review Quotes'}
       showBackButton
-      showBottomNav={false}
+      showBottomNav={true}
     >
       <div className="container mx-auto px-4 py-6 max-w-2xl">
         {/* Order Summary */}
@@ -361,7 +361,7 @@ export default function CustomOrderReviewPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="font-bold text-lg mb-1">
-                  {isRTL ? 'طلبك المفتوح' : 'Your Custom Order'}
+                  {isRTL ? 'طلبك الخاص' : 'Your Custom Order'}
                 </h2>
                 <p className="text-sm text-muted-foreground line-clamp-2">
                   {broadcast.original_text || (isRTL ? 'تسجيل صوتي / صور' : 'Voice / Images')}

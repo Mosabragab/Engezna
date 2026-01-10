@@ -305,7 +305,7 @@ export default function OrderHistoryPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-slate-800">
-                    {locale === 'ar' ? 'طلبات مفتوحة قيد التسعير' : 'Custom Orders Awaiting Pricing'}
+                    {locale === 'ar' ? 'طلبات خاصة قيد التسعير' : 'Custom Orders Awaiting Pricing'}
                   </h3>
                   <p className="text-xs text-muted-foreground">
                     {locale === 'ar'

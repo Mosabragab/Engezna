@@ -1001,7 +1001,7 @@ export default function ProviderSettingsPage() {
                       </div>
                       <p className="text-sm text-slate-500">
                         {locale === 'ar'
-                          ? 'العملاء يمكنهم الطلب من قائمة المنتجات أو إرسال طلبات مفتوحة للتسعير'
+                          ? 'العملاء يمكنهم الطلب من قائمة المنتجات أو إرسال طلبات خاصة للتسعير'
                           : 'Customers can order from products or send custom orders for pricing'}
                       </p>
                     </div>
@@ -1030,7 +1030,7 @@ export default function ProviderSettingsPage() {
                     </div>
                     <div className="flex-1">
                       <p className={`font-semibold ${operationMode === 'custom' ? 'text-primary' : 'text-slate-700'}`}>
-                        {locale === 'ar' ? 'طلبات مفتوحة فقط' : 'Custom Orders Only'}
+                        {locale === 'ar' ? 'طلبات خاصة فقط' : 'Custom Orders Only'}
                       </p>
                       <p className="text-sm text-slate-500 mt-1">
                         {locale === 'ar'

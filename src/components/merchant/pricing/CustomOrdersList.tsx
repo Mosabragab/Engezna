@@ -550,7 +550,7 @@ export function CustomOrdersList({
                   ? 'لا توجد طلبات تطابق الفلتر'
                   : 'No orders match the filter'
                 : isRTL
-                ? 'لا توجد طلبات مفتوحة حالياً'
+                ? 'لا توجد طلبات خاصة حالياً'
                 : 'No custom orders yet'}
             </p>
           </div>
