@@ -450,7 +450,7 @@ export function CustomOrdersList({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
-            {isRTL ? 'الطلبات المفتوحة' : 'Custom Orders'}
+            {isRTL ? 'الطلبات الخاصة' : 'Custom Orders'}
           </h2>
           {pendingCount > 0 && (
             <Badge variant="secondary" className="bg-amber-100 text-amber-700">

@@ -51,7 +51,7 @@ function CustomOrderPageContent() {
         if (providerError || !providerData) {
           setError(isRTL ? 'المتجر غير موجود' : 'Provider not found')
         } else if (providerData.operation_mode !== 'custom' && providerData.operation_mode !== 'hybrid') {
-          setError(isRTL ? 'هذا المتجر لا يدعم الطلب المفتوح' : 'This provider does not support custom orders')
+          setError(isRTL ? 'هذا المتجر لا يدعم الطلب الخاص' : 'This provider does not support custom orders')
         } else {
           setProvider(providerData as ProviderWithCustomSettings)
         }
@@ -162,7 +162,7 @@ function CustomOrderPageContent() {
           </h2>
           <p className="text-slate-500 text-center mb-6">
             {isRTL
-              ? 'يرجى اختيار متجر يدعم الطلب المفتوح للبدء'
+              ? 'يرجى اختيار متجر يدعم الطلب الخاص للبدء'
               : 'Please select a provider that supports custom orders to begin'}
           </p>
           <Link

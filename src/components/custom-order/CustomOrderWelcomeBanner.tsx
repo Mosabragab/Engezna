@@ -54,7 +54,7 @@ export function CustomOrderWelcomeBanner({
     return null
   }
 
-  const defaultTextAr = 'مرحباً! فعّلنا نظام الطلب المفتوح 🎉 أرسل طلبك بالصوت أو الصورة أو النص وسنقوم بتسعيره فوراً'
+  const defaultTextAr = 'مرحباً! فعّلنا نظام الطلب الخاص 🎉 أرسل طلبك بالصوت أو الصورة أو النص وسنقوم بتسعيره فوراً'
   const defaultTextEn = 'Welcome! We enabled Custom Orders 🎉 Send your order via voice, image, or text and we will price it immediately'
 
   const bannerText = isRTL
@@ -130,7 +130,7 @@ export function CustomOrderWelcomeBanner({
                   {isRTL ? 'خدمة جديدة!' : 'NEW SERVICE!'}
                 </div>
                 <h3 className="text-xl md:text-2xl font-bold text-white mb-1 drop-shadow-md">
-                  {isRTL ? 'نظام الطلب المفتوح' : 'Custom Order System'}
+                  {isRTL ? 'نظام الطلب الخاص' : 'Custom Order System'}
                 </h3>
                 <p className="text-white text-sm md:text-base leading-relaxed drop-shadow-sm">
                   {bannerText}

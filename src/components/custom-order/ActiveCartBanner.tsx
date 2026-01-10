@@ -113,7 +113,7 @@ export function ActiveCartBanner({
               </p>
               <p className="text-xs text-amber-600 mt-0.5">
                 {isRTL
-                  ? `${cartProvider.itemCount} عناصر في السلة • سيتم حذفها عند إرسال الطلب المفتوح`
+                  ? `${cartProvider.itemCount} عناصر في السلة • سيتم حذفها عند إرسال الطلب الخاص`
                   : `${cartProvider.itemCount} items in cart • Will be removed when sending custom order`}
               </p>
             </div>

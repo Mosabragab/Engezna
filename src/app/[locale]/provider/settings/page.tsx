@@ -496,7 +496,7 @@ export default function ProviderSettingsPage() {
     { key: 'store', label_ar: 'معلومات المتجر', label_en: 'Store Info', icon: Store },
     { key: 'delivery', label_ar: 'التوصيل', label_en: 'Delivery', icon: Truck },
     { key: 'pickup', label_ar: 'الاستلام', label_en: 'Pickup', icon: Package },
-    { key: 'custom-orders', label_ar: 'الطلبات المفتوحة', label_en: 'Custom Orders', icon: ClipboardList },
+    { key: 'custom-orders', label_ar: 'الطلبات الخاصة', label_en: 'Custom Orders', icon: ClipboardList },
     { key: 'status', label_ar: 'حالة المتجر', label_en: 'Store Status', icon: Power },
     { key: 'account', label_ar: 'الحساب', label_en: 'Account', icon: User },
   ]
@@ -921,7 +921,7 @@ export default function ProviderSettingsPage() {
               <CardHeader>
                 <CardTitle className="text-slate-900 flex items-center gap-2">
                   <ClipboardList className="w-5 h-5" />
-                  {locale === 'ar' ? 'إعدادات الطلبات المفتوحة' : 'Custom Orders Settings'}
+                  {locale === 'ar' ? 'إعدادات الطلبات الخاصة' : 'Custom Orders Settings'}
                 </CardTitle>
                 <p className="text-sm text-slate-500 mt-1">
                   {locale === 'ar'
@@ -993,7 +993,7 @@ export default function ProviderSettingsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <p className={`font-semibold ${operationMode === 'hybrid' ? 'text-primary' : 'text-slate-700'}`}>
-                          {locale === 'ar' ? 'هجين (قائمة المنتجات + الطلبات المفتوحة)' : 'Hybrid (Products + Custom Orders)'}
+                          {locale === 'ar' ? 'هجين (قائمة المنتجات + الطلبات الخاصة)' : 'Hybrid (Products + Custom Orders)'}
                         </p>
                         <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
                           {locale === 'ar' ? 'موصى به' : 'Recommended'}
@@ -1238,7 +1238,7 @@ export default function ProviderSettingsPage() {
                         <Sparkles className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
                         <div className="text-sm text-emerald-800">
                           <p className="font-medium mb-1">
-                            {locale === 'ar' ? 'نظام الطلب المفتوح' : 'Custom Order System'}
+                            {locale === 'ar' ? 'نظام الطلب الخاص' : 'Custom Order System'}
                           </p>
                           <ul className={`space-y-1 text-emerald-700 ${isRTL ? 'list-disc list-inside' : 'list-disc list-inside'}`}>
                             <li>{locale === 'ar' ? 'العميل يرسل طلبه (نص/صوت/صورة)' : 'Customer sends order (text/voice/image)'}</li>

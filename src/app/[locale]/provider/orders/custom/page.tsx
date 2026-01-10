@@ -261,8 +261,8 @@ export default function CustomOrdersListPage() {
 
   return (
     <ProviderLayout
-      pageTitle={{ ar: 'الطلبات المفتوحة', en: 'Custom Orders' }}
-      pageSubtitle={{ ar: 'إدارة طلبات العملاء المفتوحة', en: 'Manage customer custom orders' }}
+      pageTitle={{ ar: 'الطلبات الخاصة', en: 'Custom Orders' }}
+      pageSubtitle={{ ar: 'إدارة طلبات العملاء الخاصة', en: 'Manage customer custom orders' }}
     >
       {/* Success Message */}
       {successMessage === 'priced' && (

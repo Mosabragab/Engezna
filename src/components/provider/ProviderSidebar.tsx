@@ -129,10 +129,10 @@ export function ProviderSidebar({
         badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
         badgeColor: 'red',
       })
-      // Custom Orders - الطلبات المفتوحة (Red badge for high visibility)
+      // Custom Orders - الطلبات الخاصة (Red badge for high visibility)
       operationsItems.push({
         icon: ClipboardList,
-        label: { ar: 'الطلبات المفتوحة', en: 'Custom Orders' },
+        label: { ar: 'الطلبات الخاصة', en: 'Custom Orders' },
         path: `/${locale}/provider/orders/custom`,
         badge: pendingCustomOrders > 0 ? pendingCustomOrders.toString() : undefined,
         badgeColor: 'red',
