@@ -301,6 +301,8 @@ export default function CustomOrderPricingPage() {
       const total = subtotal + deliveryFee
 
       // Create order
+      // Note: order_type defaults to 'pickup' for custom orders
+      // Customer will select delivery method when approving the order
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -308,6 +310,7 @@ export default function CustomOrderPricingPage() {
           customer_id: request.broadcast?.customer?.id,
           order_flow: 'custom',
           broadcast_id: request.broadcast_id,
+          order_type: 'pickup', // Default for custom orders - customer chooses later
           status: 'pending',
           payment_status: 'pending',
           subtotal,
