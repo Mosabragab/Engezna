@@ -76,17 +76,35 @@ export function CustomOrderWelcomeBanner({
         transition={{ duration: 0.3, ease: 'easeOut' }}
         className={`relative overflow-hidden ${className}`}
       >
-        {/* Gradient Background */}
-        <div className="bg-gradient-to-r from-primary via-primary/90 to-emerald-500 rounded-2xl shadow-lg overflow-hidden">
-          {/* Decorative Elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+        {/* Vibrant Gradient Background */}
+        <div className="relative rounded-2xl shadow-xl overflow-hidden" style={{
+          background: 'linear-gradient(135deg, #059669 0%, #10B981 25%, #34D399 50%, #10B981 75%, #059669 100%)'
+        }}>
+          {/* Decorative Pattern Overlay */}
+          <div
+            className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          />
+
+          {/* Animated Gradient Shine */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-banner-shine"
+            />
+          </div>
+
+          {/* Decorative Circles */}
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/15 rounded-full blur-2xl" />
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-300/20 rounded-full blur-xl" />
+          <div className="absolute top-1/2 right-1/4 w-20 h-20 bg-teal-400/15 rounded-full blur-lg" />
 
           <div className="relative p-4 md:p-6">
             {/* Dismiss Button */}
             <button
               onClick={handleDismiss}
-              className="absolute top-3 end-3 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+              className="absolute top-3 end-3 p-1.5 rounded-full bg-black/20 hover:bg-black/30 text-white transition-colors backdrop-blur-sm"
               aria-label={isRTL ? 'إغلاق' : 'Dismiss'}
             >
               <X className="w-4 h-4" />
@@ -96,11 +114,11 @@ export function CustomOrderWelcomeBanner({
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
               {/* Icon & Badge */}
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-emerald-600" />
                 </div>
                 <div className="md:hidden">
-                  <span className="inline-block px-2 py-0.5 bg-white/20 rounded-full text-xs font-medium text-white">
+                  <span className="inline-block px-3 py-1 bg-amber-400 rounded-full text-xs font-bold text-amber-900 shadow-md">
                     {isRTL ? 'جديد!' : 'NEW!'}
                   </span>
                 </div>
@@ -108,13 +126,13 @@ export function CustomOrderWelcomeBanner({
 
               {/* Text Content */}
               <div className="flex-1">
-                <div className="hidden md:inline-block px-2 py-0.5 bg-white/20 rounded-full text-xs font-medium text-white mb-2">
+                <div className="hidden md:inline-block px-3 py-1 bg-amber-400 rounded-full text-xs font-bold text-amber-900 mb-2 shadow-md">
                   {isRTL ? 'خدمة جديدة!' : 'NEW SERVICE!'}
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-white mb-1">
+                <h3 className="text-xl md:text-2xl font-bold text-white mb-1 drop-shadow-md">
                   {isRTL ? 'نظام الطلب المفتوح' : 'Custom Order System'}
                 </h3>
-                <p className="text-white/90 text-sm md:text-base leading-relaxed">
+                <p className="text-white text-sm md:text-base leading-relaxed drop-shadow-sm">
                   {bannerText}
                 </p>
 
@@ -123,10 +141,10 @@ export function CustomOrderWelcomeBanner({
                   {inputMethods.map((method) => (
                     <div
                       key={method.key}
-                      className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 rounded-lg"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/25 backdrop-blur-sm rounded-full border border-white/30"
                     >
-                      <method.icon className="w-3.5 h-3.5 text-white" />
-                      <span className="text-xs text-white font-medium">
+                      <method.icon className="w-4 h-4 text-white" />
+                      <span className="text-xs text-white font-semibold">
                         {isRTL ? method.labelAr : method.labelEn}
                       </span>
                     </div>
@@ -139,23 +157,23 @@ export function CustomOrderWelcomeBanner({
                 {onStartCustomOrder ? (
                   <Button
                     onClick={onStartCustomOrder}
-                    className="w-full md:w-auto bg-white text-primary hover:bg-white/90 font-semibold shadow-md"
+                    className="w-full md:w-auto bg-white text-emerald-700 hover:bg-emerald-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6"
                   >
                     {isRTL ? 'ابدأ طلبك الآن' : 'Start Your Order'}
                     {isRTL ? (
-                      <ArrowLeft className="w-4 h-4 ms-2" />
+                      <ArrowLeft className="w-5 h-5 ms-2" />
                     ) : (
-                      <ArrowRight className="w-4 h-4 ms-2" />
+                      <ArrowRight className="w-5 h-5 ms-2" />
                     )}
                   </Button>
                 ) : (
                   <Link href={`/${locale}/custom-order?provider=${providerId}`}>
-                    <Button className="w-full md:w-auto bg-white text-primary hover:bg-white/90 font-semibold shadow-md">
+                    <Button className="w-full md:w-auto bg-white text-emerald-700 hover:bg-emerald-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6">
                       {isRTL ? 'ابدأ طلبك الآن' : 'Start Your Order'}
                       {isRTL ? (
-                        <ArrowLeft className="w-4 h-4 ms-2" />
+                        <ArrowLeft className="w-5 h-5 ms-2" />
                       ) : (
-                        <ArrowRight className="w-4 h-4 ms-2" />
+                        <ArrowRight className="w-5 h-5 ms-2" />
                       )}
                     </Button>
                   </Link>
@@ -169,36 +187,36 @@ export function CustomOrderWelcomeBanner({
               animate={{ height: isExpanded ? 'auto' : 0, opacity: isExpanded ? 1 : 0 }}
               className="overflow-hidden"
             >
-              <div className="mt-4 pt-4 border-t border-white/20">
-                <h4 className="text-white font-semibold mb-3">
+              <div className="mt-4 pt-4 border-t border-white/30">
+                <h4 className="text-white font-bold mb-3 drop-shadow-sm">
                   {isRTL ? 'كيف يعمل النظام؟' : 'How does it work?'}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="bg-white/10 rounded-xl p-3">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-2">
-                      <span className="text-white font-bold">1</span>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-3 shadow-md">
+                      <span className="text-emerald-600 font-bold text-lg">1</span>
                     </div>
-                    <p className="text-white/90 text-sm">
+                    <p className="text-white text-sm font-medium">
                       {isRTL
                         ? 'أرسل طلبك بالصوت أو الصورة أو اكتبه'
                         : 'Send your order via voice, image, or text'}
                     </p>
                   </div>
-                  <div className="bg-white/10 rounded-xl p-3">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-2">
-                      <span className="text-white font-bold">2</span>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-3 shadow-md">
+                      <span className="text-emerald-600 font-bold text-lg">2</span>
                     </div>
-                    <p className="text-white/90 text-sm">
+                    <p className="text-white text-sm font-medium">
                       {isRTL
                         ? 'نقوم بتسعير طلبك خلال دقائق'
                         : 'We price your order within minutes'}
                     </p>
                   </div>
-                  <div className="bg-white/10 rounded-xl p-3">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-2">
-                      <span className="text-white font-bold">3</span>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-3 shadow-md">
+                      <span className="text-emerald-600 font-bold text-lg">3</span>
                     </div>
-                    <p className="text-white/90 text-sm">
+                    <p className="text-white text-sm font-medium">
                       {isRTL
                         ? 'وافق على السعر وسنوصّل طلبك'
                         : 'Approve the price and we deliver'}
@@ -211,7 +229,7 @@ export function CustomOrderWelcomeBanner({
             {/* Toggle How It Works */}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-1 mt-3 text-white/80 hover:text-white text-sm transition-colors"
+              className="flex items-center gap-1 mt-3 text-white hover:text-white/90 text-sm font-medium transition-colors"
             >
               <ChevronRight
                 className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}

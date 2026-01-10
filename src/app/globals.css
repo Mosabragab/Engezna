@@ -357,6 +357,20 @@ html.no-transition * {
   background-size: 1000px 100%;
 }
 
+/* Banner shine animation for custom order banner */
+@keyframes banner-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-banner-shine {
+  animation: banner-shine 3s ease-in-out infinite;
+}
+
 /* Loading skeleton */
 .skeleton {
   @apply animate-shimmer rounded-md bg-muted;

@@ -849,8 +849,10 @@ export default function ProviderDetailPage() {
         )}
       </div>
 
-      {/* Voice Order FAB - Show only when cart is empty */}
-      {cartItemCount === 0 && <VoiceOrderFAB />}
+      {/* Voice Order FAB - Show only when cart is empty and NOT a custom order store */}
+      {cartItemCount === 0 && provider.operation_mode !== 'custom' && provider.operation_mode !== 'hybrid' && (
+        <VoiceOrderFAB />
+      )}
 
       {/* AI Smart Assistant - Always available */}
       <ChatFAB
