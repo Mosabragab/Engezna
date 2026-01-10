@@ -692,6 +692,7 @@ export const UNIT_TYPES = [
   { value: 'gram', labelAr: 'جرام', labelEn: 'Gram' },
   { value: 'piece', labelAr: 'قطعة', labelEn: 'Piece' },
   { value: 'box', labelAr: 'علبة', labelEn: 'Box' },
+  { value: 'carton', labelAr: 'كرتونة', labelEn: 'Carton' },
   { value: 'pack', labelAr: 'عبوة', labelEn: 'Pack' },
   { value: 'bottle', labelAr: 'زجاجة', labelEn: 'Bottle' },
   { value: 'liter', labelAr: 'لتر', labelEn: 'Liter' },

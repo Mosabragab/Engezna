@@ -97,9 +97,10 @@ function createEmptyItem(): ItemFormData {
 interface CustomerOrderPanelProps {
   request: CustomOrderRequestWithItems
   onCopyText: (text: string) => void
+  copiedTexts: Set<string> // تتبع النصوص التي تم نقلها
 }
 
-function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
+function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderPanelProps) {
   const locale = useLocale()
   const isRTL = locale === 'ar'
 
@@ -338,33 +339,62 @@ function CustomerOrderPanel({ request, onCopyText }: CustomerOrderPanelProps) {
             </div>
 
             <div className="space-y-2">
-              {textItems.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: isRTL ? 20 : -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors border border-gray-100 hover:border-blue-200"
-                >
-                  <span className="w-7 h-7 bg-primary/10 text-primary rounded-lg flex items-center justify-center text-sm font-bold shrink-0">
-                    {index + 1}
-                  </span>
-                  <span className="flex-1 text-gray-800 font-medium">
-                    {item}
-                  </span>
-                  {/* Prominent Quick Copy Button */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onCopyText(item)}
-                    className="h-8 gap-1.5 bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 shrink-0"
+              {textItems.map((item, index) => {
+                const isCopied = copiedTexts.has(item)
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: isRTL ? 20 : -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={cn(
+                      "flex items-center gap-2 p-3 rounded-xl transition-colors border",
+                      isCopied
+                        ? "bg-emerald-50 border-emerald-200 opacity-60"
+                        : "bg-gray-50 border-gray-100 hover:bg-blue-50 hover:border-blue-200"
+                    )}
                   >
-                    <ArrowDownToLine className="w-3.5 h-3.5" />
-                    {isRTL ? 'نقل' : 'Copy'}
-                  </Button>
-                </motion.div>
-              ))}
+                    <span className={cn(
+                      "w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold shrink-0",
+                      isCopied ? "bg-emerald-100 text-emerald-600" : "bg-primary/10 text-primary"
+                    )}>
+                      {isCopied ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
+                    </span>
+                    <span className={cn(
+                      "flex-1 font-medium",
+                      isCopied ? "text-gray-500 line-through" : "text-gray-800"
+                    )}>
+                      {item}
+                    </span>
+                    {/* Prominent Quick Copy Button - Disabled if already copied */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onCopyText(item)}
+                      disabled={isCopied}
+                      className={cn(
+                        "h-8 gap-1.5 shrink-0",
+                        isCopied
+                          ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                      )}
+                    >
+                      {isCopied ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {isRTL ? 'تم' : 'Done'}
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDownToLine className="w-3.5 h-3.5" />
+                          {isRTL ? 'نقل' : 'Copy'}
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
+                )
+              })}
             </div>
           </div>
         )}
@@ -419,6 +449,8 @@ export function PricingNotepad({
   const deliveryFee = fixedDeliveryFee ?? request.delivery_fee ?? 0
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  // Track copied customer texts to prevent duplicates
+  const [copiedTexts, setCopiedTexts] = useState<Set<string>>(new Set())
 
   // Price history lookup
   const getPriceHistoryForItem = useCallback(
@@ -451,8 +483,17 @@ export function PricingNotepad({
     setItems((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
-  // Copy customer text to new item
+  // Copy customer text to new item (only once per text)
   const handleCopyCustomerText = useCallback((text: string) => {
+    // Check if already copied to prevent duplicates
+    setCopiedTexts((prev) => {
+      if (prev.has(text)) return prev
+      const newSet = new Set(prev)
+      newSet.add(text)
+      return newSet
+    })
+
+    // Add new item with the text
     const newItem = createEmptyItem()
     newItem.item_name_ar = text
     newItem.original_customer_text = text
@@ -529,14 +570,14 @@ export function PricingNotepad({
   }
 
   return (
-    <div className={cn('flex flex-col lg:flex-row gap-4 h-full', className)}>
+    <div className={cn('flex flex-col lg:flex-row gap-4 h-full min-h-[700px]', className)}>
       {/* Left Panel - Customer Order */}
       <div className="lg:w-2/5 xl:w-1/3 h-[300px] lg:h-full">
-        <CustomerOrderPanel request={request} onCopyText={handleCopyCustomerText} />
+        <CustomerOrderPanel request={request} onCopyText={handleCopyCustomerText} copiedTexts={copiedTexts} />
       </div>
 
       {/* Right Panel - Pricing Form (Clean Invoice Style) */}
-      <div className="lg:w-3/5 xl:w-2/3 flex flex-col bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="lg:w-3/5 xl:w-2/3 flex flex-col bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden min-h-[600px] lg:min-h-0 lg:h-full">
         {/* Invoice Header - Paper Style */}
         <div className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-100 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -580,8 +621,8 @@ export function PricingNotepad({
           )}
         </div>
 
-        {/* Items List - Scrollable */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-white">
+        {/* Items List - Scrollable with improved scroll experience */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-white min-h-[300px] max-h-[calc(100vh-400px)] lg:max-h-none scroll-smooth">
           <AnimatePresence mode="popLayout">
             {items.map((item, index) => (
               <PricingItemRow

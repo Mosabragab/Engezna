@@ -147,15 +147,15 @@ export function PricingItemRow({
   const getStatusColor = (status: ItemAvailabilityStatus) => {
     switch (status) {
       case 'available':
-        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+        return 'bg-emerald-100 text-emerald-700'
       case 'unavailable':
-        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+        return 'bg-red-100 text-red-700'
       case 'substituted':
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+        return 'bg-amber-100 text-amber-700'
       case 'partial':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+        return 'bg-blue-100 text-blue-700'
       default:
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+        return 'bg-slate-100 text-slate-700'
     }
   }
 
@@ -166,7 +166,7 @@ export function PricingItemRow({
       exit={{ opacity: 0, x: isRTL ? 50 : -50 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        'bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden',
+        'bg-white rounded-xl border border-slate-200 overflow-hidden',
         item.availability_status === 'unavailable' && 'opacity-60',
         className
       )}
@@ -175,7 +175,7 @@ export function PricingItemRow({
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Index Badge */}
-          <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <span className="text-sm font-bold text-primary">{index + 1}</span>
           </div>
 
@@ -189,7 +189,7 @@ export function PricingItemRow({
                 placeholder={isRTL ? 'اسم الصنف...' : 'Item name...'}
                 disabled={disabled}
                 autoFocus={autoFocus}
-                className="flex-1 font-medium dark:bg-slate-900 dark:border-slate-600"
+                className="flex-1 font-medium"
                 dir="auto"
               />
 
@@ -227,7 +227,7 @@ export function PricingItemRow({
                         size="icon"
                         onClick={handleUsePreviousPrice}
                         disabled={disabled}
-                        className="shrink-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                        className="shrink-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                       >
                         <Clock className="w-4 h-4" />
                       </Button>
@@ -252,7 +252,7 @@ export function PricingItemRow({
             <div className="grid grid-cols-12 gap-2">
               {/* Quantity */}
               <div className="col-span-3">
-                <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+                <label className="text-xs text-slate-500 mb-1 block">
                   {isRTL ? 'الكمية' : 'Qty'}
                 </label>
                 <Input
@@ -265,13 +265,13 @@ export function PricingItemRow({
                   min="0"
                   step="0.5"
                   disabled={disabled || item.availability_status === 'unavailable'}
-                  className="text-center dark:bg-slate-900 dark:border-slate-600"
+                  className="text-center"
                 />
               </div>
 
               {/* Unit */}
               <div className="col-span-3">
-                <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+                <label className="text-xs text-slate-500 mb-1 block">
                   {isRTL ? 'الوحدة' : 'Unit'}
                 </label>
                 <Select
@@ -279,7 +279,7 @@ export function PricingItemRow({
                   onValueChange={(value) => onUpdate({ unit_type: value as UnitType })}
                   disabled={disabled || item.availability_status === 'unavailable'}
                 >
-                  <SelectTrigger className="dark:bg-slate-900 dark:border-slate-600">
+                  <SelectTrigger>
                     <SelectValue
                       placeholder={isRTL ? 'اختر' : 'Select'}
                     />
@@ -296,7 +296,7 @@ export function PricingItemRow({
 
               {/* Unit Price */}
               <div className="col-span-3">
-                <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+                <label className="text-xs text-slate-500 mb-1 block">
                   {isRTL ? 'السعر' : 'Price'}
                 </label>
                 <Input
@@ -309,16 +309,16 @@ export function PricingItemRow({
                   min="0"
                   step="0.5"
                   disabled={disabled || item.availability_status === 'unavailable'}
-                  className="text-center dark:bg-slate-900 dark:border-slate-600"
+                  className="text-center"
                 />
               </div>
 
               {/* Total */}
               <div className="col-span-3">
-                <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+                <label className="text-xs text-slate-500 mb-1 block">
                   {isRTL ? 'الإجمالي' : 'Total'}
                 </label>
-                <div className="h-10 bg-slate-100 dark:bg-slate-900 rounded-md flex items-center justify-center font-semibold text-primary">
+                <div className="h-10 bg-slate-100 rounded-md flex items-center justify-center font-semibold text-primary">
                   {(item.total_price || 0).toFixed(2)}
                 </div>
               </div>
@@ -326,7 +326,7 @@ export function PricingItemRow({
 
             {/* Status Selection */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-slate-500 dark:text-slate-400">
+              <span className="text-xs text-slate-500">
                 {isRTL ? 'الحالة:' : 'Status:'}
               </span>
               <div className="flex gap-1">
@@ -338,7 +338,7 @@ export function PricingItemRow({
                     'px-2.5 py-1 rounded-full text-xs font-medium transition-all',
                     item.availability_status === 'available'
                       ? 'bg-emerald-500 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   )}
                 >
                   <Check className="w-3 h-3 inline-block me-1" />
@@ -352,7 +352,7 @@ export function PricingItemRow({
                     'px-2.5 py-1 rounded-full text-xs font-medium transition-all',
                     item.availability_status === 'unavailable'
                       ? 'bg-red-500 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   )}
                 >
                   <X className="w-3 h-3 inline-block me-1" />
@@ -366,7 +366,7 @@ export function PricingItemRow({
                     'px-2.5 py-1 rounded-full text-xs font-medium transition-all',
                     item.availability_status === 'substituted'
                       ? 'bg-amber-500 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   )}
                 >
                   <RefreshCw className="w-3 h-3 inline-block me-1" />
@@ -397,7 +397,7 @@ export function PricingItemRow({
               size="icon"
               onClick={onRemove}
               disabled={disabled}
-              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -412,12 +412,12 @@ export function PricingItemRow({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20"
+            className="border-t border-amber-200 bg-amber-50"
           >
             <div className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <RefreshCw className="w-4 h-4 text-amber-600" />
-                <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                <span className="text-sm font-medium text-amber-700">
                   {isRTL ? 'البديل المقترح' : 'Suggested Substitute'}
                 </span>
               </div>
@@ -429,7 +429,7 @@ export function PricingItemRow({
                   onChange={(e) => onUpdate({ substitute_name_ar: e.target.value })}
                   placeholder={isRTL ? 'اسم البديل...' : 'Substitute name...'}
                   disabled={disabled}
-                  className="bg-white dark:bg-slate-800"
+                  className="bg-white"
                   dir="auto"
                 />
 
@@ -446,7 +446,7 @@ export function PricingItemRow({
                       min="0"
                       step="0.5"
                       disabled={disabled}
-                      className="bg-white dark:bg-slate-800"
+                      className="bg-white"
                     />
                   </div>
                   <div className="col-span-4">
@@ -482,7 +482,7 @@ export function PricingItemRow({
                       min="0"
                       step="0.5"
                       disabled={disabled}
-                      className="bg-white dark:bg-slate-800"
+                      className="bg-white"
                     />
                   </div>
                 </div>
@@ -490,10 +490,10 @@ export function PricingItemRow({
                 {/* Substitute Total */}
                 <div className="flex justify-end">
                   <div className="text-sm">
-                    <span className="text-slate-500 dark:text-slate-400">
+                    <span className="text-slate-500">
                       {isRTL ? 'إجمالي البديل: ' : 'Substitute total: '}
                     </span>
-                    <span className="font-semibold text-amber-700 dark:text-amber-400">
+                    <span className="font-semibold text-amber-700">
                       {(item.substitute_total_price || 0).toFixed(2)}{' '}
                       {isRTL ? 'ج.م' : 'EGP'}
                     </span>
@@ -512,16 +512,16 @@ export function PricingItemRow({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-slate-200 dark:border-slate-700"
+            className="border-t border-slate-200"
           >
             <div className="p-4 space-y-3">
               {/* Original Customer Text */}
               {originalText && (
                 <div>
-                  <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+                  <label className="text-xs text-slate-500 mb-1 block">
                     {isRTL ? 'نص العميل الأصلي' : 'Original customer text'}
                   </label>
-                  <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-lg text-sm text-slate-600 dark:text-slate-300">
+                  <div className="p-2 bg-slate-50 rounded-lg text-sm text-slate-600">
                     {originalText}
                   </div>
                 </div>
@@ -529,7 +529,7 @@ export function PricingItemRow({
 
               {/* English Name */}
               <div>
-                <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+                <label className="text-xs text-slate-500 mb-1 block">
                   {isRTL ? 'الاسم بالإنجليزية (اختياري)' : 'English name (optional)'}
                 </label>
                 <Input
@@ -537,13 +537,12 @@ export function PricingItemRow({
                   onChange={(e) => onUpdate({ item_name_en: e.target.value })}
                   placeholder="Item name in English..."
                   disabled={disabled}
-                  className="dark:bg-slate-900 dark:border-slate-600"
                 />
               </div>
 
               {/* Merchant Notes */}
               <div>
-                <label className="text-xs text-slate-500 dark:text-slate-400 mb-1 block">
+                <label className="text-xs text-slate-500 mb-1 block">
                   {isRTL ? 'ملاحظات للعميل' : 'Notes for customer'}
                 </label>
                 <Input
@@ -555,15 +554,14 @@ export function PricingItemRow({
                       : 'e.g., Price includes tax...'
                   }
                   disabled={disabled}
-                  className="dark:bg-slate-900 dark:border-slate-600"
                 />
               </div>
 
               {/* Price History Info */}
               {priceHistory && (
-                <div className="flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-                  <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-sm text-emerald-700 dark:text-emerald-400">
+                <div className="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg">
+                  <Clock className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm text-emerald-700">
                     {isRTL ? 'آخر سعر: ' : 'Last price: '}
                     <strong>
                       {priceHistory.unit_price} {isRTL ? 'ج.م' : 'EGP'}
