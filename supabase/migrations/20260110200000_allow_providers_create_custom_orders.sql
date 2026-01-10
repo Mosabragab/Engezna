@@ -24,7 +24,7 @@ CREATE POLICY "Providers can create custom orders"
     EXISTS (
       SELECT 1 FROM public.providers p
       WHERE p.id = provider_id
-      AND p.user_id = auth.uid()
+      AND p.owner_id = auth.uid()
     )
   );
 
@@ -38,7 +38,7 @@ CREATE POLICY "Providers can update custom orders"
     AND EXISTS (
       SELECT 1 FROM public.providers p
       WHERE p.id = provider_id
-      AND p.user_id = auth.uid()
+      AND p.owner_id = auth.uid()
     )
   )
   WITH CHECK (
@@ -46,7 +46,7 @@ CREATE POLICY "Providers can update custom orders"
     AND EXISTS (
       SELECT 1 FROM public.providers p
       WHERE p.id = provider_id
-      AND p.user_id = auth.uid()
+      AND p.owner_id = auth.uid()
     )
   );
 
