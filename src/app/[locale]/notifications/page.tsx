@@ -114,8 +114,8 @@ export default function NotificationsPage() {
       case 'offer':
         return <Gift className="w-5 h-5 text-green-500" />
 
-      // Custom order notifications (lowercase from DB triggers)
-      case 'custom_order_priced':
+      // Custom order notifications (UPPERCASE from DB triggers)
+      case 'CUSTOM_ORDER_PRICED':
         return <DollarSign className="w-5 h-5 text-emerald-600" />
 
       default:
@@ -225,10 +225,8 @@ export default function NotificationsPage() {
             // Check if notification is order-related for navigation (includes order_message)
             const isOrderNotification = (notification.type.startsWith('order_') || notification.type === 'order_message') && notification.related_order_id
 
-            // Check if it's a custom order notification (lowercase from DB trigger)
-            const isCustomOrderNotification = notification.type === 'custom_order_priced'
-            // Get broadcast_id from data field (set by DB trigger)
-            const customOrderData = notification.data as { broadcast_id?: string; request_id?: string } | null
+            // Check if it's a custom order notification (UPPERCASE from DB trigger)
+            const isCustomOrderNotification = notification.type === 'CUSTOM_ORDER_PRICED'
 
             const handleNotificationClick = () => {
               // Mark as read if not already
@@ -236,9 +234,10 @@ export default function NotificationsPage() {
                 handleMarkAsRead(notification.id)
               }
 
-              // Handle custom order notifications - navigate to review page
-              if (isCustomOrderNotification && customOrderData?.broadcast_id) {
-                router.push(`/${locale}/orders/custom-review/${customOrderData.broadcast_id}`)
+              // Handle custom order notifications - navigate to comparison page
+              // related_order_id contains BROADCAST_ID (Smart Reuse!)
+              if (isCustomOrderNotification && notification.related_order_id) {
+                router.push(`/${locale}/orders/custom-review/${notification.related_order_id}`)
                 return
               }
 
@@ -255,7 +254,7 @@ export default function NotificationsPage() {
                 className={`bg-white rounded-xl border p-4 transition-all ${
                   notification.is_read
                     ? 'border-slate-100'
-                    : notification.type === 'custom_order_priced'
+                    : notification.type === 'CUSTOM_ORDER_PRICED'
                       ? 'border-emerald-300 bg-emerald-50'
                       : 'border-primary/30 bg-primary/5'
                 } ${(isOrderNotification || isCustomOrderNotification) ? 'cursor-pointer hover:shadow-md' : ''}`}

@@ -113,6 +113,11 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- IMPORTANT: Only send notification if total > 0 (pricing actually done!)
+  IF NEW.total IS NULL OR NEW.total <= 0 THEN
+    RETURN NEW;
+  END IF;
+
   -- Get info
   SELECT
     b.customer_id,
@@ -129,7 +134,7 @@ BEGIN
   END IF;
 
   -- Insert notification for customer
-  -- related_order_id → temporarily stores request_id (until order is created)
+  -- related_order_id → stores BROADCAST_ID (so customer can compare ALL quotes!)
   -- related_provider_id → stores provider_id
   INSERT INTO customer_notifications (
     customer_id,
@@ -138,7 +143,7 @@ BEGIN
     title_en,
     body_ar,
     body_en,
-    related_order_id,        -- ← Stores request_id temporarily
+    related_order_id,        -- ← Stores BROADCAST_ID for comparison page
     related_provider_id      -- ← Stores provider_id
   ) VALUES (
     v_customer_id,
@@ -147,7 +152,7 @@ BEGIN
     'Order Priced! 💰',
     v_provider_name || ' سعّر طلبك بـ ' || NEW.total || ' ج.م - راجع العرض الآن',
     v_provider_name || ' priced your order at ' || NEW.total || ' EGP - Review now',
-    NEW.id,                  -- ← request_id
+    v_broadcast_id,          -- ← BROADCAST_ID (not request_id!)
     v_provider_id
   );
 
@@ -349,6 +354,11 @@ GRANT EXECUTE ON FUNCTION expire_custom_order_requests() TO service_role;
 --
 -- customer_notifications:
 --   - type: 'CUSTOM_ORDER_PRICED'
---   - related_order_id: stores request_id (temporarily, until order exists)
+--   - related_order_id: stores BROADCAST_ID (for comparison page navigation!)
 --   - related_provider_id: stores provider_id
+--   - Price is shown in body_ar/body_en text (e.g., "سعّر طلبك بـ 150 ج.م")
+--
+-- FRONTEND Navigation:
+--   - On CUSTOM_ORDER_PRICED click → /orders/custom-review/{related_order_id}
+--   - related_order_id contains broadcast_id, not request_id!
 -- ============================================================================
