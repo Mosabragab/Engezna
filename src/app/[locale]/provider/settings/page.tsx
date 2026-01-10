@@ -973,7 +973,7 @@ export default function ProviderSettingsPage() {
                   <label
                     className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start cursor-pointer ${
                       operationMode === 'hybrid'
-                        ? 'border-emerald-500 bg-emerald-50'
+                        ? 'border-primary bg-primary/5'
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
@@ -986,16 +986,16 @@ export default function ProviderSettingsPage() {
                       className="sr-only"
                     />
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
-                      operationMode === 'hybrid' ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300'
+                      operationMode === 'hybrid' ? 'border-primary bg-primary' : 'border-slate-300'
                     }`}>
                       {operationMode === 'hybrid' && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <p className={`font-semibold ${operationMode === 'hybrid' ? 'text-emerald-700' : 'text-slate-700'}`}>
+                        <p className={`font-semibold ${operationMode === 'hybrid' ? 'text-primary' : 'text-slate-700'}`}>
                           {locale === 'ar' ? 'هجين (قائمة المنتجات + الطلبات المفتوحة)' : 'Hybrid (Products + Custom Orders)'}
                         </p>
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                        <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
                           {locale === 'ar' ? 'موصى به' : 'Recommended'}
                         </span>
                       </div>
@@ -1011,7 +1011,7 @@ export default function ProviderSettingsPage() {
                   <label
                     className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start cursor-pointer ${
                       operationMode === 'custom'
-                        ? 'border-amber-500 bg-amber-50'
+                        ? 'border-primary bg-primary/5'
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
@@ -1024,12 +1024,12 @@ export default function ProviderSettingsPage() {
                       className="sr-only"
                     />
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
-                      operationMode === 'custom' ? 'border-amber-500 bg-amber-500' : 'border-slate-300'
+                      operationMode === 'custom' ? 'border-primary bg-primary' : 'border-slate-300'
                     }`}>
                       {operationMode === 'custom' && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
                     <div className="flex-1">
-                      <p className={`font-semibold ${operationMode === 'custom' ? 'text-amber-700' : 'text-slate-700'}`}>
+                      <p className={`font-semibold ${operationMode === 'custom' ? 'text-primary' : 'text-slate-700'}`}>
                         {locale === 'ar' ? 'طلبات مفتوحة فقط' : 'Custom Orders Only'}
                       </p>
                       <p className="text-sm text-slate-500 mt-1">
