@@ -506,54 +506,90 @@ export function CustomOrderInterface({
               exit={{ opacity: 0, x: 20 }}
               className="p-4 space-y-4"
             >
-              <h3 className="font-semibold text-slate-800">
-                {isRTL ? 'مراجعة الطلب' : 'Review Order'}
-              </h3>
-
-              {/* Order Summary */}
-              <div className="bg-slate-50 rounded-xl p-4 space-y-3">
-                <div className="flex items-start gap-2">
-                  <FileText className="w-4 h-4 text-slate-500 mt-0.5" />
-                  <div>
-                    <p className="text-xs text-slate-500">
-                      {isRTL ? 'المحتوى' : 'Content'}
-                    </p>
-                    <p className="text-sm text-slate-800">
-                      {textInput || (isRTL ? '(تسجيل صوتي)' : '(Voice recording)')}
-                    </p>
-                  </div>
+              {/* Order Details Card */}
+              <div className="bg-white border-2 border-primary/20 rounded-2xl overflow-hidden">
+                <div className="bg-primary/5 px-4 py-3 border-b border-primary/10">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary" />
+                    {isRTL ? 'تفاصيل طلبك' : 'Your Order Details'}
+                  </h3>
                 </div>
 
-                {images.length > 0 && (
-                  <div className="flex items-start gap-2">
-                    <ImageIcon className="w-4 h-4 text-slate-500 mt-0.5" />
+                <div className="p-4 space-y-4">
+                  {/* Text Content */}
+                  {textInput && (
                     <div>
-                      <p className="text-xs text-slate-500">
-                        {isRTL ? 'الصور' : 'Images'}
+                      <p className="text-xs text-slate-500 mb-1">
+                        {isRTL ? 'محتوى الطلب:' : 'Order content:'}
                       </p>
-                      <p className="text-sm text-slate-800">
-                        {images.length} {isRTL ? 'صور' : 'images'}
-                      </p>
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-slate-800 whitespace-pre-wrap">{textInput}</p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {notes && (
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="w-4 h-4 text-slate-500 mt-0.5" />
+                  {/* Voice Recording */}
+                  {voiceBlob && !textInput && (
                     <div>
-                      <p className="text-xs text-slate-500">
-                        {isRTL ? 'ملاحظات' : 'Notes'}
+                      <p className="text-xs text-slate-500 mb-1">
+                        {isRTL ? 'تسجيل صوتي:' : 'Voice recording:'}
                       </p>
-                      <p className="text-sm text-slate-800">{notes}</p>
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                          <Mic className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-amber-800">
+                            {isRTL ? 'تم تسجيل رسالة صوتية' : 'Voice message recorded'}
+                          </p>
+                          <p className="text-xs text-amber-600">
+                            {isRTL ? 'سيتم إرسالها للتجار' : 'Will be sent to merchants'}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  {/* Images */}
+                  {images.length > 0 && (
+                    <div>
+                      <p className="text-xs text-slate-500 mb-2">
+                        {isRTL ? `الصور المرفقة (${images.length}):` : `Attached images (${images.length}):`}
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {images.map((img, idx) => (
+                          <div
+                            key={idx}
+                            className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border-2 border-slate-200"
+                          >
+                            <img
+                              src={typeof img === 'string' ? img : URL.createObjectURL(img)}
+                              alt={`Image ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {notes && (
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">
+                        {isRTL ? 'ملاحظات إضافية:' : 'Additional notes:'}
+                      </p>
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                        <p className="text-sm text-blue-800">{notes}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Selected Providers */}
-              <div>
-                <p className="text-sm font-medium text-slate-700 mb-2">
+              <div className="bg-slate-50 rounded-xl p-4">
+                <p className="text-sm font-medium text-slate-700 mb-3">
                   {isRTL
                     ? `سيتم إرسال الطلب إلى ${selectedProviders.length} متاجر`
                     : `Order will be sent to ${selectedProviders.length} merchants`}
