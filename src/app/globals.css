@@ -14,6 +14,13 @@
  */
 
 @layer base {
+  /* Force Light Mode - Prevent system dark mode from affecting the app */
+  :root,
+  html,
+  body {
+    color-scheme: light;
+  }
+
   :root {
     /* PRIMARY BRAND COLORS - Engezna Blue */
     --primary: 198 100% 44%;            /* #009DE0 Engezna Blue */

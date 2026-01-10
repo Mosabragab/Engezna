@@ -483,7 +483,7 @@ export function PricingNotepad({
     setItems((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
-  // Copy customer text to new item (only once per text)
+  // Copy customer text to first empty item (only once per text)
   const handleCopyCustomerText = useCallback((text: string) => {
     // Check if already copied to prevent duplicates
     setCopiedTexts((prev) => {
@@ -493,11 +493,25 @@ export function PricingNotepad({
       return newSet
     })
 
-    // Add new item with the text
-    const newItem = createEmptyItem()
-    newItem.item_name_ar = text
-    newItem.original_customer_text = text
-    setItems((prev) => [...prev, newItem])
+    // Find the first empty item (no name) and fill it, otherwise add new item
+    setItems((prev) => {
+      const emptyIndex = prev.findIndex((item) => !item.item_name_ar || item.item_name_ar.trim() === '')
+
+      if (emptyIndex !== -1) {
+        // Fill the first empty item
+        return prev.map((item, index) =>
+          index === emptyIndex
+            ? { ...item, item_name_ar: text, original_customer_text: text }
+            : item
+        )
+      } else {
+        // No empty item found, add a new one
+        const newItem = createEmptyItem()
+        newItem.item_name_ar = text
+        newItem.original_customer_text = text
+        return [...prev, newItem]
+      }
+    })
   }, [])
 
   // Calculate totals

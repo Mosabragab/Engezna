@@ -318,10 +318,10 @@ export default function CustomOrderPricingPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-slate-500 dark:text-slate-400">
+          <p className="text-slate-500">
             {isRTL ? 'جاري تحميل الطلب...' : 'Loading order...'}
           </p>
         </div>
@@ -336,13 +336,13 @@ export default function CustomOrderPricingPage() {
         pageTitle={{ ar: 'تسعير طلب مفتوح', en: 'Custom Order Pricing' }}
       >
         <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-600" />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">
+          <h2 className="text-xl font-bold text-slate-800 mb-2">
             {error || (isRTL ? 'حدث خطأ' : 'An error occurred')}
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 mb-6 text-center max-w-md">
+          <p className="text-slate-500 mb-6 text-center max-w-md">
             {isRTL
               ? 'لم نتمكن من تحميل تفاصيل الطلب. قد يكون الطلب قد انتهت صلاحيته أو تم إلغاؤه.'
               : 'We could not load the order details. The order may have expired or been cancelled.'}
@@ -363,13 +363,13 @@ export default function CustomOrderPricingPage() {
         pageTitle={{ ar: 'تسعير طلب مفتوح', en: 'Custom Order Pricing' }}
       >
         <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-4">
-            <Clock className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+            <Clock className="w-8 h-8 text-amber-600" />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">
+          <h2 className="text-xl font-bold text-slate-800 mb-2">
             {isRTL ? 'تم تسعير هذا الطلب مسبقاً' : 'This order has already been priced'}
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 mb-6">
+          <p className="text-slate-500 mb-6">
             {isRTL
               ? 'حالة الطلب الحالية: ' + request.status
               : 'Current status: ' + request.status}
