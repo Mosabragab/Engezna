@@ -75,9 +75,9 @@ function CustomOrderPageContent() {
 
     try {
       const supabase = createClient()
-      const broadcastService = createCustomerBroadcastService(supabase)
+      const broadcastService = createCustomerBroadcastService(supabase, customerId)
 
-      const result = await broadcastService.createBroadcast(customerId, payload)
+      const result = await broadcastService.createBroadcast(payload)
 
       if (result.success && result.broadcastId) {
         // Navigate to the review page
