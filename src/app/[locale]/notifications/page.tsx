@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { Bell, Package, Tag, Gift, Info, Check, Trash2, Loader2, CreditCard, MessageCircle, RefreshCw } from 'lucide-react'
+import { Bell, Package, Tag, Gift, Info, Check, Trash2, Loader2, CreditCard, MessageCircle, RefreshCw, DollarSign, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { CustomerLayout } from '@/components/customer/layout'
 import { Button } from '@/components/ui/button'
@@ -89,6 +89,7 @@ export default function NotificationsPage() {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
+      // Standard order notifications
       case 'order':
       case 'order_update':
       case 'order_accepted':
@@ -112,6 +113,11 @@ export default function NotificationsPage() {
         return <Tag className="w-5 h-5 text-red-500" />
       case 'offer':
         return <Gift className="w-5 h-5 text-green-500" />
+
+      // Custom order notifications (UPPERCASE types)
+      case 'CUSTOM_ORDER_PRICED':
+        return <DollarSign className="w-5 h-5 text-emerald-600" />
+
       default:
         return <Info className="w-5 h-5 text-blue-500" />
     }
@@ -219,13 +225,24 @@ export default function NotificationsPage() {
             // Check if notification is order-related for navigation (includes order_message)
             const isOrderNotification = (notification.type.startsWith('order_') || notification.type === 'order_message') && notification.related_order_id
 
+            // Check if it's a custom order notification
+            const isCustomOrderNotification = notification.type === 'CUSTOM_ORDER_PRICED'
+
             const handleNotificationClick = () => {
+              // Mark as read if not already
+              if (!notification.is_read) {
+                handleMarkAsRead(notification.id)
+              }
+
+              // Handle custom order notifications
+              if (isCustomOrderNotification && notification.related_order_id) {
+                // For CUSTOM_ORDER_PRICED, related_order_id stores request_id temporarily
+                router.push(`/${locale}/orders/custom-review/${notification.related_order_id}`)
+                return
+              }
+
+              // Handle standard order notifications
               if (isOrderNotification && notification.related_order_id) {
-                // Mark as read if not already
-                if (!notification.is_read) {
-                  handleMarkAsRead(notification.id)
-                }
-                // Navigate to order tracking page
                 router.push(`/${locale}/orders/${notification.related_order_id}`)
               }
             }
@@ -237,8 +254,10 @@ export default function NotificationsPage() {
                 className={`bg-white rounded-xl border p-4 transition-all ${
                   notification.is_read
                     ? 'border-slate-100'
-                    : 'border-primary/30 bg-primary/5'
-                } ${isOrderNotification ? 'cursor-pointer hover:shadow-md' : ''}`}
+                    : notification.type === 'CUSTOM_ORDER_PRICED'
+                      ? 'border-emerald-300 bg-emerald-50'
+                      : 'border-primary/30 bg-primary/5'
+                } ${(isOrderNotification || isCustomOrderNotification) ? 'cursor-pointer hover:shadow-md' : ''}`}
               >
                 <div className="flex gap-3">
                   {/* Icon */}
