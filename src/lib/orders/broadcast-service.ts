@@ -190,7 +190,7 @@ export class BroadcastService {
     if (broadcastError || !broadcast) {
       console.error('Error creating broadcast:', broadcastError);
       throw new BroadcastError(
-        'Failed to create broadcast',
+        `Failed to create broadcast: ${broadcastError?.message || 'No data returned'}`,
         'DATABASE_ERROR'
       );
     }
@@ -226,7 +226,7 @@ export class BroadcastService {
 
       console.error('Error creating requests:', requestsError);
       throw new BroadcastError(
-        'Failed to create provider requests',
+        `Failed to create provider requests: ${requestsError?.message || 'No data returned'}`,
         'DATABASE_ERROR'
       );
     }

@@ -87,10 +87,13 @@ function CustomOrderPageContent() {
       }
     } catch (err) {
       console.error('Error creating broadcast:', err)
+      // Show detailed error for debugging
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      console.error('Error details:', errorMessage)
       setError(
         isRTL
-          ? 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.'
-          : 'Error submitting order. Please try again.'
+          ? `حدث خطأ أثناء إرسال الطلب: ${errorMessage}`
+          : `Error submitting order: ${errorMessage}`
       )
     } finally {
       setSubmitting(false)
