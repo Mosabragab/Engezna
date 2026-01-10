@@ -278,40 +278,8 @@ CREATE INDEX IF NOT EXISTS idx_custom_items_availability ON custom_order_items(a
 -- جدول تاريخ الأسعار - لميزة "تم شراؤه مسبقاً"
 -- ============================================================================
 
--- Function to normalize Arabic text for fuzzy matching
--- تطبيع النص العربي لمطابقة مرنة
-CREATE OR REPLACE FUNCTION normalize_arabic(input_text TEXT)
-RETURNS TEXT AS $$
-BEGIN
-  -- Handle NULL input
-  IF input_text IS NULL THEN
-    RETURN NULL;
-  END IF;
-
-  RETURN lower(
-    trim(
-      regexp_replace(
-        regexp_replace(
-          regexp_replace(
-            regexp_replace(
-              regexp_replace(
-                regexp_replace(
-                  regexp_replace(
-                    regexp_replace(input_text,
-                      '[ةه]', 'ه', 'g'),        -- Normalize ة to ه
-                    '[أإآا]', 'ا', 'g'),        -- Normalize alef variants
-                  '[يى]', 'ي', 'g'),            -- Normalize yaa variants
-                '[ؤ]', 'و', 'g'),               -- Normalize waw hamza
-              '[ئ]', 'ي', 'g'),                 -- Normalize yaa hamza
-            '[ً-ْ]', '', 'g'),                  -- Remove tashkeel (diacritics)
-          '\s+', ' ', 'g'),                     -- Normalize whitespace
-        '[0-9٠-٩]', '', 'g')                    -- Remove numbers (Arabic and English)
-    )
-  );
-END;
-$$ LANGUAGE plpgsql IMMUTABLE;
-
-COMMENT ON FUNCTION normalize_arabic IS 'تطبيع النص العربي للمقارنة المرنة - يوحد الحروف المتشابهة ويزيل التشكيل';
+-- NOTE: normalize_arabic function is defined in migration 20251216000002_arabic_normalization.sql
+-- We reuse that existing function for price history matching
 
 -- Price history table for "تم شراؤه مسبقاً" feature
 CREATE TABLE IF NOT EXISTS custom_order_price_history (
