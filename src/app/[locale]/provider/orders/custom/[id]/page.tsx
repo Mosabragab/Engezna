@@ -302,7 +302,7 @@ export default function CustomOrderPricingPage() {
           customer_id: request.broadcast?.customer?.id,
           order_flow: 'custom',
           broadcast_id: request.broadcast_id,
-          status: 'awaiting_pricing_approval',
+          status: 'pending',
           payment_status: 'pending',
           subtotal,
           delivery_fee: deliveryFee,
