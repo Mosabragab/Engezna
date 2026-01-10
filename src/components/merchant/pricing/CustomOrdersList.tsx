@@ -415,15 +415,16 @@ export function CustomOrdersList({
         comparison =
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       } else if (sortBy === 'status') {
-        const statusOrder = {
+        const statusOrder: Record<string, number> = {
           pending: 0,
+          pricing_in_progress: 0,
           priced: 1,
           customer_approved: 2,
           customer_rejected: 3,
           expired: 4,
           cancelled: 5,
         }
-        comparison = statusOrder[a.status] - statusOrder[b.status]
+        comparison = (statusOrder[a.status] ?? 6) - (statusOrder[b.status] ?? 6)
       }
       return sortDesc ? -comparison : comparison
     })
