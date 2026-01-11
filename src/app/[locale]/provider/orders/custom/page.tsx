@@ -24,6 +24,9 @@ import {
   User,
   Phone,
   DollarSign,
+  Package,
+  Truck,
+  ChefHat,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -45,6 +48,7 @@ type CustomOrderRequest = {
   created_at: string
   pricing_expires_at: string | null
   priced_at: string | null
+  order_id: string | null
   broadcast: {
     original_text: string | null
     transcribed_text: string | null
@@ -54,6 +58,11 @@ type CustomOrderRequest = {
       full_name: string | null
       phone: string | null
     } | null
+  } | null
+  order: {
+    id: string
+    order_number: string
+    status: string
   } | null
 }
 
@@ -71,6 +80,18 @@ const INPUT_TYPE_ICONS = {
   voice: Mic,
   image: ImageIcon,
   mixed: FileText,
+}
+
+// Order execution status config (for approved orders that become actual orders)
+const ORDER_STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string; bgColor: string; label_ar: string; label_en: string }> = {
+  pending: { icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', label_ar: 'جديد', label_en: 'New' },
+  accepted: { icon: CheckCircle2, color: 'text-blue-600', bgColor: 'bg-blue-50', label_ar: 'تم القبول', label_en: 'Accepted' },
+  preparing: { icon: ChefHat, color: 'text-blue-600', bgColor: 'bg-blue-50', label_ar: 'جاري التحضير', label_en: 'Preparing' },
+  ready: { icon: Package, color: 'text-cyan-600', bgColor: 'bg-cyan-50', label_ar: 'جاهز', label_en: 'Ready' },
+  out_for_delivery: { icon: Truck, color: 'text-blue-600', bgColor: 'bg-blue-50', label_ar: 'في الطريق', label_en: 'On the way' },
+  delivered: { icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-50', label_ar: 'تم التوصيل', label_en: 'Delivered' },
+  cancelled: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-50', label_ar: 'ملغي', label_en: 'Cancelled' },
+  rejected: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-50', label_ar: 'مرفوض', label_en: 'Rejected' },
 }
 
 export default function CustomOrdersListPage() {
@@ -104,6 +125,11 @@ export default function CustomOrdersListPage() {
             full_name,
             phone
           )
+        ),
+        order:orders(
+          id,
+          order_number,
+          status
         )
       `)
       .eq('provider_id', provId)
@@ -124,6 +150,7 @@ export default function CustomOrdersListPage() {
             ? req.broadcast.customer[0]
             : req.broadcast?.customer
         } : null,
+        order: Array.isArray(req.order) ? req.order[0] : req.order,
       }))
       setRequests(transformed as CustomOrderRequest[])
     }
@@ -504,6 +531,45 @@ export default function CustomOrdersListPage() {
                     {request.status === 'priced' && (
                       <div className="text-center py-2 text-blue-600 text-sm">
                         {isRTL ? 'بانتظار موافقة العميل...' : 'Waiting for customer approval...'}
+                      </div>
+                    )}
+                    {request.status === 'approved' && request.order && (
+                      <div className="space-y-3">
+                        {/* Order Execution Status */}
+                        {(() => {
+                          const orderStatusConfig = ORDER_STATUS_CONFIG[request.order.status] || ORDER_STATUS_CONFIG.pending
+                          const OrderStatusIcon = orderStatusConfig.icon
+                          return (
+                            <div className={`flex items-center justify-between p-3 rounded-lg ${orderStatusConfig.bgColor}`}>
+                              <div className="flex items-center gap-2">
+                                <OrderStatusIcon className={`w-4 h-4 ${orderStatusConfig.color}`} />
+                                <span className={`text-sm font-medium ${orderStatusConfig.color}`}>
+                                  {isRTL ? orderStatusConfig.label_ar : orderStatusConfig.label_en}
+                                </span>
+                              </div>
+                              <span className="text-xs text-slate-500">
+                                #{request.order.order_number || request.order.id.slice(0, 8).toUpperCase()}
+                              </span>
+                            </div>
+                          )
+                        })()}
+                        {/* Manage Order Button */}
+                        {!['delivered', 'cancelled', 'rejected'].includes(request.order.status) && (
+                          <Link href={`/${locale}/provider/orders/${request.order.id}`}>
+                            <Button variant="outline" className="w-full gap-2">
+                              {isRTL ? 'إدارة الطلب' : 'Manage Order'}
+                              {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                            </Button>
+                          </Link>
+                        )}
+                        {/* View Details for completed */}
+                        {['delivered', 'cancelled', 'rejected'].includes(request.order.status) && (
+                          <Link href={`/${locale}/provider/orders/${request.order.id}`}>
+                            <Button variant="ghost" size="sm" className="w-full text-slate-500">
+                              {isRTL ? 'عرض التفاصيل' : 'View Details'}
+                            </Button>
+                          </Link>
+                        )}
                       </div>
                     )}
                   </div>
