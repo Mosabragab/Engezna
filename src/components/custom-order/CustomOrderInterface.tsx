@@ -82,8 +82,8 @@ export function CustomOrderInterface({
   const [customerAddresses, setCustomerAddresses] = useState<Array<{
     id: string;
     label: string | null;
-    street_address: string;
-    district: string | null;
+    address_line1: string;
+    area: string | null;
     city: string | null;
     is_default: boolean;
   }>>([])
@@ -133,7 +133,7 @@ export function CustomOrderInterface({
         const supabase = createClient()
         const { data, error } = await supabase
           .from('addresses')
-          .select('id, label, street_address, district, city, is_default')
+          .select('id, label, address_line1, area, city, is_default')
           .eq('user_id', customerId)
           .order('is_default', { ascending: false })
 
@@ -778,8 +778,8 @@ export function CustomOrderInterface({
                                   )}
                                 </p>
                                 <p className="text-sm text-slate-500">
-                                  {addr.street_address}
-                                  {addr.district && `, ${addr.district}`}
+                                  {addr.address_line1}
+                                  {addr.area && `, ${addr.area}`}
                                   {addr.city && `, ${addr.city}`}
                                 </p>
                               </div>
