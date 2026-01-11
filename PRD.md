@@ -1,11 +1,12 @@
 # Product Requirements Document (PRD)
 ## Engezna - إنجزنا | Delivery Marketplace Platform
 
-**Version:** 5.4 (Week 6 - Refunds & Settlements Integration)
-**Date:** November 27, 2025
-**Last Updated:** December 22, 2025 (Session 20)
+**Version:** 6.0 (Production Ready)
+**Last Updated:** January 11, 2026 (Session 26)
 **Project Lead:** Mosab
 **Location:** Egypt (Starting from Upper Egypt governorates)
+
+> **Note:** For detailed session history, see [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -13,53 +14,50 @@
 
 **Engezna (إنجزنا)** is a B2C delivery marketplace platform designed to serve all of Egypt, starting from Upper Egypt governorates. The platform connects local stores (restaurants, supermarkets, groceries, pharmacies, and more) with customers, enabling fast and reliable delivery in underserved markets.
 
-Mission: To bring modern delivery services to Egyptian governorates outside
+**Mission:** To bring modern delivery services to Egyptian governorates outside
 the major cities (Cairo, Giza, Alexandria, North Coast), starting with Beni Suef,
 while supporting local businesses and creating economic opportunities through
 fair, transparent pricing.
 
-**Key Differentiator:** Ultra-low 5-7% commission model where providers manage their own delivery staff, allowing us to offer the most competitive rates in the Egyptian market.
+**Key Differentiator:**
+- **6 months 0% commission** then **max 7%** (vs competitors' 25-30%)
+- **0% customer service fees** - always!
+- Providers manage their own delivery staff
+- Arabic-first UX with full RTL support
 
 ---
 
 ## 📊 Current Development Status
 
-**Phase:** Week 6 - Refunds & Settlements Integration
-**Status:** Week 6 - Resolution Center Complete ✅
-**Target Launch:** February 2026 (12 weeks development)
-**Overall Progress:** ~94% of MVP Complete
-**Last Session:** December 21, 2025 (Session 19)
+| Metric | Value |
+|--------|-------|
+| **Phase** | Week 7 - Production Ready |
+| **Progress** | ~97% MVP Complete |
+| **Target Launch** | February 2026 |
+| **Sessions Completed** | 26 |
 
-### Session 19 Updates (December 21, 2025)
+### System Completion Status
 
-**Dynamic Permissions System:**
-- ✅ **Unified Role System** - Supervisors page now uses dynamic roles from `admin_roles` table
-- ✅ **Disputes Resource** - Added disputes permissions to all relevant roles
-- ✅ **New Roles Configured** - Default permissions for regional_manager, orders_moderator, support_agent, analyst, viewer
+| System | Status | Details |
+|--------|--------|---------|
+| Customer Journey | ✅ 100% | Browsing, Cart, Checkout, Tracking, Reviews, Favorites |
+| Provider Dashboard | ✅ 100% | Orders, Menu, Analytics, Settlements, Store Hours |
+| Admin Panel | ✅ 100% | RBAC/ABAC, Supervisors, Tasks, Approvals, Messaging |
+| Custom Orders | ✅ 100% | Triple Broadcast, Voice/Image/Text, Pricing UI |
+| AI Assistant (أحمد) | ✅ 100% | Natural language ordering, Menu search |
+| Settlement System | ✅ 100% | COD/Online breakdown, Commission calculation |
+| Legal Compliance | ✅ 100% | Privacy Policy, Terms & Conditions |
+| Payment Gateway | ✅ Ready | Kashier integrated (pending activation) |
 
-**Refunds-Settlements Integration (Critical Fixes):**
-- ✅ **Proportional Commission Reduction** - Partial refunds now reduce commission proportionally
-  - Example: 27.91% refund → 27.91% commission reduction (was zeroing entire commission)
-- ✅ **Settlement Adjustments Audit** - New `settlement_adjustments` table for tracking changes
-- ✅ **Retroactive Adjustment** - Existing settlements updated when refunds are processed
-- ✅ **Exclude Adjusted Orders** - Settlement generation skips orders with refund adjustments
-- ✅ **Handle Both COD & Online** - Proper handling for all payment types
+### Pending Items
 
-**Customer Notification Fixes:**
-- ✅ **Fixed Notification Columns** - `notify_refund_status_change` now uses correct column names (body_ar/body_en)
-- ✅ **Notification Dropdown** - Shows on hover over bell icon with last 5 notifications
-- ✅ **Refund Confirmation Buttons** - Customer can confirm cash refund receipt directly from dropdown
-- ✅ **Notification Icons** - Different icons based on type (refund/delivered/cancelled)
+| Item | Priority | Blocker |
+|------|----------|---------|
+| Push Notifications | Medium | Firebase account setup |
+| Email Notifications | Low | Resend/SendGrid account |
+| SMS Verification | Medium | Provider account |
 
-**Migrations Created:**
-- `20251221000002_add_disputes_permissions.sql` - Disputes resource permissions
-- `20251221000003_assign_new_roles_permissions.sql` - Default permissions for new roles
-- `20251221000004_fix_refunds_settlements_integration.sql` - Critical integration fixes
-- `20251221000005_fix_refund_notification_columns.sql` - Notification column fix
-
-**Files Modified:**
-- `src/app/[locale]/admin/supervisors/page.tsx` - Dynamic role selection
-- `src/components/customer/layout/CustomerHeader.tsx` - Notification dropdown with confirmation
+---
 
 ### Session 17 Updates (December 11, 2025)
 

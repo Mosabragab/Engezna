@@ -423,10 +423,11 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           // New pending custom order arrives - increment badge
           if (newRequest.status === 'pending') {
             setPendingCustomOrders(prev => prev + 1)
-            // Play notification sound for new custom order
+            // Play DISTINCT notification sound for custom orders
+            // صوت مختلف للطلبات الخاصة لتمييزها عن الطلبات العادية
             try {
-              const audio = new Audio('/sounds/notification.mp3')
-              audio.volume = 0.5
+              const audio = new Audio('/sounds/custom-order.mp3')
+              audio.volume = 0.7 // Slightly louder for custom orders
               audio.play().catch(() => {})
             } catch {}
           }

@@ -4,6 +4,41 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [Session 26] - 2026-01-11
+
+### Custom Order System (Triple Broadcast) - Comprehensive Review
+
+#### Navigation & UX Fixes
+- **Smart back navigation** - Orders from custom orders page now return correctly using `?from=custom` parameter
+- **Context-aware back button** - Shows "الطلبات الخاصة" when navigating from custom orders
+- **Customer bottom nav badge** - Fixed pending quotes count query (inverted join direction)
+
+#### Database & Notifications
+- **Notification data column** - Added JSONB `data` column to notification tables
+- **RPC functions** - Created `customer_approve_custom_order` and `customer_reject_custom_order`
+- **Check constraint fix** - Added `pricing_in_progress` to status constraint
+
+#### System Architecture Verification
+- **Settlement system** - ✅ Safe (only reads `orders` table)
+- **Analytics** - ✅ Safe (custom orders counted after approval)
+- **Dashboard stats** - ✅ Safe (all queries from `orders` table)
+- **Finance** - ✅ Safe (uses `financial_settlement_engine` view)
+
+#### Files Modified
+- `src/app/[locale]/provider/orders/[id]/page.tsx` - Smart back navigation
+- `src/app/[locale]/provider/orders/custom/page.tsx` - Added `?from=custom` parameter
+- `src/app/[locale]/provider/orders/custom/[id]/page.tsx` - Fixed redirect URLs
+- `src/components/customer/layout/BottomNavigation.tsx` - Fixed badge query
+
+### Commits
+```
+cf7324c fix: Smart back navigation for orders from custom orders page
+11e1948 fix: Fix custom order back navigation for hybrid providers
+4a3c1a6 fix: Fix customer bottom nav badge for pending quotes
+```
+
+---
+
 ## [Session 25] - 2026-01-10
 
 ### Custom Order Pricing System - Major UI Fixes

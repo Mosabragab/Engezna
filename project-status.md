@@ -1,6 +1,6 @@
 # Engezna Project Status
 
-## Last Updated: 2026-01-10 (Session 25)
+## Last Updated: 2026-01-11 (Session 26)
 
 ## Project Overview
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
@@ -17,33 +17,34 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 
 ## Current Status: ~97% MVP Complete
 
-### Session 25 Updates (January 10, 2026)
+### Session 26 Updates (January 11, 2026)
 
-#### Custom Order Pricing System - Major UI Fixes
+#### Custom Order System (Triple Broadcast) - Comprehensive Review
 
-##### Status Buttons System Rebuild
-- [x] **Complete rebuild using inline styles** - Fixed status buttons (متوفر/غير متوفر/بديل) that were turning white
-- [x] **Guaranteed color rendering** - Direct hex colors instead of Tailwind classes
-- [x] **Hover effects with JavaScript** - Reliable hover states using onMouseEnter/onMouseLeave
+##### Navigation & UX Fixes
+- [x] **Smart back navigation** - Orders from custom orders page now return correctly
+- [x] **Context-aware back button** - Shows "الطلبات الخاصة" when from custom orders
+- [x] **URL parameter tracking** - `?from=custom` preserves navigation context
+- [x] **Customer bottom nav badge** - Fixed pending quotes count query
 
-##### Deadline Validation System
-- [x] **Prevent late submissions** - Check `pricing_expires_at` before submission
-- [x] **Visual deadline indicator** - Red "انتهت المهلة!" warning when expired
-- [x] **Double-check in submit** - Server-side validation backup
+##### Database & Notifications
+- [x] **Notification data column** - Added JSONB data column to notification tables
+- [x] **RPC functions** - `customer_approve_custom_order` and `customer_reject_custom_order`
+- [x] **Check constraint fix** - Added `pricing_in_progress` to status constraint
 
-##### Dark Mode Complete Removal
-- [x] **Forced light mode** - `color-scheme: light` in globals.css
-- [x] **All pricing components** - Removed dark: classes throughout
+##### System Architecture Analysis
+- [x] **Settlement system verified** - No impact from custom orders (uses `orders` table)
+- [x] **Analytics verified** - Custom orders counted after approval
+- [x] **Dashboard stats verified** - All systems read from `orders` table
 
-##### UI Improvements
-- [x] **Number input spinners removed** - Clean pricing inputs
-- [x] **Carton unit type** - Added "كرتونة" to unit types
-- [x] **Duplicate copy prevention** - One-time copy per item
-- [x] **Fill first empty item** - Better UX for copy feature
-- [x] **Confirmation dialog button** - Fixed with inline styles
-- [x] **Net profit display** - Commission transparency
-- [x] **Audio speed controls** - 1x/1.5x/2x playback
-- [x] **Image zoom controls** - Customer image review
+##### Custom Order Flow (Verified Working)
+```
+1. Customer creates broadcast → custom_order_broadcasts
+2. Providers receive requests → custom_order_requests
+3. Provider prices → status = 'priced'
+4. Customer approves → creates entry in 'orders' table
+5. Order managed normally → financial systems work automatically
+```
 
 ---
 
