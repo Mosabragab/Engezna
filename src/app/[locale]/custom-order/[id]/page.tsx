@@ -115,6 +115,7 @@ export default function CustomOrderReviewPage() {
     }
 
     // Fetch pricing requests with items
+    // Include both new (approved/rejected) and old (customer_approved/customer_rejected) status values
     const { data: requestsData } = await supabase
       .from('custom_order_requests')
       .select(`
@@ -123,7 +124,7 @@ export default function CustomOrderReviewPage() {
         items:custom_order_items(*)
       `)
       .eq('broadcast_id', broadcastId)
-      .in('status', ['priced', 'approved', 'rejected'])
+      .in('status', ['priced', 'approved', 'rejected', 'customer_approved', 'customer_rejected'])
       .order('total', { ascending: true })
 
     const transformedRequests: PricingRequest[] = (requestsData || []).map(req => ({
@@ -149,7 +150,7 @@ export default function CustomOrderReviewPage() {
     }
   }, [user, authLoading, router, locale, broadcastId, loadBroadcast])
 
-  // Handle approve pricing
+  // Handle approve pricing - uses RPC function to bypass RLS
   const handleApprove = async () => {
     if (!selectedRequest || !user?.id) return
 
@@ -157,72 +158,29 @@ export default function CustomOrderReviewPage() {
     try {
       const supabase = createClient()
 
-      // Check if request is still priced (not expired or already approved)
-      const { data: currentRequest } = await supabase
-        .from('custom_order_requests')
-        .select('status, pricing_expires_at')
-        .eq('id', selectedRequest.id)
-        .single()
+      // Use RPC function for approval (bypasses RLS)
+      const { data, error: rpcError } = await supabase.rpc('customer_approve_custom_order', {
+        p_request_id: selectedRequest.id,
+        p_broadcast_id: broadcastId,
+      })
 
-      if (!currentRequest || currentRequest.status !== 'priced') {
-        throw new Error(isRTL ? 'هذا العرض لم يعد متاحاً' : 'This quote is no longer available')
+      if (rpcError) {
+        console.error('RPC Error:', rpcError)
+        throw new Error(isRTL ? 'حدث خطأ في الموافقة' : 'Error approving order')
       }
 
-      // Check if pricing has expired
-      if (currentRequest.pricing_expires_at && new Date(currentRequest.pricing_expires_at) < new Date()) {
-        throw new Error(isRTL ? 'انتهت صلاحية هذا العرض' : 'This quote has expired')
+      // Check the result
+      if (!data?.success) {
+        const errorMsg = data?.error || (isRTL ? 'حدث خطأ' : 'An error occurred')
+        throw new Error(errorMsg)
       }
-
-      // Update request status to approved
-      const { error: updateRequestError } = await supabase
-        .from('custom_order_requests')
-        .update({
-          status: 'approved',
-          responded_at: new Date().toISOString(),
-        })
-        .eq('id', selectedRequest.id)
-
-      if (updateRequestError) throw updateRequestError
-
-      // Update order status to accepted (if order exists)
-      if (selectedRequest.order_id) {
-        const { error: updateOrderError } = await supabase
-          .from('orders')
-          .update({
-            status: 'accepted',
-            pricing_status: 'pricing_approved',
-            pricing_responded_at: new Date().toISOString(),
-          })
-          .eq('id', selectedRequest.order_id)
-
-        if (updateOrderError) throw updateOrderError
-      }
-
-      // Update broadcast to completed
-      const { error: updateBroadcastError } = await supabase
-        .from('custom_order_broadcasts')
-        .update({
-          status: 'completed',
-          winning_order_id: selectedRequest.order_id,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', broadcastId)
-
-      if (updateBroadcastError) throw updateBroadcastError
-
-      // Cancel other pending requests
-      await supabase
-        .from('custom_order_requests')
-        .update({ status: 'cancelled' })
-        .eq('broadcast_id', broadcastId)
-        .neq('id', selectedRequest.id)
-        .in('status', ['pending', 'priced'])
 
       setShowApproveDialog(false)
 
       // Redirect to order page
-      if (selectedRequest.order_id) {
-        router.push(`/${locale}/orders/${selectedRequest.order_id}`)
+      const orderId = data.order_id || selectedRequest.order_id
+      if (orderId) {
+        router.push(`/${locale}/orders/${orderId}`)
       } else {
         router.push(`/${locale}/orders`)
       }
@@ -234,7 +192,7 @@ export default function CustomOrderReviewPage() {
     }
   }
 
-  // Handle reject pricing
+  // Handle reject pricing - uses RPC function to bypass RLS
   const handleReject = async () => {
     if (!selectedRequest) return
 
@@ -242,28 +200,21 @@ export default function CustomOrderReviewPage() {
     try {
       const supabase = createClient()
 
-      // Update request status to rejected
-      const { error: updateError } = await supabase
-        .from('custom_order_requests')
-        .update({
-          status: 'rejected',
-          responded_at: new Date().toISOString(),
-        })
-        .eq('id', selectedRequest.id)
+      // Use RPC function for rejection (bypasses RLS)
+      const { data, error: rpcError } = await supabase.rpc('customer_reject_custom_order', {
+        p_request_id: selectedRequest.id,
+        p_broadcast_id: broadcastId,
+      })
 
-      if (updateError) throw updateError
+      if (rpcError) {
+        console.error('RPC Error:', rpcError)
+        throw new Error(isRTL ? 'حدث خطأ في رفض العرض' : 'Error rejecting quote')
+      }
 
-      // If order exists, cancel it
-      if (selectedRequest.order_id) {
-        await supabase
-          .from('orders')
-          .update({
-            status: 'cancelled',
-            pricing_status: 'pricing_rejected',
-            pricing_responded_at: new Date().toISOString(),
-            cancellation_reason: isRTL ? 'العميل رفض التسعيرة' : 'Customer rejected the quote',
-          })
-          .eq('id', selectedRequest.order_id)
+      // Check the result
+      if (!data?.success) {
+        const errorMsg = data?.error || (isRTL ? 'حدث خطأ' : 'An error occurred')
+        throw new Error(errorMsg)
       }
 
       setShowRejectDialog(false)
@@ -337,7 +288,8 @@ export default function CustomOrderReviewPage() {
 
   // Get priced requests
   const pricedRequests = broadcast.requests.filter(r => r.status === 'priced')
-  const approvedRequest = broadcast.requests.find(r => r.status === 'approved')
+  // Check for both new and old status values for backwards compatibility
+  const approvedRequest = broadcast.requests.find(r => r.status === 'approved' || r.status === 'customer_approved')
 
   return (
     <CustomerLayout

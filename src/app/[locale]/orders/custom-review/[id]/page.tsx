@@ -153,7 +153,7 @@ export default function CustomOrderReviewPage() {
     }
   }, [broadcastId, user?.id, loadBroadcast])
 
-  // Handle provider selection (approve pricing)
+  // Handle provider selection (approve pricing) - uses RPC function to bypass RLS
   const handleSelectProvider = async (orderId: string) => {
     if (!broadcast) return
 
@@ -169,59 +169,26 @@ export default function CustomOrderReviewPage() {
         throw new Error('Request not found')
       }
 
-      // Update broadcast with winner
-      const { error: broadcastError } = await supabase
-        .from('custom_order_broadcasts')
-        .update({
-          status: 'completed' as BroadcastStatus,
-          winning_order_id: orderId,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', broadcastId)
+      // Use RPC function for approval (bypasses RLS)
+      const { data, error: rpcError } = await supabase.rpc('customer_approve_custom_order', {
+        p_request_id: selectedRequest.id,
+        p_broadcast_id: broadcastId,
+      })
 
-      if (broadcastError) throw broadcastError
-
-      // Update selected request
-      const { error: selectedError } = await supabase
-        .from('custom_order_requests')
-        .update({
-          status: 'customer_approved',
-          responded_at: new Date().toISOString(),
-        })
-        .eq('id', selectedRequest.id)
-
-      if (selectedError) throw selectedError
-
-      // Cancel other requests
-      const otherRequests = broadcast.requests.filter((r) => r.id !== selectedRequest.id)
-      if (otherRequests.length > 0) {
-        const { error: cancelError } = await supabase
-          .from('custom_order_requests')
-          .update({
-            status: 'cancelled',
-            responded_at: new Date().toISOString(),
-          })
-          .in(
-            'id',
-            otherRequests.map((r) => r.id)
-          )
-
-        if (cancelError) throw cancelError
+      if (rpcError) {
+        console.error('RPC Error:', rpcError)
+        throw new Error(isRTL ? 'حدث خطأ في الموافقة' : 'Error approving order')
       }
 
-      // Update order status
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({
-          status: 'pending', // Ready for merchant to accept
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', orderId)
-
-      if (orderError) throw orderError
+      // Check the result
+      if (!data?.success) {
+        const errorMsg = data?.error || (isRTL ? 'حدث خطأ' : 'An error occurred')
+        throw new Error(errorMsg)
+      }
 
       // Success - redirect to order tracking
-      router.push(`/${locale}/orders/${orderId}?success=approved`)
+      const approvedOrderId = data.order_id || orderId
+      router.push(`/${locale}/orders/${approvedOrderId}?success=approved`)
     } catch (err) {
       console.error('Error selecting provider:', err)
       setError(
