@@ -67,6 +67,46 @@ export type SettlementDirection = 'platform_pays_provider' | 'provider_pays_plat
 export type CommissionStatus = 'in_grace_period' | 'active' | 'exempt';
 
 // ============================================================================
+// CUSTOM ORDER ENUMS - Added January 2026
+// ============================================================================
+
+// Provider operation mode
+export type OperationMode = 'standard' | 'custom' | 'hybrid';
+
+// Custom order input types
+export type CustomOrderInputType = 'text' | 'voice' | 'image' | 'mixed';
+
+// Custom order request status
+export type CustomRequestStatus =
+  | 'pending'
+  | 'pricing_in_progress'  // Temporary lock during pricing submission
+  | 'priced'
+  | 'customer_approved'
+  | 'customer_rejected'
+  | 'expired'
+  | 'cancelled';
+
+// Item availability status
+export type ItemAvailabilityStatus = 'available' | 'unavailable' | 'partial' | 'substituted';
+
+// Broadcast status
+export type BroadcastStatus = 'active' | 'completed' | 'expired' | 'cancelled';
+
+// Pricing status for custom orders
+export type PricingStatus =
+  | 'awaiting_pricing'
+  | 'pricing_sent'
+  | 'pricing_approved'
+  | 'pricing_rejected'
+  | 'pricing_expired';
+
+// Order flow type
+export type OrderFlow = 'standard' | 'custom';
+
+// Item source in order_items
+export type ItemSource = 'menu' | 'custom';
+
+// ============================================================================
 // DATABASE TYPES
 // ============================================================================
 
@@ -216,6 +256,9 @@ export interface Database {
           pickup_instructions_ar: string | null;
           pickup_instructions_en: string | null;
           estimated_pickup_time_min: number;
+          // Custom Order settings - Added January 2026
+          operation_mode: OperationMode;
+          custom_order_settings: Json | null;
         };
         Insert: {
           id?: string;
@@ -269,6 +312,9 @@ export interface Database {
           pickup_instructions_ar?: string | null;
           pickup_instructions_en?: string | null;
           estimated_pickup_time_min?: number;
+          // Custom Order settings - Added January 2026
+          operation_mode?: OperationMode;
+          custom_order_settings?: Json | null;
         };
         Update: {
           id?: string;
@@ -322,6 +368,9 @@ export interface Database {
           pickup_instructions_ar?: string | null;
           pickup_instructions_en?: string | null;
           estimated_pickup_time_min?: number;
+          // Custom Order settings - Added January 2026
+          operation_mode?: OperationMode;
+          custom_order_settings?: Json | null;
         };
       };
 
@@ -840,6 +889,13 @@ export interface Database {
           out_for_delivery_at: string | null;
           delivered_at: string | null;
           cancelled_at: string | null;
+          // Custom Order fields - Added January 2026
+          order_flow: OrderFlow;
+          broadcast_id: string | null;
+          pricing_status: PricingStatus | null;
+          pricing_sent_at: string | null;
+          pricing_responded_at: string | null;
+          pricing_expires_at: string | null;
         };
         Insert: {
           id?: string;
@@ -878,6 +934,13 @@ export interface Database {
           out_for_delivery_at?: string | null;
           delivered_at?: string | null;
           cancelled_at?: string | null;
+          // Custom Order fields - Added January 2026
+          order_flow?: OrderFlow;
+          broadcast_id?: string | null;
+          pricing_status?: PricingStatus | null;
+          pricing_sent_at?: string | null;
+          pricing_responded_at?: string | null;
+          pricing_expires_at?: string | null;
         };
         Update: {
           id?: string;
@@ -916,6 +979,13 @@ export interface Database {
           out_for_delivery_at?: string | null;
           delivered_at?: string | null;
           cancelled_at?: string | null;
+          // Custom Order fields - Added January 2026
+          order_flow?: OrderFlow;
+          broadcast_id?: string | null;
+          pricing_status?: PricingStatus | null;
+          pricing_sent_at?: string | null;
+          pricing_responded_at?: string | null;
+          pricing_expires_at?: string | null;
         };
       };
 
@@ -937,6 +1007,10 @@ export interface Database {
           special_instructions: string | null;
           created_at: string;
           updated_at: string;
+          // Custom Order fields - Added January 2026
+          item_source: ItemSource;
+          custom_item_id: string | null;
+          original_customer_text: string | null;
         };
         Insert: {
           id?: string;
@@ -952,6 +1026,10 @@ export interface Database {
           special_instructions?: string | null;
           created_at?: string;
           updated_at?: string;
+          // Custom Order fields - Added January 2026
+          item_source?: ItemSource;
+          custom_item_id?: string | null;
+          original_customer_text?: string | null;
         };
         Update: {
           id?: string;
@@ -967,6 +1045,10 @@ export interface Database {
           special_instructions?: string | null;
           created_at?: string;
           updated_at?: string;
+          // Custom Order fields - Added January 2026
+          item_source?: ItemSource;
+          custom_item_id?: string | null;
+          original_customer_text?: string | null;
         };
       };
 
@@ -1666,6 +1748,292 @@ export interface Database {
           updated_by?: string | null;
         };
       };
+
+      // ====================================================================
+      // CUSTOM ORDER TABLES - Added January 2026
+      // ====================================================================
+
+      // --------------------------------------------------------------------
+      // Custom Order Broadcasts - Triple broadcast system
+      // --------------------------------------------------------------------
+      custom_order_broadcasts: {
+        Row: {
+          id: string;
+          customer_id: string;
+          provider_ids: string[];
+          winning_order_id: string | null;
+          original_input_type: CustomOrderInputType;
+          original_text: string | null;
+          voice_url: string | null;
+          image_urls: string[] | null;
+          transcribed_text: string | null;
+          customer_notes: string | null;
+          delivery_address_id: string | null;
+          delivery_address: Json | null;
+          order_type: 'delivery' | 'pickup';
+          status: BroadcastStatus;
+          pricing_deadline: string;
+          expires_at: string;
+          created_at: string;
+          updated_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          customer_id: string;
+          provider_ids: string[];
+          winning_order_id?: string | null;
+          original_input_type: CustomOrderInputType;
+          original_text?: string | null;
+          voice_url?: string | null;
+          image_urls?: string[] | null;
+          transcribed_text?: string | null;
+          customer_notes?: string | null;
+          delivery_address_id?: string | null;
+          delivery_address?: Json | null;
+          order_type?: 'delivery' | 'pickup';
+          status?: BroadcastStatus;
+          pricing_deadline: string;
+          expires_at: string;
+          created_at?: string;
+          updated_at?: string;
+          completed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          customer_id?: string;
+          provider_ids?: string[];
+          winning_order_id?: string | null;
+          original_input_type?: CustomOrderInputType;
+          original_text?: string | null;
+          voice_url?: string | null;
+          image_urls?: string[] | null;
+          transcribed_text?: string | null;
+          customer_notes?: string | null;
+          delivery_address_id?: string | null;
+          delivery_address?: Json | null;
+          order_type?: 'delivery' | 'pickup';
+          status?: BroadcastStatus;
+          pricing_deadline?: string;
+          expires_at?: string;
+          created_at?: string;
+          updated_at?: string;
+          completed_at?: string | null;
+        };
+      };
+
+      // --------------------------------------------------------------------
+      // Custom Order Requests - Per-provider pricing request
+      // --------------------------------------------------------------------
+      custom_order_requests: {
+        Row: {
+          id: string;
+          broadcast_id: string | null;
+          order_id: string | null;
+          provider_id: string;
+          input_type: CustomOrderInputType;
+          original_text: string | null;
+          voice_url: string | null;
+          image_urls: string[] | null;
+          transcribed_text: string | null;
+          customer_notes: string | null;
+          status: CustomRequestStatus;
+          items_count: number;
+          subtotal: number;
+          delivery_fee: number;
+          total: number;
+          created_at: string;
+          updated_at: string;
+          priced_at: string | null;
+          responded_at: string | null;
+          pricing_expires_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          broadcast_id?: string | null;
+          order_id?: string | null;
+          provider_id: string;
+          input_type: CustomOrderInputType;
+          original_text?: string | null;
+          voice_url?: string | null;
+          image_urls?: string[] | null;
+          transcribed_text?: string | null;
+          customer_notes?: string | null;
+          status?: CustomRequestStatus;
+          items_count?: number;
+          subtotal?: number;
+          delivery_fee?: number;
+          total?: number;
+          created_at?: string;
+          updated_at?: string;
+          priced_at?: string | null;
+          responded_at?: string | null;
+          pricing_expires_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          broadcast_id?: string | null;
+          order_id?: string | null;
+          provider_id?: string;
+          input_type?: CustomOrderInputType;
+          original_text?: string | null;
+          voice_url?: string | null;
+          image_urls?: string[] | null;
+          transcribed_text?: string | null;
+          customer_notes?: string | null;
+          status?: CustomRequestStatus;
+          items_count?: number;
+          subtotal?: number;
+          delivery_fee?: number;
+          total?: number;
+          created_at?: string;
+          updated_at?: string;
+          priced_at?: string | null;
+          responded_at?: string | null;
+          pricing_expires_at?: string | null;
+        };
+      };
+
+      // --------------------------------------------------------------------
+      // Custom Order Items - Merchant-priced items
+      // --------------------------------------------------------------------
+      custom_order_items: {
+        Row: {
+          id: string;
+          request_id: string;
+          order_id: string | null;
+          original_customer_text: string | null;
+          item_name_ar: string;
+          item_name_en: string | null;
+          description_ar: string | null;
+          description_en: string | null;
+          unit_type: string | null;
+          quantity: number;
+          unit_price: number;
+          total_price: number;
+          availability_status: ItemAvailabilityStatus;
+          substitute_name_ar: string | null;
+          substitute_name_en: string | null;
+          substitute_description: string | null;
+          substitute_quantity: number | null;
+          substitute_unit_type: string | null;
+          substitute_unit_price: number | null;
+          substitute_total_price: number | null;
+          merchant_notes: string | null;
+          display_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          request_id: string;
+          order_id?: string | null;
+          original_customer_text?: string | null;
+          item_name_ar: string;
+          item_name_en?: string | null;
+          description_ar?: string | null;
+          description_en?: string | null;
+          unit_type?: string | null;
+          quantity: number;
+          unit_price: number;
+          total_price: number;
+          availability_status?: ItemAvailabilityStatus;
+          substitute_name_ar?: string | null;
+          substitute_name_en?: string | null;
+          substitute_description?: string | null;
+          substitute_quantity?: number | null;
+          substitute_unit_type?: string | null;
+          substitute_unit_price?: number | null;
+          substitute_total_price?: number | null;
+          merchant_notes?: string | null;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          request_id?: string;
+          order_id?: string | null;
+          original_customer_text?: string | null;
+          item_name_ar?: string;
+          item_name_en?: string | null;
+          description_ar?: string | null;
+          description_en?: string | null;
+          unit_type?: string | null;
+          quantity?: number;
+          unit_price?: number;
+          total_price?: number;
+          availability_status?: ItemAvailabilityStatus;
+          substitute_name_ar?: string | null;
+          substitute_name_en?: string | null;
+          substitute_description?: string | null;
+          substitute_quantity?: number | null;
+          substitute_unit_type?: string | null;
+          substitute_unit_price?: number | null;
+          substitute_total_price?: number | null;
+          merchant_notes?: string | null;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      // --------------------------------------------------------------------
+      // Custom Order Price History - For "تم شراؤه مسبقاً" feature
+      // --------------------------------------------------------------------
+      custom_order_price_history: {
+        Row: {
+          id: string;
+          provider_id: string;
+          customer_id: string;
+          item_name_normalized: string;
+          item_name_ar: string;
+          item_name_en: string | null;
+          unit_type: string | null;
+          unit_price: number;
+          quantity: number;
+          total_price: number | null;
+          order_id: string | null;
+          request_id: string | null;
+          custom_item_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          provider_id: string;
+          customer_id: string;
+          item_name_normalized: string;
+          item_name_ar: string;
+          item_name_en?: string | null;
+          unit_type?: string | null;
+          unit_price: number;
+          quantity?: number;
+          total_price?: number | null;
+          order_id?: string | null;
+          request_id?: string | null;
+          custom_item_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          provider_id?: string;
+          customer_id?: string;
+          item_name_normalized?: string;
+          item_name_ar?: string;
+          item_name_en?: string | null;
+          unit_type?: string | null;
+          unit_price?: number;
+          quantity?: number;
+          total_price?: number | null;
+          order_id?: string | null;
+          request_id?: string | null;
+          custom_item_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -1687,6 +2055,15 @@ export interface Database {
       commission_status: CommissionStatus;
       order_type: OrderType;
       delivery_timing: DeliveryTiming;
+      // Custom Order enums - Added January 2026
+      operation_mode: OperationMode;
+      custom_order_input_type: CustomOrderInputType;
+      custom_request_status: CustomRequestStatus;
+      item_availability_status: ItemAvailabilityStatus;
+      broadcast_status: BroadcastStatus;
+      pricing_status: PricingStatus;
+      order_flow: OrderFlow;
+      item_source: ItemSource;
     };
   };
 }

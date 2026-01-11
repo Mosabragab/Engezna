@@ -3,6 +3,7 @@
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
 import {
   Package,
   ShoppingBag,
@@ -19,6 +20,7 @@ import {
   MessageSquare,
   TrendingUp,
   Users,
+  ClipboardList,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 
@@ -60,6 +62,7 @@ interface ProviderSidebarProps {
     status: string
   } | null
   pendingOrders?: number
+  pendingCustomOrders?: number // الطلبات المفتوحة المعلقة
   unreadNotifications?: number
   pendingRefunds?: number
   onHoldOrders?: number // الطلبات المعلقة - مرتبطة بالمحرك المالي
@@ -76,6 +79,7 @@ export function ProviderSidebar({
   onClose,
   provider,
   pendingOrders = 0,
+  pendingCustomOrders = 0,
   unreadNotifications = 0,
   pendingRefunds = 0,
   onHoldOrders = 0,
@@ -123,6 +127,14 @@ export function ProviderSidebar({
         label: { ar: 'الطلبات', en: 'Orders' },
         path: `/${locale}/provider/orders`,
         badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
+        badgeColor: 'red',
+      })
+      // Custom Orders - الطلبات الخاصة (Red badge for high visibility)
+      operationsItems.push({
+        icon: ClipboardList,
+        label: { ar: 'الطلبات الخاصة', en: 'Custom Orders' },
+        path: `/${locale}/provider/orders/custom`,
+        badge: pendingCustomOrders > 0 ? pendingCustomOrders.toString() : undefined,
         badgeColor: 'red',
       })
       operationsItems.push({
@@ -416,11 +428,13 @@ export function ProviderSidebar({
                         </span>
                         {item.badge && (
                           <span
-                            className={`
-                              ${isRTL ? 'mr-auto' : 'ml-auto'}
-                              ${isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor)}
-                              text-white text-xs max-lg:text-[10px] px-2 max-lg:px-1.5 py-0.5 rounded-full font-numbers
-                            `}
+                            className={cn(
+                              isRTL ? 'mr-auto' : 'ml-auto',
+                              isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor),
+                              'text-white text-xs max-lg:text-[10px] px-2 max-lg:px-1.5 py-0.5 rounded-full font-numbers',
+                              // Pulsating animation for custom orders and orders badges
+                              !isActive && 'animate-pulse-badge'
+                            )}
                           >
                             {item.badge}
                           </span>

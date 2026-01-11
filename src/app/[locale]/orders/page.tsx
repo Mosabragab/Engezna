@@ -21,6 +21,8 @@ import {
   RefreshCw,
   ChevronRight,
   ChevronLeft,
+  FileText,
+  Send,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -40,6 +42,20 @@ type Order = {
     name_en: string
     logo_url: string | null
   }
+}
+
+type CustomOrderBroadcast = {
+  id: string
+  status: 'active' | 'expired' | 'completed' | 'cancelled'
+  original_input_type: 'text' | 'voice' | 'image' | 'mixed'
+  original_text: string | null
+  created_at: string
+  pricing_deadline: string
+  // Calculated from requests relation
+  requests_count: number
+  priced_count: number
+  // Raw requests data from DB
+  requests?: { id: string; status: string }[]
 }
 
 const STATUS_CONFIG: Record<string, { icon: LucideIcon; color: string; label_ar: string; label_en: string }> = {
@@ -62,6 +78,7 @@ export default function OrderHistoryPage() {
   const isRTL = locale === 'ar'
 
   const [orders, setOrders] = useState<Order[]>([])
+  const [customBroadcasts, setCustomBroadcasts] = useState<CustomOrderBroadcast[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter] = useState<FilterType>('all')
@@ -70,6 +87,7 @@ export default function OrderHistoryPage() {
     setLoading(true)
     const supabase = createClient()
 
+    // Fetch regular orders
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -103,6 +121,36 @@ export default function OrderHistoryPage() {
           return order.payment_status === 'paid' || order.payment_status === 'completed'
         }) || []
       setOrders(transformedOrders)
+    }
+
+    // Fetch pending custom order broadcasts with related requests
+    const { data: broadcastsData, error: broadcastsError } = await supabase
+      .from('custom_order_broadcasts')
+      .select(`
+        id,
+        status,
+        original_input_type,
+        original_text,
+        created_at,
+        pricing_deadline,
+        requests:custom_order_requests(id, status)
+      `)
+      .eq('customer_id', user?.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+
+    if (broadcastsError) {
+      console.error('Error fetching broadcasts:', broadcastsError)
+    }
+
+    if (broadcastsData) {
+      // Transform to include calculated counts
+      const transformedBroadcasts = broadcastsData.map(broadcast => ({
+        ...broadcast,
+        requests_count: broadcast.requests?.length || 0,
+        priced_count: broadcast.requests?.filter((r: { status: string }) => r.status === 'priced').length || 0,
+      }))
+      setCustomBroadcasts(transformedBroadcasts as CustomOrderBroadcast[])
     }
 
     setLoading(false)
@@ -248,8 +296,84 @@ export default function OrderHistoryPage() {
             </Button>
           </div>
 
+          {/* Pending Custom Orders Section */}
+          {customBroadcasts.length > 0 && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-800">
+                    {locale === 'ar' ? 'طلبات خاصة قيد التسعير' : 'Custom Orders Awaiting Pricing'}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {locale === 'ar'
+                      ? `${customBroadcasts.length} طلب في انتظار عروض الأسعار`
+                      : `${customBroadcasts.length} order${customBroadcasts.length > 1 ? 's' : ''} waiting for price quotes`}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {customBroadcasts.map((broadcast) => (
+                  <Link key={broadcast.id} href={`/${locale}/custom-order/${broadcast.id}`}>
+                    <Card className="hover:shadow-lg transition-all cursor-pointer border-2 border-primary/20 hover:border-primary/40 bg-primary/5">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
+                          {/* Icon */}
+                          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <Send className="w-7 h-7 text-primary" />
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <h3 className="font-bold text-lg truncate">
+                                {locale === 'ar' ? 'طلب خاص' : 'Custom Order'}
+                              </h3>
+                              <span className="text-sm text-primary font-medium whitespace-nowrap">
+                                {broadcast.priced_count > 0
+                                  ? `${broadcast.priced_count}/${broadcast.requests_count} ${locale === 'ar' ? 'عروض' : 'quotes'}`
+                                  : locale === 'ar' ? 'في الانتظار' : 'Waiting'}
+                              </span>
+                            </div>
+
+                            <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
+                              {broadcast.original_text
+                                ? broadcast.original_text.slice(0, 60) + (broadcast.original_text.length > 60 ? '...' : '')
+                                : broadcast.original_input_type === 'voice'
+                                ? (locale === 'ar' ? '🎤 تسجيل صوتي' : '🎤 Voice recording')
+                                : (locale === 'ar' ? '📷 صور' : '📷 Images')}
+                            </p>
+
+                            <div className="flex items-center justify-between">
+                              {/* Status Badge */}
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                <Clock className="w-3.5 h-3.5" />
+                                {locale === 'ar' ? 'قيد التسعير' : 'Awaiting Pricing'}
+                              </div>
+
+                              {/* Arrow */}
+                              <div className="text-primary">
+                                {isRTL ? (
+                                  <ChevronLeft className="w-5 h-5" />
+                                ) : (
+                                  <ChevronRight className="w-5 h-5" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Orders List */}
-          {filteredOrders.length === 0 ? (
+          {filteredOrders.length === 0 && customBroadcasts.length === 0 ? (
             <div className="text-center py-16">
               <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">
@@ -270,6 +394,14 @@ export default function OrderHistoryPage() {
                   {locale === 'ar' ? 'تصفح المتاجر' : 'Browse Stores'}
                 </Button>
               </Link>
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {filter === 'active'
+                ? locale === 'ar' ? 'لا توجد طلبات نشطة من المتاجر' : 'No active store orders'
+                : filter === 'completed'
+                ? locale === 'ar' ? 'لا توجد طلبات مكتملة' : 'No completed orders'
+                : null}
             </div>
           ) : (
             <div className="space-y-4">

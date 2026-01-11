@@ -34,12 +34,12 @@ const playNotificationSound = (type: 'notification' | 'new-order' = 'notificatio
 interface Notification {
   id: string
   customer_id: string
-  type: string // 'order_accepted', 'order_preparing', 'order_ready', 'order_delivered', 'order_cancelled', 'promo', 'system'
+  type: string // 'order_*', 'promo', 'system', 'CUSTOM_ORDER_PRICED' (UPPERCASE!)
   title_ar: string
   title_en: string
   body_ar: string | null
   body_en: string | null
-  related_order_id: string | null
+  related_order_id: string | null  // For custom orders: stores BROADCAST_ID
   related_provider_id: string | null
   is_read: boolean
   read_at: string | null

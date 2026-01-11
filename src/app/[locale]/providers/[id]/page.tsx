@@ -10,9 +10,10 @@ import { useFavorites } from '@/hooks/customer'
 import { useGuestLocation } from '@/lib/hooks/useGuestLocation'
 import { Button } from '@/components/ui/button'
 import { ProductCard, RatingStars, StatusBadge, EmptyState, ProductDetailModal } from '@/components/customer/shared'
-import { VoiceOrderFAB } from '@/components/customer/voice'
+// VoiceOrderFAB removed - voice ordering is only available inside custom order modal
 import { ChatFAB, SmartAssistant } from '@/components/customer/chat'
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout'
+import { CustomOrderWelcomeBanner } from '@/components/custom-order'
 import {
   Clock,
   Truck,
@@ -46,6 +47,17 @@ type Provider = {
   status: string
   commission_rate: number
   city_id: string | null
+  operation_mode?: 'standard' | 'custom' | 'hybrid'
+  custom_order_settings?: {
+    accepts_text?: boolean
+    accepts_voice?: boolean
+    accepts_image?: boolean
+    pricing_timeout_hours?: number
+    customer_approval_timeout_hours?: number
+    welcome_banner_enabled?: boolean
+    welcome_banner_text_ar?: string
+    welcome_banner_text_en?: string
+  }
 }
 
 type ProductVariant = {
@@ -601,6 +613,17 @@ export default function ProviderDetailPage() {
         </div>
       </div>
 
+      {/* Custom Order Welcome Banner - For hybrid/custom stores */}
+      {(provider.operation_mode === 'custom' || provider.operation_mode === 'hybrid') && (
+        <div className="px-4 py-3">
+          <CustomOrderWelcomeBanner
+            providerId={provider.id}
+            providerName={locale === 'ar' ? provider.name_ar : provider.name_en}
+            settings={provider.custom_order_settings}
+          />
+        </div>
+      )}
+
       {/* Reviews Section */}
       {reviews.length > 0 && (
         <div className="bg-white border-b">
@@ -696,8 +719,8 @@ export default function ProviderDetailPage() {
         </div>
       )}
 
-      {/* Category Navigation - Sticky */}
-      {categories.length > 0 && (
+      {/* Category Navigation - Sticky - Hide for custom-only mode */}
+      {categories.length > 0 && provider.operation_mode !== 'custom' && (
         <div
           ref={categoriesRef}
           className="bg-white border-b sticky top-14 z-40 shadow-sm"
@@ -732,102 +755,103 @@ export default function ProviderDetailPage() {
         </div>
       )}
 
-      {/* Menu */}
-      <div className="px-4 py-4">
-        {/* Search Bar */}
-        <div className="mb-4">
-          <div className="relative">
-            <Search className={`absolute top-1/2 -translate-y-1/2 ${locale === 'ar' ? 'right-3' : 'left-3'} w-5 h-5 text-slate-400`} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={locale === 'ar' ? 'ابحث في القائمة...' : 'Search menu...'}
-              className={`w-full h-11 bg-slate-100 rounded-full border border-slate-200 outline-none focus:ring-2 focus:ring-primary focus:bg-white focus:border-primary transition-all ${
-                locale === 'ar' ? 'pr-10 pl-10 text-right' : 'pl-10 pr-10 text-left'
-              }`}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className={`absolute top-1/2 -translate-y-1/2 ${locale === 'ar' ? 'left-3' : 'right-3'} w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600`}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900">
-            {locale === 'ar' ? 'القائمة' : 'Menu'}
-            {selectedCategory && categories.length > 0 && (
-              <span className="text-slate-400 font-normal text-base">
-                {' - '}
-                {locale === 'ar'
-                  ? categories.find((c) => c.id === selectedCategory)?.name_ar
-                  : categories.find((c) => c.id === selectedCategory)?.name_en}
-              </span>
-            )}
-          </h2>
-          <span className="text-sm text-slate-400">
-            {filteredMenuItems.length} {locale === 'ar' ? 'صنف' : 'items'}
-          </span>
-        </div>
-
-        {filteredMenuItems.length === 0 ? (
-          <EmptyState
-            icon="menu"
-            title={locale === 'ar' ? 'لا توجد عناصر' : 'No items found'}
-            description={
-              searchQuery
-                ? (locale === 'ar' ? `لا توجد نتائج للبحث عن "${searchQuery}"` : `No results found for "${searchQuery}"`)
-                : (locale === 'ar' ? 'لا توجد عناصر في هذا القسم حالياً' : 'No menu items available in this category')
-            }
-          />
-        ) : (
-          <>
-            {/* Available Items */}
-            <div className="space-y-3">
-              {availableItems.map((item) => (
-                <div key={item.id} onClick={() => handleProductClick(item)} className="cursor-pointer">
-                  <ProductCard
-                    product={item}
-                    quantity={getItemQuantity(item.id)}
-                    onQuantityChange={(qty) => handleQuantityChange(item, qty)}
-                    onSelectVariant={item.has_variants ? () => handleProductClick(item) : undefined}
-                    variant="horizontal"
-                    promotion={getProductPromotion(item.id)}
-                  />
-                </div>
-              ))}
+      {/* Menu - Hide for custom-only mode */}
+      {provider.operation_mode !== 'custom' && (
+        <div className="px-4 py-4">
+          {/* Search Bar */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search className={`absolute top-1/2 -translate-y-1/2 ${locale === 'ar' ? 'right-3' : 'left-3'} w-5 h-5 text-slate-400`} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={locale === 'ar' ? 'ابحث في القائمة...' : 'Search menu...'}
+                className={`w-full h-11 bg-slate-100 rounded-full border border-slate-200 outline-none focus:ring-2 focus:ring-primary focus:bg-white focus:border-primary transition-all ${
+                  locale === 'ar' ? 'pr-10 pl-10 text-right' : 'pl-10 pr-10 text-left'
+                }`}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className={`absolute top-1/2 -translate-y-1/2 ${locale === 'ar' ? 'left-3' : 'right-3'} w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
+          </div>
 
-            {/* Unavailable Items */}
-            {unavailableItems.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-sm font-medium text-slate-400 mb-3">
-                  {locale === 'ar' ? 'غير متاح حالياً' : 'Currently Unavailable'}
-                </h3>
-                <div className="space-y-3 opacity-50">
-                  {unavailableItems.map((item) => (
-                    <div key={item.id} onClick={() => handleProductClick(item)} className="cursor-pointer">
-                      <ProductCard
-                        product={item}
-                        variant="horizontal"
-                        showAddButton={false}
-                      />
-                    </div>
-                  ))}
-                </div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">
+              {locale === 'ar' ? 'القائمة' : 'Menu'}
+              {selectedCategory && categories.length > 0 && (
+                <span className="text-slate-400 font-normal text-base">
+                  {' - '}
+                  {locale === 'ar'
+                    ? categories.find((c) => c.id === selectedCategory)?.name_ar
+                    : categories.find((c) => c.id === selectedCategory)?.name_en}
+                </span>
+              )}
+            </h2>
+            <span className="text-sm text-slate-400">
+              {filteredMenuItems.length} {locale === 'ar' ? 'صنف' : 'items'}
+            </span>
+          </div>
+
+          {filteredMenuItems.length === 0 ? (
+            <EmptyState
+              icon="menu"
+              title={locale === 'ar' ? 'لا توجد عناصر' : 'No items found'}
+              description={
+                searchQuery
+                  ? (locale === 'ar' ? `لا توجد نتائج للبحث عن "${searchQuery}"` : `No results found for "${searchQuery}"`)
+                  : (locale === 'ar' ? 'لا توجد عناصر في هذا القسم حالياً' : 'No menu items available in this category')
+              }
+            />
+          ) : (
+            <>
+              {/* Available Items */}
+              <div className="space-y-3">
+                {availableItems.map((item) => (
+                  <div key={item.id} onClick={() => handleProductClick(item)} className="cursor-pointer">
+                    <ProductCard
+                      product={item}
+                      quantity={getItemQuantity(item.id)}
+                      onQuantityChange={(qty) => handleQuantityChange(item, qty)}
+                      onSelectVariant={item.has_variants ? () => handleProductClick(item) : undefined}
+                      variant="horizontal"
+                      promotion={getProductPromotion(item.id)}
+                    />
+                  </div>
+                ))}
               </div>
-            )}
-          </>
-        )}
-      </div>
 
-      {/* Voice Order FAB - Show only when cart is empty */}
-      {cartItemCount === 0 && <VoiceOrderFAB />}
+              {/* Unavailable Items */}
+              {unavailableItems.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-medium text-slate-400 mb-3">
+                    {locale === 'ar' ? 'غير متاح حالياً' : 'Currently Unavailable'}
+                  </h3>
+                  <div className="space-y-3 opacity-50">
+                    {unavailableItems.map((item) => (
+                      <div key={item.id} onClick={() => handleProductClick(item)} className="cursor-pointer">
+                        <ProductCard
+                          product={item}
+                          variant="horizontal"
+                          showAddButton={false}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Voice Order FAB removed - voice ordering is only available inside custom order modal */}
 
       {/* AI Smart Assistant - Always available */}
       <ChatFAB
@@ -904,6 +928,8 @@ export default function ProviderDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Custom Order Floating Button removed - customers can start orders from the welcome banner */}
 
       {/* Bottom Navigation */}
       <BottomNavigation />

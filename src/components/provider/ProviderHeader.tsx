@@ -15,6 +15,13 @@ import {
   Check,
   Trash2,
   AlertTriangle,
+  Mic,
+  Image as ImageIcon,
+  FileText,
+  DollarSign,
+  CheckCircle,
+  XCircle,
+  Clock,
 } from 'lucide-react'
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
 import type { User } from '@supabase/supabase-js'
@@ -133,8 +140,9 @@ export function ProviderHeader({
     setNotifications(prev => prev.filter(n => n.id !== notificationId))
   }
 
-  function getNotificationIcon(type: string) {
+  function getNotificationIcon(type: string, bodyAr?: string | null) {
     switch (type) {
+      // Standard orders
       case 'new_order':
         return <ShoppingBag className="w-5 h-5 text-yellow-600" />
       case 'new_message':
@@ -144,6 +152,24 @@ export function ProviderHeader({
       case 'new_refund_request':
       case 'refund_confirmed':
         return <AlertTriangle className="w-5 h-5 text-orange-600" />
+
+      // Custom order notifications - UPPERCASE types
+      case 'NEW_CUSTOM_ORDER':
+        // Check body for input type to show appropriate icon
+        if (bodyAr?.includes('صوتي')) {
+          return <Mic className="w-5 h-5 text-emerald-600" />
+        }
+        if (bodyAr?.includes('صور')) {
+          return <ImageIcon className="w-5 h-5 text-emerald-600" />
+        }
+        return <FileText className="w-5 h-5 text-emerald-600" />
+      case 'CUSTOM_ORDER_APPROVED':
+        return <CheckCircle className="w-5 h-5 text-green-600" />
+      case 'CUSTOM_ORDER_REJECTED':
+        return <XCircle className="w-5 h-5 text-red-500" />
+      case 'PRICING_EXPIRED':
+        return <Clock className="w-5 h-5 text-amber-600" />
+
       default:
         return <Bell className="w-5 h-5 text-slate-500" />
     }
@@ -151,6 +177,7 @@ export function ProviderHeader({
 
   function getNotificationBgColor(type: string) {
     switch (type) {
+      // Standard orders
       case 'new_order':
         return 'bg-yellow-100'
       case 'new_message':
@@ -160,6 +187,17 @@ export function ProviderHeader({
       case 'new_refund_request':
       case 'refund_confirmed':
         return 'bg-orange-100'
+
+      // Custom order notifications
+      case 'NEW_CUSTOM_ORDER':
+        return 'bg-emerald-100'
+      case 'CUSTOM_ORDER_APPROVED':
+        return 'bg-green-100'
+      case 'CUSTOM_ORDER_REJECTED':
+        return 'bg-red-100'
+      case 'PRICING_EXPIRED':
+        return 'bg-amber-100'
+
       default:
         return 'bg-slate-100'
     }
@@ -167,6 +205,7 @@ export function ProviderHeader({
 
   function getNotificationLink(notification: ProviderNotification) {
     switch (notification.type) {
+      // Standard orders
       case 'new_order':
       case 'new_message':
         return notification.related_order_id
@@ -177,6 +216,23 @@ export function ProviderHeader({
       case 'new_refund_request':
       case 'refund_confirmed':
         return `/${locale}/provider/refunds`
+
+      // Custom order notifications
+      // related_message_id stores request_id for custom orders
+      case 'NEW_CUSTOM_ORDER':
+      case 'CUSTOM_ORDER_REJECTED':
+      case 'PRICING_EXPIRED':
+        // Navigate to custom orders list or specific request
+        return notification.related_message_id
+          ? `/${locale}/provider/orders/custom?request=${notification.related_message_id}`
+          : `/${locale}/provider/orders/custom`
+
+      case 'CUSTOM_ORDER_APPROVED':
+        // After approval, we have real order_id
+        return notification.related_order_id
+          ? `/${locale}/provider/orders/${notification.related_order_id}`
+          : `/${locale}/provider/orders/custom`
+
       default:
         return `/${locale}/provider`
     }
@@ -313,7 +369,7 @@ export function ProviderHeader({
                             }`}
                           >
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${getNotificationBgColor(notification.type)}`}>
-                              {getNotificationIcon(notification.type)}
+                              {getNotificationIcon(notification.type, notification.body_ar)}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className={`text-sm font-medium ${!notification.is_read ? 'text-primary' : 'text-slate-900'}`}>

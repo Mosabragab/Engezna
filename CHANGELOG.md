@@ -4,6 +4,55 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [Session 25] - 2026-01-10
+
+### Custom Order Pricing System - Major UI Fixes
+
+#### Status Buttons System Rebuild
+- **Complete rebuild using inline styles** - Fixed status buttons (متوفر/غير متوفر/بديل) that were turning white when clicked
+- **Guaranteed color rendering** - Using direct hex colors (`#10b981` emerald, `#ef4444` red, `#f59e0b` amber) instead of Tailwind classes
+- **Hover effects with JavaScript** - `onMouseEnter/onMouseLeave` handlers for reliable hover states
+
+#### Deadline Validation System
+- **Prevent late submissions** - Added `isDeadlineExpired` check against `pricing_expires_at`
+- **Visual deadline indicator** - Shows red "انتهت المهلة!" warning when deadline passes
+- **Double-check in submit** - Prevents submission even if button state is bypassed
+
+#### Dark Mode Removal (Complete)
+- **Forced light mode** - Added `color-scheme: light` to globals.css
+- **Loading page fix** - Removed dark mode classes from custom order page
+- **Substitute dropdown fix** - Removed `dark:bg-slate-800` from SelectTrigger
+- **PricingItemRow cleanup** - Removed all dark mode classes
+
+#### UI Improvements
+- **Number input spinners removed** - CSS to hide `-webkit-outer-spin-button` and `-moz-appearance: textfield`
+- **Carton unit type added** - Added "كرتونة" (Carton) to UNIT_TYPES
+- **Duplicate copy prevention** - Copy/transfer button only works once per item using `Set<string>`
+- **Fill first empty item** - Copy button fills first empty pricing row instead of adding new
+- **Confirmation dialog button** - Fixed send button using inline styles (`#10b981`)
+- **Net profit display** - Shows commission rate and net profit for transparency
+- **Audio speed controls** - 1x, 1.5x, 2x playback for voice recordings
+- **Image zoom controls** - Zoom in/out for customer images
+
+### Files Modified
+- `src/components/merchant/pricing/PricingItemRow.tsx` - Status buttons rebuild (lines 333-440)
+- `src/components/merchant/pricing/PricingNotepad.tsx` - Deadline validation, dialog button fix
+- `src/app/globals.css` - Light mode forcing, spinner removal
+- `src/types/custom-order.ts` - Added carton unit type
+- `src/app/[locale]/provider/orders/custom/[id]/page.tsx` - Dark mode removal
+
+### Commits
+```
+befaa88 fix: Rebuild status buttons with inline styles and add deadline validation
+c21d4d1 fix: Force status button colors with !important
+51b8255 fix: Remove dark mode class from substitute unit dropdown
+9f5e5c9 fix: Fix visual bugs in pricing UI - buttons, inputs, and spinners
+64acec1 fix: Fix pricing UI issues - light mode, copy order, button colors
+d128280 fix: Improve pricing UI with light mode, carton unit, and duplicate prevention
+```
+
+---
+
 ## [Session 24] - 2026-01-04
 
 ### Documentation Cleanup & Organization

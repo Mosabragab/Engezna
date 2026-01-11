@@ -14,6 +14,13 @@
  */
 
 @layer base {
+  /* Force Light Mode - Prevent system dark mode from affecting the app */
+  :root,
+  html,
+  body {
+    color-scheme: light;
+  }
+
   :root {
     /* PRIMARY BRAND COLORS - Engezna Blue */
     --primary: 198 100% 44%;            /* #009DE0 Engezna Blue */
@@ -186,6 +193,24 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Pulsating Badge Animation - For urgent notifications */
+  .animate-pulse-badge {
+    animation: pulse-badge 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-badge {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.1);
+      box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+  }
 }
 
 /* GRADIENTS */
@@ -357,6 +382,20 @@ html.no-transition * {
   background-size: 1000px 100%;
 }
 
+/* Banner shine animation for custom order banner */
+@keyframes banner-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-banner-shine {
+  animation: banner-shine 3s ease-in-out infinite;
+}
+
 /* Loading skeleton */
 .skeleton {
   @apply animate-shimmer rounded-md bg-muted;
@@ -490,6 +529,31 @@ html.no-transition * {
   select {
     font-size: 16px !important;
   }
+}
+
+/* ========================================
+ * Number Input - Remove Spinners/Arrows
+ * Clean number inputs for pricing forms
+ * ======================================== */
+
+/* Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Clean number input styling for pricing */
+input[type="number"].price-input {
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Partner Landing Page Animations */

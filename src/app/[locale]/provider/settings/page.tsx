@@ -34,12 +34,45 @@ import {
   Loader2,
   Trash2,
   Package,
+  ClipboardList,
+  Mic,
+  Image as ImageIcon,
+  FileText,
+  Sparkles,
 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
+
+type CustomOrderSettings = {
+  accepts_text: boolean
+  accepts_voice: boolean
+  accepts_image: boolean
+  pricing_timeout_hours: number
+  auto_cancel_after_hours: number
+  customer_approval_timeout_hours: number
+  max_items_per_order: number
+  show_price_history: boolean
+  welcome_banner_enabled: boolean
+  welcome_banner_text_ar: string
+  welcome_banner_text_en: string
+}
+
+const DEFAULT_CUSTOM_ORDER_SETTINGS: CustomOrderSettings = {
+  accepts_text: true,
+  accepts_voice: true,
+  accepts_image: true,
+  pricing_timeout_hours: 2,
+  auto_cancel_after_hours: 24,
+  customer_approval_timeout_hours: 2,
+  max_items_per_order: 50,
+  show_price_history: true,
+  welcome_banner_enabled: true,
+  welcome_banner_text_ar: 'مرحباً! يمكنك إرسال طلبك بالصوت أو الصورة أو النص وسنقوم بتسعيره فوراً',
+  welcome_banner_text_en: 'Welcome! Send your order via voice, image, or text and we will price it immediately',
+}
 
 type Provider = {
   id: string
@@ -59,6 +92,9 @@ type Provider = {
   pickup_instructions_ar: string | null
   pickup_instructions_en: string | null
   estimated_pickup_time_min: number | null
+  // Custom order settings
+  operation_mode: 'standard' | 'custom' | 'hybrid'
+  custom_order_settings: CustomOrderSettings | null
 }
 
 
@@ -71,7 +107,7 @@ export default function ProviderSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [activeTab, setActiveTab] = useState<'store' | 'delivery' | 'pickup' | 'status' | 'account'>('store')
+  const [activeTab, setActiveTab] = useState<'store' | 'delivery' | 'pickup' | 'custom-orders' | 'status' | 'account'>('store')
   const [userEmail, setUserEmail] = useState<string | null>(null)
 
   // Password change states
@@ -109,6 +145,12 @@ export default function ProviderSettingsPage() {
   const [estimatedPickupTime, setEstimatedPickupTime] = useState('')
   const [savingPickup, setSavingPickup] = useState(false)
   const [savedPickup, setSavedPickup] = useState(false)
+
+  // Custom order settings
+  const [operationMode, setOperationMode] = useState<'standard' | 'custom' | 'hybrid'>('standard')
+  const [customOrderSettings, setCustomOrderSettings] = useState<CustomOrderSettings>(DEFAULT_CUSTOM_ORDER_SETTINGS)
+  const [savingCustomOrders, setSavingCustomOrders] = useState(false)
+  const [savedCustomOrders, setSavedCustomOrders] = useState(false)
 
   const checkAuthAndLoadProvider = useCallback(async () => {
     setLoading(true)
@@ -151,6 +193,13 @@ export default function ProviderSettingsPage() {
     setPickupInstructionsAr(providerData.pickup_instructions_ar || '')
     setPickupInstructionsEn(providerData.pickup_instructions_en || '')
     setEstimatedPickupTime(providerData.estimated_pickup_time_min?.toString() || '15')
+
+    // Load custom order settings
+    setOperationMode(providerData.operation_mode || 'standard')
+    setCustomOrderSettings({
+      ...DEFAULT_CUSTOM_ORDER_SETTINGS,
+      ...(providerData.custom_order_settings || {})
+    })
 
     setLoading(false)
   }, [locale, router])
@@ -273,6 +322,39 @@ export default function ProviderSettingsPage() {
     }
 
     setSavingPickup(false)
+  }
+
+  const handleSaveCustomOrders = async () => {
+    if (!provider) return
+
+    setSavingCustomOrders(true)
+    const supabase = createClient()
+
+    const updatedSettings = {
+      ...customOrderSettings,
+      enabled_at: operationMode !== 'standard' ? new Date().toISOString() : null,
+    }
+
+    const { error } = await supabase
+      .from('providers')
+      .update({
+        operation_mode: operationMode,
+        custom_order_settings: updatedSettings,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', provider.id)
+
+    if (!error) {
+      setSavedCustomOrders(true)
+      setTimeout(() => setSavedCustomOrders(false), 3000)
+      setProvider(prev => prev ? {
+        ...prev,
+        operation_mode: operationMode,
+        custom_order_settings: updatedSettings,
+      } : null)
+    }
+
+    setSavingCustomOrders(false)
   }
 
   const handleToggleStatus = async (newStatus: 'open' | 'closed' | 'temporarily_paused') => {
@@ -414,6 +496,7 @@ export default function ProviderSettingsPage() {
     { key: 'store', label_ar: 'معلومات المتجر', label_en: 'Store Info', icon: Store },
     { key: 'delivery', label_ar: 'التوصيل', label_en: 'Delivery', icon: Truck },
     { key: 'pickup', label_ar: 'الاستلام', label_en: 'Pickup', icon: Package },
+    { key: 'custom-orders', label_ar: 'الطلبات الخاصة', label_en: 'Custom Orders', icon: ClipboardList },
     { key: 'status', label_ar: 'حالة المتجر', label_en: 'Store Status', icon: Power },
     { key: 'account', label_ar: 'الحساب', label_en: 'Account', icon: User },
   ]
@@ -445,7 +528,7 @@ export default function ProviderSettingsPage() {
               return (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key as 'store' | 'delivery' | 'pickup' | 'status' | 'account')}
+                  onClick={() => setActiveTab(tab.key as 'store' | 'delivery' | 'pickup' | 'custom-orders' | 'status' | 'account')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
                     activeTab === tab.key
                       ? 'bg-primary text-white'
@@ -817,6 +900,369 @@ export default function ProviderSettingsPage() {
                       {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
                     </>
                   ) : savedPickup ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      {locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Custom Orders Tab */}
+          {activeTab === 'custom-orders' && (
+            <Card className="bg-white border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-slate-900 flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5" />
+                  {locale === 'ar' ? 'إعدادات الطلبات الخاصة' : 'Custom Orders Settings'}
+                </CardTitle>
+                <p className="text-sm text-slate-500 mt-1">
+                  {locale === 'ar'
+                    ? 'اسمح للعملاء بإرسال طلباتهم بالصوت أو الصورة أو النص، وقم بتسعيرها يدوياً'
+                    : 'Allow customers to send orders via voice, image, or text, and price them manually'}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Operation Mode Selection */}
+                <div className="space-y-4">
+                  <Label className="text-slate-900 font-medium text-base">
+                    {locale === 'ar' ? 'وضع التشغيل' : 'Operation Mode'}
+                  </Label>
+
+                  {/* Standard Mode */}
+                  <label
+                    className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start cursor-pointer ${
+                      operationMode === 'standard'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="operationMode"
+                      value="standard"
+                      checked={operationMode === 'standard'}
+                      onChange={(e) => setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
+                      operationMode === 'standard' ? 'border-primary bg-primary' : 'border-slate-300'
+                    }`}>
+                      {operationMode === 'standard' && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`font-semibold ${operationMode === 'standard' ? 'text-primary' : 'text-slate-700'}`}>
+                        {locale === 'ar' ? 'قياسي (قائمة المنتجات فقط)' : 'Standard (Product List Only)'}
+                      </p>
+                      <p className="text-sm text-slate-500 mt-1">
+                        {locale === 'ar'
+                          ? 'العملاء يطلبون من المنتجات المعروضة في القائمة فقط'
+                          : 'Customers order from displayed products only'}
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Hybrid Mode */}
+                  <label
+                    className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start cursor-pointer ${
+                      operationMode === 'hybrid'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="operationMode"
+                      value="hybrid"
+                      checked={operationMode === 'hybrid'}
+                      onChange={(e) => setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
+                      operationMode === 'hybrid' ? 'border-primary bg-primary' : 'border-slate-300'
+                    }`}>
+                      {operationMode === 'hybrid' && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <p className={`font-semibold ${operationMode === 'hybrid' ? 'text-primary' : 'text-slate-700'}`}>
+                          {locale === 'ar' ? 'هجين (قائمة المنتجات + الطلبات الخاصة)' : 'Hybrid (Products + Custom Orders)'}
+                        </p>
+                        <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                          {locale === 'ar' ? 'موصى به' : 'Recommended'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-500">
+                        {locale === 'ar'
+                          ? 'العملاء يمكنهم الطلب من قائمة المنتجات أو إرسال طلبات خاصة للتسعير'
+                          : 'Customers can order from products or send custom orders for pricing'}
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Custom Only Mode */}
+                  <label
+                    className={`w-full p-4 rounded-xl border transition-all flex items-start gap-4 text-start cursor-pointer ${
+                      operationMode === 'custom'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="operationMode"
+                      value="custom"
+                      checked={operationMode === 'custom'}
+                      onChange={(e) => setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
+                      operationMode === 'custom' ? 'border-primary bg-primary' : 'border-slate-300'
+                    }`}>
+                      {operationMode === 'custom' && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`font-semibold ${operationMode === 'custom' ? 'text-primary' : 'text-slate-700'}`}>
+                        {locale === 'ar' ? 'طلبات خاصة فقط' : 'Custom Orders Only'}
+                      </p>
+                      <p className="text-sm text-slate-500 mt-1">
+                        {locale === 'ar'
+                          ? 'إخفاء قائمة المنتجات، العملاء يرسلون طلباتهم فقط للتسعير'
+                          : 'Hide products, customers only send orders for pricing'}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Custom Order Settings - Only show if not standard */}
+                {operationMode !== 'standard' && (
+                  <>
+                    <hr className="border-slate-200" />
+
+                    {/* Input Types */}
+                    <div className="space-y-4">
+                      <Label className="text-slate-900 font-medium">
+                        {locale === 'ar' ? 'طرق استقبال الطلبات' : 'Order Input Methods'}
+                      </Label>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* Text */}
+                        <button
+                          onClick={() => setCustomOrderSettings(s => ({ ...s, accepts_text: !s.accepts_text }))}
+                          className={`p-4 rounded-xl border transition-all ${
+                            customOrderSettings.accepts_text
+                              ? 'border-primary bg-primary/5'
+                              : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <FileText className={`w-6 h-6 mx-auto mb-2 ${
+                            customOrderSettings.accepts_text ? 'text-primary' : 'text-slate-400'
+                          }`} />
+                          <p className={`font-medium ${
+                            customOrderSettings.accepts_text ? 'text-primary' : 'text-slate-600'
+                          }`}>
+                            {locale === 'ar' ? 'نصي' : 'Text'}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {locale === 'ar' ? 'كتابة الطلب' : 'Type order'}
+                          </p>
+                        </button>
+
+                        {/* Voice */}
+                        <button
+                          onClick={() => setCustomOrderSettings(s => ({ ...s, accepts_voice: !s.accepts_voice }))}
+                          className={`p-4 rounded-xl border transition-all ${
+                            customOrderSettings.accepts_voice
+                              ? 'border-primary bg-primary/5'
+                              : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <Mic className={`w-6 h-6 mx-auto mb-2 ${
+                            customOrderSettings.accepts_voice ? 'text-primary' : 'text-slate-400'
+                          }`} />
+                          <p className={`font-medium ${
+                            customOrderSettings.accepts_voice ? 'text-primary' : 'text-slate-600'
+                          }`}>
+                            {locale === 'ar' ? 'صوتي' : 'Voice'}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {locale === 'ar' ? 'تسجيل صوتي' : 'Voice recording'}
+                          </p>
+                        </button>
+
+                        {/* Image */}
+                        <button
+                          onClick={() => setCustomOrderSettings(s => ({ ...s, accepts_image: !s.accepts_image }))}
+                          className={`p-4 rounded-xl border transition-all ${
+                            customOrderSettings.accepts_image
+                              ? 'border-primary bg-primary/5'
+                              : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <ImageIcon className={`w-6 h-6 mx-auto mb-2 ${
+                            customOrderSettings.accepts_image ? 'text-primary' : 'text-slate-400'
+                          }`} />
+                          <p className={`font-medium ${
+                            customOrderSettings.accepts_image ? 'text-primary' : 'text-slate-600'
+                          }`}>
+                            {locale === 'ar' ? 'صور' : 'Image'}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {locale === 'ar' ? 'صور المنتجات' : 'Product images'}
+                          </p>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Timing Settings */}
+                    <div className="space-y-4">
+                      <Label className="text-slate-900 font-medium">
+                        {locale === 'ar' ? 'إعدادات الوقت' : 'Timing Settings'}
+                      </Label>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Pricing Timeout */}
+                        <div>
+                          <Label className="text-sm text-slate-500 mb-1 flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {locale === 'ar' ? 'مهلة التسعير (ساعات)' : 'Pricing Timeout (hours)'}
+                          </Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="48"
+                            value={customOrderSettings.pricing_timeout_hours}
+                            onChange={(e) => setCustomOrderSettings(s => ({
+                              ...s,
+                              pricing_timeout_hours: parseInt(e.target.value) || 2
+                            }))}
+                            className="bg-white border-slate-200"
+                          />
+                          <p className="text-xs text-slate-400 mt-1">
+                            {locale === 'ar' ? 'الوقت المتاح لك لتسعير الطلب' : 'Time available to price the order'}
+                          </p>
+                        </div>
+
+                        {/* Customer Approval Timeout */}
+                        <div>
+                          <Label className="text-sm text-slate-500 mb-1 flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {locale === 'ar' ? 'مهلة موافقة العميل (ساعات)' : 'Customer Approval Timeout (hours)'}
+                          </Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="24"
+                            value={customOrderSettings.customer_approval_timeout_hours}
+                            onChange={(e) => setCustomOrderSettings(s => ({
+                              ...s,
+                              customer_approval_timeout_hours: parseInt(e.target.value) || 2
+                            }))}
+                            className="bg-white border-slate-200"
+                          />
+                          <p className="text-xs text-slate-400 mt-1">
+                            {locale === 'ar' ? 'الوقت المتاح للعميل للموافقة على السعر' : 'Time for customer to approve price'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Welcome Banner */}
+                    <div className="space-y-4">
+                      <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <Label className="text-slate-900 font-medium">
+                          {locale === 'ar' ? 'بانر الترحيب' : 'Welcome Banner'}
+                        </Label>
+                        <button
+                          type="button"
+                          onClick={() => setCustomOrderSettings(s => ({ ...s, welcome_banner_enabled: !s.welcome_banner_enabled }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            customOrderSettings.welcome_banner_enabled ? 'bg-primary' : 'bg-slate-300'
+                          }`}
+                          dir="ltr"
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              customOrderSettings.welcome_banner_enabled ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {customOrderSettings.welcome_banner_enabled && (
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="text-sm text-slate-500 mb-1">
+                              {locale === 'ar' ? 'نص البانر (عربي)' : 'Banner Text (Arabic)'}
+                            </Label>
+                            <Textarea
+                              value={customOrderSettings.welcome_banner_text_ar}
+                              onChange={(e) => setCustomOrderSettings(s => ({
+                                ...s,
+                                welcome_banner_text_ar: e.target.value
+                              }))}
+                              className="bg-white border-slate-200"
+                              dir="rtl"
+                              rows={2}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm text-slate-500 mb-1">
+                              {locale === 'ar' ? 'نص البانر (إنجليزي)' : 'Banner Text (English)'}
+                            </Label>
+                            <Textarea
+                              value={customOrderSettings.welcome_banner_text_en}
+                              onChange={(e) => setCustomOrderSettings(s => ({
+                                ...s,
+                                welcome_banner_text_en: e.target.value
+                              }))}
+                              className="bg-white border-slate-200"
+                              dir="ltr"
+                              rows={2}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info Box */}
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                      <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+                        <Sparkles className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
+                        <div className="text-sm text-emerald-800">
+                          <p className="font-medium mb-1">
+                            {locale === 'ar' ? 'نظام الطلب الخاص' : 'Custom Order System'}
+                          </p>
+                          <ul className={`space-y-1 text-emerald-700 ${isRTL ? 'list-disc list-inside' : 'list-disc list-inside'}`}>
+                            <li>{locale === 'ar' ? 'العميل يرسل طلبه (نص/صوت/صورة)' : 'Customer sends order (text/voice/image)'}</li>
+                            <li>{locale === 'ar' ? 'تقوم بتسعير الطلب وإرساله للعميل' : 'You price the order and send it to customer'}</li>
+                            <li>{locale === 'ar' ? 'العميل يوافق أو يرفض السعر' : 'Customer approves or rejects the price'}</li>
+                            <li>{locale === 'ar' ? 'أول متجر يقدم سعر مناسب يفوز بالطلب!' : 'First store to offer a good price wins!'}</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <Button
+                  className="w-full"
+                  onClick={handleSaveCustomOrders}
+                  disabled={savingCustomOrders}
+                >
+                  {savingCustomOrders ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
+                    </>
+                  ) : savedCustomOrders ? (
                     <>
                       <Check className="w-4 h-4 mr-2" />
                       {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}
