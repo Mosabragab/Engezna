@@ -454,7 +454,7 @@ export default function CustomOrderPricingPage() {
 
   // Handle cancel
   const handleCancel = () => {
-    router.push(`/${locale}/provider/orders?tab=custom`)
+    router.push(`/${locale}/provider/orders/custom`)
   }
 
   // Loading state
@@ -489,7 +489,7 @@ export default function CustomOrderPricingPage() {
               ? 'لم نتمكن من تحميل تفاصيل الطلب. قد يكون الطلب قد انتهت صلاحيته أو تم إلغاؤه.'
               : 'We could not load the order details. The order may have expired or been cancelled.'}
           </p>
-          <Button onClick={() => router.push(`/${locale}/provider/orders?tab=custom`)}>
+          <Button onClick={() => router.push(`/${locale}/provider/orders/custom`)}>
             {isRTL ? <ArrowRight className="w-4 h-4 me-2" /> : <ArrowLeft className="w-4 h-4 me-2" />}
             {isRTL ? 'العودة للطلبات' : 'Back to Orders'}
           </Button>
@@ -516,7 +516,7 @@ export default function CustomOrderPricingPage() {
               ? 'حالة الطلب الحالية: ' + request.status
               : 'Current status: ' + request.status}
           </p>
-          <Button onClick={() => router.push(`/${locale}/provider/orders?tab=custom`)}>
+          <Button onClick={() => router.push(`/${locale}/provider/orders/custom`)}>
             {isRTL ? <ArrowRight className="w-4 h-4 me-2" /> : <ArrowLeft className="w-4 h-4 me-2" />}
             {isRTL ? 'العودة للطلبات' : 'Back to Orders'}
           </Button>
@@ -538,7 +538,7 @@ export default function CustomOrderPricingPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push(`/${locale}/provider/orders?tab=custom`)}
+          onClick={() => router.push(`/${locale}/provider/orders/custom`)}
         >
           {isRTL ? <ArrowRight className="w-4 h-4 me-2" /> : <ArrowLeft className="w-4 h-4 me-2" />}
           {isRTL ? 'العودة للطلبات' : 'Back to Orders'}
