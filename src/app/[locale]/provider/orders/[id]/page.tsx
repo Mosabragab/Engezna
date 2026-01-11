@@ -141,6 +141,15 @@ export default function ProviderOrderDetailPage() {
   const searchParams = useSearchParams()
   const isRTL = locale === 'ar'
   const openChat = searchParams.get('openChat') === 'true'
+  const fromCustom = searchParams.get('from') === 'custom'
+
+  // Determine back URL based on where user came from
+  const backUrl = fromCustom
+    ? `/${locale}/provider/orders/custom`
+    : `/${locale}/provider/orders`
+  const backLabel = fromCustom
+    ? (locale === 'ar' ? 'الطلبات الخاصة' : 'Custom Orders')
+    : (locale === 'ar' ? 'الطلبات' : 'Orders')
 
   const [order, setOrder] = useState<Order | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
@@ -186,7 +195,7 @@ export default function ProviderOrderDetailPage() {
       .single()
 
     if (orderError || !orderData) {
-      router.push(`/${locale}/provider/orders`)
+      router.push(backUrl)
       return
     }
 
@@ -212,7 +221,7 @@ export default function ProviderOrderDetailPage() {
     }
 
     setLoading(false)
-  }, [locale, orderId, router])
+  }, [locale, orderId, router, backUrl])
 
   useEffect(() => {
     checkAuthAndLoadOrder()
@@ -363,9 +372,9 @@ export default function ProviderOrderDetailPage() {
           <p className="text-xl text-slate-600 mb-4">
             {locale === 'ar' ? 'الطلب غير موجود' : 'Order not found'}
           </p>
-          <Link href={`/${locale}/provider/orders`}>
+          <Link href={backUrl}>
             <Button>
-              {locale === 'ar' ? 'العودة للطلبات' : 'Back to Orders'}
+              {backLabel}
             </Button>
           </Link>
         </div>
@@ -385,11 +394,11 @@ export default function ProviderOrderDetailPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
-              href={`/${locale}/provider/orders`}
+              href={backUrl}
               className="flex items-center gap-2 text-slate-500 hover:text-slate-900"
             >
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
-              <span>{locale === 'ar' ? 'الطلبات' : 'Orders'}</span>
+              <span>{backLabel}</span>
             </Link>
             <span className="font-mono font-bold text-primary">
               #{order.order_number || order.id.slice(0, 8).toUpperCase()}

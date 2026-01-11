@@ -50,12 +50,16 @@ export default function CustomOrderPricingPage() {
         *,
         items:custom_order_items(*),
         broadcast:custom_order_broadcasts(
+          id,
+          customer_id,
           original_text,
           voice_url,
           image_urls,
           transcribed_text,
           customer_notes,
-          customer:profiles!custom_order_broadcasts_customer_id_fkey(
+          delivery_address,
+          order_type,
+          customer:profiles(
             id,
             full_name,
             phone
@@ -259,29 +263,31 @@ export default function CustomOrderPricingPage() {
 
       // ═══════════════════════════════════════════════════════════════════════
       // ATOMIC UPDATE - Lock the request before creating order
-      // Use 'pricing_in_progress' status to prevent race conditions
-      // The 'priced' status will be set AFTER totals are calculated
+      // Use RPC function to bypass RLS and ensure atomic locking
       // ═══════════════════════════════════════════════════════════════════════
 
-      // First, atomically update request to prevent race conditions
-      // Only update if status is still 'pending' (optimistic locking)
-      // Using temporary status to avoid triggering notification prematurely
+      // First, atomically update request using RPC function
+      // This bypasses RLS and ensures proper authorization
       const { data: lockResult, error: lockError } = await supabase
-        .from('custom_order_requests')
-        .update({
-          status: 'pricing_in_progress',  // Temporary status, won't trigger notification
-          updated_at: new Date().toISOString()
+        .rpc('lock_custom_order_request_for_pricing', {
+          p_request_id: request.id,
+          p_provider_id: providerId
         })
-        .eq('id', request.id)
-        .eq('status', 'pending') // Only update if still pending!
-        .select('id')
-        .single()
 
-      if (lockError || !lockResult) {
+      if (lockError) {
+        console.error('Lock RPC error:', lockError)
         throw new Error(
           isRTL
-            ? 'تم تسعير هذا الطلب بالفعل. يرجى تحديث الصفحة.'
-            : 'This request has already been priced. Please refresh the page.'
+            ? `فشل قفل الطلب: ${lockError.message}`
+            : `Failed to lock request: ${lockError.message}`
+        )
+      }
+
+      // Check RPC result
+      const lockResponse = lockResult as { success: boolean; error?: string; message?: string }
+      if (!lockResponse?.success) {
+        throw new Error(
+          lockResponse?.error || (isRTL ? 'فشل قفل الطلب للتسعير' : 'Failed to lock request for pricing')
         )
       }
 
@@ -301,16 +307,45 @@ export default function CustomOrderPricingPage() {
       const total = subtotal + deliveryFee
 
       // Create order
-      // Note: order_type defaults to 'pickup' for custom orders
-      // Customer will select delivery method when approving the order
+      // order_type and delivery_address come from the broadcast (set by customer)
+      // Use type assertion since these fields are fetched but TypeScript doesn't know the exact shape
+      const broadcastData = request.broadcast as {
+        customer_id?: string;
+        order_type?: 'delivery' | 'pickup';
+        delivery_address?: Record<string, unknown>;
+        customer?: { id: string; full_name: string; phone: string | null };
+        [key: string]: unknown;
+      } | null
+
+      // Get customer_id from broadcast - try customer.id first, then customer_id
+      const customerId = broadcastData?.customer?.id || broadcastData?.customer_id
+      if (!customerId) {
+        throw new Error(
+          isRTL
+            ? 'لم يتم العثور على بيانات العميل'
+            : 'Customer data not found'
+        )
+      }
+
+      const broadcastOrderType = broadcastData?.order_type || 'delivery'
+      const broadcastDeliveryAddress = broadcastData?.delivery_address || {
+        // Default empty address structure for custom orders
+        // Will be updated when customer approves and selects delivery
+        address: '',
+        city: '',
+        district: '',
+        notes: 'طلب خاص - العنوان سيُحدد عند الموافقة'
+      }
+
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
           provider_id: providerId,
-          customer_id: request.broadcast?.customer?.id,
+          customer_id: customerId,
           order_flow: 'custom',
           broadcast_id: request.broadcast_id,
-          order_type: 'pickup', // Default for custom orders - customer chooses later
+          order_type: broadcastOrderType,
+          delivery_address: broadcastDeliveryAddress,
           status: 'pending',
           payment_status: 'pending',
           subtotal,
@@ -327,7 +362,12 @@ export default function CustomOrderPricingPage() {
           .from('custom_order_requests')
           .update({ status: 'pending' })
           .eq('id', request.id)
-        throw new Error(orderError?.message || 'Failed to create order')
+        console.error('Order creation error:', orderError)
+        throw new Error(
+          isRTL
+            ? `فشل إنشاء الطلب: ${orderError?.message || 'خطأ غير معروف'}`
+            : `Failed to create order: ${orderError?.message || 'Unknown error'}`
+        )
       }
 
       // Insert items
@@ -376,7 +416,7 @@ export default function CustomOrderPricingPage() {
         .filter((item) => item.availability_status === 'available' && item.item_name_ar)
         .map((item) => ({
           provider_id: providerId,
-          customer_id: request.broadcast?.customer?.id,
+          customer_id: customerId,
           item_name_normalized: item.item_name_ar.toLowerCase().trim(),
           item_name_ar: item.item_name_ar,
           item_name_en: item.item_name_en,
@@ -394,14 +434,18 @@ export default function CustomOrderPricingPage() {
         })
       }
 
-      // Success - redirect back to orders list
-      router.push(`/${locale}/provider/orders?tab=custom&success=priced`)
+      // Success - redirect back to custom orders list
+      router.push(`/${locale}/provider/orders/custom?success=priced`)
     } catch (err) {
       console.error('Error submitting pricing:', err)
+      // Show specific error message if available
+      const errorMessage = err instanceof Error ? err.message : String(err)
       setError(
-        isRTL
-          ? 'حدث خطأ أثناء إرسال التسعيرة'
-          : 'An error occurred while submitting the quote'
+        errorMessage.includes('العميل') || errorMessage.includes('Customer') || errorMessage.includes('فشل') || errorMessage.includes('Failed')
+          ? errorMessage
+          : isRTL
+            ? `حدث خطأ أثناء إرسال التسعيرة: ${errorMessage}`
+            : `An error occurred while submitting the quote: ${errorMessage}`
       )
     } finally {
       setSubmitting(false)
@@ -410,7 +454,7 @@ export default function CustomOrderPricingPage() {
 
   // Handle cancel
   const handleCancel = () => {
-    router.push(`/${locale}/provider/orders?tab=custom`)
+    router.push(`/${locale}/provider/orders/custom`)
   }
 
   // Loading state
@@ -445,7 +489,7 @@ export default function CustomOrderPricingPage() {
               ? 'لم نتمكن من تحميل تفاصيل الطلب. قد يكون الطلب قد انتهت صلاحيته أو تم إلغاؤه.'
               : 'We could not load the order details. The order may have expired or been cancelled.'}
           </p>
-          <Button onClick={() => router.push(`/${locale}/provider/orders?tab=custom`)}>
+          <Button onClick={() => router.push(`/${locale}/provider/orders/custom`)}>
             {isRTL ? <ArrowRight className="w-4 h-4 me-2" /> : <ArrowLeft className="w-4 h-4 me-2" />}
             {isRTL ? 'العودة للطلبات' : 'Back to Orders'}
           </Button>
@@ -472,7 +516,7 @@ export default function CustomOrderPricingPage() {
               ? 'حالة الطلب الحالية: ' + request.status
               : 'Current status: ' + request.status}
           </p>
-          <Button onClick={() => router.push(`/${locale}/provider/orders?tab=custom`)}>
+          <Button onClick={() => router.push(`/${locale}/provider/orders/custom`)}>
             {isRTL ? <ArrowRight className="w-4 h-4 me-2" /> : <ArrowLeft className="w-4 h-4 me-2" />}
             {isRTL ? 'العودة للطلبات' : 'Back to Orders'}
           </Button>
@@ -494,7 +538,7 @@ export default function CustomOrderPricingPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push(`/${locale}/provider/orders?tab=custom`)}
+          onClick={() => router.push(`/${locale}/provider/orders/custom`)}
         >
           {isRTL ? <ArrowRight className="w-4 h-4 me-2" /> : <ArrowLeft className="w-4 h-4 me-2" />}
           {isRTL ? 'العودة للطلبات' : 'Back to Orders'}

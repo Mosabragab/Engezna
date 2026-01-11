@@ -3,8 +3,10 @@
 import { usePathname } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { useState, useEffect, useCallback } from 'react'
 import { Home, Search, ShoppingCart, ClipboardList, Heart } from 'lucide-react'
 import { useCart } from '@/lib/store/cart'
+import { createClient } from '@/lib/supabase/client'
 
 interface NavItem {
   id: string
@@ -18,8 +20,78 @@ export function BottomNavigation() {
   const pathname = usePathname()
   const t = useTranslations('bottomNav')
   const { cart } = useCart()
+  const [pendingQuotes, setPendingQuotes] = useState(0)
 
   const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+
+  // Load pending quotes count (custom orders awaiting customer approval)
+  const loadPendingQuotes = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Count priced custom order requests for this customer
+    // Query requests directly and join to broadcasts to check ownership
+    const { count, error } = await supabase
+      .from('custom_order_requests')
+      .select('id, custom_order_broadcasts!inner(customer_id, status)', { count: 'exact', head: true })
+      .eq('status', 'priced')
+      .eq('custom_order_broadcasts.customer_id', user.id)
+      .eq('custom_order_broadcasts.status', 'active')
+
+    if (error) {
+      console.error('Error loading pending quotes:', error)
+      return
+    }
+
+    setPendingQuotes(count || 0)
+  }, [])
+
+  // Load on mount and set up realtime subscription
+  useEffect(() => {
+    loadPendingQuotes()
+
+    const supabase = createClient()
+
+    // Subscribe to custom_order_requests status changes
+    const requestsChannel = supabase
+      .channel('customer-pending-quotes-requests')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'custom_order_requests',
+        },
+        () => {
+          // Reload count when any request changes
+          loadPendingQuotes()
+        }
+      )
+      .subscribe()
+
+    // Subscribe to broadcast status changes (e.g., when completed)
+    const broadcastsChannel = supabase
+      .channel('customer-pending-quotes-broadcasts')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'custom_order_broadcasts',
+        },
+        () => {
+          // Reload count when any broadcast changes
+          loadPendingQuotes()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(requestsChannel)
+      supabase.removeChannel(broadcastsChannel)
+    }
+  }, [loadPendingQuotes])
 
   const navItems: NavItem[] = [
     { id: 'home', href: `/${locale}`, icon: Home, labelKey: 'home' },
@@ -66,6 +138,12 @@ export function BottomNavigation() {
                   {isCart && cartItemsCount > 0 && (
                     <span className="absolute -top-1 -end-1 min-w-[18px] h-[18px] flex items-center justify-center bg-gradient-to-r from-primary to-primary/90 text-white text-[10px] font-bold rounded-full px-1 shadow-sm shadow-primary/30">
                       {cartItemsCount > 9 ? '9+' : cartItemsCount}
+                    </span>
+                  )}
+                  {/* Orders Badge - Pending Quotes */}
+                  {item.id === 'orders' && pendingQuotes > 0 && (
+                    <span className="absolute -top-1 -end-1 min-w-[18px] h-[18px] flex items-center justify-center bg-gradient-to-r from-amber-500 to-amber-400 text-white text-[10px] font-bold rounded-full px-1 shadow-sm shadow-amber-500/30 animate-pulse">
+                      {pendingQuotes > 9 ? '9+' : pendingQuotes}
                     </span>
                   )}
                 </div>

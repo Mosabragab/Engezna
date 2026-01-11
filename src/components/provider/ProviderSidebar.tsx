@@ -68,6 +68,7 @@ interface ProviderSidebarProps {
   onHoldOrders?: number // الطلبات المعلقة - مرتبطة بالمحرك المالي
   pendingComplaints?: number
   permissions?: StaffPermissions
+  operationMode?: 'standard' | 'custom' | 'hybrid' // وضع التشغيل: قياسي / خاص / هجين
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -85,6 +86,7 @@ export function ProviderSidebar({
   onHoldOrders = 0,
   pendingComplaints = 0,
   permissions,
+  operationMode = 'standard', // Default to standard for backward compatibility
 }: ProviderSidebarProps) {
   const locale = useLocale()
   const pathname = usePathname()
@@ -122,21 +124,26 @@ export function ProviderSidebar({
 
     // Orders - requires canManageOrders
     if (perms.canManageOrders) {
-      operationsItems.push({
-        icon: ShoppingBag,
-        label: { ar: 'الطلبات', en: 'Orders' },
-        path: `/${locale}/provider/orders`,
-        badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
-        badgeColor: 'red',
-      })
-      // Custom Orders - الطلبات الخاصة (Red badge for high visibility)
-      operationsItems.push({
-        icon: ClipboardList,
-        label: { ar: 'الطلبات الخاصة', en: 'Custom Orders' },
-        path: `/${locale}/provider/orders/custom`,
-        badge: pendingCustomOrders > 0 ? pendingCustomOrders.toString() : undefined,
-        badgeColor: 'red',
-      })
+      // Standard Orders - only show for 'standard' or 'hybrid' modes
+      if (operationMode === 'standard' || operationMode === 'hybrid') {
+        operationsItems.push({
+          icon: ShoppingBag,
+          label: { ar: 'الطلبات', en: 'Orders' },
+          path: `/${locale}/provider/orders`,
+          badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
+          badgeColor: 'red',
+        })
+      }
+      // Custom Orders - only show for 'custom' or 'hybrid' modes
+      if (operationMode === 'custom' || operationMode === 'hybrid') {
+        operationsItems.push({
+          icon: ClipboardList,
+          label: { ar: 'الطلبات الخاصة', en: 'Custom Orders' },
+          path: `/${locale}/provider/orders/custom`,
+          badge: pendingCustomOrders > 0 ? pendingCustomOrders.toString() : undefined,
+          badgeColor: 'red',
+        })
+      }
       operationsItems.push({
         icon: RefreshCw,
         label: { ar: 'المرتجعات', en: 'Refunds' },
@@ -228,27 +235,14 @@ export function ProviderSidebar({
     // ─────────────────────────────────────────────────────────────────────────
     // مجموعة الإعدادات (Settings)
     // ─────────────────────────────────────────────────────────────────────────
+    // تم دمج ساعات العمل وإدارة الفريق في صفحة إعدادات المتجر
     const settingsItems: NavItem[] = [
       {
-        icon: Clock,
-        label: { ar: 'ساعات العمل', en: 'Working Hours' },
-        path: `/${locale}/provider/store-hours`,
-      },
-      {
         icon: Settings,
-        label: { ar: 'الملف الشخصي', en: 'Profile' },
+        label: { ar: 'إعدادات المتجر', en: 'Store Settings' },
         path: `/${locale}/provider/settings`,
       },
     ]
-
-    // Team Management - only for owners
-    if (perms.canManageTeam) {
-      settingsItems.push({
-        icon: Users,
-        label: { ar: 'إدارة الفريق', en: 'Team Management' },
-        path: `/${locale}/provider/team`,
-      })
-    }
 
     groups.push({
       title: { ar: 'الإعدادات', en: 'Settings' },

@@ -235,10 +235,13 @@ export default function NotificationsPage() {
               }
 
               // Handle custom order notifications - navigate to comparison page
-              // related_order_id contains BROADCAST_ID (Smart Reuse!)
-              if (isCustomOrderNotification && notification.related_order_id) {
-                router.push(`/${locale}/orders/custom-review/${notification.related_order_id}`)
-                return
+              // broadcast_id is stored in data column
+              if (isCustomOrderNotification) {
+                const broadcastId = notification.data?.broadcast_id
+                if (broadcastId) {
+                  router.push(`/${locale}/orders/custom-review/${broadcastId}`)
+                  return
+                }
               }
 
               // Handle standard order notifications

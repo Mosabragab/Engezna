@@ -136,6 +136,7 @@ export default function ProviderOrdersPage() {
     const supabase = createClient()
 
     // Fetch orders with items in a single query using join
+    // IMPORTANT: Exclude custom orders - they are managed in the custom orders section
     const { data: ordersData, error } = await supabase
       .from('orders')
       .select(`
@@ -151,6 +152,7 @@ export default function ProviderOrdersPage() {
         delivery_address,
         customer_notes,
         created_at,
+        order_flow,
         profiles:customer_id (
           full_name,
           phone
@@ -165,6 +167,7 @@ export default function ProviderOrdersPage() {
         )
       `)
       .eq('provider_id', provId)
+      .or('order_flow.is.null,order_flow.eq.standard') // Exclude custom orders
       .order('created_at', { ascending: false })
       .limit(50)
 
