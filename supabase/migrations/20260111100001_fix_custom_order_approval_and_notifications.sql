@@ -229,6 +229,7 @@ ALTER TABLE custom_order_requests DROP CONSTRAINT IF EXISTS custom_order_request
 ALTER TABLE custom_order_requests ADD CONSTRAINT custom_order_requests_status_check
   CHECK (status IN (
     'pending',
+    'pricing_in_progress', -- Important! Used when provider locks order for pricing
     'priced',
     'approved',         -- Simpler version
     'rejected',         -- Simpler version
