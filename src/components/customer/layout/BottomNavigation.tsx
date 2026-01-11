@@ -31,10 +31,12 @@ export function BottomNavigation() {
     if (!user) return
 
     // Count priced custom order requests for this customer
+    // Only count active broadcasts (not completed, expired, or cancelled)
     const { count } = await supabase
       .from('custom_order_broadcasts')
       .select('id, custom_order_requests!inner(status)', { count: 'exact', head: true })
       .eq('customer_id', user.id)
+      .eq('status', 'active')
       .eq('custom_order_requests.status', 'priced')
 
     setPendingQuotes(count || 0)
@@ -47,8 +49,8 @@ export function BottomNavigation() {
     const supabase = createClient()
 
     // Subscribe to custom_order_requests status changes
-    const channel = supabase
-      .channel('customer-pending-quotes')
+    const requestsChannel = supabase
+      .channel('customer-pending-quotes-requests')
       .on(
         'postgres_changes',
         {
@@ -63,8 +65,26 @@ export function BottomNavigation() {
       )
       .subscribe()
 
+    // Subscribe to broadcast status changes (e.g., when completed)
+    const broadcastsChannel = supabase
+      .channel('customer-pending-quotes-broadcasts')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'custom_order_broadcasts',
+        },
+        () => {
+          // Reload count when any broadcast changes
+          loadPendingQuotes()
+        }
+      )
+      .subscribe()
+
     return () => {
-      supabase.removeChannel(channel)
+      supabase.removeChannel(requestsChannel)
+      supabase.removeChannel(broadcastsChannel)
     }
   }, [loadPendingQuotes])
 

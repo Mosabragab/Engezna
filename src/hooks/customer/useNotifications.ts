@@ -39,11 +39,18 @@ interface Notification {
   title_en: string
   body_ar: string | null
   body_en: string | null
-  related_order_id: string | null  // For custom orders: stores BROADCAST_ID
+  related_order_id: string | null  // For standard orders
   related_provider_id: string | null
   is_read: boolean
   read_at: string | null
   created_at: string
+  data: {
+    broadcast_id?: string
+    request_id?: string
+    provider_id?: string
+    total?: number
+    is_custom_order?: boolean
+  } | null  // Extra data for custom orders
 }
 
 export function useNotifications() {

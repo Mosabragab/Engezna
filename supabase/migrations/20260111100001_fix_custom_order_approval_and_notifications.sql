@@ -4,12 +4,24 @@
 --
 -- This migration fixes:
 -- 1. Customer cannot approve/reject pricing (RLS blocks update)
--- 2. Notification types mismatch (lowercase vs UPPERCASE)
--- 3. Provider notification links to wrong page
+-- 2. Missing 'data' column in notification tables
+-- 3. Notification type mismatch (lowercase vs UPPERCASE)
 --
--- @version 1.0
+-- @version 2.0
 -- @date January 2026
 -- ============================================================================
+
+-- ============================================================================
+-- 0. Add missing 'data' column to notification tables
+-- ============================================================================
+
+-- Add data column to customer_notifications if not exists
+ALTER TABLE customer_notifications
+ADD COLUMN IF NOT EXISTS data JSONB;
+
+-- Add data column to provider_notifications if not exists
+ALTER TABLE provider_notifications
+ADD COLUMN IF NOT EXISTS data JSONB;
 
 -- ============================================================================
 -- 1. RPC Function for Customer Approval (bypasses RLS)
@@ -227,10 +239,11 @@ ALTER TABLE custom_order_requests ADD CONSTRAINT custom_order_requests_status_ch
   ));
 
 -- ============================================================================
--- 4. Fix Notification Type Format (use UPPERCASE to match frontend)
+-- 4. Fix Notification Triggers (UPPERCASE types, use data column)
 -- ============================================================================
 
--- Update notify_custom_order_priced to use UPPERCASE type and set related_order_id
+-- Update notify_custom_order_priced to use UPPERCASE type
+-- Store broadcast_id in data column (not related_order_id which has FK constraint)
 CREATE OR REPLACE FUNCTION notify_custom_order_priced()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -251,7 +264,7 @@ BEGIN
     WHERE b.id = NEW.broadcast_id;
 
     -- Insert notification for customer with UPPERCASE type
-    -- IMPORTANT: related_order_id stores BROADCAST_ID for navigation
+    -- NOTE: related_order_id is NULL, broadcast_id is in data column
     IF v_customer_id IS NOT NULL THEN
       INSERT INTO customer_notifications (
         customer_id,
@@ -260,17 +273,15 @@ BEGIN
         title_en,
         body_ar,
         body_en,
-        related_order_id,  -- Store broadcast_id here for navigation
         related_provider_id,
         data
       ) VALUES (
         v_customer_id,
-        'CUSTOM_ORDER_PRICED',  -- UPPERCASE to match frontend
+        'CUSTOM_ORDER_PRICED',
         'تم تسعير طلبك!',
         'Your order has been priced!',
-        format('قام %s بتسعير طلبك. راجع العرض الآن!', v_provider_name),
-        format('%s has priced your order. Review the offer now!', v_provider_name),
-        v_broadcast_id,  -- Store broadcast_id for custom order navigation
+        format('قام %s بتسعير طلبك بـ %s ج.م - راجع العرض الآن!', v_provider_name, NEW.total::text),
+        format('%s priced your order at %s EGP - Review now!', v_provider_name, NEW.total::text),
         NEW.provider_id,
         jsonb_build_object(
           'broadcast_id', v_broadcast_id,
@@ -287,7 +298,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Update notify_custom_order_approved for provider - include order_id
+-- Update notify_custom_order_approved for provider
 CREATE OR REPLACE FUNCTION notify_custom_order_approved()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -308,6 +319,7 @@ BEGIN
     WHERE b.id = NEW.broadcast_id;
 
     -- Insert notification for merchant with UPPERCASE type
+    -- Use related_order_id for the actual order (has valid FK)
     INSERT INTO provider_notifications (
       provider_id,
       type,
@@ -316,17 +328,15 @@ BEGIN
       body_ar,
       body_en,
       related_order_id,
-      related_message_id,  -- Store request_id here
       data
     ) VALUES (
       v_provider_id,
-      'CUSTOM_ORDER_APPROVED',  -- UPPERCASE to match frontend
+      'CUSTOM_ORDER_APPROVED',
       'تمت الموافقة على تسعيرتك!',
       'Your quote was approved!',
       format('وافق %s على تسعيرتك. ابدأ تحضير الطلب!', COALESCE(v_customer_name, 'العميل')),
       format('%s approved your quote. Start preparing the order!', COALESCE(v_customer_name, 'Customer')),
-      v_order_id,  -- Store order_id for navigation to order tracking
-      NEW.id::text,  -- Store request_id
+      v_order_id,
       jsonb_build_object(
         'request_id', NEW.id,
         'order_id', v_order_id,
@@ -364,11 +374,10 @@ BEGIN
     title_en,
     body_ar,
     body_en,
-    related_message_id,  -- Store request_id
     data
   ) VALUES (
     NEW.provider_id,
-    'NEW_CUSTOM_ORDER',  -- UPPERCASE to match frontend
+    'NEW_CUSTOM_ORDER',
     'طلب مفتوح جديد!',
     'New Custom Order!',
     CASE v_input_type
@@ -381,7 +390,6 @@ BEGIN
       WHEN 'image' THEN format('New image order from %s', COALESCE(v_customer_name, 'Customer'))
       ELSE format('New custom order from %s', COALESCE(v_customer_name, 'Customer'))
     END,
-    NEW.id::text,  -- Store request_id for navigation
     jsonb_build_object(
       'request_id', NEW.id,
       'broadcast_id', NEW.broadcast_id,
@@ -398,21 +406,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION notify_custom_order_rejected()
 RETURNS TRIGGER AS $$
 DECLARE
-  v_customer_id UUID;
-  v_provider_name TEXT;
   v_broadcast_id UUID;
 BEGIN
   -- Only trigger when status changes to 'rejected' or 'customer_rejected'
   IF OLD.status NOT IN ('rejected', 'customer_rejected')
      AND NEW.status IN ('rejected', 'customer_rejected') THEN
-    -- Get broadcast and provider info
-    SELECT
-      b.customer_id,
-      b.id,
-      p.name_ar
-    INTO v_customer_id, v_broadcast_id, v_provider_name
+    -- Get broadcast id
+    SELECT b.id INTO v_broadcast_id
     FROM custom_order_broadcasts b
-    JOIN providers p ON p.id = NEW.provider_id
     WHERE b.id = NEW.broadcast_id;
 
     -- Notify merchant that their quote was rejected with UPPERCASE type
@@ -423,16 +424,14 @@ BEGIN
       title_en,
       body_ar,
       body_en,
-      related_message_id,
       data
     ) VALUES (
       NEW.provider_id,
-      'CUSTOM_ORDER_REJECTED',  -- UPPERCASE to match frontend
+      'CUSTOM_ORDER_REJECTED',
       'تم رفض تسعيرتك',
       'Your quote was rejected',
       'اختار العميل تاجراً آخر',
       'Customer chose another merchant',
-      NEW.id::text,
       jsonb_build_object(
         'request_id', NEW.id,
         'broadcast_id', v_broadcast_id,
@@ -474,16 +473,14 @@ BEGIN
       title_en,
       body_ar,
       body_en,
-      related_message_id,
       data
     ) VALUES (
       v_request.provider_id,
-      'PRICING_EXPIRED',  -- UPPERCASE to match frontend
+      'PRICING_EXPIRED',
       'فاتتك مهلة التسعير',
       'Pricing deadline missed',
       'انتهت مهلة تسعير طلب مفتوح',
       'A custom order pricing deadline has passed',
-      v_request.id::text,
       jsonb_build_object(
         'request_id', v_request.id,
         'is_custom_order', true
