@@ -14,6 +14,10 @@ import {
   AlertCircle,
   RefreshCw,
   Sparkles,
+  Truck,
+  Package,
+  MapPin,
+  ChevronDown,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -72,6 +76,19 @@ export function CustomOrderInterface({
   const [images, setImages] = useState<File[]>([])
   const [notes, setNotes] = useState('')
 
+  // Delivery options state
+  const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery')
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
+  const [customerAddresses, setCustomerAddresses] = useState<Array<{
+    id: string;
+    label: string | null;
+    street_address: string;
+    district: string | null;
+    city: string | null;
+    is_default: boolean;
+  }>>([])
+  const [loadingAddresses, setLoadingAddresses] = useState(false)
+
   // Convert items to text for submission
   const textInput = itemsToText(orderItems)
 
@@ -106,6 +123,38 @@ export function CustomOrderInterface({
       image: settings?.accepts_image ?? true,
     }
   }, [provider?.custom_order_settings])
+
+  // Load customer addresses
+  useEffect(() => {
+    const loadAddresses = async () => {
+      if (!customerId) return
+      setLoadingAddresses(true)
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from('addresses')
+          .select('id, label, street_address, district, city, is_default')
+          .eq('user_id', customerId)
+          .order('is_default', { ascending: false })
+
+        if (!error && data) {
+          setCustomerAddresses(data)
+          // Auto-select default address
+          const defaultAddr = data.find(a => a.is_default)
+          if (defaultAddr) {
+            setSelectedAddressId(defaultAddr.id)
+          } else if (data.length > 0) {
+            setSelectedAddressId(data[0].id)
+          }
+        }
+      } catch (err) {
+        console.error('Error loading addresses:', err)
+      } finally {
+        setLoadingAddresses(false)
+      }
+    }
+    loadAddresses()
+  }, [customerId])
 
   // Load draft on mount
   useEffect(() => {
@@ -250,6 +299,13 @@ export function CustomOrderInterface({
         }
       }
 
+      // Validate delivery address for delivery orders
+      if (orderType === 'delivery' && !selectedAddressId) {
+        setError(isRTL ? 'يرجى اختيار عنوان التوصيل' : 'Please select a delivery address')
+        setIsSubmitting(false)
+        return
+      }
+
       // Create payload
       const payload: CreateBroadcastPayload = {
         providerIds: selectedProviders,
@@ -258,7 +314,8 @@ export function CustomOrderInterface({
         voiceUrl,
         imageUrls,
         notes: notes || undefined,
-        orderType: 'delivery', // TODO: Add pickup option
+        orderType,
+        deliveryAddressId: orderType === 'delivery' ? selectedAddressId || undefined : undefined,
       }
 
       // Submit via parent callback
@@ -610,6 +667,143 @@ export function CustomOrderInterface({
                     )
                   })}
                 </div>
+              </div>
+
+              {/* Order Type Selection */}
+              <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+                <p className="text-sm font-medium text-slate-700">
+                  {isRTL ? 'طريقة الاستلام' : 'Delivery Method'}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Delivery Option */}
+                  <button
+                    type="button"
+                    onClick={() => setOrderType('delivery')}
+                    className={cn(
+                      'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
+                      orderType === 'delivery'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-slate-200 hover:border-slate-300'
+                    )}
+                  >
+                    <div className={cn(
+                      'w-10 h-10 rounded-full flex items-center justify-center',
+                      orderType === 'delivery' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'
+                    )}>
+                      <Truck className="w-5 h-5" />
+                    </div>
+                    <span className={cn(
+                      'text-sm font-medium',
+                      orderType === 'delivery' ? 'text-primary' : 'text-slate-700'
+                    )}>
+                      {isRTL ? 'توصيل' : 'Delivery'}
+                    </span>
+                  </button>
+
+                  {/* Pickup Option */}
+                  <button
+                    type="button"
+                    onClick={() => setOrderType('pickup')}
+                    className={cn(
+                      'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
+                      orderType === 'pickup'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-slate-200 hover:border-slate-300'
+                    )}
+                  >
+                    <div className={cn(
+                      'w-10 h-10 rounded-full flex items-center justify-center',
+                      orderType === 'pickup' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'
+                    )}>
+                      <Package className="w-5 h-5" />
+                    </div>
+                    <span className={cn(
+                      'text-sm font-medium',
+                      orderType === 'pickup' ? 'text-primary' : 'text-slate-700'
+                    )}>
+                      {isRTL ? 'استلام من المتجر' : 'Pickup'}
+                    </span>
+                    {orderType === 'pickup' && (
+                      <span className="text-xs text-green-600 font-medium">
+                        {isRTL ? 'بدون رسوم توصيل!' : 'No delivery fee!'}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Address Selection - Only for Delivery */}
+                {orderType === 'delivery' && (
+                  <div className="pt-3 border-t border-slate-100">
+                    <p className="text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      {isRTL ? 'عنوان التوصيل' : 'Delivery Address'}
+                    </p>
+
+                    {loadingAddresses ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                      </div>
+                    ) : customerAddresses.length > 0 ? (
+                      <div className="space-y-2">
+                        {customerAddresses.map((addr) => (
+                          <button
+                            key={addr.id}
+                            type="button"
+                            onClick={() => setSelectedAddressId(addr.id)}
+                            className={cn(
+                              'w-full text-start p-3 rounded-xl border-2 transition-all',
+                              selectedAddressId === addr.id
+                                ? 'border-primary bg-primary/5'
+                                : 'border-slate-200 hover:border-slate-300'
+                            )}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={cn(
+                                'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5',
+                                selectedAddressId === addr.id
+                                  ? 'border-primary bg-primary'
+                                  : 'border-slate-300'
+                              )}>
+                                {selectedAddressId === addr.id && (
+                                  <div className="w-2 h-2 rounded-full bg-white" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium text-slate-800 text-sm">
+                                  {addr.label || (isRTL ? 'عنوان' : 'Address')}
+                                  {addr.is_default && (
+                                    <span className="ms-2 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                                      {isRTL ? 'افتراضي' : 'Default'}
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                  {addr.street_address}
+                                  {addr.district && `, ${addr.district}`}
+                                  {addr.city && `, ${addr.city}`}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 bg-amber-50 rounded-xl border border-amber-200">
+                        <MapPin className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                        <p className="text-sm text-amber-700 mb-2">
+                          {isRTL ? 'لا يوجد عناوين محفوظة' : 'No saved addresses'}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => router.push(`/${locale}/profile/addresses`)}
+                        >
+                          {isRTL ? 'إضافة عنوان' : 'Add Address'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Info about triple broadcast */}

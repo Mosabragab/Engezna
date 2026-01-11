@@ -159,11 +159,25 @@ export class BroadcastService {
     let deliveryAddress = null;
     if (payload.deliveryAddressId) {
       const { data: address } = await this.supabase
-        .from('user_addresses')
-        .select('*')
+        .from('addresses')
+        .select('id, label, street_address, building_name, floor_apartment, district, city, governorate, postal_code, landmark, delivery_notes, location')
         .eq('id', payload.deliveryAddressId)
         .single();
-      deliveryAddress = address;
+      if (address) {
+        // Convert to JSONB format compatible with orders table
+        deliveryAddress = {
+          address_id: address.id,
+          address: address.street_address,
+          building: address.building_name,
+          floor: address.floor_apartment,
+          district: address.district,
+          city: address.city,
+          governorate: address.governorate,
+          landmark: address.landmark,
+          notes: address.delivery_notes,
+          location: address.location,
+        };
+      }
     }
 
     // Create broadcast

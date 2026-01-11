@@ -55,6 +55,8 @@ export default function CustomOrderPricingPage() {
           image_urls,
           transcribed_text,
           customer_notes,
+          delivery_address,
+          order_type,
           customer:profiles!custom_order_broadcasts_customer_id_fkey(
             id,
             full_name,
@@ -301,8 +303,23 @@ export default function CustomOrderPricingPage() {
       const total = subtotal + deliveryFee
 
       // Create order
-      // Note: order_type defaults to 'pickup' for custom orders
-      // Customer will select delivery method when approving the order
+      // order_type and delivery_address come from the broadcast (set by customer)
+      // Use type assertion since these fields are fetched but TypeScript doesn't know the exact shape
+      const broadcastData = request.broadcast as {
+        order_type?: 'delivery' | 'pickup';
+        delivery_address?: Record<string, unknown>;
+        [key: string]: unknown;
+      } | null
+      const broadcastOrderType = broadcastData?.order_type || 'delivery'
+      const broadcastDeliveryAddress = broadcastData?.delivery_address || {
+        // Default empty address structure for custom orders
+        // Will be updated when customer approves and selects delivery
+        address: '',
+        city: '',
+        district: '',
+        notes: 'طلب خاص - العنوان سيُحدد عند الموافقة'
+      }
+
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -310,7 +327,8 @@ export default function CustomOrderPricingPage() {
           customer_id: request.broadcast?.customer?.id,
           order_flow: 'custom',
           broadcast_id: request.broadcast_id,
-          order_type: 'pickup', // Default for custom orders - customer chooses later
+          order_type: broadcastOrderType,
+          delivery_address: broadcastDeliveryAddress,
           status: 'pending',
           payment_status: 'pending',
           subtotal,
