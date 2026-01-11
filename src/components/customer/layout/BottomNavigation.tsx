@@ -31,13 +31,18 @@ export function BottomNavigation() {
     if (!user) return
 
     // Count priced custom order requests for this customer
-    // Only count active broadcasts (not completed, expired, or cancelled)
-    const { count } = await supabase
-      .from('custom_order_broadcasts')
-      .select('id, custom_order_requests!inner(status)', { count: 'exact', head: true })
-      .eq('customer_id', user.id)
-      .eq('status', 'active')
-      .eq('custom_order_requests.status', 'priced')
+    // Query requests directly and join to broadcasts to check ownership
+    const { count, error } = await supabase
+      .from('custom_order_requests')
+      .select('id, custom_order_broadcasts!inner(customer_id, status)', { count: 'exact', head: true })
+      .eq('status', 'priced')
+      .eq('custom_order_broadcasts.customer_id', user.id)
+      .eq('custom_order_broadcasts.status', 'active')
+
+    if (error) {
+      console.error('Error loading pending quotes:', error)
+      return
+    }
 
     setPendingQuotes(count || 0)
   }, [])
