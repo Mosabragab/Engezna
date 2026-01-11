@@ -19,6 +19,7 @@ interface Provider {
   logo_url: string | null
   status: string
   category: string
+  operation_mode: 'standard' | 'custom' | 'hybrid'
 }
 
 // Staff permissions interface
@@ -132,7 +133,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       // First, check if user is a provider owner
       const { data: providerData } = await supabase
         .from('providers')
-        .select('id, name_ar, name_en, logo_url, status, category')
+        .select('id, name_ar, name_en, logo_url, status, category, operation_mode')
         .eq('owner_id', user.id)
         .limit(1)
 
@@ -167,7 +168,8 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
               name_en,
               logo_url,
               status,
-              category
+              category,
+              operation_mode
             )
           `)
           .eq('user_id', user.id)
@@ -544,6 +546,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         onHoldOrders={onHoldOrders}
         pendingComplaints={pendingComplaints}
         permissions={permissions}
+        operationMode={provider?.operation_mode || 'standard'}
       />
 
       {/* Main Content */}

@@ -123,7 +123,7 @@ export default function CustomOrderReviewPage() {
         items:custom_order_items(*)
       `)
       .eq('broadcast_id', broadcastId)
-      .in('status', ['priced', 'customer_approved', 'customer_rejected'])
+      .in('status', ['priced', 'approved', 'rejected'])
       .order('total', { ascending: true })
 
     const transformedRequests: PricingRequest[] = (requestsData || []).map(req => ({
@@ -177,7 +177,7 @@ export default function CustomOrderReviewPage() {
       const { error: updateRequestError } = await supabase
         .from('custom_order_requests')
         .update({
-          status: 'customer_approved',
+          status: 'approved',
           responded_at: new Date().toISOString(),
         })
         .eq('id', selectedRequest.id)
@@ -246,7 +246,7 @@ export default function CustomOrderReviewPage() {
       const { error: updateError } = await supabase
         .from('custom_order_requests')
         .update({
-          status: 'customer_rejected',
+          status: 'rejected',
           responded_at: new Date().toISOString(),
         })
         .eq('id', selectedRequest.id)
@@ -337,7 +337,7 @@ export default function CustomOrderReviewPage() {
 
   // Get priced requests
   const pricedRequests = broadcast.requests.filter(r => r.status === 'priced')
-  const approvedRequest = broadcast.requests.find(r => r.status === 'customer_approved')
+  const approvedRequest = broadcast.requests.find(r => r.status === 'approved')
 
   return (
     <CustomerLayout

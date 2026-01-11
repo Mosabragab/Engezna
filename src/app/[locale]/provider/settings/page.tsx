@@ -39,6 +39,9 @@ import {
   Image as ImageIcon,
   FileText,
   Sparkles,
+  Users,
+  Plus,
+  X,
 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -107,7 +110,7 @@ export default function ProviderSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [activeTab, setActiveTab] = useState<'store' | 'delivery' | 'pickup' | 'custom-orders' | 'status' | 'account'>('store')
+  const [activeTab, setActiveTab] = useState<'store' | 'working-hours' | 'delivery' | 'pickup' | 'custom-orders' | 'status' | 'team' | 'account'>('store')
   const [userEmail, setUserEmail] = useState<string | null>(null)
 
   // Password change states
@@ -494,10 +497,12 @@ export default function ProviderSettingsPage() {
 
   const tabs = [
     { key: 'store', label_ar: 'معلومات المتجر', label_en: 'Store Info', icon: Store },
+    { key: 'working-hours', label_ar: 'ساعات العمل', label_en: 'Working Hours', icon: Clock },
     { key: 'delivery', label_ar: 'التوصيل', label_en: 'Delivery', icon: Truck },
     { key: 'pickup', label_ar: 'الاستلام', label_en: 'Pickup', icon: Package },
     { key: 'custom-orders', label_ar: 'الطلبات الخاصة', label_en: 'Custom Orders', icon: ClipboardList },
     { key: 'status', label_ar: 'حالة المتجر', label_en: 'Store Status', icon: Power },
+    { key: 'team', label_ar: 'إدارة الفريق', label_en: 'Team', icon: Users },
     { key: 'account', label_ar: 'الحساب', label_en: 'Account', icon: User },
   ]
 
@@ -528,7 +533,7 @@ export default function ProviderSettingsPage() {
               return (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key as 'store' | 'delivery' | 'pickup' | 'custom-orders' | 'status' | 'account')}
+                  onClick={() => setActiveTab(tab.key as typeof activeTab)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
                     activeTab === tab.key
                       ? 'bg-primary text-white'
@@ -1724,6 +1729,72 @@ export default function ProviderSettingsPage() {
             </>
           )}
 
+          {/* Working Hours Tab */}
+          {activeTab === 'working-hours' && (
+            <Card className="bg-white border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-slate-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  {locale === 'ar' ? 'ساعات العمل' : 'Working Hours'}
+                </CardTitle>
+                <p className="text-sm text-slate-500 mt-1">
+                  {locale === 'ar'
+                    ? 'إدارة أوقات العمل اليومية للمتجر'
+                    : 'Manage your store\'s daily working hours'}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center">
+                  <Clock className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                  <p className="text-slate-600 mb-4">
+                    {locale === 'ar'
+                      ? 'يمكنك تعديل ساعات العمل من صفحة إدارة الأوقات'
+                      : 'You can edit working hours from the hours management page'}
+                  </p>
+                  <Link href={`/${locale}/provider/store-hours`}>
+                    <Button className="gap-2">
+                      <Clock className="w-4 h-4" />
+                      {locale === 'ar' ? 'إدارة ساعات العمل' : 'Manage Working Hours'}
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Team Management Tab */}
+          {activeTab === 'team' && (
+            <Card className="bg-white border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-slate-900 flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  {locale === 'ar' ? 'إدارة الفريق' : 'Team Management'}
+                </CardTitle>
+                <p className="text-sm text-slate-500 mt-1">
+                  {locale === 'ar'
+                    ? 'إضافة وإدارة أعضاء فريق العمل في متجرك'
+                    : 'Add and manage your store team members'}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center">
+                  <Users className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                  <p className="text-slate-600 mb-4">
+                    {locale === 'ar'
+                      ? 'يمكنك إضافة موظفين وتحديد صلاحياتهم من صفحة إدارة الفريق'
+                      : 'You can add staff members and set their permissions from the team page'}
+                  </p>
+                  <Link href={`/${locale}/provider/team`}>
+                    <Button className="gap-2">
+                      <Users className="w-4 h-4" />
+                      {locale === 'ar' ? 'إدارة الفريق' : 'Manage Team'}
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Quick Links */}
           <Card className="bg-white border-slate-200">
             <CardContent className="pt-6">
@@ -1731,12 +1802,6 @@ export default function ProviderSettingsPage() {
                 {locale === 'ar' ? 'روابط سريعة' : 'Quick Links'}
               </p>
               <div className="flex flex-wrap gap-2">
-                <Link href={`/${locale}/provider/store-hours`}>
-                  <Button variant="outline" size="sm" className="border-slate-300">
-                    <Clock className="w-4 h-4 mr-2" />
-                    {locale === 'ar' ? 'ساعات العمل' : 'Store Hours'}
-                  </Button>
-                </Link>
                 <Link href={`/${locale}/provider/products`}>
                   <Button variant="outline" size="sm" className="border-slate-300">
                     <Store className="w-4 h-4 mr-2" />
