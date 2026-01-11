@@ -27,6 +27,7 @@ import {
   CreditCard,
   MessageSquare,
   Calendar,
+  FileText,
 } from 'lucide-react'
 import { OrderChat } from '@/components/shared/OrderChat'
 
@@ -400,9 +401,17 @@ export default function ProviderOrderDetailPage() {
               {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
               <span>{backLabel}</span>
             </Link>
-            <span className="font-mono font-bold text-primary">
-              #{order.order_number || order.id.slice(0, 8).toUpperCase()}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold text-primary">
+                #{order.order_number || order.id.slice(0, 8).toUpperCase()}
+              </span>
+              {fromCustom && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  <FileText className="w-3 h-3" />
+                  {locale === 'ar' ? 'طلب خاص' : 'Custom'}
+                </span>
+              )}
+            </div>
             <Button
               variant="ghost"
               size="sm"
