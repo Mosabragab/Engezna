@@ -1,103 +1,49 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
 **Last Updated:** January 11, 2026 (Session 26)
-**Status:** ~97% MVP Complete - Pre-Launch Phase
-**Branch:** `claude/review-custom-order-system-TPxtK`
+**Status:** ~97% MVP Complete - Production Ready
+**Sessions Completed:** 26
+
+> **Session History:** See [CHANGELOG.md](CHANGELOG.md) for detailed session updates
 
 ---
 
-## 🆕 Session 26 Updates (January 11, 2026)
+## Quick Reference
 
-### Custom Order System (Triple Broadcast) - Review & Fixes
+### Project Links
+- **Live URL:** https://engezna.vercel.app
+- **GitHub:** https://github.com/Mosabragab/Engezna
+- **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
 
-#### Navigation Improvements
-- ✅ **Smart back navigation** - Order details page now returns to correct source
-- ✅ **Context-aware labels** - Back button shows "الطلبات الخاصة" when from custom orders
-- ✅ **URL parameter tracking** - `?from=custom` preserves navigation context
+### Key Documents
+| Document | Purpose |
+|----------|---------|
+| [README.md](README.md) | Project overview & quick start |
+| [CHANGELOG.md](CHANGELOG.md) | Detailed session history |
+| [PRD.md](PRD.md) | Product requirements |
+| [API.md](API.md) | API endpoints documentation |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
 
-#### Customer UI Fixes
-- ✅ **Bottom nav badge fix** - Fixed pending quotes count query (inverted join direction)
-- ✅ **Notification routing** - Custom order notifications route to correct review page
-
-#### Provider UI Fixes
-- ✅ **Redirect after pricing** - Provider redirected to `/provider/orders/custom` (not regular orders)
-- ✅ **Back navigation** - All back buttons in custom order flow go to custom orders page
-
-#### System Architecture Verified
-| System | Status | Notes |
-|--------|--------|-------|
-| Settlements | ✅ Safe | Only reads `orders` table |
-| Analytics | ✅ Safe | Custom orders counted after approval |
-| Dashboard | ✅ Safe | All queries from `orders` table |
-| Finance | ✅ Safe | Uses `financial_settlement_engine` view |
-
-#### Hybrid Provider Support
-- Custom orders have separate path: `/provider/orders/custom`
-- Regular orders use: `/provider/orders`
-- Both types integrate with settlements/analytics after order creation
+### Latest Session (Session 26)
+- ✅ Custom Order System fixes (Triple Broadcast)
+- ✅ Smart back navigation with `?from=custom` parameter
+- ✅ Customer bottom nav badge fix
+- ✅ Custom order badge and distinct notification sound
 
 ---
 
-## 🆕 Session 24 Updates (January 4, 2026)
+## Key Architectural Decisions
 
-### Documentation Cleanup & Organization
-- ✅ **Archived completed plans** - Moved 10 outdated plan files to `/archive`
-- ✅ **Reorganized docs folder** - Created `/docs/guides` and `/docs/features` subfolders
-- ✅ **Created CHANGELOG.md** - Consolidated session history
-- ✅ **Created ROADMAP.md** - Future tasks and priorities
+### Financial System
+**مصدر الحقيقة الواحد - Database is the ONLY source for financial calculations**
+- All commission calculations done in database triggers
+- Frontend displays values, never calculates
+- `financial_settlement_engine` view is the single source of truth
 
-### Provider Dashboard Fixes
-- ✅ **Button visibility fix** - Added `!important` prefix to override component defaults
-- ✅ **Dropdown menu sensitivity** - Fixed hover gap with padding bridge
-
-### Provider Settings Updates
-- ✅ **Delete account functionality** - Full deletion with provider data cleanup
-- ✅ **Dropdown improvements** - Removed preview button, changed "حسابي" → "إعدادات المتجر"
-- ✅ **Header cleanup** - Removed redundant text next to account icon
-
-### Files Modified
-| File | Changes |
-|------|---------|
-| `src/app/[locale]/provider/page.tsx` | Button `!bg-amber-500 !text-white` fix |
-| `src/components/provider/ProviderHeader.tsx` | Dropdown menu cleanup |
-| `src/app/[locale]/provider/settings/page.tsx` | Delete account section |
-| `src/app/api/auth/delete-account/route.ts` | Provider data cleanup |
-
----
-
-## 🆕 Session 23 Updates (December 31, 2025)
-
-### Native Google Sign-In Implementation
-- ✅ **Native Google OAuth** - Shows "engezna.com" instead of Supabase URL
-- ✅ **Custom Arabic Button** - "إستمرار عبر جوجل" (Talabat-style design)
-- ✅ **Authorization Code Flow** - Secure token exchange via `/api/auth/google`
-- ✅ **Profile Completion Flow** - New Google users directed to complete profile
-
-### Environment Variables Added
-```env
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-```
-
----
-
-## 🆕 Session 22 Updates (December 26, 2025)
-
-### Settlement System - Database as Source of Truth
-- ✅ **All financial values from database** - No frontend calculations
-- ✅ **Commission display fix** - Fixed 22 vs 17.5 issue after refunds
-- ✅ **Trigger conflict resolution** - Fixed competing database triggers
-- ✅ **UI consistency** - Matched COD/Online cards across admin/provider
-
-**Key Principle:** مصدر الحقيقة الواحد - Database is the ONLY source for financial calculations
-
----
-
-## 🆕 Session 21 Updates (December 23, 2025)
-
-### Code Polishing - Zero ESLint Errors
-- ✅ Fixed 78 hoisting errors with `useCallback` conversion
-- ✅ Build error fixes - Removed duplicate function definitions
+### Custom Orders Integration
+- Custom orders (`custom_order_requests`) → Creates `orders` entry on approval
+- Settlement/Analytics/Dashboard only query `orders` table
+- Safe integration: Custom orders don't affect existing financial systems
 - ✅ **Final Result:** 0 errors, 454 warnings (acceptable)
 
 ---
