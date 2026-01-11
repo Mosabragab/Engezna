@@ -50,6 +50,8 @@ export default function CustomOrderPricingPage() {
         *,
         items:custom_order_items(*),
         broadcast:custom_order_broadcasts(
+          id,
+          customer_id,
           original_text,
           voice_url,
           image_urls,
@@ -57,7 +59,7 @@ export default function CustomOrderPricingPage() {
           customer_notes,
           delivery_address,
           order_type,
-          customer:profiles!custom_order_broadcasts_customer_id_fkey(
+          customer:profiles(
             id,
             full_name,
             phone
@@ -306,10 +308,23 @@ export default function CustomOrderPricingPage() {
       // order_type and delivery_address come from the broadcast (set by customer)
       // Use type assertion since these fields are fetched but TypeScript doesn't know the exact shape
       const broadcastData = request.broadcast as {
+        customer_id?: string;
         order_type?: 'delivery' | 'pickup';
         delivery_address?: Record<string, unknown>;
+        customer?: { id: string; full_name: string; phone: string | null };
         [key: string]: unknown;
       } | null
+
+      // Get customer_id from broadcast - try customer.id first, then customer_id
+      const customerId = broadcastData?.customer?.id || broadcastData?.customer_id
+      if (!customerId) {
+        throw new Error(
+          isRTL
+            ? 'لم يتم العثور على بيانات العميل'
+            : 'Customer data not found'
+        )
+      }
+
       const broadcastOrderType = broadcastData?.order_type || 'delivery'
       const broadcastDeliveryAddress = broadcastData?.delivery_address || {
         // Default empty address structure for custom orders
@@ -324,7 +339,7 @@ export default function CustomOrderPricingPage() {
         .from('orders')
         .insert({
           provider_id: providerId,
-          customer_id: request.broadcast?.customer?.id,
+          customer_id: customerId,
           order_flow: 'custom',
           broadcast_id: request.broadcast_id,
           order_type: broadcastOrderType,
@@ -345,7 +360,12 @@ export default function CustomOrderPricingPage() {
           .from('custom_order_requests')
           .update({ status: 'pending' })
           .eq('id', request.id)
-        throw new Error(orderError?.message || 'Failed to create order')
+        console.error('Order creation error:', orderError)
+        throw new Error(
+          isRTL
+            ? `فشل إنشاء الطلب: ${orderError?.message || 'خطأ غير معروف'}`
+            : `Failed to create order: ${orderError?.message || 'Unknown error'}`
+        )
       }
 
       // Insert items
@@ -394,7 +414,7 @@ export default function CustomOrderPricingPage() {
         .filter((item) => item.availability_status === 'available' && item.item_name_ar)
         .map((item) => ({
           provider_id: providerId,
-          customer_id: request.broadcast?.customer?.id,
+          customer_id: customerId,
           item_name_normalized: item.item_name_ar.toLowerCase().trim(),
           item_name_ar: item.item_name_ar,
           item_name_en: item.item_name_en,
@@ -416,10 +436,14 @@ export default function CustomOrderPricingPage() {
       router.push(`/${locale}/provider/orders?tab=custom&success=priced`)
     } catch (err) {
       console.error('Error submitting pricing:', err)
+      // Show specific error message if available
+      const errorMessage = err instanceof Error ? err.message : String(err)
       setError(
-        isRTL
-          ? 'حدث خطأ أثناء إرسال التسعيرة'
-          : 'An error occurred while submitting the quote'
+        errorMessage.includes('العميل') || errorMessage.includes('Customer') || errorMessage.includes('فشل') || errorMessage.includes('Failed')
+          ? errorMessage
+          : isRTL
+            ? `حدث خطأ أثناء إرسال التسعيرة: ${errorMessage}`
+            : `An error occurred while submitting the quote: ${errorMessage}`
       )
     } finally {
       setSubmitting(false)
