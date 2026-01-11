@@ -293,9 +293,20 @@ export function CustomOrderInterface({
       // Upload images if exist
       if (images.length > 0) {
         const tempId = crypto.randomUUID()
-        const result = await storageService.uploadBroadcastImages(tempId, images)
-        if (result.urls) {
-          imageUrls = result.urls
+        console.log('Uploading images, count:', images.length)
+        try {
+          const result = await storageService.uploadBroadcastImages(tempId, images)
+          console.log('Image upload result:', result)
+          if (result.success && result.urls && result.urls.length > 0) {
+            imageUrls = result.urls
+            console.log('Image URLs:', imageUrls)
+          } else if (result.errors && result.errors.length > 0) {
+            console.error('Image upload errors:', result.errors)
+            // Continue without images but log the error
+          }
+        } catch (uploadErr) {
+          console.error('Image upload exception:', uploadErr)
+          // Continue without images
         }
       }
 
