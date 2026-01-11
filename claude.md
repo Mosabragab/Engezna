@@ -1,8 +1,40 @@
 # Claude Project Guide - Engezna (إنجزنا)
 
-**Last Updated:** January 4, 2026 (Session 24)
-**Status:** ~96% MVP Complete - Pre-Launch Phase
-**Branch:** `claude/review-project-database-plan-9mq6v`
+**Last Updated:** January 11, 2026 (Session 26)
+**Status:** ~97% MVP Complete - Pre-Launch Phase
+**Branch:** `claude/review-custom-order-system-TPxtK`
+
+---
+
+## 🆕 Session 26 Updates (January 11, 2026)
+
+### Custom Order System (Triple Broadcast) - Review & Fixes
+
+#### Navigation Improvements
+- ✅ **Smart back navigation** - Order details page now returns to correct source
+- ✅ **Context-aware labels** - Back button shows "الطلبات الخاصة" when from custom orders
+- ✅ **URL parameter tracking** - `?from=custom` preserves navigation context
+
+#### Customer UI Fixes
+- ✅ **Bottom nav badge fix** - Fixed pending quotes count query (inverted join direction)
+- ✅ **Notification routing** - Custom order notifications route to correct review page
+
+#### Provider UI Fixes
+- ✅ **Redirect after pricing** - Provider redirected to `/provider/orders/custom` (not regular orders)
+- ✅ **Back navigation** - All back buttons in custom order flow go to custom orders page
+
+#### System Architecture Verified
+| System | Status | Notes |
+|--------|--------|-------|
+| Settlements | ✅ Safe | Only reads `orders` table |
+| Analytics | ✅ Safe | Custom orders counted after approval |
+| Dashboard | ✅ Safe | All queries from `orders` table |
+| Finance | ✅ Safe | Uses `financial_settlement_engine` view |
+
+#### Hybrid Provider Support
+- Custom orders have separate path: `/provider/orders/custom`
+- Regular orders use: `/provider/orders`
+- Both types integrate with settlements/analytics after order creation
 
 ---
 
