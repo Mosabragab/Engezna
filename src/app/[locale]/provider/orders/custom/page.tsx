@@ -555,7 +555,7 @@ export default function CustomOrdersListPage() {
                         })()}
                         {/* Manage Order Button */}
                         {!['delivered', 'cancelled', 'rejected'].includes(request.order.status) && (
-                          <Link href={`/${locale}/provider/orders/${request.order.id}`}>
+                          <Link href={`/${locale}/provider/orders/${request.order.id}?from=custom`}>
                             <Button variant="outline" className="w-full gap-2">
                               {isRTL ? 'إدارة الطلب' : 'Manage Order'}
                               {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
@@ -564,7 +564,7 @@ export default function CustomOrdersListPage() {
                         )}
                         {/* View Details for completed */}
                         {['delivered', 'cancelled', 'rejected'].includes(request.order.status) && (
-                          <Link href={`/${locale}/provider/orders/${request.order.id}`}>
+                          <Link href={`/${locale}/provider/orders/${request.order.id}?from=custom`}>
                             <Button variant="ghost" size="sm" className="w-full text-slate-500">
                               {isRTL ? 'عرض التفاصيل' : 'View Details'}
                             </Button>
