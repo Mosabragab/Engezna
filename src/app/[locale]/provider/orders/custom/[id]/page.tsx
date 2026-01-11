@@ -263,29 +263,31 @@ export default function CustomOrderPricingPage() {
 
       // ═══════════════════════════════════════════════════════════════════════
       // ATOMIC UPDATE - Lock the request before creating order
-      // Use 'pricing_in_progress' status to prevent race conditions
-      // The 'priced' status will be set AFTER totals are calculated
+      // Use RPC function to bypass RLS and ensure atomic locking
       // ═══════════════════════════════════════════════════════════════════════
 
-      // First, atomically update request to prevent race conditions
-      // Only update if status is still 'pending' (optimistic locking)
-      // Using temporary status to avoid triggering notification prematurely
+      // First, atomically update request using RPC function
+      // This bypasses RLS and ensures proper authorization
       const { data: lockResult, error: lockError } = await supabase
-        .from('custom_order_requests')
-        .update({
-          status: 'pricing_in_progress',  // Temporary status, won't trigger notification
-          updated_at: new Date().toISOString()
+        .rpc('lock_custom_order_request_for_pricing', {
+          p_request_id: request.id,
+          p_provider_id: providerId
         })
-        .eq('id', request.id)
-        .eq('status', 'pending') // Only update if still pending!
-        .select('id')
-        .single()
 
-      if (lockError || !lockResult) {
+      if (lockError) {
+        console.error('Lock RPC error:', lockError)
         throw new Error(
           isRTL
-            ? 'تم تسعير هذا الطلب بالفعل. يرجى تحديث الصفحة.'
-            : 'This request has already been priced. Please refresh the page.'
+            ? `فشل قفل الطلب: ${lockError.message}`
+            : `Failed to lock request: ${lockError.message}`
+        )
+      }
+
+      // Check RPC result
+      const lockResponse = lockResult as { success: boolean; error?: string; message?: string }
+      if (!lockResponse?.success) {
+        throw new Error(
+          lockResponse?.error || (isRTL ? 'فشل قفل الطلب للتسعير' : 'Failed to lock request for pricing')
         )
       }
 
