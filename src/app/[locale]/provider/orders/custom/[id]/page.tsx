@@ -434,8 +434,8 @@ export default function CustomOrderPricingPage() {
         })
       }
 
-      // Success - redirect back to orders list
-      router.push(`/${locale}/provider/orders?tab=custom&success=priced`)
+      // Success - redirect back to custom orders list
+      router.push(`/${locale}/provider/orders/custom?success=priced`)
     } catch (err) {
       console.error('Error submitting pricing:', err)
       // Show specific error message if available
