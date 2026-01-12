@@ -21,6 +21,19 @@
     color-scheme: light;
   }
 
+  /* Smooth scrolling for the entire page */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent horizontal overflow on mobile */
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
   :root {
     /* PRIMARY BRAND COLORS - Engezna Blue */
     --primary: 198 100% 44%;            /* #009DE0 Engezna Blue */
