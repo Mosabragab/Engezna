@@ -1,0 +1,101 @@
+'use client'
+
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Volume2, Bell, ShoppingBag, Tag } from 'lucide-react'
+
+/**
+ * Debug component for testing sound notifications
+ * Only visible in development environment
+ */
+export function SoundTestDebug() {
+  const [lastPlayed, setLastPlayed] = useState<string | null>(null)
+
+  // Only render in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    return null
+  }
+
+  const playSound = (soundFile: string, label: string) => {
+    console.log(`[SoundTestDebug] Playing sound: ${soundFile}`)
+
+    try {
+      const audio = new Audio(`/sounds/${soundFile}`)
+      audio.volume = 1.0
+
+      audio.onloadeddata = () => {
+        console.log(`[SoundTestDebug] Sound loaded successfully: ${soundFile}`)
+      }
+
+      audio.onplay = () => {
+        console.log(`[SoundTestDebug] Sound started playing: ${soundFile}`)
+        setLastPlayed(label)
+      }
+
+      audio.onended = () => {
+        console.log(`[SoundTestDebug] Sound finished: ${soundFile}`)
+      }
+
+      audio.onerror = (e) => {
+        console.error(`[SoundTestDebug] Error playing sound: ${soundFile}`, e)
+      }
+
+      audio.play().catch((err) => {
+        console.error(`[SoundTestDebug] Play failed for ${soundFile}:`, err)
+      })
+    } catch (error) {
+      console.error(`[SoundTestDebug] Exception when playing ${soundFile}:`, error)
+    }
+  }
+
+  return (
+    <div className="fixed bottom-4 left-4 z-50 bg-yellow-100 border-2 border-yellow-400 rounded-lg p-4 shadow-lg max-w-xs">
+      <div className="flex items-center gap-2 mb-3 text-yellow-800">
+        <Volume2 className="w-5 h-5" />
+        <span className="font-bold text-sm">Sound Test (Dev Only)</span>
+      </div>
+
+      <div className="space-y-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2 border-green-300 hover:bg-green-50"
+          onClick={() => playSound('new-order.mp3', 'New Order')}
+        >
+          <ShoppingBag className="w-4 h-4 text-green-600" />
+          <span>Test New Order</span>
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2 border-blue-300 hover:bg-blue-50"
+          onClick={() => playSound('notification.mp3', 'General Alert')}
+        >
+          <Bell className="w-4 h-4 text-blue-600" />
+          <span>Test General Alert</span>
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2 border-purple-300 hover:bg-purple-50"
+          onClick={() => playSound('custom-order.mp3', 'Custom Pricing')}
+        >
+          <Tag className="w-4 h-4 text-purple-600" />
+          <span>Test Custom Pricing</span>
+        </Button>
+      </div>
+
+      {lastPlayed && (
+        <div className="mt-3 text-xs text-yellow-700 bg-yellow-50 p-2 rounded">
+          Last played: <span className="font-medium">{lastPlayed}</span>
+        </div>
+      )}
+
+      <div className="mt-2 text-[10px] text-yellow-600 opacity-70">
+        Check browser console for logs
+      </div>
+    </div>
+  )
+}
