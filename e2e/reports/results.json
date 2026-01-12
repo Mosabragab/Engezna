@@ -120,6 +120,160 @@
           "/(pwa|performance).*\\.spec\\.ts/"
         ],
         "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "critical-tests",
+        "name": "critical-tests",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/critical.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "merchant-tests",
+        "name": "merchant-tests",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/merchant.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "mobile-tests",
+        "name": "mobile-tests",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/mobile.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "stability-tests",
+        "name": "stability-tests",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/stability.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "device-iphone14",
+        "name": "device-iphone14",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/critical.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "device-samsung",
+        "name": "device-samsung",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/critical.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "device-ipad",
+        "name": "device-ipad",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/critical.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "device-chrome",
+        "name": "device-chrome",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/critical.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "device-safari",
+        "name": "device-safari",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/critical.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "device-firefox",
+        "name": "device-firefox",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/critical.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/user/Engezna/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "device-iphonese",
+        "name": "device-iphonese",
+        "testDir": "/home/user/Engezna/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/critical.*\\.spec\\.ts/"
+        ],
+        "timeout": 60000
       }
     ],
     "shard": null,
@@ -138,13 +292,19 @@
   "suites": [],
   "errors": [
     {
-      "message": "Error: Timed out waiting 120000ms from config.webServer.",
-      "stack": "Error: Timed out waiting 120000ms from config.webServer."
+      "message": "Error: browserType.launch: Executable doesn't exist at /root/.cache/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-linux64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "stack": "Error: browserType.launch: Executable doesn't exist at /root/.cache/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-linux64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝\n    at fallbackUIAuth (/home/user/Engezna/e2e/global-setup.ts:191:34)\n    at globalSetup (/home/user/Engezna/e2e/global-setup.ts:54:12)",
+      "location": {
+        "file": "/home/user/Engezna/e2e/global-setup.ts",
+        "column": 34,
+        "line": 191
+      },
+      "snippet": "   at global-setup.ts:191\n\n  189 | async function fallbackUIAuth(config: FullConfig) {\n  190 |   const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000'\n> 191 |   const browser = await chromium.launch()\n      |                                  ^\n  192 |\n  193 |   try {\n  194 |     // Admin auth via UI"
     }
   ],
   "stats": {
-    "startTime": "2026-01-12T18:07:03.247Z",
-    "duration": 120078.09,
+    "startTime": "2026-01-12T21:00:07.439Z",
+    "duration": 25879.466,
     "expected": 0,
     "skipped": 0,
     "unexpected": 0,
