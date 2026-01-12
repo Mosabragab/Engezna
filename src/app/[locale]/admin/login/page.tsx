@@ -65,7 +65,14 @@ export default function AdminLoginPage() {
   const checkExistingAuth = useCallback(async () => {
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+
+      // Add timeout to prevent hanging forever (5 seconds max)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Auth check timeout')), 5000)
+      )
+
+      const authPromise = supabase.auth.getUser()
+      const { data: { user } } = await Promise.race([authPromise, timeoutPromise])
 
       if (user) {
         // Check if user is admin
