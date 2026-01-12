@@ -8,19 +8,19 @@ import { test as base, expect, Page } from '@playwright/test'
 // Test user credentials (should match your test database)
 export const TEST_USERS = {
   customer: {
-    email: 'testcustomer@engezna.com',
-    password: 'Test@123456',
+    email: 'customer@test.com',
+    password: 'Test123!',
     phone: '01012345678',
     name: 'Test Customer',
   },
   provider: {
-    email: 'testprovider@engezna.com',
-    password: 'Test@123456',
+    email: 'provider@test.com',
+    password: 'Test123!',
     storeName: 'Test Store',
   },
   admin: {
-    email: 'testadmin@engezna.com',
-    password: 'Test@123456',
+    email: 'admin@test.com',
+    password: 'Test123!',
   },
 }
 
