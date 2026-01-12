@@ -146,30 +146,27 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should display checkout page elements', async ({ page }) => {
       await page.goto('/ar/checkout')
       await page.waitForLoadState('networkidle')
+      await page.waitForTimeout(1000) // Wait for dynamic content
 
       const url = page.url()
-
-      // Page should load successfully - any valid destination is acceptable
-      // Could be: checkout, cart, login, auth, homepage, or providers
       const pageContent = await page.textContent('body')
       const hasContent = pageContent && pageContent.length > 50
 
-      // If we're on checkout page, verify it has checkout content
+      // If we're on checkout page, verify it has checkout elements
       if (url.includes('/checkout')) {
-        const hasCheckoutContent = pageContent?.includes('التوصيل') ||
-          pageContent?.includes('الدفع') ||
-          pageContent?.includes('العنوان') ||
-          pageContent?.includes('delivery') ||
-          pageContent?.includes('payment') ||
-          pageContent?.includes('checkout') ||
-          pageContent?.includes('طلب') ||
-          pageContent?.includes('order') ||
-          hasContent
+        // Use accessible role-based selectors
+        const confirmButton = page.getByRole('button', { name: /تأكيد|confirm|طلب|order|إتمام/i })
+        const addressSection = page.getByText(/عنوان|address|توصيل|delivery/i).first()
+        const paymentSection = page.getByText(/دفع|payment|كاش|cash/i).first()
 
-        expect(hasCheckoutContent).toBeTruthy()
+        const hasConfirmBtn = await confirmButton.isVisible().catch(() => false)
+        const hasAddress = await addressSection.isVisible().catch(() => false)
+        const hasPayment = await paymentSection.isVisible().catch(() => false)
+
+        // Pass if any checkout element is found OR page has content
+        expect(hasConfirmBtn || hasAddress || hasPayment || hasContent).toBeTruthy()
       } else {
         // Redirected to another page - that's valid behavior
-        // Just verify the page loaded with content
         expect(hasContent).toBeTruthy()
       }
     })

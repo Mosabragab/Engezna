@@ -383,18 +383,20 @@ export default function CartPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => removeItem(item.menuItem.id, item.selectedVariant?.id)}
-                          className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-red-300 hover:text-red-500 transition-colors"
+                          className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-red-300 hover:text-red-500 transition-colors"
+                          aria-label={locale === 'ar' ? 'تقليل الكمية' : 'Decrease quantity'}
                         >
-                          <Minus className="w-4 h-4" />
+                          <Minus className="w-5 h-5" />
                         </button>
                         <span className="w-8 text-center font-semibold">
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => updateQuantity(item.menuItem.id, item.quantity + 1, item.selectedVariant?.id)}
-                          className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
+                          className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
+                          aria-label={locale === 'ar' ? 'زيادة الكمية' : 'Increase quantity'}
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="w-5 h-5" />
                         </button>
                       </div>
 
@@ -472,9 +474,10 @@ export default function CartPage() {
                       </span>
                       <button
                         onClick={() => handleAddExtras(item)}
-                        className="w-7 h-7 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                        className="min-w-[44px] min-h-[44px] w-11 h-11 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                        aria-label={locale === 'ar' ? 'إضافة للسلة' : 'Add to cart'}
                       >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
