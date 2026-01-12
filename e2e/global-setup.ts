@@ -1,5 +1,5 @@
 import { chromium, FullConfig } from '@playwright/test'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import path from 'path'
 import fs from 'fs'
 
@@ -71,7 +71,7 @@ async function globalSetup(config: FullConfig) {
 }
 
 async function authenticateViaAPI(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   baseURL: string,
   role: string,
   user: { email: string; password: string },
