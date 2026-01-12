@@ -26,19 +26,19 @@ export function QuantitySelector({
 
   const sizeClasses = {
     sm: {
-      button: 'w-6 h-6',
-      icon: 'w-3 h-3',
-      text: 'w-6 text-sm',
+      button: 'w-10 h-10', // 40px minimum for iOS (44px touch)
+      icon: 'w-4 h-4',
+      text: 'w-8 text-sm',
     },
     md: {
-      button: 'w-8 h-8',
-      icon: 'w-4 h-4',
-      text: 'w-8 text-base',
+      button: 'w-12 h-12', // 48px for Material Design guidelines
+      icon: 'w-5 h-5',
+      text: 'w-10 text-base',
     },
     lg: {
-      button: 'w-10 h-10',
-      icon: 'w-5 h-5',
-      text: 'w-10 text-lg',
+      button: 'w-14 h-14', // 56px for easy touch
+      icon: 'w-6 h-6',
+      text: 'w-12 text-lg',
     },
   }
 

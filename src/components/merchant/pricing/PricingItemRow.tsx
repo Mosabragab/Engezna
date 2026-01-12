@@ -338,16 +338,17 @@ export function PricingItemRow({
                   style={{
                     backgroundColor: item.availability_status === 'available' ? '#10b981' : '#f1f5f9',
                     color: item.availability_status === 'available' ? '#ffffff' : '#334155',
-                    padding: '4px 10px',
+                    padding: '10px 14px', // Increased for 48px touch target
+                    minHeight: '44px', // iOS minimum
                     borderRadius: '9999px',
-                    fontSize: '12px',
+                    fontSize: '13px',
                     fontWeight: 500,
                     border: 'none',
                     cursor: disabled ? 'not-allowed' : 'pointer',
                     opacity: disabled ? 0.5 : 1,
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     boxShadow: item.availability_status === 'available' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
                     transition: 'all 0.15s ease',
                   }}
@@ -374,16 +375,17 @@ export function PricingItemRow({
                   style={{
                     backgroundColor: item.availability_status === 'unavailable' ? '#ef4444' : '#f1f5f9',
                     color: item.availability_status === 'unavailable' ? '#ffffff' : '#334155',
-                    padding: '4px 10px',
+                    padding: '10px 14px', // Increased for 48px touch target
+                    minHeight: '44px', // iOS minimum
                     borderRadius: '9999px',
-                    fontSize: '12px',
+                    fontSize: '13px',
                     fontWeight: 500,
                     border: 'none',
                     cursor: disabled ? 'not-allowed' : 'pointer',
                     opacity: disabled ? 0.5 : 1,
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     boxShadow: item.availability_status === 'unavailable' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
                     transition: 'all 0.15s ease',
                   }}
@@ -410,16 +412,17 @@ export function PricingItemRow({
                   style={{
                     backgroundColor: item.availability_status === 'substituted' ? '#f59e0b' : '#f1f5f9',
                     color: item.availability_status === 'substituted' ? '#ffffff' : '#334155',
-                    padding: '4px 10px',
+                    padding: '10px 14px', // Increased for 48px touch target
+                    minHeight: '44px', // iOS minimum
                     borderRadius: '9999px',
-                    fontSize: '12px',
+                    fontSize: '13px',
                     fontWeight: 500,
                     border: 'none',
                     cursor: disabled ? 'not-allowed' : 'pointer',
                     opacity: disabled ? 0.5 : 1,
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     boxShadow: item.availability_status === 'substituted' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
                     transition: 'all 0.15s ease',
                   }}
@@ -441,19 +444,19 @@ export function PricingItemRow({
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-col gap-1">
+          {/* Actions - Touch-friendly buttons (48x48 minimum) */}
+          <div className="flex flex-col gap-2">
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="h-8 w-8"
+              className="h-12 w-12 min-h-[48px] min-w-[48px]"
             >
               {isExpanded ? (
-                <ChevronUp className="w-4 h-4" />
+                <ChevronUp className="w-5 h-5" />
               ) : (
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-5 h-5" />
               )}
             </Button>
             <Button
@@ -462,9 +465,9 @@ export function PricingItemRow({
               size="icon"
               onClick={onRemove}
               disabled={disabled}
-              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+              className="h-12 w-12 min-h-[48px] min-w-[48px] text-red-500 hover:text-red-600 hover:bg-red-50"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-5 h-5" />
             </Button>
           </div>
         </div>

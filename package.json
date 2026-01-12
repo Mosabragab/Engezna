@@ -15,7 +15,23 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report e2e/reports",
+    "test:e2e:critical": "playwright test critical-customer-journey merchant-operations",
+    "test:e2e:stability": "playwright test stability-edge-cases",
+    "test:e2e:mobile": "playwright test mobile-responsiveness --project='iPhone 15' --project='Android Generic'",
+    "test:e2e:iphone": "playwright test --project='iPhone 15 Pro Max' --project='iPhone 15'",
+    "test:e2e:android": "playwright test --project='Android Generic' --project='Android Small'",
+    "test:e2e:store-ready": "playwright test critical-customer-journey merchant-operations stability-edge-cases mobile-responsiveness",
+    "test:e2e:performance": "playwright test performance-audit",
+    "lighthouse": "lhci autorun",
+    "lighthouse:collect": "lhci collect",
+    "lighthouse:assert": "lhci assert",
+    "lighthouse:upload": "lhci upload",
+    "lighthouse:mobile": "lighthouse http://localhost:3000/ar --output=html --output-path=./e2e/reports/lighthouse-mobile.html --preset=perf --form-factor=mobile",
+    "lighthouse:desktop": "lighthouse http://localhost:3000/ar --output=html --output-path=./e2e/reports/lighthouse-desktop.html --preset=perf --form-factor=desktop",
+    "lighthouse:all": "tsx scripts/lighthouse-audit.ts --all",
+    "audit:full": "npm run test:e2e:performance && npm run lighthouse:all",
+    "audit:quick": "tsx scripts/lighthouse-audit.ts --mobile"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -62,6 +78,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.57.0",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
@@ -71,6 +88,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
+    "lighthouse": "^13.0.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.2",
