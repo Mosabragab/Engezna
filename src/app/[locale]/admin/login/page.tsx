@@ -63,30 +63,35 @@ export default function AdminLoginPage() {
   }, [clearLockout])
 
   const checkExistingAuth = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
 
-    if (user) {
-      // Check if user is admin
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        // Check if admin is active
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('is_active')
-          .eq('user_id', user.id)
+      if (user) {
+        // Check if user is admin
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
           .single()
 
-        if (adminUser?.is_active) {
-          router.push(`/${locale}/admin`)
-          return
+        if (profile?.role === 'admin') {
+          // Check if admin is active
+          const { data: adminUser } = await supabase
+            .from('admin_users')
+            .select('is_active')
+            .eq('user_id', user.id)
+            .single()
+
+          if (adminUser?.is_active) {
+            router.push(`/${locale}/admin`)
+            return
+          }
         }
       }
+    } catch (error) {
+      // Log error but continue to show login form
+      console.error('Error checking existing auth:', error)
     }
 
     setCheckingAuth(false)

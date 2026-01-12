@@ -55,36 +55,41 @@ export default function ProviderLoginPage() {
   })
 
   const checkExistingAuth = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
 
-    if (user) {
-      // Check if user is provider_owner or provider_staff
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'provider_owner') {
-        router.push(`/${locale}/provider`)
-        return
-      }
-
-      // If provider_staff, check if they are active
-      if (profile?.role === 'provider_staff') {
-        const { data: staffData } = await supabase
-          .from('provider_staff')
-          .select('id, is_active')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
+      if (user) {
+        // Check if user is provider_owner or provider_staff
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
           .single()
 
-        if (staffData) {
+        if (profile?.role === 'provider_owner') {
           router.push(`/${locale}/provider`)
           return
         }
+
+        // If provider_staff, check if they are active
+        if (profile?.role === 'provider_staff') {
+          const { data: staffData } = await supabase
+            .from('provider_staff')
+            .select('id, is_active')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .single()
+
+          if (staffData) {
+            router.push(`/${locale}/provider`)
+            return
+          }
+        }
       }
+    } catch (error) {
+      // Log error but continue to show login form
+      console.error('Error checking existing auth:', error)
     }
 
     setCheckingAuth(false)
