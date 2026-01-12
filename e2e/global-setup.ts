@@ -238,6 +238,8 @@ async function authenticateViaUI(
       // Wait up to 10 seconds for spinner to disappear
       await spinner.waitFor({ state: 'hidden', timeout: 10000 })
       console.log(`   → Spinner disappeared`)
+      // Wait for React to re-render the form after spinner disappears
+      await page.waitForTimeout(2000)
     } catch {
       // Spinner might not be present, continue
       console.log(`   → No spinner found or already hidden`)
@@ -245,6 +247,16 @@ async function authenticateViaUI(
 
     // Take screenshot for debugging
     await page.screenshot({ path: `e2e/.auth/${role}-debug.png` })
+
+    // Debug: Log page content info
+    const pageHTML = await page.content()
+    const hasEmailInput = pageHTML.includes('type="email"')
+    const hasPasswordInput = pageHTML.includes('type="password"')
+    const hasForm = pageHTML.includes('<form')
+    console.log(`   → Page has form: ${hasForm}, email: ${hasEmailInput}, password: ${hasPasswordInput}`)
+
+    // Save HTML for debugging
+    fs.writeFileSync(`e2e/.auth/${role}-debug.html`, pageHTML)
 
     // Wait for form with retry mechanism
     const emailInput = page.locator('input[type="email"]')
