@@ -143,6 +143,54 @@ export default defineConfig({
       },
     },
 
+    // Critical Customer Journey tests - use customer storage state
+    {
+      name: 'critical-tests',
+      testMatch: /critical.*\.spec\.ts/,
+      use: {
+        storageState: CUSTOMER_STORAGE_STATE,
+        viewport: { width: 412, height: 915 },
+        isMobile: true,
+        hasTouch: true,
+      },
+      dependencies: ['setup'],
+    },
+
+    // Merchant Operations tests - use provider storage state
+    {
+      name: 'merchant-tests',
+      testMatch: /merchant.*\.spec\.ts/,
+      use: {
+        storageState: PROVIDER_STORAGE_STATE,
+        viewport: { width: 1920, height: 1080 },
+      },
+      dependencies: ['setup'],
+    },
+
+    // Mobile Responsiveness tests - no auth needed
+    {
+      name: 'mobile-tests',
+      testMatch: /mobile.*\.spec\.ts/,
+      use: {
+        viewport: { width: 412, height: 915 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+
+    // Stability and Edge Cases tests - use customer storage state
+    {
+      name: 'stability-tests',
+      testMatch: /stability.*\.spec\.ts/,
+      use: {
+        storageState: CUSTOMER_STORAGE_STATE,
+        viewport: { width: 412, height: 915 },
+        isMobile: true,
+        hasTouch: true,
+      },
+      dependencies: ['setup'],
+    },
+
     // ========== Multi-Device Testing (7 Devices) ==========
     // Run with: npx playwright test --project="device-*"
 
