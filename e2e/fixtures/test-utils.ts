@@ -2,6 +2,7 @@ import { test as base, expect, Page } from '@playwright/test'
 
 /**
  * Test Utilities and Fixtures for E2E Testing
+ * Updated for Store Readiness - 48px Touch Targets
  */
 
 // Test user credentials (should match your test database)
@@ -23,7 +24,27 @@ export const TEST_USERS = {
   },
 }
 
-// Common locators
+// Order status enum values (synced with backend)
+export const ORDER_STATUS = {
+  PENDING: 'pending',
+  PRICED: 'priced', // Updated from 'awaiting_pricing_approval'
+  CONFIRMED: 'confirmed',
+  PREPARING: 'preparing',
+  READY: 'ready',
+  OUT_FOR_DELIVERY: 'out_for_delivery',
+  DELIVERED: 'delivered',
+  CANCELLED: 'cancelled',
+}
+
+// Custom order status
+export const CUSTOM_ORDER_STATUS = {
+  BROADCASTING: 'broadcasting',
+  PRICED: 'priced', // When provider sends pricing
+  ACCEPTED: 'accepted', // Customer accepted pricing
+  EXPIRED: 'expired',
+}
+
+// Common locators - Updated for 48px touch targets
 export const LOCATORS = {
   // Auth
   emailInput: 'input[type="email"], input[name="email"]',
@@ -39,17 +60,32 @@ export const LOCATORS = {
   card: '[class*="card"], [class*="Card"]',
   statsCard: '[class*="stat"], [class*="Stat"]',
 
-  // Buttons
-  addButton: 'button:has-text("إضافة"), button:has-text("Add")',
+  // Buttons - Updated selectors for 48px buttons
+  addButton: 'button:has-text("إضافة"), button:has-text("Add"), button:has-text("أضف")',
   saveButton: 'button:has-text("حفظ"), button:has-text("Save")',
   cancelButton: 'button:has-text("إلغاء"), button:has-text("Cancel")',
   deleteButton: 'button:has-text("حذف"), button:has-text("Delete")',
+
+  // Quantity selectors (48px buttons)
+  increaseButton: 'button:has(svg[class*="Plus"]), button:has-text("+"), [aria-label*="increase"], [aria-label*="زيادة"]',
+  decreaseButton: 'button:has(svg[class*="Minus"]), button:has-text("-"), [aria-label*="decrease"], [aria-label*="تقليل"]',
 
   // Status badges
   badge: '[class*="badge"], [class*="Badge"]',
 
   // Loaders
   spinner: '[class*="spinner"], [class*="loading"], [class*="animate-spin"]',
+}
+
+// API endpoints for waitForResponse
+export const API_ENDPOINTS = {
+  orders: '**/rest/v1/orders**',
+  customOrders: '**/rest/v1/custom_orders**',
+  pricing: '**/rest/v1/pricing**',
+  products: '**/rest/v1/products**',
+  providers: '**/rest/v1/providers**',
+  cart: '**/rest/v1/cart**',
+  auth: '**/auth/**',
 }
 
 // Helper class for common test operations
@@ -117,6 +153,34 @@ export class TestHelpers {
     if (await spinner.isVisible().catch(() => false)) {
       await spinner.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {})
     }
+  }
+
+  /**
+   * Wait for API response (Supabase)
+   */
+  async waitForApiResponse(endpoint: string, timeout = 10000): Promise<boolean> {
+    try {
+      await this.page.waitForResponse(
+        response => response.url().includes(endpoint) && response.status() === 200,
+        { timeout }
+      )
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Click button and wait for API response
+   */
+  async clickAndWaitForApi(selector: string, endpoint: string) {
+    await Promise.all([
+      this.page.waitForResponse(
+        response => response.url().includes(endpoint),
+        { timeout: 15000 }
+      ).catch(() => {}),
+      this.page.click(selector),
+    ])
   }
 
   /**
@@ -202,6 +266,68 @@ export class TestHelpers {
    */
   async screenshot(name: string) {
     await this.page.screenshot({ path: `e2e/screenshots/${name}.png`, fullPage: true })
+  }
+
+  /**
+   * Get quantity button (48px compliant)
+   */
+  getQuantityIncrease() {
+    return this.page.locator(LOCATORS.increaseButton).first()
+  }
+
+  getQuantityDecrease() {
+    return this.page.locator(LOCATORS.decreaseButton).first()
+  }
+
+  /**
+   * Check touch target size (min 48px for Android, 44px for iOS)
+   */
+  async checkTouchTargetSize(selector: string, minSize = 44): Promise<boolean> {
+    const element = this.page.locator(selector).first()
+    if (await element.isVisible().catch(() => false)) {
+      const box = await element.boundingBox()
+      if (box) {
+        return box.width >= minSize && box.height >= minSize
+      }
+    }
+    return false
+  }
+
+  /**
+   * Safe audio play (handles autoplay restrictions)
+   */
+  async safeAudioCheck(audioSelector: string): Promise<{ exists: boolean; canPlay: boolean }> {
+    const exists = await this.page.locator(audioSelector).count() > 0
+
+    if (!exists) {
+      return { exists: false, canPlay: false }
+    }
+
+    // Try to play with autoplay policy handling
+    const canPlay = await this.page.evaluate(() => {
+      const audio = document.querySelector('audio')
+      if (!audio) return false
+
+      // Create a promise that resolves based on play result
+      return new Promise<boolean>(resolve => {
+        const playPromise = audio.play()
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              audio.pause()
+              resolve(true)
+            })
+            .catch(() => {
+              // Autoplay blocked - this is expected
+              resolve(false)
+            })
+        } else {
+          resolve(false)
+        }
+      })
+    }).catch(() => false)
+
+    return { exists, canPlay }
   }
 }
 
