@@ -105,13 +105,21 @@ export default function AdminLoginPage() {
   }, [locale, router])
 
   useEffect(() => {
+    // Run auth check
     checkExistingAuth()
-    checkLockoutStatus()
 
-    // Fallback: Force show form after 6 seconds if still loading
+    // Run lockout check safely (wrapped in try-catch)
+    try {
+      checkLockoutStatus()
+    } catch (error) {
+      console.error('Error checking lockout status:', error)
+    }
+
+    // Fallback: Force show form after 3 seconds if still loading
+    // Reduced from 6 seconds to 3 seconds for better test experience
     const fallbackTimer = setTimeout(() => {
       setCheckingAuth(false)
-    }, 6000)
+    }, 3000)
 
     return () => clearTimeout(fallbackTimer)
   }, [checkExistingAuth, checkLockoutStatus])

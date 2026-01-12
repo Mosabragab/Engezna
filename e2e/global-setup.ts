@@ -226,12 +226,51 @@ async function authenticateViaUI(
   const page = await context.newPage()
 
   try {
+    console.log(`   → Navigating to ${baseURL}${user.loginUrl}`)
     await page.goto(`${baseURL}${user.loginUrl}`)
     await page.waitForLoadState('networkidle')
+    console.log(`   → Page loaded, waiting for form...`)
 
-    // Wait for form
+    // Wait for the loading spinner to disappear (if present)
+    // The login pages show a spinner while checking auth
+    const spinner = page.locator('.animate-spin')
+    try {
+      // Wait up to 10 seconds for spinner to disappear
+      await spinner.waitFor({ state: 'hidden', timeout: 10000 })
+      console.log(`   → Spinner disappeared`)
+    } catch {
+      // Spinner might not be present, continue
+      console.log(`   → No spinner found or already hidden`)
+    }
+
+    // Take screenshot for debugging
+    await page.screenshot({ path: `e2e/.auth/${role}-debug.png` })
+
+    // Wait for form with retry mechanism
     const emailInput = page.locator('input[type="email"]')
-    await emailInput.waitFor({ state: 'visible', timeout: 15000 })
+    let formFound = false
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await emailInput.waitFor({ state: 'visible', timeout: 8000 })
+        formFound = true
+        console.log(`   → Email input found on attempt ${attempt + 1}`)
+        break
+      } catch {
+        console.log(`   → Email input not found on attempt ${attempt + 1}, retrying...`)
+        // Take screenshot for debugging
+        await page.screenshot({ path: `e2e/.auth/${role}-debug-attempt${attempt + 1}.png` })
+        // Reload page and try again
+        await page.reload()
+        await page.waitForLoadState('networkidle')
+        // Wait a bit for React to hydrate
+        await page.waitForTimeout(2000)
+      }
+    }
+
+    if (!formFound) {
+      throw new Error(`Email input not found after 3 attempts`)
+    }
 
     await emailInput.fill(user.email)
     await page.locator('input[type="password"]').fill(user.password)
@@ -245,6 +284,8 @@ async function authenticateViaUI(
 
   } catch (error) {
     console.log(`   ⚠️  ${role} UI auth error:`, error instanceof Error ? error.message : error)
+    // Take final screenshot for debugging
+    await page.screenshot({ path: `e2e/.auth/${role}-debug-error.png` })
     await createEmptyStorageState(storageStatePath)
   } finally {
     await context.close()

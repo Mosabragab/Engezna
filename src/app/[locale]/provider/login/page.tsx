@@ -104,6 +104,13 @@ export default function ProviderLoginPage() {
 
   useEffect(() => {
     checkExistingAuth()
+
+    // Fallback: Force show form after 3 seconds if still loading
+    const fallbackTimer = setTimeout(() => {
+      setCheckingAuth(false)
+    }, 3000)
+
+    return () => clearTimeout(fallbackTimer)
   }, [checkExistingAuth])
 
   async function onSubmit(data: LoginFormData) {
