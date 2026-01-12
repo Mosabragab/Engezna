@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 /**
  * Customer Journey Smoke Test
@@ -13,10 +14,25 @@ import { test, expect } from '@playwright/test'
  * 7. Verify order confirmation page
  */
 
+// Helper function to login as customer
+async function loginAsCustomer(page: import('@playwright/test').Page) {
+  await page.goto('/ar/auth/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.customer.email)
+  await passwordInput.fill(TEST_USERS.customer.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
 test.describe('Customer Journey - Order Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the Arabic homepage
-    await page.goto('/ar')
+    await loginAsCustomer(page)
   })
 
   test('should display homepage correctly', async ({ page }) => {

@@ -1,4 +1,5 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 /**
  * Performance Audit Tests
@@ -16,6 +17,22 @@ import { test, expect, Page, BrowserContext } from '@playwright/test'
  * - CLS: < 0.1
  * - TBT: < 500ms
  */
+
+// Helper function to login as customer
+async function loginAsCustomer(page: Page) {
+  await page.goto('/ar/auth/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.customer.email)
+  await passwordInput.fill(TEST_USERS.customer.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
 
 // Performance thresholds (in milliseconds unless specified)
 const THRESHOLDS = {

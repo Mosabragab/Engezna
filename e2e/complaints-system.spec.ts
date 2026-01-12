@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 /**
  * Complaints System E2E Tests
@@ -11,10 +12,57 @@ import { test, expect } from '@playwright/test'
  * 5. Ticket messaging system
  */
 
+// Helper function to login as customer
+async function loginAsCustomer(page: import('@playwright/test').Page) {
+  await page.goto('/ar/auth/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.customer.email)
+  await passwordInput.fill(TEST_USERS.customer.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
+// Helper function to login as provider
+async function loginAsProvider(page: import('@playwright/test').Page) {
+  await page.goto('/ar/provider/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.provider.email)
+  await passwordInput.fill(TEST_USERS.provider.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
+// Helper function to login as admin
+async function loginAsAdmin(page: import('@playwright/test').Page) {
+  await page.goto('/ar/admin/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.admin.email)
+  await passwordInput.fill(TEST_USERS.admin.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
 test.describe('Customer Support Ticket Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/ar')
-    await page.waitForLoadState('networkidle')
+    await loginAsCustomer(page)
   })
 
   test('should display support page', async ({ page }) => {
@@ -76,6 +124,10 @@ test.describe('Customer Support Ticket Flow', () => {
 })
 
 test.describe('Provider Complaints Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display complaints page in provider dashboard', async ({ page }) => {
     await page.goto('/ar/provider/complaints')
     await page.waitForLoadState('networkidle')
@@ -215,6 +267,10 @@ test.describe('Provider Complaints Management', () => {
 })
 
 test.describe('Admin Resolution Center', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display admin support/resolution page', async ({ page }) => {
     await page.goto('/ar/admin/support')
     await page.waitForLoadState('networkidle')
@@ -270,6 +326,10 @@ test.describe('Admin Resolution Center', () => {
 })
 
 test.describe('Complaint Messaging System', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should support real-time message updates', async ({ page }) => {
     await page.goto('/ar/provider/complaints')
     await page.waitForLoadState('networkidle')
@@ -311,6 +371,10 @@ test.describe('Complaint Messaging System', () => {
 })
 
 test.describe('Complaint Responsive Design', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should be mobile responsive on provider complaints page', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/ar/provider/complaints')
@@ -344,6 +408,10 @@ test.describe('Complaint Responsive Design', () => {
 })
 
 test.describe('Complaint Ticket Types', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should support different complaint categories', async ({ page }) => {
     await page.goto('/ar/provider/complaints')
     await page.waitForLoadState('networkidle')

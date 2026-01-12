@@ -1,4 +1,5 @@
 import { test, expect, BrowserContext } from '@playwright/test'
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 /**
  * PWA Offline Tests
@@ -9,6 +10,22 @@ import { test, expect, BrowserContext } from '@playwright/test'
  * 3. Manifest.json configuration
  * 4. App installability
  */
+
+// Helper function to login as customer
+async function loginAsCustomer(page: import('@playwright/test').Page) {
+  await page.goto('/ar/auth/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.customer.email)
+  await passwordInput.fill(TEST_USERS.customer.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
 
 test.describe('PWA - Service Worker & Offline', () => {
   test('should register service worker', async ({ page }) => {

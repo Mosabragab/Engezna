@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 /**
  * Admin Dashboard E2E Tests
@@ -13,6 +14,22 @@ import { test, expect } from '@playwright/test'
  * 7. Refunds and disputes
  * 8. Supervisors and roles
  */
+
+// Helper function to login as admin
+async function loginAsAdmin(page: import('@playwright/test').Page) {
+  await page.goto('/ar/admin/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.admin.email)
+  await passwordInput.fill(TEST_USERS.admin.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
 
 test.describe('Admin Login Flow', () => {
   test('should display admin login page correctly', async ({ page }) => {
@@ -83,6 +100,7 @@ test.describe('Admin Login Flow', () => {
 
 test.describe('Admin Dashboard Display', () => {
   test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
     await page.goto('/ar/admin')
     await page.waitForLoadState('networkidle')
   })
@@ -124,6 +142,10 @@ test.describe('Admin Dashboard Display', () => {
 })
 
 test.describe('Admin Provider Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display providers page', async ({ page }) => {
     await page.goto('/ar/admin/providers')
     await page.waitForLoadState('networkidle')
@@ -159,6 +181,10 @@ test.describe('Admin Provider Management', () => {
 })
 
 test.describe('Admin User Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display users page', async ({ page }) => {
     await page.goto('/ar/admin/users')
     await page.waitForLoadState('networkidle')
@@ -195,6 +221,10 @@ test.describe('Admin User Management', () => {
 })
 
 test.describe('Admin Orders Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display orders page', async ({ page }) => {
     await page.goto('/ar/admin/orders')
     await page.waitForLoadState('networkidle')
@@ -213,6 +243,10 @@ test.describe('Admin Orders Management', () => {
 })
 
 test.describe('Admin Settlements Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display settlements page', async ({ page }) => {
     await page.goto('/ar/admin/settlements')
     await page.waitForLoadState('networkidle')
@@ -244,6 +278,10 @@ test.describe('Admin Settlements Management', () => {
 })
 
 test.describe('Admin Refunds & Disputes', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display refunds page', async ({ page }) => {
     await page.goto('/ar/admin/refunds')
     await page.waitForLoadState('networkidle')
@@ -278,6 +316,10 @@ test.describe('Admin Refunds & Disputes', () => {
 })
 
 test.describe('Admin Supervisors & Roles', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display supervisors page', async ({ page }) => {
     await page.goto('/ar/admin/supervisors')
     await page.waitForLoadState('networkidle')
@@ -312,6 +354,10 @@ test.describe('Admin Supervisors & Roles', () => {
 })
 
 test.describe('Admin Analytics', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display analytics page', async ({ page }) => {
     await page.goto('/ar/admin/analytics')
     await page.waitForLoadState('networkidle')
@@ -331,6 +377,10 @@ test.describe('Admin Analytics', () => {
 })
 
 test.describe('Admin Approvals Workflow', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display approvals page', async ({ page }) => {
     await page.goto('/ar/admin/approvals')
     await page.waitForLoadState('networkidle')
@@ -349,6 +399,10 @@ test.describe('Admin Approvals Workflow', () => {
 })
 
 test.describe('Admin Responsive Design', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should be mobile responsive', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/ar/admin')

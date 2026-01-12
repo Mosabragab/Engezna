@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 /**
  * Cart & Checkout E2E Tests
@@ -11,10 +12,25 @@ import { test, expect } from '@playwright/test'
  * 5. Address selection
  */
 
+// Helper function to login as customer
+async function loginAsCustomer(page: import('@playwright/test').Page) {
+  await page.goto('/ar/auth/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.customer.email)
+  await passwordInput.fill(TEST_USERS.customer.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
 test.describe('Shopping Cart', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/ar')
-    await page.waitForLoadState('networkidle')
+    await loginAsCustomer(page)
   })
 
   test('should display cart page', async ({ page }) => {
@@ -122,6 +138,10 @@ test.describe('Shopping Cart', () => {
 })
 
 test.describe('Checkout Flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsCustomer(page)
+  })
+
   test('should display checkout page', async ({ page }) => {
     await page.goto('/ar/checkout')
     await page.waitForLoadState('networkidle')
@@ -213,6 +233,10 @@ test.describe('Checkout Flow', () => {
 })
 
 test.describe('Payment Methods', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsCustomer(page)
+  })
+
   test('should support cash on delivery', async ({ page }) => {
     await page.goto('/ar/checkout')
     await page.waitForLoadState('networkidle')
@@ -249,6 +273,10 @@ test.describe('Payment Methods', () => {
 })
 
 test.describe('Order Confirmation', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsCustomer(page)
+  })
+
   test('should display orders page', async ({ page }) => {
     await page.goto('/ar/orders')
     await page.waitForLoadState('networkidle')
@@ -327,6 +355,10 @@ test.describe('Order Confirmation', () => {
 })
 
 test.describe('Address Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsCustomer(page)
+  })
+
   test('should display addresses page', async ({ page }) => {
     await page.goto('/ar/profile/addresses')
     await page.waitForLoadState('networkidle')
@@ -359,6 +391,10 @@ test.describe('Address Management', () => {
 })
 
 test.describe('Cart & Checkout Responsive Design', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsCustomer(page)
+  })
+
   test('should be mobile responsive on cart page', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/ar/cart')
@@ -395,6 +431,10 @@ test.describe('Cart & Checkout Responsive Design', () => {
 })
 
 test.describe('Favorites', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsCustomer(page)
+  })
+
   test('should display favorites page', async ({ page }) => {
     await page.goto('/ar/favorites')
     await page.waitForLoadState('networkidle')

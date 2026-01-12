@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 /**
  * Notifications & Real-time Updates E2E Tests
@@ -11,7 +12,59 @@ import { test, expect } from '@playwright/test'
  * 5. Notification page
  */
 
+// Helper function to login as customer
+async function loginAsCustomer(page: import('@playwright/test').Page) {
+  await page.goto('/ar/auth/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.customer.email)
+  await passwordInput.fill(TEST_USERS.customer.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
+// Helper function to login as provider
+async function loginAsProvider(page: import('@playwright/test').Page) {
+  await page.goto('/ar/provider/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.provider.email)
+  await passwordInput.fill(TEST_USERS.provider.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
+// Helper function to login as admin
+async function loginAsAdmin(page: import('@playwright/test').Page) {
+  await page.goto('/ar/admin/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.admin.email)
+  await passwordInput.fill(TEST_USERS.admin.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
 test.describe('Provider Notification Badges', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display sidebar with badge capability', async ({ page }) => {
     await page.goto('/ar/provider')
     await page.waitForLoadState('networkidle')
@@ -98,6 +151,10 @@ test.describe('Provider Notification Badges', () => {
 })
 
 test.describe('Customer Notifications', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsCustomer(page)
+  })
+
   test('should display notifications page', async ({ page }) => {
     await page.goto('/ar/notifications')
     await page.waitForLoadState('networkidle')
@@ -152,6 +209,10 @@ test.describe('Customer Notifications', () => {
 })
 
 test.describe('Admin Notification System', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display admin sidebar with badges', async ({ page }) => {
     await page.goto('/ar/admin')
     await page.waitForLoadState('networkidle')
@@ -206,6 +267,10 @@ test.describe('Admin Notification System', () => {
 })
 
 test.describe('Real-time Badge Updates', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('provider sidebar should support real-time updates', async ({ page }) => {
     await page.goto('/ar/provider')
     await page.waitForLoadState('networkidle')
@@ -246,6 +311,10 @@ test.describe('Real-time Badge Updates', () => {
 })
 
 test.describe('PWA App Badge Support', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should have badge support in manifest', async ({ request }) => {
     const response = await request.get('/manifest.json')
 
@@ -276,6 +345,10 @@ test.describe('PWA App Badge Support', () => {
 })
 
 test.describe('Notification Interactions', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('clicking notification should navigate to relevant page', async ({ page }) => {
     await page.goto('/ar/provider')
     await page.waitForLoadState('networkidle')
@@ -335,6 +408,10 @@ test.describe('Notification Sound', () => {
 })
 
 test.describe('Mobile Notification Display', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display bottom nav with notification indicators', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/ar/provider')

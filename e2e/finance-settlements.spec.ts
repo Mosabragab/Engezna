@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 /**
  * Finance & Settlements E2E Tests
@@ -12,7 +13,43 @@ import { test, expect } from '@playwright/test'
  * 6. Reports page
  */
 
+// Helper function to login as provider
+async function loginAsProvider(page: import('@playwright/test').Page) {
+  await page.goto('/ar/provider/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.provider.email)
+  await passwordInput.fill(TEST_USERS.provider.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
+// Helper function to login as admin
+async function loginAsAdmin(page: import('@playwright/test').Page) {
+  await page.goto('/ar/admin/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.admin.email)
+  await passwordInput.fill(TEST_USERS.admin.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
 test.describe('Provider Finance Dashboard', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display finance page with stats cards', async ({ page }) => {
     await page.goto('/ar/provider/finance')
     await page.waitForLoadState('networkidle')
@@ -101,6 +138,10 @@ test.describe('Provider Finance Dashboard', () => {
 })
 
 test.describe('COD vs Online Payment Breakdown', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display payment methods breakdown', async ({ page }) => {
     await page.goto('/ar/provider/finance')
     await page.waitForLoadState('networkidle')
@@ -140,6 +181,10 @@ test.describe('COD vs Online Payment Breakdown', () => {
 })
 
 test.describe('Transaction History', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display transaction history section', async ({ page }) => {
     await page.goto('/ar/provider/finance')
     await page.waitForLoadState('networkidle')
@@ -211,6 +256,10 @@ test.describe('Transaction History', () => {
 })
 
 test.describe('Provider Settlements', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display settlements page', async ({ page }) => {
     await page.goto('/ar/provider/settlements')
     await page.waitForLoadState('networkidle')
@@ -265,6 +314,10 @@ test.describe('Provider Settlements', () => {
 })
 
 test.describe('Admin Settlements Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display admin settlements page', async ({ page }) => {
     await page.goto('/ar/admin/settlements')
     await page.waitForLoadState('networkidle')
@@ -315,6 +368,10 @@ test.describe('Admin Settlements Management', () => {
 })
 
 test.describe('Admin Finance Overview', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display admin finance page', async ({ page }) => {
     await page.goto('/ar/admin/finance')
     await page.waitForLoadState('networkidle')
@@ -347,6 +404,10 @@ test.describe('Admin Finance Overview', () => {
 })
 
 test.describe('Provider Reports Page', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display reports page', async ({ page }) => {
     await page.goto('/ar/provider/reports')
     await page.waitForLoadState('networkidle')
@@ -413,6 +474,10 @@ test.describe('Provider Reports Page', () => {
 })
 
 test.describe('Finance Responsive Design', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should be mobile responsive on finance page', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/ar/provider/finance')

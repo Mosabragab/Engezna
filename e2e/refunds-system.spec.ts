@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 /**
  * Refunds System E2E Tests
@@ -11,10 +12,57 @@ import { test, expect } from '@playwright/test'
  * 5. Finance impact of refunds
  */
 
+// Helper function to login as customer
+async function loginAsCustomer(page: import('@playwright/test').Page) {
+  await page.goto('/ar/auth/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.customer.email)
+  await passwordInput.fill(TEST_USERS.customer.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
+// Helper function to login as provider
+async function loginAsProvider(page: import('@playwright/test').Page) {
+  await page.goto('/ar/provider/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.provider.email)
+  await passwordInput.fill(TEST_USERS.provider.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
+// Helper function to login as admin
+async function loginAsAdmin(page: import('@playwright/test').Page) {
+  await page.goto('/ar/admin/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.admin.email)
+  await passwordInput.fill(TEST_USERS.admin.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
+
 test.describe('Customer Refund Request Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/ar')
-    await page.waitForLoadState('networkidle')
+    await loginAsCustomer(page)
   })
 
   test('should display refund request option on order details', async ({ page }) => {
@@ -66,6 +114,10 @@ test.describe('Customer Refund Request Flow', () => {
 })
 
 test.describe('Provider Refund Response Flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display refunds page in provider dashboard', async ({ page }) => {
     await page.goto('/ar/provider/refunds')
     await page.waitForLoadState('networkidle')
@@ -150,6 +202,10 @@ test.describe('Provider Refund Response Flow', () => {
 })
 
 test.describe('Admin Refund Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page)
+  })
+
   test('should display admin refunds page', async ({ page }) => {
     await page.goto('/ar/admin/refunds')
     await page.waitForLoadState('networkidle')
@@ -209,6 +265,10 @@ test.describe('Admin Refund Management', () => {
 })
 
 test.describe('Refund Impact on Finance', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should reflect refunds in provider finance page', async ({ page }) => {
     await page.goto('/ar/provider/finance')
     await page.waitForLoadState('networkidle')
@@ -265,6 +325,10 @@ test.describe('Refund Impact on Finance', () => {
 })
 
 test.describe('Refund Real-time Updates', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should update UI when refund status changes', async ({ page }) => {
     await page.goto('/ar/provider/refunds')
     await page.waitForLoadState('networkidle')
@@ -311,6 +375,7 @@ test.describe('Refund Real-time Updates', () => {
 
 test.describe('Refund Responsive Design', () => {
   test('should be mobile responsive on provider refunds page', async ({ page }) => {
+    await loginAsProvider(page)
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/ar/provider/refunds')
     await page.waitForLoadState('networkidle')
@@ -325,6 +390,7 @@ test.describe('Refund Responsive Design', () => {
   })
 
   test('should be mobile responsive on admin refunds page', async ({ page }) => {
+    await loginAsAdmin(page)
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/ar/admin/refunds')
     await page.waitForLoadState('networkidle')

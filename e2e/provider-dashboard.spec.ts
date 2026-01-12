@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 /**
  * Provider Dashboard E2E Tests
@@ -11,6 +12,22 @@ import { test, expect } from '@playwright/test'
  * 5. Settings and store hours
  * 6. Settlements and Finance
  */
+
+// Helper function to login as provider
+async function loginAsProvider(page: import('@playwright/test').Page) {
+  await page.goto('/ar/provider/login')
+  await page.waitForLoadState('networkidle')
+
+  const emailInput = page.locator(LOCATORS.emailInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput)
+
+  await emailInput.fill(TEST_USERS.provider.email)
+  await passwordInput.fill(TEST_USERS.provider.password)
+  await page.click(LOCATORS.submitButton)
+
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1500)
+}
 
 test.describe('Provider Login Flow', () => {
   test('should display provider login page correctly', async ({ page }) => {
@@ -80,7 +97,7 @@ test.describe('Provider Login Flow', () => {
 
 test.describe('Provider Dashboard Display', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to provider dashboard (may redirect to login if not authenticated)
+    await loginAsProvider(page)
     await page.goto('/ar/provider')
     await page.waitForLoadState('networkidle')
   })
@@ -124,6 +141,10 @@ test.describe('Provider Dashboard Display', () => {
 })
 
 test.describe('Provider Orders Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display orders page', async ({ page }) => {
     await page.goto('/ar/provider/orders')
     await page.waitForLoadState('networkidle')
@@ -164,6 +185,10 @@ test.describe('Provider Orders Management', () => {
 })
 
 test.describe('Provider Products Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display products page', async ({ page }) => {
     await page.goto('/ar/provider/products')
     await page.waitForLoadState('networkidle')
@@ -197,6 +222,10 @@ test.describe('Provider Products Management', () => {
 })
 
 test.describe('Provider Settings', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display settings page', async ({ page }) => {
     await page.goto('/ar/provider/settings')
     await page.waitForLoadState('networkidle')
@@ -233,6 +262,10 @@ test.describe('Provider Settings', () => {
 })
 
 test.describe('Provider Finance & Settlements', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display finance page', async ({ page }) => {
     await page.goto('/ar/provider/finance')
     await page.waitForLoadState('networkidle')
@@ -269,6 +302,10 @@ test.describe('Provider Finance & Settlements', () => {
 })
 
 test.describe('Provider Grace Period Banner', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should display grace period information on dashboard', async ({ page }) => {
     await page.goto('/ar/provider')
     await page.waitForLoadState('networkidle')
@@ -291,6 +328,10 @@ test.describe('Provider Grace Period Banner', () => {
 })
 
 test.describe('Provider Responsive Design', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsProvider(page)
+  })
+
   test('should be mobile responsive', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/ar/provider')
