@@ -2,7 +2,6 @@
 
 import { useLocale, useTranslations } from 'next-intl'
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -38,7 +37,6 @@ export const dynamic = 'force-dynamic'
 export default function ProviderLoginPage() {
   const locale = useLocale()
   const t = useTranslations('partner.login')
-  const router = useRouter()
   const isRTL = locale === 'ar'
 
   const [showPassword, setShowPassword] = useState(false)
@@ -55,43 +53,64 @@ export default function ProviderLoginPage() {
   })
 
   const checkExistingAuth = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    try {
+      const supabase = createClient()
 
-    if (user) {
-      // Check if user is provider_owner or provider_staff
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
+      // Add timeout to prevent hanging forever (5 seconds max)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Auth check timeout')), 5000)
+      )
 
-      if (profile?.role === 'provider_owner') {
-        router.push(`/${locale}/provider`)
-        return
-      }
+      const authPromise = supabase.auth.getUser()
+      const { data: { user } } = await Promise.race([authPromise, timeoutPromise])
 
-      // If provider_staff, check if they are active
-      if (profile?.role === 'provider_staff') {
-        const { data: staffData } = await supabase
-          .from('provider_staff')
-          .select('id, is_active')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
+      if (user) {
+        // Check if user is provider_owner or provider_staff
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
           .single()
 
-        if (staffData) {
-          router.push(`/${locale}/provider`)
+        if (profile?.role === 'provider_owner') {
+          // Use full page navigation to ensure fresh context
+          window.location.href = `/${locale}/provider`
           return
         }
+
+        // If provider_staff, check if they are active
+        if (profile?.role === 'provider_staff') {
+          const { data: staffData } = await supabase
+            .from('provider_staff')
+            .select('id, is_active')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .single()
+
+          if (staffData) {
+            // Use full page navigation to ensure fresh context
+            window.location.href = `/${locale}/provider`
+            return
+          }
+        }
       }
+    } catch (error) {
+      // Log error but continue to show login form
+      console.error('Error checking existing auth:', error)
     }
 
     setCheckingAuth(false)
-  }, [locale, router])
+  }, [locale])
 
   useEffect(() => {
     checkExistingAuth()
+
+    // Fallback: Force show form after 3 seconds if still loading
+    const fallbackTimer = setTimeout(() => {
+      setCheckingAuth(false)
+    }, 3000)
+
+    return () => clearTimeout(fallbackTimer)
   }, [checkExistingAuth])
 
   async function onSubmit(data: LoginFormData) {

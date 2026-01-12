@@ -86,7 +86,7 @@ export function Header({ showBack = false, backHref, backLabel, hideAuth = false
           {showBack ? (
             <Link
               href={backHref || `/${locale}`}
-              className="flex items-center gap-2 text-slate-600 hover:text-primary transition-colors"
+              className="flex items-center gap-2 text-slate-600 hover:text-primary transition-colors min-h-[44px] min-w-[44px] px-2"
             >
               {isRTL ? (
                 <ArrowRight className="w-5 h-5" />
@@ -115,14 +115,14 @@ export function Header({ showBack = false, backHref, backLabel, hideAuth = false
                 <div className="w-20 h-8 bg-muted animate-pulse rounded" />
               ) : user ? (
                 <>
-                  {/* My Orders Link */}
+                  {/* My Orders Link - 44px touch target for iOS */}
                   <Link href={`/${locale}/orders`}>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="relative flex items-center gap-1.5"
+                      className="relative flex items-center gap-1.5 min-h-[44px] min-w-[44px]"
                     >
-                      <ShoppingBag className="w-4 h-4" />
+                      <ShoppingBag className="w-5 h-5" />
                       <span className="hidden sm:inline">
                         {locale === 'ar' ? 'طلباتي' : 'My Orders'}
                       </span>
@@ -134,14 +134,14 @@ export function Header({ showBack = false, backHref, backLabel, hideAuth = false
                     </Button>
                   </Link>
 
-                  {/* Sign Out Button - Always shows text to match brand identity */}
+                  {/* Sign Out Button - 44px touch target for iOS */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleSignOut}
-                    className="flex items-center gap-1.5 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
+                    className="flex items-center gap-1.5 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 min-h-[44px]"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="w-5 h-5" />
                     <span className="text-xs sm:text-sm">
                       {locale === 'ar' ? 'خروج' : 'Logout'}
                     </span>
@@ -149,7 +149,7 @@ export function Header({ showBack = false, backHref, backLabel, hideAuth = false
                 </>
               ) : (
                 <Link href={`/${locale}/auth/login`}>
-                  <Button variant="default" size="sm">
+                  <Button variant="default" size="sm" className="min-h-[44px] min-w-[44px]">
                     {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
                   </Button>
                 </Link>
