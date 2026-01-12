@@ -50,6 +50,10 @@ export const LOCATORS = {
   emailInput: 'input[type="email"], input[name="email"]',
   passwordInput: 'input[type="password"], input[name="password"]',
   submitButton: 'button[type="submit"]',
+  // Customer login page has a "Continue with Email" button that must be clicked first
+  continueWithEmailButton: 'button:has(svg.lucide-mail), button:has-text("الدخول عبر الإيميل"), button:has-text("Continue with Email")',
+  // Spinner that appears during auth check
+  authSpinner: '.animate-spin, [class*="animate-spin"]',
 
   // Navigation
   header: 'header',
@@ -94,51 +98,71 @@ export class TestHelpers {
 
   /**
    * Login as customer
+   * Note: Customer login page requires clicking "Continue with Email" button first
    */
   async loginAsCustomer() {
     await this.page.goto('/ar/auth/login')
     await this.page.waitForLoadState('networkidle')
 
-    await this.page.fill(LOCATORS.emailInput, TEST_USERS.customer.email)
-    await this.page.fill(LOCATORS.passwordInput, TEST_USERS.customer.password)
+    // Customer login page has a "Continue with Email" button that must be clicked first
+    const emailButton = this.page.locator(LOCATORS.continueWithEmailButton)
+    await emailButton.waitFor({ state: 'visible', timeout: 15000 })
+    await emailButton.click()
+
+    // Wait for the email form to appear
+    const emailInput = this.page.locator(LOCATORS.emailInput)
+    await emailInput.waitFor({ state: 'visible', timeout: 10000 })
+
+    await emailInput.fill(TEST_USERS.customer.email)
+    await this.page.locator(LOCATORS.passwordInput).fill(TEST_USERS.customer.password)
     await this.page.click(LOCATORS.submitButton)
 
     await this.page.waitForLoadState('networkidle')
-    await this.page.waitForTimeout(1000)
+    await this.page.waitForTimeout(2000)
 
     return this.page.url().includes('/auth') === false
   }
 
   /**
    * Login as provider
+   * Note: Provider login has checkingAuth spinner that must disappear first
    */
   async loginAsProvider() {
     await this.page.goto('/ar/provider/login')
     await this.page.waitForLoadState('networkidle')
 
-    await this.page.fill(LOCATORS.emailInput, TEST_USERS.provider.email)
-    await this.page.fill(LOCATORS.passwordInput, TEST_USERS.provider.password)
+    // Wait for the auth spinner to disappear and form to appear
+    const emailInput = this.page.locator(LOCATORS.emailInput)
+    await emailInput.waitFor({ state: 'visible', timeout: 15000 })
+
+    await emailInput.fill(TEST_USERS.provider.email)
+    await this.page.locator(LOCATORS.passwordInput).fill(TEST_USERS.provider.password)
     await this.page.click(LOCATORS.submitButton)
 
     await this.page.waitForLoadState('networkidle')
-    await this.page.waitForTimeout(1000)
+    await this.page.waitForTimeout(2000)
 
     return this.page.url().includes('/provider') && !this.page.url().includes('/login')
   }
 
   /**
    * Login as admin
+   * Note: Admin login has checkingAuth spinner that must disappear first
    */
   async loginAsAdmin() {
     await this.page.goto('/ar/admin/login')
     await this.page.waitForLoadState('networkidle')
 
-    await this.page.fill(LOCATORS.emailInput, TEST_USERS.admin.email)
-    await this.page.fill(LOCATORS.passwordInput, TEST_USERS.admin.password)
+    // Wait for the auth spinner to disappear and form to appear
+    const emailInput = this.page.locator(LOCATORS.emailInput)
+    await emailInput.waitFor({ state: 'visible', timeout: 15000 })
+
+    await emailInput.fill(TEST_USERS.admin.email)
+    await this.page.locator(LOCATORS.passwordInput).fill(TEST_USERS.admin.password)
     await this.page.click(LOCATORS.submitButton)
 
     await this.page.waitForLoadState('networkidle')
-    await this.page.waitForTimeout(1000)
+    await this.page.waitForTimeout(2000)
 
     return this.page.url().includes('/admin') && !this.page.url().includes('/login')
   }

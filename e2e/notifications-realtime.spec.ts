@@ -17,9 +17,14 @@ async function loginAsCustomer(page: import('@playwright/test').Page) {
   await page.goto('/ar/auth/login')
   await page.waitForLoadState('networkidle')
 
-  // Wait for the form to appear (after checkingAuth spinner disappears)
+  // Customer login page requires clicking "Continue with Email" button first
+  const emailButton = page.locator('button:has(svg.lucide-mail), button:has-text("الدخول عبر الإيميل"), button:has-text("Continue with Email")')
+  await emailButton.waitFor({ state: 'visible', timeout: 15000 })
+  await emailButton.click()
+
+  // Wait for the email form to appear
   const emailInput = page.locator(LOCATORS.emailInput)
-  await emailInput.waitFor({ state: 'visible', timeout: 15000 })
+  await emailInput.waitFor({ state: 'visible', timeout: 10000 })
 
   const passwordInput = page.locator(LOCATORS.passwordInput)
 
