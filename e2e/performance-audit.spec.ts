@@ -23,7 +23,10 @@ async function loginAsCustomer(page: Page) {
   await page.goto('/ar/auth/login')
   await page.waitForLoadState('networkidle')
 
+  // Wait for the form to appear (after checkingAuth spinner disappears)
   const emailInput = page.locator(LOCATORS.emailInput)
+  await emailInput.waitFor({ state: 'visible', timeout: 15000 })
+
   const passwordInput = page.locator(LOCATORS.passwordInput)
 
   await emailInput.fill(TEST_USERS.customer.email)
@@ -31,7 +34,7 @@ async function loginAsCustomer(page: Page) {
   await page.click(LOCATORS.submitButton)
 
   await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(1500)
+  await page.waitForTimeout(2000)
 }
 
 // Performance thresholds (in milliseconds unless specified)
