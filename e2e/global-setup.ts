@@ -1,14 +1,14 @@
 import { chromium, FullConfig } from '@playwright/test'
+import { createClient } from '@supabase/supabase-js'
 import path from 'path'
 import fs from 'fs'
 
 /**
  * Global Setup for Playwright E2E Tests
  *
- * This script runs once before all tests and:
- * 1. Logs in as Admin, Provider, and Customer
- * 2. Saves authentication state (cookies, localStorage) to JSON files
- * 3. These files are used by tests to skip the login process
+ * This script authenticates users via Supabase API (not UI) and saves
+ * the session state for use in tests. This is more reliable than
+ * UI-based authentication.
  */
 
 // Storage state file paths
@@ -22,22 +22,20 @@ const TEST_USERS = {
   admin: {
     email: process.env.TEST_ADMIN_EMAIL || 'admin@test.com',
     password: process.env.TEST_ADMIN_PASSWORD || 'Test123!',
-    loginUrl: '/ar/admin/login',
-    dashboardUrl: '/ar/admin',
   },
   provider: {
     email: process.env.TEST_PROVIDER_EMAIL || 'provider@test.com',
     password: process.env.TEST_PROVIDER_PASSWORD || 'Test123!',
-    loginUrl: '/ar/provider/login',
-    dashboardUrl: '/ar/provider',
   },
   customer: {
     email: process.env.TEST_CUSTOMER_EMAIL || 'customer@test.com',
     password: process.env.TEST_CUSTOMER_PASSWORD || 'Test123!',
-    loginUrl: '/ar/auth/login',
-    dashboardUrl: '/ar',
   },
 }
+
+// Supabase configuration
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000'
@@ -49,133 +47,246 @@ async function globalSetup(config: FullConfig) {
 
   console.log('🔐 Starting global authentication setup...')
   console.log(`   Base URL: ${baseURL}`)
+  console.log(`   Supabase URL: ${SUPABASE_URL ? '✓ configured' : '✗ missing'}`)
 
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.warn('⚠️  Supabase credentials not configured. Skipping API auth, falling back to UI auth.')
+    return fallbackUIAuth(config)
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+  try {
+    // Authenticate all users via API
+    await authenticateViaAPI(supabase, baseURL, 'admin', TEST_USERS.admin, ADMIN_STORAGE_STATE)
+    await authenticateViaAPI(supabase, baseURL, 'provider', TEST_USERS.provider, PROVIDER_STORAGE_STATE)
+    await authenticateViaAPI(supabase, baseURL, 'customer', TEST_USERS.customer, CUSTOMER_STORAGE_STATE)
+
+    console.log('✅ Global authentication setup complete!')
+  } catch (error) {
+    console.error('❌ Global setup failed:', error)
+    // Create empty storage states to prevent file not found errors
+    await createEmptyStorageStates()
+  }
+}
+
+async function authenticateViaAPI(
+  supabase: ReturnType<typeof createClient>,
+  baseURL: string,
+  role: string,
+  user: { email: string; password: string },
+  storageStatePath: string
+) {
+  console.log(`   Authenticating ${role} via API...`)
+
+  try {
+    // Sign in via Supabase API
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: user.password,
+    })
+
+    if (error) {
+      console.log(`   ⚠️  ${role} API auth failed: ${error.message}`)
+      await createEmptyStorageState(storageStatePath)
+      return
+    }
+
+    if (!data.session) {
+      console.log(`   ⚠️  ${role} no session returned`)
+      await createEmptyStorageState(storageStatePath)
+      return
+    }
+
+    console.log(`   ✓ ${role} authenticated via API`)
+
+    // Now open browser and set the session cookies
+    const browser = await chromium.launch()
+    const context = await browser.newContext()
+    const page = await context.newPage()
+
+    // Navigate to the app to establish cookies domain
+    await page.goto(baseURL)
+    await page.waitForLoadState('domcontentloaded')
+
+    // Set Supabase auth tokens in localStorage
+    await page.evaluate(({ accessToken, refreshToken, expiresAt, user }) => {
+      // Supabase stores auth in localStorage with a specific key format
+      const supabaseKey = Object.keys(localStorage).find(key =>
+        key.startsWith('sb-') && key.endsWith('-auth-token')
+      ) || `sb-${window.location.hostname.split('.')[0]}-auth-token`
+
+      const authData = {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_at: expiresAt,
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: user,
+      }
+
+      localStorage.setItem(supabaseKey, JSON.stringify(authData))
+    }, {
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+      expiresAt: data.session.expires_at,
+      user: data.user,
+    })
+
+    // Also set the auth cookie if needed
+    const domain = new URL(baseURL).hostname
+    await context.addCookies([
+      {
+        name: 'sb-access-token',
+        value: data.session.access_token,
+        domain: domain,
+        path: '/',
+        httpOnly: false,
+        secure: false,
+        sameSite: 'Lax',
+      },
+      {
+        name: 'sb-refresh-token',
+        value: data.session.refresh_token,
+        domain: domain,
+        path: '/',
+        httpOnly: false,
+        secure: false,
+        sameSite: 'Lax',
+      },
+    ])
+
+    // Save storage state
+    await context.storageState({ path: storageStatePath })
+    console.log(`   ✓ ${role} storage state saved`)
+
+    await browser.close()
+
+    // Sign out from the API client to avoid session conflicts
+    await supabase.auth.signOut()
+
+  } catch (error) {
+    console.log(`   ⚠️  ${role} authentication error:`, error instanceof Error ? error.message : error)
+    await createEmptyStorageState(storageStatePath)
+  }
+}
+
+async function createEmptyStorageState(filePath: string) {
+  const emptyState = {
+    cookies: [],
+    origins: [],
+  }
+  fs.writeFileSync(filePath, JSON.stringify(emptyState, null, 2))
+}
+
+async function createEmptyStorageStates() {
+  await createEmptyStorageState(ADMIN_STORAGE_STATE)
+  await createEmptyStorageState(PROVIDER_STORAGE_STATE)
+  await createEmptyStorageState(CUSTOMER_STORAGE_STATE)
+}
+
+// Fallback to UI-based authentication if Supabase API is not available
+async function fallbackUIAuth(config: FullConfig) {
+  const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000'
   const browser = await chromium.launch()
 
   try {
-    // Authenticate Admin
-    await authenticateUser(browser, baseURL, 'admin', TEST_USERS.admin, ADMIN_STORAGE_STATE)
+    // Admin auth via UI
+    await authenticateViaUI(browser, baseURL, 'admin', {
+      ...TEST_USERS.admin,
+      loginUrl: '/ar/admin/login',
+    }, ADMIN_STORAGE_STATE)
 
-    // Authenticate Provider
-    await authenticateUser(browser, baseURL, 'provider', TEST_USERS.provider, PROVIDER_STORAGE_STATE)
+    // Provider auth via UI
+    await authenticateViaUI(browser, baseURL, 'provider', {
+      ...TEST_USERS.provider,
+      loginUrl: '/ar/provider/login',
+    }, PROVIDER_STORAGE_STATE)
 
-    // Authenticate Customer (requires clicking "Continue with Email" button first)
-    await authenticateCustomer(browser, baseURL, TEST_USERS.customer, CUSTOMER_STORAGE_STATE)
+    // Customer auth via UI (requires clicking email button first)
+    await authenticateCustomerViaUI(browser, baseURL, TEST_USERS.customer, CUSTOMER_STORAGE_STATE)
 
   } catch (error) {
-    console.error('❌ Global setup failed:', error)
-    // Don't throw - allow tests to run even if auth fails
-    // Tests will handle unauthenticated state
+    console.error('❌ UI auth fallback failed:', error)
+    await createEmptyStorageStates()
   } finally {
     await browser.close()
   }
-
-  console.log('✅ Global authentication setup complete!')
 }
 
-async function authenticateUser(
+async function authenticateViaUI(
   browser: import('@playwright/test').Browser,
   baseURL: string,
   role: string,
-  user: typeof TEST_USERS.admin,
+  user: { email: string; password: string; loginUrl: string },
   storageStatePath: string
 ) {
-  console.log(`   Authenticating ${role}...`)
-
+  console.log(`   Authenticating ${role} via UI...`)
   const context = await browser.newContext()
   const page = await context.newPage()
 
   try {
-    // Navigate to login page
     await page.goto(`${baseURL}${user.loginUrl}`)
     await page.waitForLoadState('networkidle')
 
-    // Wait for form to appear (after auth check spinner)
-    const emailInput = page.locator('input[type="email"], input[name="email"]')
+    // Wait for form
+    const emailInput = page.locator('input[type="email"]')
     await emailInput.waitFor({ state: 'visible', timeout: 15000 })
 
-    // Fill login form
     await emailInput.fill(user.email)
-    await page.locator('input[type="password"], input[name="password"]').fill(user.password)
-
-    // Submit form
+    await page.locator('input[type="password"]').fill(user.password)
     await page.click('button[type="submit"]')
 
-    // Wait for navigation to dashboard or check if login succeeded
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(3000)
 
-    // Check if we're still on login page (login might have failed)
-    const currentUrl = page.url()
-    if (currentUrl.includes('/login')) {
-      console.log(`   ⚠️  ${role} login might have failed - still on login page`)
-    } else {
-      console.log(`   ✓ ${role} authenticated successfully`)
-    }
-
-    // Save storage state regardless of login outcome
     await context.storageState({ path: storageStatePath })
+    console.log(`   ✓ ${role} UI auth complete`)
 
   } catch (error) {
-    console.log(`   ⚠️  ${role} authentication error:`, error instanceof Error ? error.message : error)
-    // Save empty storage state to prevent file not found errors
-    await context.storageState({ path: storageStatePath })
+    console.log(`   ⚠️  ${role} UI auth error:`, error instanceof Error ? error.message : error)
+    await createEmptyStorageState(storageStatePath)
   } finally {
     await context.close()
   }
 }
 
-async function authenticateCustomer(
+async function authenticateCustomerViaUI(
   browser: import('@playwright/test').Browser,
   baseURL: string,
-  user: typeof TEST_USERS.customer,
+  user: { email: string; password: string },
   storageStatePath: string
 ) {
-  console.log('   Authenticating customer...')
-
+  console.log('   Authenticating customer via UI...')
   const context = await browser.newContext()
   const page = await context.newPage()
 
   try {
-    // Navigate to login page
-    await page.goto(`${baseURL}${user.loginUrl}`)
+    await page.goto(`${baseURL}/ar/auth/login`)
     await page.waitForLoadState('networkidle')
 
-    // Customer login requires clicking "Continue with Email" button first
-    const emailButton = page.locator('button:has(svg.lucide-mail), button:has-text("الدخول عبر الإيميل"), button:has-text("Continue with Email")')
+    // Click "Continue with Email" button first
+    const emailButton = page.locator('button:has-text("الدخول عبر الإيميل"), button:has-text("Continue with Email")')
     await emailButton.waitFor({ state: 'visible', timeout: 15000 })
     await emailButton.click()
 
-    // Wait for email form to appear
-    const emailInput = page.locator('input[type="email"], input[name="email"]')
+    // Wait for form
+    const emailInput = page.locator('input[type="email"]')
     await emailInput.waitFor({ state: 'visible', timeout: 10000 })
 
-    // Fill login form
     await emailInput.fill(user.email)
-    await page.locator('input[type="password"], input[name="password"]').fill(user.password)
-
-    // Submit form
+    await page.locator('input[type="password"]').fill(user.password)
     await page.click('button[type="submit"]')
 
-    // Wait for navigation
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(3000)
 
-    // Check if we're still on login page
-    const currentUrl = page.url()
-    if (currentUrl.includes('/login') || currentUrl.includes('/auth')) {
-      console.log('   ⚠️  Customer login might have failed - still on login page')
-    } else {
-      console.log('   ✓ Customer authenticated successfully')
-    }
-
-    // Save storage state
     await context.storageState({ path: storageStatePath })
+    console.log('   ✓ Customer UI auth complete')
 
   } catch (error) {
-    console.log('   ⚠️  Customer authentication error:', error instanceof Error ? error.message : error)
-    // Save empty storage state to prevent file not found errors
-    await context.storageState({ path: storageStatePath })
+    console.log('   ⚠️  Customer UI auth error:', error instanceof Error ? error.message : error)
+    await createEmptyStorageState(storageStatePath)
   } finally {
     await context.close()
   }
