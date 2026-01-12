@@ -149,7 +149,8 @@ export default function AdminLoginPage() {
           .single()
 
         if (adminUser?.is_active) {
-          router.push(`/${locale}/admin`)
+          // Use full page navigation to ensure fresh context
+          window.location.href = `/${locale}/admin`
           return
         }
       }
@@ -265,8 +266,14 @@ export default function AdminLoginPage() {
       // Clear failed login attempts on successful login
       clearAttempts()
 
-      // Redirect to admin dashboard
-      router.push(`/${locale}/admin`)
+      // Clear any stale permissions cache before redirect
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('admin_permissions_cache')
+      }
+
+      // Redirect to admin dashboard using full page navigation
+      // This ensures PermissionsProvider loads fresh data
+      window.location.href = `/${locale}/admin`
 
     } catch {
       setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')

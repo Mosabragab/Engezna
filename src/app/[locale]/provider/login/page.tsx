@@ -2,7 +2,6 @@
 
 import { useLocale, useTranslations } from 'next-intl'
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -38,7 +37,6 @@ export const dynamic = 'force-dynamic'
 export default function ProviderLoginPage() {
   const locale = useLocale()
   const t = useTranslations('partner.login')
-  const router = useRouter()
   const isRTL = locale === 'ar'
 
   const [showPassword, setShowPassword] = useState(false)
@@ -75,7 +73,8 @@ export default function ProviderLoginPage() {
           .single()
 
         if (profile?.role === 'provider_owner') {
-          router.push(`/${locale}/provider`)
+          // Use full page navigation to ensure fresh context
+          window.location.href = `/${locale}/provider`
           return
         }
 
@@ -89,7 +88,8 @@ export default function ProviderLoginPage() {
             .single()
 
           if (staffData) {
-            router.push(`/${locale}/provider`)
+            // Use full page navigation to ensure fresh context
+            window.location.href = `/${locale}/provider`
             return
           }
         }
@@ -100,7 +100,7 @@ export default function ProviderLoginPage() {
     }
 
     setCheckingAuth(false)
-  }, [locale, router])
+  }, [locale])
 
   useEffect(() => {
     checkExistingAuth()
