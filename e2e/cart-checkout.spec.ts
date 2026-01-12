@@ -38,7 +38,7 @@ async function loginAsCustomer(page: import('@playwright/test').Page) {
 
 test.describe('Shopping Cart', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should display cart page', async ({ page }) => {
@@ -147,7 +147,7 @@ test.describe('Shopping Cart', () => {
 
 test.describe('Checkout Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should display checkout page', async ({ page }) => {
@@ -242,7 +242,7 @@ test.describe('Checkout Flow', () => {
 
 test.describe('Payment Methods', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should support cash on delivery', async ({ page }) => {
@@ -282,7 +282,7 @@ test.describe('Payment Methods', () => {
 
 test.describe('Order Confirmation', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should display orders page', async ({ page }) => {
@@ -364,7 +364,7 @@ test.describe('Order Confirmation', () => {
 
 test.describe('Address Management', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should display addresses page', async ({ page }) => {
@@ -400,7 +400,7 @@ test.describe('Address Management', () => {
 
 test.describe('Cart & Checkout Responsive Design', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should be mobile responsive on cart page', async ({ page }) => {
@@ -440,7 +440,7 @@ test.describe('Cart & Checkout Responsive Design', () => {
 
 test.describe('Favorites', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should display favorites page', async ({ page }) => {

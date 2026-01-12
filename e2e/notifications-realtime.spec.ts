@@ -76,7 +76,7 @@ async function loginAsAdmin(page: import('@playwright/test').Page) {
 
 test.describe('Provider Notification Badges', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display sidebar with badge capability', async ({ page }) => {
@@ -166,7 +166,7 @@ test.describe('Provider Notification Badges', () => {
 
 test.describe('Customer Notifications', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should display notifications page', async ({ page }) => {
@@ -224,7 +224,7 @@ test.describe('Customer Notifications', () => {
 
 test.describe('Admin Notification System', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsAdmin(page)
+    // Auth handled by storageState
   })
 
   test('should display admin sidebar with badges', async ({ page }) => {
@@ -282,7 +282,7 @@ test.describe('Admin Notification System', () => {
 
 test.describe('Real-time Badge Updates', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('provider sidebar should support real-time updates', async ({ page }) => {
@@ -326,7 +326,7 @@ test.describe('Real-time Badge Updates', () => {
 
 test.describe('PWA App Badge Support', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should have badge support in manifest', async ({ request }) => {
@@ -360,7 +360,7 @@ test.describe('PWA App Badge Support', () => {
 
 test.describe('Notification Interactions', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('clicking notification should navigate to relevant page', async ({ page }) => {
@@ -423,7 +423,7 @@ test.describe('Notification Sound', () => {
 
 test.describe('Mobile Notification Display', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display bottom nav with notification indicators', async ({ page }) => {

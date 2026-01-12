@@ -40,7 +40,7 @@ async function loginAsCustomer(page: import('@playwright/test').Page) {
 
 test.describe('Customer Journey - Order Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should display homepage correctly', async ({ page }) => {

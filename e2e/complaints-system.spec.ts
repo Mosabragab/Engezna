@@ -76,7 +76,7 @@ async function loginAsAdmin(page: import('@playwright/test').Page) {
 
 test.describe('Customer Support Ticket Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should display support page', async ({ page }) => {
@@ -139,7 +139,7 @@ test.describe('Customer Support Ticket Flow', () => {
 
 test.describe('Provider Complaints Management', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display complaints page in provider dashboard', async ({ page }) => {
@@ -282,7 +282,7 @@ test.describe('Provider Complaints Management', () => {
 
 test.describe('Admin Resolution Center', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsAdmin(page)
+    // Auth handled by storageState
   })
 
   test('should display admin support/resolution page', async ({ page }) => {
@@ -341,7 +341,7 @@ test.describe('Admin Resolution Center', () => {
 
 test.describe('Complaint Messaging System', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should support real-time message updates', async ({ page }) => {
@@ -386,7 +386,7 @@ test.describe('Complaint Messaging System', () => {
 
 test.describe('Complaint Responsive Design', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should be mobile responsive on provider complaints page', async ({ page }) => {
@@ -423,7 +423,7 @@ test.describe('Complaint Responsive Design', () => {
 
 test.describe('Complaint Ticket Types', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should support different complaint categories', async ({ page }) => {

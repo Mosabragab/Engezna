@@ -53,7 +53,7 @@ async function loginAsAdmin(page: import('@playwright/test').Page) {
 
 test.describe('Provider Finance Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display finance page with stats cards', async ({ page }) => {
@@ -145,7 +145,7 @@ test.describe('Provider Finance Dashboard', () => {
 
 test.describe('COD vs Online Payment Breakdown', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display payment methods breakdown', async ({ page }) => {
@@ -188,7 +188,7 @@ test.describe('COD vs Online Payment Breakdown', () => {
 
 test.describe('Transaction History', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display transaction history section', async ({ page }) => {
@@ -263,7 +263,7 @@ test.describe('Transaction History', () => {
 
 test.describe('Provider Settlements', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display settlements page', async ({ page }) => {
@@ -321,7 +321,7 @@ test.describe('Provider Settlements', () => {
 
 test.describe('Admin Settlements Management', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsAdmin(page)
+    // Auth handled by storageState
   })
 
   test('should display admin settlements page', async ({ page }) => {
@@ -375,7 +375,7 @@ test.describe('Admin Settlements Management', () => {
 
 test.describe('Admin Finance Overview', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsAdmin(page)
+    // Auth handled by storageState
   })
 
   test('should display admin finance page', async ({ page }) => {
@@ -411,7 +411,7 @@ test.describe('Admin Finance Overview', () => {
 
 test.describe('Provider Reports Page', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display reports page', async ({ page }) => {
@@ -481,7 +481,7 @@ test.describe('Provider Reports Page', () => {
 
 test.describe('Finance Responsive Design', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should be mobile responsive on finance page', async ({ page }) => {

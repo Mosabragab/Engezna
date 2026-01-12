@@ -76,7 +76,7 @@ async function loginAsAdmin(page: import('@playwright/test').Page) {
 
 test.describe('Customer Refund Request Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsCustomer(page)
+    // Auth handled by storageState
   })
 
   test('should display refund request option on order details', async ({ page }) => {
@@ -129,7 +129,7 @@ test.describe('Customer Refund Request Flow', () => {
 
 test.describe('Provider Refund Response Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display refunds page in provider dashboard', async ({ page }) => {
@@ -217,7 +217,7 @@ test.describe('Provider Refund Response Flow', () => {
 
 test.describe('Admin Refund Management', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsAdmin(page)
+    // Auth handled by storageState
   })
 
   test('should display admin refunds page', async ({ page }) => {
@@ -280,7 +280,7 @@ test.describe('Admin Refund Management', () => {
 
 test.describe('Refund Impact on Finance', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should reflect refunds in provider finance page', async ({ page }) => {
@@ -340,7 +340,7 @@ test.describe('Refund Impact on Finance', () => {
 
 test.describe('Refund Real-time Updates', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should update UI when refund status changes', async ({ page }) => {
@@ -389,7 +389,7 @@ test.describe('Refund Real-time Updates', () => {
 
 test.describe('Refund Responsive Design', () => {
   test('should be mobile responsive on provider refunds page', async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/ar/provider/refunds')
     await page.waitForLoadState('networkidle')
@@ -404,7 +404,7 @@ test.describe('Refund Responsive Design', () => {
   })
 
   test('should be mobile responsive on admin refunds page', async ({ page }) => {
-    await loginAsAdmin(page)
+    // Auth handled by storageState
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/ar/admin/refunds')
     await page.waitForLoadState('networkidle')

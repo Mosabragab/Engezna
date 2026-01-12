@@ -113,7 +113,7 @@ test.describe('Provider Login Flow', () => {
 
 test.describe('Provider Dashboard Display', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
     await page.goto('/ar/provider')
     await page.waitForLoadState('networkidle')
   })
@@ -158,7 +158,7 @@ test.describe('Provider Dashboard Display', () => {
 
 test.describe('Provider Orders Management', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display orders page', async ({ page }) => {
@@ -202,7 +202,7 @@ test.describe('Provider Orders Management', () => {
 
 test.describe('Provider Products Management', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display products page', async ({ page }) => {
@@ -239,7 +239,7 @@ test.describe('Provider Products Management', () => {
 
 test.describe('Provider Settings', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display settings page', async ({ page }) => {
@@ -279,7 +279,7 @@ test.describe('Provider Settings', () => {
 
 test.describe('Provider Finance & Settlements', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display finance page', async ({ page }) => {
@@ -319,7 +319,7 @@ test.describe('Provider Finance & Settlements', () => {
 
 test.describe('Provider Grace Period Banner', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should display grace period information on dashboard', async ({ page }) => {
@@ -345,7 +345,7 @@ test.describe('Provider Grace Period Banner', () => {
 
 test.describe('Provider Responsive Design', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsProvider(page)
+    // Auth handled by storageState
   })
 
   test('should be mobile responsive', async ({ page }) => {
