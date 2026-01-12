@@ -44,6 +44,13 @@ export default function AdminLoginPage() {
   useEffect(() => {
     checkExistingAuth()
     checkLockoutStatus()
+
+    // Fallback: Show form after 3 seconds even if auth check is slow
+    const fallbackTimer = setTimeout(() => {
+      setCheckingAuth(false)
+    }, 3000)
+
+    return () => clearTimeout(fallbackTimer)
   }, [])
 
   // Countdown timer for lockout
