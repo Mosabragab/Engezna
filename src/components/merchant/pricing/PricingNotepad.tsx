@@ -215,9 +215,9 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                     {isRTL ? 'تسجيل صوتي' : 'Voice Recording'}
                   </span>
                 </div>
-                {/* Speed Controls */}
-                <div className="flex items-center gap-1 mt-2">
-                  <span className="text-xs text-purple-600 me-1">
+                {/* Speed Controls - Touch-friendly (44px minimum height) */}
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-sm text-purple-600 me-1">
                     {isRTL ? 'السرعة:' : 'Speed:'}
                   </span>
                   {[1, 1.5, 2].map((rate) => (
@@ -226,7 +226,7 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                       type="button"
                       onClick={() => changePlaybackRate(rate)}
                       className={cn(
-                        'px-2 py-0.5 rounded text-xs font-medium transition-all',
+                        'px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all',
                         playbackRate === rate
                           ? 'bg-purple-500 text-white'
                           : 'bg-purple-200 text-purple-700 hover:bg-purple-300'
@@ -257,24 +257,24 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                   {isRTL ? 'الصور المرفقة' : 'Attached Images'}
                 </span>
               </div>
-              {/* Zoom Controls */}
-              <div className="flex items-center gap-1">
+              {/* Zoom Controls - Touch-friendly (48x48 minimum) */}
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleZoomOut}
                   disabled={imageZoom <= 1}
-                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                  className="p-3 min-w-[48px] min-h-[48px] rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 transition-colors flex items-center justify-center"
                 >
-                  <ZoomOut className="w-4 h-4 text-gray-600" />
+                  <ZoomOut className="w-5 h-5 text-gray-600" />
                 </button>
-                <span className="text-xs text-gray-500 px-1">{Math.round(imageZoom * 100)}%</span>
+                <span className="text-sm text-gray-500 px-2 font-medium">{Math.round(imageZoom * 100)}%</span>
                 <button
                   type="button"
                   onClick={handleZoomIn}
                   disabled={imageZoom >= 3}
-                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                  className="p-3 min-w-[48px] min-h-[48px] rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 transition-colors flex items-center justify-center"
                 >
-                  <ZoomIn className="w-4 h-4 text-gray-600" />
+                  <ZoomIn className="w-5 h-5 text-gray-600" />
                 </button>
               </div>
             </div>
