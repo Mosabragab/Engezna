@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -41,88 +41,10 @@ export default function AdminLoginPage() {
   const MAX_ATTEMPTS = 5
   const LOCKOUT_DURATION = 15 * 60 * 1000 // 15 minutes in milliseconds
 
-  const clearLockout = useCallback(() => {
-    localStorage.removeItem('admin_login_lockout')
-    localStorage.removeItem('admin_login_attempts')
-    setIsLocked(false)
-    setLockoutTimeLeft(0)
-  }, [])
-
-  const checkLockoutStatus = useCallback(() => {
-    const lockoutData = localStorage.getItem('admin_login_lockout')
-    if (lockoutData) {
-      const { lockoutUntil } = JSON.parse(lockoutData)
-      const now = Date.now()
-      if (lockoutUntil > now) {
-        setIsLocked(true)
-        setLockoutTimeLeft(lockoutUntil - now)
-      } else {
-        clearLockout()
-      }
-    }
-  }, [clearLockout])
-
-  const checkExistingAuth = useCallback(async () => {
-    try {
-      const supabase = createClient()
-
-      // Add timeout to prevent hanging forever (5 seconds max)
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Auth check timeout')), 5000)
-      )
-
-      const authPromise = supabase.auth.getUser()
-      const { data: { user } } = await Promise.race([authPromise, timeoutPromise])
-
-      if (user) {
-        // Check if user is admin
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-
-        if (profile?.role === 'admin') {
-          // Check if admin is active
-          const { data: adminUser } = await supabase
-            .from('admin_users')
-            .select('is_active')
-            .eq('user_id', user.id)
-            .single()
-
-          if (adminUser?.is_active) {
-            router.push(`/${locale}/admin`)
-            return
-          }
-        }
-      }
-    } catch (error) {
-      // Log error but continue to show login form
-      console.error('Error checking existing auth:', error)
-    }
-
-    setCheckingAuth(false)
-  }, [locale, router])
-
   useEffect(() => {
-    // Run auth check
     checkExistingAuth()
-
-    // Run lockout check safely (wrapped in try-catch)
-    try {
-      checkLockoutStatus()
-    } catch (error) {
-      console.error('Error checking lockout status:', error)
-    }
-
-    // Fallback: Force show form after 3 seconds if still loading
-    // Reduced from 6 seconds to 3 seconds for better test experience
-    const fallbackTimer = setTimeout(() => {
-      setCheckingAuth(false)
-    }, 3000)
-
-    return () => clearTimeout(fallbackTimer)
-  }, [checkExistingAuth, checkLockoutStatus])
+    checkLockoutStatus()
+  }, [])
 
   // Countdown timer for lockout
   useEffect(() => {
@@ -140,7 +62,21 @@ export default function AdminLoginPage() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [isLocked, lockoutTimeLeft, clearLockout])
+  }, [isLocked, lockoutTimeLeft])
+
+  function checkLockoutStatus() {
+    const lockoutData = localStorage.getItem('admin_login_lockout')
+    if (lockoutData) {
+      const { lockoutUntil } = JSON.parse(lockoutData)
+      const now = Date.now()
+      if (lockoutUntil > now) {
+        setIsLocked(true)
+        setLockoutTimeLeft(lockoutUntil - now)
+      } else {
+        clearLockout()
+      }
+    }
+  }
 
   function getFailedAttempts(): number {
     const data = localStorage.getItem('admin_login_attempts')
@@ -174,8 +110,45 @@ export default function AdminLoginPage() {
     return newCount
   }
 
+  function clearLockout() {
+    localStorage.removeItem('admin_login_lockout')
+    localStorage.removeItem('admin_login_attempts')
+    setIsLocked(false)
+    setLockoutTimeLeft(0)
+  }
+
   function clearAttempts() {
     localStorage.removeItem('admin_login_attempts')
+  }
+
+  async function checkExistingAuth() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      // Check if user is admin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        // Check if admin is active
+        const { data: adminUser } = await supabase
+          .from('admin_users')
+          .select('is_active')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminUser?.is_active) {
+          router.push(`/${locale}/admin`)
+          return
+        }
+      }
+    }
+
+    setCheckingAuth(false)
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -285,9 +258,8 @@ export default function AdminLoginPage() {
       // Clear failed login attempts on successful login
       clearAttempts()
 
-      // Nuclear fix: Use window.location.href to ensure full page reload
-      // This guarantees all cookies are sent to server and Layout rebuilds completely
-      window.location.href = `/${locale}/admin`
+      // Redirect to admin dashboard
+      router.push(`/${locale}/admin`)
 
     } catch {
       setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')

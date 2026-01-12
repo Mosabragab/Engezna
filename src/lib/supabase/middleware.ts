@@ -58,6 +58,7 @@ export async function updateSession(request: NextRequest) {
   // Define public routes that don't require authentication
   const publicPatterns = [
     '/auth',
+    '/admin/login',     // Admin login page - must be public!
     '/provider/login',
     '/provider/register',
     '/partner',
