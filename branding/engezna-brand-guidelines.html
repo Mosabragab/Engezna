@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engezna Brand Guidelines 2026</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #009DE0;
+      --primary-dark: #0077B6;
+      --secondary: #0F172A;
+      --premium: #FFD700;
+      --deal: #00C27A;
+      --success: #22C55E;
+      --warning: #FACC15;
+      --error: #EF4444;
+      --in-progress: #3B82F6;
+    }
+
+    body {
+      font-family: 'Inter', 'Cairo', sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: white;
+      padding: 40px 50px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      page-break-after: always;
+    }
+
+    @media print {
+      .page {
+        box-shadow: none;
+        margin: 0;
+        padding: 30px 40px;
+      }
+    }
+
+    /* Cover Page */
+    .cover {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      min-height: calc(297mm - 80px);
+    }
+
+    .cover-logo {
+      width: 200px;
+      height: 200px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 40px;
+      box-shadow: 0 20px 60px rgba(0, 157, 224, 0.3);
+    }
+
+    .cover-logo svg {
+      width: 120px;
+      height: 120px;
+    }
+
+    .cover h1 {
+      font-size: 48px;
+      font-weight: 800;
+      color: var(--secondary);
+      margin-bottom: 10px;
+      letter-spacing: -1px;
+    }
+
+    .cover h2 {
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--primary);
+      margin-bottom: 30px;
+    }
+
+    .cover .version {
+      font-size: 14px;
+      color: #64748b;
+      padding: 10px 30px;
+      background: #f1f5f9;
+      border-radius: 30px;
+    }
+
+    /* Section Headers */
+    .section-header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 20px 30px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+    }
+
+    .section-header h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .section-header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    /* Color Swatches */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .color-card {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+
+    .color-swatch {
+      height: 100px;
+      display: flex;
+      align-items: flex-end;
+      padding: 15px;
+    }
+
+    .color-swatch.light-text {
+      color: white;
+    }
+
+    .color-swatch.dark-text {
+      color: #1e293b;
+    }
+
+    .color-info {
+      padding: 15px;
+      background: #f8fafc;
+    }
+
+    .color-name {
+      font-weight: 700;
+      font-size: 16px;
+      color: #1e293b;
+      margin-bottom: 5px;
+    }
+
+    .color-hex {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .color-usage {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 5px;
+    }
+
+    /* Small Color Grid */
+    .color-grid-small {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .color-card-small {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+
+    .color-card-small .color-swatch {
+      height: 60px;
+      padding: 10px;
+    }
+
+    .color-card-small .color-info {
+      padding: 10px;
+    }
+
+    .color-card-small .color-name {
+      font-size: 13px;
+    }
+
+    .color-card-small .color-hex {
+      font-size: 11px;
+    }
+
+    /* Tint Cards */
+    .tint-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .tint-card {
+      border-radius: 12px;
+      padding: 20px;
+      border: 2px solid;
+      text-align: center;
+    }
+
+    .tint-card .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      margin: 0 auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .tint-card .name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .tint-card .codes {
+      font-family: monospace;
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    /* Typography */
+    .font-showcase {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+
+    .font-name {
+      font-size: 14px;
+      color: var(--primary);
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    .font-sample {
+      margin-bottom: 15px;
+    }
+
+    .font-sample-ar {
+      font-family: 'Cairo', sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--secondary);
+      direction: rtl;
+    }
+
+    .font-sample-en {
+      font-family: 'Inter', sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--secondary);
+    }
+
+    .font-weights {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .font-weight-item {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .font-weight-item span:first-child {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+
+    .font-weight-item span:last-child {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    /* Logo Section */
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .logo-card {
+      border-radius: 16px;
+      padding: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 150px;
+      border: 2px solid #e2e8f0;
+    }
+
+    .logo-card.light-bg {
+      background: white;
+    }
+
+    .logo-card.dark-bg {
+      background: var(--secondary);
+    }
+
+    .logo-card.primary-bg {
+      background: var(--primary);
+    }
+
+    .logo-card img, .logo-card svg {
+      max-width: 180px;
+      max-height: 80px;
+    }
+
+    /* Spacing */
+    .spacing-demo {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+
+    .spacing-row {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .spacing-box {
+      background: var(--primary);
+      opacity: 0.2;
+    }
+
+    .spacing-label {
+      font-size: 13px;
+      color: #64748b;
+      min-width: 80px;
+    }
+
+    .spacing-value {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--secondary);
+      font-weight: 600;
+    }
+
+    /* Rules */
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .rule-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .rule-card.do {
+      border-left: 4px solid var(--success);
+    }
+
+    .rule-card.dont {
+      border-left: 4px solid var(--error);
+    }
+
+    .rule-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .rule-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: white;
+    }
+
+    .rule-card.do .rule-icon {
+      background: var(--success);
+    }
+
+    .rule-card.dont .rule-icon {
+      background: var(--error);
+    }
+
+    .rule-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .rule-text {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    /* Footer */
+    .page-footer {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    /* Utility */
+    .mb-20 { margin-bottom: 20px; }
+    .mb-30 { margin-bottom: 30px; }
+    .text-center { text-align: center; }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--secondary);
+      margin-bottom: 15px;
+    }
+
+    p.description {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+      }
+      .page {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PAGE 1: Cover -->
+  <div class="page">
+    <div class="cover">
+      <div class="cover-logo">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="40" fill="white" fill-opacity="0.2"/>
+          <path d="M30 50 L45 65 L70 35" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1>Engezna</h1>
+      <h2>Brand Guidelines</h2>
+      <p class="version">Version 3.0 | January 2026</p>
+    </div>
+  </div>
+
+  <!-- PAGE 2: Brand Overview -->
+  <div class="page">
+    <div class="section-header">
+      <h2>Brand Overview</h2>
+      <p>The essence of Engezna's visual identity</p>
+    </div>
+
+    <h3>Our Mission</h3>
+    <p class="description">
+      Engezna connects customers with local service providers, making it easy to order food,
+      groceries, and services with fast delivery across Egypt. Our brand represents trust,
+      speed, and local connection.
+    </p>
+
+    <h3>Brand Values</h3>
+    <div class="rules-grid mb-30">
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">1</div>
+          <span class="rule-title">Trust & Reliability</span>
+        </div>
+        <p class="rule-text">We deliver on our promises, every time.</p>
+      </div>
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">2</div>
+          <span class="rule-title">Local Connection</span>
+        </div>
+        <p class="rule-text">Supporting local businesses and communities.</p>
+      </div>
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">3</div>
+          <span class="rule-title">Speed & Efficiency</span>
+        </div>
+        <p class="rule-text">Fast service without compromising quality.</p>
+      </div>
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">4</div>
+          <span class="rule-title">Simplicity</span>
+        </div>
+        <p class="rule-text">Making ordering easy for everyone.</p>
+      </div>
+    </div>
+
+    <h3>Brand Personality</h3>
+    <p class="description">
+      <strong>Friendly</strong> - Approachable and warm in all communications<br>
+      <strong>Professional</strong> - Reliable and trustworthy<br>
+      <strong>Modern</strong> - Contemporary design with clean aesthetics<br>
+      <strong>Local</strong> - Rooted in Egyptian culture and community
+    </p>
+
+    <div class="page-footer">
+      <span>Engezna Brand Guidelines v3.0</span>
+      <span>Page 2</span>
+    </div>
+  </div>
+
+  <!-- PAGE 3: Primary Colors -->
+  <div class="page">
+    <div class="section-header">
+      <h2>Primary Colors</h2>
+      <p>Core brand colors that define our visual identity</p>
+    </div>
+
+    <div class="color-grid">
+      <div class="color-card">
+        <div class="color-swatch light-text" style="background: #009DE0;">
+          <span style="font-weight: 700; font-size: 18px;">Aa</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Primary Blue (Ocean)</div>
+          <div class="color-hex">#009DE0 | RGB(0, 157, 224) | HSL(198, 100%, 44%)</div>
+          <div class="color-usage">Main brand color, buttons, links, accents</div>
+        </div>
+      </div>
+
+      <div class="color-card">
+        <div class="color-swatch light-text" style="background: #0077B6;">
+          <span style="font-weight: 700; font-size: 18px;">Aa</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Primary Dark (Deep Ocean)</div>
+          <div class="color-hex">#0077B6 | RGB(0, 119, 182) | HSL(199, 100%, 36%)</div>
+          <div class="color-usage">Hover states, dark mode accents</div>
+        </div>
+      </div>
+
+      <div class="color-card">
+        <div class="color-swatch light-text" style="background: #0F172A;">
+          <span style="font-weight: 700; font-size: 18px;">Aa</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Secondary (Charcoal)</div>
+          <div class="color-hex">#0F172A | RGB(15, 23, 42) | HSL(222, 47%, 11%)</div>
+          <div class="color-usage">Text, headings, dark backgrounds</div>
+        </div>
+      </div>
+
+      <div class="color-card">
+        <div class="color-swatch dark-text" style="background: #FFD700;">
+          <span style="font-weight: 700; font-size: 18px;">Aa</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Premium Gold</div>
+          <div class="color-hex">#FFD700 | RGB(255, 215, 0) | HSL(51, 100%, 50%)</div>
+          <div class="color-usage">Premium features, highlights, badges</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Accent Color</h3>
+    <div class="color-grid" style="grid-template-columns: 1fr;">
+      <div class="color-card">
+        <div class="color-swatch light-text" style="background: #00C27A; height: 80px;">
+          <span style="font-weight: 700; font-size: 18px;">Aa</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Deal Green</div>
+          <div class="color-hex">#00C27A | RGB(0, 194, 122) | HSL(158, 100%, 38%)</div>
+          <div class="color-usage">Deals, discounts, promotions, special offers</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Engezna Brand Guidelines v3.0</span>
+      <span>Page 3</span>
+    </div>
+  </div>
+
+  <!-- PAGE 4: Semantic Colors -->
+  <div class="page">
+    <div class="section-header">
+      <h2>Semantic Colors</h2>
+      <p>Status and feedback colors for UI elements</p>
+    </div>
+
+    <div class="color-grid-small">
+      <div class="color-card-small">
+        <div class="color-swatch light-text" style="background: #22C55E;">
+          <span style="font-weight: 700;">Aa</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Success</div>
+          <div class="color-hex">#22C55E</div>
+        </div>
+      </div>
+
+      <div class="color-card-small">
+        <div class="color-swatch dark-text" style="background: #FACC15;">
+          <span style="font-weight: 700;">Aa</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Warning</div>
+          <div class="color-hex">#FACC15</div>
+        </div>
+      </div>
+
+      <div class="color-card-small">
+        <div class="color-swatch light-text" style="background: #EF4444;">
+          <span style="font-weight: 700;">Aa</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">Error</div>
+          <div class="color-hex">#EF4444</div>
+        </div>
+      </div>
+
+      <div class="color-card-small">
+        <div class="color-swatch light-text" style="background: #3B82F6;">
+          <span style="font-weight: 700;">Aa</span>
+        </div>
+        <div class="color-info">
+          <div class="color-name">In Progress</div>
+          <div class="color-hex">#3B82F6</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Card Background Tints (10% Opacity)</h3>
+    <p class="description">
+      Use these light tints for stat cards and dashboard elements.
+      Always pair with darker text variants for proper contrast.
+    </p>
+
+    <div class="tint-grid">
+      <div class="tint-card" style="background: #E6F6FC; border-color: rgba(0,157,224,0.2);">
+        <div class="icon" style="background: #009DE0; color: white;">P</div>
+        <div class="name" style="color: #0077B6;">Primary Tint</div>
+        <div class="codes">BG: #E6F6FC<br>Text: #0077B6</div>
+      </div>
+
+      <div class="tint-card" style="background: #E8F9EE; border-color: rgba(34,197,94,0.2);">
+        <div class="icon" style="background: #22C55E; color: white;">S</div>
+        <div class="name" style="color: #16A34A;">Success Tint</div>
+        <div class="codes">BG: #E8F9EE<br>Text: #16A34A</div>
+      </div>
+
+      <div class="tint-card" style="background: #FFF9E6; border-color: rgba(250,204,21,0.2);">
+        <div class="icon" style="background: #FACC15; color: #1e293b;">W</div>
+        <div class="name" style="color: #A16207;">Warning Tint</div>
+        <div class="codes">BG: #FFF9E6<br>Text: #A16207</div>
+      </div>
+
+      <div class="tint-card" style="background: #FDECEC; border-color: rgba(239,68,68,0.2);">
+        <div class="icon" style="background: #EF4444; color: white;">E</div>
+        <div class="name" style="color: #DC2626;">Error Tint</div>
+        <div class="codes">BG: #FDECEC<br>Text: #DC2626</div>
+      </div>
+
+      <div class="tint-card" style="background: #EAF1FE; border-color: rgba(59,130,246,0.2);">
+        <div class="icon" style="background: #3B82F6; color: white;">I</div>
+        <div class="name" style="color: #2563EB;">In-Progress Tint</div>
+        <div class="codes">BG: #EAF1FE<br>Text: #2563EB</div>
+      </div>
+
+      <div class="tint-card" style="background: #F3E8FF; border-color: rgba(168,85,247,0.2);">
+        <div class="icon" style="background: #A855F7; color: white;">P</div>
+        <div class="name" style="color: #9333EA;">Purple Tint</div>
+        <div class="codes">BG: #F3E8FF<br>Text: #9333EA</div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Engezna Brand Guidelines v3.0</span>
+      <span>Page 4</span>
+    </div>
+  </div>
+
+  <!-- PAGE 5: Typography -->
+  <div class="page">
+    <div class="section-header">
+      <h2>Typography</h2>
+      <p>Fonts that speak our brand language</p>
+    </div>
+
+    <div class="font-showcase">
+      <div class="font-name">Arabic: Cairo</div>
+      <div class="font-sample">
+        <div class="font-sample-ar">إنجزنا - توصيل سريع وموثوق</div>
+      </div>
+      <div class="font-weights">
+        <div class="font-weight-item" style="font-family: Cairo; font-weight: 400;">
+          <span>نص عادي</span>
+          <span>Regular 400</span>
+        </div>
+        <div class="font-weight-item" style="font-family: Cairo; font-weight: 500;">
+          <span>نص متوسط</span>
+          <span>Medium 500</span>
+        </div>
+        <div class="font-weight-item" style="font-family: Cairo; font-weight: 600;">
+          <span>نص شبه عريض</span>
+          <span>SemiBold 600</span>
+        </div>
+        <div class="font-weight-item" style="font-family: Cairo; font-weight: 700;">
+          <span>نص عريض</span>
+          <span>Bold 700</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="font-showcase">
+      <div class="font-name">English: Inter</div>
+      <div class="font-sample">
+        <div class="font-sample-en">Engezna - Fast & Reliable Delivery</div>
+      </div>
+      <div class="font-weights">
+        <div class="font-weight-item" style="font-family: Inter; font-weight: 400;">
+          <span>Regular</span>
+          <span>Weight 400</span>
+        </div>
+        <div class="font-weight-item" style="font-family: Inter; font-weight: 500;">
+          <span>Medium</span>
+          <span>Weight 500</span>
+        </div>
+        <div class="font-weight-item" style="font-family: Inter; font-weight: 600;">
+          <span>SemiBold</span>
+          <span>Weight 600</span>
+        </div>
+        <div class="font-weight-item" style="font-family: Inter; font-weight: 700;">
+          <span>Bold</span>
+          <span>Weight 700</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>Type Scale</h3>
+    <p class="description">
+      <strong>Display:</strong> 48px / Bold - Hero sections<br>
+      <strong>H1:</strong> 36px / Bold - Page titles<br>
+      <strong>H2:</strong> 28px / SemiBold - Section headers<br>
+      <strong>H3:</strong> 20px / SemiBold - Subsections<br>
+      <strong>Body:</strong> 16px / Regular - Paragraph text<br>
+      <strong>Small:</strong> 14px / Regular - Labels, captions<br>
+      <strong>Tiny:</strong> 12px / Medium - Badges, tags
+    </p>
+
+    <div class="page-footer">
+      <span>Engezna Brand Guidelines v3.0</span>
+      <span>Page 5</span>
+    </div>
+  </div>
+
+  <!-- PAGE 6: Logo Usage -->
+  <div class="page">
+    <div class="section-header">
+      <h2>Logo Usage</h2>
+      <p>Guidelines for proper logo application</p>
+    </div>
+
+    <h3>Logo Variations</h3>
+    <div class="logo-grid">
+      <div class="logo-card light-bg">
+        <div style="text-align: center;">
+          <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #009DE0, #0077B6); border-radius: 14px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+            <svg width="36" height="36" viewBox="0 0 100 100" fill="none">
+              <path d="M30 50 L45 65 L70 35" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div style="font-family: Cairo, Inter, sans-serif; font-weight: 800; font-size: 24px; color: #0F172A;">إنجزنا</div>
+        </div>
+      </div>
+      <div class="logo-card dark-bg">
+        <div style="text-align: center;">
+          <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #009DE0, #0077B6); border-radius: 14px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+            <svg width="36" height="36" viewBox="0 0 100 100" fill="none">
+              <path d="M30 50 L45 65 L70 35" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div style="font-family: Cairo, Inter, sans-serif; font-weight: 800; font-size: 24px; color: white;">إنجزنا</div>
+        </div>
+      </div>
+      <div class="logo-card primary-bg">
+        <div style="text-align: center;">
+          <div style="width: 60px; height: 60px; background: white; border-radius: 14px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+            <svg width="36" height="36" viewBox="0 0 100 100" fill="none">
+              <path d="M30 50 L45 65 L70 35" stroke="#009DE0" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div style="font-family: Cairo, Inter, sans-serif; font-weight: 800; font-size: 24px; color: white;">إنجزنا</div>
+        </div>
+      </div>
+      <div class="logo-card light-bg" style="background: #f1f5f9;">
+        <div style="text-align: center;">
+          <div style="width: 60px; height: 60px; background: #0F172A; border-radius: 14px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+            <svg width="36" height="36" viewBox="0 0 100 100" fill="none">
+              <path d="M30 50 L45 65 L70 35" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div style="font-family: Cairo, Inter, sans-serif; font-weight: 800; font-size: 24px; color: #0F172A;">إنجزنا</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Clear Space</h3>
+    <p class="description">
+      Maintain minimum clear space around the logo equal to the height of the checkmark icon.
+      This ensures the logo remains visible and impactful.
+    </p>
+
+    <h3>Minimum Size</h3>
+    <p class="description">
+      <strong>Digital:</strong> 32px height minimum<br>
+      <strong>Print:</strong> 10mm height minimum
+    </p>
+
+    <div class="page-footer">
+      <span>Engezna Brand Guidelines v3.0</span>
+      <span>Page 6</span>
+    </div>
+  </div>
+
+  <!-- PAGE 7: Do's and Don'ts -->
+  <div class="page">
+    <div class="section-header">
+      <h2>Usage Guidelines</h2>
+      <p>Best practices for brand consistency</p>
+    </div>
+
+    <h3>Color Usage</h3>
+    <div class="rules-grid mb-30">
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">✓</div>
+          <span class="rule-title">Do: Use tint backgrounds for stat cards</span>
+        </div>
+        <p class="rule-text">Apply 10% opacity tints with darker text variants for proper contrast.</p>
+      </div>
+      <div class="rule-card dont">
+        <div class="rule-header">
+          <div class="rule-icon">✗</div>
+          <span class="rule-title">Don't: Use solid colors on stat cards</span>
+        </div>
+        <p class="rule-text">Avoid solid gradient backgrounds with white text on dashboard cards.</p>
+      </div>
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">✓</div>
+          <span class="rule-title">Do: Use primary color for CTAs</span>
+        </div>
+        <p class="rule-text">Buttons and links should use the primary blue (#009DE0).</p>
+      </div>
+      <div class="rule-card dont">
+        <div class="rule-header">
+          <div class="rule-icon">✗</div>
+          <span class="rule-title">Don't: Modify brand colors</span>
+        </div>
+        <p class="rule-text">Never alter the hue or saturation of brand colors.</p>
+      </div>
+    </div>
+
+    <h3>Typography</h3>
+    <div class="rules-grid mb-30">
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">✓</div>
+          <span class="rule-title">Do: Use Cairo for Arabic</span>
+        </div>
+        <p class="rule-text">Cairo is our primary Arabic font for all communications.</p>
+      </div>
+      <div class="rule-card dont">
+        <div class="rule-header">
+          <div class="rule-icon">✗</div>
+          <span class="rule-title">Don't: Mix too many weights</span>
+        </div>
+        <p class="rule-text">Stick to 2-3 weights per design for visual harmony.</p>
+      </div>
+    </div>
+
+    <h3>Logo</h3>
+    <div class="rules-grid">
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">✓</div>
+          <span class="rule-title">Do: Maintain proportions</span>
+        </div>
+        <p class="rule-text">Always scale the logo proportionally.</p>
+      </div>
+      <div class="rule-card dont">
+        <div class="rule-header">
+          <div class="rule-icon">✗</div>
+          <span class="rule-title">Don't: Stretch or rotate</span>
+        </div>
+        <p class="rule-text">Never distort, rotate, or add effects to the logo.</p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Engezna Brand Guidelines v3.0</span>
+      <span>Page 7</span>
+    </div>
+  </div>
+
+  <!-- PAGE 8: Contact -->
+  <div class="page">
+    <div class="section-header">
+      <h2>Brand Assets & Contact</h2>
+      <p>Resources and support for brand usage</p>
+    </div>
+
+    <h3>Digital Assets</h3>
+    <p class="description">
+      All brand assets including logos, icons, and templates are available in the brand kit folder:<br><br>
+      <code style="background: #f1f5f9; padding: 10px 15px; border-radius: 8px; display: inline-block;">
+        /branding/logo-kit/
+      </code>
+    </p>
+
+    <h3>Available Formats</h3>
+    <div class="rules-grid mb-30">
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">→</div>
+          <span class="rule-title">SVG</span>
+        </div>
+        <p class="rule-text">Vector format for web and print</p>
+      </div>
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">→</div>
+          <span class="rule-title">PNG</span>
+        </div>
+        <p class="rule-text">Transparent backgrounds for digital use</p>
+      </div>
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">→</div>
+          <span class="rule-title">ICO/Favicon</span>
+        </div>
+        <p class="rule-text">Browser icons and app icons</p>
+      </div>
+      <div class="rule-card do">
+        <div class="rule-header">
+          <div class="rule-icon">→</div>
+          <span class="rule-title">CSS Variables</span>
+        </div>
+        <p class="rule-text">Ready-to-use theme file for developers</p>
+      </div>
+    </div>
+
+    <h3>Contact</h3>
+    <p class="description">
+      For brand-related questions or asset requests:<br><br>
+      <strong>Email:</strong> Support@engezna.com<br>
+      <strong>Website:</strong> www.engezna.com
+    </p>
+
+    <div style="margin-top: 60px; text-align: center; padding: 40px; background: linear-gradient(135deg, #009DE0, #0077B6); border-radius: 20px; color: white;">
+      <div style="font-size: 32px; font-weight: 800; margin-bottom: 10px; font-family: Cairo, sans-serif;">إنجزنا</div>
+      <div style="font-size: 16px; opacity: 0.9;">Fast & Reliable Delivery</div>
+      <div style="margin-top: 20px; font-size: 12px; opacity: 0.7;">© 2026 Engezna. All rights reserved.</div>
+    </div>
+
+    <div class="page-footer">
+      <span>Engezna Brand Guidelines v3.0</span>
+      <span>Page 8</span>
+    </div>
+  </div>
+
+</body>
+</html>
