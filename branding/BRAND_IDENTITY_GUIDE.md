@@ -1,6 +1,6 @@
 # Engezna – Brand Identity Guide
-Version: 3.0
-Last Updated: 2025-12-03
+Version: 3.1
+Last Updated: 2026-01-13
 
 ---
 
@@ -8,6 +8,7 @@ Last Updated: 2025-12-03
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.1 | 2026-01-13 | Fixed Secondary color (#0F172A), Warning color (#FACC15), Card Backgrounds to match engezna-theme.css v3.0 |
 | 3.0 | 2025-12-03 | Added Animated Logo System, Aref Ruqaa Typography, Logo Animation Specifications |
 | 2.1 | 2025-11-27 | Updated Semantic Colors (Professional Dashboard Standards), Text Hierarchy System |
 | 2.0 | 2025-11-27 | Added Navigation Bar Standards, Light-Only Theme Decision, UI/UX Guidelines |
@@ -194,8 +195,12 @@ Key positioning pillars:
 - HSL: `198, 100%, 44%`
 - Usage: Primary buttons, highlights, brand elements, CTAs, Info states.
 
-**Secondary Neutrals**
-- Black: `#000000`
+**Secondary Color – Charcoal**
+- HEX: `#0F172A`
+- HSL: `222, 47%, 11%`
+- Usage: Text, headings, dark backgrounds, app icons
+
+**Neutrals**
 - White: `#FFFFFF`
 
 **Accents (harmonized with #009DE0):**
@@ -209,7 +214,7 @@ Key positioning pillars:
 | State | HEX | HSL | Usage |
 |-------|-----|-----|-------|
 | **Success** | `#22C55E` | `142, 71%, 45%` | Completed orders, delivered, positive states |
-| **Warning** | `#CA8A04` | `45, 93%, 47%` | Pending orders, temporary closures, alerts (yellow-600) |
+| **Warning** | `#FACC15` | `48, 97%, 53%` | Pending orders, temporary closures, alerts |
 | **Error** | `#EF4444` | `0, 84%, 60%` | Cancelled orders, errors, rejections |
 | **In Progress** | `#3B82F6` | `217, 91%, 60%` | Active orders, processing states |
 | **Info** | `#009DE0` | `198, 100%, 44%` | Same as Primary (brand consistency) |
@@ -228,13 +233,16 @@ Key positioning pillars:
 
 **Light pastel backgrounds for stat cards and data visualization:**
 
-| Card Type | HEX | HSL | Usage |
-|-----------|-----|-----|-------|
-| **Primary Card** | `#E0F4FF` | `198, 100%, 97%` | Total counts, primary metrics |
-| **Success Card** | `#DCFCE7` | `142, 76%, 95%` | Completed orders, revenue |
-| **Info Card** | `#E0F4FF` | `198, 100%, 97%` | Active products, general info |
-| **Warning Card** | `#FEF9C3` | `48, 100%, 95%` | Pending items, alerts |
-| **Error Card** | `#FEF2F2` | `0, 86%, 97%` | Cancelled, rejected |
+| Card Type | HEX | Text Color | Usage |
+|-----------|-----|------------|-------|
+| **Primary Card** | `#E6F6FC` | `#0077B6` | Total counts, primary metrics |
+| **Success Card** | `#E8F9EE` | `#16A34A` | Completed orders, revenue |
+| **Info Card** | `#EAF7FD` | `#0891B2` | Active products, general info |
+| **Warning Card** | `#FFF9E6` | `#A16207` | Pending items, alerts |
+| **Error Card** | `#FDECEC` | `#DC2626` | Cancelled, rejected |
+| **In-Progress Card** | `#EAF1FE` | `#2563EB` | Active orders, processing |
+| **Deal Card** | `#E6F9F2` | `#059669` | Discounts, promotions |
+| **Premium Card** | `#FFF9E6` | `#B45309` | Premium features, highlights |
 
 ### 7.5 Border & Background Neutrals
 
