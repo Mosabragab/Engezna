@@ -1,5 +1,8 @@
 # Engezna – Brand Quick Reference
-Version: 2.1
+Version: 2.2
+Last Updated: 2026-01-13
+
+> **v2.2 Update:** Changed from "excluding" Cairo/Alex to phased expansion strategy
 
 ---
 
@@ -9,7 +12,11 @@ Version: 2.1
 - **Tagline (AR):** عايز تطلب؟ إنجزنا
 - **Tagline (EN):** Want to order? Engezna!
 - **What we do:**
-  Connect customers with local service providers (restaurants, supermarkets, cafés, pharmacies, fruits & veg) in non-primary Egyptian cities, replacing phone-based ordering with app-based ordering.
+  Connect customers with local service providers (restaurants, supermarkets, cafés, pharmacies, fruits & veg) across all Egyptian governorates, replacing phone-based ordering with app-based ordering.
+  
+**Expansion Strategy:**
+  - Phase 1-2: Secondary governorates (المحافظات الثانوية)
+  - Phase 3-4: Cairo, Giza, Alexandria, North Coast (المرحلة النهائية)
 
 ---
 
@@ -17,10 +24,12 @@ Version: 2.1
 
 - **Merchants:**
   - مطاعم، سوبرماركت، كافيهات، صيدليات، خضار وفاكهة
-  - Located **outside** Cairo, Giza, Alexandria, and North Coast
+  - **Phase 1-2:** Secondary governorates (all Egypt except Cairo/Giza/Alex/North Coast)
+  - **Phase 3-4:** Cairo, Giza, Alexandria, North Coast
 - **Customers:**
-  - Class B & C
-  - Residents of المحافظات
+  - Class B & C (initial focus), expanding to all segments
+  - **Phase 1-2:** Residents of المحافظات الثانوية
+  - **Phase 3-4:** Expansion to major cities
   - Used to ordering by phone
 
 ---
