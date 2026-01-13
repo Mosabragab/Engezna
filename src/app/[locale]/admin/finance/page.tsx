@@ -307,60 +307,60 @@ export default function AdminFinancePage() {
         {/* Main Stats - from financial_settlement_engine */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Total Revenue */}
-          <div className="bg-gradient-to-br from-[#22C55E] to-[#16A34A] rounded-xl p-5 text-white shadow-lg">
+          <div className="bg-[#E8F9EE] rounded-xl p-5 border border-[#22C55E]/20 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <DollarSign className="w-6 h-6" />
+              <div className="w-12 h-12 bg-[#22C55E] rounded-xl flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-white" />
               </div>
             </div>
-            <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</p>
-            <p className="text-2xl font-bold">{formatCurrency(summary.totalRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-            <p className="text-white/70 text-xs mt-2">{formatNumber(summary.totalOrders, locale)} {locale === 'ar' ? 'طلب مكتمل' : 'delivered orders'}</p>
+            <p className="text-[#16A34A] text-sm mb-1">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</p>
+            <p className="text-2xl font-bold text-[#16A34A]">{formatCurrency(summary.totalRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+            <p className="text-[#22C55E] text-xs mt-2">{formatNumber(summary.totalOrders, locale)} {locale === 'ar' ? 'طلب مكتمل' : 'delivered orders'}</p>
           </div>
 
           {/* Platform Commission */}
-          <div className="bg-gradient-to-br from-[#009DE0] to-[#0080b8] rounded-xl p-5 text-white shadow-lg">
+          <div className="bg-[#E6F6FC] rounded-xl p-5 border border-[#009DE0]/20 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <Receipt className="w-6 h-6" />
+              <div className="w-12 h-12 bg-[#009DE0] rounded-xl flex items-center justify-center">
+                <Receipt className="w-6 h-6 text-white" />
               </div>
               {summary.totalGracePeriodDiscount > 0 && (
-                <div className="flex items-center gap-1 text-sm text-blue-100">
+                <div className="flex items-center gap-1 text-sm text-[#009DE0]">
                   <Gift className="w-4 h-4" />
                   <span>{formatCurrency(summary.totalGracePeriodDiscount, locale)}</span>
                 </div>
               )}
             </div>
-            <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</p>
-            <p className="text-2xl font-bold">{formatCurrency(summary.totalActualCommission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+            <p className="text-[#0077B6] text-sm mb-1">{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</p>
+            <p className="text-2xl font-bold text-[#0077B6]">{formatCurrency(summary.totalActualCommission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
             {summary.totalGracePeriodDiscount > 0 && (
-              <p className="text-white/70 text-xs mt-2">
+              <p className="text-[#009DE0] text-xs mt-2">
                 {locale === 'ar' ? `نظري: ${formatCurrency(summary.totalTheoreticalCommission, locale)} ج.م` : `Theoretical: ${formatCurrency(summary.totalTheoreticalCommission, locale)} EGP`}
               </p>
             )}
           </div>
 
           {/* Delivery Fees */}
-          <div className="bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] rounded-xl p-5 text-white shadow-lg">
+          <div className="bg-[#F3E8FF] rounded-xl p-5 border border-[#8B5CF6]/20 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <DollarSign className="w-6 h-6" />
+              <div className="w-12 h-12 bg-[#8B5CF6] rounded-xl flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-white" />
               </div>
             </div>
-            <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</p>
-            <p className="text-2xl font-bold">{formatCurrency(summary.totalDeliveryFees, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+            <p className="text-[#7C3AED] text-sm mb-1">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</p>
+            <p className="text-2xl font-bold text-[#7C3AED]">{formatCurrency(summary.totalDeliveryFees, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
           </div>
 
           {/* Net Balance */}
-          <div className={`bg-gradient-to-br ${summary.totalNetBalance >= 0 ? 'from-[#F59E0B] to-[#D97706]' : 'from-[#EF4444] to-[#DC2626]'} rounded-xl p-5 text-white shadow-lg`}>
+          <div className={`rounded-xl p-5 border shadow-sm ${summary.totalNetBalance >= 0 ? 'bg-[#FFF9E6] border-[#F59E0B]/20' : 'bg-[#FDECEC] border-[#EF4444]/20'}`}>
             <div className="flex items-center justify-between mb-3">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                {summary.totalNetBalance >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${summary.totalNetBalance >= 0 ? 'bg-[#F59E0B]' : 'bg-[#EF4444]'}`}>
+                {summary.totalNetBalance >= 0 ? <TrendingUp className="w-6 h-6 text-white" /> : <TrendingDown className="w-6 h-6 text-white" />}
               </div>
             </div>
-            <p className="text-white/80 text-sm mb-1">{locale === 'ar' ? 'صافي الرصيد' : 'Net Balance'}</p>
-            <p className="text-2xl font-bold">{formatCurrency(Math.abs(summary.totalNetBalance), locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-            <p className="text-white/70 text-xs mt-2">
+            <p className={`text-sm mb-1 ${summary.totalNetBalance >= 0 ? 'text-[#D97706]' : 'text-[#DC2626]'}`}>{locale === 'ar' ? 'صافي الرصيد' : 'Net Balance'}</p>
+            <p className={`text-2xl font-bold ${summary.totalNetBalance >= 0 ? 'text-[#D97706]' : 'text-[#DC2626]'}`}>{formatCurrency(Math.abs(summary.totalNetBalance), locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+            <p className={`text-xs mt-2 ${summary.totalNetBalance >= 0 ? 'text-[#F59E0B]' : 'text-[#EF4444]'}`}>
               {summary.totalNetBalance >= 0
                 ? (locale === 'ar' ? 'المنصة تدفع للتجار' : 'Platform pays providers')
                 : (locale === 'ar' ? 'التجار يدفعون للمنصة' : 'Providers pay platform')
