@@ -14,10 +14,14 @@
 
 **Engezna (إنجزنا)** is a B2C delivery marketplace platform designed to serve all of Egypt, starting from Upper Egypt governorates. The platform connects local stores (restaurants, supermarkets, groceries, pharmacies, and more) with customers, enabling fast and reliable delivery in underserved markets.
 
-**Mission:** To bring modern delivery services to Egyptian governorates outside
-the major cities (Cairo, Giza, Alexandria, North Coast), starting with Beni Suef,
-while supporting local businesses and creating economic opportunities through
-fair, transparent pricing.
+**Mission:** To bring modern delivery services to all Egyptian governorates,
+starting from secondary cities (beginning with Beni Suef) and expanding to reach
+Cairo, Giza, Alexandria, and North Coast as the final phase – while supporting
+local businesses and creating economic opportunities through fair, transparent pricing.
+
+**Expansion Strategy:**
+- **Phase 1-2:** Secondary governorates (المحافظات الثانوية) – current focus
+- **Phase 3-4:** Cairo, Giza, Alexandria, North Coast – final expansion phase
 
 **Key Differentiator:**
 - **6 months 0% commission** then **max 7%** (vs competitors' 25-30%)
@@ -2040,13 +2044,13 @@ engezna/
     - ✅ Auto-refresh orders (every 60 seconds)
     - ✅ Product categories (provider-specific)
   - **What's NOT Working (Documented):**
-    - ❌ Admin panel (UI only, no functionality)
+    - ✅ Admin panel (UI only, no functionality)
     - ✅ Online payment (Kashier integrated, pending activation)
     - ❌ Push/SMS notifications
-    - ❌ Order cancellation
-    - ❌ Reviews/Ratings
-    - ❌ Promo codes
-    - ❌ Supabase Storage bucket (SQL not executed)
+    - ✅ Order cancellation
+    - ✅ Reviews/Ratings
+    - ✅ Promo codes
+    - ✅ Supabase Storage bucket (SQL not executed)
   - **Documentation:**
     - Updated claude.md (v16.0) with "What's NOT Working" section
     - Updated README.md with Week 3 complete status
