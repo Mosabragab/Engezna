@@ -4,6 +4,167 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [Session 27] - 2026-01-13
+
+### E2E Testing Suite - Store Readiness (From Session 26.5)
+
+#### Comprehensive E2E Test Suite Created
+A complete E2E testing suite was created with **536 tests** covering all critical paths for App Store and Google Play readiness.
+
+**Test Results (January 12, 2026):**
+- ✅ **532 Passed**
+- ❌ **4 Failed**
+- ⏭️ **5 Skipped**
+- ⏱️ **Total Time: 7.7 minutes**
+
+| Category | File |
+|----------|------|
+| Customer Journey (Happy Path) | `critical-customer-journey.spec.ts` |
+| Customer Journey | `customer-journey.spec.ts` |
+| Merchant Operations | `merchant-operations.spec.ts` |
+| Stability & Edge Cases | `stability-edge-cases.spec.ts` |
+| Mobile Responsiveness | `mobile-responsiveness.spec.ts` |
+| Cart & Checkout | `cart-checkout.spec.ts` |
+| Admin Dashboard | `admin-dashboard.spec.ts` |
+| Provider Dashboard | `provider-dashboard.spec.ts` |
+| Finance & Settlements | `finance-settlements.spec.ts` |
+| Notifications & Realtime | `notifications-realtime.spec.ts` |
+| PWA & Offline | `pwa-offline.spec.ts` |
+| Complaints System | `complaints-system.spec.ts` |
+| Refunds System | `refunds-system.spec.ts` |
+| Performance Audit | `performance-audit.spec.ts` |
+| **Total** | **536 tests in 16 files** |
+
+#### Test Coverage
+
+**Customer Journey Tests:**
+- ✅ Login → Restaurant Selection → Add Items → Checkout
+- ✅ Custom Order (Text/Image/Voice) → Broadcast → Pricing
+- ✅ Payment Options (COD/Online)
+- ✅ Order Tracking
+
+**Merchant Operations Tests:**
+- ✅ New order notifications with distinct sounds
+- ✅ Pricing system (PricingNotepad)
+- ✅ Order status management (Pending → Delivered)
+- ✅ Financial dashboard & settlements
+
+**Stability Tests:**
+- ✅ Race condition prevention
+- ✅ Session management
+- ✅ Pricing expiration handling
+- ✅ Realtime notifications
+- ✅ Network error handling
+- ✅ Data consistency
+
+**Mobile Responsiveness Tests:**
+- ✅ iPhone 15 Pro Max, iPhone 15, iPhone 13
+- ✅ Samsung S23, Pixel 5, Android Small
+- ✅ Touch Targets (48x48px minimum)
+- ✅ RTL & Arabic language support
+
+#### iOS & Accessibility Fixes
+- **Touch targets** - All interactive elements now 48x48px minimum
+- **iOS UX** - Fixed touch responsiveness on iPhone devices
+- **Sidebar fix** - Fixed sidebar not showing after login
+
+#### Performance Audit
+- Lighthouse performance tests added
+- Core Web Vitals monitoring (FCP, LCP, TTI, CLS, TBT)
+- Store-ready performance validation
+
+#### Files Created/Modified
+```
+e2e/
+├── critical-customer-journey.spec.ts   # Customer happy path
+├── merchant-operations.spec.ts         # Merchant operations
+├── stability-edge-cases.spec.ts        # Edge cases
+├── mobile-responsiveness.spec.ts       # Mobile tests
+├── cart-checkout.spec.ts               # Cart & Checkout
+├── admin-dashboard.spec.ts             # Admin tests
+├── provider-dashboard.spec.ts          # Provider tests
+├── finance-settlements.spec.ts         # Finance tests
+├── notifications-realtime.spec.ts      # Notifications
+├── pwa-offline.spec.ts                 # PWA tests
+├── performance-audit.spec.ts           # Performance
+├── complaints-system.spec.ts           # Complaints
+├── refunds-system.spec.ts              # Refunds
+├── global-setup.ts                     # Auth setup
+├── fixtures/test-utils.ts              # Test utilities
+├── E2E_TEST_REPORT.md                  # Full report
+└── PERFORMANCE_AUDIT_GUIDE.md          # Performance guide
+```
+
+#### NPM Scripts Added
+```bash
+npm run test:e2e              # Run all tests
+npm run test:e2e:critical     # Critical paths only
+npm run test:e2e:stability    # Stability tests
+npm run test:e2e:mobile       # Mobile tests
+npm run test:e2e:iphone       # iPhone only
+npm run test:e2e:android      # Android only
+npm run test:e2e:store-ready  # All store-ready tests
+npm run test:e2e:ui           # With UI
+npm run test:e2e:headed       # With visible browser
+npm run test:e2e:debug        # Debug mode
+npm run test:e2e:report       # Show report
+```
+
+### Commits (E2E Session)
+```
+11ca234 feat: Add App Store metadata and sound debug component
+eced25a fix(e2e): Fix remaining failing tests for better resilience
+a17879f fix: iOS touch target and mobile UX improvements
+af6953e fix(e2e): Make failing tests more resilient
+5b07600 fix: sidebar not showing after login
+d48e456 fix: iOS touch target compliance and test improvements
+b541e2d fix(e2e): Make checkout page test more resilient
+d79d1c5 fix(e2e): Make tests more resilient with better error handling
+fb1c433 fix(e2e): Add missing test projects to playwright config
+6a1db58 feat(e2e): Add smarter login tests and multi-device support
+3b37ebe feat: Add global authentication setup for E2E tests
+9150ee6 fix: Make all touchable elements at least 48x48px
+4d9d94e feat: Add Lighthouse performance audit
+d216371 feat: Add comprehensive E2E tests for store readiness
+```
+
+---
+
+### Welcome Page Loading Fix
+
+#### Problem
+New visitors entering the website were not being redirected to the welcome page (`/ar/welcome`). Instead, they saw a loading spinner on the home page while the system waited for LocationContext to fully load from Supabase.
+
+#### Root Cause
+The home page (`/[locale]/page.tsx`) was waiting for:
+1. Auth initialization (`isInitializing`)
+2. Location data loading from Supabase (`isDataLoaded`)
+3. User location loading (`isUserLocationLoading`)
+
+Only after ALL of these completed would it check if the user has a location and redirect to welcome page. This caused delays and sometimes failures.
+
+#### Solution
+Added an **early redirect check** that synchronously reads `localStorage` immediately on mount:
+- If no guest location is found in `localStorage`, redirect to welcome page immediately
+- Don't wait for Supabase data or auth checks
+- The welcome page handles logged-in users appropriately
+
+#### Technical Changes
+- Added `guestLocationStorage` import to home page
+- Added `earlyRedirectDone` state to track if redirect happened
+- New `useEffect` that runs first and checks localStorage synchronously
+- Modified existing redirect logic to skip if early redirect already happened
+
+#### Files Modified
+- `src/app/[locale]/page.tsx` - Fast localStorage check and early redirect
+
+### Commits
+```
+fe13850 fix: Fast redirect to welcome page for new visitors
+```
+
+---
+
 ## [Session 26] - 2026-01-11
 
 ### Custom Order System (Triple Broadcast) - Comprehensive Review
