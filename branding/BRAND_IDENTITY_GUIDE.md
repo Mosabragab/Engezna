@@ -1,5 +1,5 @@
 # Engezna – Brand Identity Guide
-Version: 3.1
+Version: 3.2
 Last Updated: 2026-01-13
 
 ---
@@ -8,6 +8,7 @@ Last Updated: 2026-01-13
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.2 | 2026-01-13 | **Major Update:** Changed geographic strategy from "excluding" Cairo/Alex to "phased expansion" - these cities are now Phase 3-4 (final phase), not excluded |
 | 3.1 | 2026-01-13 | Fixed Secondary color (#0F172A), Warning color (#FACC15), Card Backgrounds to match engezna-theme.css v3.0 |
 | 3.0 | 2025-12-03 | Added Animated Logo System, Aref Ruqaa Typography, Logo Animation Specifications |
 | 2.1 | 2025-11-27 | Updated Semantic Colors (Professional Dashboard Standards), Text Hierarchy System |
@@ -23,19 +24,24 @@ Last Updated: 2026-01-13
 **Tagline (AR):** عايز تطلب؟ إنجزنا
 
 **What is Engezna?**
-Engezna is a digital platform that connects everyday customers with local service providers (restaurants, supermarkets, cafés, pharmacies, fruits & vegetables shops) in non-primary Egyptian cities. The platform replaces the traditional phone-based ordering process with a modern, app-based experience.
+Engezna is a digital platform that connects everyday customers with local service providers (restaurants, supermarkets, cafés, pharmacies, fruits & vegetables shops) across all Egyptian governorates. The platform replaces the traditional phone-based ordering process with a modern, app-based experience.
 
-**Geographic Focus (at launch):**
-- All Egyptian governorates and cities **except**:
-  - Cairo
-  - Giza
-  - Alexandria
-  - North Coast (الساحل)
+**Geographic Strategy (Phased Expansion):**
+- **Phase 1-2 (الأولوية):** Secondary cities and governorates (المحافظات الثانوية)
+  - Upper Egypt: Beni Suef, Minya, Assiut, Sohag, Qena, Luxor, Aswan
+  - Delta: Sharqia, Dakahlia, Kafr El-Sheikh, Gharbia, Monufia, Beheira, Damietta
+  - Canal: Port Said, Ismailia, Suez
+  - Others: Fayoum, Red Sea, New Valley, Matrouh, North & South Sinai
+- **Phase 3-4 (المرحلة النهائية):** Cairo, Giza, Alexandria, North Coast
+  - Entry after proving the model and building operational expertise
+
+**Why This Strategy?**
+> نبدأ من المحافظات حيث المنافسة أقل والحاجة أكبر، ثم نتوسع تدريجياً حتى نصل للقاهرة والإسكندرية والجيزة والساحل الشمالي كمرحلة نهائية بعد بناء قاعدة قوية وخبرة تشغيلية.
 
 **Core Promise:**
 - No more waiting on busy phone lines
 - Simple, fast, fair connection between customer and merchant
-- Empowerment for local businesses outside the big cities
+- Empowerment for local businesses across all of Egypt
 
 ---
 
@@ -58,7 +64,7 @@ Engezna is a digital platform that connects everyday customers with local servic
 
 هنا اتولدت **منصّة إنجزنا**.
 
-منصّة معمولة مخصوص لأهل المحافظات،
+منصّة بدأت من المحافظات… وهتوصل لكل مصر.
 علشان تخلي الطلب أسرع…
 والتواصل أوضح…
 والتجربة أعدل للجميع.
@@ -83,19 +89,20 @@ Engezna is a digital platform that connects everyday customers with local servic
 ## 3. Mission, Vision & Positioning
 
 ### 3.1 Mission
-To modernize everyday ordering for Egyptians outside the major cities by making it fast, fair, and accessible for both customers and local businesses.
+To modernize everyday ordering for all Egyptians by making it fast, fair, and accessible for both customers and local businesses – starting from the governorates and expanding to cover all of Egypt.
 
 ### 3.2 Vision
-To become the default digital infrastructure for consumer services (food, groceries, pharma, fresh produce) in Egypt's secondary cities and governorates.
+To become the default digital infrastructure for consumer services (food, groceries, pharma, fresh produce) across all Egyptian governorates – from secondary cities to major metropolitan areas.
 
 ### 3.3 Brand Positioning
-> **Engezna is the simple, fair, and local-first ordering platform built for Egypt beyond Cairo, Giza, and Alexandria.**
+> **Engezna is the simple, fair, and local-first ordering platform built for all of Egypt – starting from المحافظات and growing to reach every Egyptian city.**
 
 Key positioning pillars:
-- **Local-first:** built for المحافظات, not Cairo malls.
-- **Fair economics:** 0 registration fees, low commissions.
+- **Governorates-first:** We start where the need is greatest and competition is lowest, then expand strategically.
+- **Fair economics:** 0 registration fees, low commissions (max 7%).
 - **Fast connection:** no waiting on phones, instant digital requests.
 - **Empowering SMEs:** enables small and mid-sized businesses to grow.
+- **National vision:** From المحافظات to Cairo – we're building for all of Egypt.
 
 ---
 
@@ -111,8 +118,9 @@ Key positioning pillars:
 - Fruits & vegetables shops
 
 **Profile:**
-- Located outside Cairo/Alex/Giza/North Coast
-- Class B & C markets
+- **Phase 1-2:** Located in secondary governorates (all Egypt except Cairo/Giza/Alex/North Coast)
+- **Phase 3-4:** Expansion to Cairo, Giza, Alexandria, North Coast
+- Class B & C markets (initially), expanding to all segments
 - Owners/operators who rely heavily on phone orders
 - Have their own delivery guys or part-time drivers
 
@@ -125,8 +133,9 @@ Key positioning pillars:
 ---
 
 **2. Customers (B2C side)**
-- Class B and C
-- Residents in non-primary cities
+- Class B and C (initial focus), expanding to all segments
+- **Phase 1-2:** Residents in secondary governorates
+- **Phase 3-4:** Expansion to Cairo, Giza, Alexandria, North Coast residents
 - Used to calling shops on the phone
 - Heavy WhatsApp / Facebook users, mid-range Android users
 
