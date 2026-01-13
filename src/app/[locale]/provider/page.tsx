@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import { ProviderLayout } from '@/components/provider'
+import { ProviderLayout, SoundTestDebug } from '@/components/provider'
 import { useProviderOrderNotifications } from '@/hooks/customer'
 import type { User } from '@supabase/supabase-js'
 import {
@@ -721,6 +721,9 @@ export default function ProviderDashboard() {
           </div>
         </>
       )}
+
+      {/* Debug component for testing sounds - only visible in development */}
+      <SoundTestDebug />
     </ProviderLayout>
   )
 }

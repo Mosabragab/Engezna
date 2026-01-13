@@ -128,7 +128,7 @@ export function BottomNavigation() {
                     : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
-                <div className={`relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ${
+                <div className={`relative flex items-center justify-center min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl transition-all duration-200 ${
                   active ? 'bg-primary/10' : ''
                 }`}>
                   <Icon className={`w-5 h-5 transition-all duration-200 ${
