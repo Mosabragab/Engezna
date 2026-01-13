@@ -4,6 +4,43 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [Session 27] - 2026-01-13
+
+### Welcome Page Loading Fix
+
+#### Problem
+New visitors entering the website were not being redirected to the welcome page (`/ar/welcome`). Instead, they saw a loading spinner on the home page while the system waited for LocationContext to fully load from Supabase.
+
+#### Root Cause
+The home page (`/[locale]/page.tsx`) was waiting for:
+1. Auth initialization (`isInitializing`)
+2. Location data loading from Supabase (`isDataLoaded`)
+3. User location loading (`isUserLocationLoading`)
+
+Only after ALL of these completed would it check if the user has a location and redirect to welcome page. This caused delays and sometimes failures.
+
+#### Solution
+Added an **early redirect check** that synchronously reads `localStorage` immediately on mount:
+- If no guest location is found in `localStorage`, redirect to welcome page immediately
+- Don't wait for Supabase data or auth checks
+- The welcome page handles logged-in users appropriately
+
+#### Technical Changes
+- Added `guestLocationStorage` import to home page
+- Added `earlyRedirectDone` state to track if redirect happened
+- New `useEffect` that runs first and checks localStorage synchronously
+- Modified existing redirect logic to skip if early redirect already happened
+
+#### Files Modified
+- `src/app/[locale]/page.tsx` - Fast localStorage check and early redirect
+
+### Commits
+```
+[pending] fix: Fast redirect to welcome page for new visitors
+```
+
+---
+
 ## [Session 26] - 2026-01-11
 
 ### Custom Order System (Triple Broadcast) - Comprehensive Review

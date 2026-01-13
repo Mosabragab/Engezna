@@ -1,6 +1,6 @@
 # Engezna Project Status
 
-## Last Updated: 2026-01-11 (Session 26)
+## Last Updated: 2026-01-13 (Session 27)
 
 ## Project Overview
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
@@ -16,6 +16,20 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 ---
 
 ## Current Status: ~97% MVP Complete
+
+### Session 27 Updates (January 13, 2026)
+
+#### Welcome Page Loading Fix
+- [x] **Fast redirect for new visitors** - Welcome page now opens immediately for first-time visitors
+- [x] **localStorage early check** - Synchronous check before waiting for Supabase
+- [x] **Improved UX** - No more loading spinner delay before welcome page
+
+##### Technical Details
+- Home page now checks `localStorage` for guest location immediately on mount
+- If no location found, redirects to `/welcome` without waiting for LocationContext
+- Eliminates the delay caused by waiting for Supabase data to load
+
+---
 
 ### Session 26 Updates (January 11, 2026)
 

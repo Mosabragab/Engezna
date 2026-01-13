@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { CustomerLayout } from '@/components/customer/layout'
@@ -16,6 +16,7 @@ import { ChatFAB, SmartAssistant } from '@/components/customer/chat'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/lib/store/cart'
 import { useLocation } from '@/lib/contexts/LocationContext'
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
 import { Loader2 } from 'lucide-react'
 
 
@@ -51,10 +52,29 @@ export default function HomePage() {
   const [userId, setUserId] = useState<string | undefined>()
   const [isReordering, setIsReordering] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
+  const [earlyRedirectDone, setEarlyRedirectDone] = useState(false)
 
   // Track if we've already loaded providers to avoid duplicate calls
   const providersLoadedRef = useRef(false)
   const lastLocationRef = useRef<string | null>(null)
+
+  // FAST CHECK: Check localStorage immediately on mount (before any async operations)
+  // This ensures new visitors are redirected to welcome page ASAP
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return
+
+    // Check localStorage synchronously for guest location
+    const guestLocation = guestLocationStorage.get()
+
+    // If no location saved, redirect to welcome immediately (for guests)
+    // Don't wait for auth check - just redirect fast, welcome page will handle logged-in users
+    if (!guestLocation?.governorateId) {
+      setEarlyRedirectDone(true)
+      router.replace(`/${locale}/welcome`)
+      return
+    }
+  }, [locale, router])
 
   // Single auth check on mount - just to get userId for orders
   useEffect(() => {
@@ -70,7 +90,9 @@ export default function HomePage() {
   }, [])
 
   // Check location and redirect if needed (using LocationContext data)
+  // This is a fallback for edge cases where early redirect didn't catch it
   useEffect(() => {
+    if (earlyRedirectDone) return // Already redirected
     if (isInitializing || !isDataLoaded || isUserLocationLoading) return
 
     // No location set - redirect
@@ -83,7 +105,7 @@ export default function HomePage() {
         router.replace(`/${locale}/welcome`)
       }
     }
-  }, [isInitializing, isDataLoaded, isUserLocationLoading, userLocation.governorateId, userId, locale, router])
+  }, [earlyRedirectDone, isInitializing, isDataLoaded, isUserLocationLoading, userLocation.governorateId, userId, locale, router])
 
   // Load providers when location changes (from LocationContext)
   useEffect(() => {
