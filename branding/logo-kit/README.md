@@ -1,7 +1,7 @@
 # Engezna Logo Kit | كيت شعار إنجزنا
 
 > **Version:** 3.0.0
-> **Last Updated:** December 2025
+> **Last Updated:** January 2026
 > **Brand Color:** #009DE0 (Engezna Blue)
 > **Theme Color:** #0F172A (Charcoal)
 
@@ -172,4 +172,4 @@ For brand inquiries or custom assets, contact the design team.
 
 ---
 
-© 2025 Engezna. All rights reserved.
+© 2026 Engezna. All rights reserved.
