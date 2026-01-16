@@ -120,10 +120,10 @@ Neutrals are defined under `:root` in CSS (light theme only, dark mode removed).
   - Merchants must never see or be charged "sign-up" fees anywhere in the app or back office.
 
 - **Commission model:**
-  - Commission = 0% for first 6 months from:
+  - Commission = 0% for first 3 months from:
     - Platform launch in that city, OR
     - merchant registration date (implementation decision to be documented)
-  - After 6 months:
+  - After 3 months:
     - Commission = 7% maximum of order value.
 
 - **Customer service fee:**

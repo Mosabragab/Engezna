@@ -10,8 +10,9 @@ import '../globals.css';
 
 export function generateMetadata() {
   return {
-    title: 'Engezna - إنجزنا | Delivery Marketplace in Egypt',
-    description: 'إنجزنا واطلب - Fast delivery from local stores across Egypt',
+    title: 'Engezna - إنجزنا | Local Marketplace in Egypt',
+    description:
+      'منصة إنجزنا - ماركت بليس لاحتياجات البيت الضرورية: مطاعم، سوبر ماركت، صيدليات، خضروات وفاكهة، بن وحلويات - يجمع التجار والعملاء في مكان واحد',
     manifest: '/manifest.json',
     themeColor: '#0F172A',
     appleWebApp: {

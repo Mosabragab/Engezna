@@ -24,11 +24,11 @@
 
 ### About Engezna
 
-**Engezna (إنجزنا)** - meaning "We've got it done!" - is a B2C delivery marketplace designed to serve all of Egypt, starting from Upper Egypt governorates. We connect local stores (restaurants, supermarkets, groceries, pharmacies, and more) with customers through a modern, bilingual platform.
+**Engezna (إنجزنا)** - meaning "We've got it done!" - is a local marketplace for essential home needs designed to serve all of Egypt, starting from Upper Egypt governorates. We connect local stores (restaurants, supermarkets, groceries, pharmacies, coffee & sweets, and more) with customers through a modern, bilingual platform.
 
 #### Key Differentiator
 
-- **6 months 0% commission** then **max 7%** (vs competitors' 25-30%)
+- **3 months 0% commission** then **max 7%** (vs competitors' 25-30%)
 - **0% customer service fees** - always!
 - Providers manage their own delivery staff
 - Arabic-first user experience with full RTL support
@@ -132,11 +132,11 @@ engezna/
 
 ### عن إنجزنا
 
-**إنجزنا (Engezna)** - تعني "خلصناها!" - منصة توصيل B2C مصممة لخدمة جمهورية مصر العربية بالكامل، بدءاً من محافظات الصعيد.
+**إنجزنا (Engezna)** - تعني "خلصناها!" - ماركت بليس لاحتياجات البيت الضرورية مصمم لخدمة جمهورية مصر العربية بالكامل، بدءاً من محافظات الصعيد. يجمع التجار والعملاء: مطاعم، سوبر ماركت، صيدليات، خضروات وفاكهة، بن وحلويات.
 
 #### ميزتنا الرئيسية
 
-- **6 شهور بدون عمولة** ثم **حد أقصى 7%** (مقارنة بـ 25-30% للمنافسين)
+- **3 شهور بدون عمولة** ثم **حد أقصى 7%** (مقارنة بـ 25-30% للمنافسين)
 - **0% رسوم خدمة للعملاء** - دائماً!
 - المتاجر تدير فريق التوصيل الخاص بها
 - تجربة مستخدم بالعربية أولاً مع دعم RTL كامل

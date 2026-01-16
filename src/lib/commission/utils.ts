@@ -2,14 +2,14 @@
  * Commission Calculation Utility
  *
  * Business Model:
- * - 0% commission for first 6 months (grace period)
+ * - 0% commission for first 3 months (grace period)
  * - Maximum 7% commission after grace period
  * - Governorate-specific rates may apply
  */
 
 export const COMMISSION_CONFIG = {
   // Grace period duration in days
-  GRACE_PERIOD_DAYS: 180, // 6 months
+  GRACE_PERIOD_DAYS: 90, // 3 months
 
   // Default commission rate (percentage)
   DEFAULT_RATE: 7.0,
