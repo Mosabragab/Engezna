@@ -46,11 +46,12 @@ describe('Performance Utils', () => {
       vi.useRealTimers(); // Need real timers for async
 
       const result = await measureAsync(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 15));
         return 'done';
       });
 
       expect(result.result).toBe('done');
+      // Use slightly lower threshold due to timer resolution variance
       expect(result.durationMs).toBeGreaterThanOrEqual(10);
     });
   });

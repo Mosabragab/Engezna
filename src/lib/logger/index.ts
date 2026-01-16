@@ -17,6 +17,17 @@ export interface LogContext {
   [key: string]: unknown;
 }
 
+/**
+ * Logger interface - defined before implementation to avoid circular reference
+ */
+export interface Logger {
+  debug(message: string, context?: LogContext): void;
+  info(message: string, context?: LogContext): void;
+  warn(message: string, context?: LogContext): void;
+  error(message: string, error?: unknown, context?: LogContext): void;
+  child(baseContext: LogContext): Logger;
+}
+
 interface LogEntry {
   timestamp: string;
   level: LogLevel;
@@ -171,7 +182,7 @@ function log(level: LogLevel, message: string, context?: LogContext, error?: unk
 /**
  * Logger instance with all methods
  */
-export const logger = {
+export const logger: Logger = {
   /**
    * Debug level - detailed information for debugging
    */
@@ -217,8 +228,6 @@ export const logger = {
     };
   },
 };
-
-export type Logger = typeof logger;
 
 /**
  * Create a request-scoped logger
