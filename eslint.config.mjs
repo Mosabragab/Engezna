@@ -38,6 +38,40 @@ const eslintConfig = defineConfig([
       'no-var': 'error',
     },
   },
+  // E2E tests - allow console, unused vars, and any type (test debugging)
+  {
+    files: ['e2e/**/*.ts', 'e2e/**/*.spec.ts'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  // Scripts - allow console for CLI output
+  {
+    files: ['scripts/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+  // Public JS files - allow console for service worker
+  {
+    files: ['public/**/*.js'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+  // Unit tests - allow console, unused vars (test debugging)
+  {
+    files: ['src/__tests__/**/*.ts', 'src/__tests__/**/*.tsx'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 ]);
 
 export default eslintConfig;
