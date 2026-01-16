@@ -33,6 +33,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
 
 // ============================================================================
 // Types
@@ -331,6 +332,19 @@ export default function RegisterPage() {
 
         // Wait for session to persist
         await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Sync location to localStorage (so home page can read it)
+        const selectedGov = governorates.find((g) => g.id === data.governorateId);
+        const selectedCity = cities.find((c) => c.id === data.cityId);
+
+        guestLocationStorage.set({
+          governorateId: data.governorateId,
+          governorateName: selectedGov
+            ? { ar: selectedGov.name_ar, en: selectedGov.name_en }
+            : null,
+          cityId: data.cityId || null,
+          cityName: selectedCity ? { ar: selectedCity.name_ar, en: selectedCity.name_en } : null,
+        });
 
         // Redirect to home or specified redirect
         window.location.href = redirectTo || `/${locale}`;

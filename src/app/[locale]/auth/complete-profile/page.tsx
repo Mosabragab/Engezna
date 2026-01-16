@@ -1,44 +1,45 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useMemo } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import Link from 'next/link'
-import { MapPin, Phone, Loader2, CheckCircle, User } from 'lucide-react'
+} from '@/components/ui/select';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import Link from 'next/link';
+import { MapPin, Phone, Loader2, CheckCircle, User } from 'lucide-react';
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
-  is_active: boolean
+  id: string;
+  name_ar: string;
+  name_en: string;
+  is_active: boolean;
 }
 
 interface City {
-  id: string
-  name_ar: string
-  name_en: string
-  governorate_id: string
-  is_active: boolean
+  id: string;
+  name_ar: string;
+  name_en: string;
+  governorate_id: string;
+  is_active: boolean;
 }
 
 // ============================================================================
@@ -51,34 +52,34 @@ const completeProfileSchema = z.object({
   phone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'رقم هاتف مصري غير صالح'),
   governorateId: z.string().min(1, 'يرجى اختيار المحافظة'),
   cityId: z.string().min(1, 'يرجى اختيار المدينة'),
-})
+});
 
-type CompleteProfileFormData = z.infer<typeof completeProfileSchema>
+type CompleteProfileFormData = z.infer<typeof completeProfileSchema>;
 
 // ============================================================================
 // Main Component
 // ============================================================================
 
 export default function CompleteProfilePage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect')
+  const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Location data
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [cities, setCities] = useState<City[]>([])
-  const [loadingLocations, setLoadingLocations] = useState(true)
+  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
 
   // User data
-  const [userId, setUserId] = useState<string | null>(null)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [hasExistingName, setHasExistingName] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [hasExistingName, setHasExistingName] = useState(false);
 
   const {
     register,
@@ -95,79 +96,81 @@ export default function CompleteProfilePage() {
       governorateId: '',
       cityId: '',
     },
-  })
+  });
 
-  const selectedGovernorateId = watch('governorateId')
+  const selectedGovernorateId = watch('governorateId');
 
   // Filter cities based on selected governorate
   const filteredCities = useMemo(() => {
-    if (!selectedGovernorateId) return []
-    return cities.filter(city => city.governorate_id === selectedGovernorateId)
-  }, [selectedGovernorateId, cities])
+    if (!selectedGovernorateId) return [];
+    return cities.filter((city) => city.governorate_id === selectedGovernorateId);
+  }, [selectedGovernorateId, cities]);
 
   // Check authentication and profile status
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
         // Not authenticated - redirect to login
-        router.push(`/${locale}/auth/login`)
-        return
+        router.push(`/${locale}/auth/login`);
+        return;
       }
 
-      setUserId(user.id)
-      setUserEmail(user.email || null)
+      setUserId(user.id);
+      setUserEmail(user.email || null);
 
       // Get profile data
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, phone, governorate_id, city_id')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (profile) {
         // If profile is already complete, redirect
         if (profile.governorate_id && profile.phone && profile.full_name) {
-          const destination = redirectTo || `/${locale}`
-          router.push(destination)
-          return
+          const destination = redirectTo || `/${locale}`;
+          router.push(destination);
+          return;
         }
 
         // Pre-fill existing data
         if (profile.full_name) {
-          setHasExistingName(true)
-          const nameParts = profile.full_name.split(' ')
-          setValue('firstName', nameParts[0] || '')
-          setValue('lastName', nameParts.slice(1).join(' ') || '')
+          setHasExistingName(true);
+          const nameParts = profile.full_name.split(' ');
+          setValue('firstName', nameParts[0] || '');
+          setValue('lastName', nameParts.slice(1).join(' ') || '');
         }
 
         if (profile.phone) {
-          setValue('phone', profile.phone)
+          setValue('phone', profile.phone);
         }
       }
 
-      setIsCheckingAuth(false)
+      setIsCheckingAuth(false);
     }
 
-    checkAuth()
-  }, [locale, router, redirectTo, setValue])
+    checkAuth();
+  }, [locale, router, redirectTo, setValue]);
 
   // Fetch locations
   useEffect(() => {
     async function fetchLocations() {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Fetch governorates
       const { data: govData } = await supabase
         .from('governorates')
         .select('id, name_ar, name_en, is_active')
         .eq('is_active', true)
-        .order('name_ar')
+        .order('name_ar');
 
       if (govData) {
-        setGovernorates(govData)
+        setGovernorates(govData);
       }
 
       // Fetch all cities
@@ -175,34 +178,34 @@ export default function CompleteProfilePage() {
         .from('cities')
         .select('id, name_ar, name_en, governorate_id, is_active')
         .eq('is_active', true)
-        .order('name_ar')
+        .order('name_ar');
 
       if (cityData) {
-        setCities(cityData)
+        setCities(cityData);
       }
 
-      setLoadingLocations(false)
+      setLoadingLocations(false);
     }
 
-    fetchLocations()
-  }, [])
+    fetchLocations();
+  }, []);
 
   // Reset city when governorate changes
   useEffect(() => {
-    setValue('cityId', '')
-  }, [selectedGovernorateId, setValue])
+    setValue('cityId', '');
+  }, [selectedGovernorateId, setValue]);
 
   const onSubmit = async (data: CompleteProfileFormData) => {
-    if (!userId) return
+    if (!userId) return;
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Combine first and last name
-      const fullName = `${data.firstName} ${data.lastName}`.trim()
+      const fullName = `${data.firstName} ${data.lastName}`.trim();
 
       // Update profile with all data
       const { error: updateError } = await supabase
@@ -214,31 +217,41 @@ export default function CompleteProfilePage() {
           city_id: data.cityId,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', userId)
+        .eq('id', userId);
 
       if (updateError) {
-        throw updateError
+        throw updateError;
       }
 
-      setSuccess(true)
+      // Sync location to localStorage (so home page can read it)
+      const selectedGov = governorates.find((g) => g.id === data.governorateId);
+      const selectedCity = cities.find((c) => c.id === data.cityId);
+
+      guestLocationStorage.set({
+        governorateId: data.governorateId,
+        governorateName: selectedGov ? { ar: selectedGov.name_ar, en: selectedGov.name_en } : null,
+        cityId: data.cityId || null,
+        cityName: selectedCity ? { ar: selectedCity.name_ar, en: selectedCity.name_en } : null,
+      });
+
+      setSuccess(true);
 
       // Redirect after success
       setTimeout(() => {
-        const destination = redirectTo || `/${locale}`
-        window.location.href = destination
-      }, 1500)
-
+        const destination = redirectTo || `/${locale}`;
+        window.location.href = destination;
+      }, 1500);
     } catch (err) {
-      console.error('Error updating profile:', err)
+      console.error('Error updating profile:', err);
       setError(
         locale === 'ar'
           ? 'حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.'
           : 'An error occurred while saving. Please try again.'
-      )
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Loading state
   if (isCheckingAuth) {
@@ -246,7 +259,7 @@ export default function CompleteProfilePage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
-    )
+    );
   }
 
   // Success state
@@ -263,15 +276,13 @@ export default function CompleteProfilePage() {
                 {locale === 'ar' ? 'تم حفظ البيانات!' : 'Profile Completed!'}
               </h2>
               <p className="text-muted-foreground">
-                {locale === 'ar'
-                  ? 'جاري تحويلك...'
-                  : 'Redirecting you...'}
+                {locale === 'ar' ? 'جاري تحويلك...' : 'Redirecting you...'}
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -289,9 +300,7 @@ export default function CompleteProfilePage() {
             {locale === 'ar' ? 'أكمل ملفك الشخصي' : 'Complete Your Profile'}
           </CardTitle>
           <CardDescription>
-            {locale === 'ar'
-              ? 'أدخل بياناتك للمتابعة'
-              : 'Enter your details to continue'}
+            {locale === 'ar' ? 'أدخل بياناتك للمتابعة' : 'Enter your details to continue'}
           </CardDescription>
         </CardHeader>
 
@@ -388,8 +397,12 @@ export default function CompleteProfilePage() {
                   <SelectValue
                     placeholder={
                       loadingLocations
-                        ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
-                        : (locale === 'ar' ? 'اختر المحافظة' : 'Select governorate')
+                        ? locale === 'ar'
+                          ? 'جاري التحميل...'
+                          : 'Loading...'
+                        : locale === 'ar'
+                          ? 'اختر المحافظة'
+                          : 'Select governorate'
                     }
                   />
                 </SelectTrigger>
@@ -424,10 +437,16 @@ export default function CompleteProfilePage() {
                   <SelectValue
                     placeholder={
                       !selectedGovernorateId
-                        ? (locale === 'ar' ? 'اختر المحافظة أولاً' : 'Select governorate first')
+                        ? locale === 'ar'
+                          ? 'اختر المحافظة أولاً'
+                          : 'Select governorate first'
                         : filteredCities.length === 0
-                          ? (locale === 'ar' ? 'لا توجد مدن متاحة' : 'No cities available')
-                          : (locale === 'ar' ? 'اختر المدينة' : 'Select city')
+                          ? locale === 'ar'
+                            ? 'لا توجد مدن متاحة'
+                            : 'No cities available'
+                          : locale === 'ar'
+                            ? 'اختر المدينة'
+                            : 'Select city'
                     }
                   />
                 </SelectTrigger>
@@ -456,19 +475,16 @@ export default function CompleteProfilePage() {
             </div>
 
             {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 me-2 animate-spin" />
                   {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
                 </>
+              ) : locale === 'ar' ? (
+                'حفظ ومتابعة'
               ) : (
-                locale === 'ar' ? 'حفظ ومتابعة' : 'Save & Continue'
+                'Save & Continue'
               )}
             </Button>
           </form>
@@ -480,5 +496,5 @@ export default function CompleteProfilePage() {
         {locale === 'ar' ? 'انجزنا - منصة توصيل' : 'Engezna - Delivery Platform'}
       </p>
     </div>
-  )
+  );
 }

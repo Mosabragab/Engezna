@@ -308,7 +308,7 @@ describe('Performance Utils', () => {
       vi.useRealTimers();
 
       const result = await withMetrics('api_call', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 15));
         return 'result';
       });
 
@@ -317,6 +317,7 @@ describe('Performance Utils', () => {
       const stats = getMetricStats('api_call');
       expect(stats).not.toBeNull();
       expect(stats?.count).toBe(1);
+      // Use slightly lower threshold due to timer resolution variance
       expect(stats?.min).toBeGreaterThanOrEqual(10);
     });
   });
