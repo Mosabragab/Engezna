@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { ArrowLeft, ArrowRight, Loader2, Mail } from 'lucide-react'
-import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
-import { useGoogleLogin } from '@react-oauth/google'
+import { useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { ArrowLeft, ArrowRight, Loader2, Mail } from 'lucide-react';
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
+import { useGoogleLogin } from '@react-oauth/google';
 
 // Google Icon Component
 const GoogleIcon = () => (
@@ -30,23 +30,23 @@ const GoogleIcon = () => (
       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
     />
   </svg>
-)
+);
 
 export default function SignupPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect')
+  const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
 
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Handle Google signup with authorization code flow
   const handleGoogleSignup = useGoogleLogin({
     flow: 'auth-code',
     onSuccess: async (codeResponse) => {
-      setIsGoogleLoading(true)
-      setError(null)
+      setIsGoogleLoading(true);
+      setError(null);
 
       try {
         // Exchange auth code for ID token via our API
@@ -54,62 +54,67 @@ export default function SignupPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code: codeResponse.code }),
-        })
+        });
 
-        const tokens = await tokenResponse.json()
+        const tokens = await tokenResponse.json();
 
         if (!tokenResponse.ok || !tokens.id_token) {
-          setError(locale === 'ar' ? 'فشل في الحصول على بيانات Google' : 'Failed to get Google credentials')
-          setIsGoogleLoading(false)
-          return
+          setError(
+            locale === 'ar' ? 'فشل في الحصول على بيانات Google' : 'Failed to get Google credentials'
+          );
+          setIsGoogleLoading(false);
+          return;
         }
 
-        const supabase = createClient()
+        const supabase = createClient();
 
         // Sign in to Supabase with Google ID token
         const { data, error: signInError } = await supabase.auth.signInWithIdToken({
           provider: 'google',
           token: tokens.id_token,
-        })
+        });
 
         if (signInError) {
-          console.error('Supabase signInWithIdToken error:', signInError)
-          setError(signInError.message)
-          setIsGoogleLoading(false)
-          return
+          console.error('Supabase signInWithIdToken error:', signInError);
+          setError(signInError.message);
+          setIsGoogleLoading(false);
+          return;
         }
 
-        await handlePostSignup(supabase, data.user)
+        await handlePostSignup(supabase, data.user);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       } finally {
-        setIsGoogleLoading(false)
+        setIsGoogleLoading(false);
       }
     },
     onError: () => {
-      setError(locale === 'ar' ? 'فشل التسجيل بـ Google' : 'Google sign-up failed')
-      setIsGoogleLoading(false)
+      setError(locale === 'ar' ? 'فشل التسجيل بـ Google' : 'Google sign-up failed');
+      setIsGoogleLoading(false);
     },
-  })
+  });
 
   // Handle Email Signup - redirect to register page
   const handleEmailSignup = () => {
     const registerUrl = redirectTo
       ? `/${locale}/auth/register?redirect=${encodeURIComponent(redirectTo)}`
-      : `/${locale}/auth/register`
-    router.push(registerUrl)
-  }
+      : `/${locale}/auth/register`;
+    router.push(registerUrl);
+  };
 
   // Common post-signup handler
-  const handlePostSignup = async (supabase: ReturnType<typeof createClient>, user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null) => {
-    if (!user) return
+  const handlePostSignup = async (
+    supabase: ReturnType<typeof createClient>,
+    user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null
+  ) => {
+    if (!user) return;
 
     // Check if profile exists, if not create one
     const { data: profile } = await supabase
       .from('profiles')
       .select('governorate_id, phone, role')
       .eq('id', user.id)
-      .single()
+      .single();
 
     if (!profile) {
       // Create profile for new user
@@ -118,11 +123,11 @@ export default function SignupPage() {
         email: user.email,
         full_name: (user.user_metadata?.full_name || user.user_metadata?.name || '') as string,
         role: 'customer',
-      })
+      });
     }
 
     // Sync guest location if exists
-    const guestLocation = guestLocationStorage.get()
+    const guestLocation = guestLocationStorage.get();
     if (guestLocation?.governorateId) {
       await supabase
         .from('profiles')
@@ -131,18 +136,31 @@ export default function SignupPage() {
           city_id: guestLocation.cityId || null,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id)
-      guestLocationStorage.clear()
+        .eq('id', user.id);
+      guestLocationStorage.clear();
+    }
+
+    // Wait for session to be fully persisted before redirecting
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Verify session is active
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('Session not found after Google sign-up');
+      setError(locale === 'ar' ? 'فشل في إنشاء الجلسة' : 'Failed to create session');
+      return;
     }
 
     // Always redirect to complete profile for new signups
     const completeProfileUrl = redirectTo
       ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
-      : `/${locale}/auth/complete-profile`
-    window.location.href = completeProfileUrl
-  }
+      : `/${locale}/auth/complete-profile`;
+    window.location.href = completeProfileUrl;
+  };
 
-  const isRTL = locale === 'ar'
+  const isRTL = locale === 'ar';
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
@@ -236,7 +254,11 @@ export default function SignupPage() {
           <p className="text-slate-500">
             {locale === 'ar' ? 'لديك حساب بالفعل؟' : 'Already have an account?'}{' '}
             <Link
-              href={redirectTo ? `/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/login`}
+              href={
+                redirectTo
+                  ? `/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}`
+                  : `/${locale}/auth/login`
+              }
               className="text-[#009DE0] font-medium hover:underline"
             >
               {locale === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
@@ -254,5 +276,5 @@ export default function SignupPage() {
         {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
       </Link>
     </div>
-  )
+  );
 }
