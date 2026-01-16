@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Playwright auth storage
 e2e/.auth/
+
+# E2E test reports (generated)
+e2e/reports/
