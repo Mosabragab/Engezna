@@ -134,14 +134,11 @@ export default function GovernoratePage() {
         text: isGuest ? (locale === 'ar' ? 'تم حفظ الموقع' : 'Location saved') : t('saved'),
       });
 
-      if (isGuest) {
-        // Redirect guests to home after short delay
-        setTimeout(() => {
-          router.push(`/${locale}`);
-        }, 1000);
-      } else {
-        setTimeout(() => setMessage(null), 3000);
-      }
+      // Redirect to home after saving location (both guests and logged-in users)
+      // This allows them to see stores in their new location
+      setTimeout(() => {
+        router.push(`/${locale}`);
+      }, 1000);
     } catch {
       setMessage({
         type: 'error',
