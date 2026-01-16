@@ -1,4 +1,5 @@
 # 🏦 خطة إعادة بناء صفحات الأدمن المالية والتحليلات
+
 ## Admin Financial & Analytics Pages Synchronization Rebuild Plan
 
 **التاريخ**: 25 ديسمبر 2025
@@ -10,6 +11,7 @@
 ## 🟢 نقاط القوة في هذا الحل (لماذا هذا الحل ذكي؟)
 
 ### 1. الـ SQL View (محرك التسوية الموحد) 🎯
+
 > **هذه هي أهم خطوة في الخطة**
 
 بدلاً من حساب العمولة في Frontend الأدمن بكود، وفي Frontend التاجر بكود آخر، يتم الحساب داخل قاعدة البيانات (SQL View).
@@ -43,6 +45,7 @@
 ### 2. التمييز بين "الأدمن العام" و "المدير الإقليمي" 🔐
 
 المقترح يحل مشكلة أمنية وتنظيمية كبيرة:
+
 - **المدير الإقليمي يجب ألا يرى مبيعات تجار في منطقة أخرى**
 - **الفلترة على مستوى الـ Query** (وليس بعد تحميل البيانات) تضمن:
   - ⚡ أداءً سريعاً (Performance)
@@ -63,6 +66,7 @@ WHERE provider_id IN (
 ### 3. معالجة "اتجاه التسوية" (Settlement Direction) 🔄
 
 حل واضح لمشكلة الارتباك في أنظمة الـ COD:
+
 > **"هل التاجر مدين لنا أم نحن مدينون له؟"**
 
 ```
@@ -106,22 +110,22 @@ const commission = 100.50 * 0.07;
 // ✅ الحل 1: التعامل بالقروش (أصغر وحدة عملة)
 // تخزين 100.50 جنيه كـ 10050 قرش
 interface MoneyInPiasters {
-  amount: number;  // بالقروش (integers فقط)
+  amount: number; // بالقروش (integers فقط)
 }
 
 // الحساب بالقروش
-const totalPiasters = 10050;  // 100.50 جنيه
-const commissionPiasters = Math.round(totalPiasters * 0.07);  // 704 قرش = 7.04 جنيه
+const totalPiasters = 10050; // 100.50 جنيه
+const commissionPiasters = Math.round(totalPiasters * 0.07); // 704 قرش = 7.04 جنيه
 
 // التحويل للعرض فقط
-const displayAmount = commissionPiasters / 100;  // 7.04
+const displayAmount = commissionPiasters / 100; // 7.04
 
 // ✅ الحل 2: استخدام مكتبة متخصصة
 import Decimal from 'decimal.js';
 
 const total = new Decimal('100.50');
 const rate = new Decimal('0.07');
-const commission = total.times(rate).toDecimalPlaces(2);  // 7.04 بالضبط
+const commission = total.times(rate).toDecimalPlaces(2); // 7.04 بالضبط
 ```
 
 **التطبيق في FinancialService:**
@@ -130,7 +134,7 @@ const commission = total.times(rate).toDecimalPlaces(2);  // 7.04 بالضبط
 // src/lib/finance/money.ts
 
 export class Money {
-  private piasters: number;  // تخزين داخلي بالقروش
+  private piasters: number; // تخزين داخلي بالقروش
 
   constructor(amount: number | string) {
     if (typeof amount === 'string') {
@@ -170,8 +174,8 @@ export class Money {
 }
 
 // الاستخدام:
-const orderTotal = new Money(100.50);
-const commission = orderTotal.multiply(0.07);  // 7.04 بالضبط
+const orderTotal = new Money(100.5);
+const commission = orderTotal.multiply(0.07); // 7.04 بالضبط
 ```
 
 ---
@@ -186,10 +190,10 @@ const commission = orderTotal.multiply(0.07);  // 7.04 بالضبط
 ```typescript
 // إضافة حالة On Hold للطلبات
 type OrderSettlementStatus =
-  | 'eligible'      // جاهز للتسوية
-  | 'on_hold'       // معلق - لا يدخل التسوية
-  | 'settled'       // تمت تسويته
-  | 'excluded';     // مستبعد نهائياً
+  | 'eligible' // جاهز للتسوية
+  | 'on_hold' // معلق - لا يدخل التسوية
+  | 'settled' // تمت تسويته
+  | 'excluded'; // مستبعد نهائياً
 
 interface Order {
   // ... الحقول الحالية
@@ -231,7 +235,7 @@ async function generateSettlement(providerId: string, period: DateRange) {
     .select('*')
     .eq('provider_id', providerId)
     .eq('status', 'delivered')
-    .eq('settlement_status', 'eligible')  // ← مهم!
+    .eq('settlement_status', 'eligible') // ← مهم!
     .gte('created_at', period.start)
     .lte('created_at', period.end);
 
@@ -295,17 +299,17 @@ CREATE TRIGGER trg_hold_order_on_dispute
 
 **المعلومات الواجب تسجيلها:**
 
-| الحقل | الوصف | مثال |
-|-------|-------|------|
-| `admin_id` | من الموظف الذي نفذ؟ | `uuid-of-admin` |
-| `admin_name` | اسم الموظف | "أحمد محمد" |
-| `action` | ما الإجراء؟ | `record_payment` |
-| `performed_at` | متى؟ | `2025-12-25T14:30:00Z` |
-| `ip_address` | من أين؟ | `192.168.1.100` |
-| `payment_reference` | رقم المرجع البنكي | `TRX-123456` |
-| `old_value` | القيمة قبل | `{ status: 'pending' }` |
-| `new_value` | القيمة بعد | `{ status: 'paid' }` |
-| `reason` | السبب (اختياري) | "تأكيد استلام التحويل" |
+| الحقل               | الوصف               | مثال                    |
+| ------------------- | ------------------- | ----------------------- |
+| `admin_id`          | من الموظف الذي نفذ؟ | `uuid-of-admin`         |
+| `admin_name`        | اسم الموظف          | "أحمد محمد"             |
+| `action`            | ما الإجراء؟         | `record_payment`        |
+| `performed_at`      | متى؟                | `2025-12-25T14:30:00Z`  |
+| `ip_address`        | من أين؟             | `192.168.1.100`         |
+| `payment_reference` | رقم المرجع البنكي   | `TRX-123456`            |
+| `old_value`         | القيمة قبل          | `{ status: 'pending' }` |
+| `new_value`         | القيمة بعد          | `{ status: 'paid' }`    |
+| `reason`            | السبب (اختياري)     | "تأكيد استلام التحويل"  |
 
 **جدول Audit Trail:**
 
@@ -441,11 +445,13 @@ CREATE TRIGGER trg_settlement_audit
 ## 📋 ملخص تنفيذي
 
 هذه الخطة تعالج **التزامن بين صفحات الأدمن والتاجر** في:
+
 1. الإدارة المالية (Finance)
 2. التسويات (Settlements)
 3. التحليلات (Analytics)
 
 مع مراعاة:
+
 - صلاحيات الأدمن (Super Admin vs Regional Manager)
 - فلترة المحافظات والمدن
 - انتقال البيانات المتزامن بين الطرفين
@@ -456,21 +462,21 @@ CREATE TRIGGER trg_settlement_audit
 
 ### 1. عدم تناسق الحسابات المالية
 
-| المشكلة | الموقع | الخطورة |
-|---------|--------|---------|
-| **net_payout مختلف** | Admin: `gross - commission` vs Provider: uses `net_amount_due` | 🔴 عالية |
-| **حساب المرتجعات** | Admin لا يحسب تأثير المرتجعات على العمولة | 🔴 عالية |
-| **رسوم التوصيل** | Admin يعرضها منفصلة، Provider لا يراها بوضوح | 🟡 متوسطة |
-| **فترة السماح** | Admin يعرض النسبة، لكن لا يوضح أنها 0% | 🟡 متوسطة |
+| المشكلة              | الموقع                                                         | الخطورة   |
+| -------------------- | -------------------------------------------------------------- | --------- |
+| **net_payout مختلف** | Admin: `gross - commission` vs Provider: uses `net_amount_due` | 🔴 عالية  |
+| **حساب المرتجعات**   | Admin لا يحسب تأثير المرتجعات على العمولة                      | 🔴 عالية  |
+| **رسوم التوصيل**     | Admin يعرضها منفصلة، Provider لا يراها بوضوح                   | 🟡 متوسطة |
+| **فترة السماح**      | Admin يعرض النسبة، لكن لا يوضح أنها 0%                         | 🟡 متوسطة |
 
 ### 2. عدم تناسق البيانات المعروضة
 
-| صفحة الأدمن | صفحة التاجر | الفرق |
-|-------------|-------------|-------|
-| `platform_commission` | `totalCommission` | نفس الحقل لكن المسميات مختلفة |
-| `pending_settlements` (مبلغ) | `totalDue` (مبلغ) | نفس المفهوم |
-| لا يوجد `cod_commission_owed` | يوجد | التاجر يرى تفاصيل أكثر! |
-| لا يوجد `settlement_direction` | يوجد | التاجر يرى الاتجاه |
+| صفحة الأدمن                    | صفحة التاجر       | الفرق                         |
+| ------------------------------ | ----------------- | ----------------------------- |
+| `platform_commission`          | `totalCommission` | نفس الحقل لكن المسميات مختلفة |
+| `pending_settlements` (مبلغ)   | `totalDue` (مبلغ) | نفس المفهوم                   |
+| لا يوجد `cod_commission_owed`  | يوجد              | التاجر يرى تفاصيل أكثر!       |
+| لا يوجد `settlement_direction` | يوجد              | التاجر يرى الاتجاه            |
 
 ### 3. مشاكل الفلترة الجغرافية
 
@@ -498,21 +504,21 @@ CREATE TRIGGER trg_settlement_audit
 
 ### 4. مشاكل الصلاحيات
 
-| المشكلة | التأثير |
-|---------|---------|
-| Regional Manager يرى كل التسويات | خطأ أمني |
-| Finance Admin لا يستطيع رؤية تقارير منطقته فقط | مخالف للصلاحيات |
-| Generate Settlements لكل المزودين | Regional Manager يولد لغير منطقته |
+| المشكلة                                        | التأثير                           |
+| ---------------------------------------------- | --------------------------------- |
+| Regional Manager يرى كل التسويات               | خطأ أمني                          |
+| Finance Admin لا يستطيع رؤية تقارير منطقته فقط | مخالف للصلاحيات                   |
+| Generate Settlements لكل المزودين              | Regional Manager يولد لغير منطقته |
 
 ### 5. غياب ميزات مهمة
 
-| الميزة | الأدمن | التاجر | الحالة |
-|--------|--------|--------|--------|
-| تصدير PDF | ❌ | ❌ | مطلوب للطرفين |
-| تصدير Excel | ❌ | ✅ (في Analytics) | مطلوب للأدمن |
-| Audit Trail | ❌ | ❌ | مطلوب |
-| Notifications عند تغيير التسوية | ❌ | ❌ | مطلوب |
-| Real-time updates | ❌ | ❌ | مطلوب |
+| الميزة                          | الأدمن | التاجر            | الحالة        |
+| ------------------------------- | ------ | ----------------- | ------------- |
+| تصدير PDF                       | ❌     | ❌                | مطلوب للطرفين |
+| تصدير Excel                     | ❌     | ✅ (في Analytics) | مطلوب للأدمن  |
+| Audit Trail                     | ❌     | ❌                | مطلوب         |
+| Notifications عند تغيير التسوية | ❌     | ❌                | مطلوب         |
+| Real-time updates               | ❌     | ❌                | مطلوب         |
 
 ---
 
@@ -549,38 +555,38 @@ CREATE TRIGGER trg_settlement_audit
 // src/lib/finance/financial-service.ts
 
 export class FinancialService {
-  private supabase: SupabaseClient
-  private geoFilter?: GeoFilterValue
-  private providerId?: string
+  private supabase: SupabaseClient;
+  private geoFilter?: GeoFilterValue;
+  private providerId?: string;
 
   constructor(options: {
-    supabase: SupabaseClient
-    geoFilter?: GeoFilterValue  // للأدمن
-    providerId?: string          // للتاجر
-  })
+    supabase: SupabaseClient;
+    geoFilter?: GeoFilterValue; // للأدمن
+    providerId?: string; // للتاجر
+  });
 
   // ═══════════════════════════════════════════════════════════════
   // Core Methods - تستخدم financial_settlement_engine
   // ═══════════════════════════════════════════════════════════════
 
-  async getSettlementsSummary(dateRange: DateRange): Promise<SettlementSummary>
-  async getSettlementDetails(settlementId: string): Promise<SettlementDetails>
-  async getProviderFinancials(providerId: string): Promise<ProviderFinancials>
-  async getRevenueBreakdown(dateRange: DateRange): Promise<RevenueBreakdown>
+  async getSettlementsSummary(dateRange: DateRange): Promise<SettlementSummary>;
+  async getSettlementDetails(settlementId: string): Promise<SettlementDetails>;
+  async getProviderFinancials(providerId: string): Promise<ProviderFinancials>;
+  async getRevenueBreakdown(dateRange: DateRange): Promise<RevenueBreakdown>;
 
   // ═══════════════════════════════════════════════════════════════
   // Admin-only Methods
   // ═══════════════════════════════════════════════════════════════
 
-  async generateSettlement(options: GenerateSettlementOptions): Promise<Settlement>
-  async recordPayment(settlementId: string, payment: PaymentRecord): Promise<void>
-  async exportReport(format: 'pdf' | 'excel', options: ExportOptions): Promise<Blob>
+  async generateSettlement(options: GenerateSettlementOptions): Promise<Settlement>;
+  async recordPayment(settlementId: string, payment: PaymentRecord): Promise<void>;
+  async exportReport(format: 'pdf' | 'excel', options: ExportOptions): Promise<Blob>;
 
   // ═══════════════════════════════════════════════════════════════
   // Geographic Filtering - تطبق تلقائياً
   // ═══════════════════════════════════════════════════════════════
 
-  private applyGeoFilter<T>(query: PostgrestFilterBuilder<T>): PostgrestFilterBuilder<T>
+  private applyGeoFilter<T>(query: PostgrestFilterBuilder<T>): PostgrestFilterBuilder<T>;
 }
 ```
 
@@ -591,82 +597,82 @@ export class FinancialService {
 
 export interface SettlementSummary {
   // إجماليات
-  totalRevenue: number
-  totalCommission: number
-  totalDeliveryFees: number
-  totalRefunds: number
+  totalRevenue: number;
+  totalCommission: number;
+  totalDeliveryFees: number;
+  totalRefunds: number;
 
   // التسويات
-  pendingSettlementsAmount: number
-  pendingSettlementsCount: number
-  overdueSettlementsAmount: number
-  overdueSettlementsCount: number
-  paidSettlementsAmount: number
-  paidSettlementsCount: number
+  pendingSettlementsAmount: number;
+  pendingSettlementsCount: number;
+  overdueSettlementsAmount: number;
+  overdueSettlementsCount: number;
+  paidSettlementsAmount: number;
+  paidSettlementsCount: number;
 
   // التقسيم حسب طريقة الدفع
-  codBreakdown: PaymentMethodBreakdown
-  onlineBreakdown: PaymentMethodBreakdown
+  codBreakdown: PaymentMethodBreakdown;
+  onlineBreakdown: PaymentMethodBreakdown;
 
   // الاتجاه الصافي
-  netBalance: number
-  settlementDirection: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced'
+  netBalance: number;
+  settlementDirection: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced';
 }
 
 export interface PaymentMethodBreakdown {
-  ordersCount: number
-  grossRevenue: number
-  commission: number
-  netAmount: number
-  refundsAmount: number
+  ordersCount: number;
+  grossRevenue: number;
+  commission: number;
+  netAmount: number;
+  refundsAmount: number;
 }
 
 export interface SettlementDetails {
-  id: string
-  provider: ProviderInfo
-  period: { start: string; end: string }
+  id: string;
+  provider: ProviderInfo;
+  period: { start: string; end: string };
 
   // ═══════════════════════════════════════════════════════════
   // هذه الحقول يجب أن تتطابق بين Admin و Provider
   // ═══════════════════════════════════════════════════════════
 
-  grossRevenue: number
+  grossRevenue: number;
 
   // COD
   cod: {
-    ordersCount: number
-    revenue: number
-    commissionOwed: number  // ما يدين به التاجر للمنصة
-  }
+    ordersCount: number;
+    revenue: number;
+    commissionOwed: number; // ما يدين به التاجر للمنصة
+  };
 
   // Online
   online: {
-    ordersCount: number
-    revenue: number
-    platformCommission: number
-    payoutOwed: number      // ما تدين به المنصة للتاجر
-  }
+    ordersCount: number;
+    revenue: number;
+    platformCommission: number;
+    payoutOwed: number; // ما تدين به المنصة للتاجر
+  };
 
   // Refunds - معادلة صحيحة
   refunds: {
-    totalAmount: number
-    percentage: number
+    totalAmount: number;
+    percentage: number;
     // رسوم التوصيل لا تتأثر!
-  }
+  };
 
   // Delivery (حق التاجر الثابت)
-  deliveryFees: number
+  deliveryFees: number;
 
   // Net Calculation
-  netBalance: number
-  direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced'
+  netBalance: number;
+  direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced';
 
   // Payment
-  status: SettlementStatus
-  amountPaid: number
-  paymentMethod?: string
-  paymentReference?: string
-  paidAt?: string
+  status: SettlementStatus;
+  amountPaid: number;
+  paymentMethod?: string;
+  paymentReference?: string;
+  paidAt?: string;
 }
 ```
 
@@ -679,23 +685,24 @@ export function buildFinancialQuery(
   supabase: SupabaseClient,
   table: 'settlements' | 'orders' | 'financial_settlement_engine',
   options: {
-    geoFilter?: GeoFilterValue
-    providerId?: string
-    dateRange?: DateRange
-    isRegionalAdmin?: boolean
-    allowedGovernorateIds?: string[]
+    geoFilter?: GeoFilterValue;
+    providerId?: string;
+    dateRange?: DateRange;
+    isRegionalAdmin?: boolean;
+    allowedGovernorateIds?: string[];
   }
 ) {
-  let query = supabase.from(table).select('*')
+  let query = supabase.from(table).select('*');
 
   // ═══════════════════════════════════════════════════════════════
   // 1. Regional Admin Filter (أولوية قصوى)
   // ═══════════════════════════════════════════════════════════════
   if (options.isRegionalAdmin && options.allowedGovernorateIds?.length) {
     // الفلترة عن طريق provider_id من المزودين في المنطقة
-    query = query.in('provider_id',
+    query = query.in(
+      'provider_id',
       await getProviderIdsInGovernorates(supabase, options.allowedGovernorateIds)
-    )
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -703,15 +710,15 @@ export function buildFinancialQuery(
   // ═══════════════════════════════════════════════════════════════
   if (options.geoFilter?.governorate_id) {
     // فلترة عن طريق provider location
-    const providerIds = await getProviderIdsInRegion(supabase, options.geoFilter)
-    query = query.in('provider_id', providerIds)
+    const providerIds = await getProviderIdsInRegion(supabase, options.geoFilter);
+    query = query.in('provider_id', providerIds);
   }
 
   // ═══════════════════════════════════════════════════════════════
   // 3. Provider Filter (للتاجر)
   // ═══════════════════════════════════════════════════════════════
   if (options.providerId) {
-    query = query.eq('provider_id', options.providerId)
+    query = query.eq('provider_id', options.providerId);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -720,10 +727,10 @@ export function buildFinancialQuery(
   if (options.dateRange) {
     query = query
       .gte('created_at', options.dateRange.start)
-      .lte('created_at', options.dateRange.end)
+      .lte('created_at', options.dateRange.end);
   }
 
-  return query
+  return query;
 }
 ```
 
@@ -846,21 +853,21 @@ export function buildFinancialQuery(
 
 ### مصفوفة الصلاحيات
 
-| الدور | Finance | Settlements | Analytics | Generate | Record Payment |
-|-------|---------|-------------|-----------|----------|----------------|
-| **Super Admin** | ✅ الكل | ✅ الكل | ✅ الكل | ✅ الكل | ✅ الكل |
-| **Regional Manager** | 📍 منطقته | 📍 منطقته | 📍 منطقته | 📍 منطقته | 📍 منطقته |
-| **Finance Admin** | ✅ الكل | ✅ الكل | ✅ الكل | ✅ الكل | ✅ الكل |
-| **Analyst** | 👁️ عرض | 👁️ عرض | ✅ الكل | ❌ | ❌ |
-| **Viewer** | 👁️ عرض | 👁️ عرض | 👁️ عرض | ❌ | ❌ |
+| الدور                | Finance   | Settlements | Analytics | Generate  | Record Payment |
+| -------------------- | --------- | ----------- | --------- | --------- | -------------- |
+| **Super Admin**      | ✅ الكل   | ✅ الكل     | ✅ الكل   | ✅ الكل   | ✅ الكل        |
+| **Regional Manager** | 📍 منطقته | 📍 منطقته   | 📍 منطقته | 📍 منطقته | 📍 منطقته      |
+| **Finance Admin**    | ✅ الكل   | ✅ الكل     | ✅ الكل   | ✅ الكل   | ✅ الكل        |
+| **Analyst**          | 👁️ عرض    | 👁️ عرض      | ✅ الكل   | ❌        | ❌             |
+| **Viewer**           | 👁️ عرض    | 👁️ عرض      | 👁️ عرض    | ❌        | ❌             |
 
 ### تطبيق الفلترة
 
 ```typescript
 // في كل صفحة أدمن مالية:
 
-import { useRegionFilter } from '@/lib/contexts/AdminRegionContext'
-import { usePermissions } from '@/lib/permissions/use-permissions'
+import { useRegionFilter } from '@/lib/contexts/AdminRegionContext';
+import { usePermissions } from '@/lib/permissions/use-permissions';
 
 function AdminFinancePage() {
   const {
@@ -868,39 +875,39 @@ function AdminFinancePage() {
     isRegionalAdmin,
     allowedGovernorateIds,
     regionProviderIds,
-    applyProviderFilter
-  } = useRegionFilter()
+    applyProviderFilter,
+  } = useRegionFilter();
 
-  const { can, canSync } = usePermissions()
+  const { can, canSync } = usePermissions();
 
   // التحقق من الصلاحيات
   useEffect(() => {
     if (!canSync('finance', 'view')) {
-      router.push('/admin/unauthorized')
+      router.push('/admin/unauthorized');
     }
-  }, [])
+  }, []);
 
   // تحميل البيانات مع الفلترة
   const loadData = async () => {
-    let query = supabase.from('settlements').select('*')
+    let query = supabase.from('settlements').select('*');
 
     // ⚠️ مهم: تطبيق الفلترة من الـ query وليس بعد التحميل
     if (isRegionalAdmin && regionProviderIds.length > 0) {
-      query = query.in('provider_id', regionProviderIds)
+      query = query.in('provider_id', regionProviderIds);
     } else if (!isSuperAdmin && allowedGovernorateIds.length > 0) {
       // للأدمن المحدود الصلاحيات
-      const providerIds = await getProvidersByGovernorates(allowedGovernorateIds)
-      query = query.in('provider_id', providerIds)
+      const providerIds = await getProvidersByGovernorates(allowedGovernorateIds);
+      query = query.in('provider_id', providerIds);
     }
 
     // تطبيق الفلتر الجغرافي المختار
     if (geoFilter.governorate_id || geoFilter.city_id) {
-      query = applyProviderFilter(query, 'provider_id')
+      query = applyProviderFilter(query, 'provider_id');
     }
 
-    const { data } = await query
-    return data
-  }
+    const { data } = await query;
+    return data;
+  };
 }
 ```
 
@@ -929,28 +936,32 @@ function AdminFinancePage() {
 ```typescript
 // Provider Finance Page
 useEffect(() => {
-  if (!providerId) return
+  if (!providerId) return;
 
   const subscription = supabase
     .channel('provider-settlements')
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'settlements',
-      filter: `provider_id=eq.${providerId}`
-    }, (payload) => {
-      // تحديث البيانات تلقائياً
-      if (payload.eventType === 'INSERT') {
-        toast.info('تم إنشاء تسوية جديدة')
-      } else if (payload.eventType === 'UPDATE') {
-        toast.success('تم تحديث حالة التسوية')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'settlements',
+        filter: `provider_id=eq.${providerId}`,
+      },
+      (payload) => {
+        // تحديث البيانات تلقائياً
+        if (payload.eventType === 'INSERT') {
+          toast.info('تم إنشاء تسوية جديدة');
+        } else if (payload.eventType === 'UPDATE') {
+          toast.success('تم تحديث حالة التسوية');
+        }
+        loadFinanceData();
       }
-      loadFinanceData()
-    })
-    .subscribe()
+    )
+    .subscribe();
 
-  return () => subscription.unsubscribe()
-}, [providerId])
+  return () => subscription.unsubscribe();
+}, [providerId]);
 ```
 
 ---
@@ -959,27 +970,27 @@ useEffect(() => {
 
 ### ملفات تحتاج تعديل
 
-| الملف | التغييرات المطلوبة | الأولوية |
-|-------|-------------------|----------|
-| `src/app/[locale]/admin/finance/page.tsx` | إعادة بناء كاملة | 🔴 عالية |
-| `src/app/[locale]/admin/settlements/page.tsx` | تصحيح الفلترة + الصلاحيات | 🔴 عالية |
-| `src/app/[locale]/admin/settlements/[id]/page.tsx` | توحيد العرض مع التاجر | 🟡 متوسطة |
-| `src/app/[locale]/provider/finance/page.tsx` | Realtime + توحيد | 🟡 متوسطة |
-| `src/lib/contexts/AdminRegionContext.tsx` | تحسينات | 🟢 منخفضة |
+| الملف                                              | التغييرات المطلوبة        | الأولوية  |
+| -------------------------------------------------- | ------------------------- | --------- |
+| `src/app/[locale]/admin/finance/page.tsx`          | إعادة بناء كاملة          | 🔴 عالية  |
+| `src/app/[locale]/admin/settlements/page.tsx`      | تصحيح الفلترة + الصلاحيات | 🔴 عالية  |
+| `src/app/[locale]/admin/settlements/[id]/page.tsx` | توحيد العرض مع التاجر     | 🟡 متوسطة |
+| `src/app/[locale]/provider/finance/page.tsx`       | Realtime + توحيد          | 🟡 متوسطة |
+| `src/lib/contexts/AdminRegionContext.tsx`          | تحسينات                   | 🟢 منخفضة |
 
 ### ملفات جديدة
 
-| الملف | الغرض |
-|-------|-------|
-| `src/lib/finance/money.ts` | 💰 التعامل مع المبالغ المالية (بالقروش) |
-| `src/lib/finance/financial-service.ts` | خدمة مالية موحدة |
-| `src/lib/finance/settlement-calculator.ts` | حسابات التسوية |
-| `src/lib/finance/export-service.ts` | تصدير PDF/Excel |
-| `src/types/finance.ts` | أنواع موحدة |
-| `src/hooks/useFinancialData.ts` | Hook مشترك |
-| `supabase/migrations/xxx_financial_settlement_engine.sql` | SQL View |
-| `supabase/migrations/xxx_order_settlement_status.sql` | حقل حالة التسوية للطلبات |
-| `supabase/migrations/xxx_settlement_audit_log.sql` | جدول سجل التدقيق |
+| الملف                                                     | الغرض                                   |
+| --------------------------------------------------------- | --------------------------------------- |
+| `src/lib/finance/money.ts`                                | 💰 التعامل مع المبالغ المالية (بالقروش) |
+| `src/lib/finance/financial-service.ts`                    | خدمة مالية موحدة                        |
+| `src/lib/finance/settlement-calculator.ts`                | حسابات التسوية                          |
+| `src/lib/finance/export-service.ts`                       | تصدير PDF/Excel                         |
+| `src/types/finance.ts`                                    | أنواع موحدة                             |
+| `src/hooks/useFinancialData.ts`                           | Hook مشترك                              |
+| `supabase/migrations/xxx_financial_settlement_engine.sql` | SQL View                                |
+| `supabase/migrations/xxx_order_settlement_status.sql`     | حقل حالة التسوية للطلبات                |
+| `supabase/migrations/xxx_settlement_audit_log.sql`        | جدول سجل التدقيق                        |
 
 ---
 
@@ -1005,6 +1016,7 @@ useEffect(() => {
 ```
 
 **نتائج الاختبار (25 ديسمبر 2025):**
+
 - ✅ السيناريو 1: COD القياسي - صحيح
 - ✅ السيناريو 2: فترة السماح - صحيح
 - ✅ السيناريو 3: مرتجع كلي - صحيح (التوصيل لا يُسترد)
@@ -1074,43 +1086,51 @@ useEffect(() => {
 ## ✅ معايير القبول
 
 ### 1. تناسق الأرقام
+
 - [x] `net_payout` متطابق في Admin و Provider ✅ (financial_settlement_engine)
 - [x] حساب المرتجعات موحد ✅ (calculate_commission trigger)
 - [x] رسوم التوصيل معروضة بوضوح كحق للتاجر ✅ (محرك التسوية)
 
 ### 2. الصلاحيات
+
 - [ ] Regional Manager يرى فقط منطقته
 - [ ] Generate Settlements يحترم الصلاحيات
 - [ ] Record Payment يتطلب صلاحية `finance.settle`
 
 ### 3. الفلترة
+
 - [x] الفلترة تطبق من الـ query ✅ (financial_settlement_engine يدعم governorate_id)
 - [x] الـ stats تحسب بعد الفلترة ✅
 - [ ] لا توجد بيانات مسربة
 
 ### 4. التزامن
+
 - [x] التاجر يرى التسوية فور إنشائها ✅ (Realtime subscription)
 - [ ] التاجر يتلقى إشعار عند تغيير الحالة
 - [x] الأرقام متطابقة في الوقت الحقيقي ✅ (نفس SQL View)
 
 ### 5. التصدير
+
 - [x] PDF يحتوي كل التفاصيل ✅ (exportSettlementToPDF)
 - [x] CSV يحتوي البيانات الخام ✅ (exportSettlementsToCSV)
 - [x] التنسيق احترافي ✅ (RTL + ثنائي اللغة)
 
 ### 6. معالجة المبالغ المالية (Floating Point) 💰
+
 - [x] كل الحسابات تستخدم `Money` class أو `decimal.js` ✅
 - [x] التخزين بالقروش (integers) أو `DECIMAL(12,2)` في DB ✅
 - [x] لا توجد أخطاء تقريب في العمولات ✅
 - [ ] اختبارات للحالات الحدية (0.1 + 0.2 = 0.3)
 
 ### 7. حالة الطلبات المعلقة (Hold Status) ⚖️
+
 - [x] الطلبات المتنازع عليها لا تدخل التسويات ✅ (settlement_status)
 - [x] حقل `settlement_status` موجود في جدول `orders` ✅
 - [x] Trigger تلقائي عند فتح طلب استرداد ✅ (hold_order_on_refund_request)
 - [ ] الأدمن يرى تنبيه "طلبات معلقة" عند إنشاء التسوية
 
 ### 8. سجل التدقيق (Audit Trail) 📋
+
 - [x] كل تغيير في التسوية مسجل ✅ (settlement_audit_log)
 - [x] تسجيل: من، متى، ماذا، رقم المرجع ✅
 - [x] عرض السجل في صفحة تفاصيل التسوية ✅ (قسم Audit Trail قابل للطي)

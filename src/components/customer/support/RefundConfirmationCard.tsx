@@ -1,116 +1,118 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import {
-  CheckCircle2,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  Loader2,
-  DollarSign,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { createClient } from '@/lib/supabase/client'
-import { cn } from '@/lib/utils'
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { CheckCircle2, XCircle, Clock, AlertTriangle, Loader2, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface Refund {
-  id: string
-  order_id: string
-  amount: number
-  provider_action: string
-  customer_confirmed: boolean
-  confirmation_deadline: string
-  provider_notes?: string
+  id: string;
+  order_id: string;
+  amount: number;
+  provider_action: string;
+  customer_confirmed: boolean;
+  confirmation_deadline: string;
+  provider_notes?: string;
   order?: {
-    order_number: string
-  }
+    order_number: string;
+  };
   provider?: {
-    name_ar: string
-    name_en: string
-  }
+    name_ar: string;
+    name_en: string;
+  };
 }
 
 interface RefundConfirmationCardProps {
-  refund: Refund
-  locale: string
-  onConfirm?: () => void
-  className?: string
+  refund: Refund;
+  locale: string;
+  onConfirm?: () => void;
+  className?: string;
 }
 
 export function RefundConfirmationCard({
   refund,
   locale,
   onConfirm,
-  className
+  className,
 }: RefundConfirmationCardProps) {
-  const isArabic = locale === 'ar'
-  const [loading, setLoading] = useState(false)
-  const [showNotReceivedForm, setShowNotReceivedForm] = useState(false)
-  const [notReceivedNotes, setNotReceivedNotes] = useState('')
-  const [confirmed, setConfirmed] = useState(refund.customer_confirmed)
-  const [hoursRemaining, setHoursRemaining] = useState(0)
+  const isArabic = locale === 'ar';
+  const [loading, setLoading] = useState(false);
+  const [showNotReceivedForm, setShowNotReceivedForm] = useState(false);
+  const [notReceivedNotes, setNotReceivedNotes] = useState('');
+  const [confirmed, setConfirmed] = useState(refund.customer_confirmed);
+  const [hoursRemaining, setHoursRemaining] = useState(0);
 
   // Calculate remaining time
   useEffect(() => {
     const calculateRemaining = () => {
-      if (!refund.confirmation_deadline) return 0
-      const deadline = new Date(refund.confirmation_deadline)
-      const remaining = Math.max(0, Math.floor((deadline.getTime() - Date.now()) / (1000 * 60 * 60)))
-      setHoursRemaining(remaining)
-    }
+      if (!refund.confirmation_deadline) return 0;
+      const deadline = new Date(refund.confirmation_deadline);
+      const remaining = Math.max(
+        0,
+        Math.floor((deadline.getTime() - Date.now()) / (1000 * 60 * 60))
+      );
+      setHoursRemaining(remaining);
+    };
 
-    calculateRemaining()
-    const interval = setInterval(calculateRemaining, 60000) // Update every minute
+    calculateRemaining();
+    const interval = setInterval(calculateRemaining, 60000); // Update every minute
 
-    return () => clearInterval(interval)
-  }, [refund.confirmation_deadline])
+    return () => clearInterval(interval);
+  }, [refund.confirmation_deadline]);
 
   const handleConfirm = async (received: boolean, notes?: string) => {
-    setLoading(true)
+    setLoading(true);
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Use the helper function if available
       const { error: rpcError } = await supabase.rpc('customer_confirm_refund', {
         p_refund_id: refund.id,
         p_received: received,
-        p_notes: notes || null
-      })
+        p_notes: notes || null,
+      });
 
       if (rpcError) {
         // Fallback to direct update
         if (received) {
-          await supabase.from('refunds').update({
-            customer_confirmed: true,
-            customer_confirmed_at: new Date().toISOString(),
-            status: 'processed'
-          }).eq('id', refund.id)
+          await supabase
+            .from('refunds')
+            .update({
+              customer_confirmed: true,
+              customer_confirmed_at: new Date().toISOString(),
+              status: 'processed',
+            })
+            .eq('id', refund.id);
         } else {
-          await supabase.from('refunds').update({
-            escalated_to_admin: true,
-            escalation_reason: `customer_denied_receipt: ${notes || 'No notes'}`
-          }).eq('id', refund.id)
+          await supabase
+            .from('refunds')
+            .update({
+              escalated_to_admin: true,
+              escalation_reason: `customer_denied_receipt: ${notes || 'No notes'}`,
+            })
+            .eq('id', refund.id);
         }
 
         // Create confirmation record
         await supabase.from('refund_confirmations').insert({
           refund_id: refund.id,
           confirmation_type: received ? 'received' : 'not_received',
-          customer_notes: notes
-        })
+          customer_notes: notes,
+        });
       }
 
-      setConfirmed(true)
-      onConfirm?.()
+      setConfirmed(true);
+      onConfirm?.();
     } catch (err) {
-      console.error('Error confirming refund:', err)
+      console.error('Error confirming refund:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Already confirmed
   if (confirmed) {
@@ -118,10 +120,7 @@ export function RefundConfirmationCard({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          'bg-green-50 border border-green-200 rounded-xl p-4',
-          className
-        )}
+        className={cn('bg-green-50 border border-green-200 rounded-xl p-4', className)}
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -134,13 +133,12 @@ export function RefundConfirmationCard({
             <p className="text-sm text-green-700">
               {isArabic
                 ? 'شكراً لتأكيدك. تم إغلاق طلب الاسترداد بنجاح.'
-                : 'Thank you for confirming. Refund request closed successfully.'
-              }
+                : 'Thank you for confirming. Refund request closed successfully.'}
             </p>
           </div>
         </div>
       </motion.div>
-    )
+    );
   }
 
   // Not received form
@@ -149,10 +147,7 @@ export function RefundConfirmationCard({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          'bg-red-50 border border-red-200 rounded-xl p-4',
-          className
-        )}
+        className={cn('bg-red-50 border border-red-200 rounded-xl p-4', className)}
       >
         <div className="flex items-start gap-3 mb-4">
           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -165,8 +160,7 @@ export function RefundConfirmationCard({
             <p className="text-sm text-red-700">
               {isArabic
                 ? 'سيتم تصعيد طلبك للإدارة للتحقق'
-                : 'Your request will be escalated to admin for review'
-              }
+                : 'Your request will be escalated to admin for review'}
             </p>
           </div>
         </div>
@@ -174,9 +168,8 @@ export function RefundConfirmationCard({
         <Textarea
           value={notReceivedNotes}
           onChange={(e) => setNotReceivedNotes(e.target.value)}
-          placeholder={isArabic
-            ? 'اشرح ما حدث (اختياري)...'
-            : 'Explain what happened (optional)...'
+          placeholder={
+            isArabic ? 'اشرح ما حدث (اختياري)...' : 'Explain what happened (optional)...'
           }
           className="mb-4 bg-white"
           rows={3}
@@ -198,13 +191,15 @@ export function RefundConfirmationCard({
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isArabic ? (
+              'تأكيد وتصعيد'
             ) : (
-              isArabic ? 'تأكيد وتصعيد' : 'Confirm & Escalate'
+              'Confirm & Escalate'
             )}
           </Button>
         </div>
       </motion.div>
-    )
+    );
   }
 
   // Main confirmation card
@@ -229,13 +224,14 @@ export function RefundConfirmationCard({
           <p className="text-sm text-green-700 mt-1">
             {isArabic
               ? `أكد التاجر ${refund.provider?.name_ar || ''} أنه قام برد المبلغ (${refund.amount.toFixed(2)} ج.م) كاش مع المندوب.`
-              : `${refund.provider?.name_en || 'The merchant'} confirmed refunding (${refund.amount.toFixed(2)} EGP) via delivery.`
-            }
+              : `${refund.provider?.name_en || 'The merchant'} confirmed refunding (${refund.amount.toFixed(2)} EGP) via delivery.`}
           </p>
 
           {refund.provider_notes && (
             <div className="mt-2 bg-white/50 rounded-lg p-2 text-sm text-green-800">
-              <span className="font-medium">{isArabic ? 'ملاحظات التاجر:' : 'Merchant notes:'}</span>{' '}
+              <span className="font-medium">
+                {isArabic ? 'ملاحظات التاجر:' : 'Merchant notes:'}
+              </span>{' '}
               {refund.provider_notes}
             </div>
           )}
@@ -243,13 +239,12 @@ export function RefundConfirmationCard({
           {/* Countdown Timer */}
           <div className="flex items-center gap-2 mt-3 text-sm">
             <Clock className="w-4 h-4 text-green-600" />
-            <span className={cn(
-              hoursRemaining <= 6 ? 'text-orange-600 font-medium' : 'text-green-600'
-            )}>
+            <span
+              className={cn(hoursRemaining <= 6 ? 'text-orange-600 font-medium' : 'text-green-600')}
+            >
               {isArabic
                 ? `سيتم التأكيد تلقائياً خلال ${hoursRemaining} ساعة`
-                : `Auto-confirms in ${hoursRemaining} hours`
-              }
+                : `Auto-confirms in ${hoursRemaining} hours`}
             </span>
           </div>
 
@@ -286,14 +281,13 @@ export function RefundConfirmationCard({
             <span>
               {isArabic
                 ? 'بالضغط على "نعم، استلمت" فإنك تؤكد استلامك للمبلغ المسترد. إذا لم تستلم، اضغط "لم أستلم" وسيتم التحقق من الأمر.'
-                : 'By clicking "Yes, received" you confirm receiving the refund. If you did not receive it, click "Not received" and it will be investigated.'
-              }
+                : 'By clicking "Yes, received" you confirm receiving the refund. If you did not receive it, click "Not received" and it will be investigated.'}
             </span>
           </div>
         </div>
       </div>
     </motion.div>
-  )
+  );
 }
 
-export default RefundConfirmationCard
+export default RefundConfirmationCard;

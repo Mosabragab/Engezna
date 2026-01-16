@@ -1,21 +1,21 @@
 export interface OrderReceivedData {
-  to: string
-  merchantName: string
-  storeName: string
-  orderId: string
-  orderNumber: string
-  customerName: string
-  itemsCount: number
-  totalAmount: number
-  deliveryAddress: string
-  orderUrl: string
+  to: string;
+  merchantName: string;
+  storeName: string;
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  itemsCount: number;
+  totalAmount: number;
+  deliveryAddress: string;
+  orderUrl: string;
 }
 
 export function orderReceivedTemplate(data: OrderReceivedData): string {
   const formattedAmount = new Intl.NumberFormat('ar-EG', {
     style: 'currency',
     currency: 'EGP',
-  }).format(data.totalAmount)
+  }).format(data.totalAmount);
 
   return `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -146,5 +146,5 @@ export function orderReceivedTemplate(data: OrderReceivedData): string {
         </tr>
     </table>
 </body>
-</html>`
+</html>`;
 }

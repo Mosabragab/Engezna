@@ -1,4 +1,5 @@
 # Engezna – Brand Documentation Index
+
 Version: 1.0
 
 This file serves as a map for all brand-related documentation.
@@ -40,6 +41,7 @@ This file serves as a map for all brand-related documentation.
 - Tech Owner: [Frontend Lead / Design System Owner]
 
 **Update cadence:**
+
 - Minor updates: as needed (version bump: 1.0.x)
 - Major rebrands or palette change: version 2.x+
 

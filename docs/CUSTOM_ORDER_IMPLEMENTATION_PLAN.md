@@ -1,4 +1,5 @@
 # Custom Order System - Implementation Plan v2.0
+
 ## نظام الطلب المفتوح - خطة التنفيذ النهائية
 
 **Version:** 2.1
@@ -9,6 +10,7 @@
 ---
 
 ## Table of Contents
+
 1. [Overview](#1-overview)
 2. [UX Architecture](#2-ux-architecture)
 3. [Database Schema](#3-database-schema)
@@ -27,7 +29,9 @@
 ## 1. Overview
 
 ### 1.1 Purpose
+
 Add a "Custom Order" (الطلب المفتوح) system for:
+
 - **Supermarkets** (سوبر ماركت) - نوتة السوبر ماركت
 - **Pharmacies** (صيدليات) - روشتة الصيدلية
 - **Vegetables & Fruits** (خضروات وفواكه)
@@ -35,24 +39,27 @@ Add a "Custom Order" (الطلب المفتوح) system for:
 While maintaining the existing **Standard Menu Flow** for restaurants with **ZERO impact** on existing code.
 
 ### 1.2 Key Features
-| Feature | Description |
-|---------|-------------|
-| Multi-Input | Text, Voice, Image order input |
-| Flexible Naming | Merchant can rename items for invoice accuracy |
-| Triple Broadcast | Send to 3 merchants, first approval wins |
-| Price History | "تم شراؤه مسبقاً" - Show previous prices |
-| Delivery Transparency | Clear separation of products vs delivery fees |
-| Offline Support | Voice recording cached when offline |
-| Parallel Orders | Custom order doesn't block standard cart |
+
+| Feature               | Description                                    |
+| --------------------- | ---------------------------------------------- |
+| Multi-Input           | Text, Voice, Image order input                 |
+| Flexible Naming       | Merchant can rename items for invoice accuracy |
+| Triple Broadcast      | Send to 3 merchants, first approval wins       |
+| Price History         | "تم شراؤه مسبقاً" - Show previous prices       |
+| Delivery Transparency | Clear separation of products vs delivery fees  |
+| Offline Support       | Voice recording cached when offline            |
+| Parallel Orders       | Custom order doesn't block standard cart       |
 
 ### 1.3 Operation Modes
-| Mode | Description | Default For |
-|------|-------------|-------------|
-| `standard` | Menu-based ordering only | restaurant_cafe, coffee_patisserie |
-| `custom` | Open/Custom ordering only | grocery, pharmacy, vegetables_fruits |
-| `hybrid` | Both menu + custom | Any (future expansion) |
+
+| Mode       | Description               | Default For                          |
+| ---------- | ------------------------- | ------------------------------------ |
+| `standard` | Menu-based ordering only  | restaurant_cafe, coffee_patisserie   |
+| `custom`   | Open/Custom ordering only | grocery, pharmacy, vegetables_fruits |
+| `hybrid`   | Both menu + custom        | Any (future expansion)               |
 
 ### 1.4 Design Principles
+
 1. **Zero Impact**: Existing restaurant flow unchanged
 2. **Parallel Paths**: Customer can have menu cart + custom order simultaneously
 3. **Feature Toggles**: UI adapts based on provider operation_mode
@@ -63,6 +70,7 @@ While maintaining the existing **Standard Menu Flow** for restaurants with **ZER
 ## 2. UX Architecture
 
 ### 2.1 Bottom Navigation (UNCHANGED)
+
 ```
 ┌────────┬────────┬────────┬────────┬────────┐
 │ 🏠     │ 🔍     │ 📋     │ 👤     │ ⚙️     │
@@ -73,6 +81,7 @@ While maintaining the existing **Standard Menu Flow** for restaurants with **ZER
 ```
 
 **Routing Structure:**
+
 ```
 /                           → Home (categories, providers)
 /providers                  → Browse providers
@@ -88,11 +97,13 @@ While maintaining the existing **Standard Menu Flow** for restaurants with **ZER
 ### 2.2 Cart vs Custom Order Separation
 
 **Problem Solved:**
+
 - Customer orders lunch from restaurant (in cart)
 - Customer also wants groceries from supermarket (custom order)
 - Both should work **independently and simultaneously**
 
 **Solution: Dual-Track System**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    DUAL-TRACK ORDERS                        │
@@ -135,6 +146,7 @@ When customer with active cart visits a custom-order provider:
 ```
 
 **Component: `ActiveCartBanner`**
+
 ```typescript
 // src/components/customer/shared/ActiveCartBanner.tsx
 interface ActiveCartBannerProps {
@@ -151,6 +163,7 @@ interface ActiveCartBannerProps {
 ## 3. Database Schema
 
 ### 3.1 Provider Updates
+
 ```sql
 -- Operation mode
 ALTER TABLE providers
@@ -174,7 +187,9 @@ ADD COLUMN custom_order_settings JSONB DEFAULT '{
 ### 3.2 New Tables
 
 #### `custom_order_broadcasts`
+
 Triple Broadcast - Send order to multiple merchants.
+
 ```sql
 CREATE TABLE custom_order_broadcasts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -209,7 +224,9 @@ CREATE TABLE custom_order_broadcasts (
 ```
 
 #### `custom_order_requests`
+
 Per-provider pricing request.
+
 ```sql
 CREATE TABLE custom_order_requests (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -244,7 +261,9 @@ CREATE TABLE custom_order_requests (
 ```
 
 #### `custom_order_items`
+
 Merchant-priced items with flexible naming.
+
 ```sql
 CREATE TABLE custom_order_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -286,7 +305,9 @@ CREATE TABLE custom_order_items (
 ```
 
 #### `custom_order_price_history`
+
 Track previous prices for "تم شراؤه مسبقاً" feature.
+
 ```sql
 CREATE TABLE custom_order_price_history (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -328,6 +349,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 ```
 
 ### 3.3 Order Table Updates
+
 ```sql
 ALTER TABLE orders
 ADD COLUMN order_flow TEXT DEFAULT 'standard' CHECK (order_flow IN ('standard', 'custom')),
@@ -342,6 +364,7 @@ ADD COLUMN pricing_expires_at TIMESTAMPTZ;
 ```
 
 ### 3.4 Order Items Updates
+
 ```sql
 ALTER TABLE order_items
 ADD COLUMN item_source TEXT DEFAULT 'menu' CHECK (item_source IN ('menu', 'custom')),
@@ -354,6 +377,7 @@ ADD COLUMN original_customer_text TEXT;
 ## 4. Order State Machine
 
 ### 4.1 Custom Order Flow
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                    CUSTOM ORDER STATE MACHINE                               │
@@ -401,23 +425,26 @@ ADD COLUMN original_customer_text TEXT;
 ```
 
 ### 4.2 Status Definitions
-| Status | Arabic | Description |
-|--------|--------|-------------|
-| `awaiting_pricing` | بانتظار التسعير | Order submitted, waiting for merchant |
-| `pricing_sent` | تم إرسال التسعير | Merchant priced, waiting for customer |
-| `pricing_approved` | موافق على السعر | Customer approved, becomes `confirmed` |
-| `pricing_rejected` | مرفوض | Customer rejected the pricing |
-| `pricing_expired` | منتهي الصلاحية | Timeout - no response |
+
+| Status             | Arabic           | Description                            |
+| ------------------ | ---------------- | -------------------------------------- |
+| `awaiting_pricing` | بانتظار التسعير  | Order submitted, waiting for merchant  |
+| `pricing_sent`     | تم إرسال التسعير | Merchant priced, waiting for customer  |
+| `pricing_approved` | موافق على السعر  | Customer approved, becomes `confirmed` |
+| `pricing_rejected` | مرفوض            | Customer rejected the pricing          |
+| `pricing_expired`  | منتهي الصلاحية   | Timeout - no response                  |
 
 ---
 
 ## 5. Triple Broadcast System
 
 ### 5.1 Overview
+
 Customer can send their order to **1-3 merchants** simultaneously.
 **First merchant whose pricing is approved by customer WINS.**
 
 ### 5.2 Flow Diagram
+
 ```
                     Customer submits order
                            │
@@ -456,6 +483,7 @@ Customer can send their order to **1-3 merchants** simultaneously.
 ```
 
 ### 5.3 Implementation Rules
+
 1. **Max 3 merchants** per broadcast
 2. **First approval wins** - Other orders auto-cancelled immediately
 3. **Partial pricing allowed** - Some items can be "unavailable"
@@ -464,6 +492,7 @@ Customer can send their order to **1-3 merchants** simultaneously.
 6. **Graceful degradation** - If only 1 merchant responds, customer can still approve
 
 ### 5.4 Cancel Logic (PostgreSQL Function)
+
 ```sql
 CREATE OR REPLACE FUNCTION handle_custom_order_approval(
   p_order_id UUID,
@@ -527,11 +556,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ### 6.1 Customer Components
 
 #### `CustomOrderInterface`
+
 Main component shown when visiting a custom-mode provider.
 
 **Location:** `src/components/customer/custom-order/CustomOrderInterface.tsx`
 
 **Props:**
+
 ```typescript
 interface CustomOrderInterfaceProps {
   provider: Provider;
@@ -541,6 +572,7 @@ interface CustomOrderInterfaceProps {
 ```
 
 **Features:**
+
 - Tab switching: Text / Voice / Image
 - Character counter for text input
 - Voice recording with visual feedback
@@ -549,6 +581,7 @@ interface CustomOrderInterfaceProps {
 - Submit button with validation
 
 #### `TextOrderInput`
+
 Text input with Arabic-optimized UX.
 
 **Location:** `src/components/customer/custom-order/TextOrderInput.tsx`
@@ -563,6 +596,7 @@ interface TextOrderInputProps {
 ```
 
 #### `VoiceOrderInput`
+
 Voice recording with offline support.
 
 **Location:** `src/components/customer/custom-order/VoiceOrderInput.tsx`
@@ -576,11 +610,13 @@ interface VoiceOrderInputProps {
 ```
 
 **Offline Handling:**
+
 - Recording stored in IndexedDB if offline
 - Auto-upload when connection restored
 - Visual indicator: "سيتم الإرسال عند عودة الاتصال"
 
 #### `ImageOrderInput`
+
 Image upload with compression.
 
 **Location:** `src/components/customer/custom-order/ImageOrderInput.tsx`
@@ -594,29 +630,33 @@ interface ImageOrderInputProps {
 ```
 
 #### `ActiveCartBanner`
+
 Non-intrusive banner when user has active cart.
 
 **Location:** `src/components/customer/shared/ActiveCartBanner.tsx`
 
 ```typescript
 interface ActiveCartBannerProps {
-  cartProvider: { name: string; itemCount: number; };
+  cartProvider: { name: string; itemCount: number };
   onViewCart: () => void;
   onDismiss: () => void;
 }
 ```
 
 **Design:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ 🛒 لديك سلة من "مطعم الكبابجي" (3)            عرض │ ✕ │
 └─────────────────────────────────────────────────────────────┘
 ```
+
 - Small, top of screen
 - Dismissible (remembers for session)
 - "عرض" links to cart
 
 #### `MerchantSelector`
+
 Select 1-3 merchants for triple broadcast.
 
 **Location:** `src/components/customer/custom-order/MerchantSelector.tsx`
@@ -631,11 +671,13 @@ interface MerchantSelectorProps {
 ```
 
 #### `PricingReview`
+
 Review single merchant's pricing.
 
 **Location:** `src/app/[locale]/orders/[id]/review-pricing/page.tsx`
 
 **Sections:**
+
 1. Provider info + countdown timer
 2. **Products list** (with availability badges)
 3. **Products subtotal** (separated)
@@ -644,6 +686,7 @@ Review single merchant's pricing.
 6. Action buttons: Approve / Reject
 
 #### `BroadcastComparison`
+
 Compare pricing from multiple merchants.
 
 **Location:** `src/components/customer/custom-order/BroadcastComparison.tsx`
@@ -659,11 +702,13 @@ interface BroadcastComparisonProps {
 ### 6.2 Merchant Components
 
 #### `PricingNotepad`
+
 Main merchant interface for pricing orders.
 
 **Location:** `src/components/provider/custom-order/PricingNotepad.tsx`
 
 **Props:**
+
 ```typescript
 interface PricingNotepadProps {
   request: CustomOrderRequest;
@@ -675,6 +720,7 @@ interface PricingNotepadProps {
 ```
 
 **Sections:**
+
 1. Header: Order #, Customer name, Countdown timer
 2. Original customer request (text/voice player/images)
 3. Items list with PricingItemRow
@@ -683,6 +729,7 @@ interface PricingNotepadProps {
 6. Submit/Cancel buttons
 
 #### `PricingItemRow`
+
 Individual item row with flexible naming.
 
 **Location:** `src/components/provider/custom-order/PricingItemRow.tsx`
@@ -691,7 +738,7 @@ Individual item row with flexible naming.
 interface PricingItemRowProps {
   item: PricedItem;
   originalText?: string;
-  priceHistory?: { price: number; date: string; };
+  priceHistory?: { price: number; date: string };
   onUpdate: (item: PricedItem) => void;
   onUseCustomerText: () => void;
   onUsePreviousPrice: () => void;
@@ -702,6 +749,7 @@ interface PricingItemRowProps {
 ```
 
 **"تم شراؤه مسبقاً" Feature:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ اسم الصنف: [أرز بسمتي أبيض               ] ✏️             │
@@ -723,11 +771,13 @@ interface PricingItemRowProps {
 ```
 
 #### `CustomOrdersList`
+
 List of pending custom orders for merchant.
 
 **Location:** `src/components/provider/custom-order/CustomOrdersList.tsx`
 
 **Tabs:**
+
 - ⏳ بانتظار التسعير (with count badge)
 - ✅ تم التسعير
 - 📦 الكل
@@ -745,9 +795,9 @@ export type OperationMode = 'standard' | 'custom' | 'hybrid';
 
 export interface ProviderFeatures {
   // Tab visibility
-  showOrdersTab: boolean;        // Standard orders
-  showPricingTab: boolean;       // Custom order pricing
-  showProductsTab: boolean;      // Menu management
+  showOrdersTab: boolean; // Standard orders
+  showPricingTab: boolean; // Custom order pricing
+  showProductsTab: boolean; // Menu management
 
   // Customer interface
   customerInterface: 'menu' | 'custom-order' | 'both';
@@ -770,7 +820,7 @@ export function getProviderFeatures(mode: OperationMode): ProviderFeatures {
       return {
         showOrdersTab: false,
         showPricingTab: true,
-        showProductsTab: false,  // Optional: can show as reference
+        showProductsTab: false, // Optional: can show as reference
         customerInterface: 'custom-order',
         defaultTab: 'pricing-orders',
       };
@@ -789,6 +839,7 @@ export function getProviderFeatures(mode: OperationMode): ProviderFeatures {
 ### 7.2 Dashboard Layout by Mode
 
 **Standard Mode (Restaurants):**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  📊 الرئيسية │ 📋 الطلبات │ 🍽️ المنتجات │ 💰 المالية │ ⚙️ │
@@ -797,6 +848,7 @@ export function getProviderFeatures(mode: OperationMode): ProviderFeatures {
 ```
 
 **Custom Mode (Supermarket/Pharmacy):**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  📊 الرئيسية │ 📝 طلبات التسعير │ 💰 المالية │ ⚙️ الإعدادات │
@@ -805,6 +857,7 @@ export function getProviderFeatures(mode: OperationMode): ProviderFeatures {
 ```
 
 **Hybrid Mode:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  📊 │ 📋 الطلبات │ 📝 التسعير │ 🍽️ المنتجات │ 💰 │ ⚙️     │
@@ -874,14 +927,14 @@ interface CustomOrderDraft {
   providerName: string;
   inputType: 'text' | 'voice' | 'image' | 'mixed';
   text?: string;
-  voiceCacheId?: string;  // Reference to IndexedDB
-  imageDataUrls?: string[];  // Base64 for small previews
+  voiceCacheId?: string; // Reference to IndexedDB
+  imageDataUrls?: string[]; // Base64 for small previews
   notes?: string;
   savedAt: number;
 }
 
 const DRAFT_KEY_PREFIX = 'custom_order_draft_';
-const DRAFT_EXPIRY_HOURS = 72;  // 3 days
+const DRAFT_EXPIRY_HOURS = 72; // 3 days
 
 export class DraftManager {
   // Save draft automatically (debounced)
@@ -931,8 +984,7 @@ export class DraftManager {
 
   // Clear all expired drafts (called on app start)
   cleanupExpiredDrafts(): void {
-    const keys = Object.keys(localStorage)
-      .filter(k => k.startsWith(DRAFT_KEY_PREFIX));
+    const keys = Object.keys(localStorage).filter((k) => k.startsWith(DRAFT_KEY_PREFIX));
 
     for (const key of keys) {
       try {
@@ -952,6 +1004,7 @@ export const draftManager = new DraftManager();
 ```
 
 **UI for Draft Recovery:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     📝 سوبر ماركت الأمل                      │
@@ -1011,10 +1064,8 @@ export function useBroadcastRealtime(broadcastId: string) {
         },
         (payload) => {
           if (payload.eventType === 'UPDATE') {
-            setRequests(prev =>
-              prev.map(r =>
-                r.id === payload.new.id ? { ...r, ...payload.new } : r
-              )
+            setRequests((prev) =>
+              prev.map((r) => (r.id === payload.new.id ? { ...r, ...payload.new } : r))
             );
           }
         }
@@ -1031,6 +1082,7 @@ export function useBroadcastRealtime(broadcastId: string) {
 ```
 
 **UI Auto-Update:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                   مقارنة الأسعار                             │
@@ -1075,7 +1127,7 @@ export class VoiceRecordingCache {
       blob: recording,
       providerId,
       timestamp: Date.now(),
-      status: 'pending'
+      status: 'pending',
     });
     return id;
   }
@@ -1100,6 +1152,7 @@ window.addEventListener('online', () => {
 ```
 
 **UI Feedback:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     🎤 التسجيل الصوتي                       │
@@ -1117,13 +1170,13 @@ window.addEventListener('online', () => {
 
 ### 8.4 Error States
 
-| Error | Message (AR) | Action |
-|-------|-------------|--------|
-| Network offline | أنت غير متصل بالإنترنت | Cache locally, retry when online |
-| Voice transcription failed | تعذر تحويل الصوت لنص | Allow manual text entry |
-| Image upload failed | فشل رفع الصورة | Retry button |
-| Pricing timeout | انتهت مهلة التسعير | Show expired state |
-| Broadcast expired | انتهت صلاحية الطلب | Allow new submission |
+| Error                      | Message (AR)           | Action                           |
+| -------------------------- | ---------------------- | -------------------------------- |
+| Network offline            | أنت غير متصل بالإنترنت | Cache locally, retry when online |
+| Voice transcription failed | تعذر تحويل الصوت لنص   | Allow manual text entry          |
+| Image upload failed        | فشل رفع الصورة         | Retry button                     |
+| Pricing timeout            | انتهت مهلة التسعير     | Show expired state               |
+| Broadcast expired          | انتهت صلاحية الطلب     | Allow new submission             |
 
 ### 8.5 Storage File Management
 
@@ -1132,6 +1185,7 @@ window.addEventListener('online', () => {
 **Solution: Structured Storage Paths + Cleanup Job**
 
 **Storage Path Convention:**
+
 ```
 custom-orders/
 ├── broadcasts/
@@ -1147,6 +1201,7 @@ custom-orders/
 ```
 
 **File Naming Service:**
+
 ```typescript
 // src/lib/storage/custom-order-storage.ts
 
@@ -1160,26 +1215,21 @@ export const CustomOrderStorage = {
     `custom-orders/broadcasts/${broadcastId}/images/${String(index).padStart(3, '0')}.jpg`,
 
   // Get all files for a broadcast (for deletion)
-  getBroadcastFolder: (broadcastId: string) =>
-    `custom-orders/broadcasts/${broadcastId}`,
+  getBroadcastFolder: (broadcastId: string) => `custom-orders/broadcasts/${broadcastId}`,
 
   // Upload voice recording
   async uploadVoice(broadcastId: string, blob: Blob): Promise<string> {
     const supabase = createClient();
     const path = this.getVoicePath(broadcastId);
 
-    const { data, error } = await supabase.storage
-      .from('custom-orders')
-      .upload(path, blob, {
-        contentType: 'audio/webm',
-        upsert: true,
-      });
+    const { data, error } = await supabase.storage.from('custom-orders').upload(path, blob, {
+      contentType: 'audio/webm',
+      upsert: true,
+    });
 
     if (error) throw error;
 
-    const { data: urlData } = supabase.storage
-      .from('custom-orders')
-      .getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from('custom-orders').getPublicUrl(path);
 
     return urlData.publicUrl;
   },
@@ -1192,16 +1242,12 @@ export const CustomOrderStorage = {
     for (let i = 0; i < files.length; i++) {
       const path = this.getImagePath(broadcastId, i + 1);
 
-      await supabase.storage
-        .from('custom-orders')
-        .upload(path, files[i], {
-          contentType: files[i].type,
-          upsert: true,
-        });
+      await supabase.storage.from('custom-orders').upload(path, files[i], {
+        contentType: files[i].type,
+        upsert: true,
+      });
 
-      const { data: urlData } = supabase.storage
-        .from('custom-orders')
-        .getPublicUrl(path);
+      const { data: urlData } = supabase.storage.from('custom-orders').getPublicUrl(path);
 
       urls.push(urlData.publicUrl);
     }
@@ -1219,19 +1265,16 @@ export const CustomOrderStorage = {
       .list(`broadcasts/${broadcastId}`, { recursive: true });
 
     if (files && files.length > 0) {
-      const paths = files.map(f =>
-        `broadcasts/${broadcastId}/${f.name}`
-      );
+      const paths = files.map((f) => `broadcasts/${broadcastId}/${f.name}`);
 
-      await supabase.storage
-        .from('custom-orders')
-        .remove(paths);
+      await supabase.storage.from('custom-orders').remove(paths);
     }
   },
 };
 ```
 
 **Cleanup Cron Job (Supabase Edge Function):**
+
 ```typescript
 // supabase/functions/cleanup-expired-broadcasts/index.ts
 
@@ -1262,7 +1305,7 @@ Deno.serve(async () => {
       .list(`broadcasts/${broadcast.id}`, { recursive: true });
 
     if (files && files.length > 0) {
-      const paths = files.map(f => `broadcasts/${broadcast.id}/${f.name}`);
+      const paths = files.map((f) => `broadcasts/${broadcast.id}/${f.name}`);
       await supabase.storage.from('custom-orders').remove(paths);
       deletedCount += paths.length;
     }
@@ -1283,6 +1326,7 @@ Deno.serve(async () => {
 ```
 
 **Storage Bucket Configuration:**
+
 ```sql
 -- Create bucket if not exists
 INSERT INTO storage.buckets (id, name, public)
@@ -1315,20 +1359,21 @@ USING (bucket_id = 'custom-orders');
 ## 9. Financial Integration
 
 ### 9.1 Commission Calculation
+
 ```typescript
 // Same tiered commission as standard orders
 // Commission applied to PRODUCT SUBTOTAL only
 // Delivery fee goes 100% to merchant
 
 interface CustomOrderFinancials {
-  productSubtotal: number;      // Sum of priced items
-  deliveryFee: number;          // From provider.delivery_fee
-  customerTotal: number;        // subtotal + deliveryFee
+  productSubtotal: number; // Sum of priced items
+  deliveryFee: number; // From provider.delivery_fee
+  customerTotal: number; // subtotal + deliveryFee
 
-  commissionRate: number;       // 5-7% tiered
-  platformCommission: number;   // subtotal * rate
+  commissionRate: number; // 5-7% tiered
+  platformCommission: number; // subtotal * rate
 
-  merchantPayout: number;       // subtotal - commission + deliveryFee
+  merchantPayout: number; // subtotal - commission + deliveryFee
 }
 
 function calculateCustomOrderFinancials(
@@ -1361,6 +1406,7 @@ function calculateCustomOrderFinancials(
 ```
 
 ### 9.2 Settlement Integration
+
 - Custom orders included in weekly settlement cycle
 - Same settlement tables used
 - `order_flow = 'custom'` for filtering/reporting
@@ -1370,6 +1416,7 @@ function calculateCustomOrderFinancials(
 ## 10. Implementation Checklist
 
 ### Phase 1: Database (2-3 days)
+
 - [ ] Add `operation_mode` to providers table
 - [ ] Add `custom_order_settings` JSONB to providers
 - [ ] Create `custom_order_broadcasts` table
@@ -1385,6 +1432,7 @@ function calculateCustomOrderFinancials(
 - [ ] Update default operation_mode for existing providers
 
 ### Phase 2: TypeScript Types (1 day)
+
 - [ ] Add `OperationMode` type
 - [ ] Add `CustomOrderSettings` interface
 - [ ] Add `CustomOrderBroadcast` interface
@@ -1396,6 +1444,7 @@ function calculateCustomOrderFinancials(
 - [ ] Update `OrderItem` type
 
 ### Phase 3: Backend Services (3-4 days)
+
 - [ ] Create `src/lib/orders/custom-orders.ts`
 - [ ] Create `src/lib/orders/broadcast-service.ts`
 - [ ] Create `src/lib/orders/price-history-service.ts`
@@ -1408,6 +1457,7 @@ function calculateCustomOrderFinancials(
 - [ ] Create notification templates
 
 ### Phase 4: Customer Frontend (4-5 days)
+
 - [ ] Create `CustomOrderInterface` component
 - [ ] Create `TextOrderInput` component
 - [ ] Create `VoiceOrderInput` component with offline support
@@ -1420,6 +1470,7 @@ function calculateCustomOrderFinancials(
 - [ ] Add custom orders to "طلباتي" list
 
 ### Phase 5: Merchant Frontend (3-4 days)
+
 - [ ] Create `PricingNotepad` component
 - [ ] Create `PricingItemRow` component
 - [ ] Implement "استخدام نص العميل" button
@@ -1430,6 +1481,7 @@ function calculateCustomOrderFinancials(
 - [ ] Update provider settings page
 
 ### Phase 6: Integration & Testing (2-3 days)
+
 - [ ] Kashier payment integration for custom orders
 - [ ] Notification system integration
 - [ ] Offline voice upload testing
@@ -1440,6 +1492,7 @@ function calculateCustomOrderFinancials(
 - [ ] Performance testing
 
 ### Phase 7: Admin Dashboard (2-3 days)
+
 - [ ] Add custom orders to admin orders view
 - [ ] Add broadcast monitoring
 - [ ] Add operation_mode management for providers
@@ -1450,6 +1503,7 @@ function calculateCustomOrderFinancials(
 ## 11. API Endpoints
 
 ### Customer APIs
+
 ```
 POST   /api/custom-orders/draft           # Save draft locally
 POST   /api/custom-orders/submit          # Submit broadcast
@@ -1463,6 +1517,7 @@ POST   /api/voice/transcribe              # Transcribe voice to text
 ```
 
 ### Merchant APIs
+
 ```
 GET    /api/provider/custom-orders                    # List pending orders
 GET    /api/provider/custom-orders/[requestId]        # Get order details
@@ -1475,36 +1530,38 @@ GET    /api/provider/price-history                    # Get price history
 ## 12. Notifications
 
 ### Customer Notifications
-| Event | Title (AR) | Message (AR) |
-|-------|-----------|--------------|
-| `order_submitted` | تم إرسال طلبك | طلبك في انتظار التسعير من {count} تاجر |
-| `pricing_received` | تم تسعير طلبك | {provider} قام بتسعير طلبك - {total} ج.م |
-| `all_pricing_received` | جميع التسعيرات جاهزة | راجع وقارن الأسعار واختر الأنسب |
-| `pricing_expiring` | مهلة الموافقة تنتهي قريباً | لديك {time} للموافقة على التسعير |
-| `order_confirmed` | تم تأكيد طلبك | طلبك من {provider} جاري التجهيز |
-| `order_expired` | انتهت صلاحية الطلب | لم يتم الرد في الوقت المحدد |
+
+| Event                  | Title (AR)                 | Message (AR)                             |
+| ---------------------- | -------------------------- | ---------------------------------------- |
+| `order_submitted`      | تم إرسال طلبك              | طلبك في انتظار التسعير من {count} تاجر   |
+| `pricing_received`     | تم تسعير طلبك              | {provider} قام بتسعير طلبك - {total} ج.م |
+| `all_pricing_received` | جميع التسعيرات جاهزة       | راجع وقارن الأسعار واختر الأنسب          |
+| `pricing_expiring`     | مهلة الموافقة تنتهي قريباً | لديك {time} للموافقة على التسعير         |
+| `order_confirmed`      | تم تأكيد طلبك              | طلبك من {provider} جاري التجهيز          |
+| `order_expired`        | انتهت صلاحية الطلب         | لم يتم الرد في الوقت المحدد              |
 
 ### Merchant Notifications
-| Event | Title (AR) | Message (AR) |
-|-------|-----------|--------------|
-| `new_custom_order` | طلب جديد بانتظار التسعير | لديك طلب جديد من {customer} - {items_count} صنف |
-| `pricing_deadline_soon` | تنبيه: الطلب سينتهي قريباً | لديك {time} لتسعير الطلب #{number} |
-| `order_won` | 🎉 تم اختيارك | العميل وافق على تسعيرتك - جهّز الطلب |
-| `order_lost` | تم اختيار تاجر آخر | العميل اختار تاجراً آخر للطلب #{number} |
+
+| Event                   | Title (AR)                 | Message (AR)                                    |
+| ----------------------- | -------------------------- | ----------------------------------------------- |
+| `new_custom_order`      | طلب جديد بانتظار التسعير   | لديك طلب جديد من {customer} - {items_count} صنف |
+| `pricing_deadline_soon` | تنبيه: الطلب سينتهي قريباً | لديك {time} لتسعير الطلب #{number}              |
+| `order_won`             | 🎉 تم اختيارك              | العميل وافق على تسعيرتك - جهّز الطلب            |
+| `order_lost`            | تم اختيار تاجر آخر         | العميل اختار تاجراً آخر للطلب #{number}         |
 
 ---
 
 ## 13. Timeline Summary
 
-| Phase | Duration | Status |
-|-------|----------|--------|
-| Phase 1: Database | 2-3 days | ✅ Migration created |
-| Phase 2: Types | 1 day | ✅ Completed |
-| Phase 3: Backend | 3-4 days | ✅ Completed |
-| Phase 4: Customer UI | 4-5 days | ✅ Completed |
+| Phase                | Duration | Status                          |
+| -------------------- | -------- | ------------------------------- |
+| Phase 1: Database    | 2-3 days | ✅ Migration created            |
+| Phase 2: Types       | 1 day    | ✅ Completed                    |
+| Phase 3: Backend     | 3-4 days | ✅ Completed                    |
+| Phase 4: Customer UI | 4-5 days | ✅ Completed                    |
 | Phase 5: Merchant UI | 3-4 days | ✅ Completed (Session 25 fixes) |
-| Phase 6: Testing | 2-3 days | 🔄 In Progress |
-| Phase 7: Admin | 2-3 days | ⏳ Pending |
+| Phase 6: Testing     | 2-3 days | 🔄 In Progress                  |
+| Phase 7: Admin       | 2-3 days | ⏳ Pending                      |
 
 **Total Estimated: 17-23 working days**
 
@@ -1515,9 +1572,11 @@ GET    /api/provider/price-history                    # Get price history
 ### Major UI Fixes for Pricing Interface
 
 #### Status Buttons Rebuild
+
 The status buttons (متوفر/غير متوفر/بديل) were turning white when clicked due to CSS class conflicts. **Solution**: Complete rebuild using inline styles instead of Tailwind classes.
 
 **Implementation** (`PricingItemRow.tsx:333-440`):
+
 ```typescript
 <button
   style={{
@@ -1535,18 +1594,22 @@ The status buttons (متوفر/غير متوفر/بديل) were turning white wh
 ```
 
 #### Deadline Validation
+
 Prevents pricing submission after `pricing_expires_at` has passed:
+
 - `isDeadlineExpired` computed from `pricing_expires_at`
 - Submit button disabled when expired
 - Visual warning badge shows "انتهت المهلة!" in red
 - Double-check in `handleSubmit` function
 
 #### Dark Mode Complete Removal
+
 - Added `color-scheme: light` to `globals.css`
 - Removed all `dark:` classes from pricing components
 - Loading and error states use white backgrounds
 
 #### Additional Improvements
+
 - Number input spinners removed via CSS
 - "كرتونة" (Carton) unit type added
 - Copy button now fills first empty item (not add new)
@@ -1557,9 +1620,9 @@ Prevents pricing submission after `pricing_expires_at` has passed:
 
 ## Document History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | Jan 2026 | Claude | Initial plan |
-| 2.0 | Jan 2026 | Claude | Added: Offline support, ActiveCartBanner, Price history, Feature toggles, Hybrid mode, Settings page, UX architecture |
-| 2.1 | Jan 2026 | Claude | Added: Draft auto-save (localStorage), Supabase Realtime subscription, Storage file management & cleanup job |
-| 2.2 | Jan 2026 | Claude | Session 25: Status buttons inline styles rebuild, deadline validation, dark mode removal, UI fixes |
+| Version | Date     | Author | Changes                                                                                                               |
+| ------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| 1.0     | Jan 2026 | Claude | Initial plan                                                                                                          |
+| 2.0     | Jan 2026 | Claude | Added: Offline support, ActiveCartBanner, Price history, Feature toggles, Hybrid mode, Settings page, UX architecture |
+| 2.1     | Jan 2026 | Claude | Added: Draft auto-save (localStorage), Supabase Realtime subscription, Storage file management & cleanup job          |
+| 2.2     | Jan 2026 | Claude | Session 25: Status buttons inline styles rebuild, deadline validation, dark mode removal, UI fixes                    |

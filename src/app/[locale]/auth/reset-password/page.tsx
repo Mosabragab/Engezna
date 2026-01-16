@@ -1,102 +1,108 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { ArrowLeft, ArrowRight, Loader2, Lock, CheckCircle, Eye, EyeOff } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { ArrowLeft, ArrowRight, Loader2, Lock, CheckCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPasswordPage() {
-  const locale = useLocale()
-  const searchParams = useSearchParams()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const searchParams = useSearchParams();
+  const isRTL = locale === 'ar';
 
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [isValidSession, setIsValidSession] = useState(false)
-  const [checkingSession, setCheckingSession] = useState(true)
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [isValidSession, setIsValidSession] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   // Check if user has a valid recovery session
   useEffect(() => {
     async function checkSession() {
-      const supabase = createClient()
-      
+      const supabase = createClient();
+
       // Check for hash fragment (Supabase sends recovery link with hash)
-      const hashParams = new URLSearchParams(window.location.hash.substring(1))
-      const accessToken = hashParams.get('access_token')
-      const type = hashParams.get('type')
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const type = hashParams.get('type');
 
       if (accessToken && type === 'recovery') {
         // Set the session from the recovery token
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: hashParams.get('refresh_token') || '',
-        })
+        });
 
         if (!error) {
-          setIsValidSession(true)
+          setIsValidSession(true);
         } else {
-          setError(locale === 'ar' ? 'رابط غير صالح أو منتهي الصلاحية' : 'Invalid or expired link')
+          setError(locale === 'ar' ? 'رابط غير صالح أو منتهي الصلاحية' : 'Invalid or expired link');
         }
       } else {
         // Check if there's an existing session
-        const { data: { session } } = await supabase.auth.getSession()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
-          setIsValidSession(true)
+          setIsValidSession(true);
         } else {
-          setError(locale === 'ar' ? 'رابط غير صالح أو منتهي الصلاحية' : 'Invalid or expired link')
+          setError(locale === 'ar' ? 'رابط غير صالح أو منتهي الصلاحية' : 'Invalid or expired link');
         }
       }
 
-      setCheckingSession(false)
+      setCheckingSession(false);
     }
 
-    checkSession()
-  }, [locale])
+    checkSession();
+  }, [locale]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (password.length < 8) {
-      setError(locale === 'ar' ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters')
-      return
+      setError(
+        locale === 'ar'
+          ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
+          : 'Password must be at least 8 characters'
+      );
+      return;
     }
 
     if (password !== confirmPassword) {
-      setError(locale === 'ar' ? 'كلمة المرور غير متطابقة' : 'Passwords do not match')
-      return
+      setError(locale === 'ar' ? 'كلمة المرور غير متطابقة' : 'Passwords do not match');
+      return;
     }
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
-      })
+      });
 
       if (updateError) {
-        console.error('Update password error:', updateError)
-        setError(updateError.message)
-        return
+        console.error('Update password error:', updateError);
+        setError(updateError.message);
+        return;
       }
 
-      setSuccess(true)
+      setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Loading state while checking session
   if (checkingSession) {
@@ -106,11 +112,9 @@ export default function ResetPasswordPage() {
           <EngeznaLogo size="lg" static showPen={false} />
         </Link>
         <Loader2 className="w-8 h-8 animate-spin text-[#009DE0]" />
-        <p className="mt-4 text-slate-500">
-          {locale === 'ar' ? 'جاري التحقق...' : 'Verifying...'}
-        </p>
+        <p className="mt-4 text-slate-500">{locale === 'ar' ? 'جاري التحقق...' : 'Verifying...'}</p>
       </div>
-    )
+    );
   }
 
   // Success state
@@ -144,7 +148,7 @@ export default function ResetPasswordPage() {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   // Invalid session error state
@@ -186,7 +190,7 @@ export default function ResetPasswordPage() {
           {locale === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -204,9 +208,7 @@ export default function ResetPasswordPage() {
             {locale === 'ar' ? 'إعادة تعيين كلمة المرور' : 'Reset Password'}
           </h1>
           <p className="text-slate-500">
-            {locale === 'ar'
-              ? 'أدخل كلمة المرور الجديدة'
-              : 'Enter your new password'}
+            {locale === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter your new password'}
           </p>
         </div>
 
@@ -221,7 +223,10 @@ export default function ResetPasswordPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* New Password */}
           <div className="space-y-2">
-            <label htmlFor="password" className="flex items-center gap-2 text-sm font-medium text-slate-700">
+            <label
+              htmlFor="password"
+              className="flex items-center gap-2 text-sm font-medium text-slate-700"
+            >
               <Lock className="w-4 h-4 text-[#009DE0]" />
               {locale === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
             </label>
@@ -248,7 +253,10 @@ export default function ResetPasswordPage() {
 
           {/* Confirm Password */}
           <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="flex items-center gap-2 text-sm font-medium text-slate-700">
+            <label
+              htmlFor="confirmPassword"
+              className="flex items-center gap-2 text-sm font-medium text-slate-700"
+            >
               <Lock className="w-4 h-4 text-[#009DE0]" />
               {locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
             </label>
@@ -297,5 +305,5 @@ export default function ResetPasswordPage() {
         {locale === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
       </Link>
     </div>
-  )
+  );
 }

@@ -1,46 +1,46 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
-import { Globe } from 'lucide-react'
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
+import { Globe } from 'lucide-react';
 
 interface WelcomeClientWrapperProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function WelcomeClientWrapper({ children }: WelcomeClientWrapperProps) {
-  const locale = useLocale()
-  const router = useRouter()
+  const locale = useLocale();
+  const router = useRouter();
 
   // Check if user already has location set - non-blocking redirect
   useEffect(() => {
     const checkLocation = () => {
-      const guestLocation = guestLocationStorage.get()
+      const guestLocation = guestLocationStorage.get();
       if (guestLocation?.governorateId) {
-        router.replace(`/${locale}`)
+        router.replace(`/${locale}`);
       }
-    }
+    };
     // Use requestIdleCallback if available, otherwise setTimeout
     if ('requestIdleCallback' in window) {
-      requestIdleCallback(checkLocation)
+      requestIdleCallback(checkLocation);
     } else {
-      setTimeout(checkLocation, 100)
+      setTimeout(checkLocation, 100);
     }
-  }, [locale, router])
+  }, [locale, router]);
 
-  return <>{children}</>
+  return <>{children}</>;
 }
 
 export function LanguageToggle() {
-  const locale = useLocale()
-  const router = useRouter()
+  const locale = useLocale();
+  const router = useRouter();
 
   const toggleLanguage = () => {
-    const newLocale = locale === 'ar' ? 'en' : 'ar'
-    router.push(`/${newLocale}/welcome`)
-  }
+    const newLocale = locale === 'ar' ? 'en' : 'ar';
+    router.push(`/${newLocale}/welcome`);
+  };
 
   return (
     <button
@@ -50,5 +50,5 @@ export function LanguageToggle() {
       <Globe className="w-4 h-4" />
       {locale === 'ar' ? 'English' : 'العربية'}
     </button>
-  )
+  );
 }

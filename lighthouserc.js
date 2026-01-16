@@ -60,12 +60,7 @@ module.exports = {
       },
 
       // Chrome flags
-      chromeFlags: [
-        '--no-sandbox',
-        '--disable-gpu',
-        '--headless',
-        '--disable-dev-shm-usage',
-      ],
+      chromeFlags: ['--no-sandbox', '--disable-gpu', '--headless', '--disable-dev-shm-usage'],
     },
 
     assert: {
@@ -81,7 +76,7 @@ module.exports = {
         // Core Web Vitals
         'first-contentful-paint': ['error', { maxNumericValue: 3000 }],
         'largest-contentful-paint': ['error', { maxNumericValue: 4000 }],
-        'interactive': ['error', { maxNumericValue: 5000 }],
+        interactive: ['error', { maxNumericValue: 5000 }],
         'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
         'total-blocking-time': ['error', { maxNumericValue: 500 }],
 
@@ -121,4 +116,4 @@ module.exports = {
       },
     },
   },
-}
+};

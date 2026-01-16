@@ -10,6 +10,7 @@
 **Brand Color:** Engezna Blue `#009DE0`
 
 ### 🎯 Business Model Summary
+
 - **Grace Period:** 6 months (0% commission) - فترة السماح
 - **After Grace Period:** Maximum 7% commission (أقل عمولة في السوق)
 - **Competitors:** 25-30%
@@ -90,6 +91,7 @@ grep -r "حي" --include="*.tsx" --include="*.ts" src/
 ### 1.3 Remove District from Forms
 
 **Before (Example):**
+
 ```tsx
 <FormField name="district_id" label="الحي">
   <Select options={districts} />
@@ -97,6 +99,7 @@ grep -r "حي" --include="*.tsx" --include="*.ts" src/
 ```
 
 **After:**
+
 ```tsx
 // REMOVED - Using GPS instead
 ```
@@ -120,21 +123,21 @@ Create `/src/lib/here-maps/config.ts`:
 // HERE Maps Configuration
 export const HERE_CONFIG = {
   apiKey: process.env.NEXT_PUBLIC_HERE_API_KEY!,
-  
+
   // Egypt center coordinates
   defaultCenter: {
-    lat: 29.0,  // Beni Suef area
-    lng: 31.1
+    lat: 29.0, // Beni Suef area
+    lng: 31.1,
   },
-  
+
   // Default zoom level
   defaultZoom: 12,
-  
+
   // Map language
   language: 'ar',
-  
+
   // Supported regions (Egypt only for now)
-  regions: ['EGY']
+  regions: ['EGY'],
 };
 
 // Validate API key exists
@@ -169,14 +172,14 @@ interface Address {
 interface UseHereMapsReturn {
   isLoaded: boolean;
   error: string | null;
-  
+
   // Geocoding
   geocode: (address: string) => Promise<Coordinates | null>;
   reverseGeocode: (coords: Coordinates) => Promise<Address | null>;
-  
+
   // Autosuggest
   autosuggest: (query: string, coords?: Coordinates) => Promise<Address[]>;
-  
+
   // Distance calculation
   calculateDistance: (from: Coordinates, to: Coordinates) => number;
 }
@@ -200,7 +203,7 @@ export function useHereMaps(): UseHereMapsReturn {
         `https://geocode.search.hereapi.com/v1/geocode?q=${encodeURIComponent(address)}&in=countryCode:EGY&lang=ar&apiKey=${HERE_CONFIG.apiKey}`
       );
       const data = await response.json();
-      
+
       if (data.items && data.items.length > 0) {
         const { lat, lng } = data.items[0].position;
         return { lat, lng };
@@ -219,7 +222,7 @@ export function useHereMaps(): UseHereMapsReturn {
         `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${coords.lat},${coords.lng}&lang=ar&apiKey=${HERE_CONFIG.apiKey}`
       );
       const data = await response.json();
-      
+
       if (data.items && data.items.length > 0) {
         const item = data.items[0];
         return {
@@ -227,7 +230,7 @@ export function useHereMaps(): UseHereMapsReturn {
           street: item.address?.street,
           city: item.address?.city,
           governorate: item.address?.state,
-          postalCode: item.address?.postalCode
+          postalCode: item.address?.postalCode,
         };
       }
       return null;
@@ -238,41 +241,48 @@ export function useHereMaps(): UseHereMapsReturn {
   }, []);
 
   // Autosuggest addresses
-  const autosuggest = useCallback(async (query: string, coords?: Coordinates): Promise<Address[]> => {
-    try {
-      let url = `https://autosuggest.search.hereapi.com/v1/autosuggest?q=${encodeURIComponent(query)}&in=countryCode:EGY&lang=ar&apiKey=${HERE_CONFIG.apiKey}`;
-      
-      if (coords) {
-        url += `&at=${coords.lat},${coords.lng}`;
+  const autosuggest = useCallback(
+    async (query: string, coords?: Coordinates): Promise<Address[]> => {
+      try {
+        let url = `https://autosuggest.search.hereapi.com/v1/autosuggest?q=${encodeURIComponent(query)}&in=countryCode:EGY&lang=ar&apiKey=${HERE_CONFIG.apiKey}`;
+
+        if (coords) {
+          url += `&at=${coords.lat},${coords.lng}`;
+        }
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        return (
+          data.items?.map((item: any) => ({
+            label: item.title,
+            street: item.address?.street,
+            city: item.address?.city,
+            governorate: item.address?.state,
+          })) || []
+        );
+      } catch (err) {
+        console.error('Autosuggest error:', err);
+        return [];
       }
-      
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      return data.items?.map((item: any) => ({
-        label: item.title,
-        street: item.address?.street,
-        city: item.address?.city,
-        governorate: item.address?.state
-      })) || [];
-    } catch (err) {
-      console.error('Autosuggest error:', err);
-      return [];
-    }
-  }, []);
+    },
+    []
+  );
 
   // Calculate distance between two points (Haversine formula)
   const calculateDistance = useCallback((from: Coordinates, to: Coordinates): number => {
     const R = 6371; // Earth's radius in km
-    const dLat = (to.lat - from.lat) * Math.PI / 180;
-    const dLng = (to.lng - from.lng) * Math.PI / 180;
-    
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(from.lat * Math.PI / 180) * Math.cos(to.lat * Math.PI / 180) *
-      Math.sin(dLng/2) * Math.sin(dLng/2);
-    
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const dLat = ((to.lat - from.lat) * Math.PI) / 180;
+    const dLng = ((to.lng - from.lng) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((from.lat * Math.PI) / 180) *
+        Math.cos((to.lat * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }, []);
 
@@ -282,7 +292,7 @@ export function useHereMaps(): UseHereMapsReturn {
     geocode,
     reverseGeocode,
     autosuggest,
-    calculateDistance
+    calculateDistance,
   };
 }
 ```
@@ -307,11 +317,11 @@ interface LocationPickerProps {
   className?: string;
 }
 
-export function LocationPicker({ 
-  value, 
-  onChange, 
+export function LocationPicker({
+  value,
+  onChange,
   placeholder = "ابحث عن موقعك أو استخدم GPS",
-  className 
+  className
 }: LocationPickerProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -321,7 +331,7 @@ export function LocationPicker({
   const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [mapInstance, setMapInstance] = useState<any>(null);
   const [marker, setMarker] = useState<any>(null);
-  
+
   const { isLoaded, geocode, reverseGeocode, autosuggest } = useHereMaps();
 
   // Initialize HERE Map
@@ -335,16 +345,16 @@ export function LocationPicker({
       script.src = `https://js.api.here.com/v3/3.1/mapsjs-core.js`;
       script.async = true;
       document.head.appendChild(script);
-      
+
       script.onload = () => {
         const script2 = document.createElement('script');
         script2.src = `https://js.api.here.com/v3/3.1/mapsjs-service.js`;
         document.head.appendChild(script2);
-        
+
         const script3 = document.createElement('script');
         script3.src = `https://js.api.here.com/v3/3.1/mapsjs-ui.js`;
         document.head.appendChild(script3);
-        
+
         const script4 = document.createElement('script');
         script4.src = `https://js.api.here.com/v3/3.1/mapsjs-mapevents.js`;
         document.head.appendChild(script4);
@@ -361,7 +371,7 @@ export function LocationPicker({
     });
 
     const defaultLayers = platform.createDefaultLayers();
-    
+
     const map = new H.Map(
       mapRef.current,
       defaultLayers.vector.normal.map,
@@ -374,7 +384,7 @@ export function LocationPicker({
 
     // Enable map interaction
     const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
-    
+
     // Add UI controls
     const ui = H.ui.UI.createDefault(map, defaultLayers, 'ar-EG');
 
@@ -384,15 +394,15 @@ export function LocationPicker({
         evt.currentPointer.viewportX,
         evt.currentPointer.viewportY
       );
-      
+
       updateMarker(map, H, coord);
-      
+
       // Reverse geocode
       const address = await reverseGeocode(coord);
       if (address) {
         setSelectedAddress(address.label || '');
       }
-      
+
       onChange({ lat: coord.lat, lng: coord.lng }, address?.label);
     });
 
@@ -416,7 +426,7 @@ export function LocationPicker({
     const newMarker = new H.map.Marker(coords);
     map.addObject(newMarker);
     setMarker(newMarker);
-    
+
     // Center map on marker
     map.setCenter(coords);
   };
@@ -424,7 +434,7 @@ export function LocationPicker({
   // Handle search input
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    
+
     if (query.length < 3) {
       setSuggestions([]);
       return;
@@ -440,12 +450,12 @@ export function LocationPicker({
   const handleSelectSuggestion = async (suggestion: any) => {
     setSearchQuery(suggestion.label);
     setSuggestions([]);
-    
+
     const coords = await geocode(suggestion.label);
     if (coords) {
       onChange(coords, suggestion.label);
       setSelectedAddress(suggestion.label);
-      
+
       if (mapInstance && (window as any).H) {
         updateMarker(mapInstance, (window as any).H, coords);
       }
@@ -460,24 +470,24 @@ export function LocationPicker({
     }
 
     setIsGettingLocation(true);
-    
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const coords = {
           lat: position.coords.latitude,
           lng: position.coords.longitude
         };
-        
+
         // Reverse geocode to get address
         const address = await reverseGeocode(coords);
-        
+
         onChange(coords, address?.label);
         setSelectedAddress(address?.label || 'موقعك الحالي');
-        
+
         if (mapInstance && (window as any).H) {
           updateMarker(mapInstance, (window as any).H, coords);
         }
-        
+
         setIsGettingLocation(false);
       },
       (error) => {
@@ -511,7 +521,7 @@ export function LocationPicker({
               <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
             )}
           </div>
-          
+
           <Button
             type="button"
             variant="outline"
@@ -554,12 +564,12 @@ export function LocationPicker({
       )}
 
       {/* Map Container */}
-      <div 
-        ref={mapRef} 
+      <div
+        ref={mapRef}
         className="w-full h-64 rounded-lg border bg-gray-100"
         style={{ minHeight: '250px' }}
       />
-      
+
       {/* Instructions */}
       <p className="text-xs text-gray-500 text-center">
         📍 اضغط على الخريطة لتحديد موقعك بدقة، أو استخدم زر GPS
@@ -616,17 +626,17 @@ interface LocationSelectorProps {
   required?: boolean;
 }
 
-export function LocationSelector({ 
-  value, 
-  onChange, 
+export function LocationSelector({
+  value,
+  onChange,
   showMap = true,
-  required = false 
+  required = false
 }: LocationSelectorProps) {
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [isLoadingGovernorates, setIsLoadingGovernorates] = useState(true);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
-  
+
   const supabase = createClientComponentClient();
 
   // Fetch governorates on mount
@@ -637,13 +647,13 @@ export function LocationSelector({
         .select('id, name_ar, name_en')
         .eq('is_active', true)
         .order('display_order');
-      
+
       if (!error && data) {
         setGovernorates(data);
       }
       setIsLoadingGovernorates(false);
     }
-    
+
     fetchGovernorates();
   }, []);
 
@@ -654,19 +664,19 @@ export function LocationSelector({
         setCities([]);
         return;
       }
-      
+
       setIsLoadingCities(true);
-      
+
       const { data, error } = await supabase
         .from('cities')
         .select('id, name_ar, name_en, governorate_id')
         .eq('governorate_id', value.governorate_id)
         .eq('is_active', true)
         .order('display_order');
-      
+
       if (!error && data) {
         setCities(data);
-        
+
         // Auto-select if only one city
         if (data.length === 1 && !value.city_id) {
           onChange({ ...value, city_id: data[0].id });
@@ -674,7 +684,7 @@ export function LocationSelector({
       }
       setIsLoadingCities(false);
     }
-    
+
     fetchCities();
   }, [value.governorate_id]);
 
@@ -784,6 +794,7 @@ grep -r "عمولة" --include="*.tsx" --include="*.ts" src/
 ### 3.2 Key Messages to Update
 
 **OLD Messages (REMOVE/UPDATE):**
+
 - ❌ "عمولة 6%"
 - ❌ "6% فقط"
 - ❌ Any reference to 6% commission
@@ -794,35 +805,36 @@ grep -r "عمولة" --include="*.tsx" --include="*.ts" src/
 // Partnership value proposition
 const PARTNERSHIP_MESSAGES = {
   // Hero section
-  heroTitle: "انضم لعائلة إنجزنا",
-  heroSubtitle: "الأقل عمولة في مصر - نحمي ربحك",
-  
+  heroTitle: 'انضم لعائلة إنجزنا',
+  heroSubtitle: 'الأقل عمولة في مصر - نحمي ربحك',
+
   // Key benefits
   benefits: {
     freeperiod: {
-      title: "6 أشهر مجانية",
-      description: "ابدأ بدون أي عمولة لمدة 6 أشهر كاملة - فرصتك للنمو بدون تكلفة"
+      title: '6 أشهر مجانية',
+      description: 'ابدأ بدون أي عمولة لمدة 6 أشهر كاملة - فرصتك للنمو بدون تكلفة',
     },
     lowCommission: {
-      title: "أقل عمولة في السوق",
-      description: "بعد الفترة المجانية، عمولة لا تتجاوز 7% كحد أقصى - مقارنة بـ 25-30% في المنصات الأخرى"
+      title: 'أقل عمولة في السوق',
+      description:
+        'بعد الفترة المجانية، عمولة لا تتجاوز 7% كحد أقصى - مقارنة بـ 25-30% في المنصات الأخرى',
     },
     noHiddenFees: {
-      title: "بدون رسوم خفية",
-      description: "لا رسوم تسجيل، لا اشتراك شهري، لا مفاجآت"
+      title: 'بدون رسوم خفية',
+      description: 'لا رسوم تسجيل، لا اشتراك شهري، لا مفاجآت',
     },
     ownDelivery: {
-      title: "فريق توصيلك",
-      description: "استخدم فريق التوصيل الخاص بك - وفر أكثر"
-    }
+      title: 'فريق توصيلك',
+      description: 'استخدم فريق التوصيل الخاص بك - وفر أكثر',
+    },
   },
-  
+
   // Call to action
   cta: {
-    primary: "سجل الآن مجاناً",
-    secondary: "تعرف على المزيد"
+    primary: 'سجل الآن مجاناً',
+    secondary: 'تعرف على المزيد',
   },
-  
+
   // Commission explanation
   commissionExplanation: `
     نموذج عملنا بسيط وشفاف:
@@ -830,14 +842,14 @@ const PARTNERSHIP_MESSAGES = {
     • بعد ذلك: عمولة لا تتجاوز 7% كحد أقصى
     • هذه العمولة هي الأدنى في سوق التوصيل المصري
   `,
-  
+
   // Trust badges
   trustBadges: [
-    "✅ 0% عمولة لأول 6 أشهر",
-    "✅ 7% كحد أقصى بعد الفترة المجانية", 
-    "✅ بدون رسوم تسجيل",
-    "✅ دعم فني مجاني"
-  ]
+    '✅ 0% عمولة لأول 6 أشهر',
+    '✅ 7% كحد أقصى بعد الفترة المجانية',
+    '✅ بدون رسوم تسجيل',
+    '✅ دعم فني مجاني',
+  ],
 };
 ```
 
@@ -867,13 +879,9 @@ export default function ProviderRegisterPage() {
     <div className="container max-w-4xl py-8">
       {/* Hero Section */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-4">
-          🚀 انضم لعائلة إنجزنا
-        </h1>
-        <p className="text-xl text-gray-600 mb-6">
-          المنصة الأقل عمولة في مصر - نحمي ربحك
-        </p>
-        
+        <h1 className="text-3xl font-bold mb-4">🚀 انضم لعائلة إنجزنا</h1>
+        <p className="text-xl text-gray-600 mb-6">المنصة الأقل عمولة في مصر - نحمي ربحك</p>
+
         {/* Trust Badges */}
         <div className="flex flex-wrap justify-center gap-4 mb-8">
           <Badge variant="success" className="text-lg px-4 py-2">
@@ -890,12 +898,13 @@ export default function ProviderRegisterPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Gift className="h-6 w-6 text-green-500" />
-              6 أشهر مجانية
+              <Gift className="h-6 w-6 text-green-500" />6 أشهر مجانية
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p>ابدأ بدون أي عمولة لمدة 6 أشهر كاملة. فرصتك للنمو واكتساب عملاء جدد بدون أي تكلفة.</p>
+            <p>
+              ابدأ بدون أي عمولة لمدة 6 أشهر كاملة. فرصتك للنمو واكتساب عملاء جدد بدون أي تكلفة.
+            </p>
           </CardContent>
         </Card>
 
@@ -907,7 +916,10 @@ export default function ProviderRegisterPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p>بعد الفترة المجانية، عمولة <strong>7% كحد أقصى</strong> فقط - مقارنة بـ 25-30% في المنصات الأخرى.</p>
+            <p>
+              بعد الفترة المجانية، عمولة <strong>7% كحد أقصى</strong> فقط - مقارنة بـ 25-30% في
+              المنصات الأخرى.
+            </p>
           </CardContent>
         </Card>
 
@@ -940,9 +952,7 @@ export default function ProviderRegisterPage() {
       <Card>
         <CardHeader>
           <CardTitle>سجل متجرك الآن</CardTitle>
-          <CardDescription>
-            ابدأ رحلة النمو مع إنجزنا - التسجيل مجاني
-          </CardDescription>
+          <CardDescription>ابدأ رحلة النمو مع إنجزنا - التسجيل مجاني</CardDescription>
         </CardHeader>
         <CardContent>
           <ProviderRegistrationForm />
@@ -985,19 +995,19 @@ interface Provider {
   id: string;
   name_ar: string;
   name_en?: string;
-  
+
   // Location (NO district_id!)
   governorate_id: string;
   city_id: string;
-  latitude?: number;    // NEW
-  longitude?: number;   // NEW
-  
+  latitude?: number; // NEW
+  longitude?: number; // NEW
+
   // Commission
   commission_status: 'in_grace_period' | 'active' | 'exempt';
   grace_period_start?: string;
   grace_period_end?: string;
   custom_commission_rate?: number;
-  
+
   // ... other fields
 }
 
@@ -1006,14 +1016,14 @@ interface CustomerAddress {
   user_id: string;
   governorate_id?: string;
   city_id?: string;
-  latitude: number;     // Required
-  longitude: number;    // Required
+  latitude: number; // Required
+  longitude: number; // Required
   address_line: string;
   building_number?: string;
   floor_number?: string;
   apartment_number?: string;
   landmark?: string;
-  label: string;        // المنزل، العمل، etc
+  label: string; // المنزل، العمل، etc
   is_default: boolean;
 }
 ```
@@ -1056,18 +1066,19 @@ The following files contain **WRONG information** that MUST be corrected:
 
 ### 6.0 Files to Update (MANDATORY)
 
-| File | Current (WRONG ❌) | Correct (✅) |
-|------|-------------------|-------------|
-| `branding/BRAND_IDENTITY_GUIDE.md` | 9 months, 6%, 2% service fee | **6 months, 7%, 0% service fee** |
-| `PRD.md` | "6% commission", "9 months" | **7% max, 6 months** |
-| `README.md` | "6% commission" in settlements | **7% max** |
-| `claude.md` | "6% platform fee" | **7% max** |
+| File                               | Current (WRONG ❌)             | Correct (✅)                     |
+| ---------------------------------- | ------------------------------ | -------------------------------- |
+| `branding/BRAND_IDENTITY_GUIDE.md` | 9 months, 6%, 2% service fee   | **6 months, 7%, 0% service fee** |
+| `PRD.md`                           | "6% commission", "9 months"    | **7% max, 6 months**             |
+| `README.md`                        | "6% commission" in settlements | **7% max**                       |
+| `claude.md`                        | "6% platform fee"              | **7% max**                       |
 
 ### 6.0.1 Update BRAND_IDENTITY_GUIDE.md - Section 12
 
 **Find and replace in `branding/BRAND_IDENTITY_GUIDE.md`:**
 
 **BEFORE (WRONG ❌):**
+
 ```markdown
 ## 12. Business & Economic Model (Brand-Level)
 
@@ -1084,6 +1095,7 @@ The following files contain **WRONG information** that MUST be corrected:
 ```
 
 **AFTER (CORRECT ✅):**
+
 ```markdown
 ## 12. Business & Economic Model (Brand-Level)
 
@@ -1121,7 +1133,7 @@ grep -rn "٦%" --include="*.md" .
 grep -rn "six percent" --include="*.md" .
 grep -rn "6 percent" --include="*.md" .
 
-# Find all grace period mentions  
+# Find all grace period mentions
 grep -rn "9 months" --include="*.md" .
 grep -rn "٩ أشهر" --include="*.md" .
 grep -rn "9 أشهر" --include="*.md" .
@@ -1135,17 +1147,20 @@ grep -rn "service fee" --include="*.md" .
 ### 6.0.3 Update PRD.md Sections
 
 **Section: Business Model**
+
 - Change "9 months" → "6 months"
 - Change "6% commission" → "7% maximum commission"
 - Remove any "2% service fee" mentions
 
 **Section: Settlements**
+
 - Change "6% platform commission" → "7% maximum platform commission"
 - Update any hardcoded percentages
 
 ### 6.0.4 Update README.md Sections
 
 **Search and replace:**
+
 - "6% commission" → "7% maximum commission"
 - "6% platform fee" → "7% maximum platform fee"
 - Update settlements section to reflect 7%
@@ -1153,6 +1168,7 @@ grep -rn "service fee" --include="*.md" .
 ### 6.0.5 Update claude.md Sections
 
 **Session logs mentioning 6%:**
+
 - Update any mentions of "6% platform fee"
 - Update finance page descriptions
 - Update settlements system descriptions
@@ -1164,12 +1180,14 @@ grep -rn "service fee" --include="*.md" .
 At the end of all changes, create/update documentation files:
 
 **Create `/docs/CHANGELOG.md`:**
+
 ```markdown
 # Changelog
 
 ## [Date] - HERE Maps Integration & System Cleanup
 
 ### Added
+
 - HERE Maps integration for GPS-based location selection
 - LocationPicker component with map and GPS support
 - useHereMaps hook for geocoding and reverse geocoding
@@ -1177,35 +1195,42 @@ At the end of all changes, create/update documentation files:
 - Distance calculation functions
 
 ### Changed
+
 - Simplified location system: Governorate → City → GPS (removed Districts)
 - Updated provider registration flow to use GPS
 - Updated customer address form to use GPS
 - Updated partnership messaging (6 months free, 7% max commission)
 
 ### Removed
+
 - Districts (الأحياء) system from all interfaces
 - District dropdown from all forms
 - All references to 6% commission (old rate)
 - district_id from provider and address forms
 
 ### Fixed
+
 - Commission percentage now correctly shows 7% max
 - Grace period correctly shows 6 months (180 days)
 ```
 
 **Update `/docs/LOCATION_SYSTEM.md`:**
+
 ```markdown
 # Location System Documentation
 
 ## Overview
+
 Engezna uses a simplified location system with GPS integration.
 
 ## Structure
 ```
+
 Governorate (المحافظة)
 └── City (المدينة)
-    └── GPS Coordinates (latitude, longitude)
-        └── Address Details (street, building, etc.)
+└── GPS Coordinates (latitude, longitude)
+└── Address Details (street, building, etc.)
+
 ```
 
 ## Components
@@ -1223,22 +1248,26 @@ HERE Maps integration for selecting precise GPS coordinates.
 ```
 
 **Update `/docs/COMMISSION_SYSTEM.md`:**
+
 ```markdown
 # Commission System Documentation
 
 ## Partnership Model
 
 ### Grace Period (فترة السماح)
+
 - Duration: 6 months (180 days)
 - Commission: 0%
 - Starts: From provider registration date
 
 ### After Grace Period
+
 - Maximum commission: 7%
 - This is the lowest rate in the Egyptian market
 - Competitors charge 25-30%
 
 ## Commission Calculation Priority
+
 1. System disabled → 0%
 2. In grace period → 0%
 3. Provider exempt → 0%
@@ -1254,12 +1283,14 @@ HERE Maps integration for selecting precise GPS coordinates.
 Before considering the task complete:
 
 ### Location System
+
 - [ ] **No district references** in any UI component
 - [ ] **HERE Maps** working for location selection
 - [ ] **GPS coordinates** saved to database
 - [ ] **All forms** work without districts
 
 ### Commission System
+
 - [ ] **No 6% commission** mentions anywhere (code OR documentation)
 - [ ] **Partnership messages** updated to:
   - 6 months free (0% commission)
@@ -1273,6 +1304,7 @@ Before considering the task complete:
 - [ ] **Provider dashboard** shows grace period status
 
 ### Admin Expansion Management
+
 - [ ] **Governorate management page** working:
   - [ ] List all governorates with stats
   - [ ] Activate/deactivate governorates
@@ -1284,6 +1316,7 @@ Before considering the task complete:
   - [ ] Readiness score
 
 ### Documentation
+
 - [ ] **Documentation** updated:
   - [ ] BRAND_IDENTITY_GUIDE.md - Section 12 fixed
   - [ ] PRD.md - Commission and grace period fixed
@@ -1294,6 +1327,7 @@ Before considering the task complete:
 - [ ] **Translations files** updated (remove district, update commission messages)
 
 ### Testing
+
 - [ ] **No console errors** related to removed features
 - [ ] **Commission calculation** returns correct values
 - [ ] **Grace period** tracked correctly for new providers
@@ -1355,12 +1389,12 @@ English:
 
 When updating partnership pages, use these colors:
 
-| Element | Color | Usage |
-|---------|-------|-------|
-| Primary Blue | `#009DE0` | CTAs, highlights, Engezna branding |
-| Success Green | `#00C27A` | "Free", "0%", success states |
-| Gold | `#FFD166` | Premium features, highlights |
-| Error Red | `#FF5A5F` | "No fees", comparisons to competitors |
+| Element       | Color     | Usage                                 |
+| ------------- | --------- | ------------------------------------- |
+| Primary Blue  | `#009DE0` | CTAs, highlights, Engezna branding    |
+| Success Green | `#00C27A` | "Free", "0%", success states          |
+| Gold          | `#FFD166` | Premium features, highlights          |
+| Error Red     | `#FF5A5F` | "No fees", comparisons to competitors |
 
 ### 7.3 Partnership Page Visual Hierarchy
 
@@ -1399,6 +1433,7 @@ grep -rn "%" --include="*.tsx" --include="*.ts" src/
 **Create/Update Admin Locations Page:** `/admin/locations/page.tsx`
 
 The admin should be able to:
+
 1. **View all governorates** with their status (active/inactive)
 2. **Activate/Deactivate governorates** for expansion
 3. **Manage cities** within each governorate
@@ -1443,7 +1478,7 @@ export default function AdminLocationsPage() {
       .from('governorates')
       .update({ is_active: isActive })
       .eq('id', id);
-    
+
     if (!error) {
       // Refresh data
       fetchGovernorates();
@@ -1484,7 +1519,9 @@ export default function AdminLocationsPage() {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="flex items-center gap-1">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span>{gov.active_cities_count}/{gov.cities_count} مدينة</span>
+                      <span>
+                        {gov.active_cities_count}/{gov.cities_count} مدينة
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -1495,9 +1532,7 @@ export default function AdminLocationsPage() {
                       <span>{gov.orders_count} طلب</span>
                     </div>
                     {gov.commission_override && (
-                      <Badge variant="outline">
-                        عمولة: {gov.commission_override}%
-                      </Badge>
+                      <Badge variant="outline">عمولة: {gov.commission_override}%</Badge>
                     )}
                   </div>
                   <Button variant="outline" size="sm" className="mt-4 w-full">
@@ -1509,9 +1544,7 @@ export default function AdminLocationsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="commission">
-          {/* Commission Settings - See 9.2 */}
-        </TabsContent>
+        <TabsContent value="commission">{/* Commission Settings - See 9.2 */}</TabsContent>
       </Tabs>
     </div>
   );
@@ -1523,6 +1556,7 @@ export default function AdminLocationsPage() {
 **Create Admin Commission Settings Page:** `/admin/settings/commission/page.tsx`
 
 **Features Required:**
+
 1. **Platform-wide settings** (default commission, grace period)
 2. **Per-governorate overrides** (different rates for different regions)
 3. **Per-provider overrides** (special deals with specific providers)
@@ -1540,7 +1574,7 @@ CREATE TABLE platform_settings (
 );
 
 -- Insert default commission settings
-INSERT INTO platform_settings (key, value) VALUES 
+INSERT INTO platform_settings (key, value) VALUES
 ('commission', '{
   "enabled": true,
   "default_rate": 7.00,
@@ -1586,24 +1620,22 @@ interface CommissionSettings {
 export default function CommissionSettingsPage() {
   const [settings, setSettings] = useState<CommissionSettings>({
     enabled: true,
-    default_rate: 7.00,
-    max_rate: 7.00,
+    default_rate: 7.0,
+    max_rate: 7.0,
     grace_period_days: 180,
-    grace_period_enabled: true
+    grace_period_enabled: true,
   });
-  
+
   const [governorateOverrides, setGovernorateOverrides] = useState<any[]>([]);
   const [providerOverrides, setProviderOverrides] = useState<any[]>([]);
 
   const saveSettings = async () => {
-    const { error } = await supabase
-      .from('platform_settings')
-      .upsert({ 
-        key: 'commission', 
-        value: settings,
-        updated_at: new Date().toISOString()
-      });
-    
+    const { error } = await supabase.from('platform_settings').upsert({
+      key: 'commission',
+      value: settings,
+      updated_at: new Date().toISOString(),
+    });
+
     if (!error) {
       toast.success('تم حفظ الإعدادات بنجاح');
     }
@@ -1614,13 +1646,9 @@ export default function CommissionSettingsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">إعدادات العمولة</h1>
-          <p className="text-muted-foreground">
-            إدارة نسب العمولة وفترات السماح للمتاجر
-          </p>
+          <p className="text-muted-foreground">إدارة نسب العمولة وفترات السماح للمتاجر</p>
         </div>
-        <Button onClick={saveSettings}>
-          حفظ الإعدادات
-        </Button>
+        <Button onClick={saveSettings}>حفظ الإعدادات</Button>
       </div>
 
       {/* Platform-wide Settings */}
@@ -1630,9 +1658,7 @@ export default function CommissionSettingsPage() {
             <Percent className="h-5 w-5" />
             الإعدادات العامة
           </CardTitle>
-          <CardDescription>
-            تطبق على جميع المتاجر ما لم يتم تحديد استثناء
-          </CardDescription>
+          <CardDescription>تطبق على جميع المتاجر ما لم يتم تحديد استثناء</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Enable/Disable Commission */}
@@ -1645,9 +1671,7 @@ export default function CommissionSettingsPage() {
             </div>
             <Switch
               checked={settings.enabled}
-              onCheckedChange={(checked) => 
-                setSettings(prev => ({ ...prev, enabled: checked }))
-              }
+              onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, enabled: checked }))}
             />
           </div>
 
@@ -1657,16 +1681,14 @@ export default function CommissionSettingsPage() {
             <div className="flex items-center gap-4">
               <Slider
                 value={[settings.default_rate]}
-                onValueChange={([value]) => 
-                  setSettings(prev => ({ ...prev, default_rate: value }))
+                onValueChange={([value]) =>
+                  setSettings((prev) => ({ ...prev, default_rate: value }))
                 }
                 max={settings.max_rate}
                 step={0.5}
                 className="flex-1"
               />
-              <span className="text-2xl font-bold w-16 text-left">
-                {settings.default_rate}%
-              </span>
+              <span className="text-2xl font-bold w-16 text-left">{settings.default_rate}%</span>
             </div>
             <p className="text-sm text-muted-foreground">
               الحد الأقصى المسموح: {settings.max_rate}%
@@ -1681,14 +1703,12 @@ export default function CommissionSettingsPage() {
                   <Calendar className="h-4 w-4" />
                   فترة السماح (Grace Period)
                 </Label>
-                <p className="text-sm text-muted-foreground">
-                  فترة بدون عمولة للمتاجر الجديدة
-                </p>
+                <p className="text-sm text-muted-foreground">فترة بدون عمولة للمتاجر الجديدة</p>
               </div>
               <Switch
                 checked={settings.grace_period_enabled}
-                onCheckedChange={(checked) => 
-                  setSettings(prev => ({ ...prev, grace_period_enabled: checked }))
+                onCheckedChange={(checked) =>
+                  setSettings((prev) => ({ ...prev, grace_period_enabled: checked }))
                 }
               />
             </div>
@@ -1700,10 +1720,10 @@ export default function CommissionSettingsPage() {
                   <Input
                     type="number"
                     value={settings.grace_period_days}
-                    onChange={(e) => 
-                      setSettings(prev => ({ 
-                        ...prev, 
-                        grace_period_days: parseInt(e.target.value) 
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        grace_period_days: parseInt(e.target.value),
                       }))
                     }
                     className="w-24"
@@ -1725,9 +1745,7 @@ export default function CommissionSettingsPage() {
             <Building2 className="h-5 w-5" />
             استثناءات المحافظات
           </CardTitle>
-          <CardDescription>
-            تحديد نسب عمولة مختلفة لمحافظات معينة
-          </CardDescription>
+          <CardDescription>تحديد نسب عمولة مختلفة لمحافظات معينة</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -1760,22 +1778,23 @@ export default function CommissionSettingsPage() {
             <Store className="h-5 w-5" />
             استثناءات المتاجر
           </CardTitle>
-          <CardDescription>
-            تحديد نسب عمولة خاصة لمتاجر معينة (صفقات خاصة)
-          </CardDescription>
+          <CardDescription>تحديد نسب عمولة خاصة لمتاجر معينة (صفقات خاصة)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {providerOverrides.map((provider) => (
-              <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
+              <div
+                key={provider.id}
+                className="flex items-center justify-between p-3 border rounded-lg"
+              >
                 <div>
                   <span className="font-medium">{provider.name_ar}</span>
                   <Badge variant="outline" className="mr-2">
-                    {provider.commission_status === 'in_grace_period' 
-                      ? 'في فترة السماح' 
+                    {provider.commission_status === 'in_grace_period'
+                      ? 'في فترة السماح'
                       : provider.commission_status === 'exempt'
-                      ? 'معفى'
-                      : 'نشط'}
+                        ? 'معفى'
+                        : 'نشط'}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1801,9 +1820,7 @@ export default function CommissionSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>متاجر في فترة السماح</CardTitle>
-          <CardDescription>
-            المتاجر التي لا تدفع عمولة حالياً
-          </CardDescription>
+          <CardDescription>المتاجر التي لا تدفع عمولة حالياً</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Table of providers in grace period with:
@@ -1829,96 +1846,104 @@ import { createClient } from '@/lib/supabase/client';
 
 interface CommissionResult {
   rate: number;
-  source: 'disabled' | 'grace_period' | 'exempt' | 'provider_custom' | 'governorate' | 'platform_default';
+  source:
+    | 'disabled'
+    | 'grace_period'
+    | 'exempt'
+    | 'provider_custom'
+    | 'governorate'
+    | 'platform_default';
   isInGracePeriod: boolean;
   gracePeriodDaysRemaining?: number;
 }
 
 export async function calculateProviderCommission(providerId: string): Promise<CommissionResult> {
   const supabase = createClient();
-  
+
   // 1. Get platform settings
   const { data: settingsData } = await supabase
     .from('platform_settings')
     .select('value')
     .eq('key', 'commission')
     .single();
-  
+
   const settings = settingsData?.value || {
     enabled: true,
-    default_rate: 7.00,
-    max_rate: 7.00,
+    default_rate: 7.0,
+    max_rate: 7.0,
     grace_period_days: 180,
-    grace_period_enabled: true
+    grace_period_enabled: true,
   };
-  
+
   // 2. If commission system is disabled
   if (!settings.enabled) {
     return { rate: 0, source: 'disabled', isInGracePeriod: false };
   }
-  
+
   // 3. Get provider details
   const { data: provider } = await supabase
     .from('providers')
-    .select(`
+    .select(
+      `
       commission_status,
       grace_period_start,
       grace_period_end,
       custom_commission_rate,
       governorate_id,
       governorates!inner(commission_override)
-    `)
+    `
+    )
     .eq('id', providerId)
     .single();
-  
+
   if (!provider) {
     return { rate: settings.default_rate, source: 'platform_default', isInGracePeriod: false };
   }
-  
+
   // 4. Check grace period
   if (provider.commission_status === 'in_grace_period' && provider.grace_period_end) {
     const endDate = new Date(provider.grace_period_end);
     const now = new Date();
-    
+
     if (now < endDate) {
       const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      return { 
-        rate: 0, 
-        source: 'grace_period', 
+      return {
+        rate: 0,
+        source: 'grace_period',
         isInGracePeriod: true,
-        gracePeriodDaysRemaining: daysRemaining
+        gracePeriodDaysRemaining: daysRemaining,
       };
     }
   }
-  
+
   // 5. Check if exempt
   if (provider.commission_status === 'exempt') {
     return { rate: 0, source: 'exempt', isInGracePeriod: false };
   }
-  
+
   // 6. Check provider custom rate
   if (provider.custom_commission_rate !== null) {
-    return { 
-      rate: Math.min(provider.custom_commission_rate, settings.max_rate), 
-      source: 'provider_custom', 
-      isInGracePeriod: false 
+    return {
+      rate: Math.min(provider.custom_commission_rate, settings.max_rate),
+      source: 'provider_custom',
+      isInGracePeriod: false,
     };
   }
-  
+
   // 7. Check governorate override
   if (provider.governorates?.commission_override !== null) {
-    return { 
-      rate: Math.min(provider.governorates.commission_override, settings.max_rate), 
-      source: 'governorate', 
-      isInGracePeriod: false 
+    return {
+      rate: Math.min(provider.governorates.commission_override, settings.max_rate),
+      source: 'governorate',
+      isInGracePeriod: false,
     };
   }
-  
+
   // 8. Use platform default
-  return { 
-    rate: settings.default_rate, 
-    source: 'platform_default', 
-    isInGracePeriod: false 
+  return {
+    rate: settings.default_rate,
+    source: 'platform_default',
+    isInGracePeriod: false,
   };
 }
 
@@ -1945,7 +1970,7 @@ const menuItems = [
       { title: 'المحافظات', href: '/admin/locations' },
       { title: 'المدن', href: '/admin/locations/cities' },
       { title: 'تحليلات التوسع', href: '/admin/locations/analytics' },
-    ]
+    ],
   },
   {
     title: 'إعدادات العمولة',
@@ -1962,30 +1987,32 @@ const menuItems = [
 ```tsx
 // Add to /src/app/[locale]/provider/page.tsx (dashboard)
 
-{provider.commission_status === 'in_grace_period' && (
-  <Card className="border-green-200 bg-green-50">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2 text-green-700">
-        <Gift className="h-5 w-5" />
-        أنت في فترة السماح 🎉
-      </CardTitle>
-    </CardHeader>
-    <CardContent>
-      <p className="text-green-600">
-        عمولتك الحالية: <strong>0%</strong>
-      </p>
-      <p className="text-sm text-green-600 mt-2">
-        يتبقى {gracePeriodDaysRemaining} يوم حتى انتهاء فترة السماح
-      </p>
-      <div className="mt-4 bg-green-100 rounded-full h-2">
-        <div 
-          className="bg-green-500 h-2 rounded-full"
-          style={{ width: `${(gracePeriodDaysRemaining / 180) * 100}%` }}
-        />
-      </div>
-    </CardContent>
-  </Card>
-)}
+{
+  provider.commission_status === 'in_grace_period' && (
+    <Card className="border-green-200 bg-green-50">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-green-700">
+          <Gift className="h-5 w-5" />
+          أنت في فترة السماح 🎉
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-green-600">
+          عمولتك الحالية: <strong>0%</strong>
+        </p>
+        <p className="text-sm text-green-600 mt-2">
+          يتبقى {gracePeriodDaysRemaining} يوم حتى انتهاء فترة السماح
+        </p>
+        <div className="mt-4 bg-green-100 rounded-full h-2">
+          <div
+            className="bg-green-500 h-2 rounded-full"
+            style={{ width: `${(gracePeriodDaysRemaining / 180) * 100}%` }}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 ```
 
 ---
@@ -2012,6 +2039,7 @@ find . -name "*.json" -path "*/messages/*"
 ```
 
 Expected locations:
+
 - `src/i18n/messages/ar.json`
 - `src/i18n/messages/en.json`
 - OR `src/locales/ar.json` and `src/locales/en.json`
@@ -2111,6 +2139,7 @@ Expected locations:
 ### 8.4 Remove Old/Wrong Translation Keys
 
 **Search and remove any keys with:**
+
 - `6%` or `٦%`
 - `9 months` or `9 أشهر`
 - `service fee` or `رسوم خدمة`

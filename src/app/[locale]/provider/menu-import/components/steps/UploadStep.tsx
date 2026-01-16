@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useState, useCallback } from 'react'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useCallback } from 'react';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
 import {
   FileSpreadsheet,
   AlertCircle,
@@ -11,78 +11,74 @@ import {
   ChevronDown,
   ChevronUp,
   Package,
-} from 'lucide-react'
-import type { BusinessCategoryCode } from '@/lib/constants/categories'
-import type { ExtractedCategory, ExtractedAddon } from '@/types/menu-import'
-import {
-  readExcelFile,
-  processAllSheets,
-  type MultiSheetResult,
-} from '@/lib/utils/excel-import'
+} from 'lucide-react';
+import type { BusinessCategoryCode } from '@/lib/constants/categories';
+import type { ExtractedCategory, ExtractedAddon } from '@/types/menu-import';
+import { readExcelFile, processAllSheets, type MultiSheetResult } from '@/lib/utils/excel-import';
 
 interface UploadStepProps {
-  providerId: string
-  businessType: BusinessCategoryCode
-  onComplete: (categories: ExtractedCategory[], addons: ExtractedAddon[], importId: string) => void
+  providerId: string;
+  businessType: BusinessCategoryCode;
+  onComplete: (categories: ExtractedCategory[], addons: ExtractedAddon[], importId: string) => void;
 }
 
 export function UploadStep({ providerId, onComplete }: UploadStepProps) {
-  const locale = useLocale()
+  const locale = useLocale();
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [fileName, setFileName] = useState<string>('')
-  const [result, setResult] = useState<MultiSheetResult | null>(null)
-  const [expandedSheets, setExpandedSheets] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>('');
+  const [result, setResult] = useState<MultiSheetResult | null>(null);
+  const [expandedSheets, setExpandedSheets] = useState<Set<string>>(new Set());
 
   // Handle file upload
   const handleFileSelect = useCallback(async (file: File) => {
-    setLoading(true)
-    setError(null)
-    setResult(null)
+    setLoading(true);
+    setError(null);
+    setResult(null);
 
     try {
       // Read all sheets
-      const { sheets } = await readExcelFile(file)
-      setFileName(file.name)
+      const { sheets } = await readExcelFile(file);
+      setFileName(file.name);
 
       // Process all sheets automatically
-      const processed = processAllSheets(sheets)
-      setResult(processed)
+      const processed = processAllSheets(sheets);
+      setResult(processed);
 
       // Expand first sheet by default
       if (processed.sheets.length > 0) {
-        setExpandedSheets(new Set([processed.sheets[0].name]))
+        setExpandedSheets(new Set([processed.sheets[0].name]));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'فشل في قراءة الملف')
+      setError(err instanceof Error ? err.message : 'فشل في قراءة الملف');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   // Toggle sheet expansion
   const toggleSheet = useCallback((sheetName: string) => {
-    setExpandedSheets(prev => {
-      const next = new Set(prev)
+    setExpandedSheets((prev) => {
+      const next = new Set(prev);
       if (next.has(sheetName)) {
-        next.delete(sheetName)
+        next.delete(sheetName);
       } else {
-        next.add(sheetName)
+        next.add(sheetName);
       }
-      return next
-    })
-  }, [])
+      return next;
+    });
+  }, []);
 
   // Finish and send data
   const handleFinish = useCallback(async () => {
-    if (!result) return
+    if (!result) return;
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Create import session
       const { data: importData, error: importError } = await supabase
@@ -94,24 +90,30 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
           extracted_data: {
             categories: result.combined.categories,
             addons: [],
-            warnings: result.combined.warnings.map(w => ({ type: 'other', message: w, severity: 'low' })),
+            warnings: result.combined.warnings.map((w) => ({
+              type: 'other',
+              message: w,
+              severity: 'low',
+            })),
             statistics: {
               total_categories: result.combined.categories.length,
               total_products: result.combined.totalProducts,
               products_fixed_price: result.combined.categories.reduce(
-                (sum, cat) => sum + cat.products.filter(p => p.pricing_type === 'fixed').length,
+                (sum, cat) => sum + cat.products.filter((p) => p.pricing_type === 'fixed').length,
                 0
               ),
               products_per_unit: result.combined.categories.reduce(
-                (sum, cat) => sum + cat.products.filter(p => p.pricing_type === 'per_unit').length,
+                (sum, cat) =>
+                  sum + cat.products.filter((p) => p.pricing_type === 'per_unit').length,
                 0
               ),
               products_with_variants: result.combined.categories.reduce(
-                (sum, cat) => sum + cat.products.filter(p => p.variants && p.variants.length > 0).length,
+                (sum, cat) =>
+                  sum + cat.products.filter((p) => p.variants && p.variants.length > 0).length,
                 0
               ),
               products_need_review: result.combined.categories.reduce(
-                (sum, cat) => sum + cat.products.filter(p => p.needs_review).length,
+                (sum, cat) => sum + cat.products.filter((p) => p.needs_review).length,
                 0
               ),
               average_confidence: 1.0,
@@ -125,48 +127,50 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
           retry_count: 0,
         })
         .select()
-        .single()
+        .single();
 
       if (importError || !importData) {
-        throw new Error(importError?.message || 'Failed to create import session')
+        throw new Error(importError?.message || 'Failed to create import session');
       }
 
-      onComplete(result.combined.categories, [], importData.id)
+      onComplete(result.combined.categories, [], importData.id);
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : locale === 'ar' ? 'فشل في استيراد البيانات' : 'Failed to import data'
-      )
+          : locale === 'ar'
+            ? 'فشل في استيراد البيانات'
+            : 'Failed to import data'
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [result, providerId, locale, onComplete])
+  }, [result, providerId, locale, onComplete]);
 
   // Handle file drop
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
-      e.preventDefault()
-      const file = e.dataTransfer.files[0]
-      if (file) handleFileSelect(file)
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file) handleFileSelect(file);
     },
     [handleFileSelect]
-  )
+  );
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (file) handleFileSelect(file)
+      const file = e.target.files?.[0];
+      if (file) handleFileSelect(file);
     },
     [handleFileSelect]
-  )
+  );
 
   // Reset to upload new file
   const handleReset = useCallback(() => {
-    setResult(null)
-    setFileName('')
-    setError(null)
-  }, [])
+    setResult(null);
+    setFileName('');
+    setError(null);
+  }, []);
 
   return (
     <div className="p-6">
@@ -290,7 +294,8 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
                     <div className="text-start">
                       <div className="font-medium text-slate-900">{sheet.name}</div>
                       <div className="text-sm text-slate-500">
-                        {sheet.data.categories.length} {locale === 'ar' ? 'أقسام' : 'categories'} • {sheet.data.totalProducts} {locale === 'ar' ? 'منتجات' : 'products'}
+                        {sheet.data.categories.length} {locale === 'ar' ? 'أقسام' : 'categories'} •{' '}
+                        {sheet.data.totalProducts} {locale === 'ar' ? 'منتجات' : 'products'}
                       </div>
                     </div>
                   </div>
@@ -320,7 +325,8 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
                                 <span className="truncate text-slate-700">{product.name_ar}</span>
                               </div>
                               <div className="text-primary font-medium mt-1">
-                                {product.pricing_type === 'fixed' || product.pricing_type === 'per_unit'
+                                {product.pricing_type === 'fixed' ||
+                                product.pricing_type === 'per_unit'
                                   ? `${product.price} ${locale === 'ar' ? 'ج.م' : 'EGP'}${product.pricing_type === 'per_unit' && product.unit_type ? `/${product.unit_type}` : ''}`
                                   : `${product.variants?.length || 0} ${locale === 'ar' ? 'خيارات' : 'options'}`}
                               </div>
@@ -379,5 +385,5 @@ export function UploadStep({ providerId, onComplete }: UploadStepProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

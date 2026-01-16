@@ -193,7 +193,7 @@ export const BANNER_GRADIENTS: Record<string, BannerGradient> = {
  * Get CSS gradient string for a banner color
  */
 export const getBannerGradient = (colorId: string, angle: number = 135): string => {
-  const color = Object.values(BANNER_GRADIENTS).find(c => c.id === colorId);
+  const color = Object.values(BANNER_GRADIENTS).find((c) => c.id === colorId);
   if (!color) return `linear-gradient(${angle}deg, #009DE0, #0077B6)`;
   return `linear-gradient(${angle}deg, ${color.start} 0%, ${color.end} 100%)`;
 };
@@ -201,7 +201,9 @@ export const getBannerGradient = (colorId: string, angle: number = 135): string 
 /**
  * Get glass effect CSS properties as object
  */
-export const getGlassEffectStyle = (variant: 'default' | 'light' = 'default'): React.CSSProperties => {
+export const getGlassEffectStyle = (
+  variant: 'default' | 'light' = 'default'
+): React.CSSProperties => {
   const effect = variant === 'light' ? GLASS_EFFECT_LIGHT : GLASS_EFFECT;
   return {
     background: effect.background,
@@ -217,14 +219,14 @@ export const getGlassEffectStyle = (variant: 'default' | 'light' = 'default'): R
  * Get colors by category
  */
 export const getColorsByCategory = (category: BannerGradient['category']): BannerGradient[] => {
-  return Object.values(BANNER_GRADIENTS).filter(c => c.category === category);
+  return Object.values(BANNER_GRADIENTS).filter((c) => c.category === category);
 };
 
 /**
  * Get color by usage tag
  */
 export const getColorByUsage = (usage: string): BannerGradient | undefined => {
-  return Object.values(BANNER_GRADIENTS).find(c => c.usage.includes(usage));
+  return Object.values(BANNER_GRADIENTS).find((c) => c.usage.includes(usage));
 };
 
 /**
@@ -232,7 +234,8 @@ export const getColorByUsage = (usage: string): BannerGradient | undefined => {
  */
 export const findGradientByColors = (start: string, end: string): BannerGradient | undefined => {
   return Object.values(BANNER_GRADIENTS).find(
-    c => c.start.toLowerCase() === start.toLowerCase() && c.end.toLowerCase() === end.toLowerCase()
+    (c) =>
+      c.start.toLowerCase() === start.toLowerCase() && c.end.toLowerCase() === end.toLowerCase()
   );
 };
 
@@ -240,7 +243,7 @@ export const findGradientByColors = (start: string, end: string): BannerGradient
 // ADMIN PANEL COLOR OPTIONS (For dropdown/buttons)
 // ============================================================
 
-export const ADMIN_COLOR_OPTIONS = Object.values(BANNER_GRADIENTS).map(color => ({
+export const ADMIN_COLOR_OPTIONS = Object.values(BANNER_GRADIENTS).map((color) => ({
   value: color.id,
   labelAr: color.nameAr,
   labelEn: color.nameEn,

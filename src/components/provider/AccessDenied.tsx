@@ -1,22 +1,23 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { ShieldX, ArrowLeft, ArrowRight, Home } from 'lucide-react'
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ShieldX, ArrowLeft, ArrowRight, Home } from 'lucide-react';
 
 interface AccessDeniedProps {
-  message?: string
-  showHomeButton?: boolean
+  message?: string;
+  showHomeButton?: boolean;
 }
 
 export function AccessDenied({ message, showHomeButton = true }: AccessDeniedProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const defaultMessage = locale === 'ar'
-    ? 'ليس لديك صلاحية للوصول لهذه الصفحة. تواصل مع مالك المتجر للحصول على الصلاحية.'
-    : 'You do not have permission to access this page. Contact the store owner to get access.'
+  const defaultMessage =
+    locale === 'ar'
+      ? 'ليس لديك صلاحية للوصول لهذه الصفحة. تواصل مع مالك المتجر للحصول على الصلاحية.'
+      : 'You do not have permission to access this page. Contact the store owner to get access.';
 
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-8 text-center shadow-elegant">
@@ -31,9 +32,7 @@ export function AccessDenied({ message, showHomeButton = true }: AccessDeniedPro
       </h2>
 
       {/* Message */}
-      <p className="text-slate-500 mb-6 max-w-md mx-auto">
-        {message || defaultMessage}
-      </p>
+      <p className="text-slate-500 mb-6 max-w-md mx-auto">{message || defaultMessage}</p>
 
       {/* Actions */}
       {showHomeButton && (
@@ -45,7 +44,7 @@ export function AccessDenied({ message, showHomeButton = true }: AccessDeniedPro
         </Link>
       )}
     </div>
-  )
+  );
 }
 
 // ============================================================================
@@ -53,10 +52,10 @@ export function AccessDenied({ message, showHomeButton = true }: AccessDeniedPro
 // ============================================================================
 
 interface PermissionGuardProps {
-  children: React.ReactNode
-  hasPermission: boolean
-  loading?: boolean
-  message?: string
+  children: React.ReactNode;
+  hasPermission: boolean;
+  loading?: boolean;
+  message?: string;
 }
 
 export function PermissionGuard({
@@ -70,12 +69,12 @@ export function PermissionGuard({
       <div className="flex items-center justify-center py-20">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
       </div>
-    )
+    );
   }
 
   if (!hasPermission) {
-    return <AccessDenied message={message} />
+    return <AccessDenied message={message} />;
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 }

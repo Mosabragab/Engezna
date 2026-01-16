@@ -11,20 +11,23 @@
 ## Quick Reference
 
 ### Project Links
+
 - **Live URL:** https://engezna.vercel.app
 - **GitHub:** https://github.com/Mosabragab/Engezna
 - **Supabase:** https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr
 
 ### Key Documents
-| Document | Purpose |
-|----------|---------|
-| [README.md](README.md) | Project overview & quick start |
-| [CHANGELOG.md](CHANGELOG.md) | Detailed session history |
-| [PRD.md](PRD.md) | Product requirements |
-| [API.md](API.md) | API endpoints documentation |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
+
+| Document                           | Purpose                        |
+| ---------------------------------- | ------------------------------ |
+| [README.md](README.md)             | Project overview & quick start |
+| [CHANGELOG.md](CHANGELOG.md)       | Detailed session history       |
+| [PRD.md](PRD.md)                   | Product requirements           |
+| [API.md](API.md)                   | API endpoints documentation    |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines        |
 
 ### Latest Session (Session 26)
+
 - ✅ Custom Order System fixes (Triple Broadcast)
 - ✅ Smart back navigation with `?from=custom` parameter
 - ✅ Customer bottom nav badge fix
@@ -35,12 +38,15 @@
 ## Key Architectural Decisions
 
 ### Financial System
+
 **مصدر الحقيقة الواحد - Database is the ONLY source for financial calculations**
+
 - All commission calculations done in database triggers
 - Frontend displays values, never calculates
 - `financial_settlement_engine` view is the single source of truth
 
 ### Custom Orders Integration
+
 - Custom orders (`custom_order_requests`) → Creates `orders` entry on approval
 - Settlement/Analytics/Dashboard only query `orders` table
 - Safe integration: Custom orders don't affect existing financial systems
@@ -51,11 +57,13 @@
 ## 🆕 Session 20 Updates (December 22, 2025)
 
 ### Legal Compliance
+
 - ✅ Privacy Policy page (`/privacy`)
 - ✅ Terms & Conditions page (`/terms`)
 - ✅ Company info: سويفكم للتجارة والتصدير (ذ.م.م)
 
 ### E2E Testing (Playwright)
+
 - ✅ Customer journey tests
 - ✅ PWA offline tests
 - ✅ Multi-browser configuration
@@ -65,14 +73,17 @@
 ## 🆕 Session 19 Updates (December 21, 2025)
 
 ### Dynamic Permissions System
+
 - Unified role system using `admin_roles` table instead of hardcoded enum
 - Added `disputes` resource to permissions for relevant roles
 - Configured default permissions for new roles: regional_manager, orders_moderator, support_agent, analyst, viewer
 
 ### Refunds-Settlements Integration (Critical)
+
 **Problem Fixed:** Partial refunds were zeroing entire commission instead of proportional reduction
 
 **Solution:**
+
 ```sql
 -- Proportional commission reduction formula
 commission_reduction = original_commission * (refund_amount / order_total)
@@ -80,51 +91,59 @@ commission_reduction = original_commission * (refund_amount / order_total)
 ```
 
 **New Components:**
+
 - `settlement_adjustments` table for audit trail
 - `update_settlement_after_refund()` function for retroactive adjustments
 - Updated `generate_provider_settlement()` to exclude adjusted orders
 - Updated `generate_auto_settlements()` to exclude adjusted orders
 
 ### Customer Notification Dropdown
+
 - Hover dropdown on notification bell icon
 - Shows last 5 notifications with type-specific icons
 - Refund confirmation buttons for cash refunds
 - Customer can confirm receipt without navigating to support page
 
 ### Files Modified
-| File | Changes |
-|------|---------|
-| `src/app/[locale]/admin/supervisors/page.tsx` | Dynamic role selection from database |
+
+| File                                                | Changes                                 |
+| --------------------------------------------------- | --------------------------------------- |
+| `src/app/[locale]/admin/supervisors/page.tsx`       | Dynamic role selection from database    |
 | `src/components/customer/layout/CustomerHeader.tsx` | Notification dropdown with confirmation |
 
 ### Migrations Created
-| Migration | Purpose |
-|-----------|---------|
-| `20251221000002_add_disputes_permissions.sql` | Disputes resource permissions |
-| `20251221000003_assign_new_roles_permissions.sql` | Default permissions for new roles |
+
+| Migration                                                | Purpose                            |
+| -------------------------------------------------------- | ---------------------------------- |
+| `20251221000002_add_disputes_permissions.sql`            | Disputes resource permissions      |
+| `20251221000003_assign_new_roles_permissions.sql`        | Default permissions for new roles  |
 | `20251221000004_fix_refunds_settlements_integration.sql` | Critical refunds-settlements fixes |
-| `20251221000005_fix_refund_notification_columns.sql` | Fixed notification column names |
+| `20251221000005_fix_refund_notification_columns.sql`     | Fixed notification column names    |
 
 ---
 
 ## 🆕 Session 18 Updates (December 12, 2025)
 
 ### Guest Location Support
+
 - `useGuestLocation` hook for localStorage-based location storage
 - Guests can browse stores without login
 - Location persists across sessions
 
 ### Customer Welcome Page (`/welcome`)
+
 - First-time visitor landing page
 - Features showcase: Chat to Order, Store Chat, Ratings, 0% Service Fees
 - Dynamic governorates from database
 - PWA install prompt
 
 ### Provider Filtering Fix
+
 - Strict filtering by city/governorate (no fallback)
 - Homepage and providers page show ONLY stores from selected location
 
 ### Files Created/Modified:
+
 - `src/lib/hooks/useGuestLocation.ts` - Guest location storage hook
 - `src/app/[locale]/welcome/page.tsx` - Welcome landing page
 - `src/app/[locale]/page.tsx` - Guest location support + filtering fix
@@ -139,27 +158,32 @@ commission_reduction = original_commission * (refund_amount / order_total)
 ⚠️ **CRITICAL: Use ONLY these colors**
 
 ### Primary Colors
+
 ```css
---primary: 198 100% 44%;          /* #009DE0 Engezna Blue */
---secondary: 0 0% 0%;             /* #000000 Black */
---background: 0 0% 100%;          /* #FFFFFF White */
+--primary: 198 100% 44%; /* #009DE0 Engezna Blue */
+--secondary: 0 0% 0%; /* #000000 Black */
+--background: 0 0% 100%; /* #FFFFFF White */
 ```
 
 ### Semantic Colors
+
 ```css
---deal: 158 100% 38%;             /* #00C27A Green-Cyan (Deals/Success) */
---premium: 42 100% 70%;           /* #FFD166 Soft Gold (Premium/Warning) */
---info: 194 86% 58%;              /* #36C5F0 Sky Blue (Info) */
---error: 358 100% 68%;            /* #FF5A5F Coral Red (Error) */
+--deal: 158 100% 38%; /* #00C27A Green-Cyan (Deals/Success) */
+--premium: 42 100% 70%; /* #FFD166 Soft Gold (Premium/Warning) */
+--info: 194 86% 58%; /* #36C5F0 Sky Blue (Info) */
+--error: 358 100% 68%; /* #FF5A5F Coral Red (Error) */
 ```
 
 ### ❌ OLD COLORS (DO NOT USE)
+
 - ~~Deep Green #06c769~~ ← WRONG
 - ~~Orange #E85D04~~ ← OLD (Changed to Blue)
 - ~~Gold: 43 98% 58%~~ ← WRONG
 
 ### Theme Strategy
+
 **Light-Only Theme** - Dark mode has been removed for:
+
 - Simplified development and testing
 - Consistent brand experience
 - Better performance (fewer CSS variables)
@@ -171,23 +195,26 @@ commission_reduction = original_commission * (refund_amount / order_total)
 ## 🔐 Security & Performance Fixes (Session 17 - December 11, 2025)
 
 ### Phase 1: Security Fixes
-| Fix | File | Description |
-|-----|------|-------------|
-| API Authentication | `src/app/api/chat/route.ts` | Added user authentication check |
-| Route Protection | `src/lib/supabase/middleware.ts` | Enabled protection for admin/provider/checkout |
-| Variant Price Fix | `src/app/[locale]/checkout/page.tsx` | Fixed variant price calculation in orders |
-| Dynamic Commission | `src/app/[locale]/provider/finance/page.tsx` | Commission rate from database per provider |
-| Cart Provider Switch | `src/lib/store/cart.ts` + `providers/[id]/page.tsx` | Confirmation dialog when switching |
+
+| Fix                  | File                                                | Description                                    |
+| -------------------- | --------------------------------------------------- | ---------------------------------------------- |
+| API Authentication   | `src/app/api/chat/route.ts`                         | Added user authentication check                |
+| Route Protection     | `src/lib/supabase/middleware.ts`                    | Enabled protection for admin/provider/checkout |
+| Variant Price Fix    | `src/app/[locale]/checkout/page.tsx`                | Fixed variant price calculation in orders      |
+| Dynamic Commission   | `src/app/[locale]/provider/finance/page.tsx`        | Commission rate from database per provider     |
+| Cart Provider Switch | `src/lib/store/cart.ts` + `providers/[id]/page.tsx` | Confirmation dialog when switching             |
 
 ### Phase 2: Performance Optimization
-| Fix | File | Description |
-|-----|------|-------------|
-| Audio Memory Leaks | `src/hooks/customer/useNotifications.ts` | Shared audio instances at module level |
-| Channel Leaks | `src/app/[locale]/provider/page.tsx` | useRef for channel cleanup |
-| N+1 Queries | `src/app/[locale]/page.tsx` | Single query with client-side filtering |
-| Rate Limiting | `src/lib/auth/actions.ts` + `src/lib/utils/rate-limit.ts` | Protection for auth endpoints |
+
+| Fix                | File                                                      | Description                             |
+| ------------------ | --------------------------------------------------------- | --------------------------------------- |
+| Audio Memory Leaks | `src/hooks/customer/useNotifications.ts`                  | Shared audio instances at module level  |
+| Channel Leaks      | `src/app/[locale]/provider/page.tsx`                      | useRef for channel cleanup              |
+| N+1 Queries        | `src/app/[locale]/page.tsx`                               | Single query with client-side filtering |
+| Rate Limiting      | `src/lib/auth/actions.ts` + `src/lib/utils/rate-limit.ts` | Protection for auth endpoints           |
 
 ### Rate Limiting Configuration
+
 ```typescript
 // Login: 10 attempts / 15 minutes, block for 30 minutes
 LOGIN_LIMIT: { maxAttempts: 10, windowMs: 15*60*1000, blockDurationMs: 30*60*1000 }
@@ -203,14 +230,16 @@ PASSWORD_RESET_LIMIT: { maxAttempts: 3, windowMs: 60*60*1000, blockDurationMs: 6
 ```
 
 ### Phase 3: Critical Bug Fixes
-| Fix | File | Description |
-|-----|------|-------------|
-| Phone Validation | `src/app/[locale]/checkout/page.tsx` | Egyptian format: `01XXXXXXXXX` |
-| Payment Confirmation | `src/app/[locale]/provider/orders/page.tsx` | Confirmation dialog with warning |
-| Error Handling | `src/app/[locale]/orders/[id]/page.tsx` | In-modal error display for cancellation |
-| Realtime Retry | `src/app/[locale]/orders/[id]/page.tsx` | Exponential backoff (2s, 4s, 8s) |
+
+| Fix                  | File                                        | Description                             |
+| -------------------- | ------------------------------------------- | --------------------------------------- |
+| Phone Validation     | `src/app/[locale]/checkout/page.tsx`        | Egyptian format: `01XXXXXXXXX`          |
+| Payment Confirmation | `src/app/[locale]/provider/orders/page.tsx` | Confirmation dialog with warning        |
+| Error Handling       | `src/app/[locale]/orders/[id]/page.tsx`     | In-modal error display for cancellation |
+| Realtime Retry       | `src/app/[locale]/orders/[id]/page.tsx`     | Exponential backoff (2s, 4s, 8s)        |
 
 ### Testing Checklist
+
 ```
 □ Phone Validation: /checkout - Try invalid phones (0501234567)
 □ Provider Switch: /providers/[id] - Add item, switch restaurant
@@ -221,16 +250,18 @@ PASSWORD_RESET_LIMIT: { maxAttempts: 3, windowMs: 60*60*1000, blockDurationMs: 6
 ```
 
 ### Phase 4: Admin Panel Optimization
-| Fix | File | Description |
-|-----|------|-------------|
+
+| Fix                   | File                                        | Description                         |
+| --------------------- | ------------------------------------------- | ----------------------------------- |
 | N+1 Query (Approvals) | `src/app/[locale]/admin/approvals/page.tsx` | Batch fetch users (80+ → 3 queries) |
-| N+1 Query (Orders) | `src/app/[locale]/admin/approvals/page.tsx` | Join for customer names |
-| Error Handling | `src/app/[locale]/admin/approvals/page.tsx` | User-facing alerts for failures |
-| Input Validation | `src/app/[locale]/admin/approvals/page.tsx` | Commission rate (0-100%) validation |
-| Badge Counts | `src/app/[locale]/admin/layout.tsx` | Error handling for sidebar badges |
-| Dashboard Errors | `src/app/[locale]/admin/page.tsx` | Error display with retry button |
+| N+1 Query (Orders)    | `src/app/[locale]/admin/approvals/page.tsx` | Join for customer names             |
+| Error Handling        | `src/app/[locale]/admin/approvals/page.tsx` | User-facing alerts for failures     |
+| Input Validation      | `src/app/[locale]/admin/approvals/page.tsx` | Commission rate (0-100%) validation |
+| Badge Counts          | `src/app/[locale]/admin/layout.tsx`         | Error handling for sidebar badges   |
+| Dashboard Errors      | `src/app/[locale]/admin/page.tsx`           | Error display with retry button     |
 
 ### Admin Performance Improvement
+
 ```
 Before: 80+ database queries for 20 approvals
 After:  3 queries total
@@ -243,6 +274,7 @@ Technique:
 ```
 
 ### Admin Testing Checklist
+
 ```
 □ Approvals: /admin/approvals - Load page (should be fast now)
 □ Create Request: /admin/approvals - Create commission change request
@@ -253,6 +285,7 @@ Technique:
 ---
 
 ## 🎯 Project Overview
+
 - **Name:** Engezna (إنجزنا) - "Let's get it done and order!"
 - **Launch:** February 21, 2026 (3 months)
 - **Business Model:** 5-7% commission (vs competitors' 15-20%)
@@ -267,6 +300,7 @@ Technique:
 ## ✅ What's Working NOW
 
 ### Complete Customer Flow (End-to-End!)
+
 1. ✅ Visit `/ar/providers` or `/en/providers`
 2. ✅ Browse all 4 providers with category filtering
 3. ✅ Click any provider to see their menu
@@ -288,6 +322,7 @@ Technique:
 19. ✅ **Real-time Notifications** - With polling fallback for reliability
 
 ### Partner Registration Flow (✅)
+
 1. ✅ Visit `/ar/partner/register` or `/en/partner/register`
 2. ✅ Step 1: Personal info (name, email, phone, password)
 3. ✅ Step 2: Business type dropdown + Role dropdown
@@ -299,6 +334,7 @@ Technique:
 9. ✅ Submit for review → status "pending_approval"
 
 ### Provider Orders Management (✅)
+
 1. ✅ Visit `/ar/provider/orders` or `/en/provider/orders`
 2. ✅ View all orders with stats (new/in-progress/completed/total)
 3. ✅ Filter tabs: All, New, In Progress, Completed, Cancelled
@@ -313,6 +349,7 @@ Technique:
 12. ✅ **Real-time Notifications** - Order updates, new messages
 
 ### Menu Management System (✅)
+
 1. ✅ Visit `/ar/provider/products` or `/en/provider/products`
 2. ✅ View all products with stats (total/available/unavailable)
 3. ✅ Filter tabs: All, Available, Unavailable
@@ -327,6 +364,7 @@ Technique:
 12. ✅ Image upload to Supabase Storage
 
 ### Excel Menu Import (NEW! ✅)
+
 1. ✅ Visit `/ar/provider/menu-import` or `/en/provider/menu-import`
 2. ✅ Upload Excel file (.xlsx, .xls)
 3. ✅ Preview parsed products before import
@@ -337,6 +375,7 @@ Technique:
 8. ✅ Guide: `/docs/EXCEL_IMPORT_GUIDE.md`
 
 ### Product Variants System (NEW! ✅)
+
 1. ✅ **VariantSelectionModal** - Customer selects size/weight
 2. ✅ **ProductDetailModal** - Full product view with variants
 3. ✅ **Database Table**: `product_variants`
@@ -344,6 +383,7 @@ Technique:
 5. ✅ Customers can select variant and quantity before adding to cart
 
 ### Store Hours Management (✅)
+
 1. ✅ Visit `/ar/provider/store-hours` or `/en/provider/store-hours`
 2. ✅ Weekly schedule with all 7 days
 3. ✅ Toggle each day open/closed
@@ -355,6 +395,7 @@ Technique:
 9. ✅ Link from provider dashboard
 
 ### Provider Settings (✅)
+
 1. ✅ Visit `/ar/provider/settings` or `/en/provider/settings`
 2. ✅ Tabbed interface: Store Info, Delivery, Status
 3. ✅ Store Info: Edit name (AR/EN), phone, governorate/city, address, logo
@@ -364,6 +405,7 @@ Technique:
 7. ✅ Link from provider dashboard
 
 ### Promotions Management (✅)
+
 1. ✅ Visit `/ar/provider/promotions` or `/en/provider/promotions`
 2. ✅ Stats: active, upcoming, expired, total promotions
 3. ✅ Filter tabs: All, Active, Upcoming, Expired
@@ -373,6 +415,7 @@ Technique:
 7. ✅ Link from provider dashboard
 
 ### Reports & Analytics (✅)
+
 1. ✅ Visit `/ar/provider/reports` or `/en/provider/reports`
 2. ✅ Revenue overview: Today, This Week, This Month, Last Month
 3. ✅ Growth percentage compared to last month
@@ -383,6 +426,7 @@ Technique:
 8. ✅ Link from provider dashboard
 
 ### Finance & Payments (✅)
+
 1. ✅ Visit `/ar/provider/finance` or `/en/provider/finance`
 2. ✅ Total earnings and pending payout cards
 3. ✅ Commission breakdown (up to 7% platform fee, 0% for first 6 months)
@@ -393,12 +437,15 @@ Technique:
 8. ✅ Link from provider dashboard
 
 ### Settlements System (NEW! ✅)
+
 **Smart COD vs Online Payment Handling:**
+
 - **COD (الدفع عند الاستلام)**: Provider collects cash → Owes commission to Engezna
 - **Online Payments**: Engezna collects payment → Owes payout to provider
 - **Net Balance**: Calculates who owes whom based on both payment types
 
 #### Admin Settlements (`/admin/settlements`)
+
 1. ✅ Stats overview: Pending dues, Overdue dues, Total paid
 2. ✅ Settlement generation with period selector (daily, every 3 days, weekly)
 3. ✅ Custom settlement creation for specific provider and date range
@@ -415,6 +462,7 @@ Technique:
 12. ✅ Up to 7% platform commission rate (0% for first 6 months grace period)
 
 #### Admin Settlement Detail (`/admin/settlements/[id]`)
+
 1. ✅ Provider info with phone and period
 2. ✅ Orders summary (total, COD count, online count)
 3. ✅ **COD Section** (orange): Revenue, Engezna commission due
@@ -424,6 +472,7 @@ Technique:
 7. ✅ Confirm payment / Mark failed actions
 
 #### Provider Settlements (`/provider/settlements`)
+
 1. ✅ Stats overview: Total due, Total paid, Pending count, Overdue count
 2. ✅ Settlement history list with expandable details
 3. ✅ Settlement card showing period, orders, gross revenue, commission, net payout
@@ -432,6 +481,7 @@ Technique:
 6. ✅ Full bilingual support (AR/EN)
 
 ### Provider Profile (NEW! ✅)
+
 1. ✅ Visit `/ar/provider/profile` or `/en/provider/profile`
 2. ✅ Account info display (email, avatar)
 3. ✅ Language switcher (Arabic/English) with locale redirect
@@ -441,22 +491,26 @@ Technique:
 7. ✅ Theme-aware styling (responds to dark/light mode)
 
 ### Product Categories (NEW! ✅)
+
 1. ✅ Add category dropdown when creating/editing products
 2. ✅ Create new categories inline with Arabic/English names
 3. ✅ Categories are provider-specific
 4. ✅ Database table: `product_categories`
 
 ### Enhanced Promotions (NEW! ✅)
+
 1. ✅ "Applies To" toggle: All Products or Specific Products
 2. ✅ Multi-select checkbox list for choosing specific products
 3. ✅ Display selected product count in promotion cards
 4. ✅ Validation requires at least one product when specific is chosen
 
 ### Auto-Refresh Orders (NEW! ✅)
+
 1. ✅ Orders page auto-refreshes every 60 seconds
 2. ✅ Last refresh timestamp display
 
 ### Admin Invitation System (NEW! ✅)
+
 1. ✅ Visit `/ar/admin/supervisors/invite` or `/en/admin/supervisors/invite`
 2. ✅ Create invitation with email, role, and permissions
 3. ✅ Pre-configure assigned regions
@@ -471,6 +525,7 @@ Technique:
 12. ✅ Checks admin role and active status before login
 
 ### Business Categories Supported
+
 - 🍔 Restaurant (مطعم)
 - ☕ Cafe (كافيه)
 - 🛒 Supermarket (سوبر ماركت)
@@ -479,6 +534,7 @@ Technique:
 - 🥬 Vegetables & Fruits (خضروات وفواكه)
 
 ### Live Data
+
 - ✅ 4 Providers with 30 menu items total:
   - Lavender Cafe (Coffee - 8 items)
   - Al Safa Restaurant (Restaurant - 8 items)
@@ -500,6 +556,7 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 ```
 
 ### Week 0: Foundation (100% ✅)
+
 - [x] Next.js 16 + TypeScript + Tailwind setup
 - [x] Supabase connection
 - [x] Light-only theme + RTL support
@@ -508,6 +565,7 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 - [x] Deployed to production
 
 ### Week 1: Core Features (100% ✅)
+
 - [x] Provider browsing page `/providers`
 - [x] Provider detail page `/providers/[id]`
 - [x] Menu display system
@@ -516,6 +574,7 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 - [x] Seed data (4 providers, 30 items)
 
 ### Week 2: Auth + Checkout + Settings (100% ✅)
+
 - [x] User authentication (email/password + OTP)
 - [x] Protected routes and session management
 - [x] Checkout flow with address input
@@ -534,6 +593,7 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 - [x] Governorate/city selection ✅
 
 ### Week 3: Partner Dashboard (100% ✅)
+
 - [x] Partner registration page `/partner/register` ✅
 - [x] Multi-step registration (personal info + business type) ✅
 - [x] Business category dropdown (6 types) ✅
@@ -562,6 +622,7 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 - [ ] Real-time order notifications
 
 ### Week 4: Admin Dashboard + Supervisor System (100% ✅)
+
 - [x] Unified AdminHeader component ✅
   - [x] Language switcher integration ✅
   - [x] Notifications dropdown ✅
@@ -612,6 +673,7 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
   - [x] Copy invitation link functionality ✅
 
 ### Week 5: Customer Features + Settlements (100% ✅)
+
 - [x] Order cancellation for customers ✅
 - [x] Reviews & Ratings system ✅
 - [x] Favorites feature ✅
@@ -624,6 +686,7 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 - [x] Product Variants system ✅
 
 ### Week 6: Resolution Center + Refunds Integration (100% ✅)
+
 - [x] Unified permission system using dynamic roles ✅
 - [x] Disputes resource added to permissions ✅
 - [x] Default permissions for new roles ✅
@@ -640,6 +703,7 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 ## ⚠️ What's NOT Working Yet
 
 ### Admin Panel (Backend Integration - Phase 0 Complete ✅)
+
 - ✅ **Provider management backend** - Approve, reject, suspend, reactivate providers
 - ✅ **User management backend** - Ban, unban, change role with audit logging
 - ✅ **Provider detail page** - Full view with stats and action controls
@@ -647,20 +711,24 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 - ✅ **Settlements system** - Admin and provider settlements pages complete (Session 15)
 
 ### Storage (Complete ✅)
+
 - ✅ Supabase Storage bucket - Configured and working (Dec 1, 2025)
 - ✅ Logo and product image uploads - Functional
 
 ### Payment Integration
+
 - ✅ Online payment (Kashier) - Integrated, pending account activation
 - ✅ Card payments - Available through Kashier
 - ❌ Vodafone Cash - NOT available
 
 ### Notifications
+
 - ✅ Real-time notifications (Supabase Realtime) - Live updates for customers and providers ✅ (Session 12)
 - ❌ SMS notifications - No Twilio/SMS provider integration
 - ⏸️ Email notifications - **مؤجل** (يتطلب خدمة بريد خارجية مثل Resend/SendGrid + API Keys)
 
 ### Customer Features Missing
+
 - ✅ Order cancellation - Customers can cancel pending/confirmed/accepted orders ✅ (Session 12)
 - ✅ Reviews/Ratings - Customers can rate providers and leave reviews ✅ (Session 12)
 - ✅ Favorite restaurants - Favorites feature working ✅ (Session 12)
@@ -668,11 +736,13 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 - ❌ Scheduled orders - Cannot order for later
 
 ### Provider Features Missing
+
 - ✅ Real-time order notifications - Supabase Realtime subscription ✅ (Session 12)
 - ❌ Multi-user support - No staff accounts for providers
 - ❌ Inventory management - No stock tracking
 
 ### Other Missing Features
+
 - ❌ Google Maps integration - No map display or geocoding
 - ❌ Search functionality - No full-text search across providers
 - ✅ **In-App Chat** - Order-based messaging between customer and provider (Session 15 Evening)
@@ -697,6 +767,7 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 ## 🎯 Next Steps (Week 6+)
 
 ### ✅ Completed (Week 5)
+
 1. [x] **Admin Backend Integration Phase 0** - Providers, users connected ✅
 2. [x] **Supabase Storage** - Bucket configured, uploads working ✅
 3. [x] **UI/UX Improvements** - Auth pages, Footer, Partner page, Logo unification ✅
@@ -708,20 +779,24 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 9. [x] **Promo Codes** - Full promo system in checkout ✅ (Session 12)
 
 ### High Priority (Current)
+
 10. [x] **Payment Integration (Kashier)** - Online payment support ✅ (pending account activation)
 11. [ ] **Advanced Analytics** - Time-series charts, performance metrics
 
 ### Medium Priority (Completed ✅)
+
 7. [x] Customer reviews and ratings system ✅ (Session 12)
 8. [x] Order cancellation flow for customers ✅ (Session 12)
 9. [x] Favorites/wishlist feature ✅ (Session 12)
 
 ### Current Priority
+
 10. [ ] Real-time notifications (Supabase Realtime)
 11. [ ] Email transactional notifications
 12. [ ] Promo codes system
 
 ### Lower Priority
+
 13. [ ] Support/Help page `/provider/support`
 14. [ ] Google Maps integration
 
@@ -732,6 +807,7 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 ### Work Session Dec 10, 2025 (Session 16) - Excel Import & Product Variants ✅
 
 #### Excel Menu Import System
+
 - ✅ **Import Page**: `/provider/menu-import` - Bulk import products from Excel
 - ✅ **4 Pricing Types**: fixed, per_unit, variants, weight_variants
 - ✅ **Variants Format**: `نصف كيلو:480|ربع كيلو:250` (name:price|name:price)
@@ -739,23 +815,28 @@ Week 6 ████████████ 100% ✅ Resolution Center + Refunds
 - ✅ Successfully imported: 30 categories, 156 products, 203 variants
 
 #### Product Variants System
+
 - ✅ **Database Table**: `product_variants` with variant_type, name, price, is_default
 - ✅ **VariantSelectionModal**: For selecting sizes/weights
 - ✅ **ProductDetailModal**: Full product view with variants
 
 #### Provider Categories
+
 - ✅ **Database Table**: `provider_categories` per provider
 - ✅ Categories display on provider products page
 - ✅ Category filter tabs on customer provider page
 
 #### UI Fixes
+
 - ✅ **Modal z-index**: Increased from z-50 to z-[60] to appear above navigation
 - ✅ **Add to Cart button**: Fixed visibility on mobile (was behind bottom nav)
 - ✅ **Click-outside-to-close**: Added to modals
 - ✅ **Products disappearing fix**: Changed from JOIN query to separate queries
 
 #### Key Lesson Learned
+
 **AVOID Supabase `!foreign_key` syntax for nullable relations!**
+
 ```typescript
 // BAD - Creates INNER JOIN, excludes NULL category_id
 .select(`*, category:provider_categories!category_id (...)`)
@@ -770,21 +851,25 @@ const categories = await supabase.from('provider_categories').select('*')
 ### Work Session Dec 7, 2025 (Session 15 Evening) - In-App Chat & Messaging ✅
 
 #### Provider Notifications System
+
 - ✅ Created `provider_notifications` table with triggers for order events
 - ✅ Added RLS policies for notifications persistence (DELETE, UPDATE)
 - ✅ Enabled realtime publication for `customer_notifications` and `provider_notifications` tables
 
 #### Customer Notifications Enhancement
+
 - ✅ Store name display in customer notifications
 - ✅ Polling fallback (10-second interval) for realtime reliability
 - ✅ Notification badge stabilization (removed animate-pulse flashing)
 
 #### Chat Message System
+
 - ✅ **RTL alignment fix**: Own messages appear on RIGHT, received messages on LEFT
 - ✅ **Message read status indicators**: ✓ (sent), ✓✓ (read)
 - ✅ **Locale-aware alignment**: Different justify classes for AR vs EN
 
 #### Files Modified:
+
 - `supabase/migrations/20251207000006_fix_notification_rls_policies.sql` - Realtime publication
 - `src/components/shared/OrderChat.tsx` - RTL message alignment fix
 - `src/hooks/customer/useNotifications.ts` - Polling fallback
@@ -794,6 +879,7 @@ const categories = await supabase.from('provider_categories').select('*')
 ### Work Session Dec 7, 2025 (Session 15 Part 4) - Smart Settlements (COD vs Online) ✅
 
 #### Smart Payment-Aware Settlements
+
 - ✅ **COD vs Online Payment Logic**:
   - COD orders: Provider collects cash → Owes up to 7% commission to Engezna
   - Online orders: Engezna collects payment → Owes 93%+ payout to provider
@@ -825,9 +911,11 @@ const categories = await supabase.from('provider_categories').select('*')
   - Orders table with payment method column (نقدي/إلكتروني)
 
 #### Files Created:
+
 - `supabase/migrations/20251207000003_settlements_cod_online_breakdown.sql`
 
 #### Files Modified:
+
 - `src/app/[locale]/admin/settlements/page.tsx` - COD/Online generation logic, UI updates
 - `src/app/[locale]/admin/settlements/[id]/page.tsx` - Full breakdown display
 
@@ -836,6 +924,7 @@ const categories = await supabase.from('provider_categories').select('*')
 ### Work Session Dec 7, 2025 (Session 15 Part 3) - Settlements System ✅
 
 #### Settlements Management System
+
 - ✅ **Admin Settlements Page** (`/admin/settlements` - NEW):
   - Stats cards: Pending dues, Overdue dues, Total paid
   - Period selector: Daily, Every 3 days, Weekly
@@ -866,11 +955,13 @@ const categories = await supabase.from('provider_categories').select('*')
   - orders_included (array), notes, processed_by, approved_at, rejected_at, rejection_reason
 
 #### Files Created:
+
 - `src/app/[locale]/admin/settlements/page.tsx` (~850 lines)
 - `src/app/[locale]/provider/settlements/page.tsx` (~420 lines)
 - `supabase/migrations/20251207000002_settlements_system.sql`
 
 #### Files Modified:
+
 - `src/components/admin/AdminSidebar.tsx` - Added Settlements menu item
 - `src/components/provider/ProviderSidebar.tsx` - Added Settlements menu item
 
@@ -879,6 +970,7 @@ const categories = await supabase.from('provider_categories').select('*')
 ### Work Session Dec 5, 2025 (Session 12) - Complete Feature Set ✅
 
 #### Part 1: Order Cancellation Feature
+
 - ✅ **Order Cancellation for Customers**:
   - Added cancellation button on order tracking page for cancellable orders
   - Cancellation allowed for statuses: `pending`, `confirmed`, `accepted`
@@ -887,6 +979,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Order status timeline shows cancellation status
 
 #### Part 2: Reviews & Ratings System (Complete)
+
 - ✅ **Customer Review Submission** (`/orders/[id]/page.tsx`):
   - Added Review type with full schema
   - Added review state variables (showReviewModal, reviewRating, reviewComment, existingReview)
@@ -918,20 +1011,24 @@ const categories = await supabase.from('provider_categories').select('*')
   - Added Reviews menu item linking to `/provider/reviews`
 
 #### Files Created:
+
 - `src/app/[locale]/provider/reviews/page.tsx` (NEW - Provider reviews management)
 
 #### Files Modified:
+
 - `src/app/[locale]/orders/[id]/page.tsx` (Customer review submission + order cancellation)
 - `src/app/[locale]/providers/[id]/page.tsx` (Reviews display on provider detail page)
 - `src/components/provider/ProviderSidebar.tsx` (Reviews menu item)
 
 #### Database Tables Used:
+
 - `reviews` table with columns:
   - `id`, `order_id`, `customer_id`, `provider_id`
   - `rating` (1-5), `comment`, `provider_response`, `provider_response_at`
   - `created_at`, `updated_at`
 
 #### Part 3: Real-time Notifications (Supabase Realtime)
+
 - ✅ **useNotifications Hook** (`src/hooks/customer/useNotifications.ts`):
   - Subscribes to notifications table via Supabase Realtime
   - Real-time INSERT, UPDATE, DELETE listeners
@@ -957,6 +1054,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Real-time updates without manual refresh
 
 #### Part 4: Promo Codes System
+
 - ✅ **Promo Code Validation** (checkout page):
   - Code validity checks (active, date range)
   - Minimum order amount validation
@@ -977,6 +1075,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Usage count incremented
 
 #### Additional Files Modified (Parts 3-4):
+
 - `src/hooks/customer/useNotifications.ts` (NEW)
 - `src/hooks/customer/index.ts`
 - `src/components/customer/layout/CustomerHeader.tsx`
@@ -990,6 +1089,7 @@ const categories = await supabase.from('provider_categories').select('*')
 ### Work Session Dec 4, 2025 (Session 11) - Auth, Footer, Partner & Logo Updates ✅
 
 #### Part 1: Auth System Enhancements
+
 - ✅ **Reset Password Page** (NEW):
   - Created `src/app/[locale]/auth/reset-password/page.tsx`
   - Full form with password validation and confirmation
@@ -1004,6 +1104,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Updated partner register to link to provider login
 
 #### Part 2: Footer & Partner Landing Page
+
 - ✅ **Footer Component** (NEW):
   - Created `src/components/shared/Footer.tsx`
   - 4-column layout: Brand | Customers | Partners | Contact
@@ -1020,6 +1121,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Footer hidden on mobile when bottom nav shown
 
 #### Part 3: Logo Brand Consistency (EngeznaLogo Unification)
+
 - ✅ **Customer Pages**:
   - `CustomerHeader.tsx`: Changed logo size from `sm` to `md`
 - ✅ **Provider Pages**:
@@ -1046,12 +1148,14 @@ const categories = await supabase.from('provider_categories').select('*')
   | Admin Sidebar | `md` | static |
 
 #### Files Created (NEW):
+
 - `src/app/[locale]/auth/reset-password/page.tsx`
 - `src/app/[locale]/provider/login/page.tsx`
 - `src/components/shared/Footer.tsx`
 - `src/app/[locale]/partner/page.tsx`
 
 #### Files Modified:
+
 - `src/app/[locale]/auth/login/page.tsx` (removed debug logs, added logo)
 - `src/app/[locale]/auth/signup/page.tsx` (added logo + back link)
 - `src/app/[locale]/auth/forgot-password/page.tsx` (added logo + back link)
@@ -1070,6 +1174,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - `src/i18n/messages/en.json` (footer, partner, resetPassword translations)
 
 ### Work Session Dec 3, 2025 (Session 10) - Analytics Geographic Filtering Fix ✅
+
 - ✅ **Fixed Admin Analytics Geographic Filtering**:
   - **Root Cause**: When selecting a governorate in admin analytics, page showed zeros because:
     1. Main analytics filtered orders only by provider's geographic location (IDs)
@@ -1089,6 +1194,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - `src/app/[locale]/admin/analytics/regions/page.tsx` - Name-based fallback matching
 
 ### Work Session Dec 3, 2025 (Session 9) - Admin Dashboard Zeros Fix ✅
+
 - ✅ **Fixed Provider Status Values Across Admin Module**:
   - Updated `src/lib/admin/types.ts`:
     - Changed `ProviderStatus` type from `pending_review`/`pending_documents` to correct values
@@ -1119,6 +1225,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - `src/app/[locale]/admin/providers/[id]/page.tsx`
 
 ### Work Session Dec 3, 2025 (Session 8) - Admin Backend Integration Phase 0 ✅
+
 - ✅ **Admin Module TypeScript Types** (`src/lib/admin/types.ts`):
   - Provider, User, Order types with full status enums
   - Dashboard stats interface with providers, users, orders, finance
@@ -1171,6 +1278,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - All actions now logged to audit trail
 
 ### Work Session Dec 3, 2025 (Session 7) - Animated Logo & Documentation ✅
+
 - ✅ **Animated Engezna Logo**:
   - Created `EngeznaLogo.tsx` component with RTL reveal animation
   - Uses Aref Ruqaa Google Font for Arabic calligraphy style
@@ -1203,6 +1311,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - `branding/VISUAL_ASSETS_GUIDE.md` (Updated v2.0)
 
 ### Work Session Dec 2, 2025 (Session 6) - UI Consistency & Offers Carousel ✅
+
 - ✅ **Unified Customer Pages with CustomerLayout**:
   - Converted all settings pages to use `CustomerLayout` for consistent UI
   - Pages updated: account, addresses, email, password, language, governorate
@@ -1232,6 +1341,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - `src/i18n/messages/en.json` - Added orders translation
 
 ### Work Session Dec 2, 2025 (Session 5) - City-Based Filtering & UI Fixes ✅
+
 - ✅ **City-Based Provider Filtering**:
   - Providers shown to customers are now filtered by their selected city
   - Added `userCityId` state to home page and providers page
@@ -1270,6 +1380,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - `src/app/[locale]/profile/addresses/page.tsx` - hideAuth applied
 
 ### Work Session Dec 1, 2025 (Session 4) - TypeScript Fixes & Homepage Updates ✅
+
 - ✅ **TypeScript Type Fixes**:
   - Fixed `demoOffers` field names to match `OffersCarousel` Offer interface
     - `title` → `title_ar`, `titleEn` → `title_en`
@@ -1295,6 +1406,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - `src/app/[locale]/cart/page.tsx` - Fixed disabled prop type
 
 ### Work Session Dec 1, 2025 (Session 3) - Customer Journey + PWA Components ✅
+
 - ✅ **PWA Foundation**:
   - Created `manifest.json` with Engezna branding (Arabic RTL, theme color #009DE0)
   - Updated `layout.tsx` with PWA metadata
@@ -1336,6 +1448,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Fixed inputClassName prop error in HeroSection (removed invalid prop)
 
 ### Work Session Dec 1, 2025 (Session 2) - Advanced Permissions & Storage Bucket ✅
+
 - ✅ **Supabase Storage Bucket Setup**:
   - Created `public` storage bucket for images
   - Configured file size limit (2MB) and allowed MIME types
@@ -1357,6 +1470,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Marked Storage Bucket as complete in PRD.md
 
 ### Work Session Dec 1, 2025 (Session 1) - Roles Page Fixes & Documentation Sync ✅
+
 - ✅ **Roles Page Permissions Display Fix**:
   - Fixed permissions not showing in view modal
   - Added loading state for permission fetching
@@ -1372,6 +1486,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Updated version to 18.2
 
 ### Work Session Nov 30, 2025 - Admin Invitation System ✅
+
 - ✅ **Admin Invitations Database Schema**:
   - Created `admin_invitations` table with full schema
   - Invitation status enum: pending, accepted, expired, cancelled, revoked
@@ -1403,6 +1518,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Links to new invitation page
 
 ### Work Session Nov 29, 2025 - Admin Dashboard + Supervisor System (Week 4) ✅
+
 - ✅ **Unified Admin Components**:
   - AdminHeader with language switcher, notifications, user menu
   - AdminSidebar with collapsible navigation
@@ -1450,6 +1566,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Updated claude.md with Week 4 progress
 
 ### Work Session Nov 28, 2025 - Provider Dashboard Performance Optimization ✅
+
 - ✅ **Orders Page Optimization**: Combined order items query with orders query using JOIN
   - Reduced database calls from N+1 to 1 single query
   - Faster order loading with embedded items
@@ -1467,6 +1584,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - Error handling in place
 
 ### Work Session Nov 27, 2025 - Brand Identity Refresh & Navigation Standards ✅
+
 - ✅ **Brand Color Update**: Changed from Orange (#E85D04) to Engezna Blue (#009DE0)
 - ✅ **Light-Only Theme**: Removed dark mode for simplified development and consistent brand
 - ✅ **New Navigation Bars**: Implemented new customer and provider navigation
@@ -1480,14 +1598,16 @@ const categories = await supabase.from('provider_categories').select('*')
   - Updated README.md, PRD.md, claude.md with new brand info
 
 ### Lessons Learned (Brand Refresh)
-| Problem | Root Cause | Solution |
-|---------|------------|----------|
-| Dropdown closes on hover | CSS gap between trigger and menu | Use `mt-0` and `top-full` |
-| Ghost buttons invisible | No hover background defined | Add `hover:bg-muted` |
-| RTL arrows wrong direction | Hardcoded arrow icons | Check `isRTL` and swap icons |
-| Dark mode complexity | Two themes to maintain | Simplified to light-only |
+
+| Problem                    | Root Cause                       | Solution                     |
+| -------------------------- | -------------------------------- | ---------------------------- |
+| Dropdown closes on hover   | CSS gap between trigger and menu | Use `mt-0` and `top-full`    |
+| Ghost buttons invisible    | No hover background defined      | Add `hover:bg-muted`         |
+| RTL arrows wrong direction | Hardcoded arrow icons            | Check `isRTL` and swap icons |
+| Dark mode complexity       | Two themes to maintain           | Simplified to light-only     |
 
 ### Work Session Nov 27, 2025 - Provider Enhancements ✅
+
 - ✅ **Provider Profile Page**: Created `/provider/profile` with comprehensive settings
   - Account info display with email/avatar
   - Language switcher (Arabic/English) with locale redirect
@@ -1505,6 +1625,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Fixed .single() queries**: Changed to .limit(1) across all provider pages
 
 ### Work Session Nov 26, 2025 - Finance & Payments ✅
+
 - ✅ **Finance Page**: Created `/provider/finance` with comprehensive financial dashboard
   - Total earnings card with all-time earnings
   - Pending payout card showing next payment
@@ -1518,6 +1639,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Code Metrics**: ~450 lines in new page
 
 ### Work Session Nov 26, 2025 - Reports & Analytics ✅
+
 - ✅ **Reports Page**: Created `/provider/reports` with comprehensive analytics
   - Revenue cards: Today, This Week, This Month, Last Month with growth %
   - Order stats: Total, Completed, Customers, Avg Order Value
@@ -1529,6 +1651,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Code Metrics**: ~450 lines in new page
 
 ### Work Session Nov 26, 2025 - Promotions Management ✅
+
 - ✅ **Promotions Page**: Created `/provider/promotions` with full promotion management
   - Stats row: active, upcoming, expired, total
   - Filter tabs: All, Active, Upcoming, Expired
@@ -1542,6 +1665,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Code Metrics**: ~700 lines in new page
 
 ### Work Session Nov 26, 2025 - Provider Settings Page ✅
+
 - ✅ **Provider Settings Page**: Created `/provider/settings` with tabbed interface
   - Store Info tab: Edit name (AR/EN), phone, governorate/city, address, logo
   - Delivery tab: Edit delivery fee, time, minimum order, radius
@@ -1552,6 +1676,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Code Metrics**: ~600 lines in new page
 
 ### Work Session Nov 26, 2025 - Store Hours Management ✅
+
 - ✅ **Store Hours Page**: Created `/provider/store-hours` with full weekly schedule management
   - Weekly schedule for all 7 days (Saturday-Friday)
   - Toggle each day open/closed
@@ -1565,6 +1690,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Code Metrics**: ~300 lines in new page
 
 ### Work Session Nov 26, 2025 - Menu Management System ✅
+
 - ✅ **Products List Page**: Created `/provider/products` with full product management
   - Stats row: total products, available, unavailable
   - Filter tabs: All, Available, Unavailable
@@ -1587,6 +1713,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Code Metrics**: ~1200 lines across 3 new pages
 
 ### Work Session Nov 26, 2025 - Provider Orders Management ✅
+
 - ✅ **Provider Orders Page**: Created `/provider/orders` with full order management
   - Stats row: new orders, in progress, completed, total
   - Filter tabs: All, New, In Progress, Completed, Cancelled
@@ -1606,6 +1733,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Code Metrics**: ~900 lines across 2 new pages
 
 ### Work Session Nov 26, 2025 - Partner Registration System ✅
+
 - ✅ **Partner Registration Page**: Created `/partner/register` with multi-step flow
   - Step 1: Personal info (name, email, phone, password)
   - Step 2: Business category + Partner role dropdowns
@@ -1629,11 +1757,13 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Code Metrics**: ~800 lines across 2 new pages + dashboard updates
 
 ### Work Session Nov 26, 2025 - Address Form Fix ✅
+
 - ✅ **District Dropdown Fix**: Fixed `loadDistricts` function
 - ✅ **Cascade Logic**: Districts cascade from City via `city_id`
 - ✅ **Address Form Complete**: Governorate → City → District working
 
 ### Work Session Nov 25, 2025 - Settings System ✅
+
 - ✅ **Multi-Page Settings System**: 7 dedicated pages
 - ✅ **Database Migration**: Added governorate_id and city_id to profiles
 
@@ -1654,21 +1784,25 @@ const categories = await supabase.from('provider_categories').select('*')
 ## 📁 Important Files
 
 ### Core Files
+
 - `claude.md` - This file (project guide)
 - `PRD.md` - Full requirements
 - `src/app/globals.css` - Brand colors
 - `package.json` - Dependencies (Tailwind v3)
 
 ### Partner Registration
+
 - `src/app/[locale]/partner/register/page.tsx` - Partner signup
 - `src/app/[locale]/provider/complete-profile/page.tsx` - Complete business info
 - `src/app/[locale]/provider/page.tsx` - Status-aware dashboard
 
 ### Provider Orders Management
+
 - `src/app/[locale]/provider/orders/page.tsx` - Orders list with filters & actions
 - `src/app/[locale]/provider/orders/[id]/page.tsx` - Order detail with status updates
 
 ### Menu Management System
+
 - `src/app/[locale]/provider/products/page.tsx` - Products list with search & filters
 - `src/app/[locale]/provider/products/new/page.tsx` - Add new product form
 - `src/app/[locale]/provider/products/[id]/page.tsx` - Edit product form
@@ -1676,24 +1810,31 @@ const categories = await supabase.from('provider_categories').select('*')
 - `src/i18n/messages/en.json` - English translations (providerProducts namespace)
 
 ### Store Hours Management
+
 - `src/app/[locale]/provider/store-hours/page.tsx` - Weekly schedule management
 
 ### Provider Settings
+
 - `src/app/[locale]/provider/settings/page.tsx` - Store info, delivery, and status settings
 
 ### Promotions Management
+
 - `src/app/[locale]/provider/promotions/page.tsx` - Promotions CRUD with types and scheduling
 
 ### Reports & Analytics
+
 - `src/app/[locale]/provider/reports/page.tsx` - Revenue, orders, and performance analytics
 
 ### Finance & Payments
+
 - `src/app/[locale]/provider/finance/page.tsx` - Earnings, payouts, and transaction history
 
 ### Provider Profile (NEW)
+
 - `src/app/[locale]/provider/profile/page.tsx` - Profile, language, theme, password
 
 ### Admin Dashboard (Week 4)
+
 - `src/components/admin/AdminHeader.tsx` - Unified admin header with language switcher
 - `src/components/admin/AdminSidebar.tsx` - Collapsible admin navigation
 - `src/components/admin/index.ts` - Admin component exports
@@ -1705,6 +1846,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - `src/app/[locale]/admin/announcements/page.tsx` - Team announcements
 
 ### Admin Backend Integration (Week 5 - Phase 0)
+
 - `src/lib/admin/types.ts` - TypeScript types for admin module
 - `src/lib/admin/audit.ts` - Audit logging functions
 - `src/lib/admin/providers.ts` - Provider management functions
@@ -1723,6 +1865,7 @@ const categories = await supabase.from('provider_categories').select('*')
 ## ✅ Storage Bucket Setup (COMPLETED Dec 1, 2025)
 
 The Supabase Storage bucket is now configured:
+
 - ✅ Bucket `public` created with 2MB file size limit
 - ✅ Allowed MIME types: jpeg, png, webp, gif
 - ✅ Storage policies active (Public Read, Auth Upload/Update/Delete)
@@ -1735,6 +1878,7 @@ The Supabase Storage bucket is now configured:
 **Next Review:** December 8, 2025
 
 **🎉 Session 15 (Part 2): Dynamic Footer & Governorate Analytics!**
+
 - ✅ Footer ديناميكي للمحافظات من قاعدة البيانات
 - ✅ تحديث "المدن" إلى "المحافظات" في الترجمات
 - ✅ تبويب تحليلات التوسع في صفحة المواقع للأدمن
@@ -1742,6 +1886,7 @@ The Supabase Storage bucket is now configured:
 - ✅ توصيات ذكية للتوسع
 
 **🎉 Session 15 (Part 1): AI Chat to Order - مساعد أحمد الذكي!**
+
 - ✅ إصلاح وميض شارة الإشعارات
 - ✅ 🤖 **AI Smart Assistant (أحمد)** - مساعد ذكي للطلب بالدردشة
 - ✅ AI Agent Architecture: GPT-4o-mini + Function Calling
@@ -1749,12 +1894,14 @@ The Supabase Storage bucket is now configured:
 - ✅ ChatFAB للوصول السريع للمساعد الذكي
 
 **🎉 Session 14: Financial UX & Security Updates!**
+
 - ✅ Security Update: Patched CVE-2025-55182 & CVE-2025-66478 (RCE vulnerabilities)
 - ✅ Finance Page: Fixed color consistency with brand identity
 - ✅ Orders Page: Added filter counts + payment confirmation button
 - ✅ Payment Flow: Direct "Payment Received" button on order cards
 
 **🎉 Week 5: Session 12-13 Complete!**
+
 - ✅ Order Cancellation: Customers can cancel pending/confirmed/accepted orders
 - ✅ Reviews & Ratings: Complete system for customers to rate and review providers
 - ✅ Provider Reviews Page: Dashboard for providers to view and respond to reviews
@@ -1765,11 +1912,13 @@ The Supabase Storage bucket is now configured:
 - ✅ Admin Notifications: Alerts for cancellations, new providers, support tickets
 
 **🎉 Week 5: Analytics Geographic Filtering Fixed!**
+
 - Fixed admin analytics showing zeros when filtering by governorate
 - Added fallback name-based filtering for old orders without geographic IDs
 - Both main analytics and regional analytics now properly support filtering
 
 **🎉 Week 5: Admin Backend Integration Phase 0 Complete!**
+
 - Full admin dashboard with unified components (AdminHeader, AdminSidebar)
 - Supervisor management with roles and permissions
 - Roles management page (`/admin/roles`) - View, Edit, Create, Delete roles
@@ -1784,12 +1933,14 @@ The Supabase Storage bucket is now configured:
 ### الخطة الجديدة - تحسين واجهة العملاء
 
 #### المرحلة 0: PWA Setup
+
 - [x] Create manifest.json with Engezna branding ✅
 - [x] Update layout.tsx with PWA metadata ✅
 - [x] Create InstallPrompt component ✅
 - [ ] Create PWA icons (72-512px)
 
 #### المرحلة 1: المكونات المشتركة
+
 - [x] CustomerLayout (wrapper with header + bottom nav) ✅
 - [x] CustomerHeader (location, notifications, profile) ✅
 - [x] BottomNavigation (home, browse, cart, favorites, profile) ✅
@@ -1805,6 +1956,7 @@ The Supabase Storage bucket is now configured:
 - [x] EmptyState ✅
 
 #### المرحلة 2: الصفحات الجديدة
+
 - [x] HeroSection (hero with search and location) ✅
 - [x] CategoriesSection (horizontal scrolling categories) ✅
 - [x] OffersCarousel (offers carousel) ✅
@@ -1815,17 +1967,20 @@ The Supabase Storage bucket is now configured:
 - [x] Improved provider detail with ProductCard and sticky category nav ✅
 
 #### المرحلة 3: Hooks & Database
+
 - [x] favorites table created ✅
 - [x] useFavorites hook ✅
 - [x] useProviders hook (with filters) ✅
 - [x] useCart hook improvements ✅
 
 #### المرحلة 4: الترجمات
+
 - [x] Add all new translation keys (AR/EN) ✅
 - [x] PWA translations ✅
 - [x] Customer journey translations ✅
 
 ### الملفات الجديدة المنشأة
+
 ```
 src/
 ├── components/
@@ -1865,6 +2020,7 @@ src/
 ```
 
 ### تحسينات الصفحات الموجودة
+
 - **`/providers`**: أضيف SearchBar، FilterChip للفلترة والترتيب، EmptyState
 - **`/providers/[id]`**: أضيف ProductCard، RatingStars، StatusBadge، sticky category navigation
 
@@ -1875,6 +2031,7 @@ src/
 ### ✅ المهام المكتملة
 
 #### 1. Footer ديناميكي للمحافظات
+
 - **الحالة:** ✅ مكتمل
 - **الوصف:** ربط شريط المحافظات في الـ Footer بقاعدة البيانات
 - **التغييرات:**
@@ -1888,6 +2045,7 @@ src/
   - `src/i18n/messages/en.json` - تغيير availableCities → availableGovernorates
 
 #### 2. تبويب تحليلات التوسع في صفحة المواقع
+
 - **الحالة:** ✅ مكتمل
 - **الوصف:** إضافة أدوات تحليل متقدمة للسوبر أدمن لمساعدته في قرارات التوسع
 - **المميزات:**
@@ -1905,12 +2063,12 @@ src/
 
 ### 📁 الملفات المُعدّلة
 
-| الملف | النوع | الوصف |
-|-------|-------|-------|
-| `src/components/shared/Footer.tsx` | تعديل | جلب المحافظات من قاعدة البيانات + حالة التحميل |
-| `src/i18n/messages/ar.json` | تعديل | تغيير "المدن المتاحة" → "المحافظات المتاحة" |
-| `src/i18n/messages/en.json` | تعديل | تغيير "Available Cities" → "Available Governorates" |
-| `src/app/[locale]/admin/locations/page.tsx` | تعديل | إضافة تبويب التحليلات + GovernorateAnalytics |
+| الملف                                       | النوع | الوصف                                               |
+| ------------------------------------------- | ----- | --------------------------------------------------- |
+| `src/components/shared/Footer.tsx`          | تعديل | جلب المحافظات من قاعدة البيانات + حالة التحميل      |
+| `src/i18n/messages/ar.json`                 | تعديل | تغيير "المدن المتاحة" → "المحافظات المتاحة"         |
+| `src/i18n/messages/en.json`                 | تعديل | تغيير "Available Cities" → "Available Governorates" |
+| `src/app/[locale]/admin/locations/page.tsx` | تعديل | إضافة تبويب التحليلات + GovernorateAnalytics        |
 
 ### 📊 معادلة الجاهزية (Readiness Score)
 
@@ -1930,12 +2088,14 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 ### ✅ المهام المكتملة
 
 #### 1. إصلاح وميض شارة الإشعارات
+
 - **الحالة:** ✅ مكتمل
 - **المشكلة:** شارة عدد الإشعارات كانت تومض بسرعة مرهقة للعين (animate-pulse)
 - **الحل:** إزالة كلاس `animate-pulse` من شارة العدد
 - **الملف:** `src/components/customer/layout/CustomerHeader.tsx`
 
 #### 2. 🤖 AI Smart Assistant - مساعد إنجزنا الذكي (أحمد)
+
 - **الحالة:** ✅ مكتمل
 - **المفهوم:** "دردش واطلب" - مساعد ذكي للطلب بالدردشة الطبيعية
 - **المميزات:**
@@ -1955,31 +2115,32 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 - **Documentation:** `docs/AI_SMART_ASSISTANT.md`
 
 #### 3. تحديث الصفحات الرئيسية
+
 - تحديث `/[locale]/page.tsx` لاستخدام ChatFAB و onChatClick
 - تحديث `/[locale]/providers/page.tsx` لاستخدام ChatFAB
 - تحديث رسالة الترحيب في useVoiceOrder hook
 
 ### 📁 الملفات المُعدّلة/المنشأة
 
-| الملف | النوع | الوصف |
-|-------|-------|-------|
-| `src/components/customer/layout/CustomerHeader.tsx` | تعديل | إزالة animate-pulse من شارة الإشعارات |
-| `src/components/customer/voice/VoiceOrderFAB.tsx` | تعديل | تحويل إلى ChatFAB مع أيقونة MessageCircle |
-| `src/components/customer/voice/TextChat.tsx` | جديد | مكون الدردشة النصية مع OpenAI |
-| `src/components/customer/voice/index.ts` | تعديل | تحديث الـ exports |
-| `src/components/customer/home/HeroSection.tsx` | تعديل | إزالة زر الميكروفون + تغيير النصوص |
-| `src/components/customer/shared/SearchBar.tsx` | تعديل | إزالة onVoiceClick و Mic icon |
-| `src/app/[locale]/page.tsx` | تعديل | استخدام ChatFAB و handleChatClick |
-| `src/app/[locale]/providers/page.tsx` | تعديل | استخدام ChatFAB |
-| `src/hooks/customer/useVoiceOrder.ts` | تعديل | تحديث رسالة الترحيب |
+| الملف                                               | النوع | الوصف                                     |
+| --------------------------------------------------- | ----- | ----------------------------------------- |
+| `src/components/customer/layout/CustomerHeader.tsx` | تعديل | إزالة animate-pulse من شارة الإشعارات     |
+| `src/components/customer/voice/VoiceOrderFAB.tsx`   | تعديل | تحويل إلى ChatFAB مع أيقونة MessageCircle |
+| `src/components/customer/voice/TextChat.tsx`        | جديد  | مكون الدردشة النصية مع OpenAI             |
+| `src/components/customer/voice/index.ts`            | تعديل | تحديث الـ exports                         |
+| `src/components/customer/home/HeroSection.tsx`      | تعديل | إزالة زر الميكروفون + تغيير النصوص        |
+| `src/components/customer/shared/SearchBar.tsx`      | تعديل | إزالة onVoiceClick و Mic icon             |
+| `src/app/[locale]/page.tsx`                         | تعديل | استخدام ChatFAB و handleChatClick         |
+| `src/app/[locale]/providers/page.tsx`               | تعديل | استخدام ChatFAB                           |
+| `src/hooks/customer/useVoiceOrder.ts`               | تعديل | تحديث رسالة الترحيب                       |
 
 ### 🗑️ الملفات المحذوفة
 
-| الملف | السبب |
-|-------|-------|
+| الملف                                                | السبب                          |
+| ---------------------------------------------------- | ------------------------------ |
 | `src/components/customer/voice/VoiceOrderButton.tsx` | لم يعد مطلوباً (لا تسجيل صوتي) |
-| `src/components/customer/voice/VoiceOrderChat.tsx` | تم استبداله بـ TextChat.tsx |
-| `src/app/api/voice-order/transcribe/route.ts` | لم يعد مطلوباً (لا Deepgram) |
+| `src/components/customer/voice/VoiceOrderChat.tsx`   | تم استبداله بـ TextChat.tsx    |
+| `src/app/api/voice-order/transcribe/route.ts`        | لم يعد مطلوباً (لا Deepgram)   |
 
 ### 📊 ملخص التغييرات
 
@@ -1995,6 +2156,7 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 ### ✅ المهام المكتملة
 
 #### 1. إصلاح تناسق الألوان في صفحة المالية
+
 - **الحالة:** ✅ مكتمل
 - **المشكلة:** استخدام ألوان amber من Tailwind بدلاً من ألوان الهوية التجارية
 - **الحل:**
@@ -2004,6 +2166,7 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 - **الملفات:** `src/app/[locale]/provider/finance/page.tsx`
 
 #### 2. تحديث أمني عاجل (CVE-2025-55182 & CVE-2025-66478)
+
 - **الحالة:** ✅ مكتمل
 - **الخطورة:** 10.0 CVSS (أقصى خطورة) - تنفيذ أكواد خبيثة عن بُعد (RCE)
 - **التحديثات:**
@@ -2013,6 +2176,7 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 - **الملفات:** `package.json`
 
 #### 3. تحسين UX صفحة الطلبات للمزودين
+
 - **الحالة:** ✅ مكتمل
 - **التحسينات:**
   - إضافة أرقام العد لفلاتر "جاهز"، "مكتمل"، "ملغي"
@@ -2024,11 +2188,11 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 
 ### 📁 الملفات المُعدّلة في هذه الجلسة
 
-| الملف | الوصف |
-|-------|-------|
+| الملف                                        | الوصف                                  |
+| -------------------------------------------- | -------------------------------------- |
 | `src/app/[locale]/provider/finance/page.tsx` | إصلاح تناسق الألوان مع الهوية التجارية |
-| `src/app/[locale]/provider/orders/page.tsx` | إضافة أرقام الفلاتر + زر تأكيد الدفع |
-| `package.json` | تحديث أمني لـ Next.js و React |
+| `src/app/[locale]/provider/orders/page.tsx`  | إضافة أرقام الفلاتر + زر تأكيد الدفع   |
+| `package.json`                               | تحديث أمني لـ Next.js و React          |
 
 ### 📊 الـ Commits
 
@@ -2059,6 +2223,7 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
    - اختبار إشعارات المزود (الطلبات + التقييمات)
 
 ### ✅ مهام تم إكمالها في جلسات سابقة (للمرجعية):
+
 - ✅ إصلاح Reviews RLS infinite recursion (Session 13)
 - ✅ دمج عدد الإشعارات (طلبات + تقييمات) في badge واحد (Session 13)
 - ✅ Hover dropdown للإشعارات (Session 13)
@@ -2071,12 +2236,14 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 ### ✅ المهام المكتملة
 
 #### 1. إصلاح مشكلة البروموكود على الموبايل
+
 - **الحالة:** ✅ مكتمل
 - **السبب:** كانت مشكلة Cache
 - **الحل:** تم إضافة hydration tracking لـ zustand cart store
 - **الملف:** `src/store/cartStore.ts`
 
 #### 2. نظام إشعارات العملاء (Customer Notifications)
+
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
   - إنشاء جدول `customer_notifications` جديد
@@ -2089,6 +2256,7 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
   - `src/app/[locale]/notifications/page.tsx`
 
 #### 3. نظام إشعارات الأدمن (Admin Notifications)
+
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
   - إشعار عند إلغاء طلب من أي طرف
@@ -2099,6 +2267,7 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 - **الملف:** `supabase/migrations/20251205000002_fix_reviews_and_add_admin_notifications.sql`
 
 #### 4. تفعيل pg_cron للطلبات المتأخرة
+
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
   - تفعيل pg_cron extension
@@ -2108,6 +2277,7 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 ### ⚠️ المهام المعلقة
 
 #### مشكلة التقييمات (Reviews) - لم تُحل بعد
+
 - **الحالة:** ❌ لم تُحل
 - **الخطأ:** `infinite recursion detected in policy for relation "providers"`
 - **المحاولات:**
@@ -2120,15 +2290,15 @@ Readiness Score = Provider Score + Customer Score + Order Score + Coverage Score
 
 ### 📁 الملفات المُعدّلة في هذه الجلسة
 
-| الملف | الوصف |
-|-------|-------|
-| `supabase/migrations/20251205000001_fix_notifications_and_reviews.sql` | جدول إشعارات العملاء + triggers |
-| `supabase/migrations/20251205000002_fix_reviews_and_add_admin_notifications.sql` | إشعارات الأدمن + pg_cron function |
-| `supabase/migrations/20251205000003_urgent_fix_reviews_rls.sql` | محاولة إصلاح RLS للتقييمات |
-| `src/hooks/customer/useNotifications.ts` | تحديث للعمل مع customer_notifications |
-| `src/app/[locale]/notifications/page.tsx` | تحديث عرض الإشعارات |
-| `src/app/[locale]/orders/[id]/page.tsx` | إضافة debugging للتقييمات |
-| `src/store/cartStore.ts` | إضافة hydration tracking |
+| الملف                                                                            | الوصف                                 |
+| -------------------------------------------------------------------------------- | ------------------------------------- |
+| `supabase/migrations/20251205000001_fix_notifications_and_reviews.sql`           | جدول إشعارات العملاء + triggers       |
+| `supabase/migrations/20251205000002_fix_reviews_and_add_admin_notifications.sql` | إشعارات الأدمن + pg_cron function     |
+| `supabase/migrations/20251205000003_urgent_fix_reviews_rls.sql`                  | محاولة إصلاح RLS للتقييمات            |
+| `src/hooks/customer/useNotifications.ts`                                         | تحديث للعمل مع customer_notifications |
+| `src/app/[locale]/notifications/page.tsx`                                        | تحديث عرض الإشعارات                   |
+| `src/app/[locale]/orders/[id]/page.tsx`                                          | إضافة debugging للتقييمات             |
+| `src/store/cartStore.ts`                                                         | إضافة hydration tracking              |
 
 ### 📊 الـ Commits
 

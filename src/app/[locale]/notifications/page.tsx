@@ -1,20 +1,34 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
-import { Bell, Package, Tag, Gift, Info, Check, Trash2, Loader2, CreditCard, MessageCircle, RefreshCw, DollarSign, FileText } from 'lucide-react'
-import Link from 'next/link'
-import { CustomerLayout } from '@/components/customer/layout'
-import { Button } from '@/components/ui/button'
-import { useNotifications } from '@/hooks/customer'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react';
+import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import {
+  Bell,
+  Package,
+  Tag,
+  Gift,
+  Info,
+  Check,
+  Trash2,
+  Loader2,
+  CreditCard,
+  MessageCircle,
+  RefreshCw,
+  DollarSign,
+  FileText,
+} from 'lucide-react';
+import Link from 'next/link';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Button } from '@/components/ui/button';
+import { useNotifications } from '@/hooks/customer';
+import { createClient } from '@/lib/supabase/client';
 
 export default function NotificationsPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const [markingRead, setMarkingRead] = useState<string | null>(null)
-  const [confirmingRefund, setConfirmingRefund] = useState<string | null>(null)
+  const locale = useLocale();
+  const router = useRouter();
+  const [markingRead, setMarkingRead] = useState<string | null>(null);
+  const [confirmingRefund, setConfirmingRefund] = useState<string | null>(null);
 
   // Use real-time notifications hook
   const {
@@ -25,12 +39,12 @@ export default function NotificationsPage() {
     markAsRead: markAsReadHook,
     markAllAsRead: markAllAsReadHook,
     deleteNotification: deleteNotificationHook,
-  } = useNotifications()
+  } = useNotifications();
 
   // Handle refund confirmation
   const handleConfirmRefund = async (orderId: string, notificationId: string) => {
-    setConfirmingRefund(notificationId)
-    const supabase = createClient()
+    setConfirmingRefund(notificationId);
+    const supabase = createClient();
 
     try {
       // Get refund ID from order
@@ -41,51 +55,51 @@ export default function NotificationsPage() {
         .eq('order_id', orderId)
         .eq('provider_action', 'cash_refund')
         .or('customer_confirmed.eq.false,customer_confirmed.is.null')
-        .single()
+        .single();
 
       if (refund) {
         // Call the confirm RPC
         const { error } = await supabase.rpc('customer_confirm_refund', {
           p_refund_id: refund.id,
           p_received: true,
-          p_notes: null
-        })
+          p_notes: null,
+        });
 
         if (!error) {
           // Mark notification as read and delete it
-          await markAsReadHook(notificationId)
-          await deleteNotificationHook(notificationId)
+          await markAsReadHook(notificationId);
+          await deleteNotificationHook(notificationId);
           // Show success (optional: could add toast)
         }
       }
     } catch (err) {
-      console.error('Error confirming refund:', err)
+      console.error('Error confirming refund:', err);
     } finally {
-      setConfirmingRefund(null)
+      setConfirmingRefund(null);
     }
-  }
+  };
 
   // Wrapper functions to handle loading state
   const handleMarkAsRead = async (id: string) => {
-    setMarkingRead(id)
-    await markAsReadHook(id)
-    setMarkingRead(null)
-  }
+    setMarkingRead(id);
+    await markAsReadHook(id);
+    setMarkingRead(null);
+  };
 
   const handleMarkAllAsRead = async () => {
-    await markAllAsReadHook()
-  }
+    await markAllAsReadHook();
+  };
 
   const handleDeleteNotification = async (id: string) => {
-    await deleteNotificationHook(id)
-  }
+    await deleteNotificationHook(id);
+  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push(`/${locale}/auth/login?redirect=/notifications`)
+      router.push(`/${locale}/auth/login?redirect=/notifications`);
     }
-  }, [isLoading, isAuthenticated, locale, router])
+  }, [isLoading, isAuthenticated, locale, router]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -97,50 +111,50 @@ export default function NotificationsPage() {
       case 'order_ready':
       case 'order_out_for_delivery':
       case 'order_delivered':
-        return <Package className="w-5 h-5 text-primary" />
+        return <Package className="w-5 h-5 text-primary" />;
       case 'order_cancelled':
       case 'order_rejected':
-        return <Package className="w-5 h-5 text-red-500" />
+        return <Package className="w-5 h-5 text-red-500" />;
       case 'order_message':
-        return <MessageCircle className="w-5 h-5 text-blue-500" />
+        return <MessageCircle className="w-5 h-5 text-blue-500" />;
       case 'refund_cash_confirmed':
       case 'refund_update':
-        return <RefreshCw className="w-5 h-5 text-green-500" />
+        return <RefreshCw className="w-5 h-5 text-green-500" />;
       case 'payment_confirmed':
-        return <CreditCard className="w-5 h-5 text-green-500" />
+        return <CreditCard className="w-5 h-5 text-green-500" />;
       case 'promotion':
       case 'promo':
-        return <Tag className="w-5 h-5 text-red-500" />
+        return <Tag className="w-5 h-5 text-red-500" />;
       case 'offer':
-        return <Gift className="w-5 h-5 text-green-500" />
+        return <Gift className="w-5 h-5 text-green-500" />;
 
       // Custom order notifications (UPPERCASE from DB triggers)
       case 'CUSTOM_ORDER_PRICED':
-        return <DollarSign className="w-5 h-5 text-emerald-600" />
+        return <DollarSign className="w-5 h-5 text-emerald-600" />;
 
       default:
-        return <Info className="w-5 h-5 text-blue-500" />
+        return <Info className="w-5 h-5 text-blue-500" />;
     }
-  }
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 60) {
-      return locale === 'ar' ? `منذ ${diffMins} دقيقة` : `${diffMins} min ago`
+      return locale === 'ar' ? `منذ ${diffMins} دقيقة` : `${diffMins} min ago`;
     } else if (diffHours < 24) {
-      return locale === 'ar' ? `منذ ${diffHours} ساعة` : `${diffHours} hours ago`
+      return locale === 'ar' ? `منذ ${diffHours} ساعة` : `${diffHours} hours ago`;
     } else if (diffDays < 7) {
-      return locale === 'ar' ? `منذ ${diffDays} يوم` : `${diffDays} days ago`
+      return locale === 'ar' ? `منذ ${diffDays} يوم` : `${diffDays} days ago`;
     } else {
-      return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')
+      return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US');
     }
-  }
+  };
 
   // Loading state
   if (isLoading) {
@@ -154,7 +168,7 @@ export default function NotificationsPage() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   // Empty state
@@ -182,7 +196,7 @@ export default function NotificationsPage() {
           </Button>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   return (
@@ -200,9 +214,7 @@ export default function NotificationsPage() {
             </h1>
             {unreadCount > 0 && (
               <p className="text-sm text-slate-500">
-                {locale === 'ar'
-                  ? `${unreadCount} إشعار غير مقروء`
-                  : `${unreadCount} unread`}
+                {locale === 'ar' ? `${unreadCount} إشعار غير مقروء` : `${unreadCount} unread`}
               </p>
             )}
           </div>
@@ -223,32 +235,34 @@ export default function NotificationsPage() {
         <div className="space-y-3">
           {notifications.map((notification) => {
             // Check if notification is order-related for navigation (includes order_message)
-            const isOrderNotification = (notification.type.startsWith('order_') || notification.type === 'order_message') && notification.related_order_id
+            const isOrderNotification =
+              (notification.type.startsWith('order_') || notification.type === 'order_message') &&
+              notification.related_order_id;
 
             // Check if it's a custom order notification (UPPERCASE from DB trigger)
-            const isCustomOrderNotification = notification.type === 'CUSTOM_ORDER_PRICED'
+            const isCustomOrderNotification = notification.type === 'CUSTOM_ORDER_PRICED';
 
             const handleNotificationClick = () => {
               // Mark as read if not already
               if (!notification.is_read) {
-                handleMarkAsRead(notification.id)
+                handleMarkAsRead(notification.id);
               }
 
               // Handle custom order notifications - navigate to comparison page
               // broadcast_id is stored in data column
               if (isCustomOrderNotification) {
-                const broadcastId = notification.data?.broadcast_id
+                const broadcastId = notification.data?.broadcast_id;
                 if (broadcastId) {
-                  router.push(`/${locale}/orders/custom-review/${broadcastId}`)
-                  return
+                  router.push(`/${locale}/orders/custom-review/${broadcastId}`);
+                  return;
                 }
               }
 
               // Handle standard order notifications
               if (isOrderNotification && notification.related_order_id) {
-                router.push(`/${locale}/orders/${notification.related_order_id}`)
+                router.push(`/${locale}/orders/${notification.related_order_id}`);
               }
-            }
+            };
 
             return (
               <div
@@ -260,19 +274,23 @@ export default function NotificationsPage() {
                     : notification.type === 'CUSTOM_ORDER_PRICED'
                       ? 'border-emerald-300 bg-emerald-50'
                       : 'border-primary/30 bg-primary/5'
-                } ${(isOrderNotification || isCustomOrderNotification) ? 'cursor-pointer hover:shadow-md' : ''}`}
+                } ${isOrderNotification || isCustomOrderNotification ? 'cursor-pointer hover:shadow-md' : ''}`}
               >
                 <div className="flex gap-3">
                   {/* Icon */}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    notification.is_read ? 'bg-slate-100' : 'bg-primary/10'
-                  }`}>
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      notification.is_read ? 'bg-slate-100' : 'bg-primary/10'
+                    }`}
+                  >
                     {getNotificationIcon(notification.type)}
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <h3 className={`font-semibold text-slate-900 ${!notification.is_read && 'text-primary'}`}>
+                    <h3
+                      className={`font-semibold text-slate-900 ${!notification.is_read && 'text-primary'}`}
+                    >
                       {locale === 'ar' ? notification.title_ar : notification.title_en}
                     </h3>
                     <p className="text-sm text-slate-600 mt-1">
@@ -286,27 +304,30 @@ export default function NotificationsPage() {
                   {/* Actions */}
                   <div className="flex items-start gap-1" onClick={(e) => e.stopPropagation()}>
                     {/* Confirm refund button for cash refund notifications */}
-                    {notification.body_ar?.includes('يرجى تأكيد استلام') && notification.related_order_id && (
-                      <button
-                        onClick={() => handleConfirmRefund(notification.related_order_id!, notification.id)}
-                        disabled={confirmingRefund === notification.id}
-                        className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
-                      >
-                        {confirmingRefund === notification.id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Check className="w-3 h-3" />
-                        )}
-                        {locale === 'ar' ? 'تأكيد الاستلام' : 'Confirm'}
-                      </button>
-                    )}
+                    {notification.body_ar?.includes('يرجى تأكيد استلام') &&
+                      notification.related_order_id && (
+                        <button
+                          onClick={() =>
+                            handleConfirmRefund(notification.related_order_id!, notification.id)
+                          }
+                          disabled={confirmingRefund === notification.id}
+                          className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {confirmingRefund === notification.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Check className="w-3 h-3" />
+                          )}
+                          {locale === 'ar' ? 'تأكيد الاستلام' : 'Confirm'}
+                        </button>
+                      )}
                     {/* Reply button for message notifications */}
                     {notification.type === 'order_message' && notification.related_order_id && (
                       <Link
                         href={`/${locale}/orders/${notification.related_order_id}?openChat=true`}
                         onClick={() => {
                           if (!notification.is_read) {
-                            handleMarkAsRead(notification.id)
+                            handleMarkAsRead(notification.id);
                           }
                         }}
                         className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors"
@@ -338,10 +359,10 @@ export default function NotificationsPage() {
                   </div>
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </div>
     </CustomerLayout>
-  )
+  );
 }

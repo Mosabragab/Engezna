@@ -1,16 +1,20 @@
 # Database Setup Instructions - SAFE UPDATE
 
 ## ⚠️ IMPORTANT: This is SAFE for existing databases
+
 **This update will NOT destroy your existing data!**
+
 - ✅ Preserves all existing providers (Lavender Cafe, Al Safa Restaurant, etc.)
 - ✅ Preserves all existing categories
 - ✅ Only ADDS menu items to providers that don't have any
 - ✅ Safe to run multiple times
 
 ## Overview
+
 This guide will help you add sample menu items to your existing providers in Supabase.
 
 ## Prerequisites
+
 - Access to your Supabase dashboard
 - ✅ Database schema already deployed (you have this!)
 - ✅ Existing providers (you have 4 providers!)
@@ -24,6 +28,7 @@ This guide will help you add sample menu items to your existing providers in Sup
 **This step is completely safe - it only adds menu items, doesn't modify existing data**
 
 1. Go to your Supabase SQL Editor:
+
    ```
    https://supabase.com/dashboard/project/cmxpvzqrmptfnuymhxmr/sql
    ```
@@ -31,6 +36,7 @@ This guide will help you add sample menu items to your existing providers in Sup
 2. Click "New Query"
 
 3. Copy and paste the ENTIRE content from:
+
    ```
    supabase/seed.sql
    ```
@@ -65,6 +71,7 @@ ORDER BY p.name_en;
 Expected result: Your 4 providers should now have menu items
 
 ### View Sample Menu Items
+
 ```sql
 SELECT
   p.name_en as provider,
@@ -83,11 +90,13 @@ LIMIT 20;
 Now test the provider pages with your REAL data:
 
 1. Make sure dev server is running:
+
    ```bash
    npm run dev
    ```
 
 2. Visit the providers page:
+
    ```
    http://localhost:3000/ar/providers
    ```
@@ -111,6 +120,7 @@ Now test the provider pages with your REAL data:
 ## Quick Reference: Your Existing Providers
 
 Based on your screenshot, you have:
+
 1. **Lavender Cafe** - Coffee shop
 2. **Al Safa Restaurant** - Restaurant
 3. **Al Najah Supermarket** - Grocery
@@ -121,14 +131,17 @@ All should now have appropriate menu items based on their category!
 ## Troubleshooting
 
 ### Providers page shows "No providers available"
+
 - Check if providers have status='open' or status='closed' (the page filters out pending/paused providers)
 - Update provider status in Supabase dashboard
 
 ### Menu items not showing
+
 - Run the verification query above to check menu items count
 - If count is 0, re-run the seed.sql file (it's safe!)
 
 ### Can't see my providers
+
 - Check that you have the correct Supabase credentials in your `.env.local` file
 - Make sure RLS policies allow public read access to providers
 

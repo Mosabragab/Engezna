@@ -7,4 +7,4 @@
  */
 
 // Pricing components for custom orders
-export * from './pricing'
+export * from './pricing';

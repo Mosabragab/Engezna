@@ -22,6 +22,7 @@ This document analyzes the AI Smart Assistant chat flow and identifies issues fo
 
 **Problem:**
 The AI Agent wasn't receiving the correct provider ID when operating on provider pages, causing:
+
 - Empty search results
 - "محتاج أعرف المطعم" responses when provider context was available
 - Promotions tool returning empty results
@@ -30,9 +31,10 @@ The AI Agent wasn't receiving the correct provider ID when operating on provider
 The `useAIChat.ts` hook wasn't passing the `providerContext.id` as a fallback when no `selectedProviderId` was available.
 
 **Fix Applied:**
+
 ```typescript
 // useAIChat.ts - Now passes effectiveProviderId
-const effectiveProviderId = selectedProviderId || providerContext?.id
+const effectiveProviderId = selectedProviderId || providerContext?.id;
 ```
 
 #### 2. Promotions Tool Showing Empty Results ✅ FIXED
@@ -42,6 +44,7 @@ const effectiveProviderId = selectedProviderId || providerContext?.id
 
 **Fix Applied:**
 The tool now returns BOTH:
+
 - Promotional campaigns from `promotions` table
 - Discounted products from `menu_items` where `original_price > price`
 
@@ -65,31 +68,37 @@ When `search_menu` found items with `has_variants=true`, it wasn't fetching the 
 
 **Fix Applied:**
 Added inline variant fetching in `search_menu`:
+
 ```typescript
 // For items with has_variants=true, fetch variants inline
 const fetchVariantsForItems = async (items) => {
-  const itemsWithVariants = items.filter(i => i.has_variants)
+  const itemsWithVariants = items.filter((i) => i.has_variants);
   if (itemsWithVariants.length > 0) {
     const { data: variants } = await supabase
       .from('menu_item_variants')
       .select('id, menu_item_id, name_ar, price')
-      .in('menu_item_id', itemsWithVariants.map(i => i.id))
+      .in(
+        'menu_item_id',
+        itemsWithVariants.map((i) => i.id)
+      );
     // Merge variants into items
   }
-  return items
-}
+  return items;
+};
 ```
 
 #### 4. Automatic Embedding Generation ✅ ADDED
 
 **New Feature:**
 Added automatic embedding generation for menu items using:
+
 - Supabase Edge Function (`generate-embedding`)
 - Queue-based processing with `embedding_queue` table
 - Database triggers on INSERT/UPDATE
 - pg_cron job for catch-up processing (every 5 minutes)
 
 **Files Added/Modified:**
+
 - `supabase/functions/generate-embedding/index.ts`
 - `supabase/migrations/20251215000002_embedding_auto_generation.sql`
 - `src/app/api/embeddings/route.ts`
@@ -97,12 +106,12 @@ Added automatic embedding generation for menu items using:
 
 ### Architecture Improvements
 
-| Component | Before | After |
-|-----------|--------|-------|
-| Provider ID | Manual selection only | Fallback to providerContext |
-| Promotions | promotions table only | campaigns + discounted_products |
-| Variants | Separate API call | Inline with search results |
-| Embeddings | Manual generation | Auto on INSERT/UPDATE |
+| Component   | Before                | After                           |
+| ----------- | --------------------- | ------------------------------- |
+| Provider ID | Manual selection only | Fallback to providerContext     |
+| Promotions  | promotions table only | campaigns + discounted_products |
+| Variants    | Separate API call     | Inline with search results      |
+| Embeddings  | Manual generation     | Auto on INSERT/UPDATE           |
 
 ### Files Modified
 
@@ -124,19 +133,20 @@ Added automatic embedding generation for menu items using:
 ## Session Analysis (December 13, 2025)
 
 ### Test Scenario
+
 User ordering from "سلطان بيتزا" - multiple items added to cart.
 
 ### What Worked Well
 
-| Feature | Status | Example |
-|---------|--------|---------|
-| Smart Intent Extraction | ✅ | "اريد كفته", "ابغي حواوشي" understood correctly |
-| Provider Context Search | ✅ | "عندهم حواوشي؟" searched in current provider |
-| Cart Confirmation with Provider | ✅ | "ضفت للسلة من سلطان بيتزا" |
-| Quick Reply with Provider Name | ✅ | "➕ أضف من سلطان بيتزا" |
-| Variant Selection | ✅ | حواوشي لحمة → عادي/سوبر |
-| Quantity Selection | ✅ | Buttons + Arabic text parsing |
-| Order Confirmation Step | ✅ | Shows total before adding |
+| Feature                         | Status | Example                                         |
+| ------------------------------- | ------ | ----------------------------------------------- |
+| Smart Intent Extraction         | ✅     | "اريد كفته", "ابغي حواوشي" understood correctly |
+| Provider Context Search         | ✅     | "عندهم حواوشي؟" searched in current provider    |
+| Cart Confirmation with Provider | ✅     | "ضفت للسلة من سلطان بيتزا"                      |
+| Quick Reply with Provider Name  | ✅     | "➕ أضف من سلطان بيتزا"                         |
+| Variant Selection               | ✅     | حواوشي لحمة → عادي/سوبر                         |
+| Quantity Selection              | ✅     | Buttons + Arabic text parsing                   |
+| Order Confirmation Step         | ✅     | Shows total before adding                       |
 
 ### Issues Found
 
@@ -146,6 +156,7 @@ User ordering from "سلطان بيتزا" - multiple items added to cart.
 After user adds items to cart from a specific provider, the quick replies still show "🏠 الأقسام" (Categories).
 
 **Current Behavior:**
+
 ```
 تمام! ✅ ضفت 2x فراخ باربكيو للسلة من سلطان بيتزا
 
@@ -158,6 +169,7 @@ After user adds items to cart from a specific provider, the quick replies still 
 When user is actively shopping from one provider, don't offer navigation to other categories.
 
 **Suggested Quick Replies:**
+
 ```
 🛒 اذهب للسلة
 ➕ أضف من سلطان بيتزا
@@ -165,6 +177,7 @@ When user is actively shopping from one provider, don't offer navigation to othe
 ```
 
 **Files to Modify:**
+
 - `src/app/api/chat/route.ts` - `handleConfirmAdd()` function
 
 ---
@@ -190,6 +203,7 @@ Search doesn't normalize Arabic ه (haa) to ة (taa marbuta).
 The `normalizeArabic()` function doesn't normalize ه → ة.
 
 **Files to Modify:**
+
 - `src/lib/ai/normalizeArabic.ts` - Add ه ↔ ة normalization
 
 ---
@@ -200,10 +214,12 @@ The `normalizeArabic()` function doesn't normalize ه → ة.
 First search says "not found", then similar search finds the item.
 
 **Example:**
+
 1. "عنده طحينه؟" → "مش لاقي طحينه دلوقتي"
 2. "ولا طحينة؟" → Found طحينة!
 
 **Root Cause:**
+
 - Combination of normalization issue (Issue 2)
 - Smart intent extraction might not be using normalized search
 
@@ -212,6 +228,7 @@ First search says "not found", then similar search finds the item.
 ## Architecture Overview
 
 ### Current Flow
+
 ```
 User Message
     ↓
@@ -226,14 +243,14 @@ User Message
 
 ### Key Components
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| Direct Handlers | `route.ts` | Handle button clicks without GPT |
-| Search Patterns | `route.ts` | Regex patterns for Arabic queries |
-| Smart Extraction | `route.ts` | GPT extracts intent + product |
-| Arabic Normalization | `normalizeArabic.ts` | Normalize Arabic text for search |
-| Chat Memory | `chat.ts` | Persist conversation state |
-| Cart Integration | `useAIChat.ts` | Handle cart actions |
+| Component            | File                 | Purpose                           |
+| -------------------- | -------------------- | --------------------------------- |
+| Direct Handlers      | `route.ts`           | Handle button clicks without GPT  |
+| Search Patterns      | `route.ts`           | Regex patterns for Arabic queries |
+| Smart Extraction     | `route.ts`           | GPT extracts intent + product     |
+| Arabic Normalization | `normalizeArabic.ts` | Normalize Arabic text for search  |
+| Chat Memory          | `chat.ts`            | Persist conversation state        |
+| Cart Integration     | `useAIChat.ts`       | Handle cart actions               |
 
 ---
 
@@ -242,13 +259,16 @@ User Message
 ### Phase 1: Quick Fixes ✅ COMPLETED
 
 #### 1.1 Fix Categories Button ✅
+
 - [x] Updated `handleConfirmAdd()` to show "📋 منيو [provider]" instead of "🏠 الأقسام"
 - [x] Updated `handleClearCartAndAdd()` to show "📋 منيو [provider]" instead of "🏠 الأقسام"
 
 **Changes Made:**
+
 - `src/app/api/chat/route.ts` lines 513, 567: Replaced "🏠 الأقسام" with "📋 منيو [provider]"
 
 #### 1.2 Fix Arabic Normalization ✅
+
 - [x] Improved `performDirectSearch()` to ALWAYS use normalization-based filtering first
 - [x] Previous code tried `ilike` first, then fallback to normalization only if 0 results
 - [x] New code fetches more items and applies `filterByNormalizedArabic()` first
@@ -258,22 +278,26 @@ The `normalizeArabic()` function already converts ة → ه correctly. The issue
 `performDirectSearch()` was using SQL `ilike` first, which doesn't understand Arabic normalization.
 
 **Changes Made:**
+
 - `src/app/api/chat/route.ts` `performDirectSearch()`: Now always applies normalization first
 - Added logging for normalization debugging
 
 ### Phase 2: Enhancements
 
 #### 2.1 Provider-Locked Mode
+
 - When user has items in cart, keep them focused on current provider
 - Show provider name in header of chat
 - Require explicit action to switch providers
 
 #### 2.2 Search Improvements
+
 - Pre-normalize search query before matching patterns
 - Use fuzzy matching for Arabic text
 - Log failed searches for analysis
 
 #### 2.3 UX Improvements
+
 - Show cart summary in chat header
 - Quick add buttons for previously ordered items
 - "Order again" feature
@@ -284,18 +308,18 @@ The `normalizeArabic()` function already converts ة → ه correctly. The issue
 
 ```typescript
 interface ChatMemory {
-  pending_item?: PendingItem      // Item being ordered
-  pending_variant?: PendingVariant // Selected variant
-  pending_quantity?: number        // Selected quantity
-  awaiting_quantity?: boolean      // Waiting for quantity input
-  awaiting_confirmation?: boolean  // Waiting for cart confirmation
-  awaiting_cart_clear?: boolean    // Waiting for cart clear confirmation
-  current_provider?: CurrentProvider // PERSISTS after cart add
+  pending_item?: PendingItem; // Item being ordered
+  pending_variant?: PendingVariant; // Selected variant
+  pending_quantity?: number; // Selected quantity
+  awaiting_quantity?: boolean; // Waiting for quantity input
+  awaiting_confirmation?: boolean; // Waiting for cart confirmation
+  awaiting_cart_clear?: boolean; // Waiting for cart clear confirmation
+  current_provider?: CurrentProvider; // PERSISTS after cart add
 }
 
 interface CurrentProvider {
-  id: string
-  name_ar: string
+  id: string;
+  name_ar: string;
 }
 ```
 
@@ -304,6 +328,7 @@ interface CurrentProvider {
 ## Testing Checklist
 
 ### Search Patterns to Test
+
 - [ ] "عايز X" / "عايزين X"
 - [ ] "ابغي X" / "ابغى X"
 - [ ] "محتاج X"
@@ -319,6 +344,7 @@ interface CurrentProvider {
 - [ ] "ولا X؟"
 
 ### Arabic Normalization to Test
+
 - [ ] سلطه ↔ سلطة
 - [ ] طحينه ↔ طحينة
 - [ ] كفته ↔ كفتة
@@ -326,6 +352,7 @@ interface CurrentProvider {
 - [ ] بيتزا ↔ بيتزه
 
 ### Cart Flow to Test
+
 - [ ] Add from provider A
 - [ ] Try to add from provider B → Should warn
 - [ ] Clear cart and add → Should work
@@ -355,4 +382,4 @@ aed0c3c feat: Add order confirmation step before adding to cart
 
 ---
 
-*Last Updated: 2025-12-13*
+_Last Updated: 2025-12-13_

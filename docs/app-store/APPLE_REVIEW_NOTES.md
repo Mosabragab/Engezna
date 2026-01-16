@@ -1,4 +1,5 @@
 # Apple Review Notes
+
 ## Engezna - Food & Grocery Delivery App
 
 ---
@@ -49,25 +50,29 @@ Thank you!
 ## App Store Connect Settings
 
 ### Demo Account Credentials
-| Field | Value |
-|-------|-------|
+
+| Field    | Value                |
+| -------- | -------------------- |
 | Username | reviewer@engezna.com |
-| Password | AppleReview2026! |
+| Password | AppleReview2026!     |
 
 ### Contact Information
-| Field | Value |
-|-------|-------|
-| First Name | Mosab |
-| Last Name | Ragab |
-| Phone | +20 [Phone Number] |
-| Email | support@engezna.com |
+
+| Field      | Value               |
+| ---------- | ------------------- |
+| First Name | Mosab               |
+| Last Name  | Ragab               |
+| Phone      | +20 [Phone Number]  |
+| Email      | support@engezna.com |
 
 ---
 
 ## Common Review Rejection Reasons & Prevention
 
 ### 1. Guideline 4.2 - Minimum Functionality
+
 **Prevention:** Our app provides comprehensive features:
+
 - Multiple store browsing
 - Product search and filtering
 - Shopping cart functionality
@@ -76,21 +81,27 @@ Thank you!
 - User profile management
 
 ### 2. Guideline 5.1.1 - Data Collection
+
 **Prevention:**
+
 - Privacy Policy clearly explains data collection
 - No unnecessary data collection
 - No real-time GPS tracking
 - Clear consent for push notifications
 
 ### 3. Guideline 2.1 - App Completeness
+
 **Prevention:**
+
 - All features are fully functional
 - No placeholder content
 - No broken links
 - Demo stores with real products available
 
 ### 4. Guideline 4.0 - Design
+
 **Prevention:**
+
 - Native iOS design patterns followed
 - RTL support for Arabic
 - Accessibility considerations
@@ -101,6 +112,7 @@ Thank you!
 ## Test Scenarios for Reviewers
 
 ### Scenario 1: Browse and Order (Customer Flow)
+
 1. Open app → Home screen loads with stores
 2. Select a store → View products
 3. Add items to cart
@@ -109,17 +121,20 @@ Thank you!
 6. Place order → Order confirmation appears
 
 ### Scenario 2: Custom Order Request
+
 1. Go to "Custom Orders" from home screen
 2. Describe what you need
 3. Submit request
 4. View quotes from stores (if any respond)
 
 ### Scenario 3: Order History
+
 1. Go to "My Orders"
 2. View past orders
 3. See order details and status
 
 ### Scenario 4: Language Switching
+
 1. Go to Settings/Profile
 2. Change language (Arabic ↔ English)
 3. Verify all content updates
@@ -143,25 +158,27 @@ Thank you!
 
 ## Important URLs
 
-| Purpose | URL |
-|---------|-----|
-| Privacy Policy (EN) | https://engezna.com/en/privacy |
-| Privacy Policy (AR) | https://engezna.com/ar/privacy |
-| Terms of Service (EN) | https://engezna.com/en/terms |
-| Terms of Service (AR) | https://engezna.com/ar/terms |
-| Support | https://engezna.com/en/help |
-| Marketing | https://engezna.com |
+| Purpose               | URL                            |
+| --------------------- | ------------------------------ |
+| Privacy Policy (EN)   | https://engezna.com/en/privacy |
+| Privacy Policy (AR)   | https://engezna.com/ar/privacy |
+| Terms of Service (EN) | https://engezna.com/en/terms   |
+| Terms of Service (AR) | https://engezna.com/ar/terms   |
+| Support               | https://engezna.com/en/help    |
+| Marketing             | https://engezna.com            |
 
 ---
 
 ## Response Templates for Common Issues
 
 ### If Asked About Location Services
+
 ```
 Engezna does not use real-time location tracking. Users manually select their governorate and city in their profile settings. This selection is used only to display relevant stores in their area. The app does not access the device's GPS or track user movements.
 ```
 
 ### If Asked About Data Collection
+
 ```
 We collect only the minimum information necessary:
 - Name (for order identification)
@@ -174,6 +191,7 @@ We do not collect or track real-time location data.
 ```
 
 ### If Asked About Payment Processing
+
 ```
 Engezna offers two payment methods:
 1. Cash on Delivery - No payment processing required
@@ -184,4 +202,4 @@ All payment data is handled by certified payment processors. We do not store car
 
 ---
 
-*Last Updated: January 2026*
+_Last Updated: January 2026_

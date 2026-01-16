@@ -25,7 +25,11 @@ interface PermissionsContextValue {
   legacyRole: string | null; // الدور من جدول admin_users (للتوافقية)
   accessibleResources: ResourceCode[];
   geographicScope: GeographicConstraint;
-  can: (resource: ResourceCode, action: ActionCode, context?: PermissionCheckRequest['context']) => Promise<PermissionCheckResult>;
+  can: (
+    resource: ResourceCode,
+    action: ActionCode,
+    context?: PermissionCheckRequest['context']
+  ) => Promise<PermissionCheckResult>;
   canSync: (resource: ResourceCode, action: ActionCode) => boolean;
   hasResource: (resource: ResourceCode) => boolean;
   reload: () => Promise<void>;
@@ -128,7 +132,9 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
     try {
       // جلب المستخدم الحالي
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         // Clear cache when no user is logged in
         clearPermissionsCache();
@@ -140,7 +146,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       // جلب بيانات الملف الشخصي و admin_user بالتوازي (أسرع)
       const [profileResult, adminUserResult] = await Promise.all([
         supabase.from('profiles').select('role').eq('id', user.id).single(),
-        supabase.from('admin_users').select('id, role').eq('user_id', user.id).single()
+        supabase.from('admin_users').select('id, role').eq('user_id', user.id).single(),
       ]);
 
       const profile = profileResult.data;
@@ -156,7 +162,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
             .insert({
               user_id: user.id,
               role: 'super_admin',
-              is_active: true
+              is_active: true,
             })
             .select('id, role')
             .single();
@@ -199,7 +205,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
           .from('admin_permissions')
           .select(`*, permission:permissions (id, code)`)
           .eq('admin_id', adminUser.id)
-          .or('expires_at.is.null,expires_at.gt.now()')
+          .or('expires_at.is.null,expires_at.gt.now()'),
       ]);
 
       const adminRoles = adminRolesResult.data;
@@ -349,17 +355,107 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
   // الصلاحيات الافتراضية للأدوار القديمة (للاستخدام في hasResource)
   const legacyRoleDefaultPermissions: Record<string, ResourceCode[]> = {
-    super_admin: ['dashboard', 'providers', 'orders', 'customers', 'finance', 'analytics', 'support', 'disputes', 'locations', 'team', 'approvals', 'tasks', 'messages', 'announcements', 'promotions', 'settings', 'activity_log', 'roles', 'escalation_rules'], // super_admin يرى كل شيء
-    general_moderator: ['dashboard', 'providers', 'orders', 'customers', 'support', 'disputes', 'locations', 'promotions', 'team', 'tasks', 'messages', 'announcements'],
+    super_admin: [
+      'dashboard',
+      'providers',
+      'orders',
+      'customers',
+      'finance',
+      'analytics',
+      'support',
+      'disputes',
+      'locations',
+      'team',
+      'approvals',
+      'tasks',
+      'messages',
+      'announcements',
+      'promotions',
+      'settings',
+      'activity_log',
+      'roles',
+      'escalation_rules',
+    ], // super_admin يرى كل شيء
+    general_moderator: [
+      'dashboard',
+      'providers',
+      'orders',
+      'customers',
+      'support',
+      'disputes',
+      'locations',
+      'promotions',
+      'team',
+      'tasks',
+      'messages',
+      'announcements',
+    ],
     store_supervisor: ['dashboard', 'providers', 'orders', 'support', 'messages'],
     support: ['dashboard', 'support', 'disputes', 'orders', 'customers', 'messages'],
     finance: ['dashboard', 'finance', 'orders', 'analytics', 'messages'],
     // الأدوار الجديدة
-    regional_manager: ['dashboard', 'providers', 'orders', 'customers', 'analytics', 'support', 'disputes', 'locations', 'tasks', 'approvals', 'messages', 'announcements'],
-    orders_moderator: ['dashboard', 'orders', 'providers', 'customers', 'support', 'disputes', 'locations', 'tasks', 'approvals', 'messages', 'announcements'],
-    support_agent: ['dashboard', 'support', 'disputes', 'orders', 'customers', 'providers', 'tasks', 'messages', 'announcements'],
-    analyst: ['dashboard', 'analytics', 'orders', 'providers', 'customers', 'finance', 'locations', 'activity_log', 'messages', 'announcements'],
-    viewer: ['dashboard', 'providers', 'orders', 'customers', 'support', 'locations', 'tasks', 'approvals', 'messages', 'announcements'],
+    regional_manager: [
+      'dashboard',
+      'providers',
+      'orders',
+      'customers',
+      'analytics',
+      'support',
+      'disputes',
+      'locations',
+      'tasks',
+      'approvals',
+      'messages',
+      'announcements',
+    ],
+    orders_moderator: [
+      'dashboard',
+      'orders',
+      'providers',
+      'customers',
+      'support',
+      'disputes',
+      'locations',
+      'tasks',
+      'approvals',
+      'messages',
+      'announcements',
+    ],
+    support_agent: [
+      'dashboard',
+      'support',
+      'disputes',
+      'orders',
+      'customers',
+      'providers',
+      'tasks',
+      'messages',
+      'announcements',
+    ],
+    analyst: [
+      'dashboard',
+      'analytics',
+      'orders',
+      'providers',
+      'customers',
+      'finance',
+      'locations',
+      'activity_log',
+      'messages',
+      'announcements',
+    ],
+    viewer: [
+      'dashboard',
+      'providers',
+      'orders',
+      'customers',
+      'support',
+      'locations',
+      'tasks',
+      'approvals',
+      'messages',
+      'announcements',
+    ],
   };
 
   // هل يمكن الوصول للمورد؟
@@ -383,15 +479,18 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
   // الموارد المتاحة من النظام الجديد
   const newSystemResources: ResourceCode[] = Array.from(cache.permissions.keys())
-    .filter(code => code.endsWith('.view'))
-    .map(code => code.split('.')[0] as ResourceCode);
+    .filter((code) => code.endsWith('.view'))
+    .map((code) => code.split('.')[0] as ResourceCode);
 
   // دمج الموارد من النظام الجديد والصلاحيات الافتراضية للدور القديم
-  const legacyResources = legacyRole ? (legacyRoleDefaultPermissions[legacyRole] || []) : [];
-  const accessibleResources: ResourceCode[] = [...new Set([...newSystemResources, ...legacyResources])];
+  const legacyResources = legacyRole ? legacyRoleDefaultPermissions[legacyRole] || [] : [];
+  const accessibleResources: ResourceCode[] = [
+    ...new Set([...newSystemResources, ...legacyResources]),
+  ];
 
   // هل super_admin؟ (تحقق من الأدوار الجديدة أو الدور القديم كـ fallback)
-  const isSuperAdmin = cache.roles.some(r => r.role?.code === 'super_admin') || legacyRole === 'super_admin';
+  const isSuperAdmin =
+    cache.roles.some((r) => r.role?.code === 'super_admin') || legacyRole === 'super_admin';
 
   const value: PermissionsContextValue = {
     loading,
@@ -408,11 +507,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     reload: () => loadPermissions(false), // Manual reload always shows loading
   };
 
-  return (
-    <PermissionsContext.Provider value={value}>
-      {children}
-    </PermissionsContext.Provider>
-  );
+  return <PermissionsContext.Provider value={value}>{children}</PermissionsContext.Provider>;
 }
 
 // Hook لاستخدام الصلاحيات

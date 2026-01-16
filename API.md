@@ -39,6 +39,7 @@ POST /api/auth/register
 Creates a new customer account.
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -51,6 +52,7 @@ Creates a new customer account.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -69,6 +71,7 @@ POST /api/auth/partner-register
 Creates a new merchant account with provider profile.
 
 **Request Body:**
+
 ```json
 {
   "email": "store@example.com",
@@ -93,6 +96,7 @@ POST /api/auth/google
 Exchanges Google authorization code for Supabase session.
 
 **Request Body:**
+
 ```json
 {
   "code": "authorization_code_from_google"
@@ -126,11 +130,13 @@ DELETE /api/auth/delete-account
 Permanently deletes user account and all associated data.
 
 **Headers:**
+
 ```
 Authorization: Bearer <access_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "confirmationText": "DELETE"
@@ -152,14 +158,16 @@ GET /api/admin/stats
 Returns dashboard statistics.
 
 **Query Parameters:**
+
 - `governorate_id` (optional) - Filter by governorate
 - `period` (optional) - `today`, `week`, `month`, `year`
 
 **Response:**
+
 ```json
 {
   "totalOrders": 1250,
-  "totalRevenue": 125000.50,
+  "totalRevenue": 125000.5,
   "totalUsers": 500,
   "totalProviders": 25,
   "pendingProviders": 3
@@ -177,6 +185,7 @@ GET /api/admin/orders
 Returns orders list with filtering.
 
 **Query Parameters:**
+
 - `status` - Order status filter
 - `provider_id` - Filter by provider
 - `page` - Page number
@@ -193,6 +202,7 @@ GET /api/admin/providers
 Returns providers list.
 
 **Query Parameters:**
+
 - `status` - `pending`, `approved`, `rejected`
 - `type` - Provider type
 
@@ -229,10 +239,11 @@ POST /api/payment/kashier/initiate
 Creates a new payment session with Kashier gateway.
 
 **Request Body:**
+
 ```json
 {
   "orderId": "uuid",
-  "amount": 150.50,
+  "amount": 150.5,
   "customerName": "أحمد محمد",
   "customerEmail": "user@example.com",
   "customerPhone": "01012345678"
@@ -240,6 +251,7 @@ Creates a new payment session with Kashier gateway.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -259,6 +271,7 @@ POST /api/payment/kashier/webhook
 Receives payment status updates from Kashier.
 
 **Headers:**
+
 ```
 X-Kashier-Signature: <webhook_signature>
 ```
@@ -276,11 +289,13 @@ POST /api/chat
 Sends message to AI assistant for natural language ordering.
 
 **Headers:**
+
 ```
 Authorization: Bearer <access_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "message": "عايز 2 برجر وبيبسي",
@@ -290,6 +305,7 @@ Authorization: Bearer <access_token>
 ```
 
 **Response:**
+
 ```json
 {
   "reply": "تم إضافة 2 برجر كلاسيك (30 ج.م × 2) وبيبسي كبير (15 ج.م) إلى سلة التسوق. المجموع: 75 ج.م. هل تريد شيء آخر؟",
@@ -311,6 +327,7 @@ POST /api/embeddings
 Generates text embeddings for semantic search.
 
 **Request Body:**
+
 ```json
 {
   "text": "برجر لحم بقري مع جبنة شيدر"
@@ -372,6 +389,7 @@ POST /api/voice-order/process
 Processes voice recording and extracts order details.
 
 **Request Body:**
+
 ```json
 {
   "audioUrl": "https://storage.supabase.co/.../voice.mp3",
@@ -380,6 +398,7 @@ Processes voice recording and extracts order details.
 ```
 
 **Response:**
+
 ```json
 {
   "transcription": "عايز 3 كيلو لحمة مفرومة و2 كيلو فراخ",
@@ -413,11 +432,13 @@ POST /api/menu-import/save
 Saves bulk imported menu items from Excel.
 
 **Headers:**
+
 ```
 Authorization: Bearer <access_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "providerId": "uuid",
@@ -445,8 +466,8 @@ These are PostgreSQL functions called via Supabase client.
 
 ```typescript
 const { data, error } = await supabase.rpc('customer_approve_custom_order', {
-  p_request_id: 'uuid'
-})
+  p_request_id: 'uuid',
+});
 ```
 
 Creates order from approved custom order request.
@@ -457,8 +478,8 @@ Creates order from approved custom order request.
 
 ```typescript
 const { data, error } = await supabase.rpc('customer_reject_custom_order', {
-  p_request_id: 'uuid'
-})
+  p_request_id: 'uuid',
+});
 ```
 
 ---
@@ -487,8 +508,8 @@ const { data, error } = await supabase.rpc('generate_provider_settlement', {
   p_provider_id: 'uuid',
   p_period_start: '2026-01-01',
   p_period_end: '2026-01-07',
-  p_created_by: 'admin_uuid'
-})
+  p_created_by: 'admin_uuid',
+});
 ```
 
 ---
@@ -498,9 +519,9 @@ const { data, error } = await supabase.rpc('generate_provider_settlement', {
 ```typescript
 const { data, error } = await supabase.rpc('process_order_refund', {
   p_order_id: 'uuid',
-  p_amount: 50.00,
-  p_reason: 'عنصر ناقص'
-})
+  p_amount: 50.0,
+  p_reason: 'عنصر ناقص',
+});
 ```
 
 ---
@@ -519,25 +540,25 @@ All APIs return errors in this format:
 
 ### Common Error Codes
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `UNAUTHORIZED` | 401 | Authentication required |
-| `FORBIDDEN` | 403 | Insufficient permissions |
-| `NOT_FOUND` | 404 | Resource not found |
-| `VALIDATION_ERROR` | 400 | Invalid request data |
-| `RATE_LIMITED` | 429 | Too many requests |
-| `SERVER_ERROR` | 500 | Internal server error |
+| Code               | HTTP Status | Description              |
+| ------------------ | ----------- | ------------------------ |
+| `UNAUTHORIZED`     | 401         | Authentication required  |
+| `FORBIDDEN`        | 403         | Insufficient permissions |
+| `NOT_FOUND`        | 404         | Resource not found       |
+| `VALIDATION_ERROR` | 400         | Invalid request data     |
+| `RATE_LIMITED`     | 429         | Too many requests        |
+| `SERVER_ERROR`     | 500         | Internal server error    |
 
 ---
 
 ## Rate Limiting
 
-| Endpoint | Limit |
-|----------|-------|
+| Endpoint             | Limit                |
+| -------------------- | -------------------- |
 | `/api/auth/register` | 10 requests / 15 min |
-| `/api/auth/*/otp` | 5 requests / 10 min |
-| `/api/chat` | 30 requests / min |
-| General | 100 requests / min |
+| `/api/auth/*/otp`    | 5 requests / 10 min  |
+| `/api/chat`          | 30 requests / min    |
+| General              | 100 requests / min   |
 
 ---
 

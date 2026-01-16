@@ -20,8 +20,8 @@ import type { CachedVoiceRecording } from '@/types/custom-order';
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export interface VoiceCacheConfig {
-  maxRetries?: number;       // Default: 3
-  retryDelayMs?: number;     // Default: 2000ms
+  maxRetries?: number; // Default: 3
+  retryDelayMs?: number; // Default: 2000ms
   cacheExpiryHours?: number; // Default: 72 hours
 }
 
@@ -32,11 +32,7 @@ export interface VoiceCacheStats {
   totalSizeBytes: number;
 }
 
-export type UploadCallback = (
-  id: string,
-  blob: Blob,
-  providerId: string
-) => Promise<string>;  // Returns URL
+export type UploadCallback = (id: string, blob: Blob, providerId: string) => Promise<string>; // Returns URL
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Constants
@@ -319,11 +315,14 @@ export class VoiceCache {
         await this.updateStatus(id, 'pending', newRetryCount);
 
         // Schedule retry
-        setTimeout(() => {
-          if (this.isOnline) {
-            this.tryUpload(id);
-          }
-        }, this.retryDelayMs * Math.pow(2, newRetryCount - 1));  // Exponential backoff
+        setTimeout(
+          () => {
+            if (this.isOnline) {
+              this.tryUpload(id);
+            }
+          },
+          this.retryDelayMs * Math.pow(2, newRetryCount - 1)
+        ); // Exponential backoff
       }
 
       return null;
@@ -365,7 +364,7 @@ export class VoiceCache {
   async cleanup(): Promise<number> {
     await this.ensureDb();
 
-    const expiryTime = Date.now() - (this.cacheExpiryHours * 60 * 60 * 1000);
+    const expiryTime = Date.now() - this.cacheExpiryHours * 60 * 60 * 1000;
     let cleaned = 0;
 
     return new Promise((resolve, reject) => {

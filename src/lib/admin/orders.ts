@@ -46,16 +46,14 @@ export async function getOrders(
     const offset = (page - 1) * actualLimit;
 
     // Build query
-    let query = supabase
-      .from('orders')
-      .select(
-        `
+    let query = supabase.from('orders').select(
+      `
         *,
         customer:profiles(id, full_name, phone),
         provider:providers(id, name_ar, name_en, governorate_id, city_id, district_id)
       `,
-        { count: 'exact' }
-      );
+      { count: 'exact' }
+    );
 
     // Apply filters
     if (status) {
@@ -190,7 +188,11 @@ export async function cancelOrder(
 ): Promise<OperationResult<AdminOrder>> {
   try {
     if (!reason || !reason.trim()) {
-      return { success: false, error: 'Cancellation reason is required', errorCode: 'VALIDATION_ERROR' };
+      return {
+        success: false,
+        error: 'Cancellation reason is required',
+        errorCode: 'VALIDATION_ERROR',
+      };
     }
 
     const supabase = createAdminClient();
@@ -283,7 +285,11 @@ export async function initiateRefund(
     }
 
     if (amount <= 0) {
-      return { success: false, error: 'Refund amount must be positive', errorCode: 'VALIDATION_ERROR' };
+      return {
+        success: false,
+        error: 'Refund amount must be positive',
+        errorCode: 'VALIDATION_ERROR',
+      };
     }
 
     const supabase = createAdminClient();

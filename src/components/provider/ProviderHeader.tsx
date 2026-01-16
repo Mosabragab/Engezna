@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect, useCallback } from 'react';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import {
   Menu,
   Bell,
@@ -22,37 +22,37 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-} from 'lucide-react'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import type { User } from '@supabase/supabase-js'
+} from 'lucide-react';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import type { User } from '@supabase/supabase-js';
 
 interface ProviderHeaderProps {
-  user: User | null
-  onMenuClick: () => void
-  onSignOut: () => void
-  pendingOrders?: number
-  totalNotifications?: number
-  providerId?: string
-  pageTitle?: { ar: string; en: string }
-  pageSubtitle?: { ar: string; en: string }
+  user: User | null;
+  onMenuClick: () => void;
+  onSignOut: () => void;
+  pendingOrders?: number;
+  totalNotifications?: number;
+  providerId?: string;
+  pageTitle?: { ar: string; en: string };
+  pageSubtitle?: { ar: string; en: string };
 }
 
 type ProviderNotification = {
-  id: string
-  provider_id: string
-  type: string
-  title_ar: string
-  title_en: string
-  body_ar: string | null
-  body_en: string | null
-  related_order_id: string | null
-  related_customer_id: string | null
-  related_review_id: string | null
-  related_message_id: string | null
-  is_read: boolean
-  read_at: string | null
-  created_at: string
-}
+  id: string;
+  provider_id: string;
+  type: string;
+  title_ar: string;
+  title_en: string;
+  body_ar: string | null;
+  body_en: string | null;
+  related_order_id: string | null;
+  related_customer_id: string | null;
+  related_review_id: string | null;
+  related_message_id: string | null;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;
+};
 
 export function ProviderHeader({
   user,
@@ -64,114 +64,111 @@ export function ProviderHeader({
   pageTitle,
   pageSubtitle,
 }: ProviderHeaderProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [notifications, setNotifications] = useState<ProviderNotification[]>([])
-  const [loadingNotifications, setLoadingNotifications] = useState(false)
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<ProviderNotification[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const loadNotifications = useCallback(async () => {
-    if (!providerId) return
-    setLoadingNotifications(true)
-    const supabase = createClient()
+    if (!providerId) return;
+    setLoadingNotifications(true);
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('provider_notifications')
       .select('*')
       .eq('provider_id', providerId)
       .order('created_at', { ascending: false })
-      .limit(20)
+      .limit(20);
 
     if (!error && data) {
-      setNotifications(data)
+      setNotifications(data);
     }
 
-    setLoadingNotifications(false)
-  }, [providerId])
+    setLoadingNotifications(false);
+  }, [providerId]);
 
   // Load notifications when dropdown opens
   useEffect(() => {
     if (notificationsOpen && providerId) {
-      loadNotifications()
+      loadNotifications();
     }
-  }, [notificationsOpen, providerId, loadNotifications])
+  }, [notificationsOpen, providerId, loadNotifications]);
 
   async function markAsRead(notificationId: string) {
-    const supabase = createClient()
+    const supabase = createClient();
 
     await supabase
       .from('provider_notifications')
       .update({ is_read: true, read_at: new Date().toISOString() })
-      .eq('id', notificationId)
+      .eq('id', notificationId);
 
     // Update local state
-    setNotifications(prev =>
-      prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
-    )
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+    );
   }
 
   async function markAllAsRead() {
-    if (!providerId) return
-    const supabase = createClient()
+    if (!providerId) return;
+    const supabase = createClient();
 
     await supabase
       .from('provider_notifications')
       .update({ is_read: true, read_at: new Date().toISOString() })
       .eq('provider_id', providerId)
-      .eq('is_read', false)
+      .eq('is_read', false);
 
     // Update local state
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   }
 
   async function deleteNotification(notificationId: string, e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault();
+    e.stopPropagation();
 
-    const supabase = createClient()
+    const supabase = createClient();
 
-    await supabase
-      .from('provider_notifications')
-      .delete()
-      .eq('id', notificationId)
+    await supabase.from('provider_notifications').delete().eq('id', notificationId);
 
     // Update local state
-    setNotifications(prev => prev.filter(n => n.id !== notificationId))
+    setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
   }
 
   function getNotificationIcon(type: string, bodyAr?: string | null) {
     switch (type) {
       // Standard orders
       case 'new_order':
-        return <ShoppingBag className="w-5 h-5 text-yellow-600" />
+        return <ShoppingBag className="w-5 h-5 text-yellow-600" />;
       case 'new_message':
-        return <MessageCircle className="w-5 h-5 text-blue-600" />
+        return <MessageCircle className="w-5 h-5 text-blue-600" />;
       case 'new_review':
-        return <Star className="w-5 h-5 text-primary" />
+        return <Star className="w-5 h-5 text-primary" />;
       case 'new_refund_request':
       case 'refund_confirmed':
-        return <AlertTriangle className="w-5 h-5 text-orange-600" />
+        return <AlertTriangle className="w-5 h-5 text-orange-600" />;
 
       // Custom order notifications - UPPERCASE types
       case 'NEW_CUSTOM_ORDER':
         // Check body for input type to show appropriate icon
         if (bodyAr?.includes('صوتي')) {
-          return <Mic className="w-5 h-5 text-emerald-600" />
+          return <Mic className="w-5 h-5 text-emerald-600" />;
         }
         if (bodyAr?.includes('صور')) {
-          return <ImageIcon className="w-5 h-5 text-emerald-600" />
+          return <ImageIcon className="w-5 h-5 text-emerald-600" />;
         }
-        return <FileText className="w-5 h-5 text-emerald-600" />
+        return <FileText className="w-5 h-5 text-emerald-600" />;
       case 'CUSTOM_ORDER_APPROVED':
-        return <CheckCircle className="w-5 h-5 text-green-600" />
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'CUSTOM_ORDER_REJECTED':
-        return <XCircle className="w-5 h-5 text-red-500" />
+        return <XCircle className="w-5 h-5 text-red-500" />;
       case 'PRICING_EXPIRED':
-        return <Clock className="w-5 h-5 text-amber-600" />
+        return <Clock className="w-5 h-5 text-amber-600" />;
 
       default:
-        return <Bell className="w-5 h-5 text-slate-500" />
+        return <Bell className="w-5 h-5 text-slate-500" />;
     }
   }
 
@@ -179,27 +176,27 @@ export function ProviderHeader({
     switch (type) {
       // Standard orders
       case 'new_order':
-        return 'bg-yellow-100'
+        return 'bg-yellow-100';
       case 'new_message':
-        return 'bg-blue-100'
+        return 'bg-blue-100';
       case 'new_review':
-        return 'bg-primary/10'
+        return 'bg-primary/10';
       case 'new_refund_request':
       case 'refund_confirmed':
-        return 'bg-orange-100'
+        return 'bg-orange-100';
 
       // Custom order notifications
       case 'NEW_CUSTOM_ORDER':
-        return 'bg-emerald-100'
+        return 'bg-emerald-100';
       case 'CUSTOM_ORDER_APPROVED':
-        return 'bg-green-100'
+        return 'bg-green-100';
       case 'CUSTOM_ORDER_REJECTED':
-        return 'bg-red-100'
+        return 'bg-red-100';
       case 'PRICING_EXPIRED':
-        return 'bg-amber-100'
+        return 'bg-amber-100';
 
       default:
-        return 'bg-slate-100'
+        return 'bg-slate-100';
     }
   }
 
@@ -210,12 +207,12 @@ export function ProviderHeader({
       case 'new_message':
         return notification.related_order_id
           ? `/${locale}/provider/orders/${notification.related_order_id}`
-          : `/${locale}/provider/orders`
+          : `/${locale}/provider/orders`;
       case 'new_review':
-        return `/${locale}/provider/reviews`
+        return `/${locale}/provider/reviews`;
       case 'new_refund_request':
       case 'refund_confirmed':
-        return `/${locale}/provider/refunds`
+        return `/${locale}/provider/refunds`;
 
       // Custom order notifications
       // related_message_id stores request_id for custom orders
@@ -225,44 +222,41 @@ export function ProviderHeader({
         // Navigate to custom orders list or specific request
         return notification.related_message_id
           ? `/${locale}/provider/orders/custom?request=${notification.related_message_id}`
-          : `/${locale}/provider/orders/custom`
+          : `/${locale}/provider/orders/custom`;
 
       case 'CUSTOM_ORDER_APPROVED':
         // After approval, we have real order_id
         return notification.related_order_id
           ? `/${locale}/provider/orders/${notification.related_order_id}`
-          : `/${locale}/provider/orders/custom`
+          : `/${locale}/provider/orders/custom`;
 
       default:
-        return `/${locale}/provider`
+        return `/${locale}/provider`;
     }
   }
 
   const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMins / 60)
-    const diffDays = Math.floor(diffHours / 24)
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return locale === 'ar' ? 'الآن' : 'Just now'
-    if (diffMins < 60) return locale === 'ar' ? `منذ ${diffMins} دقيقة` : `${diffMins}m ago`
-    if (diffHours < 24) return locale === 'ar' ? `منذ ${diffHours} ساعة` : `${diffHours}h ago`
-    return locale === 'ar' ? `منذ ${diffDays} يوم` : `${diffDays}d ago`
-  }
+    if (diffMins < 1) return locale === 'ar' ? 'الآن' : 'Just now';
+    if (diffMins < 60) return locale === 'ar' ? `منذ ${diffMins} دقيقة` : `${diffMins}m ago`;
+    if (diffHours < 24) return locale === 'ar' ? `منذ ${diffHours} ساعة` : `${diffHours}h ago`;
+    return locale === 'ar' ? `منذ ${diffDays} يوم` : `${diffDays}d ago`;
+  };
 
-  const unreadNotifications = notifications.filter(n => !n.is_read)
+  const unreadNotifications = notifications.filter((n) => !n.is_read);
 
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-slate-100/80 px-4 lg:px-6 py-3 shadow-elegant sticky top-0 z-40">
       <div className="flex items-center justify-between">
         {/* Right Side (RTL): Menu & Logo */}
         <div className="flex items-center gap-4">
-          <button
-            onClick={onMenuClick}
-            className="lg:hidden text-slate-500 hover:text-slate-700"
-          >
+          <button onClick={onMenuClick} className="lg:hidden text-slate-500 hover:text-slate-700">
             <Menu className="w-6 h-6" />
           </button>
 
@@ -296,20 +290,22 @@ export function ProviderHeader({
             onMouseEnter={() => setNotificationsOpen(true)}
             onMouseLeave={() => setNotificationsOpen(false)}
           >
-            <button
-              className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-xl transition-all duration-200 active:scale-95"
-            >
+            <button className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-xl transition-all duration-200 active:scale-95">
               <Bell className="w-5 h-5" />
               {(totalNotifications ?? pendingOrders) > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {(totalNotifications ?? pendingOrders) > 9 ? '9+' : (totalNotifications ?? pendingOrders)}
+                  {(totalNotifications ?? pendingOrders) > 9
+                    ? '9+'
+                    : (totalNotifications ?? pendingOrders)}
                 </span>
               )}
             </button>
 
             {/* Notifications Dropdown Panel */}
             {notificationsOpen && (
-              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full mt-2 w-80 sm:w-96 z-50 animate-slide-up`}>
+              <div
+                className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full mt-2 w-80 sm:w-96 z-50 animate-slide-up`}
+              >
                 <div className="bg-white rounded-2xl shadow-elegant-lg border border-slate-100 overflow-hidden">
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 bg-slate-50/80 border-b border-slate-100">
@@ -328,8 +324,8 @@ export function ProviderHeader({
                     {unreadNotifications.length > 0 && (
                       <button
                         onClick={(e) => {
-                          e.stopPropagation()
-                          markAllAsRead()
+                          e.stopPropagation();
+                          markAllAsRead();
                         }}
                         className="flex items-center gap-1 text-xs text-primary hover:underline"
                       >
@@ -360,19 +356,23 @@ export function ProviderHeader({
                             href={getNotificationLink(notification)}
                             onClick={() => {
                               if (!notification.is_read) {
-                                markAsRead(notification.id)
+                                markAsRead(notification.id);
                               }
-                              setNotificationsOpen(false)
+                              setNotificationsOpen(false);
                             }}
                             className={`flex items-start gap-3 px-4 py-3 hover:bg-slate-50 border-b border-slate-100 transition-colors ${
                               !notification.is_read ? 'bg-primary/5' : ''
                             }`}
                           >
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${getNotificationBgColor(notification.type)}`}>
+                            <div
+                              className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${getNotificationBgColor(notification.type)}`}
+                            >
                               {getNotificationIcon(notification.type, notification.body_ar)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className={`text-sm font-medium ${!notification.is_read ? 'text-primary' : 'text-slate-900'}`}>
+                              <p
+                                className={`text-sm font-medium ${!notification.is_read ? 'text-primary' : 'text-slate-900'}`}
+                              >
                                 {locale === 'ar' ? notification.title_ar : notification.title_en}
                               </p>
                               {(notification.body_ar || notification.body_en) && (
@@ -384,29 +384,33 @@ export function ProviderHeader({
                                 {formatTimeAgo(notification.created_at)}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <div
+                              className="flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               {/* Reply button for customer messages */}
-                              {notification.type === 'new_message' && notification.related_order_id && (
-                                <Link
-                                  href={`/${locale}/provider/orders/${notification.related_order_id}?openChat=true`}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    if (!notification.is_read) {
-                                      markAsRead(notification.id)
-                                    }
-                                    setNotificationsOpen(false)
-                                  }}
-                                  className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors"
-                                >
-                                  {locale === 'ar' ? 'رد' : 'Reply'}
-                                </Link>
-                              )}
+                              {notification.type === 'new_message' &&
+                                notification.related_order_id && (
+                                  <Link
+                                    href={`/${locale}/provider/orders/${notification.related_order_id}?openChat=true`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!notification.is_read) {
+                                        markAsRead(notification.id);
+                                      }
+                                      setNotificationsOpen(false);
+                                    }}
+                                    className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors"
+                                  >
+                                    {locale === 'ar' ? 'رد' : 'Reply'}
+                                  </Link>
+                                )}
                               {!notification.is_read && (
                                 <button
                                   onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    markAsRead(notification.id)
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    markAsRead(notification.id);
                                   }}
                                   className="p-1.5 text-slate-400 hover:text-primary rounded-full hover:bg-slate-100"
                                   title={locale === 'ar' ? 'تحديد كمقروء' : 'Mark as read'}
@@ -456,7 +460,9 @@ export function ProviderHeader({
 
             {/* Dropdown Menu */}
             {accountMenuOpen && (
-              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-1 w-56 z-50 animate-slide-up`}>
+              <div
+                className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-1 w-56 z-50 animate-slide-up`}
+              >
                 <div className="bg-white rounded-2xl shadow-elegant-lg border border-slate-100 py-2">
                   {/* User Info */}
                   <div className="px-4 py-2 border-b border-slate-100">
@@ -482,8 +488,8 @@ export function ProviderHeader({
                   <div className="border-t border-slate-100 pt-1">
                     <button
                       onClick={() => {
-                        setAccountMenuOpen(false)
-                        onSignOut()
+                        setAccountMenuOpen(false);
+                        onSignOut();
                       }}
                       className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
@@ -498,5 +504,5 @@ export function ProviderHeader({
         </div>
       </div>
     </header>
-  )
+  );
 }

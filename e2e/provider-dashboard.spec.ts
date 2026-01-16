@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test'
-import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
+import { test, expect } from '@playwright/test';
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils';
 
 /**
  * Provider Dashboard E2E Tests
@@ -15,458 +15,490 @@ import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 // Helper function to login as provider
 async function loginAsProvider(page: import('@playwright/test').Page) {
-  await page.goto('/ar/provider/login')
-  await page.waitForLoadState('networkidle')
+  await page.goto('/ar/provider/login');
+  await page.waitForLoadState('networkidle');
 
   // Wait for the form to appear (after checkingAuth spinner disappears)
-  const emailInput = page.locator(LOCATORS.emailInput)
-  await emailInput.waitFor({ state: 'visible', timeout: 15000 })
+  const emailInput = page.locator(LOCATORS.emailInput);
+  await emailInput.waitFor({ state: 'visible', timeout: 15000 });
 
-  const passwordInput = page.locator(LOCATORS.passwordInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput);
 
-  await emailInput.fill(TEST_USERS.provider.email)
-  await passwordInput.fill(TEST_USERS.provider.password)
-  await page.click(LOCATORS.submitButton)
+  await emailInput.fill(TEST_USERS.provider.email);
+  await passwordInput.fill(TEST_USERS.provider.password);
+  await page.click(LOCATORS.submitButton);
 
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(2000)
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(2000);
 }
 
 test.describe('Provider Login Flow', () => {
   // Use fresh context (no storageState) for login tests
-  test.use({ storageState: { cookies: [], origins: [] } })
+  test.use({ storageState: { cookies: [], origins: [] } });
 
   test('should display provider login page correctly', async ({ page }) => {
-    await page.goto('/ar/provider/login')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/login');
+    await page.waitForLoadState('networkidle');
 
     // Check if already redirected
-    const url = page.url()
+    const url = page.url();
     if (url.includes('/provider') && !url.includes('/login')) {
-      return
+      return;
     }
 
     // Wait for the form to appear with extended timeout
-    const emailInput = page.locator('input[type="email"], input[name="email"]')
+    const emailInput = page.locator('input[type="email"], input[name="email"]');
 
     try {
-      await emailInput.waitFor({ state: 'visible', timeout: 15000 })
+      await emailInput.waitFor({ state: 'visible', timeout: 15000 });
     } catch {
       // Re-check if redirected to dashboard
-      const currentUrl = page.url()
+      const currentUrl = page.url();
       if (currentUrl.includes('/provider') && !currentUrl.includes('/login')) {
-        return
+        return;
       }
       // Check if page has login content
-      const pageContent = await page.textContent('body')
-      if (pageContent?.includes('تسجيل') || pageContent?.includes('login') || pageContent?.includes('شريك')) {
-        console.log('Login page content found but form not visible')
-        return
+      const pageContent = await page.textContent('body');
+      if (
+        pageContent?.includes('تسجيل') ||
+        pageContent?.includes('login') ||
+        pageContent?.includes('شريك')
+      ) {
+        console.log('Login page content found but form not visible');
+        return;
       }
-      throw new Error('Login form did not appear')
+      throw new Error('Login form did not appear');
     }
 
-    const passwordInput = page.locator('input[type="password"], input[name="password"]')
-    const submitBtn = page.locator('button[type="submit"]')
+    const passwordInput = page.locator('input[type="password"], input[name="password"]');
+    const submitBtn = page.locator('button[type="submit"]');
 
-    await expect(emailInput).toBeVisible()
-    await expect(passwordInput).toBeVisible()
-    await expect(submitBtn).toBeVisible()
+    await expect(emailInput).toBeVisible();
+    await expect(passwordInput).toBeVisible();
+    await expect(submitBtn).toBeVisible();
 
     // Verify page content includes provider-related text
-    const pageContent = await page.textContent('body')
-    const hasProviderText = pageContent?.includes('شريك') ||
-                            pageContent?.includes('Partner') ||
-                            pageContent?.includes('مقدم') ||
-                            pageContent?.includes('Provider') ||
-                            pageContent?.includes('تسجيل')
+    const pageContent = await page.textContent('body');
+    const hasProviderText =
+      pageContent?.includes('شريك') ||
+      pageContent?.includes('Partner') ||
+      pageContent?.includes('مقدم') ||
+      pageContent?.includes('Provider') ||
+      pageContent?.includes('تسجيل');
 
-    expect(hasProviderText).toBeTruthy()
-  })
+    expect(hasProviderText).toBeTruthy();
+  });
 
   test('should show validation errors for empty fields', async ({ page }) => {
-    await page.goto('/ar/provider/login')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/login');
+    await page.waitForLoadState('networkidle');
 
     // Check if redirected
-    const url = page.url()
+    const url = page.url();
     if (url.includes('/provider') && !url.includes('/login')) {
-      return
+      return;
     }
 
     // Wait for the form to appear
-    const submitBtn = page.locator('button[type="submit"]')
+    const submitBtn = page.locator('button[type="submit"]');
 
     try {
-      await submitBtn.waitFor({ state: 'visible', timeout: 15000 })
+      await submitBtn.waitFor({ state: 'visible', timeout: 15000 });
     } catch {
       // Re-check if redirected to dashboard
-      const currentUrl = page.url()
+      const currentUrl = page.url();
       if (currentUrl.includes('/provider') && !currentUrl.includes('/login')) {
-        return
+        return;
       }
       // Check if page has login content
-      const pageContent = await page.textContent('body')
+      const pageContent = await page.textContent('body');
       if (pageContent?.includes('تسجيل') || pageContent?.includes('login')) {
-        console.log('Login page content found but form not visible')
-        return
+        console.log('Login page content found but form not visible');
+        return;
       }
-      throw new Error('Login form did not appear')
+      throw new Error('Login form did not appear');
     }
 
     // Try to submit empty form
-    await submitBtn.click()
-    await page.waitForTimeout(1000)
+    await submitBtn.click();
+    await page.waitForTimeout(1000);
 
-    const pageContent = await page.textContent('body')
+    const pageContent = await page.textContent('body');
 
     // Check for any error indication
-    const hasValidation = pageContent?.includes('مطلوب') ||
-                          pageContent?.includes('required') ||
-                          pageContent?.includes('Invalid') ||
-                          pageContent?.includes('البريد') ||
-                          pageContent?.includes('تسجيل') ||
-                          await page.locator('[class*="error"], [class*="invalid"], [class*="destructive"]').first().isVisible().catch(() => false)
+    const hasValidation =
+      pageContent?.includes('مطلوب') ||
+      pageContent?.includes('required') ||
+      pageContent?.includes('Invalid') ||
+      pageContent?.includes('البريد') ||
+      pageContent?.includes('تسجيل') ||
+      (await page
+        .locator('[class*="error"], [class*="invalid"], [class*="destructive"]')
+        .first()
+        .isVisible()
+        .catch(() => false));
 
-    expect(hasValidation).toBeTruthy()
-  })
+    expect(hasValidation).toBeTruthy();
+  });
 
   test('should redirect to dashboard after login (with valid credentials)', async ({ page }) => {
-    await page.goto('/ar/provider/login')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/login');
+    await page.waitForLoadState('networkidle');
 
     // Check if already on dashboard
-    const initialUrl = page.url()
+    const initialUrl = page.url();
     if (initialUrl.includes('/provider') && !initialUrl.includes('/login')) {
-      return
+      return;
     }
 
     // Wait for form
-    const emailInput = page.locator('input[type="email"], input[name="email"]')
-    const passwordInput = page.locator('input[type="password"], input[name="password"]')
+    const emailInput = page.locator('input[type="email"], input[name="email"]');
+    const passwordInput = page.locator('input[type="password"], input[name="password"]');
 
     try {
-      await emailInput.waitFor({ state: 'visible', timeout: 15000 })
+      await emailInput.waitFor({ state: 'visible', timeout: 15000 });
     } catch {
-      const currentUrl = page.url()
+      const currentUrl = page.url();
       if (currentUrl.includes('/provider') && !currentUrl.includes('/login')) {
-        return
+        return;
       }
       // Check if page has login content
-      const pageContent = await page.textContent('body')
-      if (pageContent?.includes('تسجيل') || pageContent?.includes('login') || pageContent?.includes('شريك')) {
-        console.log('Login page loading but form not ready')
-        return
+      const pageContent = await page.textContent('body');
+      if (
+        pageContent?.includes('تسجيل') ||
+        pageContent?.includes('login') ||
+        pageContent?.includes('شريك')
+      ) {
+        console.log('Login page loading but form not ready');
+        return;
       }
-      throw new Error('Login form did not appear')
+      throw new Error('Login form did not appear');
     }
 
-    await emailInput.fill('provider@test.com')
-    await passwordInput.fill('Test123!')
+    await emailInput.fill('provider@test.com');
+    await passwordInput.fill('Test123!');
 
     // Submit form
-    await page.locator('button[type="submit"]').click()
+    await page.locator('button[type="submit"]').click();
 
     // Wait for navigation
-    await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
     // Check result - either redirected to provider dashboard or showing login page
-    const url = page.url()
-    const isOnDashboard = url.includes('/provider') && !url.includes('/login')
-    const pageContent = await page.textContent('body')
-    const hasLoginPage = pageContent?.includes('تسجيل') || pageContent?.includes('login')
+    const url = page.url();
+    const isOnDashboard = url.includes('/provider') && !url.includes('/login');
+    const pageContent = await page.textContent('body');
+    const hasLoginPage = pageContent?.includes('تسجيل') || pageContent?.includes('login');
 
-    expect(isOnDashboard || hasLoginPage).toBeTruthy()
-  })
-})
+    expect(isOnDashboard || hasLoginPage).toBeTruthy();
+  });
+});
 
 test.describe('Provider Dashboard Display', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-    await page.goto('/ar/provider')
-    await page.waitForLoadState('networkidle')
-  })
+    await page.goto('/ar/provider');
+    await page.waitForLoadState('networkidle');
+  });
 
   test('should display dashboard or login redirect', async ({ page }) => {
-    const url = page.url()
+    const url = page.url();
 
     // Should either show dashboard or redirect to login
-    const isOnDashboard = url.includes('/provider') && !url.includes('/login')
-    const isOnLogin = url.includes('/login') || url.includes('/auth')
+    const isOnDashboard = url.includes('/provider') && !url.includes('/login');
+    const isOnLogin = url.includes('/login') || url.includes('/auth');
 
-    expect(isOnDashboard || isOnLogin).toBeTruthy()
-  })
+    expect(isOnDashboard || isOnLogin).toBeTruthy();
+  });
 
   test('should have navigation sidebar', async ({ page }) => {
     // If on dashboard, check for sidebar navigation
     if (page.url().includes('/provider') && !page.url().includes('/login')) {
-      const sidebar = page.locator('aside, nav[class*="sidebar"], [class*="Sidebar"]')
+      const sidebar = page.locator('aside, nav[class*="sidebar"], [class*="Sidebar"]');
 
       if (await sidebar.first().isVisible()) {
         // Verify key navigation items
-        const pageContent = await page.textContent('body')
-        const hasOrders = pageContent?.includes('الطلبات') || pageContent?.includes('Orders')
-        const hasProducts = pageContent?.includes('المنتجات') || pageContent?.includes('Products')
+        const pageContent = await page.textContent('body');
+        const hasOrders = pageContent?.includes('الطلبات') || pageContent?.includes('Orders');
+        const hasProducts = pageContent?.includes('المنتجات') || pageContent?.includes('Products');
 
-        expect(hasOrders || hasProducts).toBeTruthy()
+        expect(hasOrders || hasProducts).toBeTruthy();
       }
     }
-  })
+  });
 
   test('should display statistics cards', async ({ page }) => {
     if (page.url().includes('/provider') && !page.url().includes('/login')) {
       // Look for stats cards
-      const statsCards = page.locator('[class*="card"], [class*="Card"], [class*="stat"]')
-      const cardsCount = await statsCards.count()
+      const statsCards = page.locator('[class*="card"], [class*="Card"], [class*="stat"]');
+      const cardsCount = await statsCards.count();
 
       // Dashboard should have at least some cards/stats
-      expect(cardsCount).toBeGreaterThan(0)
+      expect(cardsCount).toBeGreaterThan(0);
     }
-  })
-})
+  });
+});
 
 test.describe('Provider Orders Management', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should display orders page', async ({ page }) => {
-    await page.goto('/ar/provider/orders')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/orders');
+    await page.waitForLoadState('networkidle');
 
-    const url = page.url()
+    const url = page.url();
 
     // Either shows orders or redirects to login
     if (url.includes('/orders')) {
-      const pageContent = await page.textContent('body')
-      const hasOrderContent = pageContent?.includes('طلب') ||
-                              pageContent?.includes('order') ||
-                              pageContent?.includes('لا يوجد') ||
-                              pageContent?.includes('no orders')
+      const pageContent = await page.textContent('body');
+      const hasOrderContent =
+        pageContent?.includes('طلب') ||
+        pageContent?.includes('order') ||
+        pageContent?.includes('لا يوجد') ||
+        pageContent?.includes('no orders');
 
-      expect(hasOrderContent).toBeTruthy()
+      expect(hasOrderContent).toBeTruthy();
     } else {
       // Redirected to login
-      expect(url.includes('/login') || url.includes('/auth')).toBeTruthy()
+      expect(url.includes('/login') || url.includes('/auth')).toBeTruthy();
     }
-  })
+  });
 
   test('should have order status tabs or filters', async ({ page }) => {
-    await page.goto('/ar/provider/orders')
-    await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(1000)
+    await page.goto('/ar/provider/orders');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
-    const url = page.url()
+    const url = page.url();
 
     // If redirected to login, test passes
     if (url.includes('/login') || url.includes('/auth')) {
-      expect(true).toBeTruthy()
-      return
+      expect(true).toBeTruthy();
+      return;
     }
 
     if (url.includes('/orders') || url.includes('/provider')) {
       // Look for tabs, filter buttons, or status-related text
-      const tabs = page.locator('button[role="tab"], [class*="tab"], [class*="Tab"]')
-      const filters = page.locator('select, [class*="filter"], [class*="Filter"]')
-      const buttons = page.locator('button')
+      const tabs = page.locator('button[role="tab"], [class*="tab"], [class*="Tab"]');
+      const filters = page.locator('select, [class*="filter"], [class*="Filter"]');
+      const buttons = page.locator('button');
 
-      const hasTabs = await tabs.count() > 0
-      const hasFilters = await filters.count() > 0
-      const hasButtons = await buttons.count() > 2
+      const hasTabs = (await tabs.count()) > 0;
+      const hasFilters = (await filters.count()) > 0;
+      const hasButtons = (await buttons.count()) > 2;
 
       // Check for status-related text content
-      const pageContent = await page.textContent('body')
-      const hasStatusText = pageContent?.includes('جديد') ||
-                            pageContent?.includes('قيد') ||
-                            pageContent?.includes('مكتمل') ||
-                            pageContent?.includes('ملغي') ||
-                            pageContent?.includes('pending') ||
-                            pageContent?.includes('completed') ||
-                            pageContent?.includes('الطلبات') ||
-                            (pageContent && pageContent.length > 100)
+      const pageContent = await page.textContent('body');
+      const hasStatusText =
+        pageContent?.includes('جديد') ||
+        pageContent?.includes('قيد') ||
+        pageContent?.includes('مكتمل') ||
+        pageContent?.includes('ملغي') ||
+        pageContent?.includes('pending') ||
+        pageContent?.includes('completed') ||
+        pageContent?.includes('الطلبات') ||
+        (pageContent && pageContent.length > 100);
 
       // Should have some way to filter orders OR have content
-      expect(hasTabs || hasFilters || hasButtons || hasStatusText).toBeTruthy()
+      expect(hasTabs || hasFilters || hasButtons || hasStatusText).toBeTruthy();
     }
-  })
-})
+  });
+});
 
 test.describe('Provider Products Management', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should display products page', async ({ page }) => {
-    await page.goto('/ar/provider/products')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/products');
+    await page.waitForLoadState('networkidle');
 
-    const url = page.url()
+    const url = page.url();
 
     if (url.includes('/products')) {
-      const pageContent = await page.textContent('body')
-      const hasProductContent = pageContent?.includes('منتج') ||
-                                pageContent?.includes('product') ||
-                                pageContent?.includes('القائمة') ||
-                                pageContent?.includes('menu')
+      const pageContent = await page.textContent('body');
+      const hasProductContent =
+        pageContent?.includes('منتج') ||
+        pageContent?.includes('product') ||
+        pageContent?.includes('القائمة') ||
+        pageContent?.includes('menu');
 
-      expect(hasProductContent).toBeTruthy()
+      expect(hasProductContent).toBeTruthy();
     }
-  })
+  });
 
   test('should have add product button', async ({ page }) => {
-    await page.goto('/ar/provider/products')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/products');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/products') && !page.url().includes('/login')) {
       // Look for add button
-      const addBtn = page.locator('button:has-text("إضافة"), button:has-text("Add"), a[href*="new"], a[href*="add"]')
+      const addBtn = page.locator(
+        'button:has-text("إضافة"), button:has-text("Add"), a[href*="new"], a[href*="add"]'
+      );
 
       if (await addBtn.first().isVisible()) {
-        await expect(addBtn.first()).toBeVisible()
+        await expect(addBtn.first()).toBeVisible();
       }
     }
-  })
-})
+  });
+});
 
 test.describe('Provider Settings', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should display settings page', async ({ page }) => {
-    await page.goto('/ar/provider/settings')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/settings');
+    await page.waitForLoadState('networkidle');
 
-    const url = page.url()
+    const url = page.url();
 
     if (url.includes('/settings')) {
-      const pageContent = await page.textContent('body')
-      const hasSettingsContent = pageContent?.includes('إعدادات') ||
-                                  pageContent?.includes('settings') ||
-                                  pageContent?.includes('المتجر') ||
-                                  pageContent?.includes('store')
+      const pageContent = await page.textContent('body');
+      const hasSettingsContent =
+        pageContent?.includes('إعدادات') ||
+        pageContent?.includes('settings') ||
+        pageContent?.includes('المتجر') ||
+        pageContent?.includes('store');
 
-      expect(hasSettingsContent).toBeTruthy()
+      expect(hasSettingsContent).toBeTruthy();
     }
-  })
+  });
 
   test('should display store hours page', async ({ page }) => {
-    await page.goto('/ar/provider/store-hours')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/store-hours');
+    await page.waitForLoadState('networkidle');
 
-    const url = page.url()
+    const url = page.url();
 
     if (url.includes('/store-hours')) {
-      const pageContent = await page.textContent('body')
-      const hasHoursContent = pageContent?.includes('ساعات') ||
-                              pageContent?.includes('hours') ||
-                              pageContent?.includes('العمل') ||
-                              pageContent?.includes('schedule')
+      const pageContent = await page.textContent('body');
+      const hasHoursContent =
+        pageContent?.includes('ساعات') ||
+        pageContent?.includes('hours') ||
+        pageContent?.includes('العمل') ||
+        pageContent?.includes('schedule');
 
-      expect(hasHoursContent).toBeTruthy()
+      expect(hasHoursContent).toBeTruthy();
     }
-  })
-})
+  });
+});
 
 test.describe('Provider Finance & Settlements', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should display finance page', async ({ page }) => {
-    await page.goto('/ar/provider/finance')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/finance');
+    await page.waitForLoadState('networkidle');
 
-    const url = page.url()
+    const url = page.url();
 
     if (url.includes('/finance')) {
-      const pageContent = await page.textContent('body')
-      const hasFinanceContent = pageContent?.includes('مالية') ||
-                                 pageContent?.includes('finance') ||
-                                 pageContent?.includes('إيرادات') ||
-                                 pageContent?.includes('revenue')
+      const pageContent = await page.textContent('body');
+      const hasFinanceContent =
+        pageContent?.includes('مالية') ||
+        pageContent?.includes('finance') ||
+        pageContent?.includes('إيرادات') ||
+        pageContent?.includes('revenue');
 
-      expect(hasFinanceContent).toBeTruthy()
+      expect(hasFinanceContent).toBeTruthy();
     }
-  })
+  });
 
   test('should display settlements page', async ({ page }) => {
-    await page.goto('/ar/provider/settlements')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/settlements');
+    await page.waitForLoadState('networkidle');
 
-    const url = page.url()
+    const url = page.url();
 
     if (url.includes('/settlements')) {
-      const pageContent = await page.textContent('body')
-      const hasSettlementsContent = pageContent?.includes('تسوية') ||
-                                     pageContent?.includes('settlement') ||
-                                     pageContent?.includes('مستحقات') ||
-                                     pageContent?.includes('dues')
+      const pageContent = await page.textContent('body');
+      const hasSettlementsContent =
+        pageContent?.includes('تسوية') ||
+        pageContent?.includes('settlement') ||
+        pageContent?.includes('مستحقات') ||
+        pageContent?.includes('dues');
 
-      expect(hasSettlementsContent).toBeTruthy()
+      expect(hasSettlementsContent).toBeTruthy();
     }
-  })
-})
+  });
+});
 
 test.describe('Provider Grace Period Banner', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should display grace period information on dashboard', async ({ page }) => {
-    await page.goto('/ar/provider')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/provider') && !page.url().includes('/login')) {
-      const pageContent = await page.textContent('body')
+      const pageContent = await page.textContent('body');
 
       // Check for grace period content (0% commission period)
-      const hasGracePeriod = pageContent?.includes('السماح') ||
-                             pageContent?.includes('grace') ||
-                             pageContent?.includes('0%') ||
-                             pageContent?.includes('مجاني')
+      const hasGracePeriod =
+        pageContent?.includes('السماح') ||
+        pageContent?.includes('grace') ||
+        pageContent?.includes('0%') ||
+        pageContent?.includes('مجاني');
 
       // This is informational - grace period may or may not be shown
       if (hasGracePeriod) {
-        expect(hasGracePeriod).toBeTruthy()
+        expect(hasGracePeriod).toBeTruthy();
       }
     }
-  })
-})
+  });
+});
 
 test.describe('Provider Responsive Design', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should be mobile responsive', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto('/ar/provider')
-    await page.waitForLoadState('networkidle')
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/ar/provider');
+    await page.waitForLoadState('networkidle');
 
     // Check no horizontal scroll
     const hasHorizontalScroll = await page.evaluate(() => {
-      return document.documentElement.scrollWidth > document.documentElement.clientWidth
-    })
+      return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+    });
 
-    expect(hasHorizontalScroll).toBeFalsy()
-  })
+    expect(hasHorizontalScroll).toBeFalsy();
+  });
 
   test('should have mobile menu toggle', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto('/ar/provider')
-    await page.waitForLoadState('networkidle')
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/ar/provider');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/provider') && !page.url().includes('/login')) {
       // Look for hamburger menu
-      const menuToggle = page.locator('button[class*="menu"], [class*="hamburger"], button svg[class*="menu"]')
+      const menuToggle = page.locator(
+        'button[class*="menu"], [class*="hamburger"], button svg[class*="menu"]'
+      );
 
       // Should have some form of mobile menu
-      const hasMenuToggle = await menuToggle.first().isVisible().catch(() => false)
-      const hasHeader = await page.locator('header').isVisible().catch(() => false)
+      const hasMenuToggle = await menuToggle
+        .first()
+        .isVisible()
+        .catch(() => false);
+      const hasHeader = await page
+        .locator('header')
+        .isVisible()
+        .catch(() => false);
 
-      expect(hasMenuToggle || hasHeader).toBeTruthy()
+      expect(hasMenuToggle || hasHeader).toBeTruthy();
     }
-  })
-})
+  });
+});

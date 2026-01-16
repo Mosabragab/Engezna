@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { useLocale } from 'next-intl'
-import { cn } from '@/lib/utils'
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
 import {
   Plus,
   Send,
@@ -26,10 +26,10 @@ import {
   Move,
   TrendingUp,
   Wallet,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -37,43 +37,43 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { PricingItemRow } from './PricingItemRow'
-import { PricingSummary } from './PricingSummary'
+} from '@/components/ui/dialog';
+import { PricingItemRow } from './PricingItemRow';
+import { PricingSummary } from './PricingSummary';
 import type {
   CustomOrderItem,
   CustomOrderRequestWithItems,
   PriceHistoryItem,
   ItemAvailabilityStatus,
-} from '@/types/custom-order'
+} from '@/types/custom-order';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface PricingNotepadProps {
-  request: CustomOrderRequestWithItems
-  priceHistory?: PriceHistoryItem[]
+  request: CustomOrderRequestWithItems;
+  priceHistory?: PriceHistoryItem[];
   onSubmitPricing: (
     items: Omit<CustomOrderItem, 'id' | 'request_id' | 'order_id' | 'created_at' | 'updated_at'>[],
     deliveryFee: number
-  ) => Promise<void>
-  onCancel: () => void
-  loading?: boolean
-  className?: string
-  fixedDeliveryFee?: number // رسوم التوصيل الثابتة من بيانات التاجر
+  ) => Promise<void>;
+  onCancel: () => void;
+  loading?: boolean;
+  className?: string;
+  fixedDeliveryFee?: number; // رسوم التوصيل الثابتة من بيانات التاجر
 }
 
 type ItemFormData = Partial<CustomOrderItem> & {
-  tempId: string
-}
+  tempId: string;
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Helper Functions
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function generateTempId(): string {
-  return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 function createEmptyItem(): ItemFormData {
@@ -87,7 +87,7 @@ function createEmptyItem(): ItemFormData {
     total_price: 0,
     availability_status: 'available',
     display_order: 0,
-  }
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -95,59 +95,65 @@ function createEmptyItem(): ItemFormData {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface CustomerOrderPanelProps {
-  request: CustomOrderRequestWithItems
-  onCopyText: (text: string) => void
-  copiedTexts: Set<string> // تتبع النصوص التي تم نقلها
+  request: CustomOrderRequestWithItems;
+  onCopyText: (text: string) => void;
+  copiedTexts: Set<string>; // تتبع النصوص التي تم نقلها
 }
 
 function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderPanelProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [playbackRate, setPlaybackRate] = useState(1)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [imageZoom, setImageZoom] = useState(1)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageZoom, setImageZoom] = useState(1);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Get display text - check both request and broadcast for data
-  const displayText = request.original_text || request.broadcast?.original_text || request.transcribed_text || request.broadcast?.transcribed_text || ''
-  const hasVoice = !!(request.voice_url || request.broadcast?.voice_url)
+  const displayText =
+    request.original_text ||
+    request.broadcast?.original_text ||
+    request.transcribed_text ||
+    request.broadcast?.transcribed_text ||
+    '';
+  const hasVoice = !!(request.voice_url || request.broadcast?.voice_url);
   // Get image URLs from request or fall back to broadcast
-  const imageUrls = request.image_urls && request.image_urls.length > 0
-    ? request.image_urls
-    : request.broadcast?.image_urls || null
-  const hasImages = imageUrls && imageUrls.length > 0
+  const imageUrls =
+    request.image_urls && request.image_urls.length > 0
+      ? request.image_urls
+      : request.broadcast?.image_urls || null;
+  const hasImages = imageUrls && imageUrls.length > 0;
 
   // Parse text into items (split by newlines or common separators)
   const textItems = displayText
     .split(/[\n,،]+/)
     .map((s) => s.trim())
-    .filter((s) => s.length > 0)
+    .filter((s) => s.length > 0);
 
   // Handle audio playback
   const toggleAudio = () => {
     if (audioRef.current) {
       if (isPlaying) {
-        audioRef.current.pause()
+        audioRef.current.pause();
       } else {
-        audioRef.current.play()
+        audioRef.current.play();
       }
-      setIsPlaying(!isPlaying)
+      setIsPlaying(!isPlaying);
     }
-  }
+  };
 
   // Handle playback rate change
   const changePlaybackRate = (rate: number) => {
-    setPlaybackRate(rate)
+    setPlaybackRate(rate);
     if (audioRef.current) {
-      audioRef.current.playbackRate = rate
+      audioRef.current.playbackRate = rate;
     }
-  }
+  };
 
   // Handle image zoom
-  const handleZoomIn = () => setImageZoom(prev => Math.min(prev + 0.5, 3))
-  const handleZoomOut = () => setImageZoom(prev => Math.max(prev - 0.5, 1))
+  const handleZoomIn = () => setImageZoom((prev) => Math.min(prev + 0.5, 3));
+  const handleZoomOut = () => setImageZoom((prev) => Math.max(prev - 0.5, 1));
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden h-full flex flex-col shadow-sm">
@@ -202,11 +208,7 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                 onClick={toggleAudio}
                 className="w-14 h-14 bg-purple-500 hover:bg-purple-600 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg"
               >
-                {isPlaying ? (
-                  <Pause className="w-6 h-6" />
-                ) : (
-                  <Play className="w-6 h-6 ms-0.5" />
-                )}
+                {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ms-0.5" />}
               </button>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
@@ -267,7 +269,9 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                 >
                   <ZoomOut className="w-5 h-5 text-gray-600" />
                 </button>
-                <span className="text-sm text-gray-500 px-2 font-medium">{Math.round(imageZoom * 100)}%</span>
+                <span className="text-sm text-gray-500 px-2 font-medium">
+                  {Math.round(imageZoom * 100)}%
+                </span>
                 <button
                   type="button"
                   onClick={handleZoomIn}
@@ -283,7 +287,10 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                 <button
                   key={index}
                   type="button"
-                  onClick={() => { setCurrentImageIndex(index); setImageZoom(1); }}
+                  onClick={() => {
+                    setCurrentImageIndex(index);
+                    setImageZoom(1);
+                  }}
                   className={cn(
                     'aspect-square rounded-lg overflow-hidden border-2 transition-all',
                     currentImageIndex === index
@@ -315,7 +322,7 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                       transformOrigin: 'center center',
                       minWidth: '100%',
                       minHeight: '100%',
-                      objectFit: 'contain'
+                      objectFit: 'contain',
                     }}
                   />
                 </div>
@@ -344,7 +351,7 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
 
             <div className="space-y-2">
               {textItems.map((item, index) => {
-                const isCopied = copiedTexts.has(item)
+                const isCopied = copiedTexts.has(item);
                 return (
                   <motion.div
                     key={index}
@@ -352,22 +359,26 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
                     className={cn(
-                      "flex items-center gap-2 p-3 rounded-xl transition-colors border",
+                      'flex items-center gap-2 p-3 rounded-xl transition-colors border',
                       isCopied
-                        ? "bg-emerald-50 border-emerald-200 opacity-60"
-                        : "bg-gray-50 border-gray-100 hover:bg-blue-50 hover:border-blue-200"
+                        ? 'bg-emerald-50 border-emerald-200 opacity-60'
+                        : 'bg-gray-50 border-gray-100 hover:bg-blue-50 hover:border-blue-200'
                     )}
                   >
-                    <span className={cn(
-                      "w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold shrink-0",
-                      isCopied ? "bg-emerald-100 text-emerald-600" : "bg-primary/10 text-primary"
-                    )}>
+                    <span
+                      className={cn(
+                        'w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold shrink-0',
+                        isCopied ? 'bg-emerald-100 text-emerald-600' : 'bg-primary/10 text-primary'
+                      )}
+                    >
                       {isCopied ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
                     </span>
-                    <span className={cn(
-                      "flex-1 font-medium",
-                      isCopied ? "text-gray-500 line-through" : "text-gray-800"
-                    )}>
+                    <span
+                      className={cn(
+                        'flex-1 font-medium',
+                        isCopied ? 'text-gray-500 line-through' : 'text-gray-800'
+                      )}
+                    >
                       {item}
                     </span>
                     {/* Prominent Quick Copy Button - Disabled if already copied */}
@@ -378,10 +389,10 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                       onClick={() => onCopyText(item)}
                       disabled={isCopied}
                       className={cn(
-                        "h-8 gap-1.5 shrink-0",
+                        'h-8 gap-1.5 shrink-0',
                         isCopied
-                          ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                          ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800'
                       )}
                     >
                       {isCopied ? (
@@ -397,7 +408,7 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                       )}
                     </Button>
                   </motion.div>
-                )
+                );
               })}
             </div>
           </div>
@@ -412,14 +423,12 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                 {isRTL ? 'ملاحظات العميل' : 'Customer Notes'}
               </span>
             </div>
-            <p className="text-sm text-amber-800">
-              {request.customer_notes}
-            </p>
+            <p className="text-sm text-amber-800">{request.customer_notes}</p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -435,8 +444,8 @@ export function PricingNotepad({
   className,
   fixedDeliveryFee,
 }: PricingNotepadProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   // State
   const [items, setItems] = useState<ItemFormData[]>(() => {
@@ -445,64 +454,64 @@ export function PricingNotepad({
       return request.items.map((item) => ({
         ...item,
         tempId: generateTempId(),
-      }))
+      }));
     }
-    return [createEmptyItem()]
-  })
+    return [createEmptyItem()];
+  });
   // Use fixed delivery fee from provider settings, not editable
-  const deliveryFee = fixedDeliveryFee ?? request.delivery_fee ?? 0
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const deliveryFee = fixedDeliveryFee ?? request.delivery_fee ?? 0;
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   // Double-tap protection - ref-based lock to prevent duplicate submissions
-  const isSubmittingRef = useRef(false)
+  const isSubmittingRef = useRef(false);
   // Track copied customer texts to prevent duplicates
-  const [copiedTexts, setCopiedTexts] = useState<Set<string>>(new Set())
+  const [copiedTexts, setCopiedTexts] = useState<Set<string>>(new Set());
 
   // Price history lookup
   const getPriceHistoryForItem = useCallback(
     (itemName: string): PriceHistoryItem | null => {
-      if (!itemName) return null
-      const normalized = itemName.toLowerCase().trim()
+      if (!itemName) return null;
+      const normalized = itemName.toLowerCase().trim();
       return (
         priceHistory.find(
           (h) =>
             h.item_name_ar.toLowerCase().includes(normalized) ||
             normalized.includes(h.item_name_ar.toLowerCase())
         ) || null
-      )
+      );
     },
     [priceHistory]
-  )
+  );
 
   // Item management
   const addItem = useCallback(() => {
-    setItems((prev) => [...prev, createEmptyItem()])
-  }, [])
+    setItems((prev) => [...prev, createEmptyItem()]);
+  }, []);
 
   const updateItem = useCallback((index: number, updates: Partial<ItemFormData>) => {
-    setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, ...updates } : item))
-    )
-  }, [])
+    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...updates } : item)));
+  }, []);
 
   const removeItem = useCallback((index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index))
-  }, [])
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   // Copy customer text to first empty item (only once per text)
   const handleCopyCustomerText = useCallback((text: string) => {
     // Check if already copied to prevent duplicates
     setCopiedTexts((prev) => {
-      if (prev.has(text)) return prev
-      const newSet = new Set(prev)
-      newSet.add(text)
-      return newSet
-    })
+      if (prev.has(text)) return prev;
+      const newSet = new Set(prev);
+      newSet.add(text);
+      return newSet;
+    });
 
     // Find the first empty item (no name) and fill it, otherwise add new item
     setItems((prev) => {
-      const emptyIndex = prev.findIndex((item) => !item.item_name_ar || item.item_name_ar.trim() === '')
+      const emptyIndex = prev.findIndex(
+        (item) => !item.item_name_ar || item.item_name_ar.trim() === ''
+      );
 
       if (emptyIndex !== -1) {
         // Fill the first empty item
@@ -510,137 +519,148 @@ export function PricingNotepad({
           index === emptyIndex
             ? { ...item, item_name_ar: text, original_customer_text: text }
             : item
-        )
+        );
       } else {
         // No empty item found, add a new one
-        const newItem = createEmptyItem()
-        newItem.item_name_ar = text
-        newItem.original_customer_text = text
-        return [...prev, newItem]
+        const newItem = createEmptyItem();
+        newItem.item_name_ar = text;
+        newItem.original_customer_text = text;
+        return [...prev, newItem];
       }
-    })
-  }, [])
+    });
+  }, []);
 
   // Calculate totals
   const validItems = items.filter(
     (item) => item.item_name_ar && item.availability_status !== 'unavailable'
-  )
+  );
   const subtotal = validItems.reduce((sum, item) => {
     if (item.availability_status === 'substituted' && item.substitute_total_price) {
-      return sum + item.substitute_total_price
+      return sum + item.substitute_total_price;
     }
-    return sum + (item.total_price || 0)
-  }, 0)
-  const total = subtotal + deliveryFee
+    return sum + (item.total_price || 0);
+  }, 0);
+  const total = subtotal + deliveryFee;
 
   // Calculate commission and net profit (للشفافية مع التاجر)
   const getCommissionRate = (amount: number): number => {
-    if (amount <= 100) return 0.07
-    if (amount <= 300) return 0.06
-    return 0.05
-  }
-  const commissionRate = getCommissionRate(subtotal)
-  const commission = subtotal * commissionRate
-  const netProfit = total - commission
+    if (amount <= 100) return 0.07;
+    if (amount <= 300) return 0.06;
+    return 0.05;
+  };
+  const commissionRate = getCommissionRate(subtotal);
+  const commission = subtotal * commissionRate;
+  const netProfit = total - commission;
 
   // Check if deadline has expired
   const isDeadlineExpired = request.pricing_expires_at
     ? new Date(request.pricing_expires_at) < new Date()
-    : false
+    : false;
 
   // Validation - also check deadline
-  const isValid = items.some(
-    (item) => item.item_name_ar && item.quantity && item.unit_price
-  ) && !isDeadlineExpired
+  const isValid =
+    items.some((item) => item.item_name_ar && item.quantity && item.unit_price) &&
+    !isDeadlineExpired;
 
   // Submit handling
   const handleSubmit = async () => {
     // Double-tap protection - prevent multiple submissions
     if (isSubmittingRef.current) {
-      console.warn('Submission already in progress')
-      return
+      console.warn('Submission already in progress');
+      return;
     }
-    isSubmittingRef.current = true
+    isSubmittingRef.current = true;
 
     // Clear previous errors
-    setSubmitError(null)
+    setSubmitError(null);
 
     // Double-check deadline before submission
     if (isDeadlineExpired) {
-      setSubmitError(isRTL ? 'انتهت مهلة التسعير - لا يمكن الإرسال' : 'Pricing deadline has expired - cannot submit')
-      setShowConfirmDialog(false)
-      isSubmittingRef.current = false
-      return
+      setSubmitError(
+        isRTL
+          ? 'انتهت مهلة التسعير - لا يمكن الإرسال'
+          : 'Pricing deadline has expired - cannot submit'
+      );
+      setShowConfirmDialog(false);
+      isSubmittingRef.current = false;
+      return;
     }
 
     // Validate items
-    const validItems = items.filter((item) => item.item_name_ar)
+    const validItems = items.filter((item) => item.item_name_ar);
     if (validItems.length === 0) {
-      setSubmitError(isRTL ? 'يرجى إضافة صنف واحد على الأقل' : 'Please add at least one item')
-      setShowConfirmDialog(false)
-      isSubmittingRef.current = false
-      return
+      setSubmitError(isRTL ? 'يرجى إضافة صنف واحد على الأقل' : 'Please add at least one item');
+      setShowConfirmDialog(false);
+      isSubmittingRef.current = false;
+      return;
     }
 
-    const hasValidPricing = validItems.some((item) => item.quantity && item.unit_price)
+    const hasValidPricing = validItems.some((item) => item.quantity && item.unit_price);
     if (!hasValidPricing) {
-      setSubmitError(isRTL ? 'يرجى إدخال الكمية والسعر لصنف واحد على الأقل' : 'Please enter quantity and price for at least one item')
-      setShowConfirmDialog(false)
-      isSubmittingRef.current = false
-      return
+      setSubmitError(
+        isRTL
+          ? 'يرجى إدخال الكمية والسعر لصنف واحد على الأقل'
+          : 'Please enter quantity and price for at least one item'
+      );
+      setShowConfirmDialog(false);
+      isSubmittingRef.current = false;
+      return;
     }
 
-    setSubmitting(true)
+    setSubmitting(true);
     try {
-      const submitItems = validItems
-        .map((item, index) => ({
-          original_customer_text: item.original_customer_text || null,
-          item_name_ar: item.item_name_ar!,
-          item_name_en: item.item_name_en || null,
-          description_ar: item.description_ar || null,
-          description_en: item.description_en || null,
-          unit_type: item.unit_type || null,
-          quantity: item.quantity || 1,
-          unit_price: item.unit_price || 0,
-          total_price: item.total_price || 0,
-          availability_status: item.availability_status || 'available',
-          substitute_name_ar: item.substitute_name_ar || null,
-          substitute_name_en: item.substitute_name_en || null,
-          substitute_description: item.substitute_description || null,
-          substitute_quantity: item.substitute_quantity || null,
-          substitute_unit_type: item.substitute_unit_type || null,
-          substitute_unit_price: item.substitute_unit_price || null,
-          substitute_total_price: item.substitute_total_price || null,
-          merchant_notes: item.merchant_notes || null,
-          display_order: index,
-        }))
+      const submitItems = validItems.map((item, index) => ({
+        original_customer_text: item.original_customer_text || null,
+        item_name_ar: item.item_name_ar!,
+        item_name_en: item.item_name_en || null,
+        description_ar: item.description_ar || null,
+        description_en: item.description_en || null,
+        unit_type: item.unit_type || null,
+        quantity: item.quantity || 1,
+        unit_price: item.unit_price || 0,
+        total_price: item.total_price || 0,
+        availability_status: item.availability_status || 'available',
+        substitute_name_ar: item.substitute_name_ar || null,
+        substitute_name_en: item.substitute_name_en || null,
+        substitute_description: item.substitute_description || null,
+        substitute_quantity: item.substitute_quantity || null,
+        substitute_unit_type: item.substitute_unit_type || null,
+        substitute_unit_price: item.substitute_unit_price || null,
+        substitute_total_price: item.substitute_total_price || null,
+        merchant_notes: item.merchant_notes || null,
+        display_order: index,
+      }));
 
-      await onSubmitPricing(submitItems, deliveryFee)
-      setShowConfirmDialog(false)
+      await onSubmitPricing(submitItems, deliveryFee);
+      setShowConfirmDialog(false);
     } catch (error) {
-      console.error('Failed to submit pricing:', error)
+      console.error('Failed to submit pricing:', error);
       setSubmitError(
         isRTL
           ? 'حدث خطأ أثناء إرسال التسعيرة. يرجى المحاولة مرة أخرى.'
           : 'An error occurred while submitting the quote. Please try again.'
-      )
-      setShowConfirmDialog(false)
+      );
+      setShowConfirmDialog(false);
     } finally {
-      setSubmitting(false)
-      isSubmittingRef.current = false
+      setSubmitting(false);
+      isSubmittingRef.current = false;
     }
-  }
+  };
 
   // Reset form
   const handleReset = () => {
-    setItems([createEmptyItem()])
-  }
+    setItems([createEmptyItem()]);
+  };
 
   return (
     <div className={cn('flex flex-col lg:flex-row gap-4 h-full min-h-[700px]', className)}>
       {/* Left Panel - Customer Order */}
       <div className="lg:w-2/5 xl:w-1/3 h-[300px] lg:h-full">
-        <CustomerOrderPanel request={request} onCopyText={handleCopyCustomerText} copiedTexts={copiedTexts} />
+        <CustomerOrderPanel
+          request={request}
+          onCopyText={handleCopyCustomerText}
+          copiedTexts={copiedTexts}
+        />
       </div>
 
       {/* Right Panel - Pricing Form (Clean Invoice Style) */}
@@ -676,26 +696,32 @@ export function PricingNotepad({
 
           {/* Deadline Badge */}
           {request.pricing_expires_at && (
-            <div className={cn(
-              "mt-3 flex items-center gap-2 text-sm p-2 rounded-lg",
-              isDeadlineExpired ? "bg-red-100 border border-red-200" : ""
-            )}>
+            <div
+              className={cn(
+                'mt-3 flex items-center gap-2 text-sm p-2 rounded-lg',
+                isDeadlineExpired ? 'bg-red-100 border border-red-200' : ''
+              )}
+            >
               {isDeadlineExpired ? (
                 <AlertTriangle className="w-4 h-4 text-red-600" />
               ) : (
                 <Clock className="w-4 h-4 text-amber-600" />
               )}
-              <span className={isDeadlineExpired ? "text-red-700 font-medium" : "text-gray-600"}>
+              <span className={isDeadlineExpired ? 'text-red-700 font-medium' : 'text-gray-600'}>
                 {isDeadlineExpired
-                  ? (isRTL ? 'انتهت المهلة!' : 'Deadline Expired!')
-                  : (isRTL ? 'المهلة:' : 'Deadline:')}
+                  ? isRTL
+                    ? 'انتهت المهلة!'
+                    : 'Deadline Expired!'
+                  : isRTL
+                    ? 'المهلة:'
+                    : 'Deadline:'}
               </span>
-              <span className={cn(
-                "font-semibold px-2 py-0.5 rounded-md",
-                isDeadlineExpired
-                  ? "text-red-700 bg-red-200"
-                  : "text-amber-700 bg-amber-50"
-              )}>
+              <span
+                className={cn(
+                  'font-semibold px-2 py-0.5 rounded-md',
+                  isDeadlineExpired ? 'text-red-700 bg-red-200' : 'text-amber-700 bg-amber-50'
+                )}
+              >
                 {new Date(request.pricing_expires_at).toLocaleTimeString(locale)}
               </span>
             </div>
@@ -734,9 +760,7 @@ export function PricingNotepad({
             whileTap={{ scale: 0.99 }}
           >
             <Plus className="w-5 h-5" />
-            <span className="font-medium">
-              {isRTL ? 'إضافة صنف جديد' : 'Add New Item'}
-            </span>
+            <span className="font-medium">{isRTL ? 'إضافة صنف جديد' : 'Add New Item'}</span>
           </motion.button>
         </div>
 
@@ -838,7 +862,10 @@ export function PricingNotepad({
             <Button
               type="button"
               variant="default"
-              onClick={() => { setSubmitError(null); setShowConfirmDialog(true); }}
+              onClick={() => {
+                setSubmitError(null);
+                setShowConfirmDialog(true);
+              }}
               disabled={!isValid || loading || submitting}
               className="flex-[2] gap-2 h-14 !bg-emerald-500 hover:!bg-emerald-600 !text-white shadow-xl shadow-emerald-500/30 text-lg font-bold transition-all hover:scale-[1.02] disabled:!bg-gray-300 disabled:!text-gray-500"
             >
@@ -871,23 +898,17 @@ export function PricingNotepad({
 
           <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-100">
             <div className="flex justify-between">
-              <span className="text-gray-600">
-                {isRTL ? 'عدد الأصناف' : 'Items'}
-              </span>
+              <span className="text-gray-600">{isRTL ? 'عدد الأصناف' : 'Items'}</span>
               <span className="font-medium text-gray-800">{validItems.length}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">
-                {isRTL ? 'المجموع' : 'Subtotal'}
-              </span>
+              <span className="text-gray-600">{isRTL ? 'المجموع' : 'Subtotal'}</span>
               <span className="font-medium text-gray-800">
                 {subtotal.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">
-                {isRTL ? 'التوصيل' : 'Delivery'}
-              </span>
+              <span className="text-gray-600">{isRTL ? 'التوصيل' : 'Delivery'}</span>
               <span className="font-medium text-gray-800">
                 {deliveryFee.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
               </span>
@@ -946,12 +967,12 @@ export function PricingNotepad({
               }}
               onMouseEnter={(e) => {
                 if (!submitting) {
-                  e.currentTarget.style.backgroundColor = '#059669'
+                  e.currentTarget.style.backgroundColor = '#059669';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!submitting) {
-                  e.currentTarget.style.backgroundColor = '#10b981'
+                  e.currentTarget.style.backgroundColor = '#10b981';
                 }
               }}
             >
@@ -966,7 +987,7 @@ export function PricingNotepad({
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
 
-export default PricingNotepad
+export default PricingNotepad;

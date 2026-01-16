@@ -4,4 +4,4 @@ export {
   getPermissionLabel,
   type StaffPermissions,
   type UseStaffPermissionsReturn,
-} from './useStaffPermissions'
+} from './useStaffPermissions';

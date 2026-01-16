@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ACTIVE_PROVIDER_STATUSES } from '@/types/database'
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
 import {
   ArrowLeft,
   ArrowRight,
@@ -26,65 +26,65 @@ import {
   FolderOpen,
   Plus,
   Layers,
-} from 'lucide-react'
+} from 'lucide-react';
 
 type Category = {
-  id: string
-  name_ar: string
-  name_en: string
-}
+  id: string;
+  name_ar: string;
+  name_en: string;
+};
 
 type ProductVariant = {
-  id?: string
-  name_ar: string
-  name_en: string
-  price: number
-  original_price?: number | null
-  is_default: boolean
-  display_order: number
-  is_available: boolean
-  isNew?: boolean
-  isDeleted?: boolean
-}
+  id?: string;
+  name_ar: string;
+  name_en: string;
+  price: number;
+  original_price?: number | null;
+  is_default: boolean;
+  display_order: number;
+  is_available: boolean;
+  isNew?: boolean;
+  isDeleted?: boolean;
+};
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default function EditProductPage() {
-  const params = useParams()
-  const productId = params.id as string
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const params = useParams();
+  const productId = params.id as string;
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
-  const [providerId, setProviderId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [providerId, setProviderId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Category state
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loadingCategories, setLoadingCategories] = useState(false)
-  const [showNewCategory, setShowNewCategory] = useState(false)
-  const [newCategoryAr, setNewCategoryAr] = useState('')
-  const [newCategoryEn, setNewCategoryEn] = useState('')
-  const [savingCategory, setSavingCategory] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategoryAr, setNewCategoryAr] = useState('');
+  const [newCategoryEn, setNewCategoryEn] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
 
   // Variants state
-  const [hasVariants, setHasVariants] = useState(false)
-  const [variants, setVariants] = useState<ProductVariant[]>([])
-  const [showAddVariant, setShowAddVariant] = useState(false)
-  const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
+  const [hasVariants, setHasVariants] = useState(false);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [showAddVariant, setShowAddVariant] = useState(false);
+  const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null);
   const [variantForm, setVariantForm] = useState({
     name_ar: '',
     name_en: '',
     price: '',
     original_price: '',
     is_default: false,
-  })
+  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -101,40 +101,42 @@ export default function EditProductPage() {
     preparation_time_min: '15',
     calories: '',
     category_id: '',
-  })
+  });
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    checkAuthAndLoadProduct()
-  }, [productId])
+    checkAuthAndLoadProduct();
+  }, [productId]);
 
   const checkAuthAndLoadProduct = async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/products/${productId}`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/provider/products/${productId}`);
+      return;
     }
 
     const { data: providerData } = await supabase
       .from('providers')
       .select('id, status')
       .eq('owner_id', user.id)
-      .limit(1)
+      .limit(1);
 
-    const provider = providerData?.[0]
+    const provider = providerData?.[0];
     if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
-      router.push(`/${locale}/provider`)
-      return
+      router.push(`/${locale}/provider`);
+      return;
     }
 
-    setProviderId(provider.id)
+    setProviderId(provider.id);
 
     // Load categories
-    await loadCategories(provider.id)
+    await loadCategories(provider.id);
 
     // Load product
     const { data: product, error } = await supabase
@@ -142,11 +144,11 @@ export default function EditProductPage() {
       .select('*')
       .eq('id', productId)
       .eq('provider_id', provider.id)
-      .single()
+      .single();
 
     if (error || !product) {
-      router.push(`/${locale}/provider/products`)
-      return
+      router.push(`/${locale}/provider/products`);
+      return;
     }
 
     setFormData({
@@ -163,57 +165,59 @@ export default function EditProductPage() {
       preparation_time_min: product.preparation_time_min?.toString() || '15',
       calories: product.calories?.toString() || '',
       category_id: product.category_id || '',
-    })
+    });
 
     if (product.image_url) {
-      setImagePreview(product.image_url)
+      setImagePreview(product.image_url);
     }
 
     // Load variants if product has them
     if (product.has_variants) {
-      setHasVariants(true)
+      setHasVariants(true);
       const { data: variantsData } = await supabase
         .from('product_variants')
         .select('*')
         .eq('product_id', productId)
-        .order('display_order', { ascending: true })
+        .order('display_order', { ascending: true });
 
       if (variantsData) {
-        setVariants(variantsData.map(v => ({
-          id: v.id,
-          name_ar: v.name_ar,
-          name_en: v.name_en || '',
-          price: v.price,
-          original_price: v.original_price,
-          is_default: v.is_default,
-          display_order: v.display_order,
-          is_available: v.is_available,
-        })))
+        setVariants(
+          variantsData.map((v) => ({
+            id: v.id,
+            name_ar: v.name_ar,
+            name_en: v.name_en || '',
+            price: v.price,
+            original_price: v.original_price,
+            is_default: v.is_default,
+            display_order: v.display_order,
+            is_available: v.is_available,
+          }))
+        );
       }
     }
 
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const loadCategories = async (provId: string) => {
-    setLoadingCategories(true)
-    const supabase = createClient()
+    setLoadingCategories(true);
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('provider_categories')
       .select('*')
       .eq('provider_id', provId)
-      .order('name_ar', { ascending: true })
+      .order('name_ar', { ascending: true });
 
     if (!error && data) {
-      setCategories(data)
+      setCategories(data);
     }
-    setLoadingCategories(false)
-  }
+    setLoadingCategories(false);
+  };
 
   // Variant management functions
   const handleAddVariant = () => {
-    if (!variantForm.name_ar.trim() || !variantForm.price) return
+    if (!variantForm.name_ar.trim() || !variantForm.price) return;
 
     const newVariant: ProductVariant = {
       name_ar: variantForm.name_ar.trim(),
@@ -224,78 +228,84 @@ export default function EditProductPage() {
       display_order: variants.length + 1,
       is_available: true,
       isNew: true,
-    }
+    };
 
     // If this is set as default, unset others
     if (newVariant.is_default) {
-      setVariants(prev => prev.map(v => ({ ...v, is_default: false })))
+      setVariants((prev) => prev.map((v) => ({ ...v, is_default: false })));
     }
 
-    setVariants(prev => [...prev, newVariant])
-    setVariantForm({ name_ar: '', name_en: '', price: '', original_price: '', is_default: false })
-    setShowAddVariant(false)
-  }
+    setVariants((prev) => [...prev, newVariant]);
+    setVariantForm({ name_ar: '', name_en: '', price: '', original_price: '', is_default: false });
+    setShowAddVariant(false);
+  };
 
   const handleEditVariant = (index: number) => {
-    const variant = variants[index]
+    const variant = variants[index];
     setVariantForm({
       name_ar: variant.name_ar,
       name_en: variant.name_en,
       price: variant.price.toString(),
       original_price: variant.original_price?.toString() || '',
       is_default: variant.is_default,
-    })
-    setEditingVariantIndex(index)
-  }
+    });
+    setEditingVariantIndex(index);
+  };
 
   const handleUpdateVariant = () => {
-    if (editingVariantIndex === null || !variantForm.name_ar.trim() || !variantForm.price) return
+    if (editingVariantIndex === null || !variantForm.name_ar.trim() || !variantForm.price) return;
 
-    setVariants(prev => prev.map((v, i) => {
-      if (i === editingVariantIndex) {
-        return {
-          ...v,
-          name_ar: variantForm.name_ar.trim(),
-          name_en: variantForm.name_en.trim() || variantForm.name_ar.trim(),
-          price: parseFloat(variantForm.price),
-          original_price: variantForm.original_price ? parseFloat(variantForm.original_price) : null,
-          is_default: variantForm.is_default,
+    setVariants((prev) =>
+      prev.map((v, i) => {
+        if (i === editingVariantIndex) {
+          return {
+            ...v,
+            name_ar: variantForm.name_ar.trim(),
+            name_en: variantForm.name_en.trim() || variantForm.name_ar.trim(),
+            price: parseFloat(variantForm.price),
+            original_price: variantForm.original_price
+              ? parseFloat(variantForm.original_price)
+              : null,
+            is_default: variantForm.is_default,
+          };
         }
-      }
-      // If the edited variant is now default, unset others
-      if (variantForm.is_default) {
-        return { ...v, is_default: false }
-      }
-      return v
-    }))
+        // If the edited variant is now default, unset others
+        if (variantForm.is_default) {
+          return { ...v, is_default: false };
+        }
+        return v;
+      })
+    );
 
-    setVariantForm({ name_ar: '', name_en: '', price: '', original_price: '', is_default: false })
-    setEditingVariantIndex(null)
-  }
+    setVariantForm({ name_ar: '', name_en: '', price: '', original_price: '', is_default: false });
+    setEditingVariantIndex(null);
+  };
 
   const handleDeleteVariant = (index: number) => {
-    const variant = variants[index]
+    const variant = variants[index];
     if (variant.id) {
       // Mark existing variant for deletion
-      setVariants(prev => prev.map((v, i) => i === index ? { ...v, isDeleted: true } : v))
+      setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, isDeleted: true } : v)));
     } else {
       // Remove new variant completely
-      setVariants(prev => prev.filter((_, i) => i !== index))
+      setVariants((prev) => prev.filter((_, i) => i !== index));
     }
-  }
+  };
 
   const handleSetDefaultVariant = (index: number) => {
-    setVariants(prev => prev.map((v, i) => ({
-      ...v,
-      is_default: i === index,
-    })))
-  }
+    setVariants((prev) =>
+      prev.map((v, i) => ({
+        ...v,
+        is_default: i === index,
+      }))
+    );
+  };
 
   const handleCreateCategory = async () => {
-    if (!newCategoryAr.trim() || !newCategoryEn.trim() || !providerId) return
+    if (!newCategoryAr.trim() || !newCategoryEn.trim() || !providerId) return;
 
-    setSavingCategory(true)
-    const supabase = createClient()
+    setSavingCategory(true);
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('provider_categories')
@@ -305,97 +315,121 @@ export default function EditProductPage() {
         name_en: newCategoryEn.trim(),
       })
       .select()
-      .single()
+      .single();
 
     if (!error && data) {
-      setCategories(prev => [...prev, data])
-      setFormData(prev => ({ ...prev, category_id: data.id }))
-      setNewCategoryAr('')
-      setNewCategoryEn('')
-      setShowNewCategory(false)
+      setCategories((prev) => [...prev, data]);
+      setFormData((prev) => ({ ...prev, category_id: data.id }));
+      setNewCategoryAr('');
+      setNewCategoryEn('');
+      setShowNewCategory(false);
     }
-    setSavingCategory(false)
-  }
+    setSavingCategory(false);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'الملف يجب أن يكون صورة' : 'File must be an image' }))
-      return
+      setErrors((prev) => ({
+        ...prev,
+        image: locale === 'ar' ? 'الملف يجب أن يكون صورة' : 'File must be an image',
+      }));
+      return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 2 ميجابايت' : 'Image must be less than 2MB' }))
-      return
+      setErrors((prev) => ({
+        ...prev,
+        image:
+          locale === 'ar'
+            ? 'حجم الصورة يجب أن يكون أقل من 2 ميجابايت'
+            : 'Image must be less than 2MB',
+      }));
+      return;
     }
 
-    setUploading(true)
-    setErrors(prev => ({ ...prev, image: '' }))
+    setUploading(true);
+    setErrors((prev) => ({ ...prev, image: '' }));
 
     try {
-      const supabase = createClient()
-      const fileExt = file.name.split('.').pop()
-      const fileName = `products/${providerId}/${Date.now()}.${fileExt}`
+      const supabase = createClient();
+      const fileExt = file.name.split('.').pop();
+      const fileName = `products/${providerId}/${Date.now()}.${fileExt}`;
 
       const { data, error } = await supabase.storage
         .from('public')
-        .upload(fileName, file, { upsert: true })
+        .upload(fileName, file, { upsert: true });
 
       if (error) {
-        setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image' }))
-        return
+        setErrors((prev) => ({
+          ...prev,
+          image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image',
+        }));
+        return;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('public')
-        .getPublicUrl(fileName)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('public').getPublicUrl(fileName);
 
-      setFormData(prev => ({ ...prev, image_url: publicUrl }))
-      setImagePreview(publicUrl)
+      setFormData((prev) => ({ ...prev, image_url: publicUrl }));
+      setImagePreview(publicUrl);
     } catch {
-      setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image' }))
+      setErrors((prev) => ({
+        ...prev,
+        image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image',
+      }));
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   const removeImage = () => {
-    setFormData(prev => ({ ...prev, image_url: '' }))
-    setImagePreview(null)
-  }
+    setFormData((prev) => ({ ...prev, image_url: '' }));
+    setImagePreview(null);
+  };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     if (!formData.name_ar.trim()) {
-      newErrors.name_ar = locale === 'ar' ? 'الاسم بالعربية مطلوب' : 'Arabic name is required'
+      newErrors.name_ar = locale === 'ar' ? 'الاسم بالعربية مطلوب' : 'Arabic name is required';
     }
     if (!formData.name_en.trim()) {
-      newErrors.name_en = locale === 'ar' ? 'الاسم بالإنجليزية مطلوب' : 'English name is required'
+      newErrors.name_en = locale === 'ar' ? 'الاسم بالإنجليزية مطلوب' : 'English name is required';
     }
     if (!formData.price || parseFloat(formData.price) <= 0) {
-      newErrors.price = locale === 'ar' ? 'السعر مطلوب ويجب أن يكون أكبر من 0' : 'Price is required and must be greater than 0'
+      newErrors.price =
+        locale === 'ar'
+          ? 'السعر مطلوب ويجب أن يكون أكبر من 0'
+          : 'Price is required and must be greater than 0';
     }
-    if (formData.original_price && parseFloat(formData.original_price) <= parseFloat(formData.price)) {
-      newErrors.original_price = locale === 'ar' ? 'السعر الأصلي يجب أن يكون أكبر من السعر الحالي' : 'Original price must be greater than current price'
+    if (
+      formData.original_price &&
+      parseFloat(formData.original_price) <= parseFloat(formData.price)
+    ) {
+      newErrors.original_price =
+        locale === 'ar'
+          ? 'السعر الأصلي يجب أن يكون أكبر من السعر الحالي'
+          : 'Original price must be greater than current price';
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!validateForm() || !providerId) return
+    if (!validateForm() || !providerId) return;
 
-    setSaving(true)
-    const supabase = createClient()
+    setSaving(true);
+    const supabase = createClient();
 
     // Get active variants (not deleted)
-    const activeVariants = variants.filter(v => !v.isDeleted)
+    const activeVariants = variants.filter((v) => !v.isDeleted);
 
     // Build product data - only include category_id if it's set
     const productData: Record<string, any> = {
@@ -403,9 +437,10 @@ export default function EditProductPage() {
       name_en: formData.name_en.trim(),
       description_ar: formData.description_ar.trim() || null,
       description_en: formData.description_en.trim() || null,
-      price: hasVariants && activeVariants.length > 0
-        ? (activeVariants.find(v => v.is_default)?.price || activeVariants[0].price)
-        : parseFloat(formData.price),
+      price:
+        hasVariants && activeVariants.length > 0
+          ? activeVariants.find((v) => v.is_default)?.price || activeVariants[0].price
+          : parseFloat(formData.price),
       original_price: formData.original_price ? parseFloat(formData.original_price) : null,
       image_url: formData.image_url || null,
       is_available: formData.is_available,
@@ -415,54 +450,60 @@ export default function EditProductPage() {
       calories: formData.calories ? parseInt(formData.calories) : null,
       has_variants: hasVariants && activeVariants.length > 0,
       updated_at: new Date().toISOString(),
-    }
+    };
 
     // Only add category_id if a category is selected
     if (formData.category_id) {
-      productData.category_id = formData.category_id
+      productData.category_id = formData.category_id;
     }
 
-    const { error } = await supabase
-      .from('menu_items')
-      .update(productData)
-      .eq('id', productId)
+    const { error } = await supabase.from('menu_items').update(productData).eq('id', productId);
 
     if (error) {
-      console.error('[EditProduct] Update error:', error)
+      console.error('[EditProduct] Update error:', error);
       // If category_id column doesn't exist, retry without it
       if (error.message?.includes('category_id')) {
-        delete productData.category_id
+        delete productData.category_id;
         const { error: retryError } = await supabase
           .from('menu_items')
           .update(productData)
-          .eq('id', productId)
+          .eq('id', productId);
 
         if (retryError) {
-          console.error('[EditProduct] Retry error:', retryError)
-          setErrors(prev => ({ ...prev, submit: locale === 'ar' ? `فشل تحديث المنتج: ${retryError.message}` : `Failed to update product: ${retryError.message}` }))
-          setSaving(false)
-          return
+          console.error('[EditProduct] Retry error:', retryError);
+          setErrors((prev) => ({
+            ...prev,
+            submit:
+              locale === 'ar'
+                ? `فشل تحديث المنتج: ${retryError.message}`
+                : `Failed to update product: ${retryError.message}`,
+          }));
+          setSaving(false);
+          return;
         }
       } else {
-        setErrors(prev => ({ ...prev, submit: locale === 'ar' ? `فشل تحديث المنتج: ${error.message}` : `Failed to update product: ${error.message}` }))
-        setSaving(false)
-        return
+        setErrors((prev) => ({
+          ...prev,
+          submit:
+            locale === 'ar'
+              ? `فشل تحديث المنتج: ${error.message}`
+              : `Failed to update product: ${error.message}`,
+        }));
+        setSaving(false);
+        return;
       }
     }
 
     // Handle variants
     if (hasVariants) {
       // Delete variants marked for deletion
-      const variantsToDelete = variants.filter(v => v.isDeleted && v.id)
+      const variantsToDelete = variants.filter((v) => v.isDeleted && v.id);
       for (const variant of variantsToDelete) {
-        await supabase
-          .from('product_variants')
-          .delete()
-          .eq('id', variant.id)
+        await supabase.from('product_variants').delete().eq('id', variant.id);
       }
 
       // Update existing variants
-      const variantsToUpdate = activeVariants.filter(v => v.id && !v.isNew)
+      const variantsToUpdate = activeVariants.filter((v) => v.id && !v.isNew);
       for (const variant of variantsToUpdate) {
         await supabase
           .from('product_variants')
@@ -476,15 +517,14 @@ export default function EditProductPage() {
             is_available: variant.is_available,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', variant.id)
+          .eq('id', variant.id);
       }
 
       // Insert new variants
-      const variantsToInsert = activeVariants.filter(v => v.isNew)
+      const variantsToInsert = activeVariants.filter((v) => v.isNew);
       if (variantsToInsert.length > 0) {
-        await supabase
-          .from('product_variants')
-          .insert(variantsToInsert.map((v, index) => ({
+        await supabase.from('product_variants').insert(
+          variantsToInsert.map((v, index) => ({
             product_id: productId,
             name_ar: v.name_ar,
             name_en: v.name_en,
@@ -494,48 +534,44 @@ export default function EditProductPage() {
             display_order: variants.length + index + 1,
             is_available: v.is_available,
             variant_type: 'option',
-          })))
+          }))
+        );
       }
     } else {
       // If has_variants is false, delete all variants
-      await supabase
-        .from('product_variants')
-        .delete()
-        .eq('product_id', productId)
+      await supabase.from('product_variants').delete().eq('product_id', productId);
     }
 
-    router.push(`/${locale}/provider/products`)
-  }
+    router.push(`/${locale}/provider/products`);
+  };
 
   const handleDelete = async () => {
-    setDeleting(true)
-    const supabase = createClient()
+    setDeleting(true);
+    const supabase = createClient();
 
-    const { error } = await supabase
-      .from('menu_items')
-      .delete()
-      .eq('id', productId)
+    const { error } = await supabase.from('menu_items').delete().eq('id', productId);
 
     if (error) {
-      setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل حذف المنتج' : 'Failed to delete product' }))
-      setDeleting(false)
-      return
+      setErrors((prev) => ({
+        ...prev,
+        submit: locale === 'ar' ? 'فشل حذف المنتج' : 'Failed to delete product',
+      }));
+      setDeleting(false);
+      return;
     }
 
-    router.push(`/${locale}/provider/products`)
-  }
+    router.push(`/${locale}/provider/products`);
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-500">
-            {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-          </p>
+          <p className="text-slate-500">{locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -597,8 +633,10 @@ export default function EditProductPage() {
                   >
                     {deleting ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : locale === 'ar' ? (
+                      'حذف'
                     ) : (
-                      locale === 'ar' ? 'حذف' : 'Delete'
+                      'Delete'
                     )}
                   </Button>
                 </div>
@@ -660,9 +698,7 @@ export default function EditProductPage() {
                   )}
                 </label>
               )}
-              {errors.image && (
-                <p className="text-red-400 text-sm mt-2">{errors.image}</p>
-              )}
+              {errors.image && <p className="text-red-400 text-sm mt-2">{errors.image}</p>}
             </CardContent>
           </Card>
 
@@ -684,14 +720,20 @@ export default function EditProductPage() {
                     <div className="flex gap-2">
                       <select
                         value={formData.category_id}
-                        onChange={(e) => setFormData(prev => ({ ...prev, category_id: e.target.value }))}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, category_id: e.target.value }))
+                        }
                         className="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                         disabled={loadingCategories}
                       >
                         <option value="">
                           {loadingCategories
-                            ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
-                            : (locale === 'ar' ? 'بدون تصنيف' : 'No Category')}
+                            ? locale === 'ar'
+                              ? 'جاري التحميل...'
+                              : 'Loading...'
+                            : locale === 'ar'
+                              ? 'بدون تصنيف'
+                              : 'No Category'}
                         </option>
                         {categories.map((cat) => (
                           <option key={cat.id} value={cat.id}>
@@ -753,9 +795,9 @@ export default function EditProductPage() {
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        setShowNewCategory(false)
-                        setNewCategoryAr('')
-                        setNewCategoryEn('')
+                        setShowNewCategory(false);
+                        setNewCategoryAr('');
+                        setNewCategoryEn('');
                       }}
                       className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-200"
                     >
@@ -768,8 +810,12 @@ export default function EditProductPage() {
                       className="flex-1"
                     >
                       {savingCategory
-                        ? (locale === 'ar' ? 'جاري الحفظ...' : 'Saving...')
-                        : (locale === 'ar' ? 'إضافة' : 'Add')}
+                        ? locale === 'ar'
+                          ? 'جاري الحفظ...'
+                          : 'Saving...'
+                        : locale === 'ar'
+                          ? 'إضافة'
+                          : 'Add'}
                     </Button>
                   </div>
                 </div>
@@ -794,13 +840,11 @@ export default function EditProductPage() {
                 <input
                   type="text"
                   value={formData.name_ar}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name_ar: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name_ar: e.target.value }))}
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   dir="rtl"
                 />
-                {errors.name_ar && (
-                  <p className="text-red-400 text-sm mt-1">{errors.name_ar}</p>
-                )}
+                {errors.name_ar && <p className="text-red-400 text-sm mt-1">{errors.name_ar}</p>}
               </div>
 
               {/* English Name */}
@@ -811,13 +855,11 @@ export default function EditProductPage() {
                 <input
                   type="text"
                   value={formData.name_en}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name_en: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name_en: e.target.value }))}
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   dir="ltr"
                 />
-                {errors.name_en && (
-                  <p className="text-red-400 text-sm mt-1">{errors.name_en}</p>
-                )}
+                {errors.name_en && <p className="text-red-400 text-sm mt-1">{errors.name_en}</p>}
               </div>
 
               {/* Arabic Description */}
@@ -827,7 +869,9 @@ export default function EditProductPage() {
                 </label>
                 <textarea
                   value={formData.description_ar}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description_ar: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description_ar: e.target.value }))
+                  }
                   rows={3}
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   dir="rtl"
@@ -841,7 +885,9 @@ export default function EditProductPage() {
                 </label>
                 <textarea
                   value={formData.description_en}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description_en: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description_en: e.target.value }))
+                  }
                   rows={3}
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   dir="ltr"
@@ -869,12 +915,10 @@ export default function EditProductPage() {
                     step="0.01"
                     min="0"
                     value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                  {errors.price && (
-                    <p className="text-red-400 text-sm mt-1">{errors.price}</p>
-                  )}
+                  {errors.price && <p className="text-red-400 text-sm mt-1">{errors.price}</p>}
                 </div>
 
                 <div>
@@ -886,7 +930,9 @@ export default function EditProductPage() {
                     step="0.01"
                     min="0"
                     value={formData.original_price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, original_price: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, original_price: e.target.value }))
+                    }
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.original_price && (
@@ -903,7 +949,9 @@ export default function EditProductPage() {
               <CardTitle className="text-slate-900 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Layers className="w-5 h-5" />
-                  {locale === 'ar' ? 'خيارات المنتج (أحجام/أوزان)' : 'Product Variants (Sizes/Weights)'}
+                  {locale === 'ar'
+                    ? 'خيارات المنتج (أحجام/أوزان)'
+                    : 'Product Variants (Sizes/Weights)'}
                 </div>
                 <button
                   type="button"
@@ -913,19 +961,21 @@ export default function EditProductPage() {
                     hasVariants ? 'bg-primary' : 'bg-slate-300'
                   }`}
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
-                    hasVariants ? 'left-[1.375rem]' : 'left-0.5'
-                  }`} />
+                  <div
+                    className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
+                      hasVariants ? 'left-[1.375rem]' : 'left-0.5'
+                    }`}
+                  />
                 </button>
               </CardTitle>
             </CardHeader>
             {hasVariants && (
               <CardContent className="space-y-4">
                 {/* Variants List */}
-                {variants.filter(v => !v.isDeleted).length > 0 ? (
+                {variants.filter((v) => !v.isDeleted).length > 0 ? (
                   <div className="space-y-2">
                     {variants.map((variant, index) => {
-                      if (variant.isDeleted) return null
+                      if (variant.isDeleted) return null;
                       return (
                         <div
                           key={variant.id || `new-${index}`}
@@ -990,7 +1040,7 @@ export default function EditProductPage() {
                             </Button>
                           </div>
                         </div>
-                      )
+                      );
                     })}
                   </div>
                 ) : (
@@ -1005,8 +1055,12 @@ export default function EditProductPage() {
                   <div className="p-4 bg-slate-100 rounded-lg space-y-4">
                     <h4 className="font-medium text-slate-900">
                       {editingVariantIndex !== null
-                        ? (locale === 'ar' ? 'تعديل الخيار' : 'Edit Variant')
-                        : (locale === 'ar' ? 'إضافة خيار جديد' : 'Add New Variant')}
+                        ? locale === 'ar'
+                          ? 'تعديل الخيار'
+                          : 'Edit Variant'
+                        : locale === 'ar'
+                          ? 'إضافة خيار جديد'
+                          : 'Add New Variant'}
                     </h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -1016,7 +1070,9 @@ export default function EditProductPage() {
                         <input
                           type="text"
                           value={variantForm.name_ar}
-                          onChange={(e) => setVariantForm(prev => ({ ...prev, name_ar: e.target.value }))}
+                          onChange={(e) =>
+                            setVariantForm((prev) => ({ ...prev, name_ar: e.target.value }))
+                          }
                           className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                           placeholder={locale === 'ar' ? 'مثال: صغير' : 'e.g., صغير'}
                           dir="rtl"
@@ -1029,7 +1085,9 @@ export default function EditProductPage() {
                         <input
                           type="text"
                           value={variantForm.name_en}
-                          onChange={(e) => setVariantForm(prev => ({ ...prev, name_en: e.target.value }))}
+                          onChange={(e) =>
+                            setVariantForm((prev) => ({ ...prev, name_en: e.target.value }))
+                          }
                           className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                           placeholder="e.g., Small"
                           dir="ltr"
@@ -1044,7 +1102,9 @@ export default function EditProductPage() {
                           step="0.01"
                           min="0"
                           value={variantForm.price}
-                          onChange={(e) => setVariantForm(prev => ({ ...prev, price: e.target.value }))}
+                          onChange={(e) =>
+                            setVariantForm((prev) => ({ ...prev, price: e.target.value }))
+                          }
                           className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
@@ -1057,7 +1117,9 @@ export default function EditProductPage() {
                           step="0.01"
                           min="0"
                           value={variantForm.original_price}
-                          onChange={(e) => setVariantForm(prev => ({ ...prev, original_price: e.target.value }))}
+                          onChange={(e) =>
+                            setVariantForm((prev) => ({ ...prev, original_price: e.target.value }))
+                          }
                           className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
@@ -1066,7 +1128,9 @@ export default function EditProductPage() {
                       <input
                         type="checkbox"
                         checked={variantForm.is_default}
-                        onChange={(e) => setVariantForm(prev => ({ ...prev, is_default: e.target.checked }))}
+                        onChange={(e) =>
+                          setVariantForm((prev) => ({ ...prev, is_default: e.target.checked }))
+                        }
                         className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
                       />
                       <span className="text-sm text-slate-600">
@@ -1078,9 +1142,15 @@ export default function EditProductPage() {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          setShowAddVariant(false)
-                          setEditingVariantIndex(null)
-                          setVariantForm({ name_ar: '', name_en: '', price: '', original_price: '', is_default: false })
+                          setShowAddVariant(false);
+                          setEditingVariantIndex(null);
+                          setVariantForm({
+                            name_ar: '',
+                            name_en: '',
+                            price: '',
+                            original_price: '',
+                            is_default: false,
+                          });
                         }}
                         className="flex-1 border-slate-300"
                       >
@@ -1088,13 +1158,19 @@ export default function EditProductPage() {
                       </Button>
                       <Button
                         type="button"
-                        onClick={editingVariantIndex !== null ? handleUpdateVariant : handleAddVariant}
+                        onClick={
+                          editingVariantIndex !== null ? handleUpdateVariant : handleAddVariant
+                        }
                         disabled={!variantForm.name_ar.trim() || !variantForm.price}
                         className="flex-1"
                       >
                         {editingVariantIndex !== null
-                          ? (locale === 'ar' ? 'تحديث' : 'Update')
-                          : (locale === 'ar' ? 'إضافة' : 'Add')}
+                          ? locale === 'ar'
+                            ? 'تحديث'
+                            : 'Update'
+                          : locale === 'ar'
+                            ? 'إضافة'
+                            : 'Add'}
                       </Button>
                     </div>
                   </div>
@@ -1135,7 +1211,9 @@ export default function EditProductPage() {
                     type="number"
                     min="1"
                     value={formData.preparation_time_min}
-                    onChange={(e) => setFormData(prev => ({ ...prev, preparation_time_min: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, preparation_time_min: e.target.value }))
+                    }
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -1148,7 +1226,7 @@ export default function EditProductPage() {
                     type="number"
                     min="0"
                     value={formData.calories}
-                    onChange={(e) => setFormData(prev => ({ ...prev, calories: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, calories: e.target.value }))}
                     className="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -1165,36 +1243,40 @@ export default function EditProductPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, is_vegetarian: !prev.is_vegetarian }))}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, is_vegetarian: !prev.is_vegetarian }))
+                    }
                     dir="ltr"
                     className={`w-12 h-6 rounded-full transition-colors relative ${
                       formData.is_vegetarian ? 'bg-green-500' : 'bg-slate-300'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
-                      formData.is_vegetarian ? 'left-[1.375rem]' : 'left-0.5'
-                    }`} />
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
+                        formData.is_vegetarian ? 'left-[1.375rem]' : 'left-0.5'
+                      }`}
+                    />
                   </button>
                 </label>
 
                 <label className="flex items-center justify-between cursor-pointer">
                   <div className="flex items-center gap-2">
                     <Flame className="w-5 h-5 text-red-500" />
-                    <span className="text-slate-700">
-                      {locale === 'ar' ? 'حار' : 'Spicy'}
-                    </span>
+                    <span className="text-slate-700">{locale === 'ar' ? 'حار' : 'Spicy'}</span>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, is_spicy: !prev.is_spicy }))}
+                    onClick={() => setFormData((prev) => ({ ...prev, is_spicy: !prev.is_spicy }))}
                     dir="ltr"
                     className={`w-12 h-6 rounded-full transition-colors relative ${
                       formData.is_spicy ? 'bg-red-500' : 'bg-slate-300'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
-                      formData.is_spicy ? 'left-[1.375rem]' : 'left-0.5'
-                    }`} />
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
+                        formData.is_spicy ? 'left-[1.375rem]' : 'left-0.5'
+                      }`}
+                    />
                   </button>
                 </label>
 
@@ -1207,15 +1289,19 @@ export default function EditProductPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, is_available: !prev.is_available }))}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, is_available: !prev.is_available }))
+                    }
                     dir="ltr"
                     className={`w-12 h-6 rounded-full transition-colors relative ${
                       formData.is_available ? 'bg-primary' : 'bg-slate-300'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
-                      formData.is_available ? 'left-[1.375rem]' : 'left-0.5'
-                    }`} />
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 ${
+                        formData.is_available ? 'left-[1.375rem]' : 'left-0.5'
+                      }`}
+                    />
                   </button>
                 </label>
               </div>
@@ -1230,12 +1316,7 @@ export default function EditProductPage() {
           )}
 
           {/* Submit Button */}
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full"
-            disabled={saving}
-          >
+          <Button type="submit" size="lg" className="w-full" disabled={saving}>
             {saving ? (
               <>
                 <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
@@ -1251,5 +1332,5 @@ export default function EditProductPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }

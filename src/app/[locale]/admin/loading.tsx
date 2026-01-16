@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { Loader2, Menu } from 'lucide-react'
+import { useLocale } from 'next-intl';
+import { Loader2, Menu } from 'lucide-react';
 
 /**
  * Admin Loading State
@@ -9,8 +9,8 @@ import { Loader2, Menu } from 'lucide-react'
  * The sidebar is rendered at the layout level, so we only show content loading state
  */
 export default function AdminLoading() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   return (
     <>
@@ -43,7 +43,10 @@ export default function AdminLoading() {
           <div className="text-center">
             <div className="relative">
               <div className="w-16 h-16 border-4 border-slate-200 rounded-full" />
-              <Loader2 className="w-16 h-16 text-[#009DE0] animate-spin absolute top-0 left-0" style={{ animationDuration: '1s' }} />
+              <Loader2
+                className="w-16 h-16 text-[#009DE0] animate-spin absolute top-0 left-0"
+                style={{ animationDuration: '1s' }}
+              />
             </div>
             <p className="text-slate-500 mt-4 font-medium">
               {isRTL ? 'جاري التحميل...' : 'Loading...'}
@@ -52,5 +55,5 @@ export default function AdminLoading() {
         </div>
       </main>
     </>
-  )
+  );
 }

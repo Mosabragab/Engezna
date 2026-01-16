@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar } from '@/components/admin'
-import { formatDate } from '@/lib/utils/formatters'
+import { useLocale } from 'next-intl';
+import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { AdminHeader, useAdminSidebar } from '@/components/admin';
+import { formatDate } from '@/lib/utils/formatters';
 import {
   Shield,
   Image as ImageIcon,
@@ -33,25 +33,25 @@ import {
   Store,
   Info,
   FileImage,
-} from 'lucide-react'
+} from 'lucide-react';
 
 // Helper function to calculate color luminance and determine if text should be dark or light
 function getContrastTextColor(hexColor: string): 'light' | 'dark' {
-  const hex = hexColor.replace('#', '')
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.6 ? 'dark' : 'light'
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? 'dark' : 'light';
 }
 
 function getGradientTextColor(startColor: string, endColor: string): 'light' | 'dark' {
-  const startLuminance = getContrastTextColor(startColor)
-  const endLuminance = getContrastTextColor(endColor)
+  const startLuminance = getContrastTextColor(startColor);
+  const endLuminance = getContrastTextColor(endColor);
   if (startLuminance === 'dark' || endLuminance === 'dark') {
-    return 'dark'
+    return 'dark';
   }
-  return 'light'
+  return 'light';
 }
 
 // Import banner color palette
@@ -61,7 +61,7 @@ import {
   COLOR_CATEGORY_LABELS,
   getBannerGradient,
   findGradientByColors,
-} from '@/constants/colors'
+} from '@/constants/colors';
 
 // Pastel Color Presets (Soft colors for light backgrounds)
 const PASTEL_PRESETS = [
@@ -75,73 +75,98 @@ const PASTEL_PRESETS = [
   { name: { ar: 'فيروزي ناعم', en: 'Soft Teal' }, start: '#CCFBF1', end: '#99F6E4' },
   { name: { ar: 'عنبري ناعم', en: 'Soft Amber' }, start: '#FEF3C7', end: '#FDE68A' },
   { name: { ar: 'سماوي ناعم', en: 'Soft Sky' }, start: '#E0F2FE', end: '#BAE6FD' },
-]
+];
 
-import { motion, AnimatePresence, Reorder } from 'framer-motion'
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 interface HomepageBanner {
-  id: string
-  title_ar: string
-  title_en: string
-  description_ar: string | null
-  description_en: string | null
-  image_url: string | null
-  background_color: string | null
-  gradient_start: string | null
-  gradient_end: string | null
-  badge_text_ar: string | null
-  badge_text_en: string | null
-  has_glassmorphism: boolean
-  cta_text_ar: string | null
-  cta_text_en: string | null
-  link_url: string | null
-  link_type: string | null
-  link_id: string | null
-  image_position: 'start' | 'end' | 'center'
-  image_size: ImageSize
-  is_countdown_active: boolean
-  countdown_end_time: string | null
-  display_order: number
-  is_active: boolean
-  starts_at: string
-  ends_at: string | null
-  created_at: string
-  governorate_id: string | null
-  city_id: string | null
-  banner_type: 'customer' | 'partner'
-  approval_status?: 'pending' | 'approved' | 'rejected' | 'cancelled' | null
-  rejection_reason?: string | null
-  provider_id?: string | null
+  id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  image_url: string | null;
+  background_color: string | null;
+  gradient_start: string | null;
+  gradient_end: string | null;
+  badge_text_ar: string | null;
+  badge_text_en: string | null;
+  has_glassmorphism: boolean;
+  cta_text_ar: string | null;
+  cta_text_en: string | null;
+  link_url: string | null;
+  link_type: string | null;
+  link_id: string | null;
+  image_position: 'start' | 'end' | 'center';
+  image_size: ImageSize;
+  is_countdown_active: boolean;
+  countdown_end_time: string | null;
+  display_order: number;
+  is_active: boolean;
+  starts_at: string;
+  ends_at: string | null;
+  created_at: string;
+  governorate_id: string | null;
+  city_id: string | null;
+  banner_type: 'customer' | 'partner';
+  approval_status?: 'pending' | 'approved' | 'rejected' | 'cancelled' | null;
+  rejection_reason?: string | null;
+  provider_id?: string | null;
 }
 
 interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
-  is_active: boolean
+  id: string;
+  name_ar: string;
+  name_en: string;
+  is_active: boolean;
 }
 
 interface City {
-  id: string
-  name_ar: string
-  name_en: string
-  governorate_id: string
-  is_active: boolean
+  id: string;
+  name_ar: string;
+  name_en: string;
+  governorate_id: string;
+  is_active: boolean;
 }
 
-type FilterStatus = 'all' | 'active' | 'inactive' | 'expired' | 'scheduled' | 'pending' | 'rejected'
+type FilterStatus =
+  | 'all'
+  | 'active'
+  | 'inactive'
+  | 'expired'
+  | 'scheduled'
+  | 'pending'
+  | 'rejected';
 
-type ImagePosition = 'start' | 'end' | 'center'
-type ImageSize = 'small' | 'medium' | 'large'
+type ImagePosition = 'start' | 'end' | 'center';
+type ImageSize = 'small' | 'medium' | 'large';
 
 // Image sizes using fixed pixel values for consistent display
-const IMAGE_SIZE_CONFIG: Record<ImageSize, { label_ar: string; label_en: string; containerClass: string; imgClass: string }> = {
-  small: { label_ar: 'صغير', label_en: 'Small', containerClass: 'w-20 h-20 sm:w-24 sm:h-24', imgClass: 'max-w-full max-h-full object-contain' },
-  medium: { label_ar: 'وسط', label_en: 'Medium', containerClass: 'w-28 h-28 sm:w-32 sm:h-32', imgClass: 'max-w-full max-h-full object-contain' },
-  large: { label_ar: 'كبير', label_en: 'Large', containerClass: 'w-36 h-36 sm:w-40 sm:h-40', imgClass: 'max-w-full max-h-full object-contain' },
-}
+const IMAGE_SIZE_CONFIG: Record<
+  ImageSize,
+  { label_ar: string; label_en: string; containerClass: string; imgClass: string }
+> = {
+  small: {
+    label_ar: 'صغير',
+    label_en: 'Small',
+    containerClass: 'w-20 h-20 sm:w-24 sm:h-24',
+    imgClass: 'max-w-full max-h-full object-contain',
+  },
+  medium: {
+    label_ar: 'وسط',
+    label_en: 'Medium',
+    containerClass: 'w-28 h-28 sm:w-32 sm:h-32',
+    imgClass: 'max-w-full max-h-full object-contain',
+  },
+  large: {
+    label_ar: 'كبير',
+    label_en: 'Large',
+    containerClass: 'w-36 h-36 sm:w-40 sm:h-40',
+    imgClass: 'max-w-full max-h-full object-contain',
+  },
+};
 
 const defaultFormData = {
   title_ar: '',
@@ -167,7 +192,7 @@ const defaultFormData = {
   ends_at: '',
   governorate_id: '' as string,
   city_id: '' as string,
-}
+};
 
 // Live Preview Component
 function BannerPreview({
@@ -175,42 +200,46 @@ function BannerPreview({
   locale,
   viewMode,
 }: {
-  data: typeof defaultFormData & { image_position: ImagePosition; image_size: ImageSize }
-  locale: string
-  viewMode: 'mobile' | 'desktop'
+  data: typeof defaultFormData & { image_position: ImagePosition; image_size: ImageSize };
+  locale: string;
+  viewMode: 'mobile' | 'desktop';
 }) {
-  const title = locale === 'ar' ? data.title_ar : data.title_en
-  const description = locale === 'ar' ? data.description_ar : data.description_en
-  const badgeText = locale === 'ar' ? data.badge_text_ar : data.badge_text_en
-  const ctaText = locale === 'ar' ? data.cta_text_ar : data.cta_text_en
+  const title = locale === 'ar' ? data.title_ar : data.title_en;
+  const description = locale === 'ar' ? data.description_ar : data.description_en;
+  const badgeText = locale === 'ar' ? data.badge_text_ar : data.badge_text_en;
+  const ctaText = locale === 'ar' ? data.cta_text_ar : data.cta_text_en;
 
   const gradientStyle = {
     background: `linear-gradient(135deg, ${data.gradient_start} 0%, ${data.gradient_end} 100%)`,
-  }
+  };
 
   // Determine text color based on background brightness
-  const textMode = getGradientTextColor(data.gradient_start, data.gradient_end)
-  const isDarkText = textMode === 'dark'
+  const textMode = getGradientTextColor(data.gradient_start, data.gradient_end);
+  const isDarkText = textMode === 'dark';
 
   // Dynamic text color classes
-  const textColorClass = isDarkText ? 'text-slate-800' : 'text-white'
-  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white/85'
+  const textColorClass = isDarkText ? 'text-slate-800' : 'text-white';
+  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white/85';
   const badgeBgClass = isDarkText
-    ? (data.has_glassmorphism ? 'bg-slate-800/15 backdrop-blur-md border border-slate-800/20' : 'bg-slate-800/20')
-    : (data.has_glassmorphism ? 'bg-white/20 backdrop-blur-md border border-white/30' : 'bg-white/25')
-  const badgeTextClass = isDarkText ? 'text-slate-800' : 'text-white'
-  const decorativeCircleClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10'
+    ? data.has_glassmorphism
+      ? 'bg-slate-800/15 backdrop-blur-md border border-slate-800/20'
+      : 'bg-slate-800/20'
+    : data.has_glassmorphism
+      ? 'bg-white/20 backdrop-blur-md border border-white/30'
+      : 'bg-white/25';
+  const badgeTextClass = isDarkText ? 'text-slate-800' : 'text-white';
+  const decorativeCircleClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10';
   const ctaButtonClass = isDarkText
     ? 'bg-slate-800 text-white hover:bg-slate-700'
-    : 'bg-white text-slate-900 hover:bg-white/95'
-  const countdownBgClass = isDarkText ? 'bg-slate-800/10' : 'bg-white/20'
-  const countdownTextClass = isDarkText ? 'text-slate-700' : 'text-white/90'
-  const placeholderIconClass = isDarkText ? 'text-slate-800/30' : 'text-white/50'
-  const placeholderBgClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10'
+    : 'bg-white text-slate-900 hover:bg-white/95';
+  const countdownBgClass = isDarkText ? 'bg-slate-800/10' : 'bg-white/20';
+  const countdownTextClass = isDarkText ? 'text-slate-700' : 'text-white/90';
+  const placeholderIconClass = isDarkText ? 'text-slate-800/30' : 'text-white/50';
+  const placeholderBgClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10';
 
-  const imageOnStart = data.image_position === 'start'
-  const imageOnCenter = data.image_position === 'center'
-  const sizeConfig = IMAGE_SIZE_CONFIG[data.image_size]
+  const imageOnStart = data.image_position === 'start';
+  const imageOnCenter = data.image_position === 'center';
+  const sizeConfig = IMAGE_SIZE_CONFIG[data.image_size];
 
   return (
     <div
@@ -219,13 +248,14 @@ function BannerPreview({
         mx-auto
       `}
     >
-      <div
-        className="relative overflow-hidden rounded-2xl aspect-[16/9]"
-        style={gradientStyle}
-      >
+      <div className="relative overflow-hidden rounded-2xl aspect-[16/9]" style={gradientStyle}>
         {/* Decorative Circles */}
-        <div className={`absolute -top-10 -end-10 w-32 h-32 ${decorativeCircleClass} rounded-full blur-sm`} />
-        <div className={`absolute -bottom-6 -start-6 w-24 h-24 ${decorativeCircleClass} rounded-full blur-sm`} />
+        <div
+          className={`absolute -top-10 -end-10 w-32 h-32 ${decorativeCircleClass} rounded-full blur-sm`}
+        />
+        <div
+          className={`absolute -bottom-6 -start-6 w-24 h-24 ${decorativeCircleClass} rounded-full blur-sm`}
+        />
 
         {/* Center Position Layout */}
         {imageOnCenter ? (
@@ -241,18 +271,14 @@ function BannerPreview({
             )}
             {badgeText && (
               <div className={`inline-block mb-1 ${badgeBgClass} rounded-lg px-2.5 py-1`}>
-                <span className={`${badgeTextClass} font-bold text-xs`}>
-                  {badgeText}
-                </span>
+                <span className={`${badgeTextClass} font-bold text-xs`}>{badgeText}</span>
               </div>
             )}
             <h3 className={`${textColorClass} font-bold text-base mb-1 leading-tight`}>
               {title || (locale === 'ar' ? 'عنوان العرض' : 'Offer Title')}
             </h3>
             {description && (
-              <p className={`${textColorSecondary} text-xs mb-2 line-clamp-1`}>
-                {description}
-              </p>
+              <p className={`${textColorSecondary} text-xs mb-2 line-clamp-1`}>{description}</p>
             )}
             {ctaText && (
               <button className={`${ctaButtonClass} font-semibold px-3 py-1.5 rounded-lg text-xs`}>
@@ -262,11 +288,13 @@ function BannerPreview({
           </div>
         ) : (
           /* Left/Right Position Layout */
-          <div className={`
+          <div
+            className={`
             relative z-10 h-full p-4
             flex ${imageOnStart ? 'flex-row-reverse' : 'flex-row'}
             items-center justify-between gap-3
-          `}>
+          `}
+          >
             <div className={`flex-1 ${imageOnStart ? 'text-end' : 'text-start'}`}>
               {/* Badge */}
               {badgeText && (
@@ -284,9 +312,7 @@ function BannerPreview({
 
               {/* Description */}
               {description && (
-                <p className={`${textColorSecondary} text-xs mb-2 line-clamp-2`}>
-                  {description}
-                </p>
+                <p className={`${textColorSecondary} text-xs mb-2 line-clamp-2`}>{description}</p>
               )}
 
               {/* Countdown */}
@@ -301,7 +327,9 @@ function BannerPreview({
 
               {/* CTA Button */}
               {ctaText && (
-                <button className={`${ctaButtonClass} font-semibold px-3 py-1.5 rounded-lg text-xs`}>
+                <button
+                  className={`${ctaButtonClass} font-semibold px-3 py-1.5 rounded-lg text-xs`}
+                >
                   {ctaText}
                 </button>
               )}
@@ -317,7 +345,9 @@ function BannerPreview({
                 />
               </div>
             ) : (
-              <div className={`${sizeConfig.containerClass} flex-shrink-0 ${placeholderBgClass} rounded-xl flex items-center justify-center`}>
+              <div
+                className={`${sizeConfig.containerClass} flex-shrink-0 ${placeholderBgClass} rounded-xl flex items-center justify-center`}
+              >
                 <ImageIcon className={`w-8 h-8 ${placeholderIconClass}`} />
               </div>
             )}
@@ -325,199 +355,204 @@ function BannerPreview({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 export default function AdminBannersPage() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const { toggle: toggleSidebar } = useAdminSidebar()
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const { toggle: toggleSidebar } = useAdminSidebar();
 
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Banner type selector
-  const [bannerType, setBannerType] = useState<'customer' | 'partner'>('customer')
+  const [bannerType, setBannerType] = useState<'customer' | 'partner'>('customer');
 
-  const [banners, setBanners] = useState<HomepageBanner[]>([])
-  const [filteredBanners, setFilteredBanners] = useState<HomepageBanner[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [editingBanner, setEditingBanner] = useState<HomepageBanner | null>(null)
-  const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile')
-  const [isSaving, setIsSaving] = useState(false)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [banners, setBanners] = useState<HomepageBanner[]>([]);
+  const [filteredBanners, setFilteredBanners] = useState<HomepageBanner[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<HomepageBanner | null>(null);
+  const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
+  const [isSaving, setIsSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState(defaultFormData)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('upload')
+  const [formData, setFormData] = useState(defaultFormData);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('upload');
 
   // Location targeting state
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [cities, setCities] = useState<City[]>([])
-  const [filteredCities, setFilteredCities] = useState<City[]>([])
+  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [filteredCities, setFilteredCities] = useState<City[]>([]);
 
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
     scheduled: 0,
     expired: 0,
-  })
+  });
 
   useEffect(() => {
-    checkAuth()
-    loadLocations()
-  }, [])
+    checkAuth();
+    loadLocations();
+  }, []);
 
   useEffect(() => {
-    filterBanners()
-  }, [banners, searchQuery, statusFilter])
+    filterBanners();
+  }, [banners, searchQuery, statusFilter]);
 
   // Reload banners when banner type changes
   useEffect(() => {
     if (isAdmin) {
-      loadBanners()
+      loadBanners();
     }
-  }, [bannerType, isAdmin])
+  }, [bannerType, isAdmin]);
 
   // Filter cities when governorate changes
   useEffect(() => {
     if (formData.governorate_id) {
-      setFilteredCities(cities.filter(c => c.governorate_id === formData.governorate_id))
+      setFilteredCities(cities.filter((c) => c.governorate_id === formData.governorate_id));
     } else {
-      setFilteredCities([])
+      setFilteredCities([]);
     }
     // Reset city when governorate changes
     if (formData.city_id) {
       const cityBelongsToGovernorate = cities.some(
-        c => c.id === formData.city_id && c.governorate_id === formData.governorate_id
-      )
+        (c) => c.id === formData.city_id && c.governorate_id === formData.governorate_id
+      );
       if (!cityBelongsToGovernorate) {
-        setFormData(prev => ({ ...prev, city_id: '' }))
+        setFormData((prev) => ({ ...prev, city_id: '' }));
       }
     }
-  }, [formData.governorate_id, cities])
+  }, [formData.governorate_id, cities]);
 
   async function loadLocations() {
-    const supabase = createClient()
+    const supabase = createClient();
     const [govResult, cityResult] = await Promise.all([
       supabase.from('governorates').select('*').eq('is_active', true).order('name_ar'),
       supabase.from('cities').select('*').eq('is_active', true).order('name_ar'),
-    ])
-    setGovernorates(govResult.data || [])
-    setCities(cityResult.data || [])
+    ]);
+    setGovernorates(govResult.data || []);
+    setCities(cityResult.data || []);
   }
 
   async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
 
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        await loadBanners()
+        setIsAdmin(true);
+        await loadBanners();
       }
     }
 
-    setLoading(false)
+    setLoading(false);
   }
 
   async function loadBanners() {
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       const { data, error } = await supabase
         .from('homepage_banners')
         .select('*')
         .eq('banner_type', bannerType)
-        .order('display_order', { ascending: true })
+        .order('display_order', { ascending: true });
 
       if (error) {
-        setBanners([])
-        return
+        setBanners([]);
+        return;
       }
 
-      setBanners(data || [])
+      setBanners(data || []);
 
       // Calculate stats
-      const now = new Date()
-      const active = (data || []).filter(b =>
-        b.is_active &&
-        new Date(b.starts_at) <= now &&
-        (!b.ends_at || new Date(b.ends_at) >= now)
-      ).length
-      const scheduled = (data || []).filter(b =>
-        b.is_active && new Date(b.starts_at) > now
-      ).length
-      const expired = (data || []).filter(b =>
-        b.ends_at && new Date(b.ends_at) < now
-      ).length
+      const now = new Date();
+      const active = (data || []).filter(
+        (b) =>
+          b.is_active && new Date(b.starts_at) <= now && (!b.ends_at || new Date(b.ends_at) >= now)
+      ).length;
+      const scheduled = (data || []).filter(
+        (b) => b.is_active && new Date(b.starts_at) > now
+      ).length;
+      const expired = (data || []).filter((b) => b.ends_at && new Date(b.ends_at) < now).length;
 
       setStats({
         total: (data || []).length,
         active,
         scheduled,
         expired,
-      })
+      });
     } catch {
-      setBanners([])
+      setBanners([]);
     }
   }
 
   function filterBanners() {
-    let filtered = [...banners]
-    const now = new Date()
+    let filtered = [...banners];
+    const now = new Date();
 
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(b =>
-        b.title_ar?.toLowerCase().includes(query) ||
-        b.title_en?.toLowerCase().includes(query) ||
-        b.description_ar?.toLowerCase().includes(query) ||
-        b.description_en?.toLowerCase().includes(query)
-      )
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (b) =>
+          b.title_ar?.toLowerCase().includes(query) ||
+          b.title_en?.toLowerCase().includes(query) ||
+          b.description_ar?.toLowerCase().includes(query) ||
+          b.description_en?.toLowerCase().includes(query)
+      );
     }
 
     switch (statusFilter) {
       case 'active':
-        filtered = filtered.filter(b =>
-          b.is_active &&
-          new Date(b.starts_at) <= now &&
-          (!b.ends_at || new Date(b.ends_at) >= now)
-        )
-        break
+        filtered = filtered.filter(
+          (b) =>
+            b.is_active &&
+            new Date(b.starts_at) <= now &&
+            (!b.ends_at || new Date(b.ends_at) >= now)
+        );
+        break;
       case 'inactive':
-        filtered = filtered.filter(b => !b.is_active && b.approval_status !== 'rejected' && b.approval_status !== 'pending')
-        break
+        filtered = filtered.filter(
+          (b) => !b.is_active && b.approval_status !== 'rejected' && b.approval_status !== 'pending'
+        );
+        break;
       case 'expired':
-        filtered = filtered.filter(b => b.ends_at && new Date(b.ends_at) < now)
-        break
+        filtered = filtered.filter((b) => b.ends_at && new Date(b.ends_at) < now);
+        break;
       case 'scheduled':
-        filtered = filtered.filter(b => b.is_active && new Date(b.starts_at) > now)
-        break
+        filtered = filtered.filter((b) => b.is_active && new Date(b.starts_at) > now);
+        break;
       case 'pending':
-        filtered = filtered.filter(b => b.approval_status === 'pending')
-        break
+        filtered = filtered.filter((b) => b.approval_status === 'pending');
+        break;
       case 'rejected':
-        filtered = filtered.filter(b => b.approval_status === 'rejected' || b.approval_status === 'cancelled')
-        break
+        filtered = filtered.filter(
+          (b) => b.approval_status === 'rejected' || b.approval_status === 'cancelled'
+        );
+        break;
     }
 
-    setFilteredBanners(filtered)
+    setFilteredBanners(filtered);
   }
 
   async function handleSaveBanner() {
-    setIsSaving(true)
-    const supabase = createClient()
+    setIsSaving(true);
+    const supabase = createClient();
 
     try {
       const bannerData = {
@@ -538,201 +573,212 @@ export default function AdminBannersPage() {
         image_position: formData.image_position,
         image_size: formData.image_size,
         is_countdown_active: formData.is_countdown_active,
-        countdown_end_time: formData.is_countdown_active && formData.countdown_end_time
-          ? new Date(formData.countdown_end_time).toISOString()
-          : null,
+        countdown_end_time:
+          formData.is_countdown_active && formData.countdown_end_time
+            ? new Date(formData.countdown_end_time).toISOString()
+            : null,
         is_active: formData.is_active,
         starts_at: new Date(formData.starts_at).toISOString(),
         ends_at: formData.ends_at ? new Date(formData.ends_at).toISOString() : null,
         governorate_id: formData.governorate_id || null,
         city_id: formData.city_id || null,
         banner_type: bannerType,
-      }
+      };
 
       if (editingBanner) {
         // Update existing
         const { error } = await supabase
           .from('homepage_banners')
           .update(bannerData)
-          .eq('id', editingBanner.id)
+          .eq('id', editingBanner.id);
 
-        if (error) throw error
+        if (error) throw error;
       } else {
         // Create new
-        const maxOrder = banners.length > 0
-          ? Math.max(...banners.map(b => b.display_order)) + 1
-          : 0
+        const maxOrder =
+          banners.length > 0 ? Math.max(...banners.map((b) => b.display_order)) + 1 : 0;
 
-        const { error } = await supabase
-          .from('homepage_banners')
-          .insert({
-            ...bannerData,
-            display_order: maxOrder,
-            created_by: user?.id,
-          })
+        const { error } = await supabase.from('homepage_banners').insert({
+          ...bannerData,
+          display_order: maxOrder,
+          created_by: user?.id,
+        });
 
-        if (error) throw error
+        if (error) throw error;
       }
 
-      setShowCreateModal(false)
-      setEditingBanner(null)
-      resetForm()
-      await loadBanners()
+      setShowCreateModal(false);
+      setEditingBanner(null);
+      resetForm();
+      await loadBanners();
 
       // Show success message
       const message = editingBanner
-        ? (locale === 'ar' ? 'تم حفظ التعديلات بنجاح' : 'Changes saved successfully')
-        : (locale === 'ar' ? 'تم إنشاء البانر بنجاح' : 'Banner created successfully')
-      setSuccessMessage(message)
-      setTimeout(() => setSuccessMessage(null), 4000)
+        ? locale === 'ar'
+          ? 'تم حفظ التعديلات بنجاح'
+          : 'Changes saved successfully'
+        : locale === 'ar'
+          ? 'تم إنشاء البانر بنجاح'
+          : 'Banner created successfully';
+      setSuccessMessage(message);
+      setTimeout(() => setSuccessMessage(null), 4000);
     } catch (error) {
-      alert(locale === 'ar' ? 'حدث خطأ أثناء حفظ البانر' : 'Error saving banner')
+      alert(locale === 'ar' ? 'حدث خطأ أثناء حفظ البانر' : 'Error saving banner');
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
   async function handleToggleActive(banner: HomepageBanner) {
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       const { error } = await supabase
         .from('homepage_banners')
         .update({ is_active: !banner.is_active })
-        .eq('id', banner.id)
+        .eq('id', banner.id);
 
-      if (error) throw error
-      await loadBanners()
+      if (error) throw error;
+      await loadBanners();
     } catch {
       // Error handled silently
     }
   }
 
   async function handleDelete(bannerId: string) {
-    if (!confirm(locale === 'ar' ? 'هل أنت متأكد من حذف هذا البانر؟' : 'Are you sure you want to delete this banner?')) {
-      return
+    if (
+      !confirm(
+        locale === 'ar'
+          ? 'هل أنت متأكد من حذف هذا البانر؟'
+          : 'Are you sure you want to delete this banner?'
+      )
+    ) {
+      return;
     }
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
-      const { error } = await supabase
-        .from('homepage_banners')
-        .delete()
-        .eq('id', bannerId)
+      const { error } = await supabase.from('homepage_banners').delete().eq('id', bannerId);
 
-      if (error) throw error
-      await loadBanners()
+      if (error) throw error;
+      await loadBanners();
     } catch {
       // Error handled silently
     }
   }
 
   async function handleReorder(newOrder: HomepageBanner[]) {
-    setBanners(newOrder)
+    setBanners(newOrder);
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     // Update display_order for all banners
     try {
       const updates = newOrder.map((banner, index) => ({
         id: banner.id,
         display_order: index,
-      }))
+      }));
 
       for (const update of updates) {
         await supabase
           .from('homepage_banners')
           .update({ display_order: update.display_order })
-          .eq('id', update.id)
+          .eq('id', update.id);
       }
     } catch {
       // Reload on error
-      await loadBanners()
+      await loadBanners();
     }
   }
 
   function resetForm() {
-    setFormData(defaultFormData)
-    setUploadMode('upload')
+    setFormData(defaultFormData);
+    setUploadMode('upload');
   }
 
   // Handle image upload
   async function handleImageUpload(file: File) {
-    if (!file) return
+    if (!file) return;
 
     // Validate file type
-    const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+    const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
     if (!validTypes.includes(file.type)) {
-      alert(locale === 'ar' ? 'نوع الملف غير مدعوم. استخدم PNG, JPG, WebP, أو GIF' : 'Unsupported file type. Use PNG, JPG, WebP, or GIF')
-      return
+      alert(
+        locale === 'ar'
+          ? 'نوع الملف غير مدعوم. استخدم PNG, JPG, WebP, أو GIF'
+          : 'Unsupported file type. Use PNG, JPG, WebP, or GIF'
+      );
+      return;
     }
 
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      alert(locale === 'ar' ? 'حجم الملف كبير جداً. الحد الأقصى 2MB' : 'File too large. Maximum 2MB')
-      return
+      alert(
+        locale === 'ar' ? 'حجم الملف كبير جداً. الحد الأقصى 2MB' : 'File too large. Maximum 2MB'
+      );
+      return;
     }
 
-    setIsUploading(true)
+    setIsUploading(true);
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Generate unique filename
-      const fileExt = file.name.split('.').pop()
-      const fileName = `banner-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-      const filePath = `banners/${fileName}`
+      const fileExt = file.name.split('.').pop();
+      const fileName = `banner-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `banners/${fileName}`;
 
       // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('public-assets')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        })
+      const { data, error } = await supabase.storage.from('public-assets').upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
 
       if (error) {
         // If bucket doesn't exist, show helpful message
         if (error.message.includes('bucket') || error.message.includes('not found')) {
-          alert(locale === 'ar'
-            ? 'يرجى إنشاء bucket باسم "public-assets" في Supabase Storage أولاً'
-            : 'Please create a bucket named "public-assets" in Supabase Storage first')
+          alert(
+            locale === 'ar'
+              ? 'يرجى إنشاء bucket باسم "public-assets" في Supabase Storage أولاً'
+              : 'Please create a bucket named "public-assets" in Supabase Storage first'
+          );
         } else {
-          throw error
+          throw error;
         }
-        return
+        return;
       }
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('public-assets')
-        .getPublicUrl(filePath)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('public-assets').getPublicUrl(filePath);
 
-      setFormData({ ...formData, image_url: publicUrl })
+      setFormData({ ...formData, image_url: publicUrl });
     } catch (error) {
-      console.error('Upload error:', error)
-      alert(locale === 'ar' ? 'حدث خطأ أثناء رفع الصورة' : 'Error uploading image')
+      console.error('Upload error:', error);
+      alert(locale === 'ar' ? 'حدث خطأ أثناء رفع الصورة' : 'Error uploading image');
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
   }
 
   // Handle drag and drop
   function handleDrop(e: React.DragEvent) {
-    e.preventDefault()
-    const file = e.dataTransfer.files[0]
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
     if (file) {
-      handleImageUpload(file)
+      handleImageUpload(file);
     }
   }
 
   function handleDragOver(e: React.DragEvent) {
-    e.preventDefault()
+    e.preventDefault();
   }
 
   function openEditModal(banner: HomepageBanner) {
-    setEditingBanner(banner)
+    setEditingBanner(banner);
     setFormData({
       title_ar: banner.title_ar,
       title_en: banner.title_en,
@@ -756,19 +802,17 @@ export default function AdminBannersPage() {
         : '',
       is_active: banner.is_active,
       starts_at: new Date(banner.starts_at).toISOString().split('T')[0],
-      ends_at: banner.ends_at
-        ? new Date(banner.ends_at).toISOString().split('T')[0]
-        : '',
+      ends_at: banner.ends_at ? new Date(banner.ends_at).toISOString().split('T')[0] : '',
       governorate_id: banner.governorate_id || '',
       city_id: banner.city_id || '',
-    })
-    setShowCreateModal(true)
+    });
+    setShowCreateModal(true);
   }
 
   const getStatusBadge = (banner: HomepageBanner) => {
-    const now = new Date()
-    const startsAt = new Date(banner.starts_at)
-    const endsAt = banner.ends_at ? new Date(banner.ends_at) : null
+    const now = new Date();
+    const startsAt = new Date(banner.starts_at);
+    const endsAt = banner.ends_at ? new Date(banner.ends_at) : null;
 
     if (endsAt && endsAt < now) {
       return (
@@ -776,7 +820,7 @@ export default function AdminBannersPage() {
           <Calendar className="w-3 h-3" />
           {locale === 'ar' ? 'منتهي' : 'Expired'}
         </span>
-      )
+      );
     }
 
     if (startsAt > now) {
@@ -785,7 +829,7 @@ export default function AdminBannersPage() {
           <Clock className="w-3 h-3" />
           {locale === 'ar' ? 'مجدول' : 'Scheduled'}
         </span>
-      )
+      );
     }
 
     if (!banner.is_active) {
@@ -794,7 +838,7 @@ export default function AdminBannersPage() {
           <XCircle className="w-3 h-3" />
           {locale === 'ar' ? 'غير مفعل' : 'Inactive'}
         </span>
-      )
+      );
     }
 
     return (
@@ -802,8 +846,8 @@ export default function AdminBannersPage() {
         <CheckCircle2 className="w-3 h-3" />
         {locale === 'ar' ? 'نشط' : 'Active'}
       </span>
-    )
-  }
+    );
+  };
 
   if (loading) {
     return (
@@ -815,7 +859,7 @@ export default function AdminBannersPage() {
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </main>
       </>
-    )
+    );
   }
 
   if (!user || !isAdmin) {
@@ -842,7 +886,7 @@ export default function AdminBannersPage() {
           </div>
         </main>
       </>
-    )
+    );
   }
 
   return (
@@ -888,9 +932,10 @@ export default function AdminBannersPage() {
                 onClick={() => setBannerType('customer')}
                 className={`
                   flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
-                  ${bannerType === 'customer'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                  ${
+                    bannerType === 'customer'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }
                 `}
               >
@@ -901,9 +946,10 @@ export default function AdminBannersPage() {
                 onClick={() => setBannerType('partner')}
                 className={`
                   flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
-                  ${bannerType === 'partner'
-                    ? 'bg-[#00C27A] text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                  ${
+                    bannerType === 'partner'
+                      ? 'bg-[#00C27A] text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }
                 `}
               >
@@ -913,18 +959,18 @@ export default function AdminBannersPage() {
             </div>
             <span className="text-xs text-slate-500 ms-auto">
               {bannerType === 'customer'
-                ? (locale === 'ar' ? 'تظهر في الصفحة الرئيسية للعملاء' : 'Shown on customer homepage')
-                : (locale === 'ar' ? 'تظهر في صفحة الشركاء' : 'Shown on partner landing page')
-              }
+                ? locale === 'ar'
+                  ? 'تظهر في الصفحة الرئيسية للعملاء'
+                  : 'Shown on customer homepage'
+                : locale === 'ar'
+                  ? 'تظهر في صفحة الشركاء'
+                  : 'Shown on partner landing page'}
             </span>
           </div>
         </div>
 
         {/* Provider Banners Approvals Link */}
-        <Link
-          href={`/${locale}/admin/banners/approvals`}
-          className="block mb-6"
-        >
+        <Link href={`/${locale}/admin/banners/approvals`} className="block mb-6">
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200 hover:border-amber-300 transition-colors group">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -936,13 +982,27 @@ export default function AdminBannersPage() {
                     {locale === 'ar' ? 'طلبات بانرات التجار' : 'Provider Banner Requests'}
                   </h3>
                   <p className="text-sm text-amber-700">
-                    {locale === 'ar' ? 'مراجعة طلبات البانرات من التجار' : 'Review banner requests from providers'}
+                    {locale === 'ar'
+                      ? 'مراجعة طلبات البانرات من التجار'
+                      : 'Review banner requests from providers'}
                   </p>
                 </div>
               </div>
-              <div className={`p-2 rounded-lg bg-amber-100 group-hover:bg-amber-200 transition-colors ${isRTL ? 'rotate-180' : ''}`}>
-                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <div
+                className={`p-2 rounded-lg bg-amber-100 group-hover:bg-amber-200 transition-colors ${isRTL ? 'rotate-180' : ''}`}
+              >
+                <svg
+                  className="w-5 h-5 text-amber-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </div>
@@ -954,7 +1014,9 @@ export default function AdminBannersPage() {
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <ImageIcon className="w-5 h-5 text-slate-600" />
-              <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي البانرات' : 'Total Banners'}</span>
+              <span className="text-sm text-slate-600">
+                {locale === 'ar' ? 'إجمالي البانرات' : 'Total Banners'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
           </div>
@@ -968,14 +1030,18 @@ export default function AdminBannersPage() {
           <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
             <div className="flex items-center gap-3 mb-2">
               <Clock className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-blue-700">{locale === 'ar' ? 'مجدول' : 'Scheduled'}</span>
+              <span className="text-sm text-blue-700">
+                {locale === 'ar' ? 'مجدول' : 'Scheduled'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-blue-700">{stats.scheduled}</p>
           </div>
           <div className="bg-slate-100 rounded-xl p-4 border border-slate-300">
             <div className="flex items-center gap-3 mb-2">
               <Calendar className="w-5 h-5 text-slate-600" />
-              <span className="text-sm text-slate-600">{locale === 'ar' ? 'منتهي' : 'Expired'}</span>
+              <span className="text-sm text-slate-600">
+                {locale === 'ar' ? 'منتهي' : 'Expired'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-slate-700">{stats.expired}</p>
           </div>
@@ -985,10 +1051,14 @@ export default function AdminBannersPage() {
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+              <Search
+                className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+              />
               <input
                 type="text"
-                placeholder={locale === 'ar' ? 'بحث بالعنوان أو الوصف...' : 'Search by title or description...'}
+                placeholder={
+                  locale === 'ar' ? 'بحث بالعنوان أو الوصف...' : 'Search by title or description...'
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
@@ -1005,8 +1075,12 @@ export default function AdminBannersPage() {
               <option value="inactive">{locale === 'ar' ? 'غير مفعل' : 'Inactive'}</option>
               <option value="scheduled">{locale === 'ar' ? 'مجدول' : 'Scheduled'}</option>
               <option value="expired">{locale === 'ar' ? 'منتهي' : 'Expired'}</option>
-              <option value="pending">{locale === 'ar' ? 'في انتظار الموافقة' : 'Pending Approval'}</option>
-              <option value="rejected">{locale === 'ar' ? 'مرفوض/ملغي' : 'Rejected/Cancelled'}</option>
+              <option value="pending">
+                {locale === 'ar' ? 'في انتظار الموافقة' : 'Pending Approval'}
+              </option>
+              <option value="rejected">
+                {locale === 'ar' ? 'مرفوض/ملغي' : 'Rejected/Cancelled'}
+              </option>
             </select>
 
             <Button
@@ -1020,9 +1094,9 @@ export default function AdminBannersPage() {
 
             <Button
               onClick={() => {
-                resetForm()
-                setEditingBanner(null)
-                setShowCreateModal(true)
+                resetForm();
+                setEditingBanner(null);
+                setShowCreateModal(true);
               }}
               className="bg-primary hover:bg-primary/90 flex items-center gap-2"
             >
@@ -1066,11 +1140,7 @@ export default function AdminBannersPage() {
                   >
                     <div className="w-full h-full flex items-center justify-center p-2">
                       {banner.image_url ? (
-                        <img
-                          src={banner.image_url}
-                          alt=""
-                          className="w-10 h-10 object-contain"
-                        />
+                        <img src={banner.image_url} alt="" className="w-10 h-10 object-contain" />
                       ) : (
                         <ImageIcon className="w-6 h-6 text-white/50" />
                       )}
@@ -1088,9 +1158,7 @@ export default function AdminBannersPage() {
                   </div>
 
                   {/* Status */}
-                  <div className="flex-shrink-0">
-                    {getStatusBadge(banner)}
-                  </div>
+                  <div className="flex-shrink-0">{getStatusBadge(banner)}</div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -1104,9 +1172,21 @@ export default function AdminBannersPage() {
                     <button
                       onClick={() => handleToggleActive(banner)}
                       className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
-                      title={banner.is_active ? (locale === 'ar' ? 'إلغاء التفعيل' : 'Deactivate') : (locale === 'ar' ? 'تفعيل' : 'Activate')}
+                      title={
+                        banner.is_active
+                          ? locale === 'ar'
+                            ? 'إلغاء التفعيل'
+                            : 'Deactivate'
+                          : locale === 'ar'
+                            ? 'تفعيل'
+                            : 'Activate'
+                      }
                     >
-                      {banner.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {banner.is_active ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                     <button
                       onClick={() => handleDelete(banner.id)}
@@ -1127,9 +1207,9 @@ export default function AdminBannersPage() {
               </p>
               <Button
                 onClick={() => {
-                  resetForm()
-                  setEditingBanner(null)
-                  setShowCreateModal(true)
+                  resetForm();
+                  setEditingBanner(null);
+                  setShowCreateModal(true);
                 }}
                 className="mt-4"
                 variant="outline"
@@ -1161,14 +1241,17 @@ export default function AdminBannersPage() {
               <div className="p-6 border-b border-slate-200 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-slate-900">
                   {editingBanner
-                    ? (locale === 'ar' ? 'تعديل البانر' : 'Edit Banner')
-                    : (locale === 'ar' ? 'إنشاء بانر جديد' : 'Create New Banner')
-                  }
+                    ? locale === 'ar'
+                      ? 'تعديل البانر'
+                      : 'Edit Banner'
+                    : locale === 'ar'
+                      ? 'إنشاء بانر جديد'
+                      : 'Create New Banner'}
                 </h2>
                 <button
                   onClick={() => {
-                    setShowCreateModal(false)
-                    setEditingBanner(null)
+                    setShowCreateModal(false);
+                    setEditingBanner(null);
                   }}
                   className="p-2 hover:bg-slate-100 rounded-lg"
                 >
@@ -1218,7 +1301,9 @@ export default function AdminBannersPage() {
                         <input
                           type="text"
                           value={formData.description_ar}
-                          onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, description_ar: e.target.value })
+                          }
                           className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                           placeholder="خصم ٣٠٪ على جميع البيتزا"
                           dir="rtl"
@@ -1231,7 +1316,9 @@ export default function AdminBannersPage() {
                         <input
                           type="text"
                           value={formData.description_en}
-                          onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, description_en: e.target.value })
+                          }
                           className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                           placeholder="30% off all pizzas"
                         />
@@ -1247,7 +1334,9 @@ export default function AdminBannersPage() {
                         <input
                           type="text"
                           value={formData.badge_text_ar}
-                          onChange={(e) => setFormData({ ...formData, badge_text_ar: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, badge_text_ar: e.target.value })
+                          }
                           className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                           placeholder="خصم ٣٠٪"
                           dir="rtl"
@@ -1260,7 +1349,9 @@ export default function AdminBannersPage() {
                         <input
                           type="text"
                           value={formData.badge_text_en}
-                          onChange={(e) => setFormData({ ...formData, badge_text_en: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, badge_text_en: e.target.value })
+                          }
                           className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                           placeholder="30% OFF"
                         />
@@ -1270,7 +1361,9 @@ export default function AdminBannersPage() {
                     {/* Image Upload / URL */}
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
-                        {locale === 'ar' ? 'صورة المنتج (PNG مفرغ مفضل)' : 'Product Image (Transparent PNG preferred)'}
+                        {locale === 'ar'
+                          ? 'صورة المنتج (PNG مفرغ مفضل)'
+                          : 'Product Image (Transparent PNG preferred)'}
                       </label>
 
                       {/* Toggle between Upload and URL */}
@@ -1347,13 +1440,14 @@ export default function AdminBannersPage() {
                                   accept="image/png,image/jpeg,image/webp,image/gif"
                                   className="hidden"
                                   onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    if (file) handleImageUpload(file)
+                                    const file = e.target.files?.[0];
+                                    if (file) handleImageUpload(file);
                                   }}
                                 />
                               </label>
                               <p className="text-xs text-slate-400 mt-2">
-                                PNG, JPG, WebP, GIF - {locale === 'ar' ? 'الحد الأقصى 2MB' : 'Max 2MB'}
+                                PNG, JPG, WebP, GIF -{' '}
+                                {locale === 'ar' ? 'الحد الأقصى 2MB' : 'Max 2MB'}
                               </p>
                             </>
                           )}
@@ -1377,34 +1471,59 @@ export default function AdminBannersPage() {
                           <div className="flex-1">
                             <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
                               <Info className="w-4 h-4" />
-                              {locale === 'ar' ? 'مواصفات الصورة المثالية' : 'Optimal Image Specifications'}
+                              {locale === 'ar'
+                                ? 'مواصفات الصورة المثالية'
+                                : 'Optimal Image Specifications'}
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                               <div className="space-y-1.5">
                                 <p className="text-blue-800">
-                                  <span className="font-medium">{locale === 'ar' ? 'النوع:' : 'Type:'}</span>{' '}
-                                  <span className="text-blue-600">PNG {locale === 'ar' ? '(مفرغ الخلفية)' : '(transparent background)'}</span>
+                                  <span className="font-medium">
+                                    {locale === 'ar' ? 'النوع:' : 'Type:'}
+                                  </span>{' '}
+                                  <span className="text-blue-600">
+                                    PNG{' '}
+                                    {locale === 'ar'
+                                      ? '(مفرغ الخلفية)'
+                                      : '(transparent background)'}
+                                  </span>
                                 </p>
                                 <p className="text-blue-800">
-                                  <span className="font-medium">{locale === 'ar' ? 'الأبعاد:' : 'Dimensions:'}</span>{' '}
-                                  <span className="text-blue-600">400x400 px {locale === 'ar' ? 'أو أكبر' : 'or larger'}</span>
+                                  <span className="font-medium">
+                                    {locale === 'ar' ? 'الأبعاد:' : 'Dimensions:'}
+                                  </span>{' '}
+                                  <span className="text-blue-600">
+                                    400x400 px {locale === 'ar' ? 'أو أكبر' : 'or larger'}
+                                  </span>
                                 </p>
                                 <p className="text-blue-800">
-                                  <span className="font-medium">{locale === 'ar' ? 'الحجم:' : 'Size:'}</span>{' '}
-                                  <span className="text-blue-600">{locale === 'ar' ? 'أقل من 2MB' : 'Less than 2MB'}</span>
+                                  <span className="font-medium">
+                                    {locale === 'ar' ? 'الحجم:' : 'Size:'}
+                                  </span>{' '}
+                                  <span className="text-blue-600">
+                                    {locale === 'ar' ? 'أقل من 2MB' : 'Less than 2MB'}
+                                  </span>
                                 </p>
                               </div>
                               <div className="space-y-1.5">
                                 <p className="text-blue-800">
-                                  <span className="font-medium">{locale === 'ar' ? 'النسبة:' : 'Aspect Ratio:'}</span>{' '}
-                                  <span className="text-blue-600">1:1 {locale === 'ar' ? '(مربع)' : '(square)'}</span>
+                                  <span className="font-medium">
+                                    {locale === 'ar' ? 'النسبة:' : 'Aspect Ratio:'}
+                                  </span>{' '}
+                                  <span className="text-blue-600">
+                                    1:1 {locale === 'ar' ? '(مربع)' : '(square)'}
+                                  </span>
                                 </p>
                                 <p className="text-blue-800">
-                                  <span className="font-medium">{locale === 'ar' ? 'الصيغ:' : 'Formats:'}</span>{' '}
+                                  <span className="font-medium">
+                                    {locale === 'ar' ? 'الصيغ:' : 'Formats:'}
+                                  </span>{' '}
                                   <span className="text-blue-600">PNG, JPG, WebP, GIF</span>
                                 </p>
                                 <p className="text-blue-800">
-                                  <span className="font-medium">{locale === 'ar' ? 'الدقة:' : 'Resolution:'}</span>{' '}
+                                  <span className="font-medium">
+                                    {locale === 'ar' ? 'الدقة:' : 'Resolution:'}
+                                  </span>{' '}
                                   <span className="text-blue-600">72-150 DPI</span>
                                 </p>
                               </div>
@@ -1413,8 +1532,7 @@ export default function AdminBannersPage() {
                               <p className="text-xs text-blue-700">
                                 {locale === 'ar'
                                   ? 'نصيحة: استخدم صور منتجات بخلفية شفافة (PNG) للحصول على أفضل نتيجة. يمكنك استخدام أدوات مثل remove.bg لإزالة الخلفية.'
-                                  : 'Tip: Use product images with transparent background (PNG) for best results. You can use tools like remove.bg to remove backgrounds.'
-                                }
+                                  : 'Tip: Use product images with transparent background (PNG) for best results. You can use tools like remove.bg to remove backgrounds.'}
                               </p>
                             </div>
                           </div>
@@ -1431,24 +1549,30 @@ export default function AdminBannersPage() {
                       {/* Pastel Colors Section */}
                       <div className="mb-4 p-3 bg-slate-50 rounded-xl">
                         <p className="text-xs font-medium text-slate-600 mb-2">
-                          {locale === 'ar' ? 'ألوان الباستيل (خلفيات فاتحة)' : 'Pastel Colors (Light backgrounds)'}
+                          {locale === 'ar'
+                            ? 'ألوان الباستيل (خلفيات فاتحة)'
+                            : 'Pastel Colors (Light backgrounds)'}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {PASTEL_PRESETS.map((preset, idx) => (
                             <button
                               key={idx}
                               type="button"
-                              onClick={() => setFormData({
-                                ...formData,
-                                gradient_start: preset.start,
-                                gradient_end: preset.end,
-                              })}
+                              onClick={() =>
+                                setFormData({
+                                  ...formData,
+                                  gradient_start: preset.start,
+                                  gradient_end: preset.end,
+                                })
+                              }
                               className={`
                                 group relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all
                                 border hover:scale-105
-                                ${formData.gradient_start === preset.start && formData.gradient_end === preset.end
-                                  ? 'border-primary ring-2 ring-primary/30'
-                                  : 'border-slate-200 hover:border-slate-300'
+                                ${
+                                  formData.gradient_start === preset.start &&
+                                  formData.gradient_end === preset.end
+                                    ? 'border-primary ring-2 ring-primary/30'
+                                    : 'border-slate-200 hover:border-slate-300'
                                 }
                               `}
                               style={{
@@ -1466,29 +1590,37 @@ export default function AdminBannersPage() {
                       {/* Vibrant Colors Section */}
                       <div className="space-y-3 mb-4">
                         <p className="text-xs font-medium text-slate-600">
-                          {locale === 'ar' ? 'الألوان الزاهية (للعروض والترويج)' : 'Vibrant Colors (For offers & promotions)'}
+                          {locale === 'ar'
+                            ? 'الألوان الزاهية (للعروض والترويج)'
+                            : 'Vibrant Colors (For offers & promotions)'}
                         </p>
                         {(['primary', 'accent', 'cool', 'special'] as const).map((category) => (
                           <div key={category}>
                             <p className="text-xs text-slate-500 mb-1.5">
-                              {locale === 'ar' ? COLOR_CATEGORY_LABELS[category].ar : COLOR_CATEGORY_LABELS[category].en}
+                              {locale === 'ar'
+                                ? COLOR_CATEGORY_LABELS[category].ar
+                                : COLOR_CATEGORY_LABELS[category].en}
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {ADMIN_COLOR_OPTIONS_GROUPED[category].map((color) => (
                                 <button
                                   key={color.id}
                                   type="button"
-                                  onClick={() => setFormData({
-                                    ...formData,
-                                    gradient_start: color.start,
-                                    gradient_end: color.end,
-                                  })}
+                                  onClick={() =>
+                                    setFormData({
+                                      ...formData,
+                                      gradient_start: color.start,
+                                      gradient_end: color.end,
+                                    })
+                                  }
                                   className={`
                                     group relative px-3 py-1.5 rounded-full text-xs font-medium transition-all
                                     hover:scale-105 shadow-sm
-                                    ${formData.gradient_start === color.start && formData.gradient_end === color.end
-                                      ? 'ring-2 ring-offset-2 ring-primary scale-105'
-                                      : ''
+                                    ${
+                                      formData.gradient_start === color.start &&
+                                      formData.gradient_end === color.end
+                                        ? 'ring-2 ring-offset-2 ring-primary scale-105'
+                                        : ''
                                     }
                                   `}
                                   style={{
@@ -1515,13 +1647,17 @@ export default function AdminBannersPage() {
                             <input
                               type="color"
                               value={formData.gradient_start}
-                              onChange={(e) => setFormData({ ...formData, gradient_start: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({ ...formData, gradient_start: e.target.value })
+                              }
                               className="w-10 h-9 border border-slate-200 rounded-lg cursor-pointer"
                             />
                             <input
                               type="text"
                               value={formData.gradient_start}
-                              onChange={(e) => setFormData({ ...formData, gradient_start: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({ ...formData, gradient_start: e.target.value })
+                              }
                               className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary font-mono text-sm"
                             />
                           </div>
@@ -1534,13 +1670,17 @@ export default function AdminBannersPage() {
                             <input
                               type="color"
                               value={formData.gradient_end}
-                              onChange={(e) => setFormData({ ...formData, gradient_end: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({ ...formData, gradient_end: e.target.value })
+                              }
                               className="w-10 h-9 border border-slate-200 rounded-lg cursor-pointer"
                             />
                             <input
                               type="text"
                               value={formData.gradient_end}
-                              onChange={(e) => setFormData({ ...formData, gradient_end: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({ ...formData, gradient_end: e.target.value })
+                              }
                               className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary font-mono text-sm"
                             />
                           </div>
@@ -1563,12 +1703,18 @@ export default function AdminBannersPage() {
                             <button
                               key={option.value}
                               type="button"
-                              onClick={() => setFormData({ ...formData, image_position: option.value as ImagePosition })}
+                              onClick={() =>
+                                setFormData({
+                                  ...formData,
+                                  image_position: option.value as ImagePosition,
+                                })
+                              }
                               className={`
                                 flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all
-                                ${formData.image_position === option.value
-                                  ? 'border-primary bg-primary/10 text-primary'
-                                  : 'border-slate-200 hover:border-slate-300'
+                                ${
+                                  formData.image_position === option.value
+                                    ? 'border-primary bg-primary/10 text-primary'
+                                    : 'border-slate-200 hover:border-slate-300'
                                 }
                               `}
                             >
@@ -1589,13 +1735,16 @@ export default function AdminBannersPage() {
                               onClick={() => setFormData({ ...formData, image_size: size })}
                               className={`
                                 flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all
-                                ${formData.image_size === size
-                                  ? 'border-primary bg-primary/10 text-primary'
-                                  : 'border-slate-200 hover:border-slate-300'
+                                ${
+                                  formData.image_size === size
+                                    ? 'border-primary bg-primary/10 text-primary'
+                                    : 'border-slate-200 hover:border-slate-300'
                                 }
                               `}
                             >
-                              {locale === 'ar' ? IMAGE_SIZE_CONFIG[size].label_ar : IMAGE_SIZE_CONFIG[size].label_en}
+                              {locale === 'ar'
+                                ? IMAGE_SIZE_CONFIG[size].label_ar
+                                : IMAGE_SIZE_CONFIG[size].label_en}
                             </button>
                           ))}
                         </div>
@@ -1608,7 +1757,9 @@ export default function AdminBannersPage() {
                         <input
                           type="checkbox"
                           checked={formData.has_glassmorphism}
-                          onChange={(e) => setFormData({ ...formData, has_glassmorphism: e.target.checked })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, has_glassmorphism: e.target.checked })
+                          }
                           className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                         />
                         <span className="text-sm text-slate-700">
@@ -1626,7 +1777,9 @@ export default function AdminBannersPage() {
                         <input
                           type="text"
                           value={formData.cta_text_ar}
-                          onChange={(e) => setFormData({ ...formData, cta_text_ar: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, cta_text_ar: e.target.value })
+                          }
                           className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                           placeholder="اطلب الآن"
                           dir="rtl"
@@ -1639,7 +1792,9 @@ export default function AdminBannersPage() {
                         <input
                           type="text"
                           value={formData.cta_text_en}
-                          onChange={(e) => setFormData({ ...formData, cta_text_en: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, cta_text_en: e.target.value })
+                          }
                           className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                           placeholder="Order Now"
                         />
@@ -1671,8 +1826,12 @@ export default function AdminBannersPage() {
                         >
                           <option value="category">{locale === 'ar' ? 'فئة' : 'Category'}</option>
                           <option value="provider">{locale === 'ar' ? 'متجر' : 'Provider'}</option>
-                          <option value="promo">{locale === 'ar' ? 'كود خصم' : 'Promo Code'}</option>
-                          <option value="external">{locale === 'ar' ? 'رابط خارجي' : 'External'}</option>
+                          <option value="promo">
+                            {locale === 'ar' ? 'كود خصم' : 'Promo Code'}
+                          </option>
+                          <option value="external">
+                            {locale === 'ar' ? 'رابط خارجي' : 'External'}
+                          </option>
                         </select>
                       </div>
                     </div>
@@ -1684,7 +1843,9 @@ export default function AdminBannersPage() {
                           <input
                             type="checkbox"
                             checked={formData.is_countdown_active}
-                            onChange={(e) => setFormData({ ...formData, is_countdown_active: e.target.checked })}
+                            onChange={(e) =>
+                              setFormData({ ...formData, is_countdown_active: e.target.checked })
+                            }
                             className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                           />
                           <span className="text-sm text-slate-700">
@@ -1700,7 +1861,9 @@ export default function AdminBannersPage() {
                           <input
                             type="datetime-local"
                             value={formData.countdown_end_time}
-                            onChange={(e) => setFormData({ ...formData, countdown_end_time: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({ ...formData, countdown_end_time: e.target.value })
+                            }
                             className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                           />
                         </div>
@@ -1750,7 +1913,13 @@ export default function AdminBannersPage() {
                           </label>
                           <select
                             value={formData.governorate_id}
-                            onChange={(e) => setFormData({ ...formData, governorate_id: e.target.value, city_id: '' })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                governorate_id: e.target.value,
+                                city_id: '',
+                              })
+                            }
                             className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary bg-white"
                           >
                             <option value="">{locale === 'ar' ? 'كل مصر' : 'All Egypt'}</option>
@@ -1773,8 +1942,12 @@ export default function AdminBannersPage() {
                           >
                             <option value="">
                               {formData.governorate_id
-                                ? (locale === 'ar' ? 'كل مدن المحافظة' : 'All cities in governorate')
-                                : (locale === 'ar' ? 'اختر المحافظة أولاً' : 'Select governorate first')}
+                                ? locale === 'ar'
+                                  ? 'كل مدن المحافظة'
+                                  : 'All cities in governorate'
+                                : locale === 'ar'
+                                  ? 'اختر المحافظة أولاً'
+                                  : 'Select governorate first'}
                             </option>
                             {filteredCities.map((city) => (
                               <option key={city.id} value={city.id}>
@@ -1789,12 +1962,12 @@ export default function AdminBannersPage() {
                         <div className="mt-3 text-xs text-primary flex items-center gap-1">
                           <Shield className="w-3 h-3" />
                           {formData.city_id
-                            ? (locale === 'ar'
-                                ? `سيظهر فقط لعملاء ${filteredCities.find(c => c.id === formData.city_id)?.name_ar || ''}`
-                                : `Will show only to customers in ${filteredCities.find(c => c.id === formData.city_id)?.name_en || ''}`)
-                            : (locale === 'ar'
-                                ? `سيظهر لكل عملاء ${governorates.find(g => g.id === formData.governorate_id)?.name_ar || ''}`
-                                : `Will show to all customers in ${governorates.find(g => g.id === formData.governorate_id)?.name_en || ''}`)}
+                            ? locale === 'ar'
+                              ? `سيظهر فقط لعملاء ${filteredCities.find((c) => c.id === formData.city_id)?.name_ar || ''}`
+                              : `Will show only to customers in ${filteredCities.find((c) => c.id === formData.city_id)?.name_en || ''}`
+                            : locale === 'ar'
+                              ? `سيظهر لكل عملاء ${governorates.find((g) => g.id === formData.governorate_id)?.name_ar || ''}`
+                              : `Will show to all customers in ${governorates.find((g) => g.id === formData.governorate_id)?.name_en || ''}`}
                         </div>
                       )}
                     </div>
@@ -1842,15 +2015,14 @@ export default function AdminBannersPage() {
                     <div className="bg-white rounded-xl p-4 border border-slate-200">
                       <p className="text-xs text-slate-500 mb-3 text-center">
                         {previewMode === 'mobile'
-                          ? (locale === 'ar' ? 'عرض الموبايل' : 'Mobile View')
-                          : (locale === 'ar' ? 'عرض الديسكتوب' : 'Desktop View')
-                        }
+                          ? locale === 'ar'
+                            ? 'عرض الموبايل'
+                            : 'Mobile View'
+                          : locale === 'ar'
+                            ? 'عرض الديسكتوب'
+                            : 'Desktop View'}
                       </p>
-                      <BannerPreview
-                        data={formData}
-                        locale={locale}
-                        viewMode={previewMode}
-                      />
+                      <BannerPreview data={formData} locale={locale} viewMode={previewMode} />
                     </div>
 
                     {/* Quick Tips */}
@@ -1859,9 +2031,24 @@ export default function AdminBannersPage() {
                         {locale === 'ar' ? 'نصائح' : 'Tips'}
                       </h4>
                       <ul className="text-xs text-blue-700 space-y-1">
-                        <li>• {locale === 'ar' ? 'استخدم صور PNG مفرغة للمنتجات' : 'Use transparent PNG for products'}</li>
-                        <li>• {locale === 'ar' ? 'الألوان الموصى بها: #009DE0, #0088CC, #0077B6' : 'Recommended colors: #009DE0, #0088CC, #0077B6'}</li>
-                        <li>• {locale === 'ar' ? 'نسبة الصورة المثالية 16:9' : 'Optimal aspect ratio is 16:9'}</li>
+                        <li>
+                          •{' '}
+                          {locale === 'ar'
+                            ? 'استخدم صور PNG مفرغة للمنتجات'
+                            : 'Use transparent PNG for products'}
+                        </li>
+                        <li>
+                          •{' '}
+                          {locale === 'ar'
+                            ? 'الألوان الموصى بها: #009DE0, #0088CC, #0077B6'
+                            : 'Recommended colors: #009DE0, #0088CC, #0077B6'}
+                        </li>
+                        <li>
+                          •{' '}
+                          {locale === 'ar'
+                            ? 'نسبة الصورة المثالية 16:9'
+                            : 'Optimal aspect ratio is 16:9'}
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -1873,8 +2060,8 @@ export default function AdminBannersPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setShowCreateModal(false)
-                    setEditingBanner(null)
+                    setShowCreateModal(false);
+                    setEditingBanner(null);
                   }}
                 >
                   {locale === 'ar' ? 'إلغاء' : 'Cancel'}
@@ -1890,9 +2077,12 @@ export default function AdminBannersPage() {
                     <Save className="w-4 h-4" />
                   )}
                   {editingBanner
-                    ? (locale === 'ar' ? 'حفظ التعديلات' : 'Save Changes')
-                    : (locale === 'ar' ? 'إنشاء البانر' : 'Create Banner')
-                  }
+                    ? locale === 'ar'
+                      ? 'حفظ التعديلات'
+                      : 'Save Changes'
+                    : locale === 'ar'
+                      ? 'إنشاء البانر'
+                      : 'Create Banner'}
                 </Button>
               </div>
             </motion.div>
@@ -1900,5 +2090,5 @@ export default function AdminBannersPage() {
         )}
       </AnimatePresence>
     </>
-  )
+  );
 }

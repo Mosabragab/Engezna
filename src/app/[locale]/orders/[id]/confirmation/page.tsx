@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { CustomerLayout } from '@/components/customer/layout'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { useEffect, useState, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   CheckCircle2,
   Clock,
@@ -18,85 +18,87 @@ import {
   Store,
   Loader2,
   Bell,
-} from 'lucide-react'
+} from 'lucide-react';
 
 type Order = {
-  id: string
-  order_number: string
-  customer_id: string
-  provider_id: string
-  status: string
-  subtotal: number
-  delivery_fee: number
-  discount: number
-  total: number
-  payment_method: string
-  payment_status: string
+  id: string;
+  order_number: string;
+  customer_id: string;
+  provider_id: string;
+  status: string;
+  subtotal: number;
+  delivery_fee: number;
+  discount: number;
+  total: number;
+  payment_method: string;
+  payment_status: string;
   delivery_address: {
-    address?: string
-    address_line1?: string
-    city_ar?: string
-    city_en?: string
-    district_ar?: string
-    district_en?: string
-    governorate_ar?: string
-    governorate_en?: string
-    phone?: string
-    full_name?: string
-    notes?: string
-  }
-  customer_notes: string | null
-  estimated_delivery_time: string
-  created_at: string
-}
+    address?: string;
+    address_line1?: string;
+    city_ar?: string;
+    city_en?: string;
+    district_ar?: string;
+    district_en?: string;
+    governorate_ar?: string;
+    governorate_en?: string;
+    phone?: string;
+    full_name?: string;
+    notes?: string;
+  };
+  customer_notes: string | null;
+  estimated_delivery_time: string;
+  created_at: string;
+};
 
 type OrderItem = {
-  id: string
-  order_id: string
-  menu_item_id: string
-  item_name_ar: string
-  item_name_en: string
-  item_price: number
-  quantity: number
-  unit_price: number
-  total_price: number
-}
+  id: string;
+  order_id: string;
+  menu_item_id: string;
+  item_name_ar: string;
+  item_name_en: string;
+  item_price: number;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+};
 
 type Provider = {
-  name_ar: string
-  name_en: string
-  phone: string
-  logo_url: string | null
-}
+  name_ar: string;
+  name_en: string;
+  phone: string;
+  logo_url: string | null;
+};
 
 export default function OrderConfirmationPage() {
-  const params = useParams()
-  const orderId = params.id as string
-  const locale = useLocale()
-  const router = useRouter()
+  const params = useParams();
+  const orderId = params.id as string;
+  const locale = useLocale();
+  const router = useRouter();
 
-  const [order, setOrder] = useState<Order | null>(null)
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([])
-  const [provider, setProvider] = useState<Provider | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [retryCount, setRetryCount] = useState(0)
+  const [order, setOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
   const loadOrderDetails = useCallback(async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
     // Wait for auth to be ready
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       // If not authenticated, redirect to login
-      router.push(`/${locale}/auth/login?redirect=/orders/${orderId}/confirmation`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/orders/${orderId}/confirmation`);
+      return;
     }
 
     // Small delay to ensure database transaction is committed
     if (retryCount === 0) {
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     // Fetch order
@@ -104,34 +106,34 @@ export default function OrderConfirmationPage() {
       .from('orders')
       .select('*')
       .eq('id', orderId)
-      .single()
+      .single();
 
     if (orderError) {
       // Retry once if order not found (might be a timing issue)
       if (retryCount < 2) {
-        setTimeout(() => setRetryCount(prev => prev + 1), 1000)
-        return
+        setTimeout(() => setRetryCount((prev) => prev + 1), 1000);
+        return;
       }
-      router.push(`/${locale}`)
-      return
+      router.push(`/${locale}`);
+      return;
     }
 
     // Verify order belongs to current user
     if (orderData.customer_id !== user.id) {
-      router.push(`/${locale}`)
-      return
+      router.push(`/${locale}`);
+      return;
     }
 
-    setOrder(orderData)
+    setOrder(orderData);
 
     // Fetch order items
     const { data: itemsData, error: itemsError } = await supabase
       .from('order_items')
       .select('*')
-      .eq('order_id', orderId)
+      .eq('order_id', orderId);
 
     if (!itemsError) {
-      setOrderItems(itemsData || [])
+      setOrderItems(itemsData || []);
     }
 
     // Fetch provider
@@ -139,18 +141,18 @@ export default function OrderConfirmationPage() {
       .from('providers')
       .select('name_ar, name_en, phone, logo_url')
       .eq('id', orderData.provider_id)
-      .single()
+      .single();
 
     if (!providerError) {
-      setProvider(providerData)
+      setProvider(providerData);
     }
 
-    setLoading(false)
-  }, [orderId, retryCount, locale, router])
+    setLoading(false);
+  }, [orderId, retryCount, locale, router]);
 
   useEffect(() => {
-    loadOrderDetails()
-  }, [loadOrderDetails])
+    loadOrderDetails();
+  }, [loadOrderDetails]);
 
   const getStatusInfo = (status: string) => {
     switch (status) {
@@ -159,61 +161,66 @@ export default function OrderConfirmationPage() {
           color: 'bg-card-bg-warning text-warning border-warning',
           icon: Clock,
           label: locale === 'ar' ? 'في انتظار موافقة التاجر' : 'Waiting for Provider Approval',
-          description: locale === 'ar'
-            ? 'تم إرسال طلبك للتاجر وفي انتظار الموافقة عليه'
-            : 'Your order has been sent to the provider and is awaiting approval',
-        }
+          description:
+            locale === 'ar'
+              ? 'تم إرسال طلبك للتاجر وفي انتظار الموافقة عليه'
+              : 'Your order has been sent to the provider and is awaiting approval',
+        };
       case 'accepted':
         return {
           color: 'bg-blue-100 text-blue-800 border-blue-200',
           icon: CheckCircle2,
           label: locale === 'ar' ? 'تم قبول الطلب' : 'Order Accepted',
-          description: locale === 'ar' ? 'تم قبول طلبك وجاري تحضيره' : 'Your order has been accepted and is being prepared',
-        }
+          description:
+            locale === 'ar'
+              ? 'تم قبول طلبك وجاري تحضيره'
+              : 'Your order has been accepted and is being prepared',
+        };
       case 'preparing':
         return {
           color: 'bg-purple-100 text-purple-800 border-purple-200',
           icon: Clock,
           label: locale === 'ar' ? 'جاري التحضير' : 'Preparing',
-          description: locale === 'ar' ? 'جاري تحضير طلبك الآن' : 'Your order is being prepared now',
-        }
+          description:
+            locale === 'ar' ? 'جاري تحضير طلبك الآن' : 'Your order is being prepared now',
+        };
       default:
         return {
           color: 'bg-slate-100 text-slate-800 border-slate-200',
           icon: Clock,
           label: status,
           description: '',
-        }
+        };
     }
-  }
+  };
 
   const getDeliveryAddress = () => {
-    if (!order?.delivery_address) return ''
-    const addr = order.delivery_address
-    const parts = []
-    const isArabic = locale === 'ar'
+    if (!order?.delivery_address) return '';
+    const addr = order.delivery_address;
+    const parts = [];
+    const isArabic = locale === 'ar';
 
     // Address line
-    if (addr.address_line1) parts.push(addr.address_line1)
-    else if (addr.address) parts.push(addr.address)
+    if (addr.address_line1) parts.push(addr.address_line1);
+    else if (addr.address) parts.push(addr.address);
 
     // District - use correct language
-    if (isArabic && addr.district_ar) parts.push(addr.district_ar)
-    else if (!isArabic && addr.district_en) parts.push(addr.district_en)
-    else if (addr.district_ar) parts.push(addr.district_ar) // Fallback to Arabic
+    if (isArabic && addr.district_ar) parts.push(addr.district_ar);
+    else if (!isArabic && addr.district_en) parts.push(addr.district_en);
+    else if (addr.district_ar) parts.push(addr.district_ar); // Fallback to Arabic
 
     // City - use correct language
-    if (isArabic && addr.city_ar) parts.push(addr.city_ar)
-    else if (!isArabic && addr.city_en) parts.push(addr.city_en)
-    else if (addr.city_ar) parts.push(addr.city_ar) // Fallback to Arabic
+    if (isArabic && addr.city_ar) parts.push(addr.city_ar);
+    else if (!isArabic && addr.city_en) parts.push(addr.city_en);
+    else if (addr.city_ar) parts.push(addr.city_ar); // Fallback to Arabic
 
     // Governorate - use correct language
-    if (isArabic && addr.governorate_ar) parts.push(addr.governorate_ar)
-    else if (!isArabic && addr.governorate_en) parts.push(addr.governorate_en)
-    else if (addr.governorate_ar) parts.push(addr.governorate_ar) // Fallback to Arabic
+    if (isArabic && addr.governorate_ar) parts.push(addr.governorate_ar);
+    else if (!isArabic && addr.governorate_en) parts.push(addr.governorate_en);
+    else if (addr.governorate_ar) parts.push(addr.governorate_ar); // Fallback to Arabic
 
-    return parts.join(isArabic ? '، ' : ', ')
-  }
+    return parts.join(isArabic ? '، ' : ', ');
+  };
 
   if (loading) {
     return (
@@ -231,7 +238,7 @@ export default function OrderConfirmationPage() {
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   if (!order) {
@@ -247,18 +254,16 @@ export default function OrderConfirmationPage() {
               {locale === 'ar' ? 'الطلب غير موجود' : 'Order not found'}
             </p>
             <Link href={`/${locale}`}>
-              <Button>
-                {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
-              </Button>
+              <Button>{locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}</Button>
             </Link>
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
-  const statusInfo = getStatusInfo(order.status)
-  const StatusIcon = statusInfo.icon
+  const statusInfo = getStatusInfo(order.status);
+  const StatusIcon = statusInfo.icon;
 
   return (
     <CustomerLayout
@@ -277,9 +282,7 @@ export default function OrderConfirmationPage() {
               {locale === 'ar' ? 'تم تقديم طلبك بنجاح!' : 'Order Placed Successfully!'}
             </h1>
             <p className="text-muted-foreground">
-              {locale === 'ar'
-                ? 'شكراً لك على طلبك'
-                : 'Thank you for your order'}
+              {locale === 'ar' ? 'شكراً لك على طلبك' : 'Thank you for your order'}
             </p>
           </div>
 
@@ -301,7 +304,9 @@ export default function OrderConfirmationPage() {
           <Card className={`mb-4 border-2 ${statusInfo.color}`}>
             <CardContent className="py-5">
               <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center ${order.status === 'pending' ? 'bg-card-bg-warning' : 'bg-blue-200'}`}>
+                <div
+                  className={`w-14 h-14 rounded-full flex items-center justify-center ${order.status === 'pending' ? 'bg-card-bg-warning' : 'bg-blue-200'}`}
+                >
                   {order.status === 'pending' ? (
                     <Loader2 className="w-8 h-8 text-warning animate-spin" />
                   ) : (
@@ -342,7 +347,9 @@ export default function OrderConfirmationPage() {
                     <p className="font-semibold">
                       {locale === 'ar' ? provider.name_ar : provider.name_en}
                     </p>
-                    <p className="text-sm text-muted-foreground" dir="ltr">{provider.phone}</p>
+                    <p className="text-sm text-muted-foreground" dir="ltr">
+                      {provider.phone}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -365,10 +372,13 @@ export default function OrderConfirmationPage() {
                     {locale === 'ar' ? 'الوقت المتوقع' : 'Estimated Time'}
                   </p>
                   <p className="font-medium">
-                    {new Date(order.estimated_delivery_time).toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {new Date(order.estimated_delivery_time).toLocaleTimeString(
+                      locale === 'ar' ? 'ar-EG' : 'en-US',
+                      {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }
+                    )}
                   </p>
                 </div>
               </div>
@@ -389,7 +399,9 @@ export default function OrderConfirmationPage() {
                   <p className="text-sm text-muted-foreground">
                     {locale === 'ar' ? 'الهاتف' : 'Phone'}
                   </p>
-                  <p className="font-medium" dir="ltr">{order.delivery_address?.phone}</p>
+                  <p className="font-medium" dir="ltr">
+                    {order.delivery_address?.phone}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -406,11 +418,13 @@ export default function OrderConfirmationPage() {
             <CardContent>
               <div className="space-y-2 mb-4">
                 {orderItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center py-2 border-b last:border-0">
+                  <div
+                    key={item.id}
+                    className="flex justify-between items-center py-2 border-b last:border-0"
+                  >
                     <div className="flex-1">
                       <p className="font-medium text-sm">
-                        {item.quantity}x{' '}
-                        {locale === 'ar' ? item.item_name_ar : item.item_name_en}
+                        {item.quantity}x {locale === 'ar' ? item.item_name_ar : item.item_name_en}
                       </p>
                     </div>
                     <p className="font-semibold text-sm">
@@ -422,22 +436,34 @@ export default function OrderConfirmationPage() {
 
               <div className="pt-3 border-t space-y-1.5 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{locale === 'ar' ? 'المجموع الفرعي' : 'Subtotal'}</span>
-                  <span>{order.subtotal.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                  <span className="text-muted-foreground">
+                    {locale === 'ar' ? 'المجموع الفرعي' : 'Subtotal'}
+                  </span>
+                  <span>
+                    {order.subtotal.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-                  <span>{order.delivery_fee.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                  <span className="text-muted-foreground">
+                    {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}
+                  </span>
+                  <span>
+                    {order.delivery_fee.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                  </span>
                 </div>
                 {order.discount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
-                    <span>-{order.discount.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                    <span>
+                      -{order.discount.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between text-base font-bold pt-2 border-t">
                   <span>{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
-                  <span className="text-primary">{order.total.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                  <span className="text-primary">
+                    {order.total.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                  </span>
                 </div>
               </div>
 
@@ -451,8 +477,8 @@ export default function OrderConfirmationPage() {
                       ? 'الدفع عند الاستلام'
                       : 'Cash on Delivery'
                     : locale === 'ar'
-                    ? 'الدفع الإلكتروني'
-                    : 'Online Payment'}
+                      ? 'الدفع الإلكتروني'
+                      : 'Online Payment'}
                 </p>
               </div>
             </CardContent>
@@ -481,8 +507,8 @@ export default function OrderConfirmationPage() {
                   بإتمام الطلب، فإنك توافق على{' '}
                   <Link href={`/${locale}/terms`} className="text-primary hover:underline">
                     الشروط والأحكام
-                  </Link>
-                  {' '}و{' '}
+                  </Link>{' '}
+                  و{' '}
                   <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
                     سياسة الخصوصية
                   </Link>
@@ -492,8 +518,8 @@ export default function OrderConfirmationPage() {
                   By placing an order, you agree to our{' '}
                   <Link href={`/${locale}/terms`} className="text-primary hover:underline">
                     Terms & Conditions
-                  </Link>
-                  {' '}and{' '}
+                  </Link>{' '}
+                  and{' '}
                   <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
                     Privacy Policy
                   </Link>
@@ -504,5 +530,5 @@ export default function OrderConfirmationPage() {
         </div>
       </div>
     </CustomerLayout>
-  )
+  );
 }

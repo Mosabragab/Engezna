@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { CustomerLayout } from '@/components/customer/layout'
+import { useState } from 'react';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { CustomerLayout } from '@/components/customer/layout';
 import {
   ArrowLeft,
   ArrowRight,
@@ -18,22 +18,22 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  Wallet
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+  Wallet,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Section {
-  id: string
-  icon: typeof FileText
-  title: string
-  content: string
+  id: string;
+  icon: typeof FileText;
+  title: string;
+  content: string;
 }
 
 export default function TermsPage() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const BackArrow = isRTL ? ArrowRight : ArrowLeft
-  const [expandedSection, setExpandedSection] = useState<string | null>('general')
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
+  const [expandedSection, setExpandedSection] = useState<string | null>('general');
 
   const content = {
     ar: {
@@ -41,7 +41,7 @@ export default function TermsPage() {
       lastUpdated: 'آخر تحديث: ديسمبر 2025',
       tabs: {
         customer: 'شروط العميل',
-        provider: 'شروط المتاجر'
+        provider: 'شروط المتاجر',
       },
       customerSections: [
         {
@@ -56,7 +56,7 @@ export default function TermsPage() {
 • دقة الطلبات وتحضيرها
 • توقيت التوصيل وتنفيذه
 
-جميع مقدمي الخدمات هم أعمال تجارية مستقلة ومسؤولون بالكامل عن خدماتهم.`
+جميع مقدمي الخدمات هم أعمال تجارية مستقلة ومسؤولون بالكامل عن خدماتهم.`,
         },
         {
           id: 'orders',
@@ -72,7 +72,7 @@ export default function TermsPage() {
 يتم التوصيل بواسطة مقدم الخدمة (المتجر) باستخدام موظفيه. إنجزنا لا توظف عمال توصيل ولا تضمن أوقات توصيل محددة.
 
 📍 العنوان:
-يجب تقديم عنوان دقيق والتواجد لاستلام الطلب.`
+يجب تقديم عنوان دقيق والتواجد لاستلام الطلب.`,
         },
         {
           id: 'discounts',
@@ -91,7 +91,7 @@ export default function TermsPage() {
 عواقب إساءة الاستخدام:
 • إلغاء الكود والطلب بدون استرداد
 • تعليق الحساب بشكل دائم
-• إجراءات قانونية في الحالات الجسيمة`
+• إجراءات قانونية في الحالات الجسيمة`,
         },
         {
           id: 'fraud',
@@ -109,7 +109,7 @@ export default function TermsPage() {
 • ملاحقته قانونياً
 
 📱 إشعار قانوني:
-أرقام الهواتف المستخدمة مسجلة ويمكن تتبعها. تحتفظ إنجزنا بالحق في اتخاذ إجراءات قانونية لاسترداد الأضرار.`
+أرقام الهواتف المستخدمة مسجلة ويمكن تتبعها. تحتفظ إنجزنا بالحق في اتخاذ إجراءات قانونية لاسترداد الأضرار.`,
         },
         {
           id: 'disputes',
@@ -126,7 +126,7 @@ export default function TermsPage() {
 • تُتخذ القرارات بناءً على الأدلة المتاحة
 • يتم إصدار المبالغ المستردة وفقاً لتقدير المنصة
 
-مقدمو الخدمات الذين تتكرر الشكاوى ضدهم قد يواجهون التعليق أو الإزالة الدائمة.`
+مقدمو الخدمات الذين تتكرر الشكاوى ضدهم قد يواجهون التعليق أو الإزالة الدائمة.`,
         },
         {
           id: 'refunds',
@@ -161,8 +161,8 @@ export default function TermsPage() {
 تحتفظ إنجزنا بالحق في تعديل سياسة الاسترداد بما يتناسب مع:
 • طرق الدفع المتاحة (نقدي/إلكتروني)
 • طبيعة المنتجات والخدمات
-• المتطلبات القانونية والتنظيمية`
-        }
+• المتطلبات القانونية والتنظيمية`,
+        },
       ],
       providerSections: [
         {
@@ -181,7 +181,7 @@ export default function TermsPage() {
 • جودة المنتجات وسلامتها
 • دقة القوائم والأسعار
 • إعداد الطلبات في الوقت المحدد
-• إدارة التوصيل بموظفيك`
+• إدارة التوصيل بموظفيك`,
         },
         {
           id: 'commission',
@@ -199,7 +199,7 @@ export default function TermsPage() {
 مثال:
 إجمالي الطلب: ٢٠٠ جنيه
 العمولة (٧٪): ١٤ جنيه
-يستلم المتجر: ١٨٦ جنيه`
+يستلم المتجر: ١٨٦ جنيه`,
         },
         {
           id: 'settlements',
@@ -218,7 +218,7 @@ export default function TermsPage() {
 ⚙️ حقوق المنصة:
 • تفعيل أو إلغاء أي طريقة دفع (نقدي/إلكتروني)
 • تعديل شروط معالجة الدفع
-• تعديل جداول التسوية مع إشعار معقول`
+• تعديل جداول التسوية مع إشعار معقول`,
         },
         {
           id: 'termination',
@@ -235,7 +235,7 @@ export default function TermsPage() {
 عند الإنهاء:
 • يجب تنفيذ جميع الطلبات المعلقة
 • العمولات المستحقة تظل واجبة الدفع
-• يمكن للمتجر طلب تصدير البيانات`
+• يمكن للمتجر طلب تصدير البيانات`,
         },
         {
           id: 'refund-settlement',
@@ -272,22 +272,22 @@ export default function TermsPage() {
 عند تفعيل الدفع الإلكتروني:
 • يتم خصم مبلغ الاسترداد من رصيد المتجر
 • تُعدّل العمولة تلقائياً قبل التحويل
-• تحتفظ المنصة بحق تجميد الأموال لحين البت في النزاعات`
-        }
+• تحتفظ المنصة بحق تجميد الأموال لحين البت في النزاعات`,
+        },
       ],
       footer: {
         company: 'سويفكم للتجارة والتصدير (ذ.م.م) - سجل تجاري: 2767',
         address: 'ش صالح حمام بجوار مسجد الاباصيري - بني سويف، مصر',
         law: 'هذه الشروط تخضع لقوانين جمهورية مصر العربية وتتوافق مع قانون حماية المستهلك المصري (القانون رقم ١٨١ لسنة ٢٠١٨)',
-        contact: 'للاستفسارات: support@engezna.com'
-      }
+        contact: 'للاستفسارات: support@engezna.com',
+      },
     },
     en: {
       title: 'Terms & Conditions',
       lastUpdated: 'Last Updated: December 2025',
       tabs: {
         customer: 'Customer Terms',
-        provider: 'Store Terms'
+        provider: 'Store Terms',
       },
       customerSections: [
         {
@@ -302,7 +302,7 @@ Engezna is NOT a restaurant, store, or delivery service. We are not responsible 
 • Order accuracy and preparation
 • Delivery timing and execution
 
-All service providers are independent businesses and are fully responsible for their services.`
+All service providers are independent businesses and are fully responsible for their services.`,
         },
         {
           id: 'orders',
@@ -318,7 +318,7 @@ All service providers are independent businesses and are fully responsible for t
 Delivery is performed by the service provider (store) using their own staff. Engezna does not employ delivery personnel and cannot guarantee specific delivery times.
 
 📍 Address:
-You must provide an accurate address and be available to receive the order.`
+You must provide an accurate address and be available to receive the order.`,
         },
         {
           id: 'discounts',
@@ -337,7 +337,7 @@ You must provide an accurate address and be available to receive the order.`
 Consequences of abuse:
 • Code and order cancellation without refund
 • Permanent account suspension
-• Legal action in severe cases`
+• Legal action in severe cases`,
         },
         {
           id: 'fraud',
@@ -355,7 +355,7 @@ Any account found placing fake orders will be:
 • Subject to legal pursuit
 
 📱 Legal Notice:
-Phone numbers used on the Platform are registered and can be traced. Engezna reserves the right to pursue legal action to recover damages.`
+Phone numbers used on the Platform are registered and can be traced. Engezna reserves the right to pursue legal action to recover damages.`,
         },
         {
           id: 'disputes',
@@ -372,7 +372,7 @@ When a dispute is escalated to the Resolution Center:
 • Decisions are made based on available evidence
 • Refunds are issued at the Platform's discretion
 
-Service providers with repeated complaints may face suspension or permanent removal.`
+Service providers with repeated complaints may face suspension or permanent removal.`,
         },
         {
           id: 'refunds',
@@ -407,8 +407,8 @@ Service providers with repeated complaints may face suspension or permanent remo
 Engezna reserves the right to modify the refund policy based on:
 • Available payment methods (cash/electronic)
 • Nature of products and services
-• Legal and regulatory requirements`
-        }
+• Legal and regulatory requirements`,
+        },
       ],
       providerSections: [
         {
@@ -427,7 +427,7 @@ Your responsibilities:
 • Product quality and safety
 • Accurate listings and prices
 • Timely order preparation
-• Managing delivery with your own staff`
+• Managing delivery with your own staff`,
         },
         {
           id: 'commission',
@@ -445,7 +445,7 @@ Your responsibilities:
 Example:
 Order subtotal: 200 EGP
 Commission (7%): 14 EGP
-Store receives: 186 EGP`
+Store receives: 186 EGP`,
         },
         {
           id: 'settlements',
@@ -464,7 +464,7 @@ The service provider authorizes Engezna to:
 ⚙️ Platform Rights:
 • Activate or deactivate any payment method (cash/electronic)
 • Modify payment processing terms
-• Modify settlement schedules with reasonable notice`
+• Modify settlement schedules with reasonable notice`,
         },
         {
           id: 'termination',
@@ -481,7 +481,7 @@ Either party may terminate the partnership with 30 days' written notice.
 Upon termination:
 • All pending orders must be fulfilled
 • Outstanding commissions remain payable
-• Store can request data export`
+• Store can request data export`,
         },
         {
           id: 'refund-settlement',
@@ -518,22 +518,22 @@ New commission: 7 EGP (50% reduction)
 When electronic payment is activated:
 • Refund amount is deducted from store balance
 • Commission is automatically adjusted before transfer
-• The Platform reserves the right to hold funds pending dispute resolution`
-        }
+• The Platform reserves the right to hold funds pending dispute resolution`,
+        },
       ],
       footer: {
         company: 'Sweifcom for Trade and Export (LLC) - Commercial Registry: 2767',
         address: 'Saleh Hammam St., next to Al-Abasiri Mosque, Beni Suef, Egypt',
         law: 'These Terms are governed by the laws of the Arab Republic of Egypt and comply with the Egyptian Consumer Protection Law (Law No. 181 of 2018)',
-        contact: 'For inquiries: support@engezna.com'
-      }
-    }
-  }
+        contact: 'For inquiries: support@engezna.com',
+      },
+    },
+  };
 
-  const t = content[locale as keyof typeof content] || content.en
-  const [activeTab, setActiveTab] = useState<'customer' | 'provider'>('customer')
+  const t = content[locale as keyof typeof content] || content.en;
+  const [activeTab, setActiveTab] = useState<'customer' | 'provider'>('customer');
 
-  const currentSections = activeTab === 'customer' ? t.customerSections : t.providerSections
+  const currentSections = activeTab === 'customer' ? t.customerSections : t.providerSections;
 
   return (
     <CustomerLayout>
@@ -596,8 +596,8 @@ When electronic payment is activated:
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-3xl mx-auto space-y-4">
             {currentSections.map((section) => {
-              const IconComponent = section.icon
-              const isExpanded = expandedSection === section.id
+              const IconComponent = section.icon;
+              const isExpanded = expandedSection === section.id;
 
               return (
                 <div
@@ -633,24 +633,16 @@ When electronic payment is activated:
                     </div>
                   )}
                 </div>
-              )
+              );
             })}
 
             {/* Footer Note */}
             <div className="bg-[#0F172A] rounded-xl p-6 text-center mt-8">
               <Scale className="w-8 h-8 text-[#009DE0] mx-auto mb-3" />
-              <p className="text-white font-semibold text-sm mb-1">
-                {t.footer.company}
-              </p>
-              <p className="text-slate-400 text-xs mb-3">
-                {t.footer.address}
-              </p>
-              <p className="text-slate-300 text-sm mb-2">
-                {t.footer.law}
-              </p>
-              <p className="text-slate-400 text-xs">
-                {t.footer.contact}
-              </p>
+              <p className="text-white font-semibold text-sm mb-1">{t.footer.company}</p>
+              <p className="text-slate-400 text-xs mb-3">{t.footer.address}</p>
+              <p className="text-slate-300 text-sm mb-2">{t.footer.law}</p>
+              <p className="text-slate-400 text-xs">{t.footer.contact}</p>
             </div>
 
             {/* Related Links */}
@@ -672,5 +664,5 @@ When electronic payment is activated:
         </div>
       </div>
     </CustomerLayout>
-  )
+  );
 }

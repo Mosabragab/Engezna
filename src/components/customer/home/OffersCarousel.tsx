@@ -1,99 +1,102 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
-import { createClient } from '@/lib/supabase/client'
-import { useUserLocation } from '@/lib/contexts/LocationContext'
+import { useLocale } from 'next-intl';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
+import { useUserLocation } from '@/lib/contexts/LocationContext';
 
 // Helper function to calculate color luminance and determine if text should be dark or light
 function getContrastTextColor(hexColor: string): 'light' | 'dark' {
   // Remove # if present
-  const hex = hexColor.replace('#', '')
+  const hex = hexColor.replace('#', '');
 
   // Parse RGB values
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
 
   // Calculate relative luminance using the formula
   // Higher values = lighter color
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
   // If luminance > 0.6, background is light, so use dark text
-  return luminance > 0.6 ? 'dark' : 'light'
+  return luminance > 0.6 ? 'dark' : 'light';
 }
 
 // Get average luminance of gradient (checks both start and end colors)
 function getGradientTextColor(startColor: string, endColor: string): 'light' | 'dark' {
-  const startLuminance = getContrastTextColor(startColor)
-  const endLuminance = getContrastTextColor(endColor)
+  const startLuminance = getContrastTextColor(startColor);
+  const endLuminance = getContrastTextColor(endColor);
 
   // If either color is light, use dark text for safety
   if (startLuminance === 'dark' || endLuminance === 'dark') {
-    return 'dark'
+    return 'dark';
   }
-  return 'light'
+  return 'light';
 }
 
 // Types
-type ImagePosition = 'start' | 'end' | 'center' | 'background'
-type ImageSize = 'small' | 'medium' | 'large'
+type ImagePosition = 'start' | 'end' | 'center' | 'background';
+type ImageSize = 'small' | 'medium' | 'large';
 
 interface HomepageBanner {
-  id: string
-  title_ar: string
-  title_en: string
-  description_ar?: string | null
-  description_en?: string | null
-  image_url?: string | null
-  background_color?: string | null
-  gradient_start?: string | null
-  gradient_end?: string | null
-  badge_text_ar?: string | null
-  badge_text_en?: string | null
-  has_glassmorphism?: boolean
-  cta_text_ar?: string | null
-  cta_text_en?: string | null
-  link_url?: string | null
-  link_type?: string | null
-  link_id?: string | null
-  image_position?: ImagePosition
-  image_size?: ImageSize
-  is_countdown_active?: boolean
-  countdown_end_time?: string | null
-  display_order?: number
+  id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar?: string | null;
+  description_en?: string | null;
+  image_url?: string | null;
+  background_color?: string | null;
+  gradient_start?: string | null;
+  gradient_end?: string | null;
+  badge_text_ar?: string | null;
+  badge_text_en?: string | null;
+  has_glassmorphism?: boolean;
+  cta_text_ar?: string | null;
+  cta_text_en?: string | null;
+  link_url?: string | null;
+  link_type?: string | null;
+  link_id?: string | null;
+  image_position?: ImagePosition;
+  image_size?: ImageSize;
+  is_countdown_active?: boolean;
+  countdown_end_time?: string | null;
+  display_order?: number;
 }
 
 // Unified image size configuration - relative to banner height for consistency
 // All sizes are designed to work harmoniously within the 16:9 aspect ratio
-const IMAGE_SIZE_CONFIG: Record<ImageSize, {
-  containerClass: string
-  maxHeight: string
-  label_ar: string
-  label_en: string
-}> = {
+const IMAGE_SIZE_CONFIG: Record<
+  ImageSize,
+  {
+    containerClass: string;
+    maxHeight: string;
+    label_ar: string;
+    label_en: string;
+  }
+> = {
   small: {
     containerClass: 'w-auto h-[45%] max-w-[25%]',
     maxHeight: '45%',
     label_ar: 'صغير',
-    label_en: 'Small'
+    label_en: 'Small',
   },
   medium: {
     containerClass: 'w-auto h-[55%] max-w-[30%]',
     maxHeight: '55%',
     label_ar: 'وسط',
-    label_en: 'Medium'
+    label_en: 'Medium',
   },
   large: {
     containerClass: 'w-auto h-[65%] max-w-[35%]',
     maxHeight: '65%',
     label_ar: 'كبير',
-    label_en: 'Large'
+    label_en: 'Large',
   },
-}
+};
 
 // Fallback demo offers (used when no database banners exist)
 const fallbackOffers: HomepageBanner[] = [
@@ -148,44 +151,50 @@ const fallbackOffers: HomepageBanner[] = [
     image_size: 'medium',
     has_glassmorphism: true,
   },
-]
+];
 
 interface OffersCarouselProps {
-  banners?: HomepageBanner[]
-  autoPlay?: boolean
-  autoPlayInterval?: number
-  title?: string
-  showViewAll?: boolean
-  onViewAll?: () => void
-  className?: string
+  banners?: HomepageBanner[];
+  autoPlay?: boolean;
+  autoPlayInterval?: number;
+  title?: string;
+  showViewAll?: boolean;
+  onViewAll?: () => void;
+  className?: string;
 }
 
 // Countdown Timer Component
-function CountdownTimer({ endTime, isDarkText = false }: { endTime: string; isDarkText?: boolean }) {
-  const locale = useLocale()
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 })
+function CountdownTimer({
+  endTime,
+  isDarkText = false,
+}: {
+  endTime: string;
+  isDarkText?: boolean;
+}) {
+  const locale = useLocale();
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const difference = new Date(endTime).getTime() - new Date().getTime()
+      const difference = new Date(endTime).getTime() - new Date().getTime();
       if (difference > 0) {
         setTimeLeft({
           hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
           minutes: Math.floor((difference / (1000 * 60)) % 60),
           seconds: Math.floor((difference / 1000) % 60),
-        })
+        });
       }
-    }
+    };
 
-    calculateTimeLeft()
-    const timer = setInterval(calculateTimeLeft, 1000)
-    return () => clearInterval(timer)
-  }, [endTime])
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+    return () => clearInterval(timer);
+  }, [endTime]);
 
-  const formatNum = (n: number) => n.toString().padStart(2, '0')
+  const formatNum = (n: number) => n.toString().padStart(2, '0');
 
-  const textColor = isDarkText ? 'text-slate-700' : 'text-white/90'
-  const bgColor = isDarkText ? 'bg-slate-800/10' : 'bg-white/20'
+  const textColor = isDarkText ? 'text-slate-700' : 'text-white/90';
+  const bgColor = isDarkText ? 'bg-slate-800/10' : 'bg-white/20';
 
   return (
     <div className={`flex items-center gap-1 ${textColor} text-xs font-medium`}>
@@ -200,11 +209,9 @@ function CountdownTimer({ endTime, isDarkText = false }: { endTime: string; isDa
       <span className={`${bgColor} backdrop-blur-sm rounded px-1.5 py-0.5`}>
         {formatNum(timeLeft.seconds)}
       </span>
-      <span className="ms-1 opacity-75">
-        {locale === 'ar' ? 'متبقي' : 'left'}
-      </span>
+      <span className="ms-1 opacity-75">{locale === 'ar' ? 'متبقي' : 'left'}</span>
     </div>
-  )
+  );
 }
 
 // Single Banner Card Component
@@ -214,46 +221,50 @@ function BannerCard({
   locale,
   isDesktop,
 }: {
-  banner: HomepageBanner
-  isActive: boolean
-  locale: string
-  isDesktop: boolean
+  banner: HomepageBanner;
+  isActive: boolean;
+  locale: string;
+  isDesktop: boolean;
 }) {
-  const title = locale === 'ar' ? banner.title_ar : banner.title_en
-  const description = locale === 'ar' ? banner.description_ar : banner.description_en
-  const badgeText = locale === 'ar' ? banner.badge_text_ar : banner.badge_text_en
-  const ctaText = locale === 'ar' ? banner.cta_text_ar : banner.cta_text_en
+  const title = locale === 'ar' ? banner.title_ar : banner.title_en;
+  const description = locale === 'ar' ? banner.description_ar : banner.description_en;
+  const badgeText = locale === 'ar' ? banner.badge_text_ar : banner.badge_text_en;
+  const ctaText = locale === 'ar' ? banner.cta_text_ar : banner.cta_text_en;
 
-  const gradientStart = banner.gradient_start || '#009DE0'
-  const gradientEnd = banner.gradient_end || '#0077B6'
+  const gradientStart = banner.gradient_start || '#009DE0';
+  const gradientEnd = banner.gradient_end || '#0077B6';
 
   const gradientStyle = {
     background: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`,
-  }
+  };
 
   // Determine text color based on background brightness
-  const textMode = getGradientTextColor(gradientStart, gradientEnd)
-  const isDarkText = textMode === 'dark'
+  const textMode = getGradientTextColor(gradientStart, gradientEnd);
+  const isDarkText = textMode === 'dark';
 
   // Text color classes
-  const textColorClass = isDarkText ? 'text-slate-800' : 'text-white'
-  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white/85'
+  const textColorClass = isDarkText ? 'text-slate-800' : 'text-white';
+  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white/85';
   const badgeBgClass = isDarkText
-    ? (banner.has_glassmorphism ? 'bg-slate-800/15 backdrop-blur-md border border-slate-800/20' : 'bg-slate-800/20')
-    : (banner.has_glassmorphism ? 'bg-white/20 backdrop-blur-md border border-white/30' : 'bg-white/25')
-  const badgeTextClass = isDarkText ? 'text-slate-800' : 'text-white'
-  const decorativeCircleClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10'
+    ? banner.has_glassmorphism
+      ? 'bg-slate-800/15 backdrop-blur-md border border-slate-800/20'
+      : 'bg-slate-800/20'
+    : banner.has_glassmorphism
+      ? 'bg-white/20 backdrop-blur-md border border-white/30'
+      : 'bg-white/25';
+  const badgeTextClass = isDarkText ? 'text-slate-800' : 'text-white';
+  const decorativeCircleClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10';
   const ctaButtonClass = isDarkText
     ? 'bg-slate-800 text-white hover:bg-slate-700'
-    : 'bg-white text-slate-900 hover:bg-white/95'
+    : 'bg-white text-slate-900 hover:bg-white/95';
 
-  const imagePosition = banner.image_position || 'end'
-  const imageSize = banner.image_size || 'medium'
-  const sizeConfig = IMAGE_SIZE_CONFIG[imageSize]
+  const imagePosition = banner.image_position || 'end';
+  const imageSize = banner.image_size || 'medium';
+  const sizeConfig = IMAGE_SIZE_CONFIG[imageSize];
 
-  const imageOnStart = imagePosition === 'start'
-  const imageOnCenter = imagePosition === 'center'
-  const imageOnBackground = imagePosition === 'background'
+  const imageOnStart = imagePosition === 'start';
+  const imageOnCenter = imagePosition === 'center';
+  const imageOnBackground = imagePosition === 'background';
 
   const CardContent = (
     <motion.div
@@ -269,34 +280,40 @@ function BannerCard({
       {/* Background Image (if image_position is 'background') */}
       {imageOnBackground && banner.image_url && (
         <div className="absolute inset-0">
-          <img
-            src={banner.image_url}
-            alt=""
-            className="w-full h-full object-cover opacity-30"
-          />
+          <img src={banner.image_url} alt="" className="w-full h-full object-cover opacity-30" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
       )}
 
       {/* Decorative Circles */}
-      <div className={`absolute -top-12 -end-12 w-40 h-40 ${decorativeCircleClass} rounded-full blur-sm`} />
-      <div className={`absolute -bottom-8 -start-8 w-32 h-32 ${decorativeCircleClass} rounded-full blur-sm`} />
+      <div
+        className={`absolute -top-12 -end-12 w-40 h-40 ${decorativeCircleClass} rounded-full blur-sm`}
+      />
+      <div
+        className={`absolute -bottom-8 -start-8 w-32 h-32 ${decorativeCircleClass} rounded-full blur-sm`}
+      />
 
       {/* Content Container */}
-      <div className={`
+      <div
+        className={`
         relative z-10 h-full p-5 md:p-6
         flex ${imageOnCenter ? 'flex-col' : imageOnStart ? 'flex-row-reverse' : 'flex-row'}
         items-center ${imageOnCenter ? 'justify-center text-center' : 'justify-between'} gap-4
-      `}>
+      `}
+      >
         {/* Text Content */}
-        <div className={`${imageOnCenter ? '' : 'flex-1'} ${imageOnCenter ? 'text-center' : imageOnStart ? 'text-end' : 'text-start'}`}>
+        <div
+          className={`${imageOnCenter ? '' : 'flex-1'} ${imageOnCenter ? 'text-center' : imageOnStart ? 'text-end' : 'text-start'}`}
+        >
           {/* Badge */}
           {badgeText && (
-            <div className={`
+            <div
+              className={`
               inline-block mb-3
               ${badgeBgClass}
               rounded-xl px-3 py-1.5 md:px-4 md:py-2
-            `}>
+            `}
+            >
               <span className={`${badgeTextClass} font-bold text-sm md:text-base`}>
                 {badgeText}
               </span>
@@ -304,7 +321,9 @@ function BannerCard({
           )}
 
           {/* Title */}
-          <h3 className={`${textColorClass} font-bold text-lg md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight`}>
+          <h3
+            className={`${textColorClass} font-bold text-lg md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight`}
+          >
             {title}
           </h3>
 
@@ -359,14 +378,15 @@ function BannerCard({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.3 }}
               style={{
-                filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15)) drop-shadow(0 16px 32px rgba(0,0,0,0.1))',
+                filter:
+                  'drop-shadow(0 8px 16px rgba(0,0,0,0.15)) drop-shadow(0 16px 32px rgba(0,0,0,0.1))',
               }}
             />
           </div>
         )}
       </div>
     </motion.div>
-  )
+  );
 
   // Wrap with Link if link_url exists
   if (banner.link_url) {
@@ -374,10 +394,10 @@ function BannerCard({
       <Link href={`/${locale}${banner.link_url}`} className="block">
         {CardContent}
       </Link>
-    )
+    );
   }
 
-  return CardContent
+  return CardContent;
 }
 
 // Liquid Progress Indicator Component
@@ -390,23 +410,23 @@ function LiquidProgressIndicator({
   autoPlayInterval,
   isRTL,
 }: {
-  totalItems: number
-  currentIndex: number
-  scrollProgress: number
-  onSelect: (index: number) => void
-  autoPlay: boolean
-  autoPlayInterval: number
-  isRTL: boolean
+  totalItems: number;
+  currentIndex: number;
+  scrollProgress: number;
+  onSelect: (index: number) => void;
+  autoPlay: boolean;
+  autoPlayInterval: number;
+  isRTL: boolean;
 }) {
   return (
     <div className="flex items-center justify-center gap-1.5 mt-4">
       {Array.from({ length: totalItems }).map((_, index) => {
         // Calculate distance for liquid effect
-        const distance = Math.abs(scrollProgress - index)
-        const isActive = index === currentIndex
+        const distance = Math.abs(scrollProgress - index);
+        const isActive = index === currentIndex;
 
         // Width based on distance (liquid stretch effect)
-        const width = isActive ? 24 : Math.max(8, 16 - distance * 8)
+        const width = isActive ? 24 : Math.max(8, 16 - distance * 8);
 
         return (
           <motion.button
@@ -415,7 +435,7 @@ function LiquidProgressIndicator({
             className="relative h-1.5 rounded-full overflow-hidden bg-slate-200"
             animate={{
               width,
-              opacity: isActive ? 1 : 0.5 + (1 - Math.min(distance, 1)) * 0.3
+              opacity: isActive ? 1 : 0.5 + (1 - Math.min(distance, 1)) * 0.3,
             }}
             transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
             whileHover={{ scale: 1.1 }}
@@ -451,10 +471,10 @@ function LiquidProgressIndicator({
               />
             )}
           </motion.button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 export function OffersCarousel({
@@ -466,59 +486,58 @@ export function OffersCarousel({
   onViewAll,
   className = '',
 }: OffersCarouselProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   // Get user's location for banner targeting
-  const { governorateId, cityId, isLoading: isLocationLoading } = useUserLocation()
+  const { governorateId, cityId, isLoading: isLocationLoading } = useUserLocation();
 
-  const [banners, setBanners] = useState<HomepageBanner[]>(propBanners || [])
-  const [isLoading, setIsLoading] = useState(!propBanners)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
-  const [scrollProgress, setScrollProgress] = useState(0)
-  const [isAutoScrolling, setIsAutoScrolling] = useState(false)
+  const [banners, setBanners] = useState<HomepageBanner[]>(propBanners || []);
+  const [isLoading, setIsLoading] = useState(!propBanners);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const sectionTitle = title || (locale === 'ar' ? 'العروض' : 'Offers')
+  const sectionTitle = title || (locale === 'ar' ? 'العروض' : 'Offers');
 
   // Detect desktop
   useEffect(() => {
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024)
-    checkDesktop()
-    window.addEventListener('resize', checkDesktop)
-    return () => window.removeEventListener('resize', checkDesktop)
-  }, [])
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   // Fetch banners from database - filtered by user's location
   useEffect(() => {
     if (propBanners) {
-      setBanners(propBanners)
-      setIsLoading(false)
-      return
+      setBanners(propBanners);
+      setIsLoading(false);
+      return;
     }
 
     // Wait for location to load before fetching banners
-    if (isLocationLoading) return
+    if (isLocationLoading) return;
 
     async function fetchBanners() {
       try {
-        const supabase = createClient()
+        const supabase = createClient();
 
         // Try to use the RPC function if available (more efficient)
-        const { data: rpcData, error: rpcError } = await supabase
-          .rpc('get_banners_for_location', {
-            p_governorate_id: governorateId || null,
-            p_city_id: cityId || null,
-          })
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_banners_for_location', {
+          p_governorate_id: governorateId || null,
+          p_city_id: cityId || null,
+        });
 
         if (!rpcError && rpcData && rpcData.length > 0) {
-          setBanners(rpcData)
-          setIsLoading(false)
-          return
+          setBanners(rpcData);
+          setIsLoading(false);
+          return;
         }
 
         // Fallback: manual filtering if RPC not available
@@ -529,128 +548,128 @@ export function OffersCarousel({
           .eq('banner_type', 'customer')
           .lte('starts_at', new Date().toISOString())
           .or(`ends_at.is.null,ends_at.gte.${new Date().toISOString()}`)
-          .order('display_order', { ascending: true })
+          .order('display_order', { ascending: true });
 
-        if (error) throw error
+        if (error) throw error;
 
         // Filter by location on client side
-        const filteredData = (data || []).filter(banner => {
+        const filteredData = (data || []).filter((banner) => {
           // National banners (no location restriction)
-          if (!banner.governorate_id && !banner.city_id) return true
+          if (!banner.governorate_id && !banner.city_id) return true;
 
           // User has no location set - only show national banners
-          if (!governorateId) return false
+          if (!governorateId) return false;
 
           // Governorate-level banners
-          if (banner.governorate_id === governorateId && !banner.city_id) return true
+          if (banner.governorate_id === governorateId && !banner.city_id) return true;
 
           // City-level banners
-          if (banner.governorate_id === governorateId && banner.city_id === cityId) return true
+          if (banner.governorate_id === governorateId && banner.city_id === cityId) return true;
 
-          return false
-        })
+          return false;
+        });
 
         if (filteredData.length > 0) {
-          setBanners(filteredData)
+          setBanners(filteredData);
         } else {
-          setBanners(fallbackOffers)
+          setBanners(fallbackOffers);
         }
       } catch (error) {
-        setBanners(fallbackOffers)
+        setBanners(fallbackOffers);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchBanners()
-  }, [propBanners, isLocationLoading, governorateId, cityId])
+    fetchBanners();
+  }, [propBanners, isLocationLoading, governorateId, cityId]);
 
   // Auto-play logic - RTL aware
   useEffect(() => {
     if (!autoPlay || banners.length <= 1 || isPaused || (isDesktop && isHovered)) {
-      return
+      return;
     }
 
     const timer = setInterval(() => {
       // In RTL, move in reverse direction for natural feel
       if (isRTL) {
-        setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
+        setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
       } else {
-        setCurrentIndex((prev) => (prev + 1) % banners.length)
+        setCurrentIndex((prev) => (prev + 1) % banners.length);
       }
-    }, autoPlayInterval)
+    }, autoPlayInterval);
 
-    return () => clearInterval(timer)
-  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered, isRTL])
+    return () => clearInterval(timer);
+  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered, isRTL]);
 
   // Scroll to current index (auto-play and programmatic navigation)
   useEffect(() => {
-    if (isDesktop || !scrollContainerRef.current || banners.length === 0) return
+    if (isDesktop || !scrollContainerRef.current || banners.length === 0) return;
 
-    const container = scrollContainerRef.current
-    const cards = container.querySelectorAll('[data-banner-card]')
-    if (cards.length === 0) return
+    const container = scrollContainerRef.current;
+    const cards = container.querySelectorAll('[data-banner-card]');
+    if (cards.length === 0) return;
 
-    const card = cards[currentIndex] as HTMLElement
-    if (!card) return
+    const card = cards[currentIndex] as HTMLElement;
+    if (!card) return;
 
     // Set flag to prevent handleScroll from interfering
-    setIsAutoScrolling(true)
+    setIsAutoScrolling(true);
 
     // Use scrollIntoView for better cross-browser and RTL support
     card.scrollIntoView({
       behavior: 'smooth',
       block: 'nearest',
       inline: 'center',
-    })
+    });
 
     // Update scroll progress
-    setScrollProgress(currentIndex)
+    setScrollProgress(currentIndex);
 
     // Reset flag after animation completes
     const resetTimer = setTimeout(() => {
-      setIsAutoScrolling(false)
-    }, 500)
+      setIsAutoScrolling(false);
+    }, 500);
 
-    return () => clearTimeout(resetTimer)
-  }, [currentIndex, isDesktop, banners.length])
+    return () => clearTimeout(resetTimer);
+  }, [currentIndex, isDesktop, banners.length]);
 
   // Handle scroll events for snap detection
   const handleScroll = useCallback(() => {
     // Skip if we're auto-scrolling or on desktop
-    if (!scrollContainerRef.current || isDesktop || isAutoScrolling) return
+    if (!scrollContainerRef.current || isDesktop || isAutoScrolling) return;
 
-    const container = scrollContainerRef.current
-    const containerWidth = container.offsetWidth
-    const scrollLeft = container.scrollLeft
-    const cardWidth = containerWidth * 0.85 + 16 // 85% width + gap
+    const container = scrollContainerRef.current;
+    const containerWidth = container.offsetWidth;
+    const scrollLeft = container.scrollLeft;
+    const cardWidth = containerWidth * 0.85 + 16; // 85% width + gap
 
     // Calculate current card based on scroll position
-    const newIndex = Math.round(scrollLeft / cardWidth)
-    const clampedIndex = Math.max(0, Math.min(newIndex, banners.length - 1))
+    const newIndex = Math.round(scrollLeft / cardWidth);
+    const clampedIndex = Math.max(0, Math.min(newIndex, banners.length - 1));
 
     // Update scroll progress for liquid effect
-    const progress = scrollLeft / (cardWidth * (banners.length - 1))
-    setScrollProgress(progress * (banners.length - 1))
+    const progress = scrollLeft / (cardWidth * (banners.length - 1));
+    setScrollProgress(progress * (banners.length - 1));
 
     if (clampedIndex !== currentIndex) {
-      setCurrentIndex(clampedIndex)
+      setCurrentIndex(clampedIndex);
     }
-  }, [currentIndex, banners.length, isDesktop, isAutoScrolling])
+  }, [currentIndex, banners.length, isDesktop, isAutoScrolling]);
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
-  }
+    setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
+  };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % banners.length)
-  }
+    setCurrentIndex((prev) => (prev + 1) % banners.length);
+  };
 
   // Pause handlers
-  const handleTouchStart = () => setIsPaused(true)
+  const handleTouchStart = () => setIsPaused(true);
   const handleTouchEnd = () => {
-    setTimeout(() => setIsPaused(false), 2000)
-  }
+    setTimeout(() => setIsPaused(false), 2000);
+  };
 
   if (isLoading) {
     return (
@@ -671,22 +690,22 @@ export function OffersCarousel({
           ))}
         </div>
       </section>
-    )
+    );
   }
 
-  if (banners.length === 0) return null
+  if (banners.length === 0) return null;
 
   // Desktop: Show 3 cards
   const visibleBanners = isDesktop
     ? (() => {
-        const result = []
+        const result = [];
         for (let i = 0; i < Math.min(3, banners.length); i++) {
-          const index = (currentIndex + i) % banners.length
-          result.push({ ...banners[index], _index: index })
+          const index = (currentIndex + i) % banners.length;
+          result.push({ ...banners[index], _index: index });
         }
-        return result
+        return result;
       })()
-    : banners
+    : banners;
 
   return (
     <section className={`bg-white px-4 py-6 ${className}`}>
@@ -730,12 +749,12 @@ export function OffersCarousel({
       <div
         className="relative"
         onMouseEnter={() => {
-          setIsHovered(true)
-          if (isDesktop) setIsPaused(true)
+          setIsHovered(true);
+          if (isDesktop) setIsPaused(true);
         }}
         onMouseLeave={() => {
-          setIsHovered(false)
-          if (isDesktop) setTimeout(() => setIsPaused(false), 1000)
+          setIsHovered(false);
+          if (isDesktop) setTimeout(() => setIsPaused(false), 1000);
         }}
       >
         {/* Mobile: Scroll Snap Carousel */}
@@ -759,11 +778,7 @@ export function OffersCarousel({
             onTouchEnd={handleTouchEnd}
           >
             {banners.map((banner, index) => (
-              <div
-                key={banner.id}
-                data-banner-card
-                className="flex-shrink-0 w-[85%] snap-center"
-              >
+              <div key={banner.id} data-banner-card className="flex-shrink-0 w-[85%] snap-center">
                 <BannerCard
                   banner={banner}
                   isActive={index === currentIndex}
@@ -822,5 +837,5 @@ export function OffersCarousel({
         />
       )}
     </section>
-  )
+  );
 }

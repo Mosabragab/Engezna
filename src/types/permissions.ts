@@ -65,8 +65,8 @@ export interface GeographicConstraint {
 
 // قيود الوقت
 export interface TimeConstraint {
-  start: string;  // HH:mm
-  end: string;    // HH:mm
+  start: string; // HH:mm
+  end: string; // HH:mm
   days: number[]; // 0-6 (Sunday-Saturday)
 }
 
@@ -192,7 +192,15 @@ export interface PermissionCheckRequest {
 // نتيجة التحقق من الصلاحية
 export interface PermissionCheckResult {
   allowed: boolean;
-  reason?: 'no_permission' | 'geographic_restriction' | 'amount_exceeded' | 'own_only' | 'not_assigned' | 'time_restriction' | 'denied' | 'expired';
+  reason?:
+    | 'no_permission'
+    | 'geographic_restriction'
+    | 'amount_exceeded'
+    | 'own_only'
+    | 'not_assigned'
+    | 'time_restriction'
+    | 'denied'
+    | 'expired';
   requiresApproval?: boolean;
   constraint?: PermissionConstraints;
 }
@@ -249,12 +257,15 @@ export interface EscalationRule {
 }
 
 // ثوابت الموارد مع الأيقونات والمسارات
-export const RESOURCE_CONFIG: Record<ResourceCode, {
-  icon: string;
-  href: string;
-  label: { ar: string; en: string };
-  category: 'main' | 'team' | 'system';
-}> = {
+export const RESOURCE_CONFIG: Record<
+  ResourceCode,
+  {
+    icon: string;
+    href: string;
+    label: { ar: string; en: string };
+    category: 'main' | 'team' | 'system';
+  }
+> = {
   dashboard: {
     icon: 'LayoutDashboard',
     href: '/admin',
@@ -378,10 +389,13 @@ export const RESOURCE_CONFIG: Record<ResourceCode, {
 };
 
 // ثوابت الإجراءات
-export const ACTION_CONFIG: Record<ActionCode, {
-  label: { ar: string; en: string };
-  severity: 'low' | 'medium' | 'high' | 'critical';
-}> = {
+export const ACTION_CONFIG: Record<
+  ActionCode,
+  {
+    label: { ar: string; en: string };
+    severity: 'low' | 'medium' | 'high' | 'critical';
+  }
+> = {
   view: { label: { ar: 'عرض', en: 'View' }, severity: 'low' },
   create: { label: { ar: 'إنشاء', en: 'Create' }, severity: 'medium' },
   update: { label: { ar: 'تعديل', en: 'Update' }, severity: 'medium' },
@@ -397,13 +411,16 @@ export const ACTION_CONFIG: Record<ActionCode, {
 };
 
 // ثوابت الأدوار
-export const ROLE_CONFIG: Record<RoleCode, {
-  icon: string;
-  color: string;
-  label: { ar: string; en: string };
-  description: { ar: string; en: string };
-  isSystem: boolean;
-}> = {
+export const ROLE_CONFIG: Record<
+  RoleCode,
+  {
+    icon: string;
+    color: string;
+    label: { ar: string; en: string };
+    description: { ar: string; en: string };
+    isSystem: boolean;
+  }
+> = {
   super_admin: {
     icon: 'Crown',
     color: '#DC2626',
@@ -436,14 +453,20 @@ export const ROLE_CONFIG: Record<RoleCode, {
     icon: 'Wallet',
     color: '#D97706',
     label: { ar: 'مشرف مالي', en: 'Finance Manager' },
-    description: { ar: 'إدارة التسويات والتقارير المالية', en: 'Manage settlements and financial reports' },
+    description: {
+      ar: 'إدارة التسويات والتقارير المالية',
+      en: 'Manage settlements and financial reports',
+    },
     isSystem: true,
   },
   regional_manager: {
     icon: 'MapPin',
     color: '#0891B2',
     label: { ar: 'مدير منطقة', en: 'Regional Manager' },
-    description: { ar: 'مسؤول عن منطقة جغرافية محددة', en: 'Responsible for a specific geographic region' },
+    description: {
+      ar: 'مسؤول عن منطقة جغرافية محددة',
+      en: 'Responsible for a specific geographic region',
+    },
     isSystem: false,
   },
   orders_moderator: {
@@ -457,7 +480,10 @@ export const ROLE_CONFIG: Record<RoleCode, {
     icon: 'MessageCircle',
     color: '#9333EA',
     label: { ar: 'موظف دعم', en: 'Support Agent' },
-    description: { ar: 'موظف دعم فني للرد على التذاكر', en: 'Technical support staff for ticket responses' },
+    description: {
+      ar: 'موظف دعم فني للرد على التذاكر',
+      en: 'Technical support staff for ticket responses',
+    },
     isSystem: false,
   },
   analyst: {

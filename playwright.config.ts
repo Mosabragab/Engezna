@@ -1,5 +1,5 @@
-import { defineConfig, devices } from '@playwright/test'
-import path from 'path'
+import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
 
 /**
  * Playwright E2E Testing Configuration
@@ -8,10 +8,10 @@ import path from 'path'
  */
 
 // Storage state paths for authenticated sessions
-const STORAGE_STATE_DIR = path.join(__dirname, 'e2e', '.auth')
-const ADMIN_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'admin.json')
-const PROVIDER_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'provider.json')
-const CUSTOMER_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'customer.json')
+const STORAGE_STATE_DIR = path.join(__dirname, 'e2e', '.auth');
+const ADMIN_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'admin.json');
+const PROVIDER_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'provider.json');
+const CUSTOMER_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'customer.json');
 
 export default defineConfig({
   // Test directory
@@ -282,4 +282,4 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
-})
+});

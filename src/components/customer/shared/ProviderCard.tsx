@@ -1,35 +1,35 @@
-'use client'
+'use client';
 
-import { useLocale, useTranslations } from 'next-intl'
-import Link from 'next/link'
-import { Star, Clock, Truck, MapPin, Heart } from 'lucide-react'
-import { useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { Star, Clock, Truck, MapPin, Heart } from 'lucide-react';
+import { useState } from 'react';
 
 interface Provider {
-  id: string
-  name_ar: string
-  name_en: string
-  description_ar: string | null
-  description_en: string | null
-  category: string
-  logo_url: string | null
-  cover_image_url: string | null
-  rating: number
-  total_reviews: number
-  delivery_fee: number
-  min_order_amount: number
-  estimated_delivery_time_min: number
-  status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval'
+  id: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  category: string;
+  logo_url: string | null;
+  cover_image_url: string | null;
+  rating: number;
+  total_reviews: number;
+  delivery_fee: number;
+  min_order_amount: number;
+  estimated_delivery_time_min: number;
+  status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval';
 }
 
 interface ProviderCardProps {
-  provider: Provider
-  variant?: 'default' | 'compact' | 'horizontal'
-  showDistance?: boolean
-  distance?: number
-  isFavorite?: boolean
-  onFavoriteToggle?: () => void
-  showPopularItem?: string
+  provider: Provider;
+  variant?: 'default' | 'compact' | 'horizontal';
+  showDistance?: boolean;
+  distance?: number;
+  isFavorite?: boolean;
+  onFavoriteToggle?: () => void;
+  showPopularItem?: string;
 }
 
 export function ProviderCard({
@@ -41,24 +41,24 @@ export function ProviderCard({
   onFavoriteToggle,
   showPopularItem,
 }: ProviderCardProps) {
-  const locale = useLocale()
-  const t = useTranslations('providers')
-  const [favorite, setFavorite] = useState(isFavorite)
+  const locale = useLocale();
+  const t = useTranslations('providers');
+  const [favorite, setFavorite] = useState(isFavorite);
 
-  const name = locale === 'ar' ? provider.name_ar : provider.name_en
-  const isOpen = provider.status === 'open'
-  const isClosed = provider.status === 'closed'
+  const name = locale === 'ar' ? provider.name_ar : provider.name_en;
+  const isOpen = provider.status === 'open';
+  const isClosed = provider.status === 'closed';
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setFavorite(!favorite)
-    onFavoriteToggle?.()
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setFavorite(!favorite);
+    onFavoriteToggle?.();
+  };
 
   // Calculate discount if exists (placeholder for now)
-  const hasDiscount = false
-  const discountPercentage = 0
+  const hasDiscount = false;
+  const discountPercentage = 0;
 
   if (variant === 'compact') {
     return (
@@ -90,7 +90,9 @@ export function ProviderCard({
             )}
           </div>
           <div className="p-3.5">
-            <h3 className="font-semibold text-sm truncate text-slate-800 group-hover:text-primary transition-colors">{name}</h3>
+            <h3 className="font-semibold text-sm truncate text-slate-800 group-hover:text-primary transition-colors">
+              {name}
+            </h3>
             <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500">
               <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -100,7 +102,7 @@ export function ProviderCard({
           </div>
         </div>
       </Link>
-    )
+    );
   }
 
   return (
@@ -146,11 +148,11 @@ export function ProviderCard({
           )}
 
           {/* Status Badge - Elegant glassmorphism */}
-          <div className={`absolute bottom-3 start-3 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md shadow-sm ${
-            isOpen
-              ? 'bg-emerald-500/90 text-white'
-              : 'bg-red-500/90 text-white'
-          }`}>
+          <div
+            className={`absolute bottom-3 start-3 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md shadow-sm ${
+              isOpen ? 'bg-emerald-500/90 text-white' : 'bg-red-500/90 text-white'
+            }`}
+          >
             {isOpen ? t('open') : t('closed')}
           </div>
 
@@ -189,25 +191,34 @@ export function ProviderCard({
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg text-sm text-slate-600">
               <Clock className="w-3.5 h-3.5 text-primary" />
-              <span className="font-medium">{provider.estimated_delivery_time_min} {locale === 'ar' ? 'د' : 'min'}</span>
+              <span className="font-medium">
+                {provider.estimated_delivery_time_min} {locale === 'ar' ? 'د' : 'min'}
+              </span>
             </div>
-            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm ${
-              provider.delivery_fee === 0
-                ? 'bg-emerald-50 text-emerald-700'
-                : 'bg-slate-50 text-slate-600'
-            }`}>
-              <Truck className={`w-3.5 h-3.5 ${provider.delivery_fee === 0 ? 'text-emerald-500' : 'text-primary'}`} />
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm ${
+                provider.delivery_fee === 0
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'bg-slate-50 text-slate-600'
+              }`}
+            >
+              <Truck
+                className={`w-3.5 h-3.5 ${provider.delivery_fee === 0 ? 'text-emerald-500' : 'text-primary'}`}
+              />
               <span className="font-medium">
                 {provider.delivery_fee === 0
-                  ? (locale === 'ar' ? 'مجاني' : 'Free')
-                  : `${provider.delivery_fee} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
-                }
+                  ? locale === 'ar'
+                    ? 'مجاني'
+                    : 'Free'
+                  : `${provider.delivery_fee} ${locale === 'ar' ? 'ج.م' : 'EGP'}`}
               </span>
             </div>
             {showDistance && distance && (
               <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg text-sm text-slate-600">
                 <MapPin className="w-3.5 h-3.5 text-primary" />
-                <span className="font-medium">{distance.toFixed(1)} {locale === 'ar' ? 'كم' : 'km'}</span>
+                <span className="font-medium">
+                  {distance.toFixed(1)} {locale === 'ar' ? 'كم' : 'km'}
+                </span>
               </div>
             )}
           </div>
@@ -222,5 +233,5 @@ export function ProviderCard({
         </div>
       </div>
     </Link>
-  )
+  );
 }

@@ -1,20 +1,20 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Image from 'next/image'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { ProviderLayout } from '@/components/provider'
-import { ACTIVE_PROVIDER_STATUSES } from '@/types/database'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ProviderLayout } from '@/components/provider';
+import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
 import {
   BANNER_GRADIENTS,
   ADMIN_COLOR_OPTIONS_GROUPED,
   COLOR_CATEGORY_LABELS,
-} from '@/constants/colors'
+} from '@/constants/colors';
 import {
   Image as ImageIcon,
   Calendar,
@@ -36,104 +36,112 @@ import {
   HourglassIcon,
   Trash2,
   Edit2,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
-type DurationType = '1_day' | '3_days' | '1_week' | '1_month'
-type ImagePosition = 'start' | 'end' | 'center'
-type ImageSize = 'small' | 'medium' | 'large'
+type DurationType = '1_day' | '3_days' | '1_week' | '1_month';
+type ImagePosition = 'start' | 'end' | 'center';
+type ImageSize = 'small' | 'medium' | 'large';
 
 // Unified image size configuration - relative to banner height for consistency
 // These settings match the customer-facing carousel for accurate preview
-const IMAGE_SIZE_CONFIG: Record<ImageSize, {
-  label_ar: string
-  label_en: string
-  maxHeight: string
-  maxWidth: string
-}> = {
+const IMAGE_SIZE_CONFIG: Record<
+  ImageSize,
+  {
+    label_ar: string;
+    label_en: string;
+    maxHeight: string;
+    maxWidth: string;
+  }
+> = {
   small: {
     label_ar: 'صغير',
     label_en: 'Small',
     maxHeight: '45%',
-    maxWidth: '25%'
+    maxWidth: '25%',
   },
   medium: {
     label_ar: 'وسط',
     label_en: 'Medium',
     maxHeight: '55%',
-    maxWidth: '30%'
+    maxWidth: '30%',
   },
   large: {
     label_ar: 'كبير',
     label_en: 'Large',
     maxHeight: '65%',
-    maxWidth: '35%'
+    maxWidth: '35%',
   },
-}
+};
 
 type BannerStatus = {
-  has_active_banner: boolean
-  has_pending_banner: boolean
-  has_rejected_banner: boolean
-  current_banner_id: string | null
-  current_banner_status: 'pending' | 'approved' | 'rejected' | 'cancelled' | null
-  current_banner_starts_at: string | null
-  current_banner_ends_at: string | null
-}
+  has_active_banner: boolean;
+  has_pending_banner: boolean;
+  has_rejected_banner: boolean;
+  current_banner_id: string | null;
+  current_banner_status: 'pending' | 'approved' | 'rejected' | 'cancelled' | null;
+  current_banner_starts_at: string | null;
+  current_banner_ends_at: string | null;
+};
 
 type Banner = {
-  id: string
-  title_ar: string
-  title_en: string
-  description_ar: string | null
-  description_en: string | null
-  image_url: string | null
-  gradient_start: string
-  gradient_end: string
-  badge_text_ar: string | null
-  badge_text_en: string | null
-  cta_text_ar: string | null
-  cta_text_en: string | null
-  starts_at: string
-  ends_at: string | null
-  duration_type: DurationType
-  approval_status: 'pending' | 'approved' | 'rejected' | 'cancelled'
-  rejection_reason: string | null
-  submitted_at: string
-  reviewed_at: string | null
-}
+  id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  image_url: string | null;
+  gradient_start: string;
+  gradient_end: string;
+  badge_text_ar: string | null;
+  badge_text_en: string | null;
+  cta_text_ar: string | null;
+  cta_text_en: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  duration_type: DurationType;
+  approval_status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  rejection_reason: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+};
 
 type Provider = {
-  id: string
-  name_ar: string
-  name_en: string
-  governorate_id: string | null
-  city_id: string | null
-}
+  id: string;
+  name_ar: string;
+  name_en: string;
+  governorate_id: string | null;
+  city_id: string | null;
+};
 
 type Location = {
-  governorate_name_ar: string
-  governorate_name_en: string
-  city_name_ar: string | null
-  city_name_en: string | null
-}
+  governorate_name_ar: string;
+  governorate_name_en: string;
+  city_name_ar: string | null;
+  city_name_en: string | null;
+};
 
-const DURATION_OPTIONS: { value: DurationType; label_ar: string; label_en: string; days: number }[] = [
+const DURATION_OPTIONS: {
+  value: DurationType;
+  label_ar: string;
+  label_en: string;
+  days: number;
+}[] = [
   { value: '1_day', label_ar: 'يوم واحد', label_en: '1 Day', days: 1 },
   { value: '3_days', label_ar: '3 أيام', label_en: '3 Days', days: 3 },
   { value: '1_week', label_ar: 'أسبوع', label_en: '1 Week', days: 7 },
   { value: '1_month', label_ar: 'شهر', label_en: '1 Month', days: 30 },
-]
+];
 
 // Helper function for text color on gradient
 function getContrastTextColor(hexColor: string): 'light' | 'dark' {
-  const hex = hexColor.replace('#', '')
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.6 ? 'dark' : 'light'
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? 'dark' : 'light';
 }
 
 const defaultFormData = {
@@ -152,57 +160,59 @@ const defaultFormData = {
   starts_at: '',
   image_position: 'end' as ImagePosition,
   image_size: 'medium' as ImageSize,
-}
+};
 
 export default function ProviderBannerPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [provider, setProvider] = useState<Provider | null>(null)
-  const [location, setLocation] = useState<Location | null>(null)
-  const [bannerStatus, setBannerStatus] = useState<BannerStatus | null>(null)
-  const [currentBanner, setCurrentBanner] = useState<Banner | null>(null)
-  const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState(defaultFormData)
-  const [isUploading, setIsUploading] = useState(false)
-  const [dateWarning, setDateWarning] = useState<string | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editingBannerId, setEditingBannerId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [location, setLocation] = useState<Location | null>(null);
+  const [bannerStatus, setBannerStatus] = useState<BannerStatus | null>(null);
+  const [currentBanner, setCurrentBanner] = useState<Banner | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState(defaultFormData);
+  const [isUploading, setIsUploading] = useState(false);
+  const [dateWarning, setDateWarning] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
 
   useEffect(() => {
-    checkAuthAndLoad()
-  }, [])
+    checkAuthAndLoad();
+  }, []);
 
   useEffect(() => {
     // Check if start date is less than 3 days from now
     if (formData.starts_at) {
-      const startDate = new Date(formData.starts_at)
-      const now = new Date()
-      const daysDiff = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      const startDate = new Date(formData.starts_at);
+      const now = new Date();
+      const daysDiff = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
       if (daysDiff < 3) {
         setDateWarning(
           locale === 'ar'
             ? 'ملاحظة: يُفضل طلب الموافقة قبل 3 أيام على الأقل من تاريخ البدء لضمان المراجعة في الوقت المناسب.'
-            : 'Note: It\'s recommended to request approval at least 3 days before start date to ensure timely review.'
-        )
+            : "Note: It's recommended to request approval at least 3 days before start date to ensure timely review."
+        );
       } else {
-        setDateWarning(null)
+        setDateWarning(null);
       }
     }
-  }, [formData.starts_at, locale])
+  }, [formData.starts_at, locale]);
 
   const checkAuthAndLoad = async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/banner`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/provider/banner`);
+      return;
     }
 
     // Get provider with location
@@ -210,15 +220,15 @@ export default function ProviderBannerPage() {
       .from('providers')
       .select('id, name_ar, name_en, governorate_id, city_id, status')
       .eq('owner_id', user.id)
-      .limit(1)
+      .limit(1);
 
-    const providerRecord = providerData?.[0]
+    const providerRecord = providerData?.[0];
     if (!providerRecord || !ACTIVE_PROVIDER_STATUSES.includes(providerRecord.status)) {
-      router.push(`/${locale}/provider`)
-      return
+      router.push(`/${locale}/provider`);
+      return;
     }
 
-    setProvider(providerRecord)
+    setProvider(providerRecord);
 
     // Load location names
     if (providerRecord.governorate_id) {
@@ -226,16 +236,16 @@ export default function ProviderBannerPage() {
         .from('governorates')
         .select('name_ar, name_en')
         .eq('id', providerRecord.governorate_id)
-        .single()
+        .single();
 
-      let cityData = null
+      let cityData = null;
       if (providerRecord.city_id) {
         const { data } = await supabase
           .from('cities')
           .select('name_ar, name_en')
           .eq('id', providerRecord.city_id)
-          .single()
-        cityData = data
+          .single();
+        cityData = data;
       }
 
       setLocation({
@@ -243,16 +253,16 @@ export default function ProviderBannerPage() {
         governorate_name_en: govData?.name_en || '',
         city_name_ar: cityData?.name_ar || null,
         city_name_en: cityData?.name_en || null,
-      })
+      });
     }
 
     // Check banner status
     const { data: statusData } = await supabase.rpc('get_provider_banner_status', {
       p_provider_id: providerRecord.id,
-    })
+    });
 
     if (statusData && statusData.length > 0) {
-      setBannerStatus(statusData[0])
+      setBannerStatus(statusData[0]);
 
       // If there's an active or pending banner, load its details
       if (statusData[0].current_banner_id) {
@@ -260,82 +270,83 @@ export default function ProviderBannerPage() {
           .from('homepage_banners')
           .select('*')
           .eq('id', statusData[0].current_banner_id)
-          .single()
+          .single();
 
         if (bannerData) {
-          setCurrentBanner(bannerData)
+          setCurrentBanner(bannerData);
         }
       }
     }
 
     // Set default start date to 3 days from now
-    const defaultDate = new Date()
-    defaultDate.setDate(defaultDate.getDate() + 3)
-    setFormData(prev => ({
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 3);
+    setFormData((prev) => ({
       ...prev,
       starts_at: defaultDate.toISOString().split('T')[0],
-    }))
+    }));
 
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const handleImageUpload = async (file: File) => {
-    if (!file || !provider) return
+    if (!file || !provider) return;
 
-    const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+    const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
     if (!validTypes.includes(file.type)) {
-      alert(locale === 'ar' ? 'نوع الملف غير مدعوم' : 'Unsupported file type')
-      return
+      alert(locale === 'ar' ? 'نوع الملف غير مدعوم' : 'Unsupported file type');
+      return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      alert(locale === 'ar' ? 'حجم الملف كبير جداً (الحد الأقصى 2MB)' : 'File too large (max 2MB)')
-      return
+      alert(locale === 'ar' ? 'حجم الملف كبير جداً (الحد الأقصى 2MB)' : 'File too large (max 2MB)');
+      return;
     }
 
-    setIsUploading(true)
+    setIsUploading(true);
 
     try {
-      const supabase = createClient()
-      const fileExt = file.name.split('.').pop()
-      const fileName = `provider-banners/${provider.id}-${Date.now()}.${fileExt}`
+      const supabase = createClient();
+      const fileExt = file.name.split('.').pop();
+      const fileName = `provider-banners/${provider.id}-${Date.now()}.${fileExt}`;
 
       const { error } = await supabase.storage
         .from('public-assets')
-        .upload(fileName, file, { cacheControl: '3600', upsert: false })
+        .upload(fileName, file, { cacheControl: '3600', upsert: false });
 
-      if (error) throw error
+      if (error) throw error;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('public-assets')
-        .getPublicUrl(fileName)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('public-assets').getPublicUrl(fileName);
 
-      setFormData({ ...formData, image_url: publicUrl })
+      setFormData({ ...formData, image_url: publicUrl });
     } catch (error) {
-      console.error('Upload error:', error)
-      alert(locale === 'ar' ? 'حدث خطأ أثناء رفع الصورة' : 'Error uploading image')
+      console.error('Upload error:', error);
+      alert(locale === 'ar' ? 'حدث خطأ أثناء رفع الصورة' : 'Error uploading image');
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
   const handleSubmit = async () => {
-    if (!provider) return
+    if (!provider) return;
 
     if (!formData.title_ar || !formData.title_en || !formData.starts_at) {
-      alert(locale === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields')
-      return
+      alert(locale === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields');
+      return;
     }
 
-    setSaving(true)
-    const supabase = createClient()
+    setSaving(true);
+    const supabase = createClient();
 
     try {
       // Calculate end date based on duration
-      const startDate = new Date(formData.starts_at)
-      const durationDays = DURATION_OPTIONS.find(d => d.value === formData.duration_type)?.days || 7
-      const endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + durationDays)
+      const startDate = new Date(formData.starts_at);
+      const durationDays =
+        DURATION_OPTIONS.find((d) => d.value === formData.duration_type)?.days || 7;
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + durationDays);
 
       const bannerData = {
         title_ar: formData.title_ar,
@@ -363,7 +374,7 @@ export default function ProviderBannerPage() {
         image_position: formData.image_position,
         image_size: formData.image_size,
         display_order: 999, // Will be ordered by duration priority
-      }
+      };
 
       if (isEditing && editingBannerId) {
         // Update existing rejected banner and reset to pending
@@ -375,60 +386,58 @@ export default function ProviderBannerPage() {
             reviewed_at: null, // Clear reviewed timestamp
             reviewed_by: null, // Clear reviewer
           })
-          .eq('id', editingBannerId)
+          .eq('id', editingBannerId);
 
-        if (error) throw error
+        if (error) throw error;
       } else {
         // Create new banner
-        const { error } = await supabase
-          .from('homepage_banners')
-          .insert(bannerData)
+        const { error } = await supabase.from('homepage_banners').insert(bannerData);
 
-        if (error) throw error
+        if (error) throw error;
       }
 
       // Reload status
-      await checkAuthAndLoad()
-      setShowForm(false)
-      setFormData(defaultFormData)
-      setIsEditing(false)
-      setEditingBannerId(null)
+      await checkAuthAndLoad();
+      setShowForm(false);
+      setFormData(defaultFormData);
+      setIsEditing(false);
+      setEditingBannerId(null);
     } catch (error) {
-      console.error('Save error:', error)
-      alert(locale === 'ar' ? 'حدث خطأ أثناء حفظ البانر' : 'Error saving banner')
+      console.error('Save error:', error);
+      alert(locale === 'ar' ? 'حدث خطأ أثناء حفظ البانر' : 'Error saving banner');
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleCancelBanner = async () => {
-    if (!currentBanner) return
+    if (!currentBanner) return;
 
-    if (!confirm(locale === 'ar' ? 'هل تريد إلغاء هذا البانر؟' : 'Cancel this banner?')) return
+    if (!confirm(locale === 'ar' ? 'هل تريد إلغاء هذا البانر؟' : 'Cancel this banner?')) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       const { error } = await supabase
         .from('homepage_banners')
         .update({ approval_status: 'cancelled', is_active: false })
-        .eq('id', currentBanner.id)
+        .eq('id', currentBanner.id);
 
-      if (error) throw error
+      if (error) throw error;
 
-      await checkAuthAndLoad()
+      await checkAuthAndLoad();
     } catch (error) {
-      console.error('Cancel error:', error)
+      console.error('Cancel error:', error);
     }
-  }
+  };
 
   // Load rejected banner data into form for editing
   const loadBannerForEditing = () => {
-    if (!currentBanner) return
+    if (!currentBanner) return;
 
     // Set default start date to 3 days from now for resubmission
-    const defaultDate = new Date()
-    defaultDate.setDate(defaultDate.getDate() + 3)
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 3);
 
     setFormData({
       title_ar: currentBanner.title_ar || '',
@@ -446,44 +455,46 @@ export default function ProviderBannerPage() {
       starts_at: defaultDate.toISOString().split('T')[0],
       image_position: (currentBanner as any).image_position || 'end',
       image_size: (currentBanner as any).image_size || 'medium',
-    })
-    setIsEditing(true)
-    setEditingBannerId(currentBanner.id)
-    setShowForm(true)
-  }
+    });
+    setIsEditing(true);
+    setEditingBannerId(currentBanner.id);
+    setShowForm(true);
+  };
 
   // Provider can create banner if:
   // - No active banner AND no pending banner
   // - OR has a rejected/cancelled banner (can try again)
-  const canCreateBanner = !bannerStatus?.has_active_banner && !bannerStatus?.has_pending_banner
-  const hasRejectedBanner = currentBanner?.approval_status === 'rejected' || currentBanner?.approval_status === 'cancelled'
+  const canCreateBanner = !bannerStatus?.has_active_banner && !bannerStatus?.has_pending_banner;
+  const hasRejectedBanner =
+    currentBanner?.approval_status === 'rejected' || currentBanner?.approval_status === 'cancelled';
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
+    const date = new Date(dateStr);
     return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    })
-  }
+    });
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-500">
-            {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-          </p>
+          <p className="text-slate-500">{locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <ProviderLayout
       pageTitle={{ ar: 'بانر العروض', en: 'Promotional Banner' }}
-      pageSubtitle={{ ar: 'أعلن عن عروضك للعملاء في مدينتك', en: 'Advertise your offers to customers in your city' }}
+      pageSubtitle={{
+        ar: 'أعلن عن عروضك للعملاء في مدينتك',
+        en: 'Advertise your offers to customers in your city',
+      }}
     >
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Location Info */}
@@ -495,13 +506,14 @@ export default function ProviderBannerPage() {
               </div>
               <div>
                 <p className="text-sm text-slate-600">
-                  {locale === 'ar' ? 'البانر سيظهر لعملاء:' : 'Banner will be shown to customers in:'}
+                  {locale === 'ar'
+                    ? 'البانر سيظهر لعملاء:'
+                    : 'Banner will be shown to customers in:'}
                 </p>
                 <p className="font-semibold text-slate-900">
                   {locale === 'ar'
                     ? `${location.city_name_ar || location.governorate_name_ar}${location.city_name_ar ? ` - ${location.governorate_name_ar}` : ''}`
-                    : `${location.city_name_en || location.governorate_name_en}${location.city_name_en ? ` - ${location.governorate_name_en}` : ''}`
-                  }
+                    : `${location.city_name_en || location.governorate_name_en}${location.city_name_en ? ` - ${location.governorate_name_en}` : ''}`}
                 </p>
               </div>
             </div>
@@ -561,7 +573,9 @@ export default function ProviderBannerPage() {
                     {currentBanner.badge_text_ar && (
                       <div className="inline-block mb-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-2.5 py-1">
                         <span className="text-white font-bold text-xs">
-                          {locale === 'ar' ? currentBanner.badge_text_ar : currentBanner.badge_text_en}
+                          {locale === 'ar'
+                            ? currentBanner.badge_text_ar
+                            : currentBanner.badge_text_en}
                         </span>
                       </div>
                     )}
@@ -570,7 +584,9 @@ export default function ProviderBannerPage() {
                     </h3>
                     {currentBanner.description_ar && (
                       <p className="text-white/85 text-xs mb-2 line-clamp-2">
-                        {locale === 'ar' ? currentBanner.description_ar : currentBanner.description_en}
+                        {locale === 'ar'
+                          ? currentBanner.description_ar
+                          : currentBanner.description_en}
                       </p>
                     )}
                     {currentBanner.cta_text_ar && (
@@ -596,27 +612,46 @@ export default function ProviderBannerPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2 text-slate-600">
                   <Calendar className="w-4 h-4" />
-                  <span>{formatDate(currentBanner.starts_at)} - {currentBanner.ends_at ? formatDate(currentBanner.ends_at) : '∞'}</span>
+                  <span>
+                    {formatDate(currentBanner.starts_at)} -{' '}
+                    {currentBanner.ends_at ? formatDate(currentBanner.ends_at) : '∞'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-600">
                   <Timer className="w-4 h-4" />
                   <span>
-                    {DURATION_OPTIONS.find(d => d.value === currentBanner.duration_type)?.[locale === 'ar' ? 'label_ar' : 'label_en']}
+                    {
+                      DURATION_OPTIONS.find((d) => d.value === currentBanner.duration_type)?.[
+                        locale === 'ar' ? 'label_ar' : 'label_en'
+                      ]
+                    }
                   </span>
                 </div>
               </div>
 
               {/* Rejection/Cancellation Reason */}
-              {(currentBanner.approval_status === 'rejected' || currentBanner.approval_status === 'cancelled') && currentBanner.rejection_reason && (
-                <div className={`p-3 ${currentBanner.approval_status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'} border rounded-lg`}>
-                  <p className={`text-sm ${currentBanner.approval_status === 'rejected' ? 'text-red-700' : 'text-slate-700'}`}>
-                    <strong>{locale === 'ar'
-                      ? (currentBanner.approval_status === 'rejected' ? 'سبب الرفض:' : 'سبب الإلغاء:')
-                      : (currentBanner.approval_status === 'rejected' ? 'Rejection Reason:' : 'Cancellation Reason:')
-                    }</strong> {currentBanner.rejection_reason}
-                  </p>
-                </div>
-              )}
+              {(currentBanner.approval_status === 'rejected' ||
+                currentBanner.approval_status === 'cancelled') &&
+                currentBanner.rejection_reason && (
+                  <div
+                    className={`p-3 ${currentBanner.approval_status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'} border rounded-lg`}
+                  >
+                    <p
+                      className={`text-sm ${currentBanner.approval_status === 'rejected' ? 'text-red-700' : 'text-slate-700'}`}
+                    >
+                      <strong>
+                        {locale === 'ar'
+                          ? currentBanner.approval_status === 'rejected'
+                            ? 'سبب الرفض:'
+                            : 'سبب الإلغاء:'
+                          : currentBanner.approval_status === 'rejected'
+                            ? 'Rejection Reason:'
+                            : 'Cancellation Reason:'}
+                      </strong>{' '}
+                      {currentBanner.rejection_reason}
+                    </p>
+                  </div>
+                )}
 
               {/* Cancel Button (for pending only) */}
               {currentBanner.approval_status === 'pending' && (
@@ -633,27 +668,24 @@ export default function ProviderBannerPage() {
               {/* Edit or Create New Banner Button (for rejected/cancelled) */}
               {hasRejectedBanner && (
                 <div className="pt-2 border-t border-slate-200 space-y-2">
-                  <Button
-                    onClick={loadBannerForEditing}
-                    className="w-full"
-                  >
+                  <Button onClick={loadBannerForEditing} className="w-full">
                     <Edit2 className="w-4 h-4 me-2" />
                     {locale === 'ar' ? 'تعديل وإعادة الإرسال' : 'Edit and Resubmit'}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setIsEditing(false)
-                      setEditingBannerId(null)
-                      setFormData(defaultFormData)
+                      setIsEditing(false);
+                      setEditingBannerId(null);
+                      setFormData(defaultFormData);
                       // Reset start date to 3 days from now
-                      const defaultDate = new Date()
-                      defaultDate.setDate(defaultDate.getDate() + 3)
-                      setFormData(prev => ({
+                      const defaultDate = new Date();
+                      defaultDate.setDate(defaultDate.getDate() + 3);
+                      setFormData((prev) => ({
                         ...prev,
                         starts_at: defaultDate.toISOString().split('T')[0],
-                      }))
-                      setShowForm(true)
+                      }));
+                      setShowForm(true);
                     }}
                     className="w-full border-slate-300"
                   >
@@ -694,14 +726,18 @@ export default function ProviderBannerPage() {
           <Card className="bg-white border-slate-200">
             <CardHeader className="border-b border-slate-200">
               <CardTitle className="text-slate-900 flex items-center gap-2">
+                {isEditing ? (
+                  <Edit2 className="w-5 h-5 text-primary" />
+                ) : (
+                  <Sparkles className="w-5 h-5 text-primary" />
+                )}
                 {isEditing
-                  ? <Edit2 className="w-5 h-5 text-primary" />
-                  : <Sparkles className="w-5 h-5 text-primary" />
-                }
-                {isEditing
-                  ? (locale === 'ar' ? 'تعديل البانر' : 'Edit Banner')
-                  : (locale === 'ar' ? 'بانر جديد' : 'New Banner')
-                }
+                  ? locale === 'ar'
+                    ? 'تعديل البانر'
+                    : 'Edit Banner'
+                  : locale === 'ar'
+                    ? 'بانر جديد'
+                    : 'New Banner'}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
@@ -732,7 +768,9 @@ export default function ProviderBannerPage() {
                     value={formData.title_ar}
                     onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
                     className="bg-white border-slate-200"
-                    placeholder={locale === 'ar' ? 'مثال: عرض نهاية الأسبوع' : 'e.g., Weekend Offer'}
+                    placeholder={
+                      locale === 'ar' ? 'مثال: عرض نهاية الأسبوع' : 'e.g., Weekend Offer'
+                    }
                     dir="rtl"
                   />
                 </div>
@@ -760,7 +798,9 @@ export default function ProviderBannerPage() {
                     value={formData.description_ar}
                     onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
                     className="bg-white border-slate-200"
-                    placeholder={locale === 'ar' ? 'خصم 30% على جميع المنتجات' : '30% off all products'}
+                    placeholder={
+                      locale === 'ar' ? 'خصم 30% على جميع المنتجات' : '30% off all products'
+                    }
                     dir="rtl"
                   />
                 </div>
@@ -877,8 +917,8 @@ export default function ProviderBannerPage() {
                           accept="image/png,image/jpeg,image/webp"
                           className="hidden"
                           onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) handleImageUpload(file)
+                            const file = e.target.files?.[0];
+                            if (file) handleImageUpload(file);
                           }}
                         />
                       </label>
@@ -905,12 +945,18 @@ export default function ProviderBannerPage() {
                       <button
                         key={option.value}
                         type="button"
-                        onClick={() => setFormData({ ...formData, image_position: option.value as ImagePosition })}
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            image_position: option.value as ImagePosition,
+                          })
+                        }
                         className={`
                           flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all
-                          ${formData.image_position === option.value
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-slate-200 hover:border-slate-300'
+                          ${
+                            formData.image_position === option.value
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-slate-200 hover:border-slate-300'
                           }
                         `}
                       >
@@ -935,13 +981,16 @@ export default function ProviderBannerPage() {
                         onClick={() => setFormData({ ...formData, image_size: size })}
                         className={`
                           flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all
-                          ${formData.image_size === size
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-slate-200 hover:border-slate-300'
+                          ${
+                            formData.image_size === size
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-slate-200 hover:border-slate-300'
                           }
                         `}
                       >
-                        {locale === 'ar' ? IMAGE_SIZE_CONFIG[size].label_ar : IMAGE_SIZE_CONFIG[size].label_en}
+                        {locale === 'ar'
+                          ? IMAGE_SIZE_CONFIG[size].label_ar
+                          : IMAGE_SIZE_CONFIG[size].label_en}
                       </button>
                     ))}
                   </div>
@@ -957,24 +1006,30 @@ export default function ProviderBannerPage() {
                   {(['primary', 'accent', 'cool', 'special'] as const).map((category) => (
                     <div key={category}>
                       <p className="text-xs text-slate-500 mb-1.5">
-                        {locale === 'ar' ? COLOR_CATEGORY_LABELS[category].ar : COLOR_CATEGORY_LABELS[category].en}
+                        {locale === 'ar'
+                          ? COLOR_CATEGORY_LABELS[category].ar
+                          : COLOR_CATEGORY_LABELS[category].en}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {ADMIN_COLOR_OPTIONS_GROUPED[category].map((color) => (
                           <button
                             key={color.id}
                             type="button"
-                            onClick={() => setFormData({
-                              ...formData,
-                              gradient_start: color.start,
-                              gradient_end: color.end,
-                            })}
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                gradient_start: color.start,
+                                gradient_end: color.end,
+                              })
+                            }
                             className={`
                               group relative px-3 py-1.5 rounded-full text-xs font-medium transition-all
                               hover:scale-105 shadow-sm
-                              ${formData.gradient_start === color.start && formData.gradient_end === color.end
-                                ? 'ring-2 ring-offset-2 ring-primary scale-105'
-                                : ''
+                              ${
+                                formData.gradient_start === color.start &&
+                                formData.gradient_end === color.end
+                                  ? 'ring-2 ring-offset-2 ring-primary scale-105'
+                                  : ''
                               }
                             `}
                             style={{
@@ -1005,9 +1060,10 @@ export default function ProviderBannerPage() {
                       onClick={() => setFormData({ ...formData, duration_type: option.value })}
                       className={`
                         p-3 rounded-lg border-2 transition-all text-center
-                        ${formData.duration_type === option.value
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-slate-200 hover:border-slate-300'
+                        ${
+                          formData.duration_type === option.value
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-slate-200 hover:border-slate-300'
                         }
                       `}
                     >
@@ -1062,7 +1118,7 @@ export default function ProviderBannerPage() {
                           className="flex-shrink-0 mb-2 flex items-center justify-center"
                           style={{
                             height: IMAGE_SIZE_CONFIG[formData.image_size].maxHeight,
-                            maxWidth: '40%'
+                            maxWidth: '40%',
                           }}
                         >
                           <img
@@ -1080,7 +1136,8 @@ export default function ProviderBannerPage() {
                         </div>
                       )}
                       <h3 className="text-white font-bold text-base mb-1">
-                        {(locale === 'ar' ? formData.title_ar : formData.title_en) || (locale === 'ar' ? 'عنوان العرض' : 'Offer Title')}
+                        {(locale === 'ar' ? formData.title_ar : formData.title_en) ||
+                          (locale === 'ar' ? 'عنوان العرض' : 'Offer Title')}
                       </h3>
                       {formData.description_ar && (
                         <p className="text-white/85 text-xs mb-2 line-clamp-1">
@@ -1095,11 +1152,15 @@ export default function ProviderBannerPage() {
                     </div>
                   ) : (
                     /* Left/Right Position Layout */
-                    <div className={`
+                    <div
+                      className={`
                       relative z-10 h-full p-4 flex items-center justify-between gap-3
                       ${formData.image_position === 'start' ? 'flex-row-reverse' : 'flex-row'}
-                    `}>
-                      <div className={`flex-1 ${formData.image_position === 'start' ? 'text-end' : 'text-start'}`}>
+                    `}
+                    >
+                      <div
+                        className={`flex-1 ${formData.image_position === 'start' ? 'text-end' : 'text-start'}`}
+                      >
                         {formData.badge_text_ar && (
                           <div className="inline-block mb-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-2.5 py-1">
                             <span className="text-white font-bold text-xs">
@@ -1108,7 +1169,8 @@ export default function ProviderBannerPage() {
                           </div>
                         )}
                         <h3 className="text-white font-bold text-base mb-1">
-                          {(locale === 'ar' ? formData.title_ar : formData.title_en) || (locale === 'ar' ? 'عنوان العرض' : 'Offer Title')}
+                          {(locale === 'ar' ? formData.title_ar : formData.title_en) ||
+                            (locale === 'ar' ? 'عنوان العرض' : 'Offer Title')}
                         </h3>
                         {formData.description_ar && (
                           <p className="text-white/85 text-xs mb-2 line-clamp-2">
@@ -1127,7 +1189,7 @@ export default function ProviderBannerPage() {
                           className="flex-shrink-0 flex items-center justify-center"
                           style={{
                             height: IMAGE_SIZE_CONFIG[formData.image_size].maxHeight,
-                            maxWidth: IMAGE_SIZE_CONFIG[formData.image_size].maxWidth
+                            maxWidth: IMAGE_SIZE_CONFIG[formData.image_size].maxWidth,
                           }}
                         >
                           <img
@@ -1156,7 +1218,7 @@ export default function ProviderBannerPage() {
                   <p>
                     {locale === 'ar'
                       ? 'سيتم مراجعة البانر من قبل الإدارة قبل نشره. يُفضل تقديم الطلب قبل 3 أيام على الأقل من تاريخ البدء المطلوب.'
-                      : 'The banner will be reviewed by admin before publishing. It\'s recommended to submit the request at least 3 days before the desired start date.'}
+                      : "The banner will be reviewed by admin before publishing. It's recommended to submit the request at least 3 days before the desired start date."}
                   </p>
                 </div>
               </div>
@@ -1165,7 +1227,9 @@ export default function ProviderBannerPage() {
               <div className="flex gap-3 pt-4">
                 <Button
                   onClick={handleSubmit}
-                  disabled={saving || !formData.title_ar || !formData.title_en || !formData.starts_at}
+                  disabled={
+                    saving || !formData.title_ar || !formData.title_en || !formData.starts_at
+                  }
                   className="flex-1"
                 >
                   {saving ? (
@@ -1177,19 +1241,22 @@ export default function ProviderBannerPage() {
                     <>
                       <Check className="w-4 h-4 me-2" />
                       {isEditing
-                        ? (locale === 'ar' ? 'إعادة الإرسال للمراجعة' : 'Resubmit for Review')
-                        : (locale === 'ar' ? 'إرسال للمراجعة' : 'Submit for Review')
-                      }
+                        ? locale === 'ar'
+                          ? 'إعادة الإرسال للمراجعة'
+                          : 'Resubmit for Review'
+                        : locale === 'ar'
+                          ? 'إرسال للمراجعة'
+                          : 'Submit for Review'}
                     </>
                   )}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setShowForm(false)
-                    setFormData(defaultFormData)
-                    setIsEditing(false)
-                    setEditingBannerId(null)
+                    setShowForm(false);
+                    setFormData(defaultFormData);
+                    setIsEditing(false);
+                    setEditingBannerId(null);
                   }}
                   className="border-slate-300"
                 >
@@ -1216,5 +1283,5 @@ export default function ProviderBannerPage() {
         )}
       </div>
     </ProviderLayout>
-  )
+  );
 }

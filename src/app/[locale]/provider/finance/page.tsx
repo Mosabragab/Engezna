@@ -1,15 +1,19 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ProviderLayout } from '@/components/provider'
-import { ACTIVE_PROVIDER_STATUSES } from '@/types/database'
-import { formatNumber, formatCurrency as formatCurrencyUtil, formatDate as formatDateUtil } from '@/lib/utils/formatters'
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ProviderLayout } from '@/components/provider';
+import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
+import {
+  formatNumber,
+  formatCurrency as formatCurrencyUtil,
+  formatDate as formatDateUtil,
+} from '@/lib/utils/formatters';
 import {
   Wallet,
   TrendingUp,
@@ -40,376 +44,394 @@ import {
   Scale,
   ShoppingBag,
   Filter,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types - Based on financial_settlement_engine SQL View
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface FinancialEngineData {
-  provider_id: string
-  provider_name_ar: string
-  provider_name_en: string
-  governorate_id: string
-  city_id: string
+  provider_id: string;
+  provider_name_ar: string;
+  provider_name_en: string;
+  governorate_id: string;
+  city_id: string;
 
   // Commission info - IMPORTANT: commission_rate is stored as 7.00 not 0.07
-  commission_rate: number // e.g., 7.00 means 7%
-  commission_status: string
-  grace_period_end: string | null
-  delivery_responsibility: string
+  commission_rate: number; // e.g., 7.00 means 7%
+  commission_status: string;
+  grace_period_end: string | null;
+  delivery_responsibility: string;
 
   // Order counts
-  total_orders: number
-  cod_orders_count: number
-  online_orders_count: number
-  eligible_orders_count: number
-  held_orders_count: number
-  settled_orders_count: number
+  total_orders: number;
+  cod_orders_count: number;
+  online_orders_count: number;
+  eligible_orders_count: number;
+  held_orders_count: number;
+  settled_orders_count: number;
 
   // Gross Revenue
-  gross_revenue: number
-  cod_gross_revenue: number
-  online_gross_revenue: number
+  gross_revenue: number;
+  cod_gross_revenue: number;
+  online_gross_revenue: number;
 
   // Subtotals (Without Delivery)
-  total_subtotal: number
-  cod_subtotal: number
-  online_subtotal: number
+  total_subtotal: number;
+  cod_subtotal: number;
+  online_subtotal: number;
 
   // Delivery Fees (Provider's right - NEVER touched by commission)
-  total_delivery_fees: number
-  cod_delivery_fees: number
-  online_delivery_fees: number
+  total_delivery_fees: number;
+  cod_delivery_fees: number;
+  online_delivery_fees: number;
 
   // Discounts
-  total_discounts: number
+  total_discounts: number;
 
   // Net Revenue (gross - delivery fees) - calculated in database
-  total_net_revenue: number
-  cod_net_revenue: number
-  online_net_revenue: number
+  total_net_revenue: number;
+  cod_net_revenue: number;
+  online_net_revenue: number;
 
   // Commission (Theoretical - what would be without grace period)
-  theoretical_commission: number
-  cod_theoretical_commission: number
-  online_theoretical_commission: number
+  theoretical_commission: number;
+  cod_theoretical_commission: number;
+  online_theoretical_commission: number;
 
   // Commission (Actual - respects grace period)
-  actual_commission: number
-  cod_actual_commission: number
-  online_actual_commission: number
+  actual_commission: number;
+  cod_actual_commission: number;
+  online_actual_commission: number;
 
   // Grace Period Discount
-  total_grace_period_discount: number
+  total_grace_period_discount: number;
 
   // Refunds
-  total_refunds: number
-  total_refund_commission_reduction: number
-  refund_percentage: number
+  total_refunds: number;
+  total_refund_commission_reduction: number;
+  refund_percentage: number;
 
   // Net Commission (after refund adjustments)
-  net_commission: number
+  net_commission: number;
 
   // COD: Commission owed to platform
-  cod_commission_owed: number
+  cod_commission_owed: number;
 
   // Online: Payout owed to provider
-  online_payout_owed: number
+  online_payout_owed: number;
 
   // Net Balance (THE MAGIC NUMBER)
-  net_balance: number
-  settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced'
+  net_balance: number;
+  settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced';
 
   // Grace Period Status
-  is_in_grace_period: boolean
-  grace_period_days_remaining: number
+  is_in_grace_period: boolean;
+  grace_period_days_remaining: number;
 
   // Additional calculated fields from SQL View (for UI display)
-  net_revenue_for_commission?: number  // صافي الإيرادات الخاضعة للعمولة
+  net_revenue_for_commission?: number; // صافي الإيرادات الخاضعة للعمولة
 }
 
 // Period filter type
-type PeriodFilter = 'today' | 'week' | 'month' | 'year' | 'all'
+type PeriodFilter = 'today' | 'week' | 'month' | 'year' | 'all';
 
 interface SettlementOrder {
-  id: string
-  order_number: string
-  total: number
-  payment_method: string
-  platform_commission: number
-  original_commission: number | null
-  delivery_fee: number
-  created_at: string
-  status: string
+  id: string;
+  order_number: string;
+  total: number;
+  payment_method: string;
+  platform_commission: number;
+  original_commission: number | null;
+  delivery_fee: number;
+  created_at: string;
+  status: string;
 }
 
 interface Settlement {
-  id: string
-  period_start: string
-  period_end: string
-  total_orders: number
-  gross_revenue: number
-  platform_commission: number
-  delivery_fees_collected: number
-  net_amount_due: number
-  net_payout: number
-  amount_paid: number
-  status: string
-  payment_date: string | null
-  paid_at: string | null
-  payment_method: string | null
-  payment_reference: string | null
-  due_date: string
-  is_overdue: boolean
-  overdue_days: number
-  notes: string | null
-  created_at: string
+  id: string;
+  period_start: string;
+  period_end: string;
+  total_orders: number;
+  gross_revenue: number;
+  platform_commission: number;
+  delivery_fees_collected: number;
+  net_amount_due: number;
+  net_payout: number;
+  amount_paid: number;
+  status: string;
+  payment_date: string | null;
+  paid_at: string | null;
+  payment_method: string | null;
+  payment_reference: string | null;
+  due_date: string;
+  is_overdue: boolean;
+  overdue_days: number;
+  notes: string | null;
+  created_at: string;
   // Extended fields from view
-  cod_orders_count: number
-  cod_gross_revenue: number
-  cod_commission_owed: number
-  cod_delivery_fees: number
-  cod_original_commission: number
-  cod_net_revenue: number
-  online_orders_count: number
-  online_gross_revenue: number
-  online_platform_commission: number
-  online_delivery_fees: number
-  online_original_commission: number
-  online_payout_owed: number
-  online_net_revenue: number
-  net_balance: number
-  total_refunds: number
-  settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null
-  total_delivery_fees: number
+  cod_orders_count: number;
+  cod_gross_revenue: number;
+  cod_commission_owed: number;
+  cod_delivery_fees: number;
+  cod_original_commission: number;
+  cod_net_revenue: number;
+  online_orders_count: number;
+  online_gross_revenue: number;
+  online_platform_commission: number;
+  online_delivery_fees: number;
+  online_original_commission: number;
+  online_payout_owed: number;
+  online_net_revenue: number;
+  net_balance: number;
+  total_refunds: number;
+  settlement_direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced' | null;
+  total_delivery_fees: number;
   // Order IDs included in this settlement
-  orders_included: string[] | null
+  orders_included: string[] | null;
 }
 
-type TabType = 'overview' | 'settlements'
+type TabType = 'overview' | 'settlements';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Main Component
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function ProviderFinanceDashboard() {
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
   // State
-  const [activeTab, setActiveTab] = useState<TabType>('overview')
-  const [providerId, setProviderId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [providerId, setProviderId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Filters
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all')
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cod' | 'online'>('all')
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cod' | 'online'>('all');
 
   // Financial Engine Data (Single Source of Truth)
-  const [financeData, setFinanceData] = useState<FinancialEngineData | null>(null)
-  const [settlements, setSettlements] = useState<Settlement[]>([])
-  const [selectedSettlement, setSelectedSettlement] = useState<Settlement | null>(null)
-  const [settlementOrders, setSettlementOrders] = useState<SettlementOrder[]>([])
-  const [loadingOrders, setLoadingOrders] = useState(false)
+  const [financeData, setFinanceData] = useState<FinancialEngineData | null>(null);
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [selectedSettlement, setSelectedSettlement] = useState<Settlement | null>(null);
+  const [settlementOrders, setSettlementOrders] = useState<SettlementOrder[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Helper: Calculate date range from period filter
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const getDateRange = useCallback((period: PeriodFilter): { startDate: string | null; endDate: string | null } => {
-    const now = new Date()
-    const endDate = now.toISOString()
+  const getDateRange = useCallback(
+    (period: PeriodFilter): { startDate: string | null; endDate: string | null } => {
+      const now = new Date();
+      const endDate = now.toISOString();
 
-    switch (period) {
-      case 'today': {
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        return { startDate: startOfDay.toISOString(), endDate }
+      switch (period) {
+        case 'today': {
+          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return { startDate: startOfDay.toISOString(), endDate };
+        }
+        case 'week': {
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay()); // Start from Sunday
+          startOfWeek.setHours(0, 0, 0, 0);
+          return { startDate: startOfWeek.toISOString(), endDate };
+        }
+        case 'month': {
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          return { startDate: startOfMonth.toISOString(), endDate };
+        }
+        case 'year': {
+          const startOfYear = new Date(now.getFullYear(), 0, 1);
+          return { startDate: startOfYear.toISOString(), endDate };
+        }
+        case 'all':
+        default:
+          return { startDate: null, endDate: null };
       }
-      case 'week': {
-        const startOfWeek = new Date(now)
-        startOfWeek.setDate(now.getDate() - now.getDay()) // Start from Sunday
-        startOfWeek.setHours(0, 0, 0, 0)
-        return { startDate: startOfWeek.toISOString(), endDate }
-      }
-      case 'month': {
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        return { startDate: startOfMonth.toISOString(), endDate }
-      }
-      case 'year': {
-        const startOfYear = new Date(now.getFullYear(), 0, 1)
-        return { startDate: startOfYear.toISOString(), endDate }
-      }
-      case 'all':
-      default:
-        return { startDate: null, endDate: null }
-    }
-  }, [])
+    },
+    []
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Load Financial Data from SQL Function (with date filtering)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const loadFinanceData = useCallback(async (provId: string, period: PeriodFilter = 'all') => {
-    const supabase = createClient()
-    const { startDate, endDate } = getDateRange(period)
+  const loadFinanceData = useCallback(
+    async (provId: string, period: PeriodFilter = 'all') => {
+      const supabase = createClient();
+      const { startDate, endDate } = getDateRange(period);
 
-    // Call the get_provider_financial_data function with date parameters
-    const { data: engineData, error: engineError } = await supabase
-      .rpc('get_provider_financial_data', {
-        p_provider_id: provId,
-        p_start_date: startDate,
-        p_end_date: endDate
-      })
-      .single()
+      // Call the get_provider_financial_data function with date parameters
+      const { data: engineData, error: engineError } = await supabase
+        .rpc('get_provider_financial_data', {
+          p_provider_id: provId,
+          p_start_date: startDate,
+          p_end_date: endDate,
+        })
+        .single();
 
-    if (engineError) {
-      console.error('Error loading financial engine data:', engineError)
-      // Fallback: try the view without filtering
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from('financial_settlement_engine')
+      if (engineError) {
+        console.error('Error loading financial engine data:', engineError);
+        // Fallback: try the view without filtering
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('financial_settlement_engine')
+          .select('*')
+          .eq('provider_id', provId)
+          .single();
+
+        if (fallbackError) {
+          setFinanceData(null);
+        } else {
+          setFinanceData(fallbackData as FinancialEngineData);
+        }
+      } else {
+        setFinanceData(engineData as FinancialEngineData);
+      }
+
+      // Fetch settlements history
+      const { data: settlementsData } = await supabase
+        .from('settlements')
         .select('*')
         .eq('provider_id', provId)
-        .single()
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-      if (fallbackError) {
-        setFinanceData(null)
-      } else {
-        setFinanceData(fallbackData as FinancialEngineData)
-      }
-    } else {
-      setFinanceData(engineData as FinancialEngineData)
-    }
-
-    // Fetch settlements history
-    const { data: settlementsData } = await supabase
-      .from('settlements')
-      .select('*')
-      .eq('provider_id', provId)
-      .order('created_at', { ascending: false })
-      .limit(20)
-
-    setSettlements((settlementsData || []) as Settlement[])
-  }, [getDateRange])
+      setSettlements((settlementsData || []) as Settlement[]);
+    },
+    [getDateRange]
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Load Settlement Orders (Drill-down)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const loadSettlementOrders = useCallback(async (settlement: Settlement) => {
-    setLoadingOrders(true)
-    const supabase = createClient()
+    setLoadingOrders(true);
+    const supabase = createClient();
 
     // Use orders_included array to fetch orders (correct approach)
     if (!settlement.orders_included || settlement.orders_included.length === 0) {
-      setSettlementOrders([])
-      setLoadingOrders(false)
-      return
+      setSettlementOrders([]);
+      setLoadingOrders(false);
+      return;
     }
 
     const { data: ordersData, error } = await supabase
       .from('orders')
-      .select('id, order_number, total, payment_method, platform_commission, original_commission, delivery_fee, created_at, status')
+      .select(
+        'id, order_number, total, payment_method, platform_commission, original_commission, delivery_fee, created_at, status'
+      )
       .in('id', settlement.orders_included)
       .order('created_at', { ascending: false })
-      .limit(50)
+      .limit(50);
 
     if (error) {
-      console.error('Error loading settlement orders:', error)
-      setSettlementOrders([])
+      console.error('Error loading settlement orders:', error);
+      setSettlementOrders([]);
     } else {
-      setSettlementOrders((ordersData || []) as SettlementOrder[])
+      setSettlementOrders((ordersData || []) as SettlementOrder[]);
     }
 
-    setLoadingOrders(false)
-  }, [])
+    setLoadingOrders(false);
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Auth & Initial Load
   // ═══════════════════════════════════════════════════════════════════════════
 
   const checkAuthAndLoad = useCallback(async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/finance`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/provider/finance`);
+      return;
     }
 
     const { data: providerData } = await supabase
       .from('providers')
       .select('id, status, commission_rate')
       .eq('owner_id', user.id)
-      .limit(1)
+      .limit(1);
 
-    const provider = providerData?.[0]
+    const provider = providerData?.[0];
     if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
-      router.push(`/${locale}/provider`)
-      return
+      router.push(`/${locale}/provider`);
+      return;
     }
 
-    setProviderId(provider.id)
-    await loadFinanceData(provider.id, periodFilter)
-    setLoading(false)
-  }, [loadFinanceData, locale, router, periodFilter])
+    setProviderId(provider.id);
+    await loadFinanceData(provider.id, periodFilter);
+    setLoading(false);
+  }, [loadFinanceData, locale, router, periodFilter]);
 
   useEffect(() => {
-    checkAuthAndLoad()
-  }, [checkAuthAndLoad])
+    checkAuthAndLoad();
+  }, [checkAuthAndLoad]);
 
   // Reload data when period filter changes
   useEffect(() => {
     if (providerId) {
-      loadFinanceData(providerId, periodFilter)
+      loadFinanceData(providerId, periodFilter);
     }
-  }, [periodFilter, providerId, loadFinanceData])
+  }, [periodFilter, providerId, loadFinanceData]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Realtime Subscription
   // ═══════════════════════════════════════════════════════════════════════════
 
   useEffect(() => {
-    if (!providerId) return
+    if (!providerId) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     const subscription = supabase
       .channel(`provider-finance-${providerId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'orders',
-        filter: `provider_id=eq.${providerId}`
-      }, () => {
-        loadFinanceData(providerId, periodFilter)
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'settlements',
-        filter: `provider_id=eq.${providerId}`
-      }, () => {
-        loadFinanceData(providerId, periodFilter)
-      })
-      .subscribe()
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        () => {
+          loadFinanceData(providerId, periodFilter);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'settlements',
+          filter: `provider_id=eq.${providerId}`,
+        },
+        () => {
+          loadFinanceData(providerId, periodFilter);
+        }
+      )
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(subscription)
-    }
-  }, [providerId, loadFinanceData, periodFilter])
+      supabase.removeChannel(subscription);
+    };
+  }, [providerId, loadFinanceData, periodFilter]);
 
   const handleRefresh = async () => {
-    if (!providerId) return
-    setRefreshing(true)
-    await loadFinanceData(providerId, periodFilter)
-    setRefreshing(false)
-  }
+    if (!providerId) return;
+    setRefreshing(true);
+    await loadFinanceData(providerId, periodFilter);
+    setRefreshing(false);
+  };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Helpers
@@ -419,47 +441,54 @@ export default function ProviderFinanceDashboard() {
     const formatted = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(Math.abs(amount))
-    return `${formatted} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
-  }
+    }).format(Math.abs(amount));
+    return `${formatted} ${locale === 'ar' ? 'ج.م' : 'EGP'}`;
+  };
 
   const getSettlementDirectionIcon = (direction: string | null) => {
     switch (direction) {
       case 'platform_pays_provider':
-        return <ArrowDownRight className="w-5 h-5 text-green-600" />
+        return <ArrowDownRight className="w-5 h-5 text-green-600" />;
       case 'provider_pays_platform':
-        return <ArrowUpRight className="w-5 h-5 text-amber-600" />
+        return <ArrowUpRight className="w-5 h-5 text-amber-600" />;
       case 'balanced':
-        return <ArrowRightLeft className="w-5 h-5 text-slate-500" />
+        return <ArrowRightLeft className="w-5 h-5 text-slate-500" />;
       default:
-        return <Scale className="w-5 h-5 text-slate-400" />
+        return <Scale className="w-5 h-5 text-slate-400" />;
     }
-  }
+  };
 
   const getSettlementDirectionLabel = (direction: string | null) => {
     switch (direction) {
       case 'platform_pays_provider':
-        return locale === 'ar' ? 'المنصة تدفع لك' : 'Platform pays you'
+        return locale === 'ar' ? 'المنصة تدفع لك' : 'Platform pays you';
       case 'provider_pays_platform':
-        return locale === 'ar' ? 'تدفع للمنصة' : 'You pay platform'
+        return locale === 'ar' ? 'تدفع للمنصة' : 'You pay platform';
       case 'balanced':
-        return locale === 'ar' ? 'متوازن' : 'Balanced'
+        return locale === 'ar' ? 'متوازن' : 'Balanced';
       default:
-        return locale === 'ar' ? 'غير محدد' : 'Unknown'
+        return locale === 'ar' ? 'غير محدد' : 'Unknown';
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-700'
-      case 'waived': return 'bg-green-100 text-green-700'
-      case 'pending': return 'bg-yellow-100 text-yellow-700'
-      case 'partially_paid': return 'bg-blue-100 text-blue-700'
-      case 'overdue': return 'bg-red-100 text-red-700'
-      case 'disputed': return 'bg-red-100 text-red-700'
-      default: return 'bg-slate-100 text-slate-700'
+      case 'paid':
+        return 'bg-green-100 text-green-700';
+      case 'waived':
+        return 'bg-green-100 text-green-700';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'partially_paid':
+        return 'bg-blue-100 text-blue-700';
+      case 'overdue':
+        return 'bg-red-100 text-red-700';
+      case 'disputed':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-slate-100 text-slate-700';
     }
-  }
+  };
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
@@ -469,24 +498,34 @@ export default function ProviderFinanceDashboard() {
       overdue: { ar: 'متأخر', en: 'Overdue' },
       disputed: { ar: 'نزاع', en: 'Disputed' },
       waived: { ar: 'معفى', en: 'Waived' },
-    }
-    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
-  }
+    };
+    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status;
+  };
 
   const tabs = [
-    { key: 'overview' as TabType, label_ar: 'نظرة عامة', label_en: 'Overview', icon: LayoutDashboard },
-    { key: 'settlements' as TabType, label_ar: 'التسويات', label_en: 'Settlements', icon: FileText },
-  ]
+    {
+      key: 'overview' as TabType,
+      label_ar: 'نظرة عامة',
+      label_en: 'Overview',
+      icon: LayoutDashboard,
+    },
+    {
+      key: 'settlements' as TabType,
+      label_ar: 'التسويات',
+      label_en: 'Settlements',
+      icon: FileText,
+    },
+  ];
 
   // Commission rate as percentage
   // IMPORTANT: commission_rate is stored as 7.00 (not 0.07), so NO multiplication needed
-  const commissionRatePercent = financeData ? Math.round(financeData.commission_rate || 7) : 7
+  const commissionRatePercent = financeData ? Math.round(financeData.commission_rate || 7) : 7;
 
   // Helper function for safe number display (prevents NaN)
   const safeNumber = (value: number | undefined | null): number => {
-    if (value === undefined || value === null || isNaN(value)) return 0
-    return value
-  }
+    if (value === undefined || value === null || isNaN(value)) return 0;
+    return value;
+  };
 
   // Period filter options
   const periodOptions: { key: PeriodFilter; label_ar: string; label_en: string }[] = [
@@ -495,14 +534,18 @@ export default function ProviderFinanceDashboard() {
     { key: 'month', label_ar: 'هذا الشهر', label_en: 'This Month' },
     { key: 'year', label_ar: 'هذه السنة', label_en: 'This Year' },
     { key: 'all', label_ar: 'الكل', label_en: 'All Time' },
-  ]
+  ];
 
   // Payment method filter options
-  const paymentMethodOptions: { key: 'all' | 'cod' | 'online'; label_ar: string; label_en: string }[] = [
+  const paymentMethodOptions: {
+    key: 'all' | 'cod' | 'online';
+    label_ar: string;
+    label_en: string;
+  }[] = [
     { key: 'all', label_ar: 'الكل', label_en: 'All' },
     { key: 'cod', label_ar: 'نقدي', label_en: 'COD' },
     { key: 'online', label_ar: 'إلكتروني', label_en: 'Online' },
-  ]
+  ];
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Loading State
@@ -518,7 +561,7 @@ export default function ProviderFinanceDashboard() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -535,7 +578,7 @@ export default function ProviderFinanceDashboard() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
             {tabs.map((tab) => {
-              const Icon = tab.icon
+              const Icon = tab.icon;
               return (
                 <button
                   key={tab.key}
@@ -551,7 +594,7 @@ export default function ProviderFinanceDashboard() {
                     {locale === 'ar' ? tab.label_ar : tab.label_en}
                   </span>
                 </button>
-              )
+              );
             })}
           </div>
 
@@ -595,7 +638,9 @@ export default function ProviderFinanceDashboard() {
               disabled={refreshing}
               className="text-slate-600"
             >
-              <RefreshCw className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'} ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'} ${refreshing ? 'animate-spin' : ''}`}
+              />
               {locale === 'ar' ? 'تحديث' : 'Refresh'}
             </Button>
           </div>
@@ -630,12 +675,20 @@ export default function ProviderFinanceDashboard() {
                       </p>
                       <div className="flex flex-wrap gap-4">
                         <div className="bg-green-100 rounded-xl px-4 py-2 border border-green-200">
-                          <p className="text-green-600 text-xs">{locale === 'ar' ? 'الأيام المتبقية' : 'Days Remaining'}</p>
-                          <p className="text-2xl font-bold text-green-800">{financeData.grace_period_days_remaining}</p>
+                          <p className="text-green-600 text-xs">
+                            {locale === 'ar' ? 'الأيام المتبقية' : 'Days Remaining'}
+                          </p>
+                          <p className="text-2xl font-bold text-green-800">
+                            {financeData.grace_period_days_remaining}
+                          </p>
                         </div>
                         <div className="bg-green-100 rounded-xl px-4 py-2 border border-green-200">
-                          <p className="text-green-600 text-xs">{locale === 'ar' ? 'وفرت حتى الآن' : 'Saved So Far'}</p>
-                          <p className="text-2xl font-bold text-green-800">{formatCurrency(safeNumber(financeData.theoretical_commission))}</p>
+                          <p className="text-green-600 text-xs">
+                            {locale === 'ar' ? 'وفرت حتى الآن' : 'Saved So Far'}
+                          </p>
+                          <p className="text-2xl font-bold text-green-800">
+                            {formatCurrency(safeNumber(financeData.theoretical_commission))}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -659,13 +712,18 @@ export default function ProviderFinanceDashboard() {
                   {/* Row 1: Total Sales (including delivery) */}
                   <div className="flex items-center justify-between py-2">
                     <span className="text-slate-600">
-                      {locale === 'ar' ? 'إجمالي المبيعات (شامل التوصيل)' : 'Total Sales (incl. delivery)'}
+                      {locale === 'ar'
+                        ? 'إجمالي المبيعات (شامل التوصيل)'
+                        : 'Total Sales (incl. delivery)'}
                     </span>
-                    <span className="font-semibold text-slate-900">{formatCurrency(safeNumber(financeData.gross_revenue))}</span>
+                    <span className="font-semibold text-slate-900">
+                      {formatCurrency(safeNumber(financeData.gross_revenue))}
+                    </span>
                   </div>
 
                   {/* COD/Online Breakdown */}
-                  {(safeNumber(financeData.cod_orders_count) > 0 || safeNumber(financeData.online_orders_count) > 0) && (
+                  {(safeNumber(financeData.cod_orders_count) > 0 ||
+                    safeNumber(financeData.online_orders_count) > 0) && (
                     <div className="ml-4 space-y-1 text-sm border-l-2 border-slate-200 pl-3">
                       {safeNumber(financeData.cod_orders_count) > 0 && (
                         <div className="flex items-center justify-between py-1">
@@ -675,7 +733,9 @@ export default function ProviderFinanceDashboard() {
                               ? `دفع عند الاستلام (${safeNumber(financeData.cod_orders_count)} طلب)`
                               : `Cash on Delivery (${safeNumber(financeData.cod_orders_count)} orders)`}
                           </span>
-                          <span className="font-medium text-amber-800">{formatCurrency(safeNumber(financeData.cod_gross_revenue))}</span>
+                          <span className="font-medium text-amber-800">
+                            {formatCurrency(safeNumber(financeData.cod_gross_revenue))}
+                          </span>
                         </div>
                       )}
                       {safeNumber(financeData.online_orders_count) > 0 && (
@@ -686,7 +746,9 @@ export default function ProviderFinanceDashboard() {
                               ? `دفع إلكتروني (${safeNumber(financeData.online_orders_count)} طلب)`
                               : `Online Payment (${safeNumber(financeData.online_orders_count)} orders)`}
                           </span>
-                          <span className="font-medium text-blue-800">{formatCurrency(safeNumber(financeData.online_gross_revenue))}</span>
+                          <span className="font-medium text-blue-800">
+                            {formatCurrency(safeNumber(financeData.online_gross_revenue))}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -699,7 +761,9 @@ export default function ProviderFinanceDashboard() {
                         <span>(−)</span>
                         {locale === 'ar' ? 'المرتجعات' : 'Refunds'}
                       </span>
-                      <span className="font-semibold">{formatCurrency(safeNumber(financeData.total_refunds))}</span>
+                      <span className="font-semibold">
+                        {formatCurrency(safeNumber(financeData.total_refunds))}
+                      </span>
                     </div>
                   )}
 
@@ -712,7 +776,9 @@ export default function ProviderFinanceDashboard() {
                         {locale === 'ar' ? 'لا تخضع للعمولة' : 'not subject to commission'}
                       </span>
                     </span>
-                    <span className="font-semibold">{formatCurrency(safeNumber(financeData.total_delivery_fees))}</span>
+                    <span className="font-semibold">
+                      {formatCurrency(safeNumber(financeData.total_delivery_fees))}
+                    </span>
                   </div>
 
                   {/* Divider */}
@@ -721,12 +787,16 @@ export default function ProviderFinanceDashboard() {
                   {/* Row 4: Net Revenue (Commission Base) - From SQL View */}
                   <div className="flex items-center justify-between py-2 bg-slate-50 -mx-4 px-4 rounded">
                     <span className="font-medium text-slate-700">
-                      {locale === 'ar' ? '= صافي الإيرادات الخاضعة للعمولة' : '= Net Revenue (Commission Base)'}
+                      {locale === 'ar'
+                        ? '= صافي الإيرادات الخاضعة للعمولة'
+                        : '= Net Revenue (Commission Base)'}
                     </span>
                     <span className="font-bold text-slate-900">
                       {formatCurrency(
                         safeNumber(financeData.net_revenue_for_commission) ||
-                        (safeNumber(financeData.gross_revenue) - safeNumber(financeData.total_refunds) - safeNumber(financeData.total_delivery_fees))
+                          safeNumber(financeData.gross_revenue) -
+                            safeNumber(financeData.total_refunds) -
+                            safeNumber(financeData.total_delivery_fees)
                       )}
                     </span>
                   </div>
@@ -737,7 +807,9 @@ export default function ProviderFinanceDashboard() {
                   {/* Row 5: Platform Commission */}
                   <div className="flex items-center justify-between py-2">
                     <span className="text-slate-600">
-                      {locale === 'ar' ? `عمولة المنصة (${commissionRatePercent}%)` : `Platform Commission (${commissionRatePercent}%)`}
+                      {locale === 'ar'
+                        ? `عمولة المنصة (${commissionRatePercent}%)`
+                        : `Platform Commission (${commissionRatePercent}%)`}
                     </span>
                     <span className="font-semibold text-slate-500 line-through">
                       {formatCurrency(safeNumber(financeData.theoretical_commission))}
@@ -749,9 +821,13 @@ export default function ProviderFinanceDashboard() {
                     <div className="flex items-center justify-between py-2 text-green-600">
                       <span className="flex items-center gap-2">
                         <Gift className="w-4 h-4" />
-                        {locale === 'ar' ? 'معفى (فترة الدعم المجانية)' : 'Waived (Free Support Period)'}
+                        {locale === 'ar'
+                          ? 'معفى (فترة الدعم المجانية)'
+                          : 'Waived (Free Support Period)'}
                       </span>
-                      <span className="font-semibold">+{formatCurrency(safeNumber(financeData.theoretical_commission))}</span>
+                      <span className="font-semibold">
+                        +{formatCurrency(safeNumber(financeData.theoretical_commission))}
+                      </span>
                     </div>
                   )}
 
@@ -759,19 +835,23 @@ export default function ProviderFinanceDashboard() {
                   <div className="border-t-2 border-slate-300 my-2" />
 
                   {/* Row 7: Final - You Pay to Platform */}
-                  <div className={`flex items-center justify-between py-3 px-4 -mx-4 rounded-xl ${
-                    safeNumber(financeData.actual_commission) === 0
-                      ? 'bg-green-100'
-                      : 'bg-amber-100'
-                  }`}>
+                  <div
+                    className={`flex items-center justify-between py-3 px-4 -mx-4 rounded-xl ${
+                      safeNumber(financeData.actual_commission) === 0
+                        ? 'bg-green-100'
+                        : 'bg-amber-100'
+                    }`}
+                  >
                     <span className="font-bold text-slate-800">
                       {locale === 'ar' ? '💳 تدفع للمنصة' : '💳 You Pay to Platform'}
                     </span>
-                    <span className={`text-2xl font-bold ${
-                      safeNumber(financeData.actual_commission) === 0
-                        ? 'text-green-700'
-                        : 'text-amber-700'
-                    }`}>
+                    <span
+                      className={`text-2xl font-bold ${
+                        safeNumber(financeData.actual_commission) === 0
+                          ? 'text-green-700'
+                          : 'text-amber-700'
+                      }`}
+                    >
                       {formatCurrency(safeNumber(financeData.actual_commission))}
                     </span>
                   </div>
@@ -782,23 +862,27 @@ export default function ProviderFinanceDashboard() {
             {/* ╔═══════════════════════════════════════════════════════════════════╗ */}
             {/* ║ NET BALANCE - THE MAGIC NUMBER (Most Prominent)                   ║ */}
             {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
-            <Card className={`border-2 overflow-hidden relative ${
-              financeData.settlement_direction === 'platform_pays_provider'
-                ? 'bg-gradient-to-br from-green-50 to-emerald-100 border-green-300'
-                : financeData.settlement_direction === 'provider_pays_platform'
-                  ? 'bg-gradient-to-br from-amber-50 to-orange-100 border-amber-300'
-                  : 'bg-gradient-to-br from-slate-50 to-slate-100 border-slate-300'
-            }`}>
+            <Card
+              className={`border-2 overflow-hidden relative ${
+                financeData.settlement_direction === 'platform_pays_provider'
+                  ? 'bg-gradient-to-br from-green-50 to-emerald-100 border-green-300'
+                  : financeData.settlement_direction === 'provider_pays_platform'
+                    ? 'bg-gradient-to-br from-amber-50 to-orange-100 border-amber-300'
+                    : 'bg-gradient-to-br from-slate-50 to-slate-100 border-slate-300'
+              }`}
+            >
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/30 rounded-full -translate-y-1/2 translate-x-1/2" />
               <CardContent className="pt-8 pb-8 relative">
                 <div className="text-center">
-                  <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                    financeData.settlement_direction === 'platform_pays_provider'
-                      ? 'bg-green-500'
-                      : financeData.settlement_direction === 'provider_pays_platform'
-                        ? 'bg-amber-500'
-                        : 'bg-slate-400'
-                  }`}>
+                  <div
+                    className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                      financeData.settlement_direction === 'platform_pays_provider'
+                        ? 'bg-green-500'
+                        : financeData.settlement_direction === 'provider_pays_platform'
+                          ? 'bg-amber-500'
+                          : 'bg-slate-400'
+                    }`}
+                  >
                     {financeData.settlement_direction === 'platform_pays_provider' ? (
                       <TrendingUp className="w-10 h-10 text-white" />
                     ) : financeData.settlement_direction === 'provider_pays_platform' ? (
@@ -812,30 +896,40 @@ export default function ProviderFinanceDashboard() {
                     {locale === 'ar' ? 'الرصيد الصافي' : 'Net Balance'}
                   </p>
 
-                  <p className={`text-5xl font-bold mb-2 ${
-                    financeData.settlement_direction === 'platform_pays_provider'
-                      ? 'text-green-700'
-                      : financeData.settlement_direction === 'provider_pays_platform'
-                        ? 'text-amber-700'
-                        : 'text-slate-700'
-                  }`}>
+                  <p
+                    className={`text-5xl font-bold mb-2 ${
+                      financeData.settlement_direction === 'platform_pays_provider'
+                        ? 'text-green-700'
+                        : financeData.settlement_direction === 'provider_pays_platform'
+                          ? 'text-amber-700'
+                          : 'text-slate-700'
+                    }`}
+                  >
                     {formatCurrency(safeNumber(financeData.net_balance))}
                   </p>
 
-                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${
-                    financeData.settlement_direction === 'platform_pays_provider'
-                      ? 'bg-green-200 text-green-800'
-                      : financeData.settlement_direction === 'provider_pays_platform'
-                        ? 'bg-amber-200 text-amber-800'
-                        : 'bg-slate-200 text-slate-700'
-                  }`}>
+                  <div
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${
+                      financeData.settlement_direction === 'platform_pays_provider'
+                        ? 'bg-green-200 text-green-800'
+                        : financeData.settlement_direction === 'provider_pays_platform'
+                          ? 'bg-amber-200 text-amber-800'
+                          : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
                     {getSettlementDirectionIcon(financeData.settlement_direction)}
                     <span className="font-medium">
                       {financeData.settlement_direction === 'platform_pays_provider'
-                        ? (locale === 'ar' ? 'مستحقاتك لدى المنصة' : 'Platform owes you')
+                        ? locale === 'ar'
+                          ? 'مستحقاتك لدى المنصة'
+                          : 'Platform owes you'
                         : financeData.settlement_direction === 'provider_pays_platform'
-                          ? (locale === 'ar' ? 'مستحقات المنصة لديك' : 'You owe platform')
-                          : (locale === 'ar' ? 'الحساب متوازن' : 'Account balanced')}
+                          ? locale === 'ar'
+                            ? 'مستحقات المنصة لديك'
+                            : 'You owe platform'
+                          : locale === 'ar'
+                            ? 'الحساب متوازن'
+                            : 'Account balanced'}
                     </span>
                   </div>
                 </div>
@@ -857,7 +951,9 @@ export default function ProviderFinanceDashboard() {
                       {locale === 'ar' ? 'غير مشمولة في العمولة' : 'excluded from commission'}
                     </span>
                   </div>
-                  <span className="font-bold text-slate-900">{formatCurrency(safeNumber(financeData.total_delivery_fees))}</span>
+                  <span className="font-bold text-slate-900">
+                    {formatCurrency(safeNumber(financeData.total_delivery_fees))}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -879,12 +975,16 @@ export default function ProviderFinanceDashboard() {
                       <p className="text-red-600 text-sm mb-3">
                         {locale === 'ar'
                           ? 'هذه الطلبات قيد المراجعة أو متنازع عليها ولن تظهر في التسوية الحالية.'
-                          : 'These orders are under review or disputed and won\'t appear in the current settlement.'}
+                          : "These orders are under review or disputed and won't appear in the current settlement."}
                       </p>
                       <div className="flex gap-4">
                         <div className="bg-white rounded-lg px-4 py-2 border border-red-200">
-                          <p className="text-red-500 text-xs">{locale === 'ar' ? 'عدد الطلبات' : 'Orders Count'}</p>
-                          <p className="text-xl font-bold text-red-700">{safeNumber(financeData.held_orders_count)}</p>
+                          <p className="text-red-500 text-xs">
+                            {locale === 'ar' ? 'عدد الطلبات' : 'Orders Count'}
+                          </p>
+                          <p className="text-xl font-bold text-red-700">
+                            {safeNumber(financeData.held_orders_count)}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -896,193 +996,251 @@ export default function ProviderFinanceDashboard() {
             {/* ╔═══════════════════════════════════════════════════════════════════╗ */}
             {/* ║ COD vs ONLINE COMPARISON - Same Format as Sales Summary           ║ */}
             {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
-            <div className={`grid gap-4 ${
-              paymentMethodFilter === 'all' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
-            }`}>
+            <div
+              className={`grid gap-4 ${
+                paymentMethodFilter === 'all' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
+              }`}
+            >
               {/* COD Card */}
               {(paymentMethodFilter === 'all' || paymentMethodFilter === 'cod') && (
-              <Card className="bg-white border-amber-200 border-2">
-                <CardContent className="pt-5 pb-5">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-amber-100">
-                    <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
-                      <Banknote className="w-5 h-5 text-white" />
+                <Card className="bg-white border-amber-200 border-2">
+                  <CardContent className="pt-5 pb-5">
+                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-amber-100">
+                      <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
+                        <Banknote className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-amber-900">
+                          {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
+                        </p>
+                        <p className="text-amber-600 text-xs">
+                          {safeNumber(financeData.cod_orders_count)}{' '}
+                          {locale === 'ar' ? 'طلب' : 'orders'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-amber-900">
-                        {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
-                      </p>
-                      <p className="text-amber-600 text-xs">
-                        {safeNumber(financeData.cod_orders_count)} {locale === 'ar' ? 'طلب' : 'orders'}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2 text-sm">
-                    {/* Total Sales */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
-                      <span className="font-semibold text-slate-900">{formatCurrency(safeNumber(financeData.cod_gross_revenue))}</span>
-                    </div>
-                    {/* Refunds - if any */}
-                    {safeNumber(financeData.total_refunds) > 0 && safeNumber(financeData.cod_orders_count) > 0 && (
+                    <div className="space-y-2 text-sm">
+                      {/* Total Sales */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600">
+                          {locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}
+                        </span>
+                        <span className="font-semibold text-slate-900">
+                          {formatCurrency(safeNumber(financeData.cod_gross_revenue))}
+                        </span>
+                      </div>
+                      {/* Refunds - if any */}
+                      {safeNumber(financeData.total_refunds) > 0 &&
+                        safeNumber(financeData.cod_orders_count) > 0 && (
+                          <div className="flex justify-between items-center text-red-600">
+                            <span>(−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}</span>
+                            <span className="font-semibold">
+                              {formatCurrency(
+                                safeNumber(financeData.total_refunds) *
+                                  (safeNumber(financeData.cod_gross_revenue) /
+                                    safeNumber(financeData.gross_revenue || 1))
+                              )}
+                            </span>
+                          </div>
+                        )}
+                      {/* Delivery Fees */}
                       <div className="flex justify-between items-center text-red-600">
-                        <span>(−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}</span>
+                        <span className="flex items-center gap-1">
+                          (−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                          <span className="text-[10px] bg-red-100 text-red-500 px-1 py-0.5 rounded">
+                            {locale === 'ar' ? 'لا تخضع للعمولة' : 'no commission'}
+                          </span>
+                        </span>
                         <span className="font-semibold">
+                          {formatCurrency(safeNumber(financeData.cod_delivery_fees))}
+                        </span>
+                      </div>
+                      {/* Divider */}
+                      <div className="border-t border-dashed border-slate-200 my-1" />
+                      {/* Net Revenue for Commission */}
+                      <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1.5 rounded">
+                        <span className="font-medium text-slate-700">
+                          ={' '}
+                          {locale === 'ar'
+                            ? 'صافي الإيرادات الخاضعة للعمولة'
+                            : 'Net Revenue (Commission Base)'}
+                        </span>
+                        <span className="font-bold text-slate-900">
                           {formatCurrency(
-                            safeNumber(financeData.total_refunds) *
-                            (safeNumber(financeData.cod_gross_revenue) / safeNumber(financeData.gross_revenue || 1))
+                            safeNumber(financeData.cod_gross_revenue) -
+                              safeNumber(financeData.cod_delivery_fees) -
+                              safeNumber(financeData.total_refunds) *
+                                (safeNumber(financeData.cod_gross_revenue) /
+                                  safeNumber(financeData.gross_revenue || 1))
                           )}
                         </span>
                       </div>
-                    )}
-                    {/* Delivery Fees */}
-                    <div className="flex justify-between items-center text-red-600">
-                      <span className="flex items-center gap-1">
-                        (−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
-                        <span className="text-[10px] bg-red-100 text-red-500 px-1 py-0.5 rounded">
-                          {locale === 'ar' ? 'لا تخضع للعمولة' : 'no commission'}
+                      {/* Commission */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600">
+                          {locale === 'ar'
+                            ? `عمولة المنصة (${commissionRatePercent}%)`
+                            : `Commission (${commissionRatePercent}%)`}
                         </span>
-                      </span>
-                      <span className="font-semibold">{formatCurrency(safeNumber(financeData.cod_delivery_fees))}</span>
-                    </div>
-                    {/* Divider */}
-                    <div className="border-t border-dashed border-slate-200 my-1" />
-                    {/* Net Revenue for Commission */}
-                    <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1.5 rounded">
-                      <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات الخاضعة للعمولة' : 'Net Revenue (Commission Base)'}</span>
-                      <span className="font-bold text-slate-900">
-                        {formatCurrency(
-                          safeNumber(financeData.cod_gross_revenue) -
-                          safeNumber(financeData.cod_delivery_fees) -
-                          (safeNumber(financeData.total_refunds) * (safeNumber(financeData.cod_gross_revenue) / safeNumber(financeData.gross_revenue || 1)))
-                        )}
-                      </span>
-                    </div>
-                    {/* Commission */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600">{locale === 'ar' ? `عمولة المنصة (${commissionRatePercent}%)` : `Commission (${commissionRatePercent}%)`}</span>
-                      <span className="font-semibold text-slate-500 line-through">{formatCurrency(safeNumber(financeData.cod_theoretical_commission))}</span>
-                    </div>
-                    {/* Grace Period Waiver */}
-                    {financeData.is_in_grace_period && (
-                      <div className="flex justify-between items-center text-green-600">
-                        <span className="flex items-center gap-1">
-                          <Gift className="w-3 h-3" />
-                          {locale === 'ar' ? 'معفى' : 'Waived'}
-                        </span>
-                        <span className="font-semibold">+{formatCurrency(safeNumber(financeData.cod_theoretical_commission))}</span>
-                      </div>
-                    )}
-                    {/* Final Result */}
-                    <div className="border-t-2 border-amber-200 pt-2 mt-2">
-                      <div className={`flex justify-between items-center py-2 px-2 -mx-2 rounded-lg ${
-                        safeNumber(financeData.cod_commission_owed) === 0 ? 'bg-green-100' : 'bg-amber-100'
-                      }`}>
-                        <span className="font-bold text-slate-800 flex items-center gap-1">
-                          <ArrowUpRight className="w-4 h-4" />
-                          {locale === 'ar' ? 'تدفع للمنصة' : 'You Pay'}
-                        </span>
-                        <span className={`text-lg font-bold ${
-                          safeNumber(financeData.cod_commission_owed) === 0 ? 'text-green-700' : 'text-amber-700'
-                        }`}>
-                          {formatCurrency(safeNumber(financeData.cod_commission_owed))}
+                        <span className="font-semibold text-slate-500 line-through">
+                          {formatCurrency(safeNumber(financeData.cod_theoretical_commission))}
                         </span>
                       </div>
+                      {/* Grace Period Waiver */}
+                      {financeData.is_in_grace_period && (
+                        <div className="flex justify-between items-center text-green-600">
+                          <span className="flex items-center gap-1">
+                            <Gift className="w-3 h-3" />
+                            {locale === 'ar' ? 'معفى' : 'Waived'}
+                          </span>
+                          <span className="font-semibold">
+                            +{formatCurrency(safeNumber(financeData.cod_theoretical_commission))}
+                          </span>
+                        </div>
+                      )}
+                      {/* Final Result */}
+                      <div className="border-t-2 border-amber-200 pt-2 mt-2">
+                        <div
+                          className={`flex justify-between items-center py-2 px-2 -mx-2 rounded-lg ${
+                            safeNumber(financeData.cod_commission_owed) === 0
+                              ? 'bg-green-100'
+                              : 'bg-amber-100'
+                          }`}
+                        >
+                          <span className="font-bold text-slate-800 flex items-center gap-1">
+                            <ArrowUpRight className="w-4 h-4" />
+                            {locale === 'ar' ? 'تدفع للمنصة' : 'You Pay'}
+                          </span>
+                          <span
+                            className={`text-lg font-bold ${
+                              safeNumber(financeData.cod_commission_owed) === 0
+                                ? 'text-green-700'
+                                : 'text-amber-700'
+                            }`}
+                          >
+                            {formatCurrency(safeNumber(financeData.cod_commission_owed))}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Online Card */}
               {(paymentMethodFilter === 'all' || paymentMethodFilter === 'online') && (
-              <Card className="bg-white border-blue-200 border-2">
-                <CardContent className="pt-5 pb-5">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-blue-100">
-                    <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-                      <CreditCard className="w-5 h-5 text-white" />
+                <Card className="bg-white border-blue-200 border-2">
+                  <CardContent className="pt-5 pb-5">
+                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-blue-100">
+                      <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-blue-900">
+                          {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+                        </p>
+                        <p className="text-blue-600 text-xs">
+                          {safeNumber(financeData.online_orders_count)}{' '}
+                          {locale === 'ar' ? 'طلب' : 'orders'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-blue-900">
-                        {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
-                      </p>
-                      <p className="text-blue-600 text-xs">
-                        {safeNumber(financeData.online_orders_count)} {locale === 'ar' ? 'طلب' : 'orders'}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2 text-sm">
-                    {/* Total Sales */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
-                      <span className="font-semibold text-slate-900">{formatCurrency(safeNumber(financeData.online_gross_revenue))}</span>
-                    </div>
-                    {/* Refunds - if any */}
-                    {safeNumber(financeData.total_refunds) > 0 && safeNumber(financeData.online_orders_count) > 0 && (
+                    <div className="space-y-2 text-sm">
+                      {/* Total Sales */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600">
+                          {locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}
+                        </span>
+                        <span className="font-semibold text-slate-900">
+                          {formatCurrency(safeNumber(financeData.online_gross_revenue))}
+                        </span>
+                      </div>
+                      {/* Refunds - if any */}
+                      {safeNumber(financeData.total_refunds) > 0 &&
+                        safeNumber(financeData.online_orders_count) > 0 && (
+                          <div className="flex justify-between items-center text-red-600">
+                            <span>(−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}</span>
+                            <span className="font-semibold">
+                              {formatCurrency(
+                                safeNumber(financeData.total_refunds) *
+                                  (safeNumber(financeData.online_gross_revenue) /
+                                    safeNumber(financeData.gross_revenue || 1))
+                              )}
+                            </span>
+                          </div>
+                        )}
+                      {/* Delivery Fees */}
                       <div className="flex justify-between items-center text-red-600">
-                        <span>(−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}</span>
+                        <span className="flex items-center gap-1">
+                          (−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                          <span className="text-[10px] bg-red-100 text-red-500 px-1 py-0.5 rounded">
+                            {locale === 'ar' ? 'لا تخضع للعمولة' : 'no commission'}
+                          </span>
+                        </span>
                         <span className="font-semibold">
+                          {formatCurrency(safeNumber(financeData.online_delivery_fees))}
+                        </span>
+                      </div>
+                      {/* Divider */}
+                      <div className="border-t border-dashed border-slate-200 my-1" />
+                      {/* Net Revenue for Commission */}
+                      <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1.5 rounded">
+                        <span className="font-medium text-slate-700">
+                          ={' '}
+                          {locale === 'ar'
+                            ? 'صافي الإيرادات الخاضعة للعمولة'
+                            : 'Net Revenue (Commission Base)'}
+                        </span>
+                        <span className="font-bold text-slate-900">
                           {formatCurrency(
-                            safeNumber(financeData.total_refunds) *
-                            (safeNumber(financeData.online_gross_revenue) / safeNumber(financeData.gross_revenue || 1))
+                            safeNumber(financeData.online_gross_revenue) -
+                              safeNumber(financeData.online_delivery_fees) -
+                              safeNumber(financeData.total_refunds) *
+                                (safeNumber(financeData.online_gross_revenue) /
+                                  safeNumber(financeData.gross_revenue || 1))
                           )}
                         </span>
                       </div>
-                    )}
-                    {/* Delivery Fees */}
-                    <div className="flex justify-between items-center text-red-600">
-                      <span className="flex items-center gap-1">
-                        (−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
-                        <span className="text-[10px] bg-red-100 text-red-500 px-1 py-0.5 rounded">
-                          {locale === 'ar' ? 'لا تخضع للعمولة' : 'no commission'}
+                      {/* Commission */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600">
+                          {locale === 'ar'
+                            ? `عمولة المنصة (${commissionRatePercent}%)`
+                            : `Commission (${commissionRatePercent}%)`}
                         </span>
-                      </span>
-                      <span className="font-semibold">{formatCurrency(safeNumber(financeData.online_delivery_fees))}</span>
-                    </div>
-                    {/* Divider */}
-                    <div className="border-t border-dashed border-slate-200 my-1" />
-                    {/* Net Revenue for Commission */}
-                    <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1.5 rounded">
-                      <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات الخاضعة للعمولة' : 'Net Revenue (Commission Base)'}</span>
-                      <span className="font-bold text-slate-900">
-                        {formatCurrency(
-                          safeNumber(financeData.online_gross_revenue) -
-                          safeNumber(financeData.online_delivery_fees) -
-                          (safeNumber(financeData.total_refunds) * (safeNumber(financeData.online_gross_revenue) / safeNumber(financeData.gross_revenue || 1)))
-                        )}
-                      </span>
-                    </div>
-                    {/* Commission */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600">{locale === 'ar' ? `عمولة المنصة (${commissionRatePercent}%)` : `Commission (${commissionRatePercent}%)`}</span>
-                      <span className="font-semibold text-red-500">-{formatCurrency(safeNumber(financeData.online_theoretical_commission))}</span>
-                    </div>
-                    {/* Grace Period Waiver */}
-                    {financeData.is_in_grace_period && (
-                      <div className="flex justify-between items-center text-green-600">
-                        <span className="flex items-center gap-1">
-                          <Gift className="w-3 h-3" />
-                          {locale === 'ar' ? 'معفى' : 'Waived'}
-                        </span>
-                        <span className="font-semibold">+{formatCurrency(safeNumber(financeData.online_theoretical_commission))}</span>
-                      </div>
-                    )}
-                    {/* Final Result - Platform pays provider */}
-                    <div className="border-t-2 border-blue-200 pt-2 mt-2">
-                      <div className="flex justify-between items-center py-2 px-2 -mx-2 rounded-lg bg-green-100">
-                        <span className="font-bold text-slate-800 flex items-center gap-1">
-                          <ArrowDownRight className="w-4 h-4 text-green-600" />
-                          {locale === 'ar' ? 'المنصة تدفع لك' : 'Platform Pays You'}
-                        </span>
-                        <span className="text-lg font-bold text-green-700">
-                          {formatCurrency(safeNumber(financeData.online_payout_owed))}
+                        <span className="font-semibold text-red-500">
+                          -{formatCurrency(safeNumber(financeData.online_theoretical_commission))}
                         </span>
                       </div>
+                      {/* Grace Period Waiver */}
+                      {financeData.is_in_grace_period && (
+                        <div className="flex justify-between items-center text-green-600">
+                          <span className="flex items-center gap-1">
+                            <Gift className="w-3 h-3" />
+                            {locale === 'ar' ? 'معفى' : 'Waived'}
+                          </span>
+                          <span className="font-semibold">
+                            +{formatCurrency(safeNumber(financeData.online_theoretical_commission))}
+                          </span>
+                        </div>
+                      )}
+                      {/* Final Result - Platform pays provider */}
+                      <div className="border-t-2 border-blue-200 pt-2 mt-2">
+                        <div className="flex justify-between items-center py-2 px-2 -mx-2 rounded-lg bg-green-100">
+                          <span className="font-bold text-slate-800 flex items-center gap-1">
+                            <ArrowDownRight className="w-4 h-4 text-green-600" />
+                            {locale === 'ar' ? 'المنصة تدفع لك' : 'Platform Pays You'}
+                          </span>
+                          <span className="text-lg font-bold text-green-700">
+                            {formatCurrency(safeNumber(financeData.online_payout_owed))}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
               )}
             </div>
 
@@ -1092,26 +1250,40 @@ export default function ProviderFinanceDashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card className="bg-white border-slate-200">
                 <CardContent className="pt-4 pb-4 text-center">
-                  <p className="text-3xl font-bold text-primary">{safeNumber(financeData.total_orders)}</p>
-                  <p className="text-xs text-slate-500 mt-1">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
+                  <p className="text-3xl font-bold text-primary">
+                    {safeNumber(financeData.total_orders)}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="bg-white border-slate-200">
                 <CardContent className="pt-4 pb-4 text-center">
-                  <p className="text-3xl font-bold text-green-600">{safeNumber(financeData.settled_orders_count)}</p>
-                  <p className="text-xs text-slate-500 mt-1">{locale === 'ar' ? 'تمت تسويتها' : 'Settled'}</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {safeNumber(financeData.settled_orders_count)}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {locale === 'ar' ? 'تمت تسويتها' : 'Settled'}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="bg-white border-slate-200">
                 <CardContent className="pt-4 pb-4 text-center">
-                  <p className="text-3xl font-bold text-amber-600">{safeNumber(financeData.held_orders_count)}</p>
-                  <p className="text-xs text-slate-500 mt-1">{locale === 'ar' ? 'قيد الانتظار' : 'On Hold'}</p>
+                  <p className="text-3xl font-bold text-amber-600">
+                    {safeNumber(financeData.held_orders_count)}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {locale === 'ar' ? 'قيد الانتظار' : 'On Hold'}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="bg-white border-slate-200">
                 <CardContent className="pt-4 pb-4 text-center">
                   <p className="text-3xl font-bold text-slate-600">{commissionRatePercent}%</p>
-                  <p className="text-xs text-slate-500 mt-1">{locale === 'ar' ? 'نسبة العمولة' : 'Commission Rate'}</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {locale === 'ar' ? 'نسبة العمولة' : 'Commission Rate'}
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -1148,7 +1320,9 @@ export default function ProviderFinanceDashboard() {
                 {locale === 'ar' ? 'لا توجد بيانات مالية بعد' : 'No financial data yet'}
               </p>
               <p className="text-slate-400 text-sm mt-1">
-                {locale === 'ar' ? 'ستظهر البيانات بعد إتمام طلباتك الأولى' : 'Data will appear after your first completed orders'}
+                {locale === 'ar'
+                  ? 'ستظهر البيانات بعد إتمام طلباتك الأولى'
+                  : 'Data will appear after your first completed orders'}
               </p>
             </CardContent>
           </Card>
@@ -1190,7 +1364,9 @@ export default function ProviderFinanceDashboard() {
                 {settlements.length === 0 ? (
                   <div className="text-center py-12 text-slate-500">
                     <Receipt className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                    <p className="font-medium">{locale === 'ar' ? 'لا توجد تسويات بعد' : 'No settlements yet'}</p>
+                    <p className="font-medium">
+                      {locale === 'ar' ? 'لا توجد تسويات بعد' : 'No settlements yet'}
+                    </p>
                     <p className="text-sm mt-1">
                       {locale === 'ar'
                         ? 'ستظهر التسويات هنا بعد إتمام طلباتك الأولى'
@@ -1204,61 +1380,77 @@ export default function ProviderFinanceDashboard() {
                         key={settlement.id}
                         onClick={() => {
                           if (selectedSettlement?.id === settlement.id) {
-                            setSelectedSettlement(null)
-                            setSettlementOrders([])
+                            setSelectedSettlement(null);
+                            setSettlementOrders([]);
                           } else {
-                            setSelectedSettlement(settlement)
-                            loadSettlementOrders(settlement)
+                            setSelectedSettlement(settlement);
+                            loadSettlementOrders(settlement);
                           }
                         }}
                         className="w-full text-start"
                       >
-                        <div className={`p-4 rounded-xl border transition-all ${
-                          selectedSettlement?.id === settlement.id
-                            ? 'bg-primary/5 border-primary/30'
-                            : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                        }`}>
+                        <div
+                          className={`p-4 rounded-xl border transition-all ${
+                            selectedSettlement?.id === settlement.id
+                              ? 'bg-primary/5 border-primary/30'
+                              : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               {/* Settlement Direction Icon */}
-                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                settlement.settlement_direction === 'platform_pays_provider'
-                                  ? 'bg-green-100'
-                                  : settlement.settlement_direction === 'provider_pays_platform'
-                                    ? 'bg-amber-100'
-                                    : 'bg-slate-100'
-                              }`}>
+                              <div
+                                className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                                  settlement.settlement_direction === 'platform_pays_provider'
+                                    ? 'bg-green-100'
+                                    : settlement.settlement_direction === 'provider_pays_platform'
+                                      ? 'bg-amber-100'
+                                      : 'bg-slate-100'
+                                }`}
+                              >
                                 {getSettlementDirectionIcon(settlement.settlement_direction)}
                               </div>
                               <div>
                                 <p className="font-medium text-slate-900">
-                                  {formatDateUtil(settlement.period_start, locale)} - {formatDateUtil(settlement.period_end, locale)}
+                                  {formatDateUtil(settlement.period_start, locale)} -{' '}
+                                  {formatDateUtil(settlement.period_end, locale)}
                                 </p>
                                 <p className="text-xs text-slate-500">
-                                  {formatNumber(settlement.total_orders, locale)} {locale === 'ar' ? 'طلب' : 'orders'} |
-                                  {' '}{getSettlementDirectionLabel(settlement.settlement_direction)}
+                                  {formatNumber(settlement.total_orders, locale)}{' '}
+                                  {locale === 'ar' ? 'طلب' : 'orders'} |{' '}
+                                  {getSettlementDirectionLabel(settlement.settlement_direction)}
                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
                               <div className="text-end">
-                                <p className={`font-bold text-lg ${
-                                  settlement.settlement_direction === 'platform_pays_provider'
-                                    ? 'text-green-600'
-                                    : settlement.settlement_direction === 'provider_pays_platform'
-                                      ? 'text-amber-600'
-                                      : 'text-slate-600'
-                                }`}>
-                                  {formatCurrency(Math.abs(settlement.net_balance || settlement.net_payout || 0))}
+                                <p
+                                  className={`font-bold text-lg ${
+                                    settlement.settlement_direction === 'platform_pays_provider'
+                                      ? 'text-green-600'
+                                      : settlement.settlement_direction === 'provider_pays_platform'
+                                        ? 'text-amber-600'
+                                        : 'text-slate-600'
+                                  }`}
+                                >
+                                  {formatCurrency(
+                                    Math.abs(settlement.net_balance || settlement.net_payout || 0)
+                                  )}
                                 </p>
-                                <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${getStatusColor(settlement.status)}`}>
+                                <span
+                                  className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${getStatusColor(settlement.status)}`}
+                                >
                                   {getStatusLabel(settlement.status)}
                                 </span>
                               </div>
                               {isRTL ? (
-                                <ChevronLeft className={`w-5 h-5 text-slate-400 transition-transform ${selectedSettlement?.id === settlement.id ? '-rotate-90' : ''}`} />
+                                <ChevronLeft
+                                  className={`w-5 h-5 text-slate-400 transition-transform ${selectedSettlement?.id === settlement.id ? '-rotate-90' : ''}`}
+                                />
                               ) : (
-                                <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${selectedSettlement?.id === settlement.id ? 'rotate-90' : ''}`} />
+                                <ChevronRight
+                                  className={`w-5 h-5 text-slate-400 transition-transform ${selectedSettlement?.id === settlement.id ? 'rotate-90' : ''}`}
+                                />
                               )}
                             </div>
                           </div>
@@ -1269,28 +1461,45 @@ export default function ProviderFinanceDashboard() {
                               {/* COD/Online Breakdown - Database Values Only (Single Source of Truth) */}
                               {(() => {
                                 // ✅ ALL values directly from database - NO frontend calculations
-                                const codDeliveryFees = settlement.cod_delivery_fees || 0
-                                const codOriginalCommission = settlement.cod_original_commission || 0
-                                const onlineDeliveryFees = settlement.online_delivery_fees || 0
-                                const onlineOriginalCommission = settlement.online_original_commission || 0
+                                const codDeliveryFees = settlement.cod_delivery_fees || 0;
+                                const codOriginalCommission =
+                                  settlement.cod_original_commission || 0;
+                                const onlineDeliveryFees = settlement.online_delivery_fees || 0;
+                                const onlineOriginalCommission =
+                                  settlement.online_original_commission || 0;
 
                                 // ✅ Net revenue from database (NOT calculated in frontend)
-                                const codNetRevenue = settlement.cod_net_revenue || 0
-                                const onlineNetRevenue = settlement.online_net_revenue || 0
+                                const codNetRevenue = settlement.cod_net_revenue || 0;
+                                const onlineNetRevenue = settlement.online_net_revenue || 0;
 
                                 // ✅ Refunds - proportionally allocated based on gross revenue
-                                const totalRefunds = settlement.total_refunds || 0
-                                const totalGross = (settlement.cod_gross_revenue || 0) + (settlement.online_gross_revenue || 0)
-                                const codRefunds = totalGross > 0 ? totalRefunds * ((settlement.cod_gross_revenue || 0) / totalGross) : 0
-                                const onlineRefunds = totalGross > 0 ? totalRefunds * ((settlement.online_gross_revenue || 0) / totalGross) : 0
+                                const totalRefunds = settlement.total_refunds || 0;
+                                const totalGross =
+                                  (settlement.cod_gross_revenue || 0) +
+                                  (settlement.online_gross_revenue || 0);
+                                const codRefunds =
+                                  totalGross > 0
+                                    ? totalRefunds *
+                                      ((settlement.cod_gross_revenue || 0) / totalGross)
+                                    : 0;
+                                const onlineRefunds =
+                                  totalGross > 0
+                                    ? totalRefunds *
+                                      ((settlement.online_gross_revenue || 0) / totalGross)
+                                    : 0;
 
                                 // ✅ Net Revenue for Commission = Net Revenue - Refunds
-                                const codNetRevenueForCommission = codNetRevenue - codRefunds
-                                const onlineNetRevenueForCommission = onlineNetRevenue - onlineRefunds
+                                const codNetRevenueForCommission = codNetRevenue - codRefunds;
+                                const onlineNetRevenueForCommission =
+                                  onlineNetRevenue - onlineRefunds;
 
                                 // Grace period detection: commission is 0 but original_commission > 0
-                                const codIsGracePeriod = (settlement.cod_commission_owed || 0) === 0 && codOriginalCommission > 0
-                                const onlineIsGracePeriod = (settlement.online_platform_commission || 0) === 0 && onlineOriginalCommission > 0
+                                const codIsGracePeriod =
+                                  (settlement.cod_commission_owed || 0) === 0 &&
+                                  codOriginalCommission > 0;
+                                const onlineIsGracePeriod =
+                                  (settlement.online_platform_commission || 0) === 0 &&
+                                  onlineOriginalCommission > 0;
 
                                 return (
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1304,10 +1513,13 @@ export default function ProviderFinanceDashboard() {
                                           </div>
                                           <div>
                                             <p className="font-bold text-amber-900 text-sm">
-                                              {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
+                                              {locale === 'ar'
+                                                ? 'الدفع عند الاستلام'
+                                                : 'Cash on Delivery'}
                                             </p>
                                             <p className="text-amber-600 text-xs">
-                                              {settlement.cod_orders_count || 0} {locale === 'ar' ? 'طلب' : 'orders'}
+                                              {settlement.cod_orders_count || 0}{' '}
+                                              {locale === 'ar' ? 'طلب' : 'orders'}
                                             </p>
                                           </div>
                                         </div>
@@ -1316,15 +1528,23 @@ export default function ProviderFinanceDashboard() {
                                         <div className="space-y-1.5 text-xs">
                                           {/* Total Sales */}
                                           <div className="flex justify-between items-center">
-                                            <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
-                                            <span className="font-semibold text-slate-900">{formatCurrency(settlement.cod_gross_revenue || 0)}</span>
+                                            <span className="text-slate-600">
+                                              {locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}
+                                            </span>
+                                            <span className="font-semibold text-slate-900">
+                                              {formatCurrency(settlement.cod_gross_revenue || 0)}
+                                            </span>
                                           </div>
 
                                           {/* Refunds - if any */}
                                           {codRefunds > 0 && (
                                             <div className="flex justify-between items-center text-red-600">
-                                              <span>(−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}</span>
-                                              <span className="font-semibold">{formatCurrency(codRefunds)}</span>
+                                              <span>
+                                                (−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}
+                                              </span>
+                                              <span className="font-semibold">
+                                                {formatCurrency(codRefunds)}
+                                              </span>
                                             </div>
                                           )}
 
@@ -1332,12 +1552,15 @@ export default function ProviderFinanceDashboard() {
                                           {codDeliveryFees > 0 && (
                                             <div className="flex justify-between items-center text-red-600">
                                               <span className="flex items-center gap-1">
-                                                (−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                                                (−){' '}
+                                                {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
                                                 <span className="text-[8px] bg-red-100 text-red-500 px-1 rounded">
                                                   {locale === 'ar' ? 'لا عمولة' : 'no comm'}
                                                 </span>
                                               </span>
-                                              <span className="font-semibold">{formatCurrency(codDeliveryFees)}</span>
+                                              <span className="font-semibold">
+                                                {formatCurrency(codDeliveryFees)}
+                                              </span>
                                             </div>
                                           )}
 
@@ -1346,20 +1569,37 @@ export default function ProviderFinanceDashboard() {
 
                                           {/* Net Revenue for Commission */}
                                           <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1 rounded">
-                                            <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات الخاضعة للعمولة' : 'Commission Base'}</span>
-                                            <span className="font-bold text-slate-900">{formatCurrency(codNetRevenueForCommission)}</span>
+                                            <span className="font-medium text-slate-700">
+                                              ={' '}
+                                              {locale === 'ar'
+                                                ? 'صافي الإيرادات الخاضعة للعمولة'
+                                                : 'Commission Base'}
+                                            </span>
+                                            <span className="font-bold text-slate-900">
+                                              {formatCurrency(codNetRevenueForCommission)}
+                                            </span>
                                           </div>
 
                                           {/* Commission - with strikethrough if grace period */}
                                           <div className="flex justify-between items-center">
-                                            <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</span>
+                                            <span className="text-slate-600">
+                                              {locale === 'ar' ? 'عمولة المنصة' : 'Commission'}
+                                            </span>
                                             {codIsGracePeriod ? (
                                               <span className="font-semibold">
-                                                <span className="text-slate-400 line-through me-1">{formatCurrency(codOriginalCommission)}</span>
-                                                <span className="text-green-600">{formatNumber(0, locale)}</span>
+                                                <span className="text-slate-400 line-through me-1">
+                                                  {formatCurrency(codOriginalCommission)}
+                                                </span>
+                                                <span className="text-green-600">
+                                                  {formatNumber(0, locale)}
+                                                </span>
                                               </span>
                                             ) : (
-                                              <span className="font-semibold text-red-500">{formatCurrency(settlement.cod_commission_owed || 0)}</span>
+                                              <span className="font-semibold text-red-500">
+                                                {formatCurrency(
+                                                  settlement.cod_commission_owed || 0
+                                                )}
+                                              </span>
                                             )}
                                           </div>
 
@@ -1368,25 +1608,39 @@ export default function ProviderFinanceDashboard() {
                                             <div className="flex justify-between items-center text-green-600 bg-green-50 -mx-2 px-2 py-1 rounded">
                                               <span className="flex items-center gap-1">
                                                 <Gift className="w-3 h-3" />
-                                                {locale === 'ar' ? 'معفى (فترة السماح)' : 'Waived (Grace Period)'}
+                                                {locale === 'ar'
+                                                  ? 'معفى (فترة السماح)'
+                                                  : 'Waived (Grace Period)'}
                                               </span>
-                                              <span className="font-semibold">+{formatCurrency(codOriginalCommission)}</span>
+                                              <span className="font-semibold">
+                                                +{formatCurrency(codOriginalCommission)}
+                                              </span>
                                             </div>
                                           )}
 
                                           {/* Final Result */}
                                           <div className="border-t-2 border-amber-200 pt-2 mt-2">
-                                            <div className={`flex justify-between items-center py-1.5 px-2 -mx-2 rounded-lg ${
-                                              (settlement.cod_commission_owed || 0) === 0 ? 'bg-green-100' : 'bg-amber-100'
-                                            }`}>
+                                            <div
+                                              className={`flex justify-between items-center py-1.5 px-2 -mx-2 rounded-lg ${
+                                                (settlement.cod_commission_owed || 0) === 0
+                                                  ? 'bg-green-100'
+                                                  : 'bg-amber-100'
+                                              }`}
+                                            >
                                               <span className="font-bold text-slate-800 flex items-center gap-1 text-xs">
                                                 <ArrowUpRight className="w-3 h-3" />
                                                 {locale === 'ar' ? 'تدفع للمنصة' : 'You Pay'}
                                               </span>
-                                              <span className={`font-bold ${
-                                                (settlement.cod_commission_owed || 0) === 0 ? 'text-green-700' : 'text-amber-700'
-                                              }`}>
-                                                {formatCurrency(settlement.cod_commission_owed || 0)}
+                                              <span
+                                                className={`font-bold ${
+                                                  (settlement.cod_commission_owed || 0) === 0
+                                                    ? 'text-green-700'
+                                                    : 'text-amber-700'
+                                                }`}
+                                              >
+                                                {formatCurrency(
+                                                  settlement.cod_commission_owed || 0
+                                                )}
                                               </span>
                                             </div>
                                           </div>
@@ -1395,19 +1649,30 @@ export default function ProviderFinanceDashboard() {
                                     </div>
 
                                     {/* Online Card - Database Values (dimmed if no orders) */}
-                                    <div className={`bg-white border-2 border-blue-200 rounded-xl overflow-hidden ${(settlement.online_orders_count || 0) === 0 ? 'opacity-40' : ''}`}>
+                                    <div
+                                      className={`bg-white border-2 border-blue-200 rounded-xl overflow-hidden ${(settlement.online_orders_count || 0) === 0 ? 'opacity-40' : ''}`}
+                                    >
                                       <div className="p-4">
                                         {/* Header with Icon */}
                                         <div className="flex items-center gap-3 mb-3 pb-2 border-b border-blue-100">
-                                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${(settlement.online_orders_count || 0) === 0 ? 'bg-slate-300' : 'bg-blue-500'}`}>
+                                          <div
+                                            className={`w-8 h-8 rounded-lg flex items-center justify-center ${(settlement.online_orders_count || 0) === 0 ? 'bg-slate-300' : 'bg-blue-500'}`}
+                                          >
                                             <CreditCard className="w-4 h-4 text-white" />
                                           </div>
                                           <div>
-                                            <p className={`font-bold text-sm ${(settlement.online_orders_count || 0) === 0 ? 'text-slate-500' : 'text-blue-900'}`}>
-                                              {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+                                            <p
+                                              className={`font-bold text-sm ${(settlement.online_orders_count || 0) === 0 ? 'text-slate-500' : 'text-blue-900'}`}
+                                            >
+                                              {locale === 'ar'
+                                                ? 'الدفع الإلكتروني'
+                                                : 'Online Payment'}
                                             </p>
-                                            <p className={`text-xs ${(settlement.online_orders_count || 0) === 0 ? 'text-slate-400' : 'text-blue-600'}`}>
-                                              {settlement.online_orders_count || 0} {locale === 'ar' ? 'طلب' : 'orders'}
+                                            <p
+                                              className={`text-xs ${(settlement.online_orders_count || 0) === 0 ? 'text-slate-400' : 'text-blue-600'}`}
+                                            >
+                                              {settlement.online_orders_count || 0}{' '}
+                                              {locale === 'ar' ? 'طلب' : 'orders'}
                                             </p>
                                           </div>
                                         </div>
@@ -1416,15 +1681,23 @@ export default function ProviderFinanceDashboard() {
                                         <div className="space-y-1.5 text-xs">
                                           {/* Total Sales */}
                                           <div className="flex justify-between items-center">
-                                            <span className="text-slate-600">{locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}</span>
-                                            <span className="font-semibold text-slate-900">{formatCurrency(settlement.online_gross_revenue || 0)}</span>
+                                            <span className="text-slate-600">
+                                              {locale === 'ar' ? 'إجمالي المبيعات' : 'Total Sales'}
+                                            </span>
+                                            <span className="font-semibold text-slate-900">
+                                              {formatCurrency(settlement.online_gross_revenue || 0)}
+                                            </span>
                                           </div>
 
                                           {/* Refunds - if any */}
                                           {onlineRefunds > 0 && (
                                             <div className="flex justify-between items-center text-red-600">
-                                              <span>(−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}</span>
-                                              <span className="font-semibold">{formatCurrency(onlineRefunds)}</span>
+                                              <span>
+                                                (−) {locale === 'ar' ? 'المرتجعات' : 'Refunds'}
+                                              </span>
+                                              <span className="font-semibold">
+                                                {formatCurrency(onlineRefunds)}
+                                              </span>
                                             </div>
                                           )}
 
@@ -1432,12 +1705,15 @@ export default function ProviderFinanceDashboard() {
                                           {onlineDeliveryFees > 0 && (
                                             <div className="flex justify-between items-center text-red-600">
                                               <span className="flex items-center gap-1">
-                                                (−) {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+                                                (−){' '}
+                                                {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
                                                 <span className="text-[8px] bg-red-100 text-red-500 px-1 rounded">
                                                   {locale === 'ar' ? 'لا عمولة' : 'no comm'}
                                                 </span>
                                               </span>
-                                              <span className="font-semibold">{formatCurrency(onlineDeliveryFees)}</span>
+                                              <span className="font-semibold">
+                                                {formatCurrency(onlineDeliveryFees)}
+                                              </span>
                                             </div>
                                           )}
 
@@ -1446,20 +1722,38 @@ export default function ProviderFinanceDashboard() {
 
                                           {/* Net Revenue for Commission */}
                                           <div className="flex justify-between items-center bg-slate-50 -mx-2 px-2 py-1 rounded">
-                                            <span className="font-medium text-slate-700">= {locale === 'ar' ? 'صافي الإيرادات الخاضعة للعمولة' : 'Commission Base'}</span>
-                                            <span className="font-bold text-slate-900">{formatCurrency(onlineNetRevenueForCommission)}</span>
+                                            <span className="font-medium text-slate-700">
+                                              ={' '}
+                                              {locale === 'ar'
+                                                ? 'صافي الإيرادات الخاضعة للعمولة'
+                                                : 'Commission Base'}
+                                            </span>
+                                            <span className="font-bold text-slate-900">
+                                              {formatCurrency(onlineNetRevenueForCommission)}
+                                            </span>
                                           </div>
 
                                           {/* Commission - with strikethrough if grace period */}
                                           <div className="flex justify-between items-center">
-                                            <span className="text-slate-600">{locale === 'ar' ? 'عمولة المنصة' : 'Commission'}</span>
+                                            <span className="text-slate-600">
+                                              {locale === 'ar' ? 'عمولة المنصة' : 'Commission'}
+                                            </span>
                                             {onlineIsGracePeriod ? (
                                               <span className="font-semibold">
-                                                <span className="text-slate-400 line-through me-1">-{formatCurrency(onlineOriginalCommission)}</span>
-                                                <span className="text-green-600">{formatNumber(0, locale)}</span>
+                                                <span className="text-slate-400 line-through me-1">
+                                                  -{formatCurrency(onlineOriginalCommission)}
+                                                </span>
+                                                <span className="text-green-600">
+                                                  {formatNumber(0, locale)}
+                                                </span>
                                               </span>
                                             ) : (
-                                              <span className="font-semibold text-red-500">-{formatCurrency(settlement.online_platform_commission || 0)}</span>
+                                              <span className="font-semibold text-red-500">
+                                                -
+                                                {formatCurrency(
+                                                  settlement.online_platform_commission || 0
+                                                )}
+                                              </span>
                                             )}
                                           </div>
 
@@ -1468,9 +1762,13 @@ export default function ProviderFinanceDashboard() {
                                             <div className="flex justify-between items-center text-green-600 bg-green-50 -mx-2 px-2 py-1 rounded">
                                               <span className="flex items-center gap-1">
                                                 <Gift className="w-3 h-3" />
-                                                {locale === 'ar' ? 'معفى (فترة السماح)' : 'Waived (Grace Period)'}
+                                                {locale === 'ar'
+                                                  ? 'معفى (فترة السماح)'
+                                                  : 'Waived (Grace Period)'}
                                               </span>
-                                              <span className="font-semibold">+{formatCurrency(onlineOriginalCommission)}</span>
+                                              <span className="font-semibold">
+                                                +{formatCurrency(onlineOriginalCommission)}
+                                              </span>
                                             </div>
                                           )}
 
@@ -1479,7 +1777,9 @@ export default function ProviderFinanceDashboard() {
                                             <div className="flex justify-between items-center py-1.5 px-2 -mx-2 rounded-lg bg-green-100">
                                               <span className="font-bold text-slate-800 flex items-center gap-1 text-xs">
                                                 <ArrowDownRight className="w-3 h-3 text-green-600" />
-                                                {locale === 'ar' ? 'المنصة تدفع لك' : 'Platform Pays You'}
+                                                {locale === 'ar'
+                                                  ? 'المنصة تدفع لك'
+                                                  : 'Platform Pays You'}
                                               </span>
                                               <span className="font-bold text-green-700">
                                                 {formatCurrency(settlement.online_payout_owed || 0)}
@@ -1490,7 +1790,7 @@ export default function ProviderFinanceDashboard() {
                                       </div>
                                     </div>
                                   </div>
-                                )
+                                );
                               })()}
 
                               {/* Delivery Fees in Settlement - From Database */}
@@ -1502,7 +1802,9 @@ export default function ProviderFinanceDashboard() {
                                       {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
                                     </span>
                                   </div>
-                                  <span className="font-semibold text-slate-800">{formatCurrency(settlement.total_delivery_fees || 0)}</span>
+                                  <span className="font-semibold text-slate-800">
+                                    {formatCurrency(settlement.total_delivery_fees || 0)}
+                                  </span>
                                 </div>
                               </div>
 
@@ -1527,22 +1829,33 @@ export default function ProviderFinanceDashboard() {
                                     <div className="p-4 text-center">
                                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto" />
                                       <p className="text-xs text-slate-500 mt-2">
-                                        {locale === 'ar' ? 'جاري تحميل الطلبات...' : 'Loading orders...'}
+                                        {locale === 'ar'
+                                          ? 'جاري تحميل الطلبات...'
+                                          : 'Loading orders...'}
                                       </p>
                                     </div>
                                   ) : settlementOrders.length === 0 ? (
                                     <div className="p-4 text-center text-slate-500 text-xs">
-                                      {locale === 'ar' ? 'لا توجد بيانات طلبات' : 'No order data available'}
+                                      {locale === 'ar'
+                                        ? 'لا توجد بيانات طلبات'
+                                        : 'No order data available'}
                                     </div>
                                   ) : (
                                     <div className="divide-y divide-slate-100">
                                       {settlementOrders.map((order) => (
-                                        <div key={order.id} className="p-2.5 hover:bg-slate-100 transition-colors">
+                                        <div
+                                          key={order.id}
+                                          className="p-2.5 hover:bg-slate-100 transition-colors"
+                                        >
                                           <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                              <span className={`w-6 h-6 rounded flex items-center justify-center text-white text-[10px] ${
-                                                order.payment_method === 'cod' ? 'bg-amber-500' : 'bg-blue-500'
-                                              }`}>
+                                              <span
+                                                className={`w-6 h-6 rounded flex items-center justify-center text-white text-[10px] ${
+                                                  order.payment_method === 'cod'
+                                                    ? 'bg-amber-500'
+                                                    : 'bg-blue-500'
+                                                }`}
+                                              >
                                                 {order.payment_method === 'cod' ? (
                                                   <Banknote className="w-3 h-3" />
                                                 ) : (
@@ -1563,7 +1876,8 @@ export default function ProviderFinanceDashboard() {
                                                 {formatCurrency(order.total || 0)}
                                               </p>
                                               <p className="text-[10px] text-red-500">
-                                                -{formatCurrency(order.platform_commission || 0)} {locale === 'ar' ? 'عمولة' : 'comm.'}
+                                                -{formatCurrency(order.platform_commission || 0)}{' '}
+                                                {locale === 'ar' ? 'عمولة' : 'comm.'}
                                               </p>
                                             </div>
                                           </div>
@@ -1575,13 +1889,15 @@ export default function ProviderFinanceDashboard() {
                               </div>
 
                               {/* Net Balance Result */}
-                              <div className={`p-4 rounded-lg ${
-                                settlement.settlement_direction === 'platform_pays_provider'
-                                  ? 'bg-green-100 border border-green-300'
-                                  : settlement.settlement_direction === 'provider_pays_platform'
-                                    ? 'bg-amber-100 border border-amber-300'
-                                    : 'bg-slate-100 border border-slate-300'
-                              }`}>
+                              <div
+                                className={`p-4 rounded-lg ${
+                                  settlement.settlement_direction === 'platform_pays_provider'
+                                    ? 'bg-green-100 border border-green-300'
+                                    : settlement.settlement_direction === 'provider_pays_platform'
+                                      ? 'bg-amber-100 border border-amber-300'
+                                      : 'bg-slate-100 border border-slate-300'
+                                }`}
+                              >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     {getSettlementDirectionIcon(settlement.settlement_direction)}
@@ -1590,17 +1906,22 @@ export default function ProviderFinanceDashboard() {
                                         {locale === 'ar' ? 'الرصيد الصافي' : 'Net Balance'}
                                       </p>
                                       <p className="text-xs text-slate-600">
-                                        {getSettlementDirectionLabel(settlement.settlement_direction)}
+                                        {getSettlementDirectionLabel(
+                                          settlement.settlement_direction
+                                        )}
                                       </p>
                                     </div>
                                   </div>
-                                  <p className={`text-2xl font-bold ${
-                                    settlement.settlement_direction === 'platform_pays_provider'
-                                      ? 'text-green-700'
-                                      : settlement.settlement_direction === 'provider_pays_platform'
-                                        ? 'text-amber-700'
-                                        : 'text-slate-700'
-                                  }`}>
+                                  <p
+                                    className={`text-2xl font-bold ${
+                                      settlement.settlement_direction === 'platform_pays_provider'
+                                        ? 'text-green-700'
+                                        : settlement.settlement_direction ===
+                                            'provider_pays_platform'
+                                          ? 'text-amber-700'
+                                          : 'text-slate-700'
+                                    }`}
+                                  >
                                     {formatCurrency(Math.abs(settlement.net_balance || 0))}
                                   </p>
                                 </div>
@@ -1617,8 +1938,10 @@ export default function ProviderFinanceDashboard() {
                                       </p>
                                       <p className="text-xs text-green-600">
                                         {formatDateUtil(settlement.paid_at, locale)}
-                                        {settlement.payment_method && ` • ${settlement.payment_method}`}
-                                        {settlement.payment_reference && ` • ${settlement.payment_reference}`}
+                                        {settlement.payment_method &&
+                                          ` • ${settlement.payment_method}`}
+                                        {settlement.payment_reference &&
+                                          ` • ${settlement.payment_reference}`}
                                       </p>
                                     </div>
                                   </div>
@@ -1665,5 +1988,5 @@ export default function ProviderFinanceDashboard() {
         </Card>
       </div>
     </ProviderLayout>
-  )
+  );
 }

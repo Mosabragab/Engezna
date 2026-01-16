@@ -1,52 +1,52 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Volume2, Bell, ShoppingBag, Tag } from 'lucide-react'
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Volume2, Bell, ShoppingBag, Tag } from 'lucide-react';
 
 /**
  * Debug component for testing sound notifications
  * Only visible in development environment
  */
 export function SoundTestDebug() {
-  const [lastPlayed, setLastPlayed] = useState<string | null>(null)
+  const [lastPlayed, setLastPlayed] = useState<string | null>(null);
 
   // Only render in development mode
   if (process.env.NODE_ENV !== 'development') {
-    return null
+    return null;
   }
 
   const playSound = (soundFile: string, label: string) => {
-    console.log(`[SoundTestDebug] Playing sound: ${soundFile}`)
+    console.log(`[SoundTestDebug] Playing sound: ${soundFile}`);
 
     try {
-      const audio = new Audio(`/sounds/${soundFile}`)
-      audio.volume = 1.0
+      const audio = new Audio(`/sounds/${soundFile}`);
+      audio.volume = 1.0;
 
       audio.onloadeddata = () => {
-        console.log(`[SoundTestDebug] Sound loaded successfully: ${soundFile}`)
-      }
+        console.log(`[SoundTestDebug] Sound loaded successfully: ${soundFile}`);
+      };
 
       audio.onplay = () => {
-        console.log(`[SoundTestDebug] Sound started playing: ${soundFile}`)
-        setLastPlayed(label)
-      }
+        console.log(`[SoundTestDebug] Sound started playing: ${soundFile}`);
+        setLastPlayed(label);
+      };
 
       audio.onended = () => {
-        console.log(`[SoundTestDebug] Sound finished: ${soundFile}`)
-      }
+        console.log(`[SoundTestDebug] Sound finished: ${soundFile}`);
+      };
 
       audio.onerror = (e) => {
-        console.error(`[SoundTestDebug] Error playing sound: ${soundFile}`, e)
-      }
+        console.error(`[SoundTestDebug] Error playing sound: ${soundFile}`, e);
+      };
 
       audio.play().catch((err) => {
-        console.error(`[SoundTestDebug] Play failed for ${soundFile}:`, err)
-      })
+        console.error(`[SoundTestDebug] Play failed for ${soundFile}:`, err);
+      });
     } catch (error) {
-      console.error(`[SoundTestDebug] Exception when playing ${soundFile}:`, error)
+      console.error(`[SoundTestDebug] Exception when playing ${soundFile}:`, error);
     }
-  }
+  };
 
   return (
     <div className="fixed bottom-4 left-4 z-50 bg-yellow-100 border-2 border-yellow-400 rounded-lg p-4 shadow-lg max-w-xs">
@@ -97,5 +97,5 @@ export function SoundTestDebug() {
         Check browser console for logs
       </div>
     </div>
-  )
+  );
 }

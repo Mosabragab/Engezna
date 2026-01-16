@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import { ReactNode } from 'react'
-import { PermissionsProvider } from '@/lib/permissions/use-permissions'
+import { ReactNode } from 'react';
+import { PermissionsProvider } from '@/lib/permissions/use-permissions';
 
 interface AdminLayoutProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 /**
@@ -12,9 +12,5 @@ interface AdminLayoutProps {
  * يوفر PermissionsProvider لجميع صفحات لوحة التحكم
  */
 export function AdminLayout({ children }: AdminLayoutProps) {
-  return (
-    <PermissionsProvider>
-      {children}
-    </PermissionsProvider>
-  )
+  return <PermissionsProvider>{children}</PermissionsProvider>;
 }

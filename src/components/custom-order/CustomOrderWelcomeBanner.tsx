@@ -1,25 +1,34 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useLocale } from 'next-intl'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mic, Camera, FileText, Sparkles, ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
+import { useState, useEffect } from 'react';
+import { useLocale } from 'next-intl';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  X,
+  Mic,
+  Camera,
+  FileText,
+  Sparkles,
+  ArrowLeft,
+  ArrowRight,
+  ChevronRight,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface CustomOrderWelcomeBannerProps {
-  providerId: string
-  providerName: string
+  providerId: string;
+  providerName: string;
   settings?: {
-    accepts_text?: boolean
-    accepts_voice?: boolean
-    accepts_image?: boolean
-    welcome_banner_text_ar?: string
-    welcome_banner_text_en?: string
-    welcome_banner_enabled?: boolean
-  }
-  onStartCustomOrder?: () => void
-  className?: string
+    accepts_text?: boolean;
+    accepts_voice?: boolean;
+    accepts_image?: boolean;
+    welcome_banner_text_ar?: string;
+    welcome_banner_text_en?: string;
+    welcome_banner_enabled?: boolean;
+  };
+  onStartCustomOrder?: () => void;
+  className?: string;
 }
 
 export function CustomOrderWelcomeBanner({
@@ -29,43 +38,63 @@ export function CustomOrderWelcomeBanner({
   onStartCustomOrder,
   className = '',
 }: CustomOrderWelcomeBannerProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const [isDismissed, setIsDismissed] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const [isDismissed, setIsDismissed] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Check if banner was previously dismissed (per provider, per session)
   useEffect(() => {
-    const dismissedKey = `custom_order_banner_dismissed_${providerId}`
-    const dismissed = sessionStorage.getItem(dismissedKey)
+    const dismissedKey = `custom_order_banner_dismissed_${providerId}`;
+    const dismissed = sessionStorage.getItem(dismissedKey);
     if (dismissed === 'true') {
-      setIsDismissed(true)
+      setIsDismissed(true);
     }
-  }, [providerId])
+  }, [providerId]);
 
   const handleDismiss = () => {
-    const dismissedKey = `custom_order_banner_dismissed_${providerId}`
-    sessionStorage.setItem(dismissedKey, 'true')
-    setIsDismissed(true)
-  }
+    const dismissedKey = `custom_order_banner_dismissed_${providerId}`;
+    sessionStorage.setItem(dismissedKey, 'true');
+    setIsDismissed(true);
+  };
 
   // Don't show if disabled or dismissed
   if (!settings?.welcome_banner_enabled || isDismissed) {
-    return null
+    return null;
   }
 
-  const defaultTextAr = 'مرحباً! فعّلنا نظام الطلب الخاص 🎉 أرسل طلبك بالصوت أو الصورة أو النص وسنقوم بتسعيره فوراً'
-  const defaultTextEn = 'Welcome! We enabled Custom Orders 🎉 Send your order via voice, image, or text and we will price it immediately'
+  const defaultTextAr =
+    'مرحباً! فعّلنا نظام الطلب الخاص 🎉 أرسل طلبك بالصوت أو الصورة أو النص وسنقوم بتسعيره فوراً';
+  const defaultTextEn =
+    'Welcome! We enabled Custom Orders 🎉 Send your order via voice, image, or text and we will price it immediately';
 
   const bannerText = isRTL
     ? settings?.welcome_banner_text_ar || defaultTextAr
-    : settings?.welcome_banner_text_en || defaultTextEn
+    : settings?.welcome_banner_text_en || defaultTextEn;
 
   const inputMethods = [
-    { key: 'voice', icon: Mic, enabled: settings?.accepts_voice !== false, labelAr: 'صوتي', labelEn: 'Voice' },
-    { key: 'image', icon: Camera, enabled: settings?.accepts_image !== false, labelAr: 'صورة', labelEn: 'Image' },
-    { key: 'text', icon: FileText, enabled: settings?.accepts_text !== false, labelAr: 'نص', labelEn: 'Text' },
-  ].filter((m) => m.enabled)
+    {
+      key: 'voice',
+      icon: Mic,
+      enabled: settings?.accepts_voice !== false,
+      labelAr: 'صوتي',
+      labelEn: 'Voice',
+    },
+    {
+      key: 'image',
+      icon: Camera,
+      enabled: settings?.accepts_image !== false,
+      labelAr: 'صورة',
+      labelEn: 'Image',
+    },
+    {
+      key: 'text',
+      icon: FileText,
+      enabled: settings?.accepts_text !== false,
+      labelAr: 'نص',
+      labelEn: 'Text',
+    },
+  ].filter((m) => m.enabled);
 
   return (
     <AnimatePresence>
@@ -77,9 +106,13 @@ export function CustomOrderWelcomeBanner({
         className={`relative overflow-hidden ${className}`}
       >
         {/* Vibrant Gradient Background */}
-        <div className="relative rounded-2xl shadow-xl overflow-hidden" style={{
-          background: 'linear-gradient(135deg, #059669 0%, #10B981 25%, #34D399 50%, #10B981 75%, #059669 100%)'
-        }}>
+        <div
+          className="relative rounded-2xl shadow-xl overflow-hidden"
+          style={{
+            background:
+              'linear-gradient(135deg, #059669 0%, #10B981 25%, #34D399 50%, #10B981 75%, #059669 100%)',
+          }}
+        >
           {/* Decorative Pattern Overlay */}
           <div
             className="absolute inset-0 opacity-10"
@@ -90,9 +123,7 @@ export function CustomOrderWelcomeBanner({
 
           {/* Animated Gradient Shine */}
           <div className="absolute inset-0 overflow-hidden">
-            <div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-banner-shine"
-            />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-banner-shine" />
           </div>
 
           {/* Decorative Circles */}
@@ -207,9 +238,7 @@ export function CustomOrderWelcomeBanner({
                       <span className="text-emerald-600 font-bold text-lg">2</span>
                     </div>
                     <p className="text-white text-sm font-medium">
-                      {isRTL
-                        ? 'نقوم بتسعير طلبك خلال دقائق'
-                        : 'We price your order within minutes'}
+                      {isRTL ? 'نقوم بتسعير طلبك خلال دقائق' : 'We price your order within minutes'}
                     </p>
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
@@ -217,9 +246,7 @@ export function CustomOrderWelcomeBanner({
                       <span className="text-emerald-600 font-bold text-lg">3</span>
                     </div>
                     <p className="text-white text-sm font-medium">
-                      {isRTL
-                        ? 'وافق على السعر وسنوصّل طلبك'
-                        : 'Approve the price and we deliver'}
+                      {isRTL ? 'وافق على السعر وسنوصّل طلبك' : 'Approve the price and we deliver'}
                     </p>
                   </div>
                 </div>
@@ -239,14 +266,14 @@ export function CustomOrderWelcomeBanner({
                   ? 'إخفاء التفاصيل'
                   : 'Hide details'
                 : isRTL
-                ? 'كيف يعمل النظام؟'
-                : 'How does it work?'}
+                  ? 'كيف يعمل النظام؟'
+                  : 'How does it work?'}
             </button>
           </div>
         </div>
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }
 
 // Compact version for smaller spaces
@@ -254,11 +281,11 @@ export function CustomOrderBadge({
   providerId,
   onClick,
 }: {
-  providerId: string
-  onClick?: () => void
+  providerId: string;
+  onClick?: () => void;
 }) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   return (
     <motion.button
@@ -270,7 +297,7 @@ export function CustomOrderBadge({
       <Sparkles className="w-4 h-4" />
       {isRTL ? 'طلب خاص متاح' : 'Custom Orders Available'}
     </motion.button>
-  )
+  );
 }
 
 // Mini floating button for custom order
@@ -278,11 +305,11 @@ export function CustomOrderFloatingButton({
   providerId,
   providerName,
 }: {
-  providerId: string
-  providerName: string
+  providerId: string;
+  providerName: string;
 }) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   return (
     <Link href={`/${locale}/custom-order?provider=${providerId}`}>
@@ -313,5 +340,5 @@ export function CustomOrderFloatingButton({
         </div>
       </motion.div>
     </Link>
-  )
+  );
 }

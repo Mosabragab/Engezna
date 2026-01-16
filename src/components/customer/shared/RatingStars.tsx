@@ -1,15 +1,15 @@
-'use client'
+'use client';
 
-import { Star } from 'lucide-react'
+import { Star } from 'lucide-react';
 
 interface RatingStarsProps {
-  rating: number
-  maxRating?: number
-  showValue?: boolean
-  showCount?: boolean
-  count?: number
-  size?: 'sm' | 'md' | 'lg'
-  className?: string
+  rating: number;
+  maxRating?: number;
+  showValue?: boolean;
+  showCount?: boolean;
+  count?: number;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
 }
 
 export function RatingStars({
@@ -25,21 +25,21 @@ export function RatingStars({
     sm: { star: 'w-3 h-3', text: 'text-xs', gap: 'gap-0.5' },
     md: { star: 'w-4 h-4', text: 'text-sm', gap: 'gap-1' },
     lg: { star: 'w-5 h-5', text: 'text-base', gap: 'gap-1.5' },
-  }
+  };
 
-  const classes = sizeClasses[size]
+  const classes = sizeClasses[size];
 
   // Round rating to nearest 0.5
-  const roundedRating = Math.round(rating * 2) / 2
+  const roundedRating = Math.round(rating * 2) / 2;
 
   return (
     <div className={`flex items-center ${classes.gap} ${className}`}>
       {/* Stars */}
       <div className={`flex items-center ${classes.gap}`}>
         {Array.from({ length: maxRating }).map((_, index) => {
-          const starValue = index + 1
-          const isFilled = starValue <= roundedRating
-          const isHalf = !isFilled && starValue - 0.5 <= roundedRating
+          const starValue = index + 1;
+          const isFilled = starValue <= roundedRating;
+          const isHalf = !isFilled && starValue - 0.5 <= roundedRating;
 
           return (
             <div key={index} className="relative">
@@ -56,23 +56,19 @@ export function RatingStars({
                 </div>
               )}
             </div>
-          )
+          );
         })}
       </div>
 
       {/* Rating value */}
       {showValue && (
-        <span className={`font-semibold text-slate-900 ${classes.text}`}>
-          {rating.toFixed(1)}
-        </span>
+        <span className={`font-semibold text-slate-900 ${classes.text}`}>{rating.toFixed(1)}</span>
       )}
 
       {/* Review count */}
       {showCount && count > 0 && (
-        <span className={`text-slate-400 ${classes.text}`}>
-          ({count})
-        </span>
+        <span className={`text-slate-400 ${classes.text}`}>({count})</span>
       )}
     </div>
-  )
+  );
 }

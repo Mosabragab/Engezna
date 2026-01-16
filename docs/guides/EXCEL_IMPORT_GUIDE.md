@@ -1,4 +1,5 @@
 # دليل استيراد المنتجات من Excel
+
 # Excel Product Import Guide
 
 ---
@@ -13,28 +14,29 @@ You can easily import all your products from an Excel file. This guide explains 
 
 ## الأعمدة المطلوبة | Required Columns
 
-| العمود (Column) | مطلوب | الوصف | مثال |
-|----------------|-------|-------|------|
-| `name_ar` | ✅ نعم | اسم المنتج بالعربية | ريش ضاني |
-| `name_en` | ❌ لا | اسم المنتج بالإنجليزية | Lamb Chops |
-| `price` | ✅ نعم | السعر الأساسي | 250 |
-| `category` | ❌ لا | التصنيف | لحوم |
-| `description_ar` | ❌ لا | الوصف بالعربية | ريش ضاني طازجة |
-| `description_en` | ❌ لا | الوصف بالإنجليزية | Fresh lamb chops |
-| `original_price` | ❌ لا | السعر قبل الخصم | 300 |
-| `image_url` | ❌ لا | رابط صورة المنتج | https://example.com/image.jpg |
-| `is_available` | ❌ لا | متاح للبيع (TRUE/FALSE) | TRUE |
-| `preparation_time` | ❌ لا | وقت التحضير بالدقائق | 15 |
-| `is_spicy` | ❌ لا | حار (TRUE/FALSE) | FALSE |
-| `is_vegetarian` | ❌ لا | نباتي (TRUE/FALSE) | FALSE |
-| `pricing_type` | ❌ لا | نوع التسعير | variants |
-| `variants` | ❌ لا | الأحجام/الأوزان المتاحة | نصف كيلو:480\|ربع كيلو:250 |
+| العمود (Column)    | مطلوب  | الوصف                   | مثال                          |
+| ------------------ | ------ | ----------------------- | ----------------------------- |
+| `name_ar`          | ✅ نعم | اسم المنتج بالعربية     | ريش ضاني                      |
+| `name_en`          | ❌ لا  | اسم المنتج بالإنجليزية  | Lamb Chops                    |
+| `price`            | ✅ نعم | السعر الأساسي           | 250                           |
+| `category`         | ❌ لا  | التصنيف                 | لحوم                          |
+| `description_ar`   | ❌ لا  | الوصف بالعربية          | ريش ضاني طازجة                |
+| `description_en`   | ❌ لا  | الوصف بالإنجليزية       | Fresh lamb chops              |
+| `original_price`   | ❌ لا  | السعر قبل الخصم         | 300                           |
+| `image_url`        | ❌ لا  | رابط صورة المنتج        | https://example.com/image.jpg |
+| `is_available`     | ❌ لا  | متاح للبيع (TRUE/FALSE) | TRUE                          |
+| `preparation_time` | ❌ لا  | وقت التحضير بالدقائق    | 15                            |
+| `is_spicy`         | ❌ لا  | حار (TRUE/FALSE)        | FALSE                         |
+| `is_vegetarian`    | ❌ لا  | نباتي (TRUE/FALSE)      | FALSE                         |
+| `pricing_type`     | ❌ لا  | نوع التسعير             | variants                      |
+| `variants`         | ❌ لا  | الأحجام/الأوزان المتاحة | نصف كيلو:480\|ربع كيلو:250    |
 
 ---
 
 ## أنواع التسعير | Pricing Types
 
 ### 1. `fixed` - سعر ثابت
+
 للمنتجات ذات السعر الواحد مثل المشروبات والسندوتشات.
 
 **مثال:**
@@ -43,6 +45,7 @@ You can easily import all your products from an Excel file. This guide explains 
 | كابتشينو | 45 | fixed |
 
 ### 2. `per_unit` - سعر بالوحدة
+
 للمنتجات التي تُباع بالوحدة أو الكيلو.
 
 **مثال:**
@@ -51,6 +54,7 @@ You can easily import all your products from an Excel file. This guide explains 
 | لحم بقري | 250 | per_unit |
 
 ### 3. `variants` - متعدد الأحجام
+
 للمنتجات بأحجام مختلفة مثل البيتزا أو العصائر.
 
 **مثال:**
@@ -59,6 +63,7 @@ You can easily import all your products from an Excel file. This guide explains 
 | بيتزا مارجريتا | 80 | variants | صغير:80\|وسط:120\|كبير:160 |
 
 ### 4. `weight_variants` - متعدد الأوزان
+
 للمنتجات التي تُباع بأوزان مختلفة مثل اللحوم.
 
 **مثال:**
@@ -71,6 +76,7 @@ You can easily import all your products from an Excel file. This guide explains 
 ## تنسيق الفاريانت | Variants Format
 
 ### الصيغة العامة:
+
 ```
 الاسم:السعر|الاسم:السعر|الاسم:السعر
 ```
@@ -78,16 +84,19 @@ You can easily import all your products from an Excel file. This guide explains 
 ### أمثلة:
 
 #### أوزان (للحوم والدواجن):
+
 ```
 ربع كيلو:250|نصف كيلو:480|كيلو:900
 ```
 
 #### أحجام (للمشروبات):
+
 ```
 صغير:20|وسط:30|كبير:40
 ```
 
 #### خيارات (للبيتزا):
+
 ```
 شخصي:50|عائلي صغير:100|عائلي كبير:150
 ```
@@ -99,6 +108,7 @@ You can easily import all your products from an Excel file. This guide explains 
 التصنيفات يتم إنشاؤها تلقائياً من عمود `category`.
 
 **ملاحظات:**
+
 - استخدم نفس اسم التصنيف لجميع المنتجات المتشابهة
 - الأسماء حساسة للحروف (لحوم ≠ اللحوم)
 - يمكنك ترك العمود فارغاً إذا لم ترغب في التصنيف
@@ -130,18 +140,21 @@ You can easily import all your products from an Excel file. This guide explains 
 ## خطوات الاستيراد | Import Steps
 
 ### 1. تحضير الملف
+
 - افتح Excel أو Google Sheets
 - أنشئ الأعمدة كما هو موضح أعلاه
 - أضف منتجاتك (سطر لكل منتج)
 - احفظ الملف بصيغة `.xlsx` أو `.xls`
 
 ### 2. رفع الملف
+
 1. ادخل على لوحة التحكم الخاصة بك
 2. اضغط على "استيراد المنتجات" أو "Import Products"
 3. اختر ملف Excel
 4. انتظر معاينة المنتجات
 
 ### 3. مراجعة وتأكيد
+
 1. راجع المنتجات في جدول المعاينة
 2. تأكد من صحة الأسعار والتصنيفات
 3. اضغط "حفظ المنتجات" للاستيراد
@@ -151,20 +164,25 @@ You can easily import all your products from an Excel file. This guide explains 
 ## الأخطاء الشائعة | Common Errors
 
 ### 1. المنتج لا يظهر
+
 **السبب:** عمود `name_ar` فارغ
 **الحل:** تأكد من وجود اسم عربي لكل منتج
 
 ### 2. الفاريانت لا يعمل
+
 **السبب:** صيغة خاطئة
 **الحل:** استخدم الصيغة: `الاسم:السعر|الاسم:السعر`
+
 - استخدم `:` بين الاسم والسعر
 - استخدم `|` للفصل بين الخيارات
 
 ### 3. التصنيف لا يظهر
+
 **السبب:** اختلاف في كتابة اسم التصنيف
 **الحل:** استخدم نفس الكتابة بالضبط لجميع المنتجات
 
 ### 4. السعر صفر
+
 **السبب:** عمود السعر فارغ أو يحتوي على نص
 **الحل:** تأكد من أن السعر رقم فقط (بدون "جنيه" أو "ج.م")
 
@@ -187,9 +205,10 @@ You can easily import all your products from an Excel file. This guide explains 
 ## الدعم الفني | Support
 
 إذا واجهت أي مشكلة، تواصل معنا عبر:
+
 - واتساب: [رقم الدعم]
 - البريد: support@engezna.com
 
 ---
 
-*آخر تحديث: 2025-12-11*
+_آخر تحديث: 2025-12-11_

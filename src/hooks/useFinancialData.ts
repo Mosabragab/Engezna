@@ -77,9 +77,7 @@ interface UseFinancialDataReturn {
 // Hook Implementation
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function useFinancialData(
-  options: UseFinancialDataOptions = {}
-): UseFinancialDataReturn {
+export function useFinancialData(options: UseFinancialDataOptions = {}): UseFinancialDataReturn {
   const {
     isAdmin = false,
     isRegionalAdmin = false,
@@ -343,10 +341,7 @@ export function useSettlementDetails(settlementId: string) {
     []
   );
 
-  const service = useMemo(
-    () => createAdminFinancialService(supabase),
-    [supabase]
-  );
+  const service = useMemo(() => createAdminFinancialService(supabase), [supabase]);
 
   const load = useCallback(async () => {
     setIsLoading(true);

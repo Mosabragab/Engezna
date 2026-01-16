@@ -4,13 +4,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logAuditAction, logActivity } from './audit';
-import type {
-  AdminUser,
-  UserFilters,
-  PaginatedResult,
-  OperationResult,
-  UserRole,
-} from './types';
+import type { AdminUser, UserFilters, PaginatedResult, OperationResult, UserRole } from './types';
 
 const PAGE_SIZE = 20;
 const MAX_SIZE = 100;
@@ -44,9 +38,7 @@ export async function getUsers(
     const actualLimit = Math.min(limit, MAX_SIZE);
     const offset = (page - 1) * actualLimit;
 
-    let query = supabase
-      .from('profiles')
-      .select('*', { count: 'exact' });
+    let query = supabase.from('profiles').select('*', { count: 'exact' });
 
     // Apply filters
     if (role) {
@@ -114,17 +106,11 @@ export async function getUsers(
  * جلب مستخدم واحد بالمعرف
  * Fetch a single user by ID
  */
-export async function getUserById(
-  userId: string
-): Promise<OperationResult<AdminUser>> {
+export async function getUserById(userId: string): Promise<OperationResult<AdminUser>> {
   try {
     const supabase = createAdminClient();
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -182,11 +168,10 @@ export async function banUser(
 
     // Step 2: Call the database function to cancel orders
     // This uses SECURITY DEFINER to bypass RLS policies
-    const { error: cancelError } = await supabase
-      .rpc('cancel_orders_for_banned_customer', {
-        p_customer_id: userId,
-        p_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`
-      });
+    const { error: cancelError } = await supabase.rpc('cancel_orders_for_banned_customer', {
+      p_customer_id: userId,
+      p_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`,
+    });
 
     if (cancelError) {
       // If RPC fails, try direct approach as fallback
@@ -211,18 +196,16 @@ export async function banUser(
             .select('id, status');
 
           // Send notification to provider (silently fail if error)
-          await supabase
-            .from('provider_notifications')
-            .insert({
-              provider_id: order.provider_id,
-              type: 'order_cancelled',
-              title_ar: 'تم إلغاء طلب بسبب حظر العميل',
-              title_en: 'Order Cancelled - Customer Banned',
-              body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع خدمة عملاء إنجزنا.`,
-              body_en: `Order #${order.order_number} (${order.total} EGP) has been cancelled due to customer ban.`,
-              related_order_id: order.id,
-              related_customer_id: userId,
-            });
+          await supabase.from('provider_notifications').insert({
+            provider_id: order.provider_id,
+            type: 'order_cancelled',
+            title_ar: 'تم إلغاء طلب بسبب حظر العميل',
+            title_en: 'Order Cancelled - Customer Banned',
+            body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع خدمة عملاء إنجزنا.`,
+            body_en: `Order #${order.order_number} (${order.total} EGP) has been cancelled due to customer ban.`,
+            related_order_id: order.id,
+            related_customer_id: userId,
+          });
         }
       }
     }
@@ -243,16 +226,14 @@ export async function banUser(
     }
 
     // Step 4: Send notification to the banned customer (silently fail if error)
-    await supabase
-      .from('customer_notifications')
-      .insert({
-        customer_id: userId,
-        type: 'account_banned',
-        title_ar: 'تم تعليق حسابك',
-        title_en: 'Account Suspended',
-        body_ar: `تم تعليق حسابك في إنجزنا. السبب: ${reason.trim()}. للاستفسار، يرجى التواصل مع خدمة عملاء إنجزنا.`,
-        body_en: `Your Engezna account has been suspended. Reason: ${reason.trim()}. For inquiries, please contact Engezna support.`,
-      });
+    await supabase.from('customer_notifications').insert({
+      customer_id: userId,
+      type: 'account_banned',
+      title_ar: 'تم تعليق حسابك',
+      title_en: 'Account Suspended',
+      body_ar: `تم تعليق حسابك في إنجزنا. السبب: ${reason.trim()}. للاستفسار، يرجى التواصل مع خدمة عملاء إنجزنا.`,
+      body_en: `Your Engezna account has been suspended. Reason: ${reason.trim()}. For inquiries, please contact Engezna support.`,
+    });
 
     return { success: true, data: updated as AdminUser };
   } catch (err) {
@@ -320,16 +301,16 @@ export async function unbanUser(
     );
 
     // Send notification to the customer that their account has been reactivated
-    const { error: notifError } = await supabase
-      .from('customer_notifications')
-      .insert({
-        customer_id: userId,
-        type: 'account_reactivated',
-        title_ar: 'تم تفعيل حسابك',
-        title_en: 'Account Reactivated',
-        body_ar: 'تم إلغاء تعليق حسابك في إنجزنا. يمكنك الآن استخدام التطبيق بشكل طبيعي. شكراً لتفهمك.',
-        body_en: 'Your Engezna account has been reactivated. You can now use the app normally. Thank you for your understanding.',
-      });
+    const { error: notifError } = await supabase.from('customer_notifications').insert({
+      customer_id: userId,
+      type: 'account_reactivated',
+      title_ar: 'تم تفعيل حسابك',
+      title_en: 'Account Reactivated',
+      body_ar:
+        'تم إلغاء تعليق حسابك في إنجزنا. يمكنك الآن استخدام التطبيق بشكل طبيعي. شكراً لتفهمك.',
+      body_en:
+        'Your Engezna account has been reactivated. You can now use the app normally. Thank you for your understanding.',
+    });
 
     if (notifError) {
       console.error('[UNBAN USER] Failed to send notification:', notifError.message);
@@ -437,9 +418,7 @@ export async function getUserStats(): Promise<
   try {
     const supabase = createAdminClient();
 
-    const { data: users, error } = await supabase
-      .from('profiles')
-      .select('role, is_active');
+    const { data: users, error } = await supabase.from('profiles').select('role, is_active');
 
     if (error) {
       return { success: false, error: error.message, errorCode: 'DATABASE_ERROR' };

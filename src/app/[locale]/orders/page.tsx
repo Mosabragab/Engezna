@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/auth'
-import { CustomerLayout } from '@/components/customer/layout'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Clock,
   ShoppingBag,
@@ -24,73 +24,117 @@ import {
   FileText,
   Send,
   type LucideIcon,
-} from 'lucide-react'
+} from 'lucide-react';
 
 type Order = {
-  id: string
-  order_number: string
-  provider_id: string
-  status: string
-  payment_status: string
-  subtotal: number
-  delivery_fee: number
-  total: number
-  payment_method: string
-  created_at: string
+  id: string;
+  order_number: string;
+  provider_id: string;
+  status: string;
+  payment_status: string;
+  subtotal: number;
+  delivery_fee: number;
+  total: number;
+  payment_method: string;
+  created_at: string;
   provider: {
-    name_ar: string
-    name_en: string
-    logo_url: string | null
-  }
-}
+    name_ar: string;
+    name_en: string;
+    logo_url: string | null;
+  };
+};
 
 type CustomOrderBroadcast = {
-  id: string
-  status: 'active' | 'expired' | 'completed' | 'cancelled'
-  original_input_type: 'text' | 'voice' | 'image' | 'mixed'
-  original_text: string | null
-  created_at: string
-  pricing_deadline: string
+  id: string;
+  status: 'active' | 'expired' | 'completed' | 'cancelled';
+  original_input_type: 'text' | 'voice' | 'image' | 'mixed';
+  original_text: string | null;
+  created_at: string;
+  pricing_deadline: string;
   // Calculated from requests relation
-  requests_count: number
-  priced_count: number
+  requests_count: number;
+  priced_count: number;
   // Raw requests data from DB
-  requests?: { id: string; status: string }[]
-}
+  requests?: { id: string; status: string }[];
+};
 
-const STATUS_CONFIG: Record<string, { icon: LucideIcon; color: string; label_ar: string; label_en: string }> = {
-  pending: { icon: Clock, color: 'text-warning bg-card-bg-warning', label_ar: 'في الانتظار', label_en: 'Pending' },
-  accepted: { icon: CheckCircle2, color: 'text-blue-600 bg-blue-100', label_ar: 'تم القبول', label_en: 'Accepted' },
-  preparing: { icon: ChefHat, color: 'text-warning bg-card-bg-warning', label_ar: 'جاري التحضير', label_en: 'Preparing' },
-  ready: { icon: Package, color: 'text-purple-600 bg-purple-100', label_ar: 'جاهز', label_en: 'Ready' },
-  out_for_delivery: { icon: Truck, color: 'text-indigo-600 bg-indigo-100', label_ar: 'في الطريق', label_en: 'On the way' },
-  delivered: { icon: CheckCircle2, color: 'text-green-600 bg-green-100', label_ar: 'تم التوصيل', label_en: 'Delivered' },
-  cancelled: { icon: XCircle, color: 'text-red-600 bg-red-100', label_ar: 'ملغي', label_en: 'Cancelled' },
-  rejected: { icon: XCircle, color: 'text-red-600 bg-red-100', label_ar: 'مرفوض', label_en: 'Rejected' },
-}
+const STATUS_CONFIG: Record<
+  string,
+  { icon: LucideIcon; color: string; label_ar: string; label_en: string }
+> = {
+  pending: {
+    icon: Clock,
+    color: 'text-warning bg-card-bg-warning',
+    label_ar: 'في الانتظار',
+    label_en: 'Pending',
+  },
+  accepted: {
+    icon: CheckCircle2,
+    color: 'text-blue-600 bg-blue-100',
+    label_ar: 'تم القبول',
+    label_en: 'Accepted',
+  },
+  preparing: {
+    icon: ChefHat,
+    color: 'text-warning bg-card-bg-warning',
+    label_ar: 'جاري التحضير',
+    label_en: 'Preparing',
+  },
+  ready: {
+    icon: Package,
+    color: 'text-purple-600 bg-purple-100',
+    label_ar: 'جاهز',
+    label_en: 'Ready',
+  },
+  out_for_delivery: {
+    icon: Truck,
+    color: 'text-indigo-600 bg-indigo-100',
+    label_ar: 'في الطريق',
+    label_en: 'On the way',
+  },
+  delivered: {
+    icon: CheckCircle2,
+    color: 'text-green-600 bg-green-100',
+    label_ar: 'تم التوصيل',
+    label_en: 'Delivered',
+  },
+  cancelled: {
+    icon: XCircle,
+    color: 'text-red-600 bg-red-100',
+    label_ar: 'ملغي',
+    label_en: 'Cancelled',
+  },
+  rejected: {
+    icon: XCircle,
+    color: 'text-red-600 bg-red-100',
+    label_ar: 'مرفوض',
+    label_en: 'Rejected',
+  },
+};
 
-type FilterType = 'all' | 'active' | 'completed'
+type FilterType = 'all' | 'active' | 'completed';
 
 export default function OrderHistoryPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const isRTL = locale === 'ar';
 
-  const [orders, setOrders] = useState<Order[]>([])
-  const [customBroadcasts, setCustomBroadcasts] = useState<CustomOrderBroadcast[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [filter, setFilter] = useState<FilterType>('all')
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [customBroadcasts, setCustomBroadcasts] = useState<CustomOrderBroadcast[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<FilterType>('all');
 
   const loadOrders = useCallback(async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
     // Fetch regular orders
     const { data, error } = await supabase
       .from('orders')
-      .select(`
+      .select(
+        `
         id,
         order_number,
         provider_id,
@@ -102,31 +146,34 @@ export default function OrderHistoryPage() {
         payment_method,
         created_at,
         provider:providers(name_ar, name_en, logo_url)
-      `)
+      `
+      )
       .eq('customer_id', user?.id)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (!error) {
       // Transform provider from array to object
       // CRITICAL: Filter out unpaid online payment orders (phantom orders)
-      const transformedOrders = data
-        ?.map(order => ({
-          ...order,
-          provider: Array.isArray(order.provider) ? order.provider[0] : order.provider
-        }))
-        .filter(order => {
-          // Cash orders are always visible
-          if (order.payment_method === 'cash') return true
-          // Online payment orders only visible when payment is completed/paid
-          return order.payment_status === 'paid' || order.payment_status === 'completed'
-        }) || []
-      setOrders(transformedOrders)
+      const transformedOrders =
+        data
+          ?.map((order) => ({
+            ...order,
+            provider: Array.isArray(order.provider) ? order.provider[0] : order.provider,
+          }))
+          .filter((order) => {
+            // Cash orders are always visible
+            if (order.payment_method === 'cash') return true;
+            // Online payment orders only visible when payment is completed/paid
+            return order.payment_status === 'paid' || order.payment_status === 'completed';
+          }) || [];
+      setOrders(transformedOrders);
     }
 
     // Fetch pending custom order broadcasts with related requests
     const { data: broadcastsData, error: broadcastsError } = await supabase
       .from('custom_order_broadcasts')
-      .select(`
+      .select(
+        `
         id,
         status,
         original_input_type,
@@ -134,82 +181,82 @@ export default function OrderHistoryPage() {
         created_at,
         pricing_deadline,
         requests:custom_order_requests(id, status)
-      `)
+      `
+      )
       .eq('customer_id', user?.id)
       .eq('status', 'active')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (broadcastsError) {
-      console.error('Error fetching broadcasts:', broadcastsError)
+      console.error('Error fetching broadcasts:', broadcastsError);
     }
 
     if (broadcastsData) {
       // Transform to include calculated counts
-      const transformedBroadcasts = broadcastsData.map(broadcast => ({
+      const transformedBroadcasts = broadcastsData.map((broadcast) => ({
         ...broadcast,
         requests_count: broadcast.requests?.length || 0,
-        priced_count: broadcast.requests?.filter((r: { status: string }) => r.status === 'priced').length || 0,
-      }))
-      setCustomBroadcasts(transformedBroadcasts as CustomOrderBroadcast[])
+        priced_count:
+          broadcast.requests?.filter((r: { status: string }) => r.status === 'priced').length || 0,
+      }));
+      setCustomBroadcasts(transformedBroadcasts as CustomOrderBroadcast[]);
     }
 
-    setLoading(false)
-  }, [user?.id])
+    setLoading(false);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push(`/${locale}/auth/login?redirect=/orders`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/orders`);
+      return;
     }
     if (user) {
-      loadOrders()
+      loadOrders();
     }
-  }, [user, authLoading, router, locale, loadOrders])
+  }, [user, authLoading, router, locale, loadOrders]);
 
   const handleRefresh = async () => {
-    setRefreshing(true)
-    await loadOrders()
-    setRefreshing(false)
-  }
+    setRefreshing(true);
+    await loadOrders();
+    setRefreshing(false);
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
-    })
-  }
+    });
+  };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return date.toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
   const getStatusConfig = (status: string) => {
-    return STATUS_CONFIG[status] || STATUS_CONFIG.pending
-  }
+    return STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+  };
 
   const filterOrders = (orders: Order[]) => {
     switch (filter) {
       case 'active':
-        return orders.filter(o => 
-          !['delivered', 'cancelled', 'rejected'].includes(o.status)
-        )
+        return orders.filter((o) => !['delivered', 'cancelled', 'rejected'].includes(o.status));
       case 'completed':
-        return orders.filter(o => 
-          ['delivered', 'cancelled', 'rejected'].includes(o.status)
-        )
+        return orders.filter((o) => ['delivered', 'cancelled', 'rejected'].includes(o.status));
       default:
-        return orders
+        return orders;
     }
-  }
+  };
 
-  const filteredOrders = filterOrders(orders)
-  const activeCount = orders.filter(o => !['delivered', 'cancelled', 'rejected'].includes(o.status)).length
+  const filteredOrders = filterOrders(orders);
+  const activeCount = orders.filter(
+    (o) => !['delivered', 'cancelled', 'rejected'].includes(o.status)
+  ).length;
 
   // Refresh button for header
   const refreshButton = (
@@ -222,7 +269,7 @@ export default function OrderHistoryPage() {
     >
       <RefreshCw className={`h-5 w-5 text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
     </Button>
-  )
+  );
 
   if (loading || authLoading) {
     return (
@@ -240,7 +287,7 @@ export default function OrderHistoryPage() {
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   return (
@@ -253,11 +300,9 @@ export default function OrderHistoryPage() {
         <div className="max-w-3xl mx-auto">
           {/* Page Title */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold mb-2">
-              {locale === 'ar' ? 'طلباتي' : 'My Orders'}
-            </h1>
+            <h1 className="text-2xl font-bold mb-2">{locale === 'ar' ? 'طلباتي' : 'My Orders'}</h1>
             <p className="text-muted-foreground">
-              {locale === 'ar' 
+              {locale === 'ar'
                 ? `${orders.length} طلب${orders.length !== 1 ? 'ات' : ''}`
                 : `${orders.length} order${orders.length !== 1 ? 's' : ''}`}
               {activeCount > 0 && (
@@ -334,16 +379,23 @@ export default function OrderHistoryPage() {
                               <span className="text-sm text-primary font-medium whitespace-nowrap">
                                 {broadcast.priced_count > 0
                                   ? `${broadcast.priced_count}/${broadcast.requests_count} ${locale === 'ar' ? 'عروض' : 'quotes'}`
-                                  : locale === 'ar' ? 'في الانتظار' : 'Waiting'}
+                                  : locale === 'ar'
+                                    ? 'في الانتظار'
+                                    : 'Waiting'}
                               </span>
                             </div>
 
                             <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
                               {broadcast.original_text
-                                ? broadcast.original_text.slice(0, 60) + (broadcast.original_text.length > 60 ? '...' : '')
+                                ? broadcast.original_text.slice(0, 60) +
+                                  (broadcast.original_text.length > 60 ? '...' : '')
                                 : broadcast.original_input_type === 'voice'
-                                ? (locale === 'ar' ? '🎤 تسجيل صوتي' : '🎤 Voice recording')
-                                : (locale === 'ar' ? '📷 صور' : '📷 Images')}
+                                  ? locale === 'ar'
+                                    ? '🎤 تسجيل صوتي'
+                                    : '🎤 Voice recording'
+                                  : locale === 'ar'
+                                    ? '📷 صور'
+                                    : '📷 Images'}
                             </p>
 
                             <div className="flex items-center justify-between">
@@ -378,10 +430,16 @@ export default function OrderHistoryPage() {
               <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">
                 {filter === 'all'
-                  ? locale === 'ar' ? 'لا توجد طلبات بعد' : 'No orders yet'
+                  ? locale === 'ar'
+                    ? 'لا توجد طلبات بعد'
+                    : 'No orders yet'
                   : filter === 'active'
-                  ? locale === 'ar' ? 'لا توجد طلبات نشطة' : 'No active orders'
-                  : locale === 'ar' ? 'لا توجد طلبات مكتملة' : 'No completed orders'}
+                    ? locale === 'ar'
+                      ? 'لا توجد طلبات نشطة'
+                      : 'No active orders'
+                    : locale === 'ar'
+                      ? 'لا توجد طلبات مكتملة'
+                      : 'No completed orders'}
               </h2>
               <p className="text-muted-foreground mb-6">
                 {locale === 'ar'
@@ -398,16 +456,20 @@ export default function OrderHistoryPage() {
           ) : filteredOrders.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {filter === 'active'
-                ? locale === 'ar' ? 'لا توجد طلبات نشطة من المتاجر' : 'No active store orders'
+                ? locale === 'ar'
+                  ? 'لا توجد طلبات نشطة من المتاجر'
+                  : 'No active store orders'
                 : filter === 'completed'
-                ? locale === 'ar' ? 'لا توجد طلبات مكتملة' : 'No completed orders'
-                : null}
+                  ? locale === 'ar'
+                    ? 'لا توجد طلبات مكتملة'
+                    : 'No completed orders'
+                  : null}
             </div>
           ) : (
             <div className="space-y-4">
               {filteredOrders.map((order) => {
-                const statusConfig = getStatusConfig(order.status)
-                const StatusIcon = statusConfig.icon
+                const statusConfig = getStatusConfig(order.status);
+                const StatusIcon = statusConfig.icon;
 
                 return (
                   <Link key={order.id} href={`/${locale}/orders/${order.id}`}>
@@ -418,7 +480,9 @@ export default function OrderHistoryPage() {
                           {order.provider?.logo_url ? (
                             <img
                               src={order.provider.logo_url}
-                              alt={locale === 'ar' ? order.provider.name_ar : order.provider.name_en}
+                              alt={
+                                locale === 'ar' ? order.provider.name_ar : order.provider.name_en
+                              }
                               className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
                             />
                           ) : (
@@ -431,9 +495,13 @@ export default function OrderHistoryPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <h3 className="font-bold text-lg truncate">
-                                {order.provider 
-                                  ? (locale === 'ar' ? order.provider.name_ar : order.provider.name_en)
-                                  : locale === 'ar' ? 'متجر غير معروف' : 'Unknown Store'}
+                                {order.provider
+                                  ? locale === 'ar'
+                                    ? order.provider.name_ar
+                                    : order.provider.name_en
+                                  : locale === 'ar'
+                                    ? 'متجر غير معروف'
+                                    : 'Unknown Store'}
                               </h3>
                               <span className="text-lg font-bold text-primary whitespace-nowrap">
                                 {order.total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
@@ -450,7 +518,9 @@ export default function OrderHistoryPage() {
 
                             <div className="flex items-center justify-between">
                               {/* Status Badge */}
-                              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                              <div
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}
+                              >
                                 <StatusIcon className="w-3.5 h-3.5" />
                                 {locale === 'ar' ? statusConfig.label_ar : statusConfig.label_en}
                               </div>
@@ -469,7 +539,7 @@ export default function OrderHistoryPage() {
                       </CardContent>
                     </Card>
                   </Link>
-                )
+                );
               })}
             </div>
           )}
@@ -488,5 +558,5 @@ export default function OrderHistoryPage() {
         </div>
       </div>
     </CustomerLayout>
-  )
+  );
 }

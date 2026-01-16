@@ -65,7 +65,7 @@ export default function OfflinePage() {
     }
 
     // Wait a moment and check again
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     if (navigator.onLine) {
       window.location.href = '/ar';
@@ -96,7 +96,10 @@ export default function OfflinePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex flex-col items-center justify-center p-6 text-white" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex flex-col items-center justify-center p-6 text-white"
+      dir="rtl"
+    >
       {/* Logo and Icon */}
       <div className="text-center mb-8">
         <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-gray-700">
@@ -126,7 +129,7 @@ export default function OfflinePage() {
           className="w-full bg-[#009DE0] hover:bg-[#0077B6] text-white py-4 text-lg rounded-xl flex items-center justify-center gap-3"
         >
           <RefreshCw className={`w-5 h-5 ${isRetrying ? 'animate-spin' : ''}`} />
-          {isRetrying ? (t('retrying') || 'جاري المحاولة...') : (t('retry') || 'إعادة المحاولة')}
+          {isRetrying ? t('retrying') || 'جاري المحاولة...' : t('retry') || 'إعادة المحاولة'}
         </Button>
 
         {/* Call Support Button */}

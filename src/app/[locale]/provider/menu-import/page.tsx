@@ -1,41 +1,44 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import { ImportWizard } from './components/ImportWizard'
-import { ArrowRight, ArrowLeft, Loader2, FileUp } from 'lucide-react'
-import Link from 'next/link'
-import type { BusinessCategoryCode } from '@/lib/constants/categories'
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import { ImportWizard } from './components/ImportWizard';
+import { ArrowRight, ArrowLeft, Loader2, FileUp } from 'lucide-react';
+import Link from 'next/link';
+import type { BusinessCategoryCode } from '@/lib/constants/categories';
 
 interface Provider {
-  id: string
-  name_ar: string
-  name_en: string
-  category: BusinessCategoryCode
-  status: string
+  id: string;
+  name_ar: string;
+  name_en: string;
+  category: BusinessCategoryCode;
+  status: string;
 }
 
 export default function MenuImportPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
-  const [loading, setLoading] = useState(true)
-  const [provider, setProvider] = useState<Provider | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true);
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const checkAuthAndLoadProvider = useCallback(async () => {
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       // Check authentication
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        router.push(`/${locale}/provider/login`)
-        return
+        router.push(`/${locale}/provider/login`);
+        return;
       }
 
       // Load provider data
@@ -43,12 +46,12 @@ export default function MenuImportPage() {
         .from('providers')
         .select('id, name_ar, name_en, category, status')
         .eq('owner_id', user.id)
-        .single()
+        .single();
 
       if (providerError || !providerData) {
-        setError(locale === 'ar' ? 'لم يتم العثور على المتجر' : 'Store not found')
-        setLoading(false)
-        return
+        setError(locale === 'ar' ? 'لم يتم العثور على المتجر' : 'Store not found');
+        setLoading(false);
+        return;
       }
 
       // Check if provider is approved
@@ -57,22 +60,22 @@ export default function MenuImportPage() {
           locale === 'ar'
             ? 'يجب أن يكون المتجر معتمداً لاستخدام هذه الميزة'
             : 'Store must be approved to use this feature'
-        )
-        setLoading(false)
-        return
+        );
+        setLoading(false);
+        return;
       }
 
-      setProvider(providerData as Provider)
+      setProvider(providerData as Provider);
     } catch {
-      setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
+      setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [locale, router])
+  }, [locale, router]);
 
   useEffect(() => {
-    checkAuthAndLoadProvider()
-  }, [checkAuthAndLoadProvider])
+    checkAuthAndLoadProvider();
+  }, [checkAuthAndLoadProvider]);
 
   // Loading state
   if (loading) {
@@ -80,12 +83,10 @@ export default function MenuImportPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">
-            {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-          </p>
+          <p className="text-slate-600">{locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
-    )
+    );
   }
 
   // Error state
@@ -109,7 +110,7 @@ export default function MenuImportPage() {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -153,5 +154,5 @@ export default function MenuImportPage() {
         />
       </main>
     </div>
-  )
+  );
 }

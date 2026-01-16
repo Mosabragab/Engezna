@@ -2,10 +2,7 @@
 // هوكات الأدمن - Admin Hooks
 // ═══════════════════════════════════════════════════════════════════════
 
-export {
-  useAdminProviders,
-  usePendingProviders,
-} from './useAdminProviders';
+export { useAdminProviders, usePendingProviders } from './useAdminProviders';
 
 export {
   useAdminStats,

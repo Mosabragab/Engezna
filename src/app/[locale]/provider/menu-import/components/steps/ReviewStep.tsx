@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState, useMemo, useCallback } from 'react'
-import { useLocale } from 'next-intl'
+import { useState, useMemo, useCallback } from 'react';
+import { useLocale } from 'next-intl';
 import {
   Check,
   Pencil,
@@ -17,25 +17,25 @@ import {
   FileSpreadsheet,
   FileText,
   Download,
-} from 'lucide-react'
-import * as XLSX from 'xlsx'
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
+} from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import type {
   ExtractedCategory,
   ExtractedProduct,
   ExtractedAddon,
   AnalysisWarning,
   AnalysisStatistics,
-} from '@/types/menu-import'
+} from '@/types/menu-import';
 
 interface ReviewStepProps {
-  categories: ExtractedCategory[]
-  addons: ExtractedAddon[]
-  warnings: AnalysisWarning[]
-  statistics: AnalysisStatistics | null
-  onComplete: (categories: ExtractedCategory[], addons: ExtractedAddon[]) => void
-  onBack: () => void
+  categories: ExtractedCategory[];
+  addons: ExtractedAddon[];
+  warnings: AnalysisWarning[];
+  statistics: AnalysisStatistics | null;
+  onComplete: (categories: ExtractedCategory[], addons: ExtractedAddon[]) => void;
+  onBack: () => void;
 }
 
 export function ReviewStep({
@@ -46,68 +46,68 @@ export function ReviewStep({
   onComplete,
   onBack,
 }: ReviewStepProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   // Local state for editing
-  const [categories, setCategories] = useState<ExtractedCategory[]>(initialCategories)
-  const [addons, setAddons] = useState<ExtractedAddon[]>(initialAddons)
+  const [categories, setCategories] = useState<ExtractedCategory[]>(initialCategories);
+  const [addons, setAddons] = useState<ExtractedAddon[]>(initialAddons);
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(initialCategories.map((_, i) => `cat-${i}`))
-  )
+  );
   const [editingProduct, setEditingProduct] = useState<{
-    categoryIndex: number
-    productIndex: number
-  } | null>(null)
-  const [editingCategory, setEditingCategory] = useState<number | null>(null)
+    categoryIndex: number;
+    productIndex: number;
+  } | null>(null);
+  const [editingCategory, setEditingCategory] = useState<number | null>(null);
 
   // Calculate review progress
   const reviewProgress = useMemo(() => {
-    let total = 0
-    let confirmed = 0
+    let total = 0;
+    let confirmed = 0;
 
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       if (!cat.isDeleted) {
-        cat.products.forEach(prod => {
+        cat.products.forEach((prod) => {
           if (!prod.isDeleted) {
-            total++
-            if (prod.isConfirmed || prod.isEdited) confirmed++
+            total++;
+            if (prod.isConfirmed || prod.isEdited) confirmed++;
           }
-        })
+        });
       }
-    })
+    });
 
-    return { total, confirmed, percentage: total > 0 ? Math.round((confirmed / total) * 100) : 0 }
-  }, [categories])
+    return { total, confirmed, percentage: total > 0 ? Math.round((confirmed / total) * 100) : 0 };
+  }, [categories]);
 
   // Calculate local statistics (fix for NaN issues)
   const localStatistics = useMemo(() => {
-    let totalCategories = 0
-    let totalProducts = 0
-    let productsWithVariants = 0
-    let totalConfidence = 0
-    let productCount = 0
+    let totalCategories = 0;
+    let totalProducts = 0;
+    let productsWithVariants = 0;
+    let totalConfidence = 0;
+    let productCount = 0;
 
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       if (!cat.isDeleted) {
-        totalCategories++
-        cat.products.forEach(prod => {
+        totalCategories++;
+        cat.products.forEach((prod) => {
           if (!prod.isDeleted) {
-            totalProducts++
+            totalProducts++;
             if (prod.variants && prod.variants.length > 0) {
-              productsWithVariants++
+              productsWithVariants++;
             }
             if (typeof prod.confidence === 'number' && !isNaN(prod.confidence)) {
-              totalConfidence += prod.confidence
-              productCount++
+              totalConfidence += prod.confidence;
+              productCount++;
             }
           }
-        })
+        });
       }
-    })
+    });
 
-    const avgConfidence = productCount > 0 ? totalConfidence / productCount : 0.9
+    const avgConfidence = productCount > 0 ? totalConfidence / productCount : 0.9;
 
     return {
       total_categories: totalCategories,
@@ -115,149 +115,153 @@ export function ReviewStep({
       products_with_variants: productsWithVariants,
       products_need_review: statistics?.products_need_review || 0,
       average_confidence: avgConfidence,
-    }
-  }, [categories, statistics])
+    };
+  }, [categories, statistics]);
 
   const toggleCategory = (index: number) => {
-    const key = `cat-${index}`
-    const newExpanded = new Set(expandedCategories)
+    const key = `cat-${index}`;
+    const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(key)) {
-      newExpanded.delete(key)
+      newExpanded.delete(key);
     } else {
-      newExpanded.add(key)
+      newExpanded.add(key);
     }
-    setExpandedCategories(newExpanded)
-  }
+    setExpandedCategories(newExpanded);
+  };
 
   const confirmProduct = (categoryIndex: number, productIndex: number) => {
-    const newCategories = [...categories]
-    newCategories[categoryIndex].products[productIndex].isConfirmed = true
-    setCategories(newCategories)
-  }
+    const newCategories = [...categories];
+    newCategories[categoryIndex].products[productIndex].isConfirmed = true;
+    setCategories(newCategories);
+  };
 
   const deleteProduct = (categoryIndex: number, productIndex: number) => {
-    const newCategories = [...categories]
-    newCategories[categoryIndex].products[productIndex].isDeleted = true
-    setCategories(newCategories)
-  }
+    const newCategories = [...categories];
+    newCategories[categoryIndex].products[productIndex].isDeleted = true;
+    setCategories(newCategories);
+  };
 
   const restoreProduct = (categoryIndex: number, productIndex: number) => {
-    const newCategories = [...categories]
-    newCategories[categoryIndex].products[productIndex].isDeleted = false
-    setCategories(newCategories)
-  }
+    const newCategories = [...categories];
+    newCategories[categoryIndex].products[productIndex].isDeleted = false;
+    setCategories(newCategories);
+  };
 
   const deleteCategory = (categoryIndex: number) => {
-    const newCategories = [...categories]
-    newCategories[categoryIndex].isDeleted = true
-    setCategories(newCategories)
-  }
+    const newCategories = [...categories];
+    newCategories[categoryIndex].isDeleted = true;
+    setCategories(newCategories);
+  };
 
   const restoreCategory = (categoryIndex: number) => {
-    const newCategories = [...categories]
-    newCategories[categoryIndex].isDeleted = false
-    setCategories(newCategories)
-  }
+    const newCategories = [...categories];
+    newCategories[categoryIndex].isDeleted = false;
+    setCategories(newCategories);
+  };
 
   const updateProduct = (
     categoryIndex: number,
     productIndex: number,
     updates: Partial<ExtractedProduct>
   ) => {
-    const newCategories = [...categories]
+    const newCategories = [...categories];
     newCategories[categoryIndex].products[productIndex] = {
       ...newCategories[categoryIndex].products[productIndex],
       ...updates,
       isEdited: true,
-    }
-    setCategories(newCategories)
-  }
+    };
+    setCategories(newCategories);
+  };
 
   const updateCategory = (categoryIndex: number, updates: Partial<ExtractedCategory>) => {
-    const newCategories = [...categories]
+    const newCategories = [...categories];
     newCategories[categoryIndex] = {
       ...newCategories[categoryIndex],
       ...updates,
       isEdited: true,
-    }
-    setCategories(newCategories)
-  }
+    };
+    setCategories(newCategories);
+  };
 
   const confirmAllInCategory = (categoryIndex: number) => {
-    const newCategories = [...categories]
-    newCategories[categoryIndex].products.forEach(prod => {
+    const newCategories = [...categories];
+    newCategories[categoryIndex].products.forEach((prod) => {
       if (!prod.isDeleted) {
-        prod.isConfirmed = true
+        prod.isConfirmed = true;
       }
-    })
-    newCategories[categoryIndex].isConfirmed = true
-    setCategories(newCategories)
-  }
+    });
+    newCategories[categoryIndex].isConfirmed = true;
+    setCategories(newCategories);
+  };
 
   const handleConfirm = () => {
-    onComplete(categories, addons)
-  }
+    onComplete(categories, addons);
+  };
 
   const formatPrice = (price: number | null) => {
-    if (price === null) return '-'
-    return `${price.toFixed(2)} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
-  }
+    if (price === null) return '-';
+    return `${price.toFixed(2)} ${locale === 'ar' ? 'ج.م' : 'EGP'}`;
+  };
 
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.9) return 'text-green-600 bg-green-50'
-    if (confidence >= 0.7) return 'text-yellow-600 bg-yellow-50'
-    return 'text-red-600 bg-red-50'
-  }
+    if (confidence >= 0.9) return 'text-green-600 bg-green-50';
+    if (confidence >= 0.7) return 'text-yellow-600 bg-yellow-50';
+    return 'text-red-600 bg-red-50';
+  };
 
   // Export to Excel
   const exportToExcel = useCallback(() => {
-    const workbook = XLSX.utils.book_new()
+    const workbook = XLSX.utils.book_new();
 
     // Prepare products data for Excel
-    const productsData: Record<string, unknown>[] = []
+    const productsData: Record<string, unknown>[] = [];
 
     categories.forEach((category) => {
       if (!category.isDeleted) {
         category.products.forEach((product) => {
           if (!product.isDeleted) {
             productsData.push({
-              'القسم': category.name_ar,
-              'Category': category.name_en || '',
+              القسم: category.name_ar,
+              Category: category.name_en || '',
               'اسم المنتج': product.name_ar,
               'Product Name': product.name_en || '',
-              'الوصف': product.description_ar || '',
-              'نوع التسعير': product.pricing_type === 'fixed' ? 'سعر ثابت' :
-                product.pricing_type === 'per_unit' ? 'بالوحدة' : 'خيارات متعددة',
-              'السعر': product.price || '',
+              الوصف: product.description_ar || '',
+              'نوع التسعير':
+                product.pricing_type === 'fixed'
+                  ? 'سعر ثابت'
+                  : product.pricing_type === 'per_unit'
+                    ? 'بالوحدة'
+                    : 'خيارات متعددة',
+              السعر: product.price || '',
               'السعر الأصلي': product.original_price || '',
-              'الخيارات': product.variants?.map(v => `${v.name_ar}: ${v.price}`).join(' | ') || '',
-              'الدقة': `${Math.round(product.confidence * 100)}%`,
-              'شائع': product.is_popular ? 'نعم' : 'لا',
-              'حار': product.is_spicy ? 'نعم' : 'لا',
-              'نباتي': product.is_vegetarian ? 'نعم' : 'لا',
-            })
+              الخيارات: product.variants?.map((v) => `${v.name_ar}: ${v.price}`).join(' | ') || '',
+              الدقة: `${Math.round(product.confidence * 100)}%`,
+              شائع: product.is_popular ? 'نعم' : 'لا',
+              حار: product.is_spicy ? 'نعم' : 'لا',
+              نباتي: product.is_vegetarian ? 'نعم' : 'لا',
+            });
           }
-        })
+        });
       }
-    })
+    });
 
     // Create products sheet
-    const productsSheet = XLSX.utils.json_to_sheet(productsData)
-    XLSX.utils.book_append_sheet(workbook, productsSheet, 'المنتجات')
+    const productsSheet = XLSX.utils.json_to_sheet(productsData);
+    XLSX.utils.book_append_sheet(workbook, productsSheet, 'المنتجات');
 
     // Create categories summary sheet
     const categoriesData = categories
-      .filter(c => !c.isDeleted)
+      .filter((c) => !c.isDeleted)
       .map((category, index) => ({
         '#': index + 1,
         'اسم القسم': category.name_ar,
         'Category Name': category.name_en || '',
-        'الأيقونة': category.icon || '',
-        'عدد المنتجات': category.products.filter(p => !p.isDeleted).length,
-      }))
+        الأيقونة: category.icon || '',
+        'عدد المنتجات': category.products.filter((p) => !p.isDeleted).length,
+      }));
 
-    const categoriesSheet = XLSX.utils.json_to_sheet(categoriesData)
-    XLSX.utils.book_append_sheet(workbook, categoriesSheet, 'الأقسام')
+    const categoriesSheet = XLSX.utils.json_to_sheet(categoriesData);
+    XLSX.utils.book_append_sheet(workbook, categoriesSheet, 'الأقسام');
 
     // Create addons sheet if any
     if (addons.length > 0) {
@@ -265,16 +269,16 @@ export function ReviewStep({
         '#': index + 1,
         'اسم الإضافة': addon.name_ar,
         'Addon Name': addon.name_en || '',
-        'السعر': addon.price,
-      }))
-      const addonsSheet = XLSX.utils.json_to_sheet(addonsData)
-      XLSX.utils.book_append_sheet(workbook, addonsSheet, 'الإضافات')
+        السعر: addon.price,
+      }));
+      const addonsSheet = XLSX.utils.json_to_sheet(addonsData);
+      XLSX.utils.book_append_sheet(workbook, addonsSheet, 'الإضافات');
     }
 
     // Download file
-    const fileName = `menu-export-${new Date().toISOString().split('T')[0]}.xlsx`
-    XLSX.writeFile(workbook, fileName)
-  }, [categories, addons])
+    const fileName = `menu-export-${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  }, [categories, addons]);
 
   // Export to PDF
   const exportToPDF = useCallback(() => {
@@ -283,22 +287,22 @@ export function ReviewStep({
       orientation: 'landscape',
       unit: 'mm',
       format: 'a4',
-    })
+    });
 
     // Set font
-    doc.setFont('helvetica')
+    doc.setFont('helvetica');
 
     // Title
-    doc.setFontSize(18)
-    doc.text('Products Export - تصدير المنتجات', 148, 15, { align: 'center' })
+    doc.setFontSize(18);
+    doc.text('Products Export - تصدير المنتجات', 148, 15, { align: 'center' });
 
     // Statistics
-    doc.setFontSize(12)
-    const statsText = `Categories: ${localStatistics.total_categories} | Products: ${localStatistics.total_products} | With Variants: ${localStatistics.products_with_variants}`
-    doc.text(statsText, 148, 25, { align: 'center' })
+    doc.setFontSize(12);
+    const statsText = `Categories: ${localStatistics.total_categories} | Products: ${localStatistics.total_products} | With Variants: ${localStatistics.products_with_variants}`;
+    doc.text(statsText, 148, 25, { align: 'center' });
 
     // Prepare table data
-    const tableData: (string | number)[][] = []
+    const tableData: (string | number)[][] = [];
 
     categories.forEach((category) => {
       if (!category.isDeleted) {
@@ -310,18 +314,26 @@ export function ReviewStep({
               product.description_ar || '-',
               product.pricing_type === 'fixed' || product.pricing_type === 'per_unit'
                 ? String(product.price || '-')
-                : product.variants?.map(v => `${v.name_ar}: ${v.price}`).join(', ') || '-',
+                : product.variants?.map((v) => `${v.name_ar}: ${v.price}`).join(', ') || '-',
               `${Math.round(product.confidence * 100)}%`,
-            ])
+            ]);
           }
-        })
+        });
       }
-    })
+    });
 
     // Create table
     autoTable(doc, {
       startY: 35,
-      head: [['Category / القسم', 'Product / المنتج', 'Description / الوصف', 'Price / السعر', 'Confidence / الدقة']],
+      head: [
+        [
+          'Category / القسم',
+          'Product / المنتج',
+          'Description / الوصف',
+          'Price / السعر',
+          'Confidence / الدقة',
+        ],
+      ],
       body: tableData,
       styles: {
         fontSize: 9,
@@ -342,14 +354,14 @@ export function ReviewStep({
         3: { cellWidth: 50 },
         4: { cellWidth: 25 },
       },
-    })
+    });
 
     // Download file
-    const fileName = `menu-export-${new Date().toISOString().split('T')[0]}.pdf`
-    doc.save(fileName)
-  }, [categories, localStatistics])
+    const fileName = `menu-export-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  }, [categories, localStatistics]);
 
-  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   return (
     <div className="p-6">
@@ -374,25 +386,20 @@ export function ReviewStep({
               className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors"
             >
               <Download className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                {locale === 'ar' ? 'تصدير' : 'Export'}
-              </span>
+              <span className="text-sm font-medium">{locale === 'ar' ? 'تصدير' : 'Export'}</span>
               <ChevronDown className="w-4 h-4" />
             </button>
 
             {showExportMenu && (
               <>
                 {/* Backdrop */}
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowExportMenu(false)}
-                />
+                <div className="fixed inset-0 z-10" onClick={() => setShowExportMenu(false)} />
                 {/* Menu */}
                 <div className="absolute end-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 z-20 overflow-hidden">
                   <button
                     onClick={() => {
-                      exportToExcel()
-                      setShowExportMenu(false)
+                      exportToExcel();
+                      setShowExportMenu(false);
                     }}
                     className="w-full px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
                   >
@@ -406,8 +413,8 @@ export function ReviewStep({
                   </button>
                   <button
                     onClick={() => {
-                      exportToPDF()
-                      setShowExportMenu(false)
+                      exportToPDF();
+                      setShowExportMenu(false);
                     }}
                     className="w-full px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors border-t border-slate-100"
                   >
@@ -430,18 +437,16 @@ export function ReviewStep({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="bg-blue-50 rounded-xl p-4">
           <div className="text-2xl font-bold text-blue-700">{localStatistics.total_categories}</div>
-          <div className="text-sm text-blue-600">
-            {locale === 'ar' ? 'أقسام' : 'Categories'}
-          </div>
+          <div className="text-sm text-blue-600">{locale === 'ar' ? 'أقسام' : 'Categories'}</div>
         </div>
         <div className="bg-green-50 rounded-xl p-4">
           <div className="text-2xl font-bold text-green-700">{localStatistics.total_products}</div>
-          <div className="text-sm text-green-600">
-            {locale === 'ar' ? 'منتجات' : 'Products'}
-          </div>
+          <div className="text-sm text-green-600">{locale === 'ar' ? 'منتجات' : 'Products'}</div>
         </div>
         <div className="bg-purple-50 rounded-xl p-4">
-          <div className="text-2xl font-bold text-purple-700">{localStatistics.products_with_variants}</div>
+          <div className="text-2xl font-bold text-purple-700">
+            {localStatistics.products_with_variants}
+          </div>
           <div className="text-sm text-purple-600">
             {locale === 'ar' ? 'بأحجام متعددة' : 'With Variants'}
           </div>
@@ -526,16 +531,18 @@ export function ReviewStep({
                   <input
                     type="text"
                     value={category.name_ar}
-                    onChange={e => updateCategory(catIndex, { name_ar: e.target.value })}
+                    onChange={(e) => updateCategory(catIndex, { name_ar: e.target.value })}
                     onBlur={() => setEditingCategory(null)}
-                    onKeyDown={e => e.key === 'Enter' && setEditingCategory(null)}
+                    onKeyDown={(e) => e.key === 'Enter' && setEditingCategory(null)}
                     className="px-2 py-1 border rounded text-lg font-semibold"
                     autoFocus
-                    onClick={e => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
                   <div>
-                    <h3 className={`font-semibold ${category.isDeleted ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                    <h3
+                      className={`font-semibold ${category.isDeleted ? 'line-through text-slate-400' : 'text-slate-900'}`}
+                    >
                       {category.name_ar}
                       {category.name_en && (
                         <span className="text-slate-500 font-normal text-sm mx-2">
@@ -544,7 +551,7 @@ export function ReviewStep({
                       )}
                     </h3>
                     <p className="text-sm text-slate-500">
-                      {category.products.filter(p => !p.isDeleted).length}{' '}
+                      {category.products.filter((p) => !p.isDeleted).length}{' '}
                       {locale === 'ar' ? 'منتج' : 'products'}
                     </p>
                   </div>
@@ -555,9 +562,9 @@ export function ReviewStep({
                 {!category.isDeleted && (
                   <>
                     <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        confirmAllInCategory(catIndex)
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        confirmAllInCategory(catIndex);
                       }}
                       className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                       title={locale === 'ar' ? 'تأكيد الكل' : 'Confirm All'}
@@ -565,9 +572,9 @@ export function ReviewStep({
                       <Check className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        setEditingCategory(catIndex)
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingCategory(catIndex);
                       }}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title={locale === 'ar' ? 'تعديل' : 'Edit'}
@@ -575,9 +582,9 @@ export function ReviewStep({
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        deleteCategory(catIndex)
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteCategory(catIndex);
                       }}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title={locale === 'ar' ? 'حذف' : 'Delete'}
@@ -588,22 +595,21 @@ export function ReviewStep({
                 )}
                 {category.isDeleted && (
                   <button
-                    onClick={e => {
-                      e.stopPropagation()
-                      restoreCategory(catIndex)
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      restoreCategory(catIndex);
                     }}
                     className="px-3 py-1 text-sm bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
                   >
                     {locale === 'ar' ? 'استعادة' : 'Restore'}
                   </button>
                 )}
-                {!category.isDeleted && (
-                  expandedCategories.has(`cat-${catIndex}`) ? (
+                {!category.isDeleted &&
+                  (expandedCategories.has(`cat-${catIndex}`) ? (
                     <ChevronUp className="w-5 h-5 text-slate-400" />
                   ) : (
                     <ChevronDown className="w-5 h-5 text-slate-400" />
-                  )
-                )}
+                  ))}
               </div>
             </div>
 
@@ -622,9 +628,11 @@ export function ReviewStep({
                     onConfirm={() => confirmProduct(catIndex, prodIndex)}
                     onDelete={() => deleteProduct(catIndex, prodIndex)}
                     onRestore={() => restoreProduct(catIndex, prodIndex)}
-                    onEdit={() => setEditingProduct({ categoryIndex: catIndex, productIndex: prodIndex })}
+                    onEdit={() =>
+                      setEditingProduct({ categoryIndex: catIndex, productIndex: prodIndex })
+                    }
                     onSave={() => setEditingProduct(null)}
-                    onUpdate={updates => updateProduct(catIndex, prodIndex, updates)}
+                    onUpdate={(updates) => updateProduct(catIndex, prodIndex, updates)}
                     formatPrice={formatPrice}
                     getConfidenceColor={getConfidenceColor}
                   />
@@ -679,22 +687,22 @@ export function ReviewStep({
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 // Product Row Component
 interface ProductRowProps {
-  product: ExtractedProduct
-  isEditing: boolean
-  locale: string
-  onConfirm: () => void
-  onDelete: () => void
-  onRestore: () => void
-  onEdit: () => void
-  onSave: () => void
-  onUpdate: (updates: Partial<ExtractedProduct>) => void
-  formatPrice: (price: number | null) => string
-  getConfidenceColor: (confidence: number) => string
+  product: ExtractedProduct;
+  isEditing: boolean;
+  locale: string;
+  onConfirm: () => void;
+  onDelete: () => void;
+  onRestore: () => void;
+  onEdit: () => void;
+  onSave: () => void;
+  onUpdate: (updates: Partial<ExtractedProduct>) => void;
+  formatPrice: (price: number | null) => string;
+  getConfidenceColor: (confidence: number) => string;
 }
 
 function ProductRow({
@@ -721,7 +729,7 @@ function ProductRow({
           {locale === 'ar' ? 'استعادة' : 'Restore'}
         </button>
       </div>
-    )
+    );
   }
 
   if (isEditing) {
@@ -736,7 +744,7 @@ function ProductRow({
               <input
                 type="text"
                 value={product.name_ar}
-                onChange={e => onUpdate({ name_ar: e.target.value })}
+                onChange={(e) => onUpdate({ name_ar: e.target.value })}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
               />
             </div>
@@ -747,7 +755,7 @@ function ProductRow({
               <input
                 type="text"
                 value={product.name_en || ''}
-                onChange={e => onUpdate({ name_en: e.target.value || null })}
+                onChange={(e) => onUpdate({ name_en: e.target.value || null })}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
               />
             </div>
@@ -762,7 +770,7 @@ function ProductRow({
                 <input
                   type="number"
                   value={product.price || ''}
-                  onChange={e => onUpdate({ price: parseFloat(e.target.value) || null })}
+                  onChange={(e) => onUpdate({ price: parseFloat(e.target.value) || null })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
                 />
               </div>
@@ -773,7 +781,7 @@ function ProductRow({
                 <input
                   type="number"
                   value={product.original_price || ''}
-                  onChange={e => onUpdate({ original_price: parseFloat(e.target.value) || null })}
+                  onChange={(e) => onUpdate({ original_price: parseFloat(e.target.value) || null })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
                   placeholder={locale === 'ar' ? 'اختياري' : 'Optional'}
                 />
@@ -787,7 +795,7 @@ function ProductRow({
             </label>
             <textarea
               value={product.description_ar || ''}
-              onChange={e => onUpdate({ description_ar: e.target.value || null })}
+              onChange={(e) => onUpdate({ description_ar: e.target.value || null })}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
               rows={2}
             />
@@ -803,7 +811,7 @@ function ProductRow({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -819,15 +827,11 @@ function ProductRow({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-slate-900 truncate">
-              {product.name_ar}
-            </span>
+            <span className="font-medium text-slate-900 truncate">{product.name_ar}</span>
             {(product.isConfirmed || product.isEdited) && (
               <Check className="w-4 h-4 text-green-600 shrink-0" />
             )}
-            {product.needs_review && (
-              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-            )}
+            {product.needs_review && <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />}
           </div>
 
           {product.description_ar && (
@@ -899,5 +903,5 @@ function ProductRow({
         </button>
       </div>
     </div>
-  )
+  );
 }

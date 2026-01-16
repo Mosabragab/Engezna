@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useMemo } from 'react'
-import { useLocale } from 'next-intl'
-import { cn } from '@/lib/utils'
+import { useMemo } from 'react';
+import { useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
 import {
   Receipt,
   Truck,
@@ -12,32 +12,27 @@ import {
   Package,
   AlertCircle,
   Info,
-} from 'lucide-react'
-import { motion } from 'framer-motion'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import type { CustomOrderItem } from '@/types/custom-order'
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { CustomOrderItem } from '@/types/custom-order';
 import {
   useCustomOrderFinancials,
   formatCurrency,
   COMMISSION_TIERS,
-} from '@/hooks/useCustomOrderFinancials'
+} from '@/hooks/useCustomOrderFinancials';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface PricingSummaryProps {
-  items: CustomOrderItem[]
-  deliveryFee: number
-  onDeliveryFeeChange?: (fee: number) => void
-  className?: string
-  variant?: 'compact' | 'detailed' | 'full'
-  showMerchantPayout?: boolean
+  items: CustomOrderItem[];
+  deliveryFee: number;
+  onDeliveryFeeChange?: (fee: number) => void;
+  className?: string;
+  variant?: 'compact' | 'detailed' | 'full';
+  showMerchantPayout?: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -52,30 +47,30 @@ export function PricingSummary({
   variant = 'detailed',
   showMerchantPayout = true,
 }: PricingSummaryProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   // Use the financial calculations hook
   const financials = useCustomOrderFinancials({
     items,
     deliveryFee,
-  })
+  });
 
   // Format currency with locale
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat(locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount)
-  }
+    }).format(amount);
+  };
 
   // Get commission tier description
   const getCommissionTierDesc = () => {
-    const rate = financials.commissionRate * 100
-    if (rate >= 7) return isRTL ? 'نسبة أساسية' : 'Base rate'
-    if (rate >= 6) return isRTL ? 'نسبة متوسطة' : 'Mid tier'
-    return isRTL ? 'نسبة مميزة' : 'Premium tier'
-  }
+    const rate = financials.commissionRate * 100;
+    if (rate >= 7) return isRTL ? 'نسبة أساسية' : 'Base rate';
+    if (rate >= 6) return isRTL ? 'نسبة متوسطة' : 'Mid tier';
+    return isRTL ? 'نسبة مميزة' : 'Premium tier';
+  };
 
   // Compact variant
   if (variant === 'compact') {
@@ -109,7 +104,7 @@ export function PricingSummary({
           </div>
         )}
       </div>
-    )
+    );
   }
 
   // Detailed / Full variant
@@ -189,9 +184,7 @@ export function PricingSummary({
                 min="0"
                 step="5"
               />
-              <span className="text-sm text-slate-500">
-                {isRTL ? 'ج.م' : 'EGP'}
-              </span>
+              <span className="text-sm text-slate-500">{isRTL ? 'ج.م' : 'EGP'}</span>
             </div>
           ) : (
             <span className="font-medium text-slate-800 dark:text-slate-200">
@@ -308,7 +301,7 @@ export function PricingSummary({
         )}
       </div>
     </motion.div>
-  )
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -316,10 +309,10 @@ export function PricingSummary({
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface LivePricingSummaryProps {
-  subtotal: number
-  deliveryFee: number
-  itemsCount: number
-  className?: string
+  subtotal: number;
+  deliveryFee: number;
+  itemsCount: number;
+  className?: string;
 }
 
 export function LivePricingSummary({
@@ -328,10 +321,10 @@ export function LivePricingSummary({
   itemsCount,
   className,
 }: LivePricingSummaryProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const total = subtotal + deliveryFee
+  const total = subtotal + deliveryFee;
 
   return (
     <div
@@ -347,9 +340,7 @@ export function LivePricingSummary({
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {isRTL ? 'أصناف' : 'Items'}
               </p>
-              <p className="font-semibold text-slate-800 dark:text-slate-200">
-                {itemsCount}
-              </p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200">{itemsCount}</p>
             </div>
             <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
             <div className="text-center">
@@ -386,7 +377,7 @@ export function LivePricingSummary({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default PricingSummary
+export default PricingSummary;

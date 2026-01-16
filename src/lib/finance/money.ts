@@ -33,7 +33,9 @@ export class Money {
   constructor(amount: number | string, _isPiasters = false) {
     if (_isPiasters) {
       // Internal use: amount is already in piasters
-      this._piasters = Math.round(typeof amount === 'string' ? parseFloat(amount) || 0 : amount || 0);
+      this._piasters = Math.round(
+        typeof amount === 'string' ? parseFloat(amount) || 0 : amount || 0
+      );
     } else if (typeof amount === 'string') {
       const parsed = parseFloat(amount);
       if (isNaN(parsed)) {
@@ -341,11 +343,7 @@ export function sumMoney(amounts: Money[]): Money {
  * @param discount - Any discount applied
  * @param rate - Commission rate as percentage (e.g., 7 for 7%)
  */
-export function calculateCommission(
-  subtotal: Money,
-  discount: Money,
-  rate: number
-): Money {
+export function calculateCommission(subtotal: Money, discount: Money, rate: number): Money {
   const base = subtotal.subtract(discount).nonNegative();
   return base.percent(rate);
 }
@@ -372,10 +370,7 @@ export function calculateRefundCommissionReduction(
  * @param codCommissionOwed - What merchant owes platform for COD orders
  * @returns Positive = platform pays provider, Negative = provider pays platform
  */
-export function calculateNetBalance(
-  onlinePayoutOwed: Money,
-  codCommissionOwed: Money
-): Money {
+export function calculateNetBalance(onlinePayoutOwed: Money, codCommissionOwed: Money): Money {
   return onlinePayoutOwed.subtract(codCommissionOwed);
 }
 
@@ -401,10 +396,7 @@ export function getSettlementDirection(
 // Type Exports
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export type SettlementDirection =
-  | 'platform_pays_provider'
-  | 'provider_pays_platform'
-  | 'balanced';
+export type SettlementDirection = 'platform_pays_provider' | 'provider_pays_platform' | 'balanced';
 
 export type MoneyInput = number | string | Money;
 

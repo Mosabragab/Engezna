@@ -1,49 +1,49 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
-import { createClient } from '@/lib/supabase/client'
+import { useLocale } from 'next-intl';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
 
 // Helper function to calculate color luminance
 function getContrastTextColor(hexColor: string): 'light' | 'dark' {
-  const hex = hexColor.replace('#', '')
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.6 ? 'dark' : 'light'
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? 'dark' : 'light';
 }
 
 function getGradientTextColor(startColor: string, endColor: string): 'light' | 'dark' {
-  const startLuminance = getContrastTextColor(startColor)
-  const endLuminance = getContrastTextColor(endColor)
+  const startLuminance = getContrastTextColor(startColor);
+  const endLuminance = getContrastTextColor(endColor);
   if (startLuminance === 'dark' || endLuminance === 'dark') {
-    return 'dark'
+    return 'dark';
   }
-  return 'light'
+  return 'light';
 }
 
 interface PartnerBanner {
-  id: string
-  title_ar: string
-  title_en: string
-  description_ar?: string | null
-  description_en?: string | null
-  image_url?: string | null
-  gradient_start?: string | null
-  gradient_end?: string | null
-  badge_text_ar?: string | null
-  badge_text_en?: string | null
-  has_glassmorphism?: boolean
-  cta_text_ar?: string | null
-  cta_text_en?: string | null
-  link_url?: string | null
-  image_position?: 'start' | 'end' | 'background'
-  is_countdown_active?: boolean
-  countdown_end_time?: string | null
+  id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar?: string | null;
+  description_en?: string | null;
+  image_url?: string | null;
+  gradient_start?: string | null;
+  gradient_end?: string | null;
+  badge_text_ar?: string | null;
+  badge_text_en?: string | null;
+  has_glassmorphism?: boolean;
+  cta_text_ar?: string | null;
+  cta_text_en?: string | null;
+  link_url?: string | null;
+  image_position?: 'start' | 'end' | 'background';
+  is_countdown_active?: boolean;
+  countdown_end_time?: string | null;
 }
 
 // Fallback partner banners
@@ -96,12 +96,12 @@ const fallbackPartnerBanners: PartnerBanner[] = [
     image_position: 'end',
     has_glassmorphism: true,
   },
-]
+];
 
 interface PartnerBannersCarouselProps {
-  autoPlay?: boolean
-  autoPlayInterval?: number
-  className?: string
+  autoPlay?: boolean;
+  autoPlayInterval?: number;
+  className?: string;
 }
 
 function PartnerBannerCard({
@@ -110,39 +110,43 @@ function PartnerBannerCard({
   locale,
   isDesktop,
 }: {
-  banner: PartnerBanner
-  isActive: boolean
-  locale: string
-  isDesktop: boolean
+  banner: PartnerBanner;
+  isActive: boolean;
+  locale: string;
+  isDesktop: boolean;
 }) {
-  const title = locale === 'ar' ? banner.title_ar : banner.title_en
-  const description = locale === 'ar' ? banner.description_ar : banner.description_en
-  const badgeText = locale === 'ar' ? banner.badge_text_ar : banner.badge_text_en
-  const ctaText = locale === 'ar' ? banner.cta_text_ar : banner.cta_text_en
+  const title = locale === 'ar' ? banner.title_ar : banner.title_en;
+  const description = locale === 'ar' ? banner.description_ar : banner.description_en;
+  const badgeText = locale === 'ar' ? banner.badge_text_ar : banner.badge_text_en;
+  const ctaText = locale === 'ar' ? banner.cta_text_ar : banner.cta_text_en;
 
-  const gradientStart = banner.gradient_start || '#009DE0'
-  const gradientEnd = banner.gradient_end || '#0077B6'
+  const gradientStart = banner.gradient_start || '#009DE0';
+  const gradientEnd = banner.gradient_end || '#0077B6';
 
   const gradientStyle = {
     background: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`,
-  }
+  };
 
-  const textMode = getGradientTextColor(gradientStart, gradientEnd)
-  const isDarkText = textMode === 'dark'
+  const textMode = getGradientTextColor(gradientStart, gradientEnd);
+  const isDarkText = textMode === 'dark';
 
-  const textColorClass = isDarkText ? 'text-slate-800' : 'text-white'
-  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white/85'
+  const textColorClass = isDarkText ? 'text-slate-800' : 'text-white';
+  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white/85';
   const badgeBgClass = isDarkText
-    ? (banner.has_glassmorphism ? 'bg-slate-800/15 backdrop-blur-md border border-slate-800/20' : 'bg-slate-800/20')
-    : (banner.has_glassmorphism ? 'bg-white/20 backdrop-blur-md border border-white/30' : 'bg-white/25')
-  const badgeTextClass = isDarkText ? 'text-slate-800' : 'text-white'
-  const decorativeCircleClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10'
+    ? banner.has_glassmorphism
+      ? 'bg-slate-800/15 backdrop-blur-md border border-slate-800/20'
+      : 'bg-slate-800/20'
+    : banner.has_glassmorphism
+      ? 'bg-white/20 backdrop-blur-md border border-white/30'
+      : 'bg-white/25';
+  const badgeTextClass = isDarkText ? 'text-slate-800' : 'text-white';
+  const decorativeCircleClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10';
   const ctaButtonClass = isDarkText
     ? 'bg-slate-800 text-white hover:bg-slate-700'
-    : 'bg-white text-slate-900 hover:bg-white/95'
+    : 'bg-white text-slate-900 hover:bg-white/95';
 
-  const imageOnStart = banner.image_position === 'start'
-  const imageOnBackground = banner.image_position === 'background'
+  const imageOnStart = banner.image_position === 'start';
+  const imageOnBackground = banner.image_position === 'background';
 
   const CardContent = (
     <motion.div
@@ -157,37 +161,43 @@ function PartnerBannerCard({
     >
       {imageOnBackground && banner.image_url && (
         <div className="absolute inset-0">
-          <img
-            src={banner.image_url}
-            alt=""
-            className="w-full h-full object-cover opacity-30"
-          />
+          <img src={banner.image_url} alt="" className="w-full h-full object-cover opacity-30" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
       )}
 
-      <div className={`absolute -top-12 -end-12 w-40 h-40 ${decorativeCircleClass} rounded-full blur-sm`} />
-      <div className={`absolute -bottom-8 -start-8 w-32 h-32 ${decorativeCircleClass} rounded-full blur-sm`} />
+      <div
+        className={`absolute -top-12 -end-12 w-40 h-40 ${decorativeCircleClass} rounded-full blur-sm`}
+      />
+      <div
+        className={`absolute -bottom-8 -start-8 w-32 h-32 ${decorativeCircleClass} rounded-full blur-sm`}
+      />
 
-      <div className={`
+      <div
+        className={`
         relative z-10 h-full p-5 md:p-6
         flex ${imageOnStart ? 'flex-row-reverse' : 'flex-row'}
         items-center justify-between gap-4
-      `}>
+      `}
+      >
         <div className={`flex-1 ${imageOnStart ? 'text-end' : 'text-start'}`}>
           {badgeText && (
-            <div className={`
+            <div
+              className={`
               inline-block mb-3
               ${badgeBgClass}
               rounded-xl px-3 py-1.5 md:px-4 md:py-2
-            `}>
+            `}
+            >
               <span className={`${badgeTextClass} font-bold text-sm md:text-base`}>
                 {badgeText}
               </span>
             </div>
           )}
 
-          <h3 className={`${textColorClass} font-bold text-lg md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight`}>
+          <h3
+            className={`${textColorClass} font-bold text-lg md:text-xl lg:text-2xl mb-1 md:mb-2 leading-tight`}
+          >
             {title}
           </h3>
 
@@ -217,11 +227,13 @@ function PartnerBannerCard({
         </div>
 
         {!imageOnBackground && banner.image_url && (
-          <div className={`
+          <div
+            className={`
             relative
             ${isDesktop ? 'w-36 h-36 md:w-40 md:h-40' : 'w-28 h-28 sm:w-32 sm:h-32'}
             flex-shrink-0
-          `}>
+          `}
+          >
             <motion.img
               src={banner.image_url}
               alt={title}
@@ -230,24 +242,25 @@ function PartnerBannerCard({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.3 }}
               style={{
-                filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15)) drop-shadow(0 16px 32px rgba(0,0,0,0.1))',
+                filter:
+                  'drop-shadow(0 8px 16px rgba(0,0,0,0.15)) drop-shadow(0 16px 32px rgba(0,0,0,0.1))',
               }}
             />
           </div>
         )}
       </div>
     </motion.div>
-  )
+  );
 
   if (banner.link_url) {
     return (
       <Link href={`/${locale}${banner.link_url}`} className="block">
         {CardContent}
       </Link>
-    )
+    );
   }
 
-  return CardContent
+  return CardContent;
 }
 
 function ProgressIndicator({
@@ -259,20 +272,20 @@ function ProgressIndicator({
   autoPlayInterval,
   isRTL,
 }: {
-  totalItems: number
-  currentIndex: number
-  scrollProgress: number
-  onSelect: (index: number) => void
-  autoPlay: boolean
-  autoPlayInterval: number
-  isRTL: boolean
+  totalItems: number;
+  currentIndex: number;
+  scrollProgress: number;
+  onSelect: (index: number) => void;
+  autoPlay: boolean;
+  autoPlayInterval: number;
+  isRTL: boolean;
 }) {
   return (
     <div className="flex items-center justify-center gap-1.5 mt-4">
       {Array.from({ length: totalItems }).map((_, index) => {
-        const distance = Math.abs(scrollProgress - index)
-        const isActive = index === currentIndex
-        const width = isActive ? 24 : Math.max(8, 16 - distance * 8)
+        const distance = Math.abs(scrollProgress - index);
+        const isActive = index === currentIndex;
+        const width = isActive ? 24 : Math.max(8, 16 - distance * 8);
 
         return (
           <motion.button
@@ -281,7 +294,7 @@ function ProgressIndicator({
             className="relative h-1.5 rounded-full overflow-hidden bg-[#009DE0]/20"
             animate={{
               width,
-              opacity: isActive ? 1 : 0.5 + (1 - Math.min(distance, 1)) * 0.3
+              opacity: isActive ? 1 : 0.5 + (1 - Math.min(distance, 1)) * 0.3,
             }}
             transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
             whileHover={{ scale: 1.1 }}
@@ -305,10 +318,10 @@ function ProgressIndicator({
               />
             )}
           </motion.button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 export function PartnerBannersCarousel({
@@ -316,33 +329,33 @@ export function PartnerBannersCarousel({
   autoPlayInterval = 5000,
   className = '',
 }: PartnerBannersCarouselProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const [banners, setBanners] = useState<PartnerBanner[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
-  const [scrollProgress, setScrollProgress] = useState(0)
-  const [isAutoScrolling, setIsAutoScrolling] = useState(false)
+  const [banners, setBanners] = useState<PartnerBanner[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Detect desktop
   useEffect(() => {
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024)
-    checkDesktop()
-    window.addEventListener('resize', checkDesktop)
-    return () => window.removeEventListener('resize', checkDesktop)
-  }, [])
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   // Fetch partner banners from database
   useEffect(() => {
     async function fetchBanners() {
       try {
-        const supabase = createClient()
+        const supabase = createClient();
 
         const { data, error } = await supabase
           .from('homepage_banners')
@@ -351,103 +364,103 @@ export function PartnerBannersCarousel({
           .eq('banner_type', 'partner')
           .lte('starts_at', new Date().toISOString())
           .or(`ends_at.is.null,ends_at.gte.${new Date().toISOString()}`)
-          .order('display_order', { ascending: true })
+          .order('display_order', { ascending: true });
 
-        if (error) throw error
+        if (error) throw error;
 
         if (data && data.length > 0) {
-          setBanners(data)
+          setBanners(data);
         } else {
-          setBanners(fallbackPartnerBanners)
+          setBanners(fallbackPartnerBanners);
         }
       } catch (error) {
-        setBanners(fallbackPartnerBanners)
+        setBanners(fallbackPartnerBanners);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchBanners()
-  }, [])
+    fetchBanners();
+  }, []);
 
   // Auto-play logic - RTL aware
   useEffect(() => {
     if (!autoPlay || banners.length <= 1 || isPaused || (isDesktop && isHovered)) {
-      return
+      return;
     }
 
     const timer = setInterval(() => {
       // In RTL, move in reverse direction for natural feel
       if (isRTL) {
-        setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
+        setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
       } else {
-        setCurrentIndex((prev) => (prev + 1) % banners.length)
+        setCurrentIndex((prev) => (prev + 1) % banners.length);
       }
-    }, autoPlayInterval)
+    }, autoPlayInterval);
 
-    return () => clearInterval(timer)
-  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered, isRTL])
+    return () => clearInterval(timer);
+  }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered, isRTL]);
 
   // Scroll to current index
   useEffect(() => {
-    if (isDesktop || !scrollContainerRef.current || banners.length === 0) return
+    if (isDesktop || !scrollContainerRef.current || banners.length === 0) return;
 
-    const container = scrollContainerRef.current
-    const cards = container.querySelectorAll('[data-partner-banner-card]')
-    if (cards.length === 0) return
+    const container = scrollContainerRef.current;
+    const cards = container.querySelectorAll('[data-partner-banner-card]');
+    if (cards.length === 0) return;
 
-    const card = cards[currentIndex] as HTMLElement
-    if (!card) return
+    const card = cards[currentIndex] as HTMLElement;
+    if (!card) return;
 
-    setIsAutoScrolling(true)
+    setIsAutoScrolling(true);
 
     card.scrollIntoView({
       behavior: 'smooth',
       block: 'nearest',
       inline: 'center',
-    })
+    });
 
-    setScrollProgress(currentIndex)
+    setScrollProgress(currentIndex);
 
     const resetTimer = setTimeout(() => {
-      setIsAutoScrolling(false)
-    }, 500)
+      setIsAutoScrolling(false);
+    }, 500);
 
-    return () => clearTimeout(resetTimer)
-  }, [currentIndex, isDesktop, banners.length])
+    return () => clearTimeout(resetTimer);
+  }, [currentIndex, isDesktop, banners.length]);
 
   // Handle scroll events
   const handleScroll = useCallback(() => {
-    if (!scrollContainerRef.current || isDesktop || isAutoScrolling) return
+    if (!scrollContainerRef.current || isDesktop || isAutoScrolling) return;
 
-    const container = scrollContainerRef.current
-    const containerWidth = container.offsetWidth
-    const scrollLeft = container.scrollLeft
-    const cardWidth = containerWidth * 0.85 + 16
+    const container = scrollContainerRef.current;
+    const containerWidth = container.offsetWidth;
+    const scrollLeft = container.scrollLeft;
+    const cardWidth = containerWidth * 0.85 + 16;
 
-    const newIndex = Math.round(scrollLeft / cardWidth)
-    const clampedIndex = Math.max(0, Math.min(newIndex, banners.length - 1))
+    const newIndex = Math.round(scrollLeft / cardWidth);
+    const clampedIndex = Math.max(0, Math.min(newIndex, banners.length - 1));
 
-    const progress = scrollLeft / (cardWidth * (banners.length - 1))
-    setScrollProgress(progress * (banners.length - 1))
+    const progress = scrollLeft / (cardWidth * (banners.length - 1));
+    setScrollProgress(progress * (banners.length - 1));
 
     if (clampedIndex !== currentIndex) {
-      setCurrentIndex(clampedIndex)
+      setCurrentIndex(clampedIndex);
     }
-  }, [currentIndex, banners.length, isDesktop, isAutoScrolling])
+  }, [currentIndex, banners.length, isDesktop, isAutoScrolling]);
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length)
-  }
+    setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
+  };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % banners.length)
-  }
+    setCurrentIndex((prev) => (prev + 1) % banners.length);
+  };
 
-  const handleTouchStart = () => setIsPaused(true)
+  const handleTouchStart = () => setIsPaused(true);
   const handleTouchEnd = () => {
-    setTimeout(() => setIsPaused(false), 2000)
-  }
+    setTimeout(() => setIsPaused(false), 2000);
+  };
 
   if (isLoading) {
     return (
@@ -465,33 +478,33 @@ export function PartnerBannersCarousel({
           ))}
         </div>
       </div>
-    )
+    );
   }
 
-  if (banners.length === 0) return null
+  if (banners.length === 0) return null;
 
   const visibleBanners = isDesktop
     ? (() => {
-        const result = []
+        const result = [];
         for (let i = 0; i < Math.min(3, banners.length); i++) {
-          const index = (currentIndex + i) % banners.length
-          result.push({ ...banners[index], _index: index })
+          const index = (currentIndex + i) % banners.length;
+          result.push({ ...banners[index], _index: index });
         }
-        return result
+        return result;
       })()
-    : banners
+    : banners;
 
   return (
     <div className={`${className}`}>
       <div
         className="relative"
         onMouseEnter={() => {
-          setIsHovered(true)
-          if (isDesktop) setIsPaused(true)
+          setIsHovered(true);
+          if (isDesktop) setIsPaused(true);
         }}
         onMouseLeave={() => {
-          setIsHovered(false)
-          if (isDesktop) setTimeout(() => setIsPaused(false), 1000)
+          setIsHovered(false);
+          if (isDesktop) setTimeout(() => setIsPaused(false), 1000);
         }}
       >
         {/* Mobile: Scroll Snap Carousel */}
@@ -603,5 +616,5 @@ export function PartnerBannersCarousel({
         />
       )}
     </div>
-  )
+  );
 }

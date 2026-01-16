@@ -1,14 +1,25 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { CustomerLayout } from '@/components/customer/layout'
-import { ArrowLeft, ArrowRight, Shield, Database, Share2, Lock, UserCheck, Clock, Mail, Trash2 } from 'lucide-react'
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { CustomerLayout } from '@/components/customer/layout';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Shield,
+  Database,
+  Share2,
+  Lock,
+  UserCheck,
+  Clock,
+  Mail,
+  Trash2,
+} from 'lucide-react';
 
 export default function PrivacyPage() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const BackArrow = isRTL ? ArrowRight : ArrowLeft
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   const content = {
     ar: {
@@ -20,7 +31,7 @@ export default function PrivacyPage() {
           title: '١. مقدمة',
           content: `مرحباً بك في إنجزنا. توضح سياسة الخصوصية هذه كيفية جمع واستخدام والإفصاح عن معلوماتك وحمايتها عند استخدامك لتطبيقنا وموقعنا الإلكتروني.
 
-باستخدامك لإنجزنا، فإنك توافق على جمع واستخدام المعلومات وفقاً لهذه السياسة.`
+باستخدامك لإنجزنا، فإنك توافق على جمع واستخدام المعلومات وفقاً لهذه السياسة.`,
         },
         {
           icon: Database,
@@ -33,7 +44,7 @@ export default function PrivacyPage() {
 • عناوين التوصيل - لتنفيذ الطلبات
 • المحافظة والمدينة - لعرض المتاجر المتاحة في منطقتك
 
-⚠️ هام: إنجزنا لا تستخدم تتبع الموقع الجغرافي اللحظي (GPS). نحن لا نتتبع موقعك المباشر ولا نراقب تحركاتك. يتم تحديد موقعك فقط من خلال المحافظة والمدينة التي تختارها يدوياً.`
+⚠️ هام: إنجزنا لا تستخدم تتبع الموقع الجغرافي اللحظي (GPS). نحن لا نتتبع موقعك المباشر ولا نراقب تحركاتك. يتم تحديد موقعك فقط من خلال المحافظة والمدينة التي تختارها يدوياً.`,
         },
         {
           icon: Share2,
@@ -46,7 +57,7 @@ export default function PrivacyPage() {
 
 مقدمو الخدمة ملزمون تعاقدياً باستخدام هذه المعلومات فقط لتنفيذ الطلبات، ويُحظر عليهم استخدامها للتسويق أو أي أغراض أخرى.
 
-🔒 نحن لا نبيع أو نؤجر أو نتاجر بمعلوماتك الشخصية لأطراف ثالثة لأغراض تسويقية.`
+🔒 نحن لا نبيع أو نؤجر أو نتاجر بمعلوماتك الشخصية لأطراف ثالثة لأغراض تسويقية.`,
         },
         {
           icon: Lock,
@@ -56,7 +67,7 @@ export default function PrivacyPage() {
 • التشفير: جميع البيانات المنقولة مشفرة باستخدام SSL/TLS
 • التحكم في الوصول: فقط الموظفون المصرح لهم يمكنهم الوصول إلى البيانات
 • التخزين الآمن: البيانات مخزنة على خوادم آمنة مع عمليات تدقيق منتظمة
-• حماية كلمات المرور: كلمات المرور مشفرة ولا تُخزن كنص عادي`
+• حماية كلمات المرور: كلمات المرور مشفرة ولا تُخزن كنص عادي`,
         },
         {
           icon: UserCheck,
@@ -68,7 +79,7 @@ export default function PrivacyPage() {
 • الحذف: طلب حذف حسابك وبياناتك
 • إلغاء الاشتراك: إلغاء الاشتراك من الرسائل الترويجية
 
-لممارسة هذه الحقوق، تواصل معنا على: privacy@engezna.com`
+لممارسة هذه الحقوق، تواصل معنا على: privacy@engezna.com`,
         },
         {
           icon: Trash2,
@@ -92,12 +103,12 @@ export default function PrivacyPage() {
 • سجل الطلبات
 • المفضلات
 
-📌 ملاحظة: بعض البيانات قد نحتفظ بها لفترة محدودة للامتثال للمتطلبات القانونية والضريبية.`
+📌 ملاحظة: بعض البيانات قد نحتفظ بها لفترة محدودة للامتثال للمتطلبات القانونية والضريبية.`,
         },
         {
           icon: Clock,
           title: '٧. الاحتفاظ بالبيانات',
-          content: `نحتفظ بمعلوماتك الشخصية طالما حسابك نشط أو حسب الحاجة لتقديم الخدمات. يمكنك طلب حذف حسابك والبيانات المرتبطة به في أي وقت عن طريق التواصل مع فريق الدعم.`
+          content: `نحتفظ بمعلوماتك الشخصية طالما حسابك نشط أو حسب الحاجة لتقديم الخدمات. يمكنك طلب حذف حسابك والبيانات المرتبطة به في أي وقت عن طريق التواصل مع فريق الدعم.`,
         },
         {
           icon: Mail,
@@ -108,9 +119,9 @@ export default function PrivacyPage() {
 📍 العنوان: ش صالح حمام بجوار مسجد الاباصيري - بني سويف، مصر
 📋 السجل التجاري: 2767
 📧 البريد الإلكتروني: support@engezna.com
-💬 الدعم الفني: من خلال قسم المساعدة في التطبيق`
-        }
-      ]
+💬 الدعم الفني: من خلال قسم المساعدة في التطبيق`,
+        },
+      ],
     },
     en: {
       title: 'Privacy Policy',
@@ -121,7 +132,7 @@ export default function PrivacyPage() {
           title: '1. Introduction',
           content: `Welcome to Engezna. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and website.
 
-By using Engezna, you agree to the collection and use of information in accordance with this policy.`
+By using Engezna, you agree to the collection and use of information in accordance with this policy.`,
         },
         {
           icon: Database,
@@ -134,7 +145,7 @@ By using Engezna, you agree to the collection and use of information in accordan
 • Delivery Addresses - Order fulfillment
 • Governorate & City - Displaying relevant stores in your area
 
-⚠️ Important: Engezna does NOT use real-time GPS tracking. We do not track your live location or monitor your movements. Your location is determined solely by the governorate and city you manually select.`
+⚠️ Important: Engezna does NOT use real-time GPS tracking. We do not track your live location or monitor your movements. Your location is determined solely by the governorate and city you manually select.`,
         },
         {
           icon: Share2,
@@ -147,7 +158,7 @@ By using Engezna, you agree to the collection and use of information in accordan
 
 Service providers are contractually obligated to use this information solely for order fulfillment and are prohibited from using it for marketing or other purposes.
 
-🔒 We NEVER sell, rent, or trade your personal information to third parties for marketing purposes.`
+🔒 We NEVER sell, rent, or trade your personal information to third parties for marketing purposes.`,
         },
         {
           icon: Lock,
@@ -157,7 +168,7 @@ Service providers are contractually obligated to use this information solely for
 • Encryption: All transmitted data is encrypted using SSL/TLS
 • Access Control: Only authorized personnel can access personal data
 • Secure Storage: Data is stored on secure servers with regular audits
-• Password Protection: Passwords are hashed and never stored in plain text`
+• Password Protection: Passwords are hashed and never stored in plain text`,
         },
         {
           icon: UserCheck,
@@ -169,7 +180,7 @@ Service providers are contractually obligated to use this information solely for
 • Deletion: Request deletion of your account and data
 • Opt-out: Unsubscribe from promotional communications
 
-To exercise these rights, contact us at: privacy@engezna.com`
+To exercise these rights, contact us at: privacy@engezna.com`,
         },
         {
           icon: Trash2,
@@ -193,12 +204,12 @@ What Gets Deleted:
 • Order history
 • Favorites
 
-Note: Some data may be retained for a limited period to comply with legal and tax requirements.`
+Note: Some data may be retained for a limited period to comply with legal and tax requirements.`,
         },
         {
           icon: Clock,
           title: '7. Data Retention',
-          content: `We retain your personal information for as long as your account is active or as needed to provide services. You may request deletion of your account and associated data at any time by contacting our support team.`
+          content: `We retain your personal information for as long as your account is active or as needed to provide services. You may request deletion of your account and associated data at any time by contacting our support team.`,
         },
         {
           icon: Mail,
@@ -209,13 +220,13 @@ Note: Some data may be retained for a limited period to comply with legal and ta
 📍 Address: Saleh Hammam St., next to Al-Abasiri Mosque, Beni Suef, Egypt
 📋 Commercial Registry: 2767
 📧 Email: support@engezna.com
-💬 Support: Through the app's Help section`
-        }
-      ]
-    }
-  }
+💬 Support: Through the app's Help section`,
+        },
+      ],
+    },
+  };
 
-  const t = content[locale as keyof typeof content] || content.en
+  const t = content[locale as keyof typeof content] || content.en;
 
   return (
     <CustomerLayout>
@@ -246,7 +257,7 @@ Note: Some data may be retained for a limited period to comply with legal and ta
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-3xl mx-auto space-y-6">
             {t.sections.map((section, index) => {
-              const IconComponent = section.icon
+              const IconComponent = section.icon;
               return (
                 <div
                   key={index}
@@ -257,16 +268,14 @@ Note: Some data may be retained for a limited period to comply with legal and ta
                       <IconComponent className="w-5 h-5 text-[#009DE0]" />
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-lg font-bold text-[#0F172A] mb-3">
-                        {section.title}
-                      </h2>
+                      <h2 className="text-lg font-bold text-[#0F172A] mb-3">{section.title}</h2>
                       <div className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-line">
                         {section.content}
                       </div>
                     </div>
                   </div>
                 </div>
-              )
+              );
             })}
 
             {/* Footer Note */}
@@ -274,8 +283,7 @@ Note: Some data may be retained for a limited period to comply with legal and ta
               <p className="text-slate-600 text-sm">
                 {isRTL
                   ? 'هذه السياسة متوافقة مع قانون حماية البيانات الشخصية المصري (القانون رقم ١٥١ لسنة ٢٠٢٠)'
-                  : 'This policy complies with the Egyptian Personal Data Protection Law (Law No. 151 of 2020)'
-                }
+                  : 'This policy complies with the Egyptian Personal Data Protection Law (Law No. 151 of 2020)'}
               </p>
             </div>
 
@@ -298,5 +306,5 @@ Note: Some data may be retained for a limited period to comply with legal and ta
         </div>
       </div>
     </CustomerLayout>
-  )
+  );
 }

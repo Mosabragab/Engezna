@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import {
   FileText,
   Mic,
@@ -18,25 +18,25 @@ import {
   Package,
   MapPin,
   ChevronDown,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 // Child components
-import { TextOrderInput } from './TextOrderInput'
-import { VoiceOrderInput } from './VoiceOrderInput'
-import { ImageOrderInput } from './ImageOrderInput'
-import { MerchantSelector } from './MerchantSelector'
-import { ActiveCartBanner, ActiveCartNotice } from './ActiveCartBanner'
-import { NotepadOrderInput, OrderItem, itemsToText, textToItems } from './NotepadOrderInput'
+import { TextOrderInput } from './TextOrderInput';
+import { VoiceOrderInput } from './VoiceOrderInput';
+import { ImageOrderInput } from './ImageOrderInput';
+import { MerchantSelector } from './MerchantSelector';
+import { ActiveCartBanner, ActiveCartNotice } from './ActiveCartBanner';
+import { NotepadOrderInput, OrderItem, itemsToText, textToItems } from './NotepadOrderInput';
 
 // Services & hooks
-import { useDraftManager } from '@/lib/offline/draft-manager'
-import { useCart } from '@/lib/store/cart'
-import { createClient } from '@/lib/supabase/client'
-import { createCustomerBroadcastService } from '@/lib/orders/broadcast-service'
-import { createCustomOrderStorageService } from '@/lib/storage/custom-order-storage'
+import { useDraftManager } from '@/lib/offline/draft-manager';
+import { useCart } from '@/lib/store/cart';
+import { createClient } from '@/lib/supabase/client';
+import { createCustomerBroadcastService } from '@/lib/orders/broadcast-service';
+import { createCustomOrderStorageService } from '@/lib/storage/custom-order-storage';
 
 // Types
 import type {
@@ -44,16 +44,16 @@ import type {
   ProviderWithCustomSettings,
   CustomOrderInputType,
   CreateBroadcastPayload,
-} from '@/types/custom-order'
-import { MAX_BROADCAST_PROVIDERS } from '@/types/custom-order'
+} from '@/types/custom-order';
+import { MAX_BROADCAST_PROVIDERS } from '@/types/custom-order';
 
 interface ExtendedCustomOrderInterfaceProps extends CustomOrderInterfaceProps {
-  className?: string
-  availableProviders?: ProviderWithCustomSettings[]
-  customerId?: string
+  className?: string;
+  availableProviders?: ProviderWithCustomSettings[];
+  customerId?: string;
 }
 
-type InputTab = 'text' | 'voice' | 'image'
+type InputTab = 'text' | 'voice' | 'image';
 
 export function CustomOrderInterface({
   provider,
@@ -63,113 +63,115 @@ export function CustomOrderInterface({
   availableProviders = [],
   customerId,
 }: ExtendedCustomOrderInterfaceProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const router = useRouter()
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const router = useRouter();
 
   // Input state
-  const [activeTab, setActiveTab] = useState<InputTab>('text')
+  const [activeTab, setActiveTab] = useState<InputTab>('text');
   const [orderItems, setOrderItems] = useState<OrderItem[]>([
-    { id: crypto.randomUUID(), text: '' }
-  ])
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null)
-  const [images, setImages] = useState<File[]>([])
-  const [notes, setNotes] = useState('')
+    { id: crypto.randomUUID(), text: '' },
+  ]);
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [notes, setNotes] = useState('');
 
   // Delivery options state
-  const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery')
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
-  const [customerAddresses, setCustomerAddresses] = useState<Array<{
-    id: string;
-    label: string | null;
-    address_line1: string;
-    area: string | null;
-    city: string | null;
-    is_default: boolean;
-  }>>([])
-  const [loadingAddresses, setLoadingAddresses] = useState(false)
+  const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [customerAddresses, setCustomerAddresses] = useState<
+    Array<{
+      id: string;
+      label: string | null;
+      address_line1: string;
+      area: string | null;
+      city: string | null;
+      is_default: boolean;
+    }>
+  >([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   // Convert items to text for submission
-  const textInput = itemsToText(orderItems)
+  const textInput = itemsToText(orderItems);
 
   // Provider selection (for broadcast)
   const [selectedProviders, setSelectedProviders] = useState<string[]>(
     provider ? [provider.id] : []
-  )
+  );
 
   // UI state
-  const [step, setStep] = useState<'input' | 'providers' | 'review'>('input')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [showDraftBanner, setShowDraftBanner] = useState(false)
+  const [step, setStep] = useState<'input' | 'providers' | 'review'>('input');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
 
   // Cart state for ActiveCartBanner
-  const cart = useCart()
-  const hasActiveCart = cart.cart.length > 0
-  const activeCartProvider = cart.provider
+  const cart = useCart();
+  const hasActiveCart = cart.cart.length > 0;
+  const activeCartProvider = cart.provider;
 
   // Draft management
   const { draft, saveDraft, deleteDraft, startAutoSave, hasDraft } = useDraftManager(
     provider?.id || 'general',
     provider?.name_ar || 'General'
-  )
+  );
 
   // Determine accepted input types
   const acceptedTypes = useMemo(() => {
-    const settings = provider?.custom_order_settings
+    const settings = provider?.custom_order_settings;
     return {
       text: settings?.accepts_text ?? true,
       voice: settings?.accepts_voice ?? true,
       image: settings?.accepts_image ?? true,
-    }
-  }, [provider?.custom_order_settings])
+    };
+  }, [provider?.custom_order_settings]);
 
   // Load customer addresses
   useEffect(() => {
     const loadAddresses = async () => {
-      if (!customerId) return
-      setLoadingAddresses(true)
+      if (!customerId) return;
+      setLoadingAddresses(true);
       try {
-        const supabase = createClient()
+        const supabase = createClient();
         const { data, error } = await supabase
           .from('addresses')
           .select('id, label, address_line1, area, city, is_default')
           .eq('user_id', customerId)
-          .order('is_default', { ascending: false })
+          .order('is_default', { ascending: false });
 
         if (!error && data) {
-          setCustomerAddresses(data)
+          setCustomerAddresses(data);
           // Auto-select default address
-          const defaultAddr = data.find(a => a.is_default)
+          const defaultAddr = data.find((a) => a.is_default);
           if (defaultAddr) {
-            setSelectedAddressId(defaultAddr.id)
+            setSelectedAddressId(defaultAddr.id);
           } else if (data.length > 0) {
-            setSelectedAddressId(data[0].id)
+            setSelectedAddressId(data[0].id);
           }
         }
       } catch (err) {
-        console.error('Error loading addresses:', err)
+        console.error('Error loading addresses:', err);
       } finally {
-        setLoadingAddresses(false)
+        setLoadingAddresses(false);
       }
-    }
-    loadAddresses()
-  }, [customerId])
+    };
+    loadAddresses();
+  }, [customerId]);
 
   // Load draft on mount
   useEffect(() => {
     if (draft) {
-      setShowDraftBanner(true)
+      setShowDraftBanner(true);
       // Don't auto-restore - let user decide
     }
-  }, [draft])
+  }, [draft]);
 
   // Start auto-save
   useEffect(() => {
     startAutoSave(() => {
-      const text = itemsToText(orderItems)
+      const text = itemsToText(orderItems);
       if (!text && !voiceBlob && images.length === 0) {
-        return null
+        return null;
       }
 
       return {
@@ -179,142 +181,142 @@ export function CustomOrderInterface({
         text: text || undefined,
         imageDataUrls: images.length > 0 ? [] : undefined, // Would need to convert to data URLs
         notes: notes || undefined,
-      }
-    })
-  }, [orderItems, voiceBlob, images, notes, provider, startAutoSave])
+      };
+    });
+  }, [orderItems, voiceBlob, images, notes, provider, startAutoSave]);
 
   // Restore draft
   const handleRestoreDraft = () => {
     if (draft) {
       if (draft.text) {
-        setOrderItems(textToItems(draft.text))
+        setOrderItems(textToItems(draft.text));
       }
-      if (draft.notes) setNotes(draft.notes)
+      if (draft.notes) setNotes(draft.notes);
       // Voice and images need special handling (IndexedDB/base64)
-      setShowDraftBanner(false)
+      setShowDraftBanner(false);
     }
-  }
+  };
 
   // Discard draft
   const handleDiscardDraft = () => {
-    deleteDraft()
-    setShowDraftBanner(false)
-  }
+    deleteDraft();
+    setShowDraftBanner(false);
+  };
 
   // Determine input type based on what's filled
   const determineInputType = (): CustomOrderInputType => {
-    const hasText = textInput.trim().length > 0
-    const hasVoice = voiceBlob !== null
-    const hasImages = images.length > 0
+    const hasText = textInput.trim().length > 0;
+    const hasVoice = voiceBlob !== null;
+    const hasImages = images.length > 0;
 
-    if (hasText && (hasVoice || hasImages)) return 'mixed'
-    if (hasVoice) return 'voice'
-    if (hasImages) return 'image'
-    return 'text'
-  }
+    if (hasText && (hasVoice || hasImages)) return 'mixed';
+    if (hasVoice) return 'voice';
+    if (hasImages) return 'image';
+    return 'text';
+  };
 
   // Check if form has content
   const hasContent = useMemo(() => {
-    return textInput.trim().length > 0 || voiceBlob !== null || images.length > 0
-  }, [textInput, voiceBlob, images])
+    return textInput.trim().length > 0 || voiceBlob !== null || images.length > 0;
+  }, [textInput, voiceBlob, images]);
 
   // Handle tab change
   const handleTabChange = (value: string) => {
-    setActiveTab(value as InputTab)
-  }
+    setActiveTab(value as InputTab);
+  };
 
   // Handle voice recording complete
   const handleVoiceComplete = (blob: Blob) => {
-    setVoiceBlob(blob)
-  }
+    setVoiceBlob(blob);
+  };
 
   // Handle voice error
   const handleVoiceError = (errorMsg: string) => {
-    setError(errorMsg)
-  }
+    setError(errorMsg);
+  };
 
   // Navigate to cart
   const handleViewCart = () => {
-    router.push(`/${locale}/cart`)
-  }
+    router.push(`/${locale}/cart`);
+  };
 
   // Proceed to provider selection
   const handleProceedToProviders = () => {
     if (!hasContent) {
-      setError(isRTL ? 'يرجى إدخال طلبك' : 'Please enter your order')
-      return
+      setError(isRTL ? 'يرجى إدخال طلبك' : 'Please enter your order');
+      return;
     }
-    setError(null)
-    setStep('providers')
-  }
+    setError(null);
+    setStep('providers');
+  };
 
   // Back to input
   const handleBackToInput = () => {
-    setStep('input')
-  }
+    setStep('input');
+  };
 
   // Proceed to review
   const handleProceedToReview = () => {
     if (selectedProviders.length === 0) {
-      setError(isRTL ? 'يرجى اختيار متجر واحد على الأقل' : 'Please select at least one merchant')
-      return
+      setError(isRTL ? 'يرجى اختيار متجر واحد على الأقل' : 'Please select at least one merchant');
+      return;
     }
-    setError(null)
-    setStep('review')
-  }
+    setError(null);
+    setStep('review');
+  };
 
   // Submit order
   const handleSubmit = async () => {
     if (!customerId) {
-      setError(isRTL ? 'يرجى تسجيل الدخول' : 'Please login')
-      return
+      setError(isRTL ? 'يرجى تسجيل الدخول' : 'Please login');
+      return;
     }
 
-    setIsSubmitting(true)
-    setError(null)
+    setIsSubmitting(true);
+    setError(null);
 
     try {
-      const supabase = createClient()
-      const storageService = createCustomOrderStorageService(supabase)
+      const supabase = createClient();
+      const storageService = createCustomOrderStorageService(supabase);
 
-      let voiceUrl: string | undefined
-      let imageUrls: string[] | undefined
+      let voiceUrl: string | undefined;
+      let imageUrls: string[] | undefined;
 
       // Upload voice if exists
       if (voiceBlob) {
         // Generate a temporary broadcast ID for storage
-        const tempId = crypto.randomUUID()
-        const result = await storageService.uploadVoice(tempId, voiceBlob)
+        const tempId = crypto.randomUUID();
+        const result = await storageService.uploadVoice(tempId, voiceBlob);
         if (result.url) {
-          voiceUrl = result.url
+          voiceUrl = result.url;
         }
       }
 
       // Upload images if exist
       if (images.length > 0) {
-        const tempId = crypto.randomUUID()
-        console.log('Uploading images, count:', images.length)
+        const tempId = crypto.randomUUID();
+        console.log('Uploading images, count:', images.length);
         try {
-          const result = await storageService.uploadBroadcastImages(tempId, images)
-          console.log('Image upload result:', result)
+          const result = await storageService.uploadBroadcastImages(tempId, images);
+          console.log('Image upload result:', result);
           if (result.success && result.urls && result.urls.length > 0) {
-            imageUrls = result.urls
-            console.log('Image URLs:', imageUrls)
+            imageUrls = result.urls;
+            console.log('Image URLs:', imageUrls);
           } else if (result.errors && result.errors.length > 0) {
-            console.error('Image upload errors:', result.errors)
+            console.error('Image upload errors:', result.errors);
             // Continue without images but log the error
           }
         } catch (uploadErr) {
-          console.error('Image upload exception:', uploadErr)
+          console.error('Image upload exception:', uploadErr);
           // Continue without images
         }
       }
 
       // Validate delivery address for delivery orders
       if (orderType === 'delivery' && !selectedAddressId) {
-        setError(isRTL ? 'يرجى اختيار عنوان التوصيل' : 'Please select a delivery address')
-        setIsSubmitting(false)
-        return
+        setError(isRTL ? 'يرجى اختيار عنوان التوصيل' : 'Please select a delivery address');
+        setIsSubmitting(false);
+        return;
       }
 
       // Create payload
@@ -327,43 +329,39 @@ export function CustomOrderInterface({
         notes: notes || undefined,
         orderType,
         deliveryAddressId: orderType === 'delivery' ? selectedAddressId || undefined : undefined,
-      }
+      };
 
       // Submit via parent callback
-      await onSubmit(payload)
+      await onSubmit(payload);
 
       // Clear draft on success
-      deleteDraft()
+      deleteDraft();
 
       // Clear cart if needed
       if (hasActiveCart) {
-        cart.clearCart()
+        cart.clearCart();
       }
     } catch (err) {
-      console.error('Error submitting order:', err)
-      setError(
-        isRTL
-          ? 'حدث خطأ أثناء إرسال الطلب'
-          : 'Error submitting order'
-      )
+      console.error('Error submitting order:', err);
+      setError(isRTL ? 'حدث خطأ أثناء إرسال الطلب' : 'Error submitting order');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   // Available providers for selection (filter to custom mode only)
   const selectableProviders = useMemo(() => {
     if (availableProviders.length > 0) {
       return availableProviders.filter(
         (p) => p.operation_mode === 'custom' || p.operation_mode === 'hybrid'
-      )
+      );
     }
     // If only single provider mode
     if (provider) {
-      return [provider]
+      return [provider];
     }
-    return []
-  }, [availableProviders, provider])
+    return [];
+  }, [availableProviders, provider]);
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
@@ -403,19 +401,11 @@ export function CustomOrderInterface({
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleRestoreDraft}
-                  className="gap-1"
-                >
+                <Button size="sm" onClick={handleRestoreDraft} className="gap-1">
                   <RefreshCw className="w-3.5 h-3.5" />
                   {isRTL ? 'استعادة' : 'Restore'}
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleDiscardDraft}
-                >
+                <Button size="sm" variant="ghost" onClick={handleDiscardDraft}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
@@ -456,9 +446,7 @@ export function CustomOrderInterface({
                     <h2 className="font-semibold text-slate-800">
                       {isRTL ? provider.name_ar : provider.name_en}
                     </h2>
-                    <p className="text-sm text-slate-500">
-                      {isRTL ? 'طلب خاص' : 'Custom Order'}
-                    </p>
+                    <p className="text-sm text-slate-500">{isRTL ? 'طلب خاص' : 'Custom Order'}</p>
                   </div>
                 </div>
               )}
@@ -469,25 +457,19 @@ export function CustomOrderInterface({
                   {acceptedTypes.text && (
                     <TabsTrigger value="text" className="gap-1.5">
                       <FileText className="w-4 h-4" />
-                      <span className="hidden sm:inline">
-                        {isRTL ? 'نص' : 'Text'}
-                      </span>
+                      <span className="hidden sm:inline">{isRTL ? 'نص' : 'Text'}</span>
                     </TabsTrigger>
                   )}
                   {acceptedTypes.voice && (
                     <TabsTrigger value="voice" className="gap-1.5">
                       <Mic className="w-4 h-4" />
-                      <span className="hidden sm:inline">
-                        {isRTL ? 'صوت' : 'Voice'}
-                      </span>
+                      <span className="hidden sm:inline">{isRTL ? 'صوت' : 'Voice'}</span>
                     </TabsTrigger>
                   )}
                   {acceptedTypes.image && (
                     <TabsTrigger value="image" className="gap-1.5">
                       <ImageIcon className="w-4 h-4" />
-                      <span className="hidden sm:inline">
-                        {isRTL ? 'صور' : 'Images'}
-                      </span>
+                      <span className="hidden sm:inline">{isRTL ? 'صور' : 'Images'}</span>
                     </TabsTrigger>
                   )}
                 </TabsList>
@@ -622,7 +604,9 @@ export function CustomOrderInterface({
                   {images.length > 0 && (
                     <div>
                       <p className="text-xs text-slate-500 mb-2">
-                        {isRTL ? `الصور المرفقة (${images.length}):` : `Attached images (${images.length}):`}
+                        {isRTL
+                          ? `الصور المرفقة (${images.length}):`
+                          : `Attached images (${images.length}):`}
                       </p>
                       <div className="flex gap-2 overflow-x-auto pb-2">
                         {images.map((img, idx) => (
@@ -664,7 +648,7 @@ export function CustomOrderInterface({
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {selectedProviders.map((id, index) => {
-                    const p = selectableProviders.find((p) => p.id === id)
+                    const p = selectableProviders.find((p) => p.id === id);
                     return (
                       <span
                         key={id}
@@ -675,7 +659,7 @@ export function CustomOrderInterface({
                         </span>
                         {isRTL ? p?.name_ar : p?.name_en}
                       </span>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -697,16 +681,22 @@ export function CustomOrderInterface({
                         : 'border-slate-200 hover:border-slate-300'
                     )}
                   >
-                    <div className={cn(
-                      'w-10 h-10 rounded-full flex items-center justify-center',
-                      orderType === 'delivery' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'
-                    )}>
+                    <div
+                      className={cn(
+                        'w-10 h-10 rounded-full flex items-center justify-center',
+                        orderType === 'delivery'
+                          ? 'bg-primary text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      )}
+                    >
                       <Truck className="w-5 h-5" />
                     </div>
-                    <span className={cn(
-                      'text-sm font-medium',
-                      orderType === 'delivery' ? 'text-primary' : 'text-slate-700'
-                    )}>
+                    <span
+                      className={cn(
+                        'text-sm font-medium',
+                        orderType === 'delivery' ? 'text-primary' : 'text-slate-700'
+                      )}
+                    >
                       {isRTL ? 'توصيل' : 'Delivery'}
                     </span>
                   </button>
@@ -722,16 +712,22 @@ export function CustomOrderInterface({
                         : 'border-slate-200 hover:border-slate-300'
                     )}
                   >
-                    <div className={cn(
-                      'w-10 h-10 rounded-full flex items-center justify-center',
-                      orderType === 'pickup' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'
-                    )}>
+                    <div
+                      className={cn(
+                        'w-10 h-10 rounded-full flex items-center justify-center',
+                        orderType === 'pickup'
+                          ? 'bg-primary text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      )}
+                    >
                       <Package className="w-5 h-5" />
                     </div>
-                    <span className={cn(
-                      'text-sm font-medium',
-                      orderType === 'pickup' ? 'text-primary' : 'text-slate-700'
-                    )}>
+                    <span
+                      className={cn(
+                        'text-sm font-medium',
+                        orderType === 'pickup' ? 'text-primary' : 'text-slate-700'
+                      )}
+                    >
                       {isRTL ? 'استلام من المتجر' : 'Pickup'}
                     </span>
                     {orderType === 'pickup' && (
@@ -769,12 +765,14 @@ export function CustomOrderInterface({
                             )}
                           >
                             <div className="flex items-start gap-3">
-                              <div className={cn(
-                                'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5',
-                                selectedAddressId === addr.id
-                                  ? 'border-primary bg-primary'
-                                  : 'border-slate-300'
-                              )}>
+                              <div
+                                className={cn(
+                                  'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5',
+                                  selectedAddressId === addr.id
+                                    ? 'border-primary bg-primary'
+                                    : 'border-slate-300'
+                                )}
+                              >
                                 {selectedAddressId === addr.id && (
                                   <div className="w-2 h-2 rounded-full bg-white" />
                                 )}
@@ -854,12 +852,7 @@ export function CustomOrderInterface({
       <div className="p-4 border-t border-slate-100 bg-white">
         {step === 'input' && (
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={onCancel}
-              className="flex-1"
-              disabled={isSubmitting}
-            >
+            <Button variant="outline" onClick={onCancel} className="flex-1" disabled={isSubmitting}>
               {isRTL ? 'إلغاء' : 'Cancel'}
             </Button>
             <Button
@@ -902,11 +895,7 @@ export function CustomOrderInterface({
             >
               {isRTL ? 'رجوع' : 'Back'}
             </Button>
-            <Button
-              onClick={handleSubmit}
-              className="flex-1 gap-2"
-              disabled={isSubmitting}
-            >
+            <Button onClick={handleSubmit} className="flex-1 gap-2" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -923,5 +912,5 @@ export function CustomOrderInterface({
         )}
       </div>
     </div>
-  )
+  );
 }

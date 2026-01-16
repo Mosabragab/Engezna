@@ -107,7 +107,9 @@ export async function getDashboardStats(
     // إحصائيات مقدمي الخدمة - Provider Statistics
     // ───────────────────────────────────────────────────────────────────
 
-    let providersQuery = supabase.from('providers').select('id, status, created_at, governorate_id');
+    let providersQuery = supabase
+      .from('providers')
+      .select('id, status, created_at, governorate_id');
     if (hasRegionFilter) providersQuery = providersQuery.in('governorate_id', filterGovernorateIds);
     if (cityId) providersQuery = providersQuery.eq('city_id', cityId);
 
@@ -133,19 +135,20 @@ export async function getDashboardStats(
 
     const providerStats = {
       total: providers.length,
-      pending: providers.filter(
-        (p) => p.status === 'pending_approval' || p.status === 'incomplete'
-      ).length,
+      pending: providers.filter((p) => p.status === 'pending_approval' || p.status === 'incomplete')
+        .length,
       approved: providers.filter(
-        (p) => p.status === 'approved' || p.status === 'open' || p.status === 'closed' || p.status === 'temporarily_paused' || p.status === 'on_vacation'
+        (p) =>
+          p.status === 'approved' ||
+          p.status === 'open' ||
+          p.status === 'closed' ||
+          p.status === 'temporarily_paused' ||
+          p.status === 'on_vacation'
       ).length,
       rejected: providers.filter((p) => p.status === 'rejected').length,
       suspended: providers.filter((p) => p.status === 'suspended').length,
       newThisMonth: providersThisMonth.length,
-      changePercent: calculateChangePercent(
-        providersThisMonth.length,
-        providersLastMonth.length
-      ),
+      changePercent: calculateChangePercent(providersThisMonth.length, providersLastMonth.length),
     };
 
     // ───────────────────────────────────────────────────────────────────
@@ -215,20 +218,14 @@ export async function getDashboardStats(
     const completedStatuses = ['delivered', 'completed'];
     const cancelledStatuses = ['cancelled', 'refunded'];
 
-    const ordersToday = orders.filter(
-      (o) => new Date(o.created_at) >= new Date(startOfToday)
-    );
-    const ordersThisWeek = orders.filter(
-      (o) => new Date(o.created_at) >= new Date(startOfWeek)
-    );
+    const ordersToday = orders.filter((o) => new Date(o.created_at) >= new Date(startOfToday));
+    const ordersThisWeek = orders.filter((o) => new Date(o.created_at) >= new Date(startOfWeek));
     const ordersLastWeek = orders.filter(
       (o) =>
         new Date(o.created_at) >= new Date(startOfPreviousWeek) &&
         new Date(o.created_at) < new Date(startOfWeek)
     );
-    const ordersThisMonth = orders.filter(
-      (o) => new Date(o.created_at) >= new Date(startOfMonth)
-    );
+    const ordersThisMonth = orders.filter((o) => new Date(o.created_at) >= new Date(startOfMonth));
     const ordersLastMonth = orders.filter(
       (o) =>
         new Date(o.created_at) >= new Date(startOfPreviousMonth) &&
@@ -259,9 +256,7 @@ export async function getDashboardStats(
       0
     );
 
-    const completedOrdersToday = ordersToday.filter((o) =>
-      completedStatuses.includes(o.status)
-    );
+    const completedOrdersToday = ordersToday.filter((o) => completedStatuses.includes(o.status));
     const completedOrdersThisMonth = ordersThisMonth.filter((o) =>
       completedStatuses.includes(o.status)
     );
@@ -270,14 +265,8 @@ export async function getDashboardStats(
     );
 
     const todayRevenue = completedOrdersToday.reduce((sum, o) => sum + (o.total || 0), 0);
-    const thisMonthRevenue = completedOrdersThisMonth.reduce(
-      (sum, o) => sum + (o.total || 0),
-      0
-    );
-    const lastMonthRevenue = completedOrdersLastMonth.reduce(
-      (sum, o) => sum + (o.total || 0),
-      0
-    );
+    const thisMonthRevenue = completedOrdersThisMonth.reduce((sum, o) => sum + (o.total || 0), 0);
+    const lastMonthRevenue = completedOrdersLastMonth.reduce((sum, o) => sum + (o.total || 0), 0);
 
     // Pending settlement - calculate from actual settlements table
     // Sum of net_payout for settlements that are pending or partially_paid
@@ -292,16 +281,16 @@ export async function getDashboardStats(
       if (hasRegionFilter && providerIds.length > 0) {
         settlementsQuery = settlementsQuery.in('provider_id', providerIds);
       } else if (hasRegionFilter && providerIds.length === 0) {
-        settlementsQuery = settlementsQuery.eq('provider_id', '00000000-0000-0000-0000-000000000000');
+        settlementsQuery = settlementsQuery.eq(
+          'provider_id',
+          '00000000-0000-0000-0000-000000000000'
+        );
       }
 
       const { data: pendingSettlementsData, error: settlementsError } = await settlementsQuery;
 
       if (!settlementsError && pendingSettlementsData) {
-        pendingSettlement = pendingSettlementsData.reduce(
-          (sum, s) => sum + (s.net_payout || 0),
-          0
-        );
+        pendingSettlement = pendingSettlementsData.reduce((sum, s) => sum + (s.net_payout || 0), 0);
       }
     } catch (err) {
       console.error('Error fetching pending settlements:', err);

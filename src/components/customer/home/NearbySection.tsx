@@ -1,27 +1,27 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Provider {
-  id: string
-  name_ar: string
-  name_en: string
-  logo_url?: string | null
-  cover_image_url?: string | null
-  category: string
-  distance?: number // in km
-  status: string
+  id: string;
+  name_ar: string;
+  name_en: string;
+  logo_url?: string | null;
+  cover_image_url?: string | null;
+  category: string;
+  distance?: number; // in km
+  status: string;
 }
 
 interface NearbySectionProps {
-  title?: string
-  providers?: Provider[]
-  onViewAll?: () => void
-  showViewAll?: boolean
-  className?: string
+  title?: string;
+  providers?: Provider[];
+  onViewAll?: () => void;
+  showViewAll?: boolean;
+  className?: string;
 }
 
 /**
@@ -35,12 +35,12 @@ export function NearbySection({
   showViewAll = true,
   className = '',
 }: NearbySectionProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const sectionTitle = title || (isRTL ? 'قريب منك' : 'Nearby')
+  const sectionTitle = title || (isRTL ? 'قريب منك' : 'Nearby');
 
-  if (providers.length === 0) return null
+  if (providers.length === 0) return null;
 
   return (
     <section className={cn('py-4', className)}>
@@ -56,26 +56,19 @@ export function NearbySection({
             className="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
           >
             {isRTL ? 'عرض الكل' : 'View All'}
-            {isRTL ? (
-              <ChevronLeft className="w-4 h-4" />
-            ) : (
-              <ChevronRight className="w-4 h-4" />
-            )}
+            {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
         )}
       </div>
 
       {/* Horizontal Scroll Cards - CSS Scroll Snap */}
-      <div
-        className="snap-carousel px-4 pb-2 gap-3"
-        style={{ scrollPaddingInlineStart: '16px' }}
-      >
+      <div className="snap-carousel px-4 pb-2 gap-3" style={{ scrollPaddingInlineStart: '16px' }}>
         {providers.map((provider) => (
           <NearbyMiniCard key={provider.id} provider={provider} locale={locale} />
         ))}
       </div>
     </section>
-  )
+  );
 }
 
 // Category emoji mapping
@@ -88,13 +81,13 @@ const categoryEmojis: Record<string, string> = {
   pharmacy: '💊',
   juice: '🧃',
   desserts: '🍰',
-}
+};
 
 // Mini Provider Card for nearby section
 function NearbyMiniCard({ provider, locale }: { provider: Provider; locale: string }) {
-  const isRTL = locale === 'ar'
-  const name = isRTL ? provider.name_ar : provider.name_en
-  const emoji = categoryEmojis[provider.category] || '🏪'
+  const isRTL = locale === 'ar';
+  const name = isRTL ? provider.name_ar : provider.name_en;
+  const emoji = categoryEmojis[provider.category] || '🏪';
 
   return (
     <Link
@@ -117,25 +110,19 @@ function NearbyMiniCard({ provider, locale }: { provider: Provider; locale: stri
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl">
-            {emoji}
-          </div>
+          <div className="w-full h-full flex items-center justify-center text-3xl">{emoji}</div>
         )}
         {/* Status Badge */}
         {provider.status === 'closed' && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-white text-xs font-medium">
-              {isRTL ? 'مغلق' : 'Closed'}
-            </span>
+            <span className="text-white text-xs font-medium">{isRTL ? 'مغلق' : 'Closed'}</span>
           </div>
         )}
       </div>
 
       {/* Info */}
       <div className="p-2">
-        <h3 className="font-semibold text-slate-900 text-sm truncate mb-1">
-          {name}
-        </h3>
+        <h3 className="font-semibold text-slate-900 text-sm truncate mb-1">{name}</h3>
         {provider.distance !== undefined && (
           <div className="flex items-center gap-1 text-xs text-slate-500">
             <MapPin className="w-3 h-3" />
@@ -146,5 +133,5 @@ function NearbyMiniCard({ provider, locale }: { provider: Provider; locale: stri
         )}
       </div>
     </Link>
-  )
+  );
 }

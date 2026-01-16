@@ -1,18 +1,18 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 /**
  * Creates a Supabase client for server-side operations
  * This should be used in Server Components, Server Actions, and Route Handlers
  */
 export async function createClient() {
-  const cookieStore = await cookies()
+  const cookieStore = await cookies();
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase environment variables missing in server client')
+    console.warn('Supabase environment variables missing in server client');
   }
 
   return createServerClient(
@@ -21,13 +21,13 @@ export async function createClient() {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll()
+          return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
-            )
+            );
           } catch {
             // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
@@ -36,5 +36,5 @@ export async function createClient() {
         },
       },
     }
-  )
+  );
 }

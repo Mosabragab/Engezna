@@ -24,10 +24,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user role from profiles table
@@ -55,7 +52,12 @@ export async function POST(request: NextRequest) {
         const filters: OrderFilters = params.filters || {};
         console.log('[Orders API] Fetching orders with filters:', filters);
         const result = await getOrders(filters);
-        console.log('[Orders API] Result success:', result.success, 'Data count:', result.data?.data?.length || 0);
+        console.log(
+          '[Orders API] Result success:',
+          result.success,
+          'Data count:',
+          result.data?.data?.length || 0
+        );
         if (!result.success) {
           console.error('[Orders API] Error:', result.error);
         }
@@ -155,16 +157,10 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        return NextResponse.json(
-          { success: false, error: 'Unknown action' },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });
     }
   } catch (error) {
     console.error('Error in admin orders API:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

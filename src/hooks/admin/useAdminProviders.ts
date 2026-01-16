@@ -123,9 +123,7 @@ const defaultFilters: ProviderFilters = {
   sortOrder: 'desc',
 };
 
-export function useAdminProviders(
-  options: UseAdminProvidersOptions = {}
-): UseAdminProvidersReturn {
+export function useAdminProviders(options: UseAdminProvidersOptions = {}): UseAdminProvidersReturn {
   const { initialFilters = {}, autoFetch = true } = options;
 
   // State
@@ -298,9 +296,7 @@ export function useAdminProviders(
         if (result.success) {
           startTransition(() => {
             setProviders((prev) =>
-              prev.map((p) =>
-                p.id === providerId ? { ...p, commission_rate: commissionRate } : p
-              )
+              prev.map((p) => (p.id === providerId ? { ...p, commission_rate: commissionRate } : p))
             );
           });
           return true;

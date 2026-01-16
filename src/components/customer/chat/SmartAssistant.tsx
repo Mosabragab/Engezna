@@ -10,93 +10,94 @@
  * - Disables body scroll when open
  */
 
-'use client'
+'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Send, Loader2, Sparkles, Trash2, ShoppingCart } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { useAIChat } from '@/hooks/useAIChat'
-import { MessageBubble } from './MessageBubble'
-import { QuickActionsBar } from './QuickActionsBar'
-import { DEFAULT_QUICK_ACTIONS } from '@/types/chat'
-import type { ChatProduct } from '@/types/chat'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useCart } from '@/lib/store/cart'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Send, Loader2, Sparkles, Trash2, ShoppingCart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useAIChat } from '@/hooks/useAIChat';
+import { MessageBubble } from './MessageBubble';
+import { QuickActionsBar } from './QuickActionsBar';
+import { DEFAULT_QUICK_ACTIONS } from '@/types/chat';
+import type { ChatProduct } from '@/types/chat';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useCart } from '@/lib/store/cart';
+import { createClient } from '@/lib/supabase/client';
 
 // Custom hook to disable body scroll when chat is open
 function useBodyScrollLock(isLocked: boolean) {
   useEffect(() => {
-    if (!isLocked) return
+    if (!isLocked) return;
 
     // Save current scroll position and body style
-    const scrollY = window.scrollY
-    const originalStyle = window.getComputedStyle(document.body).overflow
+    const scrollY = window.scrollY;
+    const originalStyle = window.getComputedStyle(document.body).overflow;
 
     // Lock body scroll
-    document.body.style.overflow = 'hidden'
-    document.body.style.position = 'fixed'
-    document.body.style.top = `-${scrollY}px`
-    document.body.style.width = '100%'
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
 
     return () => {
       // Restore body scroll
-      document.body.style.overflow = originalStyle
-      document.body.style.position = ''
-      document.body.style.top = ''
-      document.body.style.width = ''
-      window.scrollTo(0, scrollY)
-    }
-  }, [isLocked])
+      document.body.style.overflow = originalStyle;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [isLocked]);
 }
 
 // Custom hook for Visual Viewport API - handles mobile keyboard
 function useVisualViewport() {
-  const [keyboardHeight, setKeyboardHeight] = useState(0)
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
-    const viewport = window.visualViewport
-    if (!viewport) return
+    const viewport = window.visualViewport;
+    if (!viewport) return;
 
     const handleResize = () => {
       // Calculate keyboard height from visual viewport
-      const heightDiff = window.innerHeight - viewport.height
-      const keyboardOpen = heightDiff > 150 // 150px threshold
+      const heightDiff = window.innerHeight - viewport.height;
+      const keyboardOpen = heightDiff > 150; // 150px threshold
 
-      setKeyboardHeight(keyboardOpen ? heightDiff : 0)
-      setIsKeyboardOpen(keyboardOpen)
-    }
+      setKeyboardHeight(keyboardOpen ? heightDiff : 0);
+      setIsKeyboardOpen(keyboardOpen);
+    };
 
     // Initial measurement
-    handleResize()
+    handleResize();
 
-    viewport.addEventListener('resize', handleResize)
-    viewport.addEventListener('scroll', handleResize)
+    viewport.addEventListener('resize', handleResize);
+    viewport.addEventListener('scroll', handleResize);
 
     return () => {
-      viewport.removeEventListener('resize', handleResize)
-      viewport.removeEventListener('scroll', handleResize)
-    }
-  }, [])
+      viewport.removeEventListener('resize', handleResize);
+      viewport.removeEventListener('scroll', handleResize);
+    };
+  }, []);
 
-  return { keyboardHeight, isKeyboardOpen }
+  return { keyboardHeight, isKeyboardOpen };
 }
 
 interface SmartAssistantProps {
-  isOpen: boolean
-  onClose: () => void
-  userId?: string
-  cityId?: string
-  governorateId?: string
-  customerName?: string // Can be passed directly if already available
-  providerContext?: {    // Provider context when opened from provider page
-    id: string
-    name: string
-  }
+  isOpen: boolean;
+  onClose: () => void;
+  userId?: string;
+  cityId?: string;
+  governorateId?: string;
+  customerName?: string; // Can be passed directly if already available
+  providerContext?: {
+    // Provider context when opened from provider page
+    id: string;
+    name: string;
+  };
 }
 
 export function SmartAssistant({
@@ -108,43 +109,43 @@ export function SmartAssistant({
   customerName: propCustomerName,
   providerContext,
 }: SmartAssistantProps) {
-  const [inputValue, setInputValue] = useState('')
-  const [customerName, setCustomerName] = useState<string | undefined>(propCustomerName)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter()
+  const [inputValue, setInputValue] = useState('');
+  const [customerName, setCustomerName] = useState<string | undefined>(propCustomerName);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   // Lock body scroll when chat is open (mobile)
-  useBodyScrollLock(isOpen)
+  useBodyScrollLock(isOpen);
 
   // Visual Viewport API for keyboard handling
-  const { keyboardHeight, isKeyboardOpen } = useVisualViewport()
+  const { keyboardHeight, isKeyboardOpen } = useVisualViewport();
 
   // Fetch customer name if userId is available and customerName not provided
   useEffect(() => {
     if (userId && !propCustomerName) {
       const fetchCustomerName = async () => {
         try {
-          const supabase = createClient()
+          const supabase = createClient();
           const { data: profile } = await supabase
             .from('profiles')
             .select('full_name')
             .eq('id', userId)
-            .single()
+            .single();
 
           if (profile?.full_name) {
             // Extract first name for friendly greeting
-            const firstName = profile.full_name.split(' ')[0]
-            setCustomerName(firstName)
+            const firstName = profile.full_name.split(' ')[0];
+            setCustomerName(firstName);
           }
         } catch (error) {
           // Error handled silently
         }
-      }
-      fetchCustomerName()
+      };
+      fetchCustomerName();
     }
-  }, [userId, propCustomerName])
+  }, [userId, propCustomerName]);
 
   const {
     messages,
@@ -157,75 +158,84 @@ export function SmartAssistant({
     addToCartFromChat,
     clearChat,
     clearPendingNavigation,
-  } = useAIChat({ userId, cityId, governorateId, customerName, providerContext })
+  } = useAIChat({ userId, cityId, governorateId, customerName, providerContext });
 
   // Handle navigation requests from chat
   useEffect(() => {
     if (pendingNavigation) {
       // Close the chat modal first
-      onClose()
+      onClose();
       // Navigate after a short delay to allow modal to close
       setTimeout(() => {
-        router.push(pendingNavigation)
-        clearPendingNavigation()
-      }, 100)
+        router.push(pendingNavigation);
+        clearPendingNavigation();
+      }, 100);
     }
-  }, [pendingNavigation, router, onClose, clearPendingNavigation])
+  }, [pendingNavigation, router, onClose, clearPendingNavigation]);
 
-  const { getItemCount } = useCart()
-  const cartCount = getItemCount()
+  const { getItemCount } = useCart();
+  const cartCount = getItemCount();
 
   // Scroll to bottom on new messages
   useEffect(() => {
     // Use requestAnimationFrame for smoother scroll timing
     requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    })
-  }, [messages, streamingContent])
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }, [messages, streamingContent]);
 
   // Scroll to bottom when keyboard opens
   useEffect(() => {
     if (isKeyboardOpen) {
       // Small delay to let the viewport settle
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
-  }, [isKeyboardOpen])
+  }, [isKeyboardOpen]);
 
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   // Handle send
   const handleSend = useCallback(async () => {
-    if (!inputValue.trim() || isLoading) return
+    if (!inputValue.trim() || isLoading) return;
 
-    const message = inputValue
-    setInputValue('')
-    await sendMessage(message)
-  }, [inputValue, isLoading, sendMessage])
+    const message = inputValue;
+    setInputValue('');
+    await sendMessage(message);
+  }, [inputValue, isLoading, sendMessage]);
 
   // Handle Enter key
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }, [handleSend])
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
 
   // Handle suggestion click
-  const handleSuggestionClick = useCallback((suggestion: string) => {
-    sendQuickAction(suggestion)
-  }, [sendQuickAction])
+  const handleSuggestionClick = useCallback(
+    (suggestion: string) => {
+      sendQuickAction(suggestion);
+    },
+    [sendQuickAction]
+  );
 
   // Handle add to cart
-  const handleAddToCart = useCallback((product: ChatProduct) => {
-    addToCartFromChat(product, 1)
-  }, [addToCartFromChat])
+  const handleAddToCart = useCallback(
+    (product: ChatProduct) => {
+      addToCartFromChat(product, 1);
+    },
+    [addToCartFromChat]
+  );
 
   return (
     <AnimatePresence>
@@ -278,23 +288,29 @@ export function SmartAssistant({
                     isKeyboardOpen ? 'w-8 h-8 md:w-10 md:h-10' : 'w-10 h-10'
                   )}
                 >
-                  <Sparkles className={cn(
-                    'transition-all duration-200',
-                    isKeyboardOpen ? 'w-4 h-4 md:w-5 md:h-5' : 'w-5 h-5'
-                  )} />
+                  <Sparkles
+                    className={cn(
+                      'transition-all duration-200',
+                      isKeyboardOpen ? 'w-4 h-4 md:w-5 md:h-5' : 'w-5 h-5'
+                    )}
+                  />
                 </div>
                 <div>
-                  <h3 className={cn(
-                    'font-bold transition-all duration-200',
-                    isKeyboardOpen ? 'text-xs md:text-sm' : 'text-sm'
-                  )}>
+                  <h3
+                    className={cn(
+                      'font-bold transition-all duration-200',
+                      isKeyboardOpen ? 'text-xs md:text-sm' : 'text-sm'
+                    )}
+                  >
                     مساعد إنجزنا الذكي
                   </h3>
                   {/* Hide subtitle when keyboard is open */}
-                  <p className={cn(
-                    'text-xs text-white/80 transition-all duration-200',
-                    isKeyboardOpen && 'hidden md:block'
-                  )}>
+                  <p
+                    className={cn(
+                      'text-xs text-white/80 transition-all duration-200',
+                      isKeyboardOpen && 'hidden md:block'
+                    )}
+                  >
                     دردش واطلب
                   </p>
                 </div>
@@ -360,9 +376,7 @@ export function SmartAssistant({
                   onAddToCart={handleAddToCart}
                   isStreaming={isStreaming && index === messages.length - 1}
                   streamingContent={
-                    isStreaming && index === messages.length - 1
-                      ? streamingContent
-                      : undefined
+                    isStreaming && index === messages.length - 1 ? streamingContent : undefined
                   }
                 />
               ))}
@@ -431,7 +445,7 @@ export function SmartAssistant({
         </>
       )}
     </AnimatePresence>
-  )
+  );
 }
 
-export default SmartAssistant
+export default SmartAssistant;

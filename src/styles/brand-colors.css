@@ -15,54 +15,54 @@
 
 :root {
   /* BRAND COLORS - Engezna Blue */
-  --color-primary: 198 100% 44%;         /* #009DE0 */
-  --color-primary-light: 198 100% 54%;   /* Lighter Blue */
-  --color-primary-dark: 198 100% 34%;    /* Darker Blue */
+  --color-primary: 198 100% 44%; /* #009DE0 */
+  --color-primary-light: 198 100% 54%; /* Lighter Blue */
+  --color-primary-dark: 198 100% 34%; /* Darker Blue */
   --color-primary-foreground: 0 0% 100%; /* White */
 
-  --color-secondary: 222 47% 11%;        /* #0F172A Charcoal */
+  --color-secondary: 222 47% 11%; /* #0F172A Charcoal */
   --color-secondary-foreground: 0 0% 100%;
 
-  --color-white: 0 0% 100%;              /* #FFFFFF */
+  --color-white: 0 0% 100%; /* #FFFFFF */
 
   /* ACCENT COLORS - Harmonized with #009DE0 */
-  --color-deal: 158 100% 38%;            /* #00C27A Green-Cyan (Deals/Discounts) */
-  --color-premium: 42 100% 70%;          /* #FFD166 Soft Gold (Premium) */
-  --color-info: 198 100% 44%;            /* Same as Primary - Engezna Blue */
-  --color-in-progress: 217 91% 60%;      /* #3B82F6 Blue for active states */
+  --color-deal: 158 100% 38%; /* #00C27A Green-Cyan (Deals/Discounts) */
+  --color-premium: 42 100% 70%; /* #FFD166 Soft Gold (Premium) */
+  --color-info: 198 100% 44%; /* Same as Primary - Engezna Blue */
+  --color-in-progress: 217 91% 60%; /* #3B82F6 Blue for active states */
 
   /* SEMANTIC COLORS - Professional Dashboard Standards */
-  --color-success: 142 71% 45%;          /* #22C55E Green */
-  --color-error: 0 84% 60%;              /* #EF4444 Red */
-  --color-warning: 48 97% 53%;           /* #FACC15 Yellow */
+  --color-success: 142 71% 45%; /* #22C55E Green */
+  --color-error: 0 84% 60%; /* #EF4444 Red */
+  --color-warning: 48 97% 53%; /* #FACC15 Yellow */
 
   /* CONTRAST SYSTEM - Text Hierarchy */
-  --color-text-primary: 222 47% 11%;     /* #0F172A Main text */
-  --color-text-secondary: 215 16% 47%;   /* #475569 Secondary text */
-  --color-text-muted: 215 16% 65%;       /* #94A3B8 Muted text */
+  --color-text-primary: 222 47% 11%; /* #0F172A Main text */
+  --color-text-secondary: 215 16% 47%; /* #475569 Secondary text */
+  --color-text-muted: 215 16% 65%; /* #94A3B8 Muted text */
 
   /* NEUTRAL TONES (Light Mode) */
-  --color-background: 0 0% 100%;         /* White */
-  --color-foreground: 222 47% 11%;       /* #0F172A */
-  --color-muted: 210 40% 96%;            /* #F1F5F9 */
+  --color-background: 0 0% 100%; /* White */
+  --color-foreground: 222 47% 11%; /* #0F172A */
+  --color-muted: 210 40% 96%; /* #F1F5F9 */
   --color-muted-foreground: 215 16% 47%; /* #475569 */
-  --color-border: 214 32% 91%;           /* #E2E8F0 */
-  --color-input: 214 32% 91%;            /* #E2E8F0 */
+  --color-border: 214 32% 91%; /* #E2E8F0 */
+  --color-input: 214 32% 91%; /* #E2E8F0 */
   --color-ring: var(--color-primary);
 
   /* CARD BACKGROUNDS - 10% opacity tints */
-  --color-card-primary: 198 100% 97%;    /* Blue 10% #E0F4FF */
-  --color-card-success: 142 76% 95%;     /* Green 10% #DCFCE7 */
-  --color-card-info: 198 100% 97%;       /* Cyan 10% #E0F4FF */
-  --color-card-warning: 48 100% 95%;     /* Yellow 10% #FEF9C3 */
-  --color-card-error: 0 86% 97%;         /* Red 10% #FEF2F2 */
+  --color-card-primary: 198 100% 97%; /* Blue 10% #E0F4FF */
+  --color-card-success: 142 76% 95%; /* Green 10% #DCFCE7 */
+  --color-card-info: 198 100% 97%; /* Cyan 10% #E0F4FF */
+  --color-card-warning: 48 100% 95%; /* Yellow 10% #FEF9C3 */
+  --color-card-error: 0 86% 97%; /* Red 10% #FEF2F2 */
 
   /* CHART COLORS */
-  --chart-1: var(--color-primary);       /* #009DE0 */
-  --chart-2: 217 91% 60%;                /* #3B82F6 */
-  --chart-3: 142 71% 45%;                /* #22C55E */
-  --chart-4: 48 97% 53%;                 /* #FACC15 */
-  --chart-5: 280 65% 60%;                /* Purple */
+  --chart-1: var(--color-primary); /* #009DE0 */
+  --chart-2: 217 91% 60%; /* #3B82F6 */
+  --chart-3: 142 71% 45%; /* #22C55E */
+  --chart-4: 48 97% 53%; /* #FACC15 */
+  --chart-5: 280 65% 60%; /* Purple */
 
   /* UTILITY */
   --radius: 0.5rem;
@@ -71,45 +71,107 @@
 /* UTILITY CLASSES */
 
 /* Backgrounds - Primary */
-.bg-primary { background-color: hsl(var(--color-primary)); }
-.bg-deal { background-color: hsl(var(--color-deal)); }
-.bg-premium { background-color: hsl(var(--color-premium)); }
-.bg-info { background-color: hsl(var(--color-info)); }
-.bg-error { background-color: hsl(var(--color-error)); }
-.bg-success { background-color: hsl(var(--color-success)); }
-.bg-warning { background-color: hsl(var(--color-warning)); }
-.bg-in-progress { background-color: hsl(var(--color-in-progress)); }
+.bg-primary {
+  background-color: hsl(var(--color-primary));
+}
+.bg-deal {
+  background-color: hsl(var(--color-deal));
+}
+.bg-premium {
+  background-color: hsl(var(--color-premium));
+}
+.bg-info {
+  background-color: hsl(var(--color-info));
+}
+.bg-error {
+  background-color: hsl(var(--color-error));
+}
+.bg-success {
+  background-color: hsl(var(--color-success));
+}
+.bg-warning {
+  background-color: hsl(var(--color-warning));
+}
+.bg-in-progress {
+  background-color: hsl(var(--color-in-progress));
+}
 
 /* Backgrounds - Card Tints (10% opacity) */
-.bg-card-primary { background-color: hsl(var(--color-card-primary)); }
-.bg-card-success { background-color: hsl(var(--color-card-success)); }
-.bg-card-info { background-color: hsl(var(--color-card-info)); }
-.bg-card-warning { background-color: hsl(var(--color-card-warning)); }
-.bg-card-error { background-color: hsl(var(--color-card-error)); }
+.bg-card-primary {
+  background-color: hsl(var(--color-card-primary));
+}
+.bg-card-success {
+  background-color: hsl(var(--color-card-success));
+}
+.bg-card-info {
+  background-color: hsl(var(--color-card-info));
+}
+.bg-card-warning {
+  background-color: hsl(var(--color-card-warning));
+}
+.bg-card-error {
+  background-color: hsl(var(--color-card-error));
+}
 
 /* Text - Brand */
-.text-primary { color: hsl(var(--color-primary)); }
-.text-deal { color: hsl(var(--color-deal)); }
-.text-premium { color: hsl(var(--color-premium)); }
-.text-info { color: hsl(var(--color-info)); }
-.text-error { color: hsl(var(--color-error)); }
-.text-success { color: hsl(var(--color-success)); }
-.text-warning { color: hsl(var(--color-warning)); }
-.text-in-progress { color: hsl(var(--color-in-progress)); }
+.text-primary {
+  color: hsl(var(--color-primary));
+}
+.text-deal {
+  color: hsl(var(--color-deal));
+}
+.text-premium {
+  color: hsl(var(--color-premium));
+}
+.text-info {
+  color: hsl(var(--color-info));
+}
+.text-error {
+  color: hsl(var(--color-error));
+}
+.text-success {
+  color: hsl(var(--color-success));
+}
+.text-warning {
+  color: hsl(var(--color-warning));
+}
+.text-in-progress {
+  color: hsl(var(--color-in-progress));
+}
 
 /* Text - Hierarchy */
-.text-body { color: hsl(var(--color-text-primary)); }
-.text-secondary { color: hsl(var(--color-text-secondary)); }
-.text-muted { color: hsl(var(--color-text-muted)); }
+.text-body {
+  color: hsl(var(--color-text-primary));
+}
+.text-secondary {
+  color: hsl(var(--color-text-secondary));
+}
+.text-muted {
+  color: hsl(var(--color-text-muted));
+}
 
 /* Borders */
-.border-primary { border-color: hsl(var(--color-primary)); }
-.border-deal { border-color: hsl(var(--color-deal)); }
-.border-premium { border-color: hsl(var(--color-premium)); }
-.border-info { border-color: hsl(var(--color-info)); }
-.border-error { border-color: hsl(var(--color-error)); }
-.border-success { border-color: hsl(var(--color-success)); }
-.border-warning { border-color: hsl(var(--color-warning)); }
+.border-primary {
+  border-color: hsl(var(--color-primary));
+}
+.border-deal {
+  border-color: hsl(var(--color-deal));
+}
+.border-premium {
+  border-color: hsl(var(--color-premium));
+}
+.border-info {
+  border-color: hsl(var(--color-info));
+}
+.border-error {
+  border-color: hsl(var(--color-error));
+}
+.border-success {
+  border-color: hsl(var(--color-success));
+}
+.border-warning {
+  border-color: hsl(var(--color-warning));
+}
 
 /* GRADIENTS */
 .gradient-hero-light {
@@ -155,7 +217,7 @@
 
 .badge-premium {
   background-color: hsl(var(--color-premium));
-  color: #0F172A;
+  color: #0f172a;
   border-radius: 999px;
   padding: 0.1rem 0.5rem;
   font-size: 0.75rem;

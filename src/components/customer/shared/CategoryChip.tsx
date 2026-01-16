@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { ReactNode } from 'react'
+import { ReactNode } from 'react';
 
 interface CategoryChipProps {
-  icon?: ReactNode
-  label: string
-  isActive?: boolean
-  onClick?: () => void
-  className?: string
+  icon?: ReactNode;
+  label: string;
+  isActive?: boolean;
+  onClick?: () => void;
+  className?: string;
 }
 
 export function CategoryChip({
@@ -29,5 +29,5 @@ export function CategoryChip({
       {icon && <span className="text-lg">{icon}</span>}
       <span className="font-medium text-sm">{label}</span>
     </button>
-  )
+  );
 }

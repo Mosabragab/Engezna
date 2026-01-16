@@ -1,25 +1,25 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useEffect, useState, useCallback, ReactNode } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import { AdminHeader } from './AdminHeader'
-import { AdminSidebar } from './AdminSidebar'
-import { Shield, Loader2 } from 'lucide-react'
+import { useLocale } from 'next-intl';
+import { useEffect, useState, useCallback, ReactNode } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { AdminHeader } from './AdminHeader';
+import { AdminSidebar } from './AdminSidebar';
+import { Shield, Loader2 } from 'lucide-react';
 
 interface AdminPageWrapperProps {
-  children: ReactNode
-  title: string
-  subtitle?: string
-  requireSuperAdmin?: boolean
-  pendingProviders?: number
-  openTickets?: number
-  pendingTasks?: number
-  pendingApprovals?: number
-  unreadMessages?: number
+  children: ReactNode;
+  title: string;
+  subtitle?: string;
+  requireSuperAdmin?: boolean;
+  pendingProviders?: number;
+  openTickets?: number;
+  pendingTasks?: number;
+  pendingApprovals?: number;
+  unreadMessages?: number;
 }
 
 /**
@@ -39,47 +39,49 @@ export function AdminPageWrapper({
   pendingApprovals = 0,
   unreadMessages = 0,
 }: AdminPageWrapperProps) {
-  const locale = useLocale()
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const locale = useLocale();
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const checkAuth = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
 
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (profile?.role === 'admin') {
-        setIsAdmin(true)
+        setIsAdmin(true);
 
         // Check if user is super_admin
         const { data: adminUser } = await supabase
           .from('admin_users')
           .select('role')
           .eq('user_id', user.id)
-          .single()
+          .single();
 
         if (adminUser?.role === 'super_admin') {
-          setIsSuperAdmin(true)
+          setIsSuperAdmin(true);
         }
       }
     }
 
-    setLoading(false)
-  }, [])
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+    checkAuth();
+  }, [checkAuth]);
 
   // Always render the shell with sidebar
   return (
@@ -165,7 +167,9 @@ export function AdminPageWrapper({
                   {locale === 'ar' ? 'غير مصرح' : 'Access Denied'}
                 </h1>
                 <p className="text-slate-600 mb-6">
-                  {locale === 'ar' ? 'هذه الصفحة متاحة للمدير التنفيذي فقط' : 'Super admin access required'}
+                  {locale === 'ar'
+                    ? 'هذه الصفحة متاحة للمدير التنفيذي فقط'
+                    : 'Super admin access required'}
                 </p>
                 <Link href={`/${locale}/admin`}>
                   <Button size="lg" variant="outline">
@@ -181,5 +185,5 @@ export function AdminPageWrapper({
         </main>
       </div>
     </div>
-  )
+  );
 }

@@ -8,16 +8,16 @@
  */
 
 export interface UnitTypeConfig {
-  id: string
-  name_ar: string
-  name_en: string
-  symbol_ar: string
-  symbol_en: string
-  divisible: boolean
-  min: number
-  step: number
-  presets: number[]
-  category: 'weight' | 'volume' | 'count' | 'portion'
+  id: string;
+  name_ar: string;
+  name_en: string;
+  symbol_ar: string;
+  symbol_en: string;
+  divisible: boolean;
+  min: number;
+  step: number;
+  presets: number[];
+  category: 'weight' | 'volume' | 'count' | 'portion';
 }
 
 export const UNIT_TYPES: Record<string, UnitTypeConfig> = {
@@ -322,9 +322,9 @@ export const UNIT_TYPES: Record<string, UnitTypeConfig> = {
     presets: [1, 2, 3, 4],
     category: 'portion',
   },
-} as const
+} as const;
 
-export type UnitType = keyof typeof UNIT_TYPES
+export type UnitType = keyof typeof UNIT_TYPES;
 
 /**
  * Get units grouped by category
@@ -335,20 +335,20 @@ export function getUnitsByCategory(): Record<string, UnitTypeConfig[]> {
     volume: [],
     count: [],
     portion: [],
-  }
+  };
 
-  Object.values(UNIT_TYPES).forEach(unit => {
-    grouped[unit.category].push(unit)
-  })
+  Object.values(UNIT_TYPES).forEach((unit) => {
+    grouped[unit.category].push(unit);
+  });
 
-  return grouped
+  return grouped;
 }
 
 /**
  * Get unit configuration by ID
  */
 export function getUnitConfig(unitId: string): UnitTypeConfig | null {
-  return UNIT_TYPES[unitId] || null
+  return UNIT_TYPES[unitId] || null;
 }
 
 /**
@@ -359,50 +359,47 @@ export function formatQuantityWithUnit(
   unitId: string,
   locale: 'ar' | 'en' = 'ar'
 ): string {
-  const unit = UNIT_TYPES[unitId]
-  if (!unit) return `${quantity}`
+  const unit = UNIT_TYPES[unitId];
+  if (!unit) return `${quantity}`;
 
-  const symbol = locale === 'ar' ? unit.symbol_ar : unit.symbol_en
+  const symbol = locale === 'ar' ? unit.symbol_ar : unit.symbol_en;
 
   // Format fractional quantities nicely
   if (unit.divisible && quantity < 1) {
-    if (quantity === 0.25) return locale === 'ar' ? `ربع ${symbol}` : `¼ ${symbol}`
-    if (quantity === 0.5) return locale === 'ar' ? `نص ${symbol}` : `½ ${symbol}`
-    if (quantity === 0.75) return locale === 'ar' ? `ثلاثة أرباع ${symbol}` : `¾ ${symbol}`
+    if (quantity === 0.25) return locale === 'ar' ? `ربع ${symbol}` : `¼ ${symbol}`;
+    if (quantity === 0.5) return locale === 'ar' ? `نص ${symbol}` : `½ ${symbol}`;
+    if (quantity === 0.75) return locale === 'ar' ? `ثلاثة أرباع ${symbol}` : `¾ ${symbol}`;
   }
 
   // Format mixed numbers
   if (unit.divisible && quantity > 1 && quantity % 1 !== 0) {
-    const whole = Math.floor(quantity)
-    const fraction = quantity - whole
+    const whole = Math.floor(quantity);
+    const fraction = quantity - whole;
     if (fraction === 0.5) {
-      return locale === 'ar' ? `${whole} ونص ${symbol}` : `${whole}½ ${symbol}`
+      return locale === 'ar' ? `${whole} ونص ${symbol}` : `${whole}½ ${symbol}`;
     }
   }
 
-  return `${quantity} ${symbol}`
+  return `${quantity} ${symbol}`;
 }
 
 /**
  * Format quantity for display (shorthand)
  */
 export function formatQuantityShort(quantity: number): string {
-  if (quantity === 0.25) return '¼'
-  if (quantity === 0.5) return '½'
-  if (quantity === 0.75) return '¾'
-  if (quantity === 1.5) return '1½'
-  if (quantity === 2.5) return '2½'
-  return quantity.toString()
+  if (quantity === 0.25) return '¼';
+  if (quantity === 0.5) return '½';
+  if (quantity === 0.75) return '¾';
+  if (quantity === 1.5) return '1½';
+  if (quantity === 2.5) return '2½';
+  return quantity.toString();
 }
 
 /**
  * Calculate price based on quantity and unit price
  */
-export function calculateUnitPrice(
-  unitPrice: number,
-  quantity: number
-): number {
-  return Math.round(unitPrice * quantity * 100) / 100
+export function calculateUnitPrice(unitPrice: number, quantity: number): number {
+  return Math.round(unitPrice * quantity * 100) / 100;
 }
 
 /**
@@ -412,33 +409,33 @@ export function validateQuantity(
   quantity: number,
   unitId: string
 ): { valid: boolean; error?: string } {
-  const unit = UNIT_TYPES[unitId]
+  const unit = UNIT_TYPES[unitId];
   if (!unit) {
-    return { valid: false, error: 'Unknown unit type' }
+    return { valid: false, error: 'Unknown unit type' };
   }
 
   if (quantity < unit.min) {
     return {
       valid: false,
       error: `Minimum quantity is ${unit.min} ${unit.symbol_en}`,
-    }
+    };
   }
 
   if (!unit.divisible && quantity % 1 !== 0) {
     return {
       valid: false,
       error: `${unit.name_en} must be a whole number`,
-    }
+    };
   }
 
   if (unit.divisible && (quantity * 100) % (unit.step * 100) !== 0) {
     return {
       valid: false,
       error: `Quantity must be in increments of ${unit.step}`,
-    }
+    };
   }
 
-  return { valid: true }
+  return { valid: true };
 }
 
 /**
@@ -446,51 +443,51 @@ export function validateQuantity(
  */
 export const DEFAULT_UNITS_BY_CATEGORY: Record<string, UnitType> = {
   // Vegetables & Fruits
-  'خضار': 'kg',
-  'فاكهة': 'kg',
-  'فواكه': 'kg',
-  'vegetables': 'kg',
-  'fruits': 'kg',
+  خضار: 'kg',
+  فاكهة: 'kg',
+  فواكه: 'kg',
+  vegetables: 'kg',
+  fruits: 'kg',
 
   // Meat & Poultry
-  'لحوم': 'kg',
-  'دواجن': 'kg',
-  'meat': 'kg',
-  'poultry': 'kg',
+  لحوم: 'kg',
+  دواجن: 'kg',
+  meat: 'kg',
+  poultry: 'kg',
 
   // Drinks
-  'مشروبات': 'bottle',
-  'عصائر': 'bottle',
-  'drinks': 'bottle',
-  'beverages': 'bottle',
+  مشروبات: 'bottle',
+  عصائر: 'bottle',
+  drinks: 'bottle',
+  beverages: 'bottle',
 
   // Restaurant
-  'مطعم': 'piece',
-  'وجبات': 'meal',
-  'restaurant': 'piece',
-  'meals': 'meal',
+  مطعم: 'piece',
+  وجبات: 'meal',
+  restaurant: 'piece',
+  meals: 'meal',
 
   // Bakery
-  'مخبوزات': 'piece',
-  'حلويات': 'piece',
-  'bakery': 'piece',
-  'sweets': 'piece',
+  مخبوزات: 'piece',
+  حلويات: 'piece',
+  bakery: 'piece',
+  sweets: 'piece',
 
   // Default
-  'default': 'piece',
-}
+  default: 'piece',
+};
 
 /**
  * Get suggested unit for a category name
  */
 export function getSuggestedUnit(categoryName: string): UnitType {
-  const normalizedName = categoryName.toLowerCase().trim()
+  const normalizedName = categoryName.toLowerCase().trim();
 
   for (const [key, unit] of Object.entries(DEFAULT_UNITS_BY_CATEGORY)) {
     if (normalizedName.includes(key.toLowerCase())) {
-      return unit
+      return unit;
     }
   }
 
-  return 'piece'
+  return 'piece';
 }

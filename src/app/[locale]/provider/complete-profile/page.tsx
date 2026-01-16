@@ -1,18 +1,24 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useTranslations, useLocale } from 'next-intl'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import Link from 'next/link'
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import Link from 'next/link';
 import {
   Store,
   Upload,
@@ -21,49 +27,51 @@ import {
   ArrowLeft,
   Image as ImageIcon,
   Loader2,
-  MapPin
-} from 'lucide-react'
-import { LocationPicker } from '@/components/maps/LocationPicker'
+  MapPin,
+} from 'lucide-react';
+import { LocationPicker } from '@/components/maps/LocationPicker';
 
 // Types
 interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
+  id: string;
+  name_ar: string;
+  name_en: string;
 }
 
 interface City {
-  id: string
-  governorate_id: string
-  name_ar: string
-  name_en: string
+  id: string;
+  governorate_id: string;
+  name_ar: string;
+  name_en: string;
 }
 
 interface Provider {
-  id: string
-  name_ar: string
-  name_en: string
-  phone: string
-  address_ar: string
-  address_en: string | null
-  logo_url: string | null
-  delivery_fee: number
-  estimated_delivery_time_min: number | null
-  min_order_amount: number | null
-  delivery_radius_km: number | null
-  status: string
-  category: string
-  governorate_id: string | null
-  city_id: string | null
-  latitude: number | null
-  longitude: number | null
+  id: string;
+  name_ar: string;
+  name_en: string;
+  phone: string;
+  address_ar: string;
+  address_en: string | null;
+  logo_url: string | null;
+  delivery_fee: number;
+  estimated_delivery_time_min: number | null;
+  min_order_amount: number | null;
+  delivery_radius_km: number | null;
+  status: string;
+  category: string;
+  governorate_id: string | null;
+  city_id: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 // Form validation schema
 const completeProfileSchema = z.object({
   storeNameAr: z.string().min(2, 'Store name must be at least 2 characters'),
   storeNameEn: z.string().min(2, 'Store name must be at least 2 characters'),
-  storePhone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'Please enter a valid Egyptian phone number'),
+  storePhone: z
+    .string()
+    .regex(/^01[0-2,5]{1}[0-9]{8}$/, 'Please enter a valid Egyptian phone number'),
   governorateId: z.string().min(1, 'Please select a governorate'),
   cityId: z.string().min(1, 'Please select a city'),
   address: z.string().min(5, 'Address must be at least 5 characters'),
@@ -71,35 +79,35 @@ const completeProfileSchema = z.object({
   estimatedDeliveryTime: z.number().min(5, 'Delivery time must be at least 5 minutes'),
   minOrderAmount: z.number().min(0, 'Minimum order must be 0 or more'),
   deliveryRadius: z.number().min(1, 'Delivery radius must be at least 1 km'),
-})
+});
 
-type CompleteProfileFormData = z.infer<typeof completeProfileSchema>
+type CompleteProfileFormData = z.infer<typeof completeProfileSchema>;
 
 export default function CompleteProfilePage() {
-  const t = useTranslations('partner.completeProfile')
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const t = useTranslations('partner.completeProfile');
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
   // State
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [provider, setProvider] = useState<Provider | null>(null)
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [cities, setCities] = useState<City[]>([])
-  const [filteredCities, setFilteredCities] = useState<City[]>([])
-  const [governorateLocked, setGovernorateLocked] = useState(false) // Governorate locked from registration
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [filteredCities, setFilteredCities] = useState<City[]>([]);
+  const [governorateLocked, setGovernorateLocked] = useState(false); // Governorate locked from registration
 
   // Logo upload state
-  const [logoFile, setLogoFile] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [logoUploading, setLogoUploading] = useState(false)
-  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   // GPS Location state
-  const [storeLocation, setStoreLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [storeLocation, setStoreLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const {
     register,
@@ -114,34 +122,36 @@ export default function CompleteProfilePage() {
       estimatedDeliveryTime: 30,
       minOrderAmount: 50,
       deliveryRadius: 5,
-    }
-  })
+    },
+  });
 
-  const governorateId = watch('governorateId')
+  const governorateId = watch('governorateId');
 
   // Load provider data and governorates
   useEffect(() => {
-    loadData()
-  }, [])
+    loadData();
+  }, []);
 
   // Filter cities when governorate changes
   useEffect(() => {
     if (governorateId) {
-      const filtered = cities.filter(city => city.governorate_id === governorateId)
-      setFilteredCities(filtered)
-      setValue('cityId', '') // Reset city selection
+      const filtered = cities.filter((city) => city.governorate_id === governorateId);
+      setFilteredCities(filtered);
+      setValue('cityId', ''); // Reset city selection
     }
-  }, [governorateId, cities, setValue])
+  }, [governorateId, cities, setValue]);
 
   async function loadData() {
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       // Check authentication
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        router.push(`/${locale}/auth/login`)
-        return
+        router.push(`/${locale}/auth/login`);
+        return;
       }
 
       // Load provider data
@@ -149,49 +159,51 @@ export default function CompleteProfilePage() {
         .from('providers')
         .select('*')
         .eq('owner_id', user.id)
-        .limit(1)
+        .limit(1);
 
-      const providerData = providersData?.[0]
+      const providerData = providersData?.[0];
       if (providerError || !providerData) {
-        setError('Provider not found. Please register first.')
-        setIsLoading(false)
-        return
+        setError('Provider not found. Please register first.');
+        setIsLoading(false);
+        return;
       }
 
       // Check if already approved or pending_approval
       if (providerData.status === 'approved' || providerData.status === 'pending_approval') {
-        router.push(`/${locale}/provider`)
-        return
+        router.push(`/${locale}/provider`);
+        return;
       }
 
-      setProvider(providerData)
+      setProvider(providerData);
 
       // Pre-fill form if data exists
-      if (providerData.name_ar) setValue('storeNameAr', providerData.name_ar)
-      if (providerData.name_en) setValue('storeNameEn', providerData.name_en)
-      if (providerData.phone) setValue('storePhone', providerData.phone)
-      if (providerData.address_ar) setValue('address', providerData.address_ar)
-      if (providerData.delivery_fee) setValue('deliveryFee', providerData.delivery_fee)
-      if (providerData.estimated_delivery_time_min) setValue('estimatedDeliveryTime', providerData.estimated_delivery_time_min)
-      if (providerData.min_order_amount) setValue('minOrderAmount', providerData.min_order_amount)
-      if (providerData.delivery_radius_km) setValue('deliveryRadius', providerData.delivery_radius_km)
+      if (providerData.name_ar) setValue('storeNameAr', providerData.name_ar);
+      if (providerData.name_en) setValue('storeNameEn', providerData.name_en);
+      if (providerData.phone) setValue('storePhone', providerData.phone);
+      if (providerData.address_ar) setValue('address', providerData.address_ar);
+      if (providerData.delivery_fee) setValue('deliveryFee', providerData.delivery_fee);
+      if (providerData.estimated_delivery_time_min)
+        setValue('estimatedDeliveryTime', providerData.estimated_delivery_time_min);
+      if (providerData.min_order_amount) setValue('minOrderAmount', providerData.min_order_amount);
+      if (providerData.delivery_radius_km)
+        setValue('deliveryRadius', providerData.delivery_radius_km);
       if (providerData.logo_url) {
-        setLogoUrl(providerData.logo_url)
-        setLogoPreview(providerData.logo_url)
+        setLogoUrl(providerData.logo_url);
+        setLogoPreview(providerData.logo_url);
       }
 
       // Pre-fill GPS location if exists
       if (providerData.latitude && providerData.longitude) {
-        setStoreLocation({ lat: providerData.latitude, lng: providerData.longitude })
+        setStoreLocation({ lat: providerData.latitude, lng: providerData.longitude });
       }
 
       // Pre-fill governorate if set (locked from registration)
       if (providerData.governorate_id) {
-        setValue('governorateId', providerData.governorate_id)
-        setGovernorateLocked(true) // Lock governorate - cannot be changed
+        setValue('governorateId', providerData.governorate_id);
+        setGovernorateLocked(true); // Lock governorate - cannot be changed
       }
       if (providerData.city_id) {
-        setValue('cityId', providerData.city_id)
+        setValue('cityId', providerData.city_id);
       }
 
       // Load governorates
@@ -199,112 +211,110 @@ export default function CompleteProfilePage() {
         .from('governorates')
         .select('*')
         .eq('is_active', true)
-        .order('display_order')
+        .order('display_order');
 
-      if (govData) setGovernorates(govData)
+      if (govData) setGovernorates(govData);
 
       // Load all cities
       const { data: cityData } = await supabase
         .from('cities')
         .select('*')
         .eq('is_active', true)
-        .order('display_order')
+        .order('display_order');
 
-      if (cityData) setCities(cityData)
-
+      if (cityData) setCities(cityData);
     } catch (err) {
-      setError('Failed to load data')
+      setError('Failed to load data');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   // Handle logo file selection
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        setError('Please select an image file')
-        return
+        setError('Please select an image file');
+        return;
       }
       // Validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
-        setError('Image must be less than 2MB')
-        return
+        setError('Image must be less than 2MB');
+        return;
       }
 
-      setLogoFile(file)
-      setLogoPreview(URL.createObjectURL(file))
-      setError(null)
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+      setError(null);
     }
-  }
+  };
 
   // Upload logo to Supabase Storage
   const uploadLogo = async (): Promise<string | null> => {
-    if (!logoFile || !provider) return logoUrl
+    if (!logoFile || !provider) return logoUrl;
 
-    setLogoUploading(true)
-    const supabase = createClient()
+    setLogoUploading(true);
+    const supabase = createClient();
 
     try {
       // Generate unique filename
-      const fileExt = logoFile.name.split('.').pop()
-      const fileName = `${provider.id}-${Date.now()}.${fileExt}`
-      const filePath = `provider-logos/${fileName}`
+      const fileExt = logoFile.name.split('.').pop();
+      const fileName = `${provider.id}-${Date.now()}.${fileExt}`;
+      const filePath = `provider-logos/${fileName}`;
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('public')
         .upload(filePath, logoFile, {
           cacheControl: '3600',
-          upsert: true
-        })
+          upsert: true,
+        });
 
       if (uploadError) {
         // If bucket doesn't exist, try creating it or use a fallback
-        setError('Failed to upload logo. Please try again.')
-        return null
+        setError('Failed to upload logo. Please try again.');
+        return null;
       }
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('public')
-        .getPublicUrl(filePath)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('public').getPublicUrl(filePath);
 
-      setLogoUrl(publicUrl)
-      return publicUrl
-
+      setLogoUrl(publicUrl);
+      return publicUrl;
     } catch {
-      setError('Failed to upload logo')
-      return null
+      setError('Failed to upload logo');
+      return null;
     } finally {
-      setLogoUploading(false)
+      setLogoUploading(false);
     }
-  }
+  };
 
   const onSubmit = async (data: CompleteProfileFormData) => {
     // Validate logo
     if (!logoUrl && !logoFile) {
-      setError(locale === 'ar' ? 'الشعار إجباري' : 'Logo is required')
-      return
+      setError(locale === 'ar' ? 'الشعار إجباري' : 'Logo is required');
+      return;
     }
 
-    setIsSaving(true)
-    setError(null)
+    setIsSaving(true);
+    setError(null);
 
     try {
       // Upload logo if new file selected
-      let finalLogoUrl = logoUrl
+      let finalLogoUrl = logoUrl;
       if (logoFile) {
-        finalLogoUrl = await uploadLogo()
+        finalLogoUrl = await uploadLogo();
         if (!finalLogoUrl) {
-          setIsSaving(false)
-          return
+          setIsSaving(false);
+          return;
         }
       }
 
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Update provider record
       // Note: governorate_id is only updated if not already set (locked from registration)
@@ -325,55 +335,54 @@ export default function CompleteProfilePage() {
         // GPS coordinates
         latitude: storeLocation?.lat || null,
         longitude: storeLocation?.lng || null,
-      }
+      };
 
       // Only update governorate if not locked (not set during registration)
       if (!governorateLocked) {
-        updateData.governorate_id = data.governorateId
+        updateData.governorate_id = data.governorateId;
       }
 
       const { error: updateError } = await supabase
         .from('providers')
         .update(updateData)
-        .eq('id', provider?.id)
+        .eq('id', provider?.id);
 
       if (updateError) {
-        setError(updateError.message)
-        return
+        setError(updateError.message);
+        return;
       }
 
-      setSuccess(true)
+      setSuccess(true);
 
       // Redirect to dashboard after 2 seconds
       setTimeout(() => {
-        router.push(`/${locale}/provider`)
-      }, 2000)
-
+        router.push(`/${locale}/provider`);
+      }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   // Calculate progress
   const calculateProgress = () => {
-    let completed = 0
-    const total = 10
+    let completed = 0;
+    const total = 10;
 
-    if (watch('storeNameAr')) completed++
-    if (watch('storeNameEn')) completed++
-    if (watch('storePhone')) completed++
-    if (watch('governorateId')) completed++
-    if (watch('cityId')) completed++
-    if (watch('address')) completed++
-    if (logoUrl || logoFile) completed++
-    if (watch('deliveryFee') >= 0) completed++
-    if (watch('estimatedDeliveryTime') > 0) completed++
-    if (watch('minOrderAmount') >= 0) completed++
+    if (watch('storeNameAr')) completed++;
+    if (watch('storeNameEn')) completed++;
+    if (watch('storePhone')) completed++;
+    if (watch('governorateId')) completed++;
+    if (watch('cityId')) completed++;
+    if (watch('address')) completed++;
+    if (logoUrl || logoFile) completed++;
+    if (watch('deliveryFee') >= 0) completed++;
+    if (watch('estimatedDeliveryTime') > 0) completed++;
+    if (watch('minOrderAmount') >= 0) completed++;
 
-    return Math.round((completed / total) * 100)
-  }
+    return Math.round((completed / total) * 100);
+  };
 
   // Loading state
   if (isLoading) {
@@ -381,7 +390,7 @@ export default function CompleteProfilePage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
       </div>
-    )
+    );
   }
 
   // Success state
@@ -400,14 +409,17 @@ export default function CompleteProfilePage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4 py-8">
       <div className="max-w-2xl mx-auto">
         {/* Back Button */}
-        <Link href={`/${locale}/provider`} className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6">
+        <Link
+          href={`/${locale}/provider`}
+          className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6"
+        >
           <ArrowLeft className={`w-4 h-4 ${isRTL ? 'ml-2 rotate-180' : 'mr-2'}`} />
           {locale === 'ar' ? 'العودة للوحة التحكم' : 'Back to Dashboard'}
         </Link>
@@ -419,12 +431,8 @@ export default function CompleteProfilePage() {
                 <Store className="w-8 h-8 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-center">
-              {t('title')}
-            </CardTitle>
-            <CardDescription className="text-center">
-              {t('description')}
-            </CardDescription>
+            <CardTitle className="text-2xl font-bold text-center">{t('title')}</CardTitle>
+            <CardDescription className="text-center">{t('description')}</CardDescription>
 
             {/* Progress Bar */}
             <div className="pt-4">
@@ -516,7 +524,9 @@ export default function CompleteProfilePage() {
                       onValueChange={(value) => setValue('governorateId', value)}
                       disabled={isSaving || governorateLocked}
                     >
-                      <SelectTrigger className={`${errors.governorateId ? 'border-destructive' : ''} ${governorateLocked ? 'bg-slate-50 cursor-not-allowed' : ''}`}>
+                      <SelectTrigger
+                        className={`${errors.governorateId ? 'border-destructive' : ''} ${governorateLocked ? 'bg-slate-50 cursor-not-allowed' : ''}`}
+                      >
                         <SelectValue placeholder={t('governoratePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -529,7 +539,9 @@ export default function CompleteProfilePage() {
                     </Select>
                     {governorateLocked && (
                       <p className="text-xs text-slate-500">
-                        {locale === 'ar' ? 'تم تحديد المحافظة عند التسجيل ولا يمكن تغييرها' : 'Governorate was set during registration and cannot be changed'}
+                        {locale === 'ar'
+                          ? 'تم تحديد المحافظة عند التسجيل ولا يمكن تغييرها'
+                          : 'Governorate was set during registration and cannot be changed'}
                       </p>
                     )}
                     {errors.governorateId && !governorateLocked && (
@@ -585,18 +597,24 @@ export default function CompleteProfilePage() {
                     <LocationPicker
                       value={storeLocation}
                       onChange={(coords, address) => {
-                        setStoreLocation(coords)
+                        setStoreLocation(coords);
                         // Optionally update address if not already set
                         if (address && !watch('address')) {
-                          setValue('address', address)
+                          setValue('address', address);
                         }
                       }}
-                      placeholder={locale === 'ar' ? 'ابحث عن موقع متجرك أو استخدم GPS' : 'Search for your store location or use GPS'}
+                      placeholder={
+                        locale === 'ar'
+                          ? 'ابحث عن موقع متجرك أو استخدم GPS'
+                          : 'Search for your store location or use GPS'
+                      }
                       disabled={isSaving}
                     />
                     {!storeLocation && (
                       <p className="text-xs text-amber-600">
-                        {locale === 'ar' ? '📍 يُفضل تحديد الموقع لمساعدة العملاء في الوصول إليك' : '📍 Setting location helps customers find you'}
+                        {locale === 'ar'
+                          ? '📍 يُفضل تحديد الموقع لمساعدة العملاء في الوصول إليك'
+                          : '📍 Setting location helps customers find you'}
                       </p>
                     )}
                   </div>
@@ -644,12 +662,8 @@ export default function CompleteProfilePage() {
                             <Upload className="w-6 h-6 text-muted-foreground" />
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {t('logoUpload')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          PNG, JPG (max 2MB)
-                        </p>
+                        <p className="text-sm text-muted-foreground">{t('logoUpload')}</p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG (max 2MB)</p>
                       </div>
                     )}
                   </div>
@@ -689,7 +703,9 @@ export default function CompleteProfilePage() {
                       dir="ltr"
                     />
                     {errors.estimatedDeliveryTime && (
-                      <p className="text-sm text-destructive">{errors.estimatedDeliveryTime.message}</p>
+                      <p className="text-sm text-destructive">
+                        {errors.estimatedDeliveryTime.message}
+                      </p>
                     )}
                   </div>
 
@@ -747,5 +763,5 @@ export default function CompleteProfilePage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

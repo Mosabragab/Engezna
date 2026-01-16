@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * ProviderSidebarSkeleton - هيكل تحميل للقائمة الجانبية للتاجر
@@ -36,10 +36,7 @@ export function ProviderSidebarSkeleton() {
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {/* Main Navigation Items */}
         {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-          <div
-            key={`nav-${i}`}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl"
-          >
+          <div key={`nav-${i}`} className="flex items-center gap-3 px-4 py-2.5 rounded-xl">
             <div className="w-5 h-5 bg-slate-200 rounded" />
             <div className="h-4 flex-1 bg-slate-200 rounded" />
             {/* Badge skeleton for some items */}
@@ -53,10 +50,7 @@ export function ProviderSidebarSkeleton() {
 
         {/* Secondary Navigation Items */}
         {[1, 2, 3].map((i) => (
-          <div
-            key={`sec-${i}`}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl"
-          >
+          <div key={`sec-${i}`} className="flex items-center gap-3 px-4 py-2.5 rounded-xl">
             <div className="w-5 h-5 bg-slate-200 rounded" />
             <div className="h-4 flex-1 bg-slate-200 rounded" />
           </div>
@@ -71,7 +65,7 @@ export function ProviderSidebarSkeleton() {
         </div>
       </div>
     </aside>
-  )
+  );
 }
 
-export default ProviderSidebarSkeleton
+export default ProviderSidebarSkeleton;

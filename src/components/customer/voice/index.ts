@@ -1,2 +1,2 @@
-export { ChatFAB, VoiceOrderFAB } from './VoiceOrderFAB'
-export { TextChat } from './TextChat'
+export { ChatFAB, VoiceOrderFAB } from './VoiceOrderFAB';
+export { TextChat } from './TextChat';

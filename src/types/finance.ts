@@ -17,16 +17,13 @@ export type SettlementStatus =
   | 'disputed'
   | 'waived';
 
-export type SettlementDirection =
-  | 'platform_pays_provider'
-  | 'provider_pays_platform'
-  | 'balanced';
+export type SettlementDirection = 'platform_pays_provider' | 'provider_pays_platform' | 'balanced';
 
 export type OrderSettlementStatus =
-  | 'eligible'    // Ready to be included in next settlement
-  | 'on_hold'     // Temporarily excluded (dispute, pending refund)
-  | 'settled'     // Already included in a settlement
-  | 'excluded';   // Permanently excluded (cancelled, rejected)
+  | 'eligible' // Ready to be included in next settlement
+  | 'on_hold' // Temporarily excluded (dispute, pending refund)
+  | 'settled' // Already included in a settlement
+  | 'excluded'; // Permanently excluded (cancelled, rejected)
 
 export type PaymentMethod = 'cash' | 'card' | 'wallet' | 'bank_transfer';
 
@@ -175,8 +172,8 @@ export interface ProviderFinancialSummary {
 
   // Commission (what platform earns)
   commission: {
-    theoretical: number;  // What would be without grace period
-    actual: number;       // What is actually charged
+    theoretical: number; // What would be without grace period
+    actual: number; // What is actually charged
     gracePeriodDiscount: number;
     rate: number;
   };
@@ -197,9 +194,9 @@ export interface ProviderFinancialSummary {
 
   // Settlement calculations
   settlement: {
-    codCommissionOwed: number;     // Provider owes platform
-    onlinePayoutOwed: number;      // Platform owes provider
-    netBalance: number;            // Positive = platform pays provider
+    codCommissionOwed: number; // Provider owes platform
+    onlinePayoutOwed: number; // Platform owes provider
+    netBalance: number; // Positive = platform pays provider
     direction: SettlementDirection;
   };
 
@@ -245,9 +242,9 @@ export interface AdminFinancialSummary {
 
   // Net balance
   totalNetBalance: number;
-  providersToPay: number;      // Count of providers platform pays
-  providersToCollect: number;  // Count of providers to collect from
-  providersBalanced: number;   // Count of balanced providers
+  providersToPay: number; // Count of providers platform pays
+  providersToCollect: number; // Count of providers to collect from
+  providersBalanced: number; // Count of balanced providers
 
   // Order status
   eligibleOrders: number;
@@ -413,8 +410,8 @@ export interface SettlementAuditLog {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export interface FinancialDateRange {
-  start: string;  // ISO date string
-  end: string;    // ISO date string
+  start: string; // ISO date string
+  end: string; // ISO date string
 }
 
 export interface FinancialFilters {

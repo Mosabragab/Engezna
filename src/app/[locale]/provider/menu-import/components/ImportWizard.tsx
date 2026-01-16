@@ -1,46 +1,46 @@
-'use client'
+'use client';
 
-import { useState, useCallback } from 'react'
-import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
-import { Upload, CheckSquare, Save, CheckCircle2 } from 'lucide-react'
-import { UploadStep } from './steps/UploadStep'
-import { ReviewStep } from './steps/ReviewStep'
-import { ConfirmStep } from './steps/ConfirmStep'
-import type { BusinessCategoryCode } from '@/lib/constants/categories'
+import { useState, useCallback } from 'react';
+import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { Upload, CheckSquare, Save, CheckCircle2 } from 'lucide-react';
+import { UploadStep } from './steps/UploadStep';
+import { ReviewStep } from './steps/ReviewStep';
+import { ConfirmStep } from './steps/ConfirmStep';
+import type { BusinessCategoryCode } from '@/lib/constants/categories';
 import type {
   ExtractedCategory,
   ExtractedAddon,
   AnalysisWarning,
   AnalysisStatistics,
-} from '@/types/menu-import'
+} from '@/types/menu-import';
 
 interface ImportWizardProps {
-  providerId: string
-  businessType: BusinessCategoryCode
-  providerName: string
+  providerId: string;
+  businessType: BusinessCategoryCode;
+  providerName: string;
 }
 
-type WizardStep = 1 | 2 | 3 | 4
+type WizardStep = 1 | 2 | 3 | 4;
 
 interface WizardState {
-  step: WizardStep
-  importId: string | null
+  step: WizardStep;
+  importId: string | null;
   analysisResult: {
-    categories: ExtractedCategory[]
-    addons: ExtractedAddon[]
-    warnings: AnalysisWarning[]
-    statistics: AnalysisStatistics
-  } | null
-  editedCategories: ExtractedCategory[]
-  editedAddons: ExtractedAddon[]
-  isSaving: boolean
-  error: string | null
+    categories: ExtractedCategory[];
+    addons: ExtractedAddon[];
+    warnings: AnalysisWarning[];
+    statistics: AnalysisStatistics;
+  } | null;
+  editedCategories: ExtractedCategory[];
+  editedAddons: ExtractedAddon[];
+  isSaving: boolean;
+  error: string | null;
   saveResults: {
-    categoriesCreated: number
-    productsCreated: number
-    variantsCreated: number
-  } | null
+    categoriesCreated: number;
+    productsCreated: number;
+    variantsCreated: number;
+  } | null;
 }
 
 const initialState: WizardState = {
@@ -52,13 +52,13 @@ const initialState: WizardState = {
   isSaving: false,
   error: null,
   saveResults: null,
-}
+};
 
 export function ImportWizard({ providerId, businessType, providerName }: ImportWizardProps) {
-  const locale = useLocale()
-  const router = useRouter()
+  const locale = useLocale();
+  const router = useRouter();
 
-  const [state, setState] = useState<WizardState>(initialState)
+  const [state, setState] = useState<WizardState>(initialState);
 
   // Step definitions
   const steps = [
@@ -82,107 +82,105 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
       title: locale === 'ar' ? 'تم!' : 'Done!',
       icon: CheckCircle2,
     },
-  ]
+  ];
 
   // Handle Excel upload completion - goes directly to review
-  const handleUploadComplete = useCallback((
-    categories: ExtractedCategory[],
-    addons: ExtractedAddon[],
-    importId: string
-  ) => {
-    const totalProducts = categories.reduce((sum, cat) => sum + cat.products.length, 0)
-    const productsWithVariants = categories.reduce(
-      (sum, cat) => sum + cat.products.filter(p => p.variants && p.variants.length > 0).length,
-      0
-    )
+  const handleUploadComplete = useCallback(
+    (categories: ExtractedCategory[], addons: ExtractedAddon[], importId: string) => {
+      const totalProducts = categories.reduce((sum, cat) => sum + cat.products.length, 0);
+      const productsWithVariants = categories.reduce(
+        (sum, cat) => sum + cat.products.filter((p) => p.variants && p.variants.length > 0).length,
+        0
+      );
 
-    setState(prev => ({
-      ...prev,
-      importId,
-      analysisResult: {
-        categories,
-        addons,
-        warnings: [],
-        statistics: {
-          total_categories: categories.length,
-          total_products: totalProducts,
-          products_fixed_price: totalProducts - productsWithVariants,
-          products_per_unit: 0,
-          products_with_variants: productsWithVariants,
-          products_need_review: categories.reduce(
-            (sum, cat) => sum + cat.products.filter(p => p.needs_review).length,
-            0
-          ),
-          average_confidence: 1.0,
-          addons_found: addons.length,
+      setState((prev) => ({
+        ...prev,
+        importId,
+        analysisResult: {
+          categories,
+          addons,
+          warnings: [],
+          statistics: {
+            total_categories: categories.length,
+            total_products: totalProducts,
+            products_fixed_price: totalProducts - productsWithVariants,
+            products_per_unit: 0,
+            products_with_variants: productsWithVariants,
+            products_need_review: categories.reduce(
+              (sum, cat) => sum + cat.products.filter((p) => p.needs_review).length,
+              0
+            ),
+            average_confidence: 1.0,
+            addons_found: addons.length,
+          },
         },
-      },
-      editedCategories: categories,
-      editedAddons: addons,
-      step: 2,
-      error: null,
-    }))
-  }, [])
+        editedCategories: categories,
+        editedAddons: addons,
+        step: 2,
+        error: null,
+      }));
+    },
+    []
+  );
 
   // Handle review completion
-  const handleReviewComplete = useCallback((
-    categories: ExtractedCategory[],
-    addons: ExtractedAddon[]
-  ) => {
-    setState(prev => ({
-      ...prev,
-      editedCategories: categories,
-      editedAddons: addons,
-      step: 3,
-      error: null,
-    }))
-  }, [])
+  const handleReviewComplete = useCallback(
+    (categories: ExtractedCategory[], addons: ExtractedAddon[]) => {
+      setState((prev) => ({
+        ...prev,
+        editedCategories: categories,
+        editedAddons: addons,
+        step: 3,
+        error: null,
+      }));
+    },
+    []
+  );
 
   // Handle save completion
-  const handleSaveComplete = useCallback((results: {
-    categoriesCreated: number
-    productsCreated: number
-    variantsCreated: number
-  }) => {
-    setState(prev => ({
-      ...prev,
-      saveResults: results,
-      step: 4,
-      isSaving: false,
-      error: null,
-    }))
-  }, [])
+  const handleSaveComplete = useCallback(
+    (results: { categoriesCreated: number; productsCreated: number; variantsCreated: number }) => {
+      setState((prev) => ({
+        ...prev,
+        saveResults: results,
+        step: 4,
+        isSaving: false,
+        error: null,
+      }));
+    },
+    []
+  );
 
   // Handle save error
   const handleSaveError = useCallback((error: string) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isSaving: false,
       error,
-    }))
-  }, [])
+    }));
+  }, []);
 
   // Go back to previous step
   const handleBack = useCallback(() => {
-    setState(prev => {
-      if (prev.step === 1) return prev
+    setState((prev) => {
+      if (prev.step === 1) return prev;
       return {
         ...prev,
         step: (prev.step - 1) as WizardStep,
         error: null,
-      }
-    })
-  }, [])
+      };
+    });
+  }, []);
 
   // Reset wizard
   const handleReset = useCallback(() => {
-    setState(initialState)
-  }, [])
+    setState(initialState);
+  }, []);
 
   // Navigate to products page
   const handleFinish = useCallback(() => {
-    router.push(`/${locale}/provider/products`)
-  }, [router, locale])
+    router.push(`/${locale}/provider/products`);
+  }, [router, locale]);
 
   return (
     <div className="space-y-6">
@@ -190,10 +188,10 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div className="flex items-center justify-between">
           {steps.map((step, index) => {
-            const Icon = step.icon
-            const isActive = state.step === step.number
-            const isCompleted = state.step > step.number
-            const isLast = index === steps.length - 1
+            const Icon = step.icon;
+            const isActive = state.step === step.number;
+            const isCompleted = state.step > step.number;
+            const isLast = index === steps.length - 1;
 
             return (
               <div key={step.number} className="flex items-center flex-1">
@@ -204,8 +202,8 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
                       isCompleted
                         ? 'bg-green-500 text-white'
                         : isActive
-                        ? 'bg-primary text-white'
-                        : 'bg-slate-100 text-slate-400'
+                          ? 'bg-primary text-white'
+                          : 'bg-slate-100 text-slate-400'
                     }`}
                   >
                     {isCompleted ? (
@@ -232,7 +230,7 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
                   />
                 )}
               </div>
-            )
+            );
           })}
         </div>
       </div>
@@ -342,5 +340,5 @@ export function ImportWizard({ providerId, businessType, providerName }: ImportW
         )}
       </div>
     </div>
-  )
+  );
 }

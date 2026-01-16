@@ -8,15 +8,15 @@
 
 ## 📋 المراحل الرئيسية
 
-| المرحلة | الوصف | المدة التقديرية |
-|---------|-------|-----------------|
-| 1 | إعداد Firebase Project | - |
-| 2 | إنشاء جداول قاعدة البيانات | - |
-| 3 | تثبيت Firebase SDK في Next.js | - |
-| 4 | إنشاء Service Worker للـ PWA | - |
-| 5 | إنشاء Edge Functions | - |
-| 6 | إعداد Database Webhooks | - |
-| 7 | اختبار السيناريوهات | - |
+| المرحلة | الوصف                         | المدة التقديرية |
+| ------- | ----------------------------- | --------------- |
+| 1       | إعداد Firebase Project        | -               |
+| 2       | إنشاء جداول قاعدة البيانات    | -               |
+| 3       | تثبيت Firebase SDK في Next.js | -               |
+| 4       | إنشاء Service Worker للـ PWA  | -               |
+| 5       | إنشاء Edge Functions          | -               |
+| 6       | إعداد Database Webhooks       | -               |
+| 7       | اختبار السيناريوهات           | -               |
 
 ---
 
@@ -36,6 +36,7 @@
    - انسخ الـ Config
 
 3. **الحصول على المفاتيح:**
+
    ```
    ستحتاج:
    - Firebase Config (للـ Frontend)
@@ -47,6 +48,7 @@
    - انسخ "Server Key" (Legacy) أو استخدم FCM v1 API
 
 ### المخرجات المطلوبة:
+
 ```env
 # .env.local (Frontend)
 NEXT_PUBLIC_FIREBASE_API_KEY=xxx
@@ -203,8 +205,8 @@ npm install firebase
 
 ```typescript
 // src/lib/firebase/config.ts
-import { initializeApp, getApps } from 'firebase/app'
-import { getMessaging, getToken, onMessage } from 'firebase/messaging'
+import { initializeApp, getApps } from 'firebase/app';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -213,82 +215,85 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-}
+};
 
 // Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-export { app }
+export { app };
 ```
 
 ### 3.3 إنشاء Hook لإدارة الإشعارات
 
 ```typescript
 // src/hooks/usePushNotifications.ts
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { getMessaging, getToken, onMessage } from 'firebase/messaging'
-import { app } from '@/lib/firebase/config'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect } from 'react';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { app } from '@/lib/firebase/config';
+import { createClient } from '@/lib/supabase/client';
 
 export function usePushNotifications() {
-  const [permission, setPermission] = useState<NotificationPermission>('default')
-  const [token, setToken] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Request permission and get token
   const requestPermission = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const result = await Notification.requestPermission()
-      setPermission(result)
+      const result = await Notification.requestPermission();
+      setPermission(result);
 
       if (result === 'granted') {
-        const messaging = getMessaging(app)
+        const messaging = getMessaging(app);
         const currentToken = await getToken(messaging, {
           vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-        })
+        });
 
         if (currentToken) {
-          setToken(currentToken)
-          await saveTokenToDatabase(currentToken)
+          setToken(currentToken);
+          await saveTokenToDatabase(currentToken);
         }
       }
     } catch (error) {
-      console.error('Error requesting notification permission:', error)
+      console.error('Error requesting notification permission:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Save token to Supabase
   const saveTokenToDatabase = async (fcmToken: string) => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (user) {
-      await supabase
-        .from('fcm_tokens')
-        .upsert({
+      await supabase.from('fcm_tokens').upsert(
+        {
           user_id: user.id,
           token: fcmToken,
           device_type: 'web',
           is_active: true,
           last_used_at: new Date().toISOString(),
-        }, {
+        },
+        {
           onConflict: 'token',
-        })
+        }
+      );
     }
-  }
+  };
 
   // Listen for foreground messages
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') return;
 
-    const messaging = getMessaging(app)
+    const messaging = getMessaging(app);
     const unsubscribe = onMessage(messaging, (payload) => {
-      console.log('Foreground message:', payload)
+      console.log('Foreground message:', payload);
 
       // Show notification manually in foreground
       if (payload.notification) {
@@ -296,19 +301,19 @@ export function usePushNotifications() {
           body: payload.notification.body,
           icon: '/icons/icon-192x192.png',
           badge: '/icons/badge-72x72.png',
-        })
+        });
       }
-    })
+    });
 
-    return () => unsubscribe()
-  }, [])
+    return () => unsubscribe();
+  }, []);
 
   return {
     permission,
     token,
     loading,
     requestPermission,
-  }
+  };
 }
 ```
 
@@ -316,25 +321,25 @@ export function usePushNotifications() {
 
 ```javascript
 // public/firebase-messaging-sw.js
-importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js')
-importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js')
+importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
-})
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_AUTH_DOMAIN',
+  projectId: 'YOUR_PROJECT_ID',
+  storageBucket: 'YOUR_STORAGE_BUCKET',
+  messagingSenderId: 'YOUR_SENDER_ID',
+  appId: 'YOUR_APP_ID',
+});
 
-const messaging = firebase.messaging()
+const messaging = firebase.messaging();
 
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
-  console.log('Background message:', payload)
+  console.log('Background message:', payload);
 
-  const notificationTitle = payload.notification?.title || 'إنجزنا'
+  const notificationTitle = payload.notification?.title || 'إنجزنا';
   const notificationOptions = {
     body: payload.notification?.body,
     icon: '/icons/icon-192x192.png',
@@ -343,32 +348,32 @@ messaging.onBackgroundMessage((payload) => {
     data: payload.data,
     // Custom actions
     actions: payload.data?.actions ? JSON.parse(payload.data.actions) : [],
-  }
+  };
 
-  self.registration.showNotification(notificationTitle, notificationOptions)
-})
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
+  event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/'
+  const urlToOpen = event.notification.data?.url || '/';
 
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((windowClients) => {
       // Check if there's already a window open
       for (const client of windowClients) {
         if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus()
+          return client.focus();
         }
       }
       // Open new window
       if (clients.openWindow) {
-        return clients.openWindow(urlToOpen)
+        return clients.openWindow(urlToOpen);
       }
     })
-  )
-})
+  );
+});
 ```
 
 ---
@@ -379,32 +384,27 @@ self.addEventListener('notificationclick', (event) => {
 
 ```typescript
 // supabase/functions/send-push-notification/index.ts
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const FIREBASE_PROJECT_ID = Deno.env.get('FIREBASE_PROJECT_ID')
-const FIREBASE_SERVICE_ACCOUNT = JSON.parse(
-  Deno.env.get('FIREBASE_SERVICE_ACCOUNT_KEY') || '{}'
-)
+const FIREBASE_PROJECT_ID = Deno.env.get('FIREBASE_PROJECT_ID');
+const FIREBASE_SERVICE_ACCOUNT = JSON.parse(Deno.env.get('FIREBASE_SERVICE_ACCOUNT_KEY') || '{}');
 
 // Get Firebase access token
 async function getAccessToken() {
-  const jwt = await createJWT(FIREBASE_SERVICE_ACCOUNT)
+  const jwt = await createJWT(FIREBASE_SERVICE_ACCOUNT);
 
-  const response = await fetch(
-    'https://oauth2.googleapis.com/token',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: jwt,
-      }),
-    }
-  )
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }),
+  });
 
-  const data = await response.json()
-  return data.access_token
+  const data = await response.json();
+  return data.access_token;
 }
 
 // Send notification via FCM v1 API
@@ -414,7 +414,7 @@ async function sendNotification(
   body: string,
   data: Record<string, string>
 ) {
-  const accessToken = await getAccessToken()
+  const accessToken = await getAccessToken();
 
   const message = {
     message: {
@@ -434,80 +434,79 @@ async function sendNotification(
         },
       },
     },
-  }
+  };
 
   const response = await fetch(
     `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`,
     {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(message),
     }
-  )
+  );
 
-  return response.json()
+  return response.json();
 }
 
 serve(async (req) => {
   try {
-    const { user_ids, title_ar, title_en, body_ar, body_en, data } = await req.json()
+    const { user_ids, title_ar, title_en, body_ar, body_en, data } = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
 
     // Get FCM tokens for users
     const { data: tokens, error } = await supabase
       .from('fcm_tokens')
       .select('token, user_id, profiles(preferred_language)')
       .in('user_id', user_ids)
-      .eq('is_active', true)
+      .eq('is_active', true);
 
-    if (error) throw error
+    if (error) throw error;
 
     // Send to each token
     const results = await Promise.all(
       tokens.map(async (t) => {
-        const lang = t.profiles?.preferred_language || 'ar'
-        const title = lang === 'ar' ? title_ar : title_en
-        const body = lang === 'ar' ? body_ar : body_en
+        const lang = t.profiles?.preferred_language || 'ar';
+        const title = lang === 'ar' ? title_ar : title_en;
+        const body = lang === 'ar' ? body_ar : body_en;
 
-        return sendNotification(t.token, title, body, data)
+        return sendNotification(t.token, title, body, data);
       })
-    )
+    );
 
-    return new Response(
-      JSON.stringify({ success: true, sent: results.length }),
-      { headers: { 'Content-Type': 'application/json' } }
-    )
+    return new Response(JSON.stringify({ success: true, sent: results.length }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    )
+    return new Response(JSON.stringify({ success: false, error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
-})
+});
 ```
 
 ### 4.2 دالة معالجة الطلبات الجديدة
 
 ```typescript
 // supabase/functions/handle-new-order/index.ts
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 serve(async (req) => {
-  const payload = await req.json()
-  const { record: order } = payload // New order from webhook
+  const payload = await req.json();
+  const { record: order } = payload; // New order from webhook
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  )
+  );
 
   // Get provider staff with order management permission
   const { data: staff } = await supabase
@@ -515,11 +514,11 @@ serve(async (req) => {
     .select('user_id')
     .eq('provider_id', order.provider_id)
     .eq('is_active', true)
-    .eq('can_manage_orders', true)
+    .eq('can_manage_orders', true);
 
-  if (!staff?.length) return new Response('No staff to notify')
+  if (!staff?.length) return new Response('No staff to notify');
 
-  const user_ids = staff.map(s => s.user_id)
+  const user_ids = staff.map((s) => s.user_id);
 
   // Call send-push-notification function
   const { data, error } = await supabase.functions.invoke('send-push-notification', {
@@ -535,10 +534,10 @@ serve(async (req) => {
         url: `/ar/provider/orders/${order.id}`,
       },
     },
-  })
+  });
 
-  return new Response(JSON.stringify({ success: true }))
-})
+  return new Response(JSON.stringify({ success: true }));
+});
 ```
 
 ---
@@ -551,13 +550,13 @@ serve(async (req) => {
 
 2. **إعداد الـ Webhooks:**
 
-| الاسم | الجدول | الحدث | Edge Function |
-|-------|--------|-------|---------------|
-| `on_new_order` | `orders` | `INSERT` | `handle-new-order` |
-| `on_order_status_change` | `orders` | `UPDATE` (status column) | `handle-order-status` |
-| `on_new_chat_message` | `chat_messages` | `INSERT` | `handle-new-message` |
-| `on_new_provider_request` | `providers` | `INSERT` (status = pending) | `handle-provider-request` |
-| `on_new_complaint` | `complaints` | `INSERT` | `handle-new-complaint` |
+| الاسم                     | الجدول          | الحدث                       | Edge Function             |
+| ------------------------- | --------------- | --------------------------- | ------------------------- |
+| `on_new_order`            | `orders`        | `INSERT`                    | `handle-new-order`        |
+| `on_order_status_change`  | `orders`        | `UPDATE` (status column)    | `handle-order-status`     |
+| `on_new_chat_message`     | `chat_messages` | `INSERT`                    | `handle-new-message`      |
+| `on_new_provider_request` | `providers`     | `INSERT` (status = pending) | `handle-provider-request` |
+| `on_new_complaint`        | `complaints`    | `INSERT`                    | `handle-new-complaint`    |
 
 ---
 
@@ -565,32 +564,32 @@ serve(async (req) => {
 
 ### للعميل (Customer)
 
-| السيناريو | العنوان | المحتوى | الإجراء |
-|-----------|---------|---------|---------|
-| قبول الطلب | ✅ تم قبول طلبك | طلبك #123 قيد التحضير الآن | فتح تفاصيل الطلب |
-| جاري التحضير | 👨‍🍳 جاري تحضير طلبك | طلبك #123 يتم تحضيره حالياً | فتح تفاصيل الطلب |
-| في الطريق | 🚗 الطلب في الطريق | المندوب في طريقه إليك | فتح تتبع الطلب |
-| تم التوصيل | 🎉 تم التوصيل | نتمنى لك وجبة شهية! قيّم تجربتك | فتح صفحة التقييم |
-| رسالة جديدة | 💬 رسالة من المتجر | لديك رد جديد بخصوص طلبك | فتح الدردشة |
-| عرض جديد | 🎁 عرض خاص! | خصم 20% على طلبك القادم | فتح صفحة العروض |
+| السيناريو    | العنوان            | المحتوى                         | الإجراء          |
+| ------------ | ------------------ | ------------------------------- | ---------------- |
+| قبول الطلب   | ✅ تم قبول طلبك    | طلبك #123 قيد التحضير الآن      | فتح تفاصيل الطلب |
+| جاري التحضير | 👨‍🍳 جاري تحضير طلبك | طلبك #123 يتم تحضيره حالياً     | فتح تفاصيل الطلب |
+| في الطريق    | 🚗 الطلب في الطريق | المندوب في طريقه إليك           | فتح تتبع الطلب   |
+| تم التوصيل   | 🎉 تم التوصيل      | نتمنى لك وجبة شهية! قيّم تجربتك | فتح صفحة التقييم |
+| رسالة جديدة  | 💬 رسالة من المتجر | لديك رد جديد بخصوص طلبك         | فتح الدردشة      |
+| عرض جديد     | 🎁 عرض خاص!        | خصم 20% على طلبك القادم         | فتح صفحة العروض  |
 
 ### للتاجر/المشرف (Provider/Staff)
 
-| السيناريو | العنوان | المحتوى | الصوت |
-|-----------|---------|---------|-------|
-| طلب جديد | 🛒 طلب جديد! | طلب #123 بقيمة 150 ج.م | 🔊 رنة مميزة |
-| إلغاء طلب | ❌ تم إلغاء طلب | العميل ألغى الطلب #123 | 🔊 تنبيه |
-| تقييم جديد | ⭐ تقييم جديد | حصلت على تقييم 5 نجوم | 🔊 إيجابي |
-| رسالة عميل | 💬 رسالة من عميل | استفسار بخصوص الطلب #123 | 🔊 رسالة |
-| تحديث من مشرف | 👤 تحديث الفريق | [أحمد] حدّث حالة الطلب | 🔔 عادي |
+| السيناريو     | العنوان          | المحتوى                  | الصوت        |
+| ------------- | ---------------- | ------------------------ | ------------ |
+| طلب جديد      | 🛒 طلب جديد!     | طلب #123 بقيمة 150 ج.م   | 🔊 رنة مميزة |
+| إلغاء طلب     | ❌ تم إلغاء طلب  | العميل ألغى الطلب #123   | 🔊 تنبيه     |
+| تقييم جديد    | ⭐ تقييم جديد    | حصلت على تقييم 5 نجوم    | 🔊 إيجابي    |
+| رسالة عميل    | 💬 رسالة من عميل | استفسار بخصوص الطلب #123 | 🔊 رسالة     |
+| تحديث من مشرف | 👤 تحديث الفريق  | [أحمد] حدّث حالة الطلب   | 🔔 عادي      |
 
 ### للأدمن (Admin)
 
-| السيناريو | العنوان | المحتوى |
-|-----------|---------|---------|
-| طلب انضمام | 🏪 متجر جديد | "مطعم الشام" تقدم للانضمام |
+| السيناريو  | العنوان       | المحتوى                      |
+| ---------- | ------------- | ---------------------------- |
+| طلب انضمام | 🏪 متجر جديد  | "مطعم الشام" تقدم للانضمام   |
 | شكوى جديدة | ⚠️ شكوى جديدة | شكوى من [العميل] ضد [المتجر] |
-| تنبيه أمني | 🚨 تنبيه أمني | محاولة دخول مشبوهة |
+| تنبيه أمني | 🚨 تنبيه أمني | محاولة دخول مشبوهة           |
 
 ---
 
@@ -624,6 +623,7 @@ public/
 ## 📝 ملخص الملفات المطلوب إنشاؤها
 
 ### في Next.js:
+
 ```
 src/
   lib/
@@ -640,6 +640,7 @@ public/
 ```
 
 ### في Supabase:
+
 ```
 supabase/
   functions/
@@ -674,6 +675,7 @@ supabase/
 ## 🚀 بعد الموافقة
 
 بمجرد موافقتك على هذه الخطة، سأبدأ بـ:
+
 1. إنشاء ملفات SQL للجداول
 2. إنشاء ملفات Firebase في Next.js
 3. إنشاء Edge Functions

@@ -3,9 +3,11 @@
 ## Last Updated: 2026-01-13 (Session 27)
 
 ## Project Overview
+
 Engezna is a multi-vendor e-commerce platform connecting customers with local providers (restaurants, supermarkets, cafes, etc.) in Egypt.
 
 ## Tech Stack
+
 - **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth, RLS)
 - **State Management**: Zustand (cart)
@@ -20,6 +22,7 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 ### Session 27 Updates (January 13, 2026)
 
 #### E2E Testing Suite - Store Readiness
+
 - [x] **536 E2E tests created** covering all critical paths (532 passed, 4 failed, 5 skipped)
 - [x] **Customer journey tests** - Login, order, checkout, tracking
 - [x] **Merchant operations tests** - Notifications, pricing, order status
@@ -30,9 +33,11 @@ Engezna is a multi-vendor e-commerce platform connecting customers with local pr
 - [x] **Global auth setup** - For protected route testing
 
 ##### Test Results (January 12, 2026)
+
 - ✅ 532 Passed | ❌ 4 Failed | ⏭️ 5 Skipped | ⏱️ 7.7 minutes
 
 ##### Test Files (16 files)
+
 ```
 e2e/
 ├── critical-customer-journey.spec.ts
@@ -54,11 +59,13 @@ e2e/
 ```
 
 #### Welcome Page Loading Fix
+
 - [x] **Fast redirect for new visitors** - Welcome page now opens immediately for first-time visitors
 - [x] **localStorage early check** - Synchronous check before waiting for Supabase
 - [x] **Improved UX** - No more loading spinner delay before welcome page
 
 ##### Technical Details
+
 - Home page now checks `localStorage` for guest location immediately on mount
 - If no location found, redirects to `/welcome` without waiting for LocationContext
 - Eliminates the delay caused by waiting for Supabase data to load
@@ -70,22 +77,26 @@ e2e/
 #### Custom Order System (Triple Broadcast) - Comprehensive Review
 
 ##### Navigation & UX Fixes
+
 - [x] **Smart back navigation** - Orders from custom orders page now return correctly
 - [x] **Context-aware back button** - Shows "الطلبات الخاصة" when from custom orders
 - [x] **URL parameter tracking** - `?from=custom` preserves navigation context
 - [x] **Customer bottom nav badge** - Fixed pending quotes count query
 
 ##### Database & Notifications
+
 - [x] **Notification data column** - Added JSONB data column to notification tables
 - [x] **RPC functions** - `customer_approve_custom_order` and `customer_reject_custom_order`
 - [x] **Check constraint fix** - Added `pricing_in_progress` to status constraint
 
 ##### System Architecture Analysis
+
 - [x] **Settlement system verified** - No impact from custom orders (uses `orders` table)
 - [x] **Analytics verified** - Custom orders counted after approval
 - [x] **Dashboard stats verified** - All systems read from `orders` table
 
 ##### Custom Order Flow (Verified Working)
+
 ```
 1. Customer creates broadcast → custom_order_broadcasts
 2. Providers receive requests → custom_order_requests
@@ -99,16 +110,19 @@ e2e/
 ### Session 24 Updates (January 4, 2026)
 
 #### Documentation Cleanup & Organization
+
 - [x] **Archived completed plans** - Moved 10 outdated plan files to `/archive`
 - [x] **Reorganized docs folder** - Created `/docs/guides` and `/docs/features` subfolders
 - [x] **Created CHANGELOG.md** - Consolidated session history
 - [x] **Created ROADMAP.md** - Future tasks and priorities
 
 #### Provider Dashboard Fixes
+
 - [x] **Fixed button visibility** - Added `!important` prefix to button colors
 - [x] **Fixed dropdown menu sensitivity** - Padding bridge for smooth hover
 
 #### Provider Settings Updates
+
 - [x] **Delete account functionality** - Full account deletion with provider data cleanup
 - [x] **Dropdown menu improvements** - Removed preview button, changed labels
 - [x] **Header cleanup** - Removed redundant "حسابي" text
@@ -118,6 +132,7 @@ e2e/
 ### Session 23 Updates (December 31, 2025)
 
 #### Native Google Sign-In Implementation
+
 - [x] **Native Google OAuth** - Shows "engezna.com" instead of Supabase URL
 - [x] **Custom Arabic Button** - "إستمرار عبر جوجل" (Talabat-style)
 - [x] **Authorization Code Flow** - Secure token exchange via API
@@ -128,6 +143,7 @@ e2e/
 ### Session 22 Updates (December 26, 2025)
 
 #### Settlement System Refinements
+
 - [x] **Database as Single Source of Truth** - All financial values from database, no frontend calculations
 - [x] **Commission Display Fix** - Fixed 22 vs 17.5 issue after refunds
 - [x] **Trigger Conflict Resolution** - Fixed `calculate_order_commission` and `generate_provider_settlement`
@@ -136,6 +152,7 @@ e2e/
 - [x] **Grace Period Display** - Shows waiver indicator when commission = 0 but revenue > 0
 
 #### Key Principles Established
+
 1. **مصدر الحقيقة الواحد**: Database is the only source for financial calculations
 2. **Backend Calculations Only**: Frontend displays values, never calculates them
 3. **Commission Formula**: `commission = (subtotal - discount - refund) * rate`
@@ -145,6 +162,7 @@ e2e/
 ### Session 20 Updates (December 23, 2025)
 
 #### Legal Compliance & Company Registration
+
 - [x] **Privacy Policy Page** (`/privacy`) - Bilingual with Charcoal theme header
 - [x] **Terms & Conditions Page** (`/terms`) - Tabbed interface (Customer/Provider)
 - [x] **Company Information** - سويفكم للتجارة والتصدير (ذ.م.م)
@@ -156,6 +174,7 @@ e2e/
 - [x] **Manifest.json Privacy URL** - `privacy_policy_url` for PWA compliance
 
 #### E2E Testing Setup (Playwright)
+
 - [x] **Playwright Configuration** - Multi-browser (Chrome, Safari, Mobile)
 - [x] **Customer Journey Smoke Test** - Homepage → Store → Cart → Checkout
 - [x] **PWA Offline Tests** - Service Worker, Offline page, Manifest validation
@@ -166,6 +185,7 @@ e2e/
 ### Completed Features
 
 #### Customer Side
+
 - [x] Customer registration & authentication
 - [x] **Google Sign-In** - Native OAuth showing engezna.com with Arabic button
 - [x] Provider browsing and search
@@ -192,6 +212,7 @@ e2e/
 - [x] **E2E Tests (Playwright)** - Customer journey and PWA tests
 
 #### Provider Side
+
 - [x] Provider registration & approval flow
 - [x] Provider dashboard with statistics
 - [x] Order management (accept/reject/status updates)
@@ -209,6 +230,7 @@ e2e/
 - [x] **Product variants** - Size/weight options per product
 
 #### Admin Side
+
 - [x] Admin dashboard
 - [x] Provider approval system
 - [x] Basic analytics (with platform colors)
@@ -225,18 +247,19 @@ e2e/
 
 ## Test Accounts
 
-| Email | Password | Role | Provider |
-|-------|----------|------|----------|
-| provider@test.com | Test123! | provider_owner | سوبر ماركت النجاح |
-| provider2@test.com | Test123! | provider_owner | سلطان بيتزا |
-| provider3@test.com | Test123! | provider_owner | لافندر كافيه |
-| provider4@test.com | Test123! | provider_owner | مطعم الصفا |
-| customer@test.com | Test123! | customer | - |
-| admin@test.com | Test123! | admin | - |
+| Email              | Password | Role           | Provider          |
+| ------------------ | -------- | -------------- | ----------------- |
+| provider@test.com  | Test123! | provider_owner | سوبر ماركت النجاح |
+| provider2@test.com | Test123! | provider_owner | سلطان بيتزا       |
+| provider3@test.com | Test123! | provider_owner | لافندر كافيه      |
+| provider4@test.com | Test123! | provider_owner | مطعم الصفا        |
+| customer@test.com  | Test123! | customer       | -                 |
+| admin@test.com     | Test123! | admin          | -                 |
 
 ---
 
 ## Database Schema Highlights
+
 - `profiles` - User profiles with roles (customer, provider_owner, provider_staff, admin)
 - `providers` - Store/provider information (status enum: open, closed, temporarily_paused, on_vacation, incomplete)
 - `menu_items` - Product catalog with pricing_type (fixed, per_unit, variants, weight_variants)
@@ -257,6 +280,7 @@ e2e/
 ---
 
 ## RLS Policies Summary
+
 - Customers can view all approved providers (status in open, closed, temporarily_paused, on_vacation)
 - Customers can create orders only if is_active = true (not banned)
 - Customers can cancel their own pending orders (if not banned)
@@ -269,7 +293,9 @@ e2e/
 ## Important Database Notes
 
 ### Provider Status Field
+
 The `providers` table uses a `status` enum, NOT a boolean `is_approved`:
+
 - `open` - Store is open
 - `closed` - Store is closed
 - `temporarily_paused` - Temporarily unavailable
@@ -277,10 +303,13 @@ The `providers` table uses a `status` enum, NOT a boolean `is_approved`:
 - `incomplete` - Registration incomplete
 
 ### Order Status Enum
+
 Valid values: `pending`, `accepted`, `preparing`, `ready`, `out_for_delivery`, `delivered`, `cancelled`, `rejected`
+
 - **NO** `confirmed` status exists!
 
 ### Debugging Tips
+
 1. Check column existence: `SELECT column_name FROM information_schema.columns WHERE table_name = 'your_table'`
 2. Check RLS policies: `SELECT * FROM pg_policies WHERE tablename = 'your_table'`
 3. Add error logging to catch silent query failures
@@ -288,10 +317,12 @@ Valid values: `pending`, `accepted`, `preparing`, `ready`, `out_for_delivery`, `
 ---
 
 ## Known Issues
+
 - None currently
 
 ---
 
 ## Deployment
+
 - **Platform**: Vercel
 - **Preview URL**: engezna-rjt1rdc1e-engeznas-projects.vercel.app

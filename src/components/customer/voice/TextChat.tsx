@@ -1,22 +1,22 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useRef } from 'react'
-import { useLocale } from 'next-intl'
-import { X, ShoppingCart, Trash2, Loader2, Bot, User, Send } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useVoiceOrder, VoiceOrderMessage, CartItem } from '@/hooks/customer/useVoiceOrder'
+import { useState, useEffect, useRef } from 'react';
+import { useLocale } from 'next-intl';
+import { X, ShoppingCart, Trash2, Loader2, Bot, User, Send } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useVoiceOrder, VoiceOrderMessage, CartItem } from '@/hooks/customer/useVoiceOrder';
 
 interface TextChatProps {
-  isOpen: boolean
-  onClose: () => void
-  onAddToCart?: (items: CartItem[]) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onAddToCart?: (items: CartItem[]) => void;
 }
 
 export function TextChat({ isOpen, onClose, onAddToCart }: TextChatProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [textInput, setTextInput] = useState('')
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [textInput, setTextInput] = useState('');
 
   const {
     messages,
@@ -26,50 +26,50 @@ export function TextChat({ isOpen, onClose, onAddToCart }: TextChatProps) {
     confirmOrder,
     cancelPendingItems,
     startNewConversation,
-  } = useVoiceOrder()
+  } = useVoiceOrder();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Start conversation when opened
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      startNewConversation()
+      startNewConversation();
     }
-  }, [isOpen, messages.length, startNewConversation])
+  }, [isOpen, messages.length, startNewConversation]);
 
   const handleTextSubmit = () => {
     if (textInput.trim() && !isProcessing) {
-      processTranscript(textInput.trim())
-      setTextInput('')
+      processTranscript(textInput.trim());
+      setTextInput('');
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleTextSubmit()
+      e.preventDefault();
+      handleTextSubmit();
     }
-  }
+  };
 
   const handleConfirmOrder = async () => {
-    const success = await confirmOrder()
+    const success = await confirmOrder();
     if (success && onAddToCart) {
-      onAddToCart(pendingCartItems)
+      onAddToCart(pendingCartItems);
     }
-  }
+  };
 
   const formatPrice = (price: number) => {
-    return `${price.toFixed(2)} ${locale === 'ar' ? 'جنيه' : 'EGP'}`
-  }
+    return `${price.toFixed(2)} ${locale === 'ar' ? 'جنيه' : 'EGP'}`;
+  };
 
   const calculateTotal = () => {
-    return pendingCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  }
+    return pendingCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center">
@@ -149,9 +149,7 @@ export function TextChat({ isOpen, onClose, onAddToCart }: TextChatProps) {
             </div>
 
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200">
-              <span className="font-semibold">
-                {locale === 'ar' ? 'الإجمالي:' : 'Total:'}
-              </span>
+              <span className="font-semibold">{locale === 'ar' ? 'الإجمالي:' : 'Total:'}</span>
               <span className="text-lg font-bold text-primary">
                 {formatPrice(calculateTotal())}
               </span>
@@ -182,7 +180,11 @@ export function TextChat({ isOpen, onClose, onAddToCart }: TextChatProps) {
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder={locale === 'ar' ? 'اكتب طلبك هنا... مثال: عايز 2 برجر و بيبسي' : 'Type your order... e.g., I want 2 burgers and a pepsi'}
+                placeholder={
+                  locale === 'ar'
+                    ? 'اكتب طلبك هنا... مثال: عايز 2 برجر و بيبسي'
+                    : 'Type your order... e.g., I want 2 burgers and a pepsi'
+                }
                 className="w-full px-4 py-3 pe-12 border border-slate-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm min-h-[48px] max-h-[120px]"
                 rows={1}
                 disabled={isProcessing}
@@ -210,21 +212,16 @@ export function TextChat({ isOpen, onClose, onAddToCart }: TextChatProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Message Bubble Component
 function MessageBubble({ message, locale }: { message: VoiceOrderMessage; locale: string }) {
-  const isAssistant = message.role === 'assistant'
-  const isRTL = locale === 'ar'
+  const isAssistant = message.role === 'assistant';
+  const isRTL = locale === 'ar';
 
   return (
-    <div
-      className={cn(
-        'flex gap-2',
-        isAssistant ? '' : 'flex-row-reverse'
-      )}
-    >
+    <div className={cn('flex gap-2', isAssistant ? '' : 'flex-row-reverse')}>
       {/* Avatar */}
       <div
         className={cn(
@@ -253,14 +250,12 @@ function MessageBubble({ message, locale }: { message: VoiceOrderMessage; locale
         {message.isLoading ? (
           <div className="flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">
-              {locale === 'ar' ? 'جاري التفكير...' : 'Thinking...'}
-            </span>
+            <span className="text-sm">{locale === 'ar' ? 'جاري التفكير...' : 'Thinking...'}</span>
           </div>
         ) : (
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
         )}
       </div>
     </div>
-  )
+  );
 }

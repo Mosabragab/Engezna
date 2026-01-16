@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useLocale } from 'next-intl'
-import { cn } from '@/lib/utils'
-import { ShoppingCart, X, ChevronRight } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import type { ActiveCartBannerProps } from '@/types/custom-order'
+import { useState } from 'react';
+import { useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
+import { ShoppingCart, X, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import type { ActiveCartBannerProps } from '@/types/custom-order';
 
 interface ExtendedActiveCartBannerProps extends ActiveCartBannerProps {
-  className?: string
-  position?: 'top' | 'bottom'
-  variant?: 'compact' | 'full'
+  className?: string;
+  position?: 'top' | 'bottom';
+  variant?: 'compact' | 'full';
 }
 
 export function ActiveCartBanner({
@@ -22,19 +22,19 @@ export function ActiveCartBanner({
   position = 'top',
   variant = 'full',
 }: ExtendedActiveCartBannerProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const [isVisible, setIsVisible] = useState(true)
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const [isVisible, setIsVisible] = useState(true);
 
   const handleDismiss = () => {
-    setIsVisible(false)
+    setIsVisible(false);
     // Delay actual dismiss to allow animation
     setTimeout(() => {
-      onDismiss()
-    }, 200)
-  }
+      onDismiss();
+    }, 200);
+  };
 
-  if (!isVisible) return null
+  if (!isVisible) return null;
 
   if (variant === 'compact') {
     return (
@@ -55,20 +55,13 @@ export function ActiveCartBanner({
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-800 truncate">
-                {cartProvider.name}
-              </p>
+              <p className="text-sm font-medium text-slate-800 truncate">{cartProvider.name}</p>
               <p className="text-xs text-slate-500">
                 {cartProvider.itemCount} {isRTL ? 'عناصر' : 'items'}
               </p>
             </div>
 
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onViewCart}
-              className="shrink-0 gap-1"
-            >
+            <Button size="sm" variant="ghost" onClick={onViewCart} className="shrink-0 gap-1">
               {isRTL ? 'عرض' : 'View'}
               <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
             </Button>
@@ -82,7 +75,7 @@ export function ActiveCartBanner({
           </div>
         </motion.div>
       </AnimatePresence>
-    )
+    );
   }
 
   return (
@@ -142,7 +135,7 @@ export function ActiveCartBanner({
         </div>
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }
 
 // Simple inline notification variant
@@ -151,12 +144,12 @@ export function ActiveCartNotice({
   onViewCart,
   className,
 }: {
-  cartProvider: { name: string; itemCount: number }
-  onViewCart: () => void
-  className?: string
+  cartProvider: { name: string; itemCount: number };
+  onViewCart: () => void;
+  className?: string;
 }) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   return (
     <div
@@ -178,5 +171,5 @@ export function ActiveCartNotice({
         {isRTL ? 'عرض' : 'View'}
       </button>
     </div>
-  )
+  );
 }

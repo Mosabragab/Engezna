@@ -7,7 +7,7 @@
  * Set AI_PROVIDER=claude in .env to use Claude, otherwise defaults to OpenAI.
  */
 
-import OpenAI from 'openai'
+import OpenAI from 'openai';
 import {
   AGENT_TOOLS,
   executeAgentTool,
@@ -16,29 +16,29 @@ import {
   type ToolResult,
   loadCustomerInsights,
   saveCustomerInsights,
-  analyzeConversationForInsights
-} from './agentTools'
-import { validateToolParams, checkRateLimit } from './toolValidation'
+  analyzeConversationForInsights,
+} from './agentTools';
+import { validateToolParams, checkRateLimit } from './toolValidation';
 import {
   buildSystemPrompt,
   type AgentContext,
   type AgentResponse,
-  type ConversationTurn
-} from './agentPrompt'
-import { runClaudeAgentStream, runClaudeAgent } from './claudeHandler'
+  type ConversationTurn,
+} from './agentPrompt';
+import { runClaudeAgentStream, runClaudeAgent } from './claudeHandler';
 
 // =============================================================================
 // AI PROVIDER CONFIGURATION
 // =============================================================================
 
-type AIProvider = 'openai' | 'claude'
+type AIProvider = 'openai' | 'claude';
 
 function getAIProvider(): AIProvider {
-  const provider = process.env.AI_PROVIDER?.toLowerCase()
+  const provider = process.env.AI_PROVIDER?.toLowerCase();
   if (provider === 'claude' || provider === 'anthropic') {
-    return 'claude'
+    return 'claude';
   }
-  return 'openai'
+  return 'openai';
 }
 
 // =============================================================================
@@ -46,42 +46,42 @@ function getAIProvider(): AIProvider {
 // =============================================================================
 
 export interface AgentMessage {
-  role: 'user' | 'assistant'
-  content: string
+  role: 'user' | 'assistant';
+  content: string;
 }
 
 export interface AgentStreamEvent {
-  type: 'content' | 'tool_call' | 'tool_result' | 'done' | 'error'
-  content?: string
-  toolName?: string
-  toolArgs?: Record<string, unknown>
-  toolResult?: ToolResult
-  error?: string
-  response?: AgentResponse
+  type: 'content' | 'tool_call' | 'tool_result' | 'done' | 'error';
+  content?: string;
+  toolName?: string;
+  toolArgs?: Record<string, unknown>;
+  toolResult?: ToolResult;
+  error?: string;
+  response?: AgentResponse;
 }
 
 export interface AgentHandlerOptions {
-  context: AgentContext
-  messages: AgentMessage[]
-  onStream?: (event: AgentStreamEvent) => void
+  context: AgentContext;
+  messages: AgentMessage[];
+  onStream?: (event: AgentStreamEvent) => void;
 }
 
 // =============================================================================
 // OPENAI CLIENT (Lazy initialization)
 // =============================================================================
 
-let openaiClient: OpenAI | null = null
+let openaiClient: OpenAI | null = null;
 
 function getOpenAIClient(): OpenAI {
   if (!openaiClient) {
     if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY environment variable is not set')
+      throw new Error('OPENAI_API_KEY environment variable is not set');
     }
     openaiClient = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    })
+      apiKey: process.env.OPENAI_API_KEY,
+    });
   }
-  return openaiClient
+  return openaiClient;
 }
 
 // =============================================================================
@@ -89,16 +89,16 @@ function getOpenAIClient(): OpenAI {
 // =============================================================================
 
 function convertToolsToOpenAI(context: ToolContext): OpenAI.Chat.Completions.ChatCompletionTool[] {
-  const availableTools = getAvailableTools(context)
+  const availableTools = getAvailableTools(context);
 
-  return availableTools.map(tool => ({
+  return availableTools.map((tool) => ({
     type: 'function' as const,
     function: {
       name: tool.name,
       description: tool.description,
-      parameters: tool.parameters
-    }
-  }))
+      parameters: tool.parameters,
+    },
+  }));
 }
 
 // =============================================================================
@@ -107,37 +107,73 @@ function convertToolsToOpenAI(context: ToolContext): OpenAI.Chat.Completions.Cha
 
 export async function runAgent(options: AgentHandlerOptions): Promise<AgentResponse> {
   // Check which AI provider to use
-  const provider = getAIProvider()
+  const provider = getAIProvider();
 
   if (provider === 'claude') {
     // Delegate to Claude handler
-    return runClaudeAgent(options)
+    return runClaudeAgent(options);
   }
 
   // OpenAI implementation below
-  const { context, messages, onStream } = options
+  const { context, messages, onStream } = options;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CATEGORY SELECTION ENFORCEMENT (Pre-AI Check)
   // Same logic as runAgentStream - check before calling OpenAI
   // ═══════════════════════════════════════════════════════════════════════════
-  const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || ''
-  const isCategorySelection = lastUserMessage.startsWith('category:')
-  const hasProviderContext = !!(context.providerId || context.cartProviderId)
-  const hasCategorySelected = !!context.selectedCategory
+  const lastUserMessage =
+    messages
+      .filter((m) => m.role === 'user')
+      .pop()
+      ?.content?.toLowerCase() || '';
+  const isCategorySelection = lastUserMessage.startsWith('category:');
+  const hasProviderContext = !!(context.providerId || context.cartProviderId);
+  const hasCategorySelected = !!context.selectedCategory;
 
   const orderingKeywords = [
-    'عايز', 'عاوز', 'عايزة', 'عاوزة', 'محتاج', 'نفسي', 'ابغى', 'ابي',
-    'بيتزا', 'برجر', 'شاورما', 'فراخ', 'كفتة', 'فتة', 'رز', 'مكرونة',
-    'مشروب', 'عصير', 'قهوة', 'شاي', 'كولا', 'بيبسي',
-    'سوبر', 'ماركت', 'خضار', 'فاكهة', 'لبن', 'جبنة', 'بيض',
-    'حلو', 'حلويات', 'كيك', 'جاتوه', 'بسبوسة', 'كنافة',
-    'بن', 'نوتيلا', 'شوكولاتة'
-  ]
-  const seemsLikeOrdering = orderingKeywords.some(kw => lastUserMessage.includes(kw))
+    'عايز',
+    'عاوز',
+    'عايزة',
+    'عاوزة',
+    'محتاج',
+    'نفسي',
+    'ابغى',
+    'ابي',
+    'بيتزا',
+    'برجر',
+    'شاورما',
+    'فراخ',
+    'كفتة',
+    'فتة',
+    'رز',
+    'مكرونة',
+    'مشروب',
+    'عصير',
+    'قهوة',
+    'شاي',
+    'كولا',
+    'بيبسي',
+    'سوبر',
+    'ماركت',
+    'خضار',
+    'فاكهة',
+    'لبن',
+    'جبنة',
+    'بيض',
+    'حلو',
+    'حلويات',
+    'كيك',
+    'جاتوه',
+    'بسبوسة',
+    'كنافة',
+    'بن',
+    'نوتيلا',
+    'شوكولاتة',
+  ];
+  const seemsLikeOrdering = orderingKeywords.some((kw) => lastUserMessage.includes(kw));
 
   if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
-    console.log('[runAgent] No category selected - returning prompt BEFORE calling AI')
+    console.log('[runAgent] No category selected - returning prompt BEFORE calling AI');
     return {
       content: 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇',
       suggestions: ['🍔 مطاعم', '🛒 سوبر ماركت', '🍌 خضروات وفواكه', '☕ البن والحلويات'],
@@ -145,90 +181,97 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
         { title: '🍔 مطاعم', payload: 'category:restaurant_cafe' },
         { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
         { title: '🍌 خضروات وفواكه', payload: 'category:vegetables_fruits' },
-        { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
-      ]
-    }
+        { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' },
+      ],
+    };
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CATEGORY SELECTION HANDLER - Transform payload to natural language
   // ═══════════════════════════════════════════════════════════════════════════
-  let effectiveMessages = messages
+  let effectiveMessages = messages;
   if (isCategorySelection) {
-    const categoryCode = lastUserMessage.replace('category:', '')
-    console.log('[runAgent] Category selected:', categoryCode, '- transforming for AI')
+    const categoryCode = lastUserMessage.replace('category:', '');
+    console.log('[runAgent] Category selected:', categoryCode, '- transforming for AI');
 
     const categoryNames: Record<string, string> = {
-      'restaurant_cafe': 'مطاعم',
-      'coffee_sweets': 'البن والحلويات',
-      'grocery': 'سوبر ماركت',
-      'vegetables_fruits': 'خضروات وفواكه'
-    }
+      restaurant_cafe: 'مطاعم',
+      coffee_sweets: 'البن والحلويات',
+      grocery: 'سوبر ماركت',
+      vegetables_fruits: 'خضروات وفواكه',
+    };
 
-    const categoryName = categoryNames[categoryCode] || categoryCode
+    const categoryName = categoryNames[categoryCode] || categoryCode;
 
     // Find the original ordering request from conversation history
     const previousUserMessages = messages
-      .filter(m => m.role === 'user')
-      .map(m => m.content)
-      .slice(0, -1)
+      .filter((m) => m.role === 'user')
+      .map((m) => m.content)
+      .slice(0, -1);
 
-    const originalRequest = previousUserMessages.find(msg =>
-      orderingKeywords.some(kw => msg.toLowerCase().includes(kw))
-    )
+    const originalRequest = previousUserMessages.find((msg) =>
+      orderingKeywords.some((kw) => msg.toLowerCase().includes(kw))
+    );
 
     const transformedMessage = originalRequest
       ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
-      : `اخترت قسم ${categoryName}. ورّيني المتاح`
+      : `اخترت قسم ${categoryName}. ورّيني المتاح`;
 
-    console.log('[runAgent] Transformed message:', transformedMessage)
+    console.log('[runAgent] Transformed message:', transformedMessage);
 
     effectiveMessages = messages.map((m, i) => {
       if (i === messages.length - 1 && m.role === 'user') {
-        return { ...m, content: transformedMessage }
+        return { ...m, content: transformedMessage };
       }
-      return m
-    })
+      return m;
+    });
   }
 
   // Load customer insights if customer is logged in
-  let enrichedContext = { ...context }
+  let enrichedContext = { ...context };
   if (context.customerId) {
     try {
-      const insights = await loadCustomerInsights(context.customerId)
+      const insights = await loadCustomerInsights(context.customerId);
       if (insights) {
-        console.log('[runAgent] Loaded customer insights:', insights.conversation_style?.customer_type)
+        console.log(
+          '[runAgent] Loaded customer insights:',
+          insights.conversation_style?.customer_type
+        );
         enrichedContext = {
           ...context,
           customerMemory: {
             ...context.customerMemory,
-            preferences: insights.preferences as { spicy?: boolean; vegetarian?: boolean; notes?: string[] },
-          }
-        }
+            preferences: insights.preferences as {
+              spicy?: boolean;
+              vegetarian?: boolean;
+              notes?: string[];
+            },
+          },
+        };
       }
     } catch (error) {
-      console.error('[runAgent] Failed to load customer insights:', error)
+      console.error('[runAgent] Failed to load customer insights:', error);
     }
   }
 
   // Build system prompt with enriched context
-  const systemPrompt = buildSystemPrompt(enrichedContext)
+  const systemPrompt = buildSystemPrompt(enrichedContext);
 
   // Convert tools to OpenAI format
-  const tools = convertToolsToOpenAI(context)
+  const tools = convertToolsToOpenAI(context);
 
   // Build messages array for OpenAI (use effectiveMessages which may be transformed)
   const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
-    ...effectiveMessages.map(msg => ({
+    ...effectiveMessages.map((msg) => ({
       role: msg.role as 'user' | 'assistant',
-      content: msg.content
-    }))
-  ]
+      content: msg.content,
+    })),
+  ];
 
   // Track conversation turns for this request
-  const turns: ConversationTurn[] = []
-  let finalResponse: AgentResponse = { content: '' }
+  const turns: ConversationTurn[] = [];
+  let finalResponse: AgentResponse = { content: '' };
 
   // Run the agent loop (max 5 iterations to prevent infinite loops)
   for (let iteration = 0; iteration < 5; iteration++) {
@@ -240,13 +283,13 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
         tools: tools.length > 0 ? tools : undefined,
         tool_choice: tools.length > 0 ? 'auto' : undefined,
         temperature: 0.85, // Higher for more natural, varied responses
-        max_tokens: 1500,  // More room for detailed, helpful responses
+        max_tokens: 1500, // More room for detailed, helpful responses
         presence_penalty: 0.1, // Slight penalty to reduce repetition
-        frequency_penalty: 0.1 // Encourage diverse vocabulary
-      })
+        frequency_penalty: 0.1, // Encourage diverse vocabulary
+      });
 
-      const choice = completion.choices[0]
-      const message = choice.message
+      const choice = completion.choices[0];
+      const message = choice.message;
 
       // Check if the model wants to call tools
       if (message.tool_calls && message.tool_calls.length > 0) {
@@ -254,98 +297,98 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
         openaiMessages.push({
           role: 'assistant',
           content: message.content || '',
-          tool_calls: message.tool_calls
-        })
+          tool_calls: message.tool_calls,
+        });
 
         // Execute each tool call
         for (const toolCall of message.tool_calls) {
           // Handle different tool call types
-          if (toolCall.type !== 'function') continue
-          const toolName = toolCall.function.name
-          const toolArgs = JSON.parse(toolCall.function.arguments)
+          if (toolCall.type !== 'function') continue;
+          const toolName = toolCall.function.name;
+          const toolArgs = JSON.parse(toolCall.function.arguments);
 
           // Stream tool call event
           onStream?.({
             type: 'tool_call',
             toolName,
-            toolArgs
-          })
+            toolArgs,
+          });
 
           // Validate tool parameters before execution
-          const validation = validateToolParams(toolName, toolArgs, context)
+          const validation = validateToolParams(toolName, toolArgs, context);
           if (!validation.valid) {
             // Return validation error as tool result
             const validationResult: ToolResult = {
               success: false,
               error: validation.error,
-              message: validation.message
-            }
+              message: validation.message,
+            };
 
             onStream?.({
               type: 'tool_result',
               toolName,
-              toolResult: validationResult
-            })
+              toolResult: validationResult,
+            });
 
             turns.push({
               role: 'tool',
               content: JSON.stringify(validationResult),
               toolName,
               toolResult: validationResult,
-              timestamp: new Date()
-            })
+              timestamp: new Date(),
+            });
 
             openaiMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
-              content: JSON.stringify(validationResult)
-            })
+              content: JSON.stringify(validationResult),
+            });
 
-            continue
+            continue;
           }
 
           // Check rate limits (using a simple conversation identifier)
-          const conversationId = context.customerId || 'anonymous'
-          const rateLimit = checkRateLimit(toolName, conversationId)
+          const conversationId = context.customerId || 'anonymous';
+          const rateLimit = checkRateLimit(toolName, conversationId);
           if (!rateLimit.allowed) {
             const rateLimitResult: ToolResult = {
               success: false,
               error: 'rate_limited',
-              message: rateLimit.message
-            }
+              message: rateLimit.message,
+            };
 
             onStream?.({
               type: 'tool_result',
               toolName,
-              toolResult: rateLimitResult
-            })
+              toolResult: rateLimitResult,
+            });
 
             turns.push({
               role: 'tool',
               content: JSON.stringify(rateLimitResult),
               toolName,
               toolResult: rateLimitResult,
-              timestamp: new Date()
-            })
+              timestamp: new Date(),
+            });
 
             openaiMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
-              content: JSON.stringify(rateLimitResult)
-            })
+              content: JSON.stringify(rateLimitResult),
+            });
 
-            continue
+            continue;
           }
 
           // Execute the tool
-          const result = await executeAgentTool(toolName, toolArgs, context)
+          const result = await executeAgentTool(toolName, toolArgs, context);
 
           // Stream tool result event
           onStream?.({
             type: 'tool_result',
             toolName,
-            toolResult: result
-          })
+            toolResult: result,
+          });
 
           // Add tool result to conversation
           turns.push({
@@ -353,97 +396,102 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
             content: JSON.stringify(result),
             toolName,
             toolResult: result,
-            timestamp: new Date()
-          })
+            timestamp: new Date(),
+          });
 
           // Add tool result to OpenAI messages
           openaiMessages.push({
             role: 'tool',
             tool_call_id: toolCall.id,
-            content: JSON.stringify(result)
-          })
+            content: JSON.stringify(result),
+          });
         }
 
         // Continue the loop to get the final response
-        continue
+        continue;
       }
 
       // No tool calls - this is the final response
-      const content = message.content || ''
+      const content = message.content || '';
 
       // Stream content
       onStream?.({
         type: 'content',
-        content
-      })
+        content,
+      });
 
       // Parse the response to extract structured data
-      finalResponse = parseAgentOutput(content, turns, context.providerId || context.cartProviderId)
+      finalResponse = parseAgentOutput(
+        content,
+        turns,
+        context.providerId || context.cartProviderId
+      );
 
       // Stream done event
       onStream?.({
         type: 'done',
-        response: finalResponse
-      })
+        response: finalResponse,
+      });
 
-      break
-
+      break;
     } catch (error) {
-      console.error('[Agent Error]:', error)
+      console.error('[Agent Error]:', error);
 
       // Never expose technical errors to users - just show a friendly message
       // Log the actual error for debugging but give user a positive experience
 
       finalResponse = {
         content: 'مش لاقي نتائج دلوقتي. جرب تاني أو اسألني سؤال تاني 😊',
-        suggestions: ['🔄 جرب تاني', '🛒 المنتجات', '🏠 الرئيسية']
-      }
+        suggestions: ['🔄 جرب تاني', '🛒 المنتجات', '🏠 الرئيسية'],
+      };
 
       onStream?.({
         type: 'done',
-        response: finalResponse
-      })
+        response: finalResponse,
+      });
 
-      break
+      break;
     }
   }
 
   // Save customer insights after conversation (non-blocking)
   if (context.customerId && turns.length > 0) {
     const toolResults = turns
-      .filter(t => t.role === 'tool' && t.toolResult)
-      .map(t => ({ toolName: t.toolName || '', result: t.toolResult as ToolResult }))
+      .filter((t) => t.role === 'tool' && t.toolResult)
+      .map((t) => ({ toolName: t.toolName || '', result: t.toolResult as ToolResult }));
 
     const insights = analyzeConversationForInsights(
-      messages.map(m => ({ role: m.role, content: m.content })),
+      messages.map((m) => ({ role: m.role, content: m.content })),
       toolResults
-    )
+    );
 
     // Save insights asynchronously (don't block the response)
-    saveCustomerInsights(context.customerId, insights).catch(err => {
-      console.error('[runAgent] Failed to save customer insights:', err)
-    })
+    saveCustomerInsights(context.customerId, insights).catch((err) => {
+      console.error('[runAgent] Failed to save customer insights:', err);
+    });
   }
 
-  return finalResponse
+  return finalResponse;
 }
 
 // =============================================================================
 // STREAMING AGENT HANDLER (Provider-agnostic)
 // =============================================================================
 
-export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenerator<AgentStreamEvent> {
+export async function* runAgentStream(
+  options: AgentHandlerOptions
+): AsyncGenerator<AgentStreamEvent> {
   // Check which AI provider to use
-  const provider = getAIProvider()
+  const provider = getAIProvider();
 
   if (provider === 'claude') {
     // Delegate to Claude handler
-    yield* runClaudeAgentStream(options)
-    return
+    yield* runClaudeAgentStream(options);
+    return;
   }
 
   // OpenAI implementation below
-  const { context, messages } = options
+  const { context, messages } = options;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CATEGORY SELECTION ENFORCEMENT (Pre-AI Check)
@@ -451,33 +499,69 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
   // return category prompt immediately WITHOUT calling OpenAI.
   // This is more reliable than relying on AI to understand tool errors.
   // ═══════════════════════════════════════════════════════════════════════════
-  const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || ''
-  const isCategorySelection = lastUserMessage.startsWith('category:')
-  const hasProviderContext = !!(context.providerId || context.cartProviderId)
-  const hasCategorySelected = !!context.selectedCategory
+  const lastUserMessage =
+    messages
+      .filter((m) => m.role === 'user')
+      .pop()
+      ?.content?.toLowerCase() || '';
+  const isCategorySelection = lastUserMessage.startsWith('category:');
+  const hasProviderContext = !!(context.providerId || context.cartProviderId);
+  const hasCategorySelected = !!context.selectedCategory;
 
   // Check if user seems to want to order/search (not just greeting)
   const orderingKeywords = [
-    'عايز', 'عاوز', 'عايزة', 'عاوزة', 'محتاج', 'نفسي', 'ابغى', 'ابي',
-    'بيتزا', 'برجر', 'شاورما', 'فراخ', 'كفتة', 'فتة', 'رز', 'مكرونة',
-    'مشروب', 'عصير', 'قهوة', 'شاي', 'كولا', 'بيبسي',
-    'سوبر', 'ماركت', 'خضار', 'فاكهة', 'لبن', 'جبنة', 'بيض',
-    'حلو', 'حلويات', 'كيك', 'جاتوه', 'بسبوسة', 'كنافة',
-    'بن', 'نوتيلا', 'شوكولاتة'
-  ]
-  const seemsLikeOrdering = orderingKeywords.some(kw => lastUserMessage.includes(kw))
+    'عايز',
+    'عاوز',
+    'عايزة',
+    'عاوزة',
+    'محتاج',
+    'نفسي',
+    'ابغى',
+    'ابي',
+    'بيتزا',
+    'برجر',
+    'شاورما',
+    'فراخ',
+    'كفتة',
+    'فتة',
+    'رز',
+    'مكرونة',
+    'مشروب',
+    'عصير',
+    'قهوة',
+    'شاي',
+    'كولا',
+    'بيبسي',
+    'سوبر',
+    'ماركت',
+    'خضار',
+    'فاكهة',
+    'لبن',
+    'جبنة',
+    'بيض',
+    'حلو',
+    'حلويات',
+    'كيك',
+    'جاتوه',
+    'بسبوسة',
+    'كنافة',
+    'بن',
+    'نوتيلا',
+    'شوكولاتة',
+  ];
+  const seemsLikeOrdering = orderingKeywords.some((kw) => lastUserMessage.includes(kw));
 
   if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
-    console.log('[runAgentStream] No category selected - returning prompt BEFORE calling AI')
-    console.log('[runAgentStream] User message:', lastUserMessage)
+    console.log('[runAgentStream] No category selected - returning prompt BEFORE calling AI');
+    console.log('[runAgentStream] User message:', lastUserMessage);
 
-    const categoryPromptContent = 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇'
+    const categoryPromptContent = 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇';
 
     // Stream the content
     yield {
       type: 'content',
-      content: categoryPromptContent
-    }
+      content: categoryPromptContent,
+    };
 
     // Return done with category selection quick replies
     yield {
@@ -489,95 +573,102 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
           { title: '🍔 مطاعم', payload: 'category:restaurant_cafe' },
           { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
           { title: '🍌 خضروات وفواكه', payload: 'category:vegetables_fruits' },
-          { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' }
-        ]
-      }
-    }
-    return
+          { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' },
+        ],
+      },
+    };
+    return;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // CATEGORY SELECTION HANDLER - Transform payload to natural language
   // Instead of showing provider list, transform the message and let AI handle it
   // ═══════════════════════════════════════════════════════════════════════════
-  let effectiveMessages = messages
+  let effectiveMessages = messages;
   if (isCategorySelection) {
-    const categoryCode = lastUserMessage.replace('category:', '')
-    console.log('[runAgentStream] Category selected:', categoryCode, '- transforming for AI')
+    const categoryCode = lastUserMessage.replace('category:', '');
+    console.log('[runAgentStream] Category selected:', categoryCode, '- transforming for AI');
 
     // Category name mapping
     const categoryNames: Record<string, string> = {
-      'restaurant_cafe': 'مطاعم',
-      'coffee_sweets': 'البن والحلويات',
-      'grocery': 'سوبر ماركت',
-      'vegetables_fruits': 'خضروات وفواكه'
-    }
+      restaurant_cafe: 'مطاعم',
+      coffee_sweets: 'البن والحلويات',
+      grocery: 'سوبر ماركت',
+      vegetables_fruits: 'خضروات وفواكه',
+    };
 
-    const categoryName = categoryNames[categoryCode] || categoryCode
+    const categoryName = categoryNames[categoryCode] || categoryCode;
 
     // Find the original ordering request from conversation history
     const previousUserMessages = messages
-      .filter(m => m.role === 'user')
-      .map(m => m.content)
-      .slice(0, -1) // Exclude current category selection
+      .filter((m) => m.role === 'user')
+      .map((m) => m.content)
+      .slice(0, -1); // Exclude current category selection
 
-    const originalRequest = previousUserMessages.find(msg =>
-      orderingKeywords.some(kw => msg.toLowerCase().includes(kw))
-    )
+    const originalRequest = previousUserMessages.find((msg) =>
+      orderingKeywords.some((kw) => msg.toLowerCase().includes(kw))
+    );
 
     // Transform the message to natural language for the AI
     // If there was an original request, remind AI about it
     const transformedMessage = originalRequest
       ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
-      : `اخترت قسم ${categoryName}. ورّيني المتاح`
+      : `اخترت قسم ${categoryName}. ورّيني المتاح`;
 
-    console.log('[runAgentStream] Transformed message:', transformedMessage)
+    console.log('[runAgentStream] Transformed message:', transformedMessage);
 
     // Replace the last user message with transformed version
     effectiveMessages = messages.map((m, i) => {
       if (i === messages.length - 1 && m.role === 'user') {
-        return { ...m, content: transformedMessage }
+        return { ...m, content: transformedMessage };
       }
-      return m
-    })
+      return m;
+    });
   }
 
   // Load customer insights if customer is logged in
-  let enrichedContext = { ...context }
+  let enrichedContext = { ...context };
   if (context.customerId) {
     try {
-      const insights = await loadCustomerInsights(context.customerId)
+      const insights = await loadCustomerInsights(context.customerId);
       if (insights) {
-        console.log('[runAgentStream] Loaded customer insights:', insights.conversation_style?.customer_type)
+        console.log(
+          '[runAgentStream] Loaded customer insights:',
+          insights.conversation_style?.customer_type
+        );
         enrichedContext = {
           ...context,
           customerMemory: {
             ...context.customerMemory,
-            preferences: insights.preferences as { spicy?: boolean; vegetarian?: boolean; notes?: string[] },
-          }
-        }
+            preferences: insights.preferences as {
+              spicy?: boolean;
+              vegetarian?: boolean;
+              notes?: string[];
+            },
+          },
+        };
       }
     } catch (error) {
-      console.error('[runAgentStream] Failed to load customer insights:', error)
+      console.error('[runAgentStream] Failed to load customer insights:', error);
     }
   }
 
   // Build system prompt with enriched context
-  const systemPrompt = buildSystemPrompt(enrichedContext)
+  const systemPrompt = buildSystemPrompt(enrichedContext);
 
   // Convert tools to OpenAI format
-  const tools = convertToolsToOpenAI(context)
+  const tools = convertToolsToOpenAI(context);
 
   // Build messages array for OpenAI (use effectiveMessages which may be transformed)
   const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
-    ...effectiveMessages.map(msg => ({
+    ...effectiveMessages.map((msg) => ({
       role: msg.role as 'user' | 'assistant',
-      content: msg.content
-    }))
-  ]
+      content: msg.content,
+    })),
+  ];
 
-  const turns: ConversationTurn[] = []
+  const turns: ConversationTurn[] = [];
 
   // Run the agent loop
   for (let iteration = 0; iteration < 5; iteration++) {
@@ -589,29 +680,29 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
         tools: tools.length > 0 ? tools : undefined,
         tool_choice: tools.length > 0 ? 'auto' : undefined,
         temperature: 0.85, // Higher for more natural, varied responses
-        max_tokens: 1500,  // More room for detailed, helpful responses
+        max_tokens: 1500, // More room for detailed, helpful responses
         presence_penalty: 0.1, // Slight penalty to reduce repetition
         frequency_penalty: 0.1, // Encourage diverse vocabulary
-        stream: true
-      })
+        stream: true,
+      });
 
-      let accumulatedContent = ''
+      let accumulatedContent = '';
       const toolCalls: Array<{
-        id: string
-        name: string
-        arguments: string
-      }> = []
+        id: string;
+        name: string;
+        arguments: string;
+      }> = [];
 
       for await (const chunk of stream) {
-        const delta = chunk.choices[0]?.delta
+        const delta = chunk.choices[0]?.delta;
 
         // Handle content streaming
         if (delta?.content) {
-          accumulatedContent += delta.content
+          accumulatedContent += delta.content;
           yield {
             type: 'content',
-            content: delta.content
-          }
+            content: delta.content,
+          };
         }
 
         // Handle tool calls
@@ -622,18 +713,18 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
                 toolCalls[toolCallDelta.index] = {
                   id: toolCallDelta.id || '',
                   name: toolCallDelta.function?.name || '',
-                  arguments: ''
-                }
+                  arguments: '',
+                };
               }
 
               if (toolCallDelta.id) {
-                toolCalls[toolCallDelta.index].id = toolCallDelta.id
+                toolCalls[toolCallDelta.index].id = toolCallDelta.id;
               }
               if (toolCallDelta.function?.name) {
-                toolCalls[toolCallDelta.index].name = toolCallDelta.function.name
+                toolCalls[toolCallDelta.index].name = toolCallDelta.function.name;
               }
               if (toolCallDelta.function?.arguments) {
-                toolCalls[toolCallDelta.index].arguments += toolCallDelta.function.arguments
+                toolCalls[toolCallDelta.index].arguments += toolCallDelta.function.arguments;
               }
             }
           }
@@ -646,158 +737,161 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
         openaiMessages.push({
           role: 'assistant',
           content: accumulatedContent || null,
-          tool_calls: toolCalls.map(tc => ({
+          tool_calls: toolCalls.map((tc) => ({
             id: tc.id,
             type: 'function' as const,
             function: {
               name: tc.name,
-              arguments: tc.arguments
-            }
-          }))
-        })
+              arguments: tc.arguments,
+            },
+          })),
+        });
 
         // Execute each tool
         for (const toolCall of toolCalls) {
-          const toolArgs = JSON.parse(toolCall.arguments)
-          const toolName = toolCall.name
+          const toolArgs = JSON.parse(toolCall.arguments);
+          const toolName = toolCall.name;
 
           yield {
             type: 'tool_call',
             toolName,
-            toolArgs
-          }
+            toolArgs,
+          };
 
           // Validate tool parameters before execution
-          const validation = validateToolParams(toolName, toolArgs, context)
+          const validation = validateToolParams(toolName, toolArgs, context);
           if (!validation.valid) {
             const validationResult: ToolResult = {
               success: false,
               error: validation.error,
-              message: validation.message
-            }
+              message: validation.message,
+            };
 
             yield {
               type: 'tool_result',
               toolName,
-              toolResult: validationResult
-            }
+              toolResult: validationResult,
+            };
 
             turns.push({
               role: 'tool',
               content: JSON.stringify(validationResult),
               toolName,
               toolResult: validationResult,
-              timestamp: new Date()
-            })
+              timestamp: new Date(),
+            });
 
             openaiMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
-              content: JSON.stringify(validationResult)
-            })
+              content: JSON.stringify(validationResult),
+            });
 
-            continue
+            continue;
           }
 
           // Check rate limits
-          const conversationId = context.customerId || 'anonymous'
-          const rateLimit = checkRateLimit(toolName, conversationId)
+          const conversationId = context.customerId || 'anonymous';
+          const rateLimit = checkRateLimit(toolName, conversationId);
           if (!rateLimit.allowed) {
             const rateLimitResult: ToolResult = {
               success: false,
               error: 'rate_limited',
-              message: rateLimit.message
-            }
+              message: rateLimit.message,
+            };
 
             yield {
               type: 'tool_result',
               toolName,
-              toolResult: rateLimitResult
-            }
+              toolResult: rateLimitResult,
+            };
 
             turns.push({
               role: 'tool',
               content: JSON.stringify(rateLimitResult),
               toolName,
               toolResult: rateLimitResult,
-              timestamp: new Date()
-            })
+              timestamp: new Date(),
+            });
 
             openaiMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
-              content: JSON.stringify(rateLimitResult)
-            })
+              content: JSON.stringify(rateLimitResult),
+            });
 
-            continue
+            continue;
           }
 
-          const result = await executeAgentTool(toolName, toolArgs, context)
+          const result = await executeAgentTool(toolName, toolArgs, context);
 
           yield {
             type: 'tool_result',
             toolName: toolCall.name,
-            toolResult: result
-          }
+            toolResult: result,
+          };
 
           turns.push({
             role: 'tool',
             content: JSON.stringify(result),
             toolName: toolCall.name,
             toolResult: result,
-            timestamp: new Date()
-          })
+            timestamp: new Date(),
+          });
 
           openaiMessages.push({
             role: 'tool',
             tool_call_id: toolCall.id,
-            content: JSON.stringify(result)
-          })
+            content: JSON.stringify(result),
+          });
         }
 
         // Continue loop
-        continue
+        continue;
       }
 
       // Final response
-      const finalResponse = parseAgentOutput(accumulatedContent, turns, context.providerId || context.cartProviderId)
+      const finalResponse = parseAgentOutput(
+        accumulatedContent,
+        turns,
+        context.providerId || context.cartProviderId
+      );
 
       // Save customer insights after conversation (non-blocking)
       if (context.customerId && turns.length > 0) {
         const toolResults = turns
-          .filter(t => t.role === 'tool' && t.toolResult)
-          .map(t => ({ toolName: t.toolName || '', result: t.toolResult as ToolResult }))
+          .filter((t) => t.role === 'tool' && t.toolResult)
+          .map((t) => ({ toolName: t.toolName || '', result: t.toolResult as ToolResult }));
 
         const insights = analyzeConversationForInsights(
-          messages.map(m => ({ role: m.role, content: m.content })),
+          messages.map((m) => ({ role: m.role, content: m.content })),
           toolResults
-        )
+        );
 
-        saveCustomerInsights(context.customerId, insights).catch(err => {
-          console.error('[runAgentStream] Failed to save customer insights:', err)
-        })
+        saveCustomerInsights(context.customerId, insights).catch((err) => {
+          console.error('[runAgentStream] Failed to save customer insights:', err);
+        });
       }
 
       yield {
         type: 'done',
-        response: finalResponse
-      }
+        response: finalResponse,
+      };
 
-      return
-
+      return;
     } catch (error) {
-      console.error('[Agent Stream Error]:', error)
+      console.error('[Agent Stream Error]:', error);
 
       // Never expose technical errors to users - just show a friendly message
       yield {
         type: 'done',
         response: {
           content: 'مش لاقي نتائج دلوقتي. جرب تاني أو اسألني سؤال تاني 😊',
-          suggestions: ['🔄 جرب تاني', '🛒 المنتجات', '🏠 الرئيسية']
-        }
-      }
+          suggestions: ['🔄 جرب تاني', '🛒 المنتجات', '🏠 الرئيسية'],
+        },
+      };
 
-      return
+      return;
     }
   }
 
@@ -806,9 +900,9 @@ export async function* runAgentStream(options: AgentHandlerOptions): AsyncGenera
     type: 'done',
     response: {
       content: 'عذراً، مش قادر أكمل الطلب دلوقتي. حاول مرة تانية.',
-      suggestions: ['🔄 حاول مرة تانية']
-    }
-  }
+      suggestions: ['🔄 حاول مرة تانية'],
+    },
+  };
 }
 
 // =============================================================================
@@ -829,47 +923,50 @@ function generateDynamicQuickReplies(
   toolsUsed?: string[],
   providerId?: string
 ): { suggestions: string[]; quickReplies: AgentResponse['quickReplies'] } {
-
   // Helper: create products navigation payload
   // ALWAYS use navigate: when we have a provider, otherwise guide user to select one first
-  const menuPayload = providerId
-    ? `navigate:/ar/providers/${providerId}`
-    : null  // null means don't show the products button, show provider selection instead
+  const menuPayload = providerId ? `navigate:/ar/providers/${providerId}` : null; // null means don't show the products button, show provider selection instead
 
   // Alternative button when no provider is selected
-  const selectProviderPayload = 'عايز أطلب من مكان معين'
+  const selectProviderPayload = 'عايز أطلب من مكان معين';
 
   // Analyze content for intent signals
-  const contentLower = content.toLowerCase()
+  const contentLower = content.toLowerCase();
 
   // =================================================================
   // INTENT DETECTION: Analyze what the AI said to determine best actions
   // =================================================================
 
   // Check if AI is asking about size/variant selection
-  const isAskingVariant = contentLower.includes('حجم') ||
+  const isAskingVariant =
+    contentLower.includes('حجم') ||
     contentLower.includes('أي حجم') ||
-    contentLower.includes('صغير') && contentLower.includes('كبير') ||
-    contentLower.includes('اختار')
+    (contentLower.includes('صغير') && contentLower.includes('كبير')) ||
+    contentLower.includes('اختار');
 
   // Check if AI is asking about quantity
-  const isAskingQuantity = contentLower.includes('كام واحد') ||
+  const isAskingQuantity =
+    contentLower.includes('كام واحد') ||
     contentLower.includes('كام واحدة') ||
-    contentLower.includes('الكمية')
+    contentLower.includes('الكمية');
 
   // Check if AI is confirming something
-  const isConfirming = contentLower.includes('صح؟') ||
+  const isConfirming =
+    contentLower.includes('صح؟') ||
     contentLower.includes('صح كده') ||
-    contentLower.includes('تمام كده')
+    contentLower.includes('تمام كده');
 
   // Check if search returned no results
-  const noResults = contentLower.includes('مش لاقي') ||
+  const noResults =
+    contentLower.includes('مش لاقي') ||
     contentLower.includes('ملقتش') ||
-    contentLower.includes('مفيش')
+    contentLower.includes('مفيش');
 
   // Check if AI is showing promotions
-  const showingPromotions = toolsUsed?.includes('get_promotions') ||
-    contentLower.includes('عرض') || contentLower.includes('خصم')
+  const showingPromotions =
+    toolsUsed?.includes('get_promotions') ||
+    contentLower.includes('عرض') ||
+    contentLower.includes('خصم');
 
   // =================================================================
   // CONTEXTUAL QUICK REPLIES (Order matters! Most decisive checks first)
@@ -883,15 +980,17 @@ function generateDynamicQuickReplies(
       quickReplies: [
         { title: '🛒 شوف السلة', payload: 'ايه في السلة؟' },
         { title: '➕ أضف حاجة تانية', payload: 'عايز أضيف حاجة تانية' },
-        { title: '✅ كمل للدفع', payload: 'navigate:/ar/checkout' }
-      ]
-    }
+        { title: '✅ كمل للدفع', payload: 'navigate:/ar/checkout' },
+      ],
+    };
   }
 
   // AI asking about provider preference (من مطعم معين؟ ولا أساعدك؟)
   const isAskingProviderPreference =
     (contentLower.includes('مطعم معين') || contentLower.includes('مكان معين')) &&
-    (contentLower.includes('أساعدك') || contentLower.includes('اختيار') || contentLower.includes('ولا'))
+    (contentLower.includes('أساعدك') ||
+      contentLower.includes('اختيار') ||
+      contentLower.includes('ولا'));
 
   if (isAskingProviderPreference) {
     return {
@@ -899,17 +998,16 @@ function generateDynamicQuickReplies(
       quickReplies: [
         { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار أحسن مكان' },
         { title: '🏪 عندي مطعم معين', payload: 'أيوه عندي مطعم معين' },
-        { title: '🔥 شوف العروض', payload: 'ورّيني العروض الأول' }
-      ]
-    }
+        { title: '🔥 شوف العروض', payload: 'ورّيني العروض الأول' },
+      ],
+    };
   }
 
   // Size/Variant selection needed
   // Only show size buttons if the content explicitly mentions these standard sizes
   // Don't show for other variants like "عادي/سوبر" or "ربع كيلو/نص كيلو"
-  const hasStandardSizes = contentLower.includes('صغير') &&
-    contentLower.includes('وسط') &&
-    contentLower.includes('كبير')
+  const hasStandardSizes =
+    contentLower.includes('صغير') && contentLower.includes('وسط') && contentLower.includes('كبير');
 
   if (isAskingVariant && hasProducts && hasStandardSizes) {
     return {
@@ -917,9 +1015,9 @@ function generateDynamicQuickReplies(
       quickReplies: [
         { title: '📏 صغير', payload: 'عايز الحجم الصغير' },
         { title: '📏 وسط', payload: 'عايز الحجم الوسط' },
-        { title: '📏 كبير', payload: 'عايز الحجم الكبير' }
-      ]
-    }
+        { title: '📏 كبير', payload: 'عايز الحجم الكبير' },
+      ],
+    };
   }
 
   // For other variant types (عادي/سوبر, ربع/نص كيلو), show generic add button
@@ -929,9 +1027,9 @@ function generateDynamicQuickReplies(
       quickReplies: [
         { title: '✅ ضيف للسلة', payload: 'ضيفه للسلة' },
         { title: '📋 تفاصيل أكتر', payload: 'عايز تفاصيل أكتر' },
-        { title: '🔍 حاجة تانية', payload: 'عايز حاجة تانية' }
-      ]
-    }
+        { title: '🔍 حاجة تانية', payload: 'عايز حاجة تانية' },
+      ],
+    };
   }
 
   // Quantity selection needed
@@ -941,9 +1039,9 @@ function generateDynamicQuickReplies(
       quickReplies: [
         { title: '1️⃣ واحدة', payload: 'واحدة بس' },
         { title: '2️⃣ اتنين', payload: 'اتنين' },
-        { title: '3️⃣ تلاتة', payload: 'تلاتة' }
-      ]
-    }
+        { title: '3️⃣ تلاتة', payload: 'تلاتة' },
+      ],
+    };
   }
 
   // Confirmation needed
@@ -953,16 +1051,17 @@ function generateDynamicQuickReplies(
       quickReplies: [
         { title: '✅ أيوه تمام', payload: 'أيوه ضيف للسلة' },
         { title: '❌ لأ غير', payload: 'لأ عايز أغير' },
-        { title: '🔄 عدل الكمية', payload: 'عايز أغير الكمية' }
-      ]
-    }
+        { title: '🔄 عدل الكمية', payload: 'عايز أغير الكمية' },
+      ],
+    };
   }
 
   // Provider selection/disambiguation - when asking user to choose a provider
-  const isProviderSelection = contentLower.includes('تفضل تطلب من مين') ||
+  const isProviderSelection =
+    contentLower.includes('تفضل تطلب من مين') ||
     contentLower.includes('اختار المطعم') ||
     contentLower.includes('تفضل مين') ||
-    (contentLower.includes('لقيت') && contentLower.includes('مكان'))
+    (contentLower.includes('لقيت') && contentLower.includes('مكان'));
 
   if (isProviderSelection) {
     return {
@@ -971,9 +1070,9 @@ function generateDynamicQuickReplies(
         { title: '🏆 الأعلى تقييماً', payload: 'عايز الأعلى تقييماً' },
         { title: '💰 الأرخص', payload: 'عايز الأرخص' },
         { title: '🔥 اللي عنده عروض', payload: 'عايز اللي عنده عروض' },
-        { title: '🔍 حاجة تانية', payload: 'عايز حاجة تانية خالص' }
-      ]
-    }
+        { title: '🔍 حاجة تانية', payload: 'عايز حاجة تانية خالص' },
+      ],
+    };
   }
 
   // No results found - help user search differently
@@ -986,14 +1085,14 @@ function generateDynamicQuickReplies(
         ? [
             { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة تانية' },
             { title: '🛒 شوف المنتجات', payload: menuPayload },
-            { title: '🔥 العروض', payload: 'فيه عروض ايه دلوقتي؟' }
+            { title: '🔥 العروض', payload: 'فيه عروض ايه دلوقتي؟' },
           ]
         : [
             { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة تانية' },
             { title: '🏪 اختار مكان', payload: selectProviderPayload },
-            { title: '🔥 العروض', payload: 'فيه عروض ايه دلوقتي؟' }
-          ]
-    }
+            { title: '🔥 العروض', payload: 'فيه عروض ايه دلوقتي؟' },
+          ],
+    };
   }
 
   // After search with products found
@@ -1003,9 +1102,9 @@ function generateDynamicQuickReplies(
       quickReplies: [
         { title: '✅ ضيف للسلة', payload: 'ضيف الأول للسلة' },
         { title: '📋 تفاصيل أكتر', payload: 'عايز تفاصيل أكتر' },
-        { title: '🔍 حاجة تانية', payload: 'عايز أبحث عن حاجة تانية' }
-      ]
-    }
+        { title: '🔍 حاجة تانية', payload: 'عايز أبحث عن حاجة تانية' },
+      ],
+    };
   }
 
   // Showing promotions
@@ -1018,14 +1117,14 @@ function generateDynamicQuickReplies(
         ? [
             { title: '🎁 استخدم العرض', payload: 'عايز أستخدم العرض ده' },
             { title: '🛒 شوف المنتجات', payload: menuPayload },
-            { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' }
+            { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' },
           ]
         : [
             { title: '🎁 استخدم العرض', payload: 'عايز أستخدم العرض ده' },
             { title: '🏪 اختار مكان', payload: selectProviderPayload },
-            { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' }
-          ]
-    }
+            { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة' },
+          ],
+    };
   }
 
   // Order tracking context
@@ -1035,40 +1134,49 @@ function generateDynamicQuickReplies(
       quickReplies: [
         { title: '📍 تتبع الطلب', payload: 'فين طلبي دلوقتي؟' },
         { title: '📞 اتصل بالمطعم', payload: 'عايز رقم المطعم' },
-        { title: '❌ إلغاء الطلب', payload: 'عايز ألغي الطلب' }
-      ]
-    }
+        { title: '❌ إلغاء الطلب', payload: 'عايز ألغي الطلب' },
+      ],
+    };
   }
 
   // Complaint or problem context
-  if (contentLower.includes('مشكلة') || contentLower.includes('شكوى') ||
-      contentLower.includes('زعلان') || contentLower.includes('معلش')) {
+  if (
+    contentLower.includes('مشكلة') ||
+    contentLower.includes('شكوى') ||
+    contentLower.includes('زعلان') ||
+    contentLower.includes('معلش')
+  ) {
     return {
       suggestions: ['📞 كلم خدمة العملاء', '📝 اكتب شكوى', '🔙 رجوع'],
       quickReplies: [
         { title: '📞 كلم خدمة العملاء', payload: 'عايز أكلم حد من خدمة العملاء' },
         { title: '📝 اكتب شكوى', payload: 'عايز أعمل شكوى رسمية' },
-        { title: '🔙 رجوع', payload: 'خلاص مش محتاج' }
-      ]
-    }
+        { title: '🔙 رجوع', payload: 'خلاص مش محتاج' },
+      ],
+    };
   }
 
   // Cart summary context
-  if (toolsUsed?.includes('get_cart_summary') ||
-      (contentLower.includes('السلة') && contentLower.includes('فيها'))) {
+  if (
+    toolsUsed?.includes('get_cart_summary') ||
+    (contentLower.includes('السلة') && contentLower.includes('فيها'))
+  ) {
     return {
       suggestions: ['✅ كمل للدفع', '➕ أضف حاجة', '🗑️ فضي السلة'],
       quickReplies: [
         { title: '✅ كمل للدفع', payload: 'navigate:/ar/checkout' },
         { title: '➕ أضف حاجة', payload: 'عايز أضيف حاجة تانية' },
-        { title: '🗑️ فضي السلة', payload: 'امسح السلة كلها' }
-      ]
-    }
+        { title: '🗑️ فضي السلة', payload: 'امسح السلة كلها' },
+      ],
+    };
   }
 
   // Delivery info context - show products button (navigates to provider page)
-  if (toolsUsed?.includes('get_delivery_info') ||
-      contentLower.includes('توصيل') || contentLower.includes('رسوم')) {
+  if (
+    toolsUsed?.includes('get_delivery_info') ||
+    contentLower.includes('توصيل') ||
+    contentLower.includes('رسوم')
+  ) {
     return {
       suggestions: menuPayload
         ? ['🛒 شوف المنتجات', '🔍 بحث تاني', '🔥 العروض']
@@ -1077,14 +1185,14 @@ function generateDynamicQuickReplies(
         ? [
             { title: '🛒 شوف المنتجات', payload: menuPayload },
             { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة' },
-            { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
+            { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
           ]
         : [
             { title: '🏪 اختار مكان', payload: selectProviderPayload },
             { title: '🔍 بحث تاني', payload: 'عايز أبحث عن حاجة' },
-            { title: '🔥 العروض', payload: 'فيه عروض ايه؟' }
-          ]
-    }
+            { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
+          ],
+    };
   }
 
   // Menu/categories context
@@ -1095,23 +1203,28 @@ function generateDynamicQuickReplies(
         { title: '🍕 بيتزا', payload: 'عايز بيتزا' },
         { title: '🍔 برجر', payload: 'عايز برجر' },
         { title: '🥗 سلطات', payload: 'عايز سلطة' },
-        { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة معينة' }
-      ]
-    }
+        { title: '🔍 بحث', payload: 'عايز أبحث عن حاجة معينة' },
+      ],
+    };
   }
 
   // Greeting/welcome context - guide to provider selection
-  if (contentLower.includes('أهلاً') || contentLower.includes('أهلا') ||
-      contentLower.includes('صباح') || contentLower.includes('مساء') ||
-      contentLower.includes('عايز تطلب منين') || contentLower.includes('عايزة تطلبي منين')) {
+  if (
+    contentLower.includes('أهلاً') ||
+    contentLower.includes('أهلا') ||
+    contentLower.includes('صباح') ||
+    contentLower.includes('مساء') ||
+    contentLower.includes('عايز تطلب منين') ||
+    contentLower.includes('عايزة تطلبي منين')
+  ) {
     return {
       suggestions: ['🏪 عندي مكان معين', '🔍 ساعدني أختار', '🔥 اللي عندهم عروض'],
       quickReplies: [
         { title: '🏪 عندي مكان معين', payload: 'عايز أطلب من مكان معين' },
         { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار مكان' },
-        { title: '🔥 اللي عندهم عروض', payload: 'ورّيني الأماكن اللي عندها عروض' }
-      ]
-    }
+        { title: '🔥 اللي عندهم عروض', payload: 'ورّيني الأماكن اللي عندها عروض' },
+      ],
+    };
   }
 
   // Default suggestions - context-aware
@@ -1122,9 +1235,9 @@ function generateDynamicQuickReplies(
       quickReplies: [
         { title: '🛒 شوف المنتجات', payload: menuPayload },
         { title: '🔥 العروض', payload: 'فيه عروض ايه؟' },
-        { title: '📦 طلباتي', payload: 'فين طلباتي؟' }
-      ]
-    }
+        { title: '📦 طلباتي', payload: 'فين طلباتي؟' },
+      ],
+    };
   }
 
   // No provider selected - guide to selection
@@ -1133,9 +1246,9 @@ function generateDynamicQuickReplies(
     quickReplies: [
       { title: '🏪 عندي مكان معين', payload: 'عايز أطلب من مكان معين' },
       { title: '🔍 ساعدني أختار', payload: 'ساعدني أختار مكان' },
-      { title: '🔥 اللي عندهم عروض', payload: 'ورّيني الأماكن اللي عندها عروض' }
-    ]
-  }
+      { title: '🔥 اللي عندهم عروض', payload: 'ورّيني الأماكن اللي عندها عروض' },
+    ],
+  };
 }
 
 /**
@@ -1143,135 +1256,150 @@ function generateDynamicQuickReplies(
  * This is a POST-PROCESSING GUARDRAIL to ensure no URLs or markdown images slip through
  */
 function sanitizeAgentResponse(content: string): string {
-  let sanitized = content
+  let sanitized = content;
 
   // Remove markdown image syntax: ![alt](url)
-  sanitized = sanitized.replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
+  sanitized = sanitized.replace(/!\[([^\]]*)\]\([^)]+\)/g, '');
 
   // Remove markdown links but keep the text: [text](url) -> text
-  sanitized = sanitized.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+  sanitized = sanitized.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 
   // Remove raw URLs (http, https, ftp)
-  sanitized = sanitized.replace(/https?:\/\/[^\s<>"\)]+/gi, '')
-  sanitized = sanitized.replace(/ftp:\/\/[^\s<>"\)]+/gi, '')
+  sanitized = sanitized.replace(/https?:\/\/[^\s<>"\)]+/gi, '');
+  sanitized = sanitized.replace(/ftp:\/\/[^\s<>"\)]+/gi, '');
 
   // Remove any remaining URL-like patterns
-  sanitized = sanitized.replace(/www\.[^\s<>"\)]+/gi, '')
+  sanitized = sanitized.replace(/www\.[^\s<>"\)]+/gi, '');
 
   // Remove bold/italic markdown that might look odd
-  sanitized = sanitized.replace(/\*\*([^*]+)\*\*/g, '$1')
-  sanitized = sanitized.replace(/\*([^*]+)\*/g, '$1')
-  sanitized = sanitized.replace(/__([^_]+)__/g, '$1')
-  sanitized = sanitized.replace(/_([^_]+)_/g, '$1')
+  sanitized = sanitized.replace(/\*\*([^*]+)\*\*/g, '$1');
+  sanitized = sanitized.replace(/\*([^*]+)\*/g, '$1');
+  sanitized = sanitized.replace(/__([^_]+)__/g, '$1');
+  sanitized = sanitized.replace(/_([^_]+)_/g, '$1');
 
   // Remove code blocks
-  sanitized = sanitized.replace(/```[\s\S]*?```/g, '')
-  sanitized = sanitized.replace(/`([^`]+)`/g, '$1')
+  sanitized = sanitized.replace(/```[\s\S]*?```/g, '');
+  sanitized = sanitized.replace(/`([^`]+)`/g, '$1');
 
   // Remove HTML tags
-  sanitized = sanitized.replace(/<[^>]+>/g, '')
+  sanitized = sanitized.replace(/<[^>]+>/g, '');
 
   // Remove JSON blocks (sometimes AI outputs raw JSON)
-  sanitized = sanitized.replace(/\{[\s\S]*?"[\s\S]*?\}/g, '')
+  sanitized = sanitized.replace(/\{[\s\S]*?"[\s\S]*?\}/g, '');
 
   // Clean up extra whitespace
-  sanitized = sanitized.replace(/\n{3,}/g, '\n\n')
-  sanitized = sanitized.replace(/  +/g, ' ')
+  sanitized = sanitized.replace(/\n{3,}/g, '\n\n');
+  sanitized = sanitized.replace(/  +/g, ' ');
 
-  return sanitized.trim()
+  return sanitized.trim();
 }
 
 /**
  * Parse agent output to extract structured response
  */
-function parseAgentOutput(content: string, turns: ConversationTurn[], providerId?: string): AgentResponse {
+function parseAgentOutput(
+  content: string,
+  turns: ConversationTurn[],
+  providerId?: string
+): AgentResponse {
   // Apply post-processing guardrails to sanitize the response
-  const sanitizedContent = sanitizeAgentResponse(content)
+  const sanitizedContent = sanitizeAgentResponse(content);
 
   const response: AgentResponse = {
     content: sanitizedContent,
     suggestions: [],
     quickReplies: [],
     products: [],
-    cartActions: []  // Collect ALL cart actions from multiple tool calls
-  }
+    cartActions: [], // Collect ALL cart actions from multiple tool calls
+  };
 
   // Track which tools were used
-  const toolsUsed: string[] = []
+  const toolsUsed: string[] = [];
 
   // Extract products and cart actions from tool results
   for (const turn of turns) {
     if (turn.role === 'tool' && turn.toolResult) {
       if (turn.toolName) {
-        toolsUsed.push(turn.toolName)
+        toolsUsed.push(turn.toolName);
       }
 
-      const result = turn.toolResult as ToolResult
+      const result = turn.toolResult as ToolResult;
 
       // ═══════════════════════════════════════════════════════════════════
       // FIX: Extract discovered_provider_id from tool results
       // Check BOTH root level (lookup_provider) AND inside data (search_menu)
       // ═══════════════════════════════════════════════════════════════════
       if (result.discovered_provider_id && !response.discoveredProviderId) {
-        response.discoveredProviderId = result.discovered_provider_id
-        response.discoveredProviderName = result.discovered_provider_name
-        console.log('[parseAgentOutput] Discovered provider (root):', result.discovered_provider_id, result.discovered_provider_name)
+        response.discoveredProviderId = result.discovered_provider_id;
+        response.discoveredProviderName = result.discovered_provider_name;
+        console.log(
+          '[parseAgentOutput] Discovered provider (root):',
+          result.discovered_provider_id,
+          result.discovered_provider_name
+        );
       }
 
       if (result.success && result.data) {
-        const data = result.data as Record<string, unknown>
+        const data = result.data as Record<string, unknown>;
 
         // Also check inside data (for search_menu)
         if (data.discovered_provider_id && !response.discoveredProviderId) {
-          response.discoveredProviderId = data.discovered_provider_id as string
-          response.discoveredProviderName = data.discovered_provider_name as string | undefined
-          console.log('[parseAgentOutput] Discovered provider (data):', data.discovered_provider_id, data.discovered_provider_name)
+          response.discoveredProviderId = data.discovered_provider_id as string;
+          response.discoveredProviderName = data.discovered_provider_name as string | undefined;
+          console.log(
+            '[parseAgentOutput] Discovered provider (data):',
+            data.discovered_provider_id,
+            data.discovered_provider_name
+          );
         }
 
         // Check for cart_action (from add_to_cart tool)
         // FIXED: Don't accumulate duplicate cart actions for the same item
         // This prevents quantity multiplication when agent loop runs multiple times
         if (data.cart_action) {
-          const cartAction = data.cart_action as AgentResponse['cartAction']
+          const cartAction = data.cart_action as AgentResponse['cartAction'];
 
           // Check if we already have a cart action for this item+variant combination
           const existingIndex = response.cartActions!.findIndex(
-            (a) => a?.menu_item_id === cartAction?.menu_item_id
-                && a?.variant_id === cartAction?.variant_id
-          )
+            (a) =>
+              a?.menu_item_id === cartAction?.menu_item_id &&
+              a?.variant_id === cartAction?.variant_id
+          );
 
           if (existingIndex >= 0) {
             // Replace existing action instead of accumulating
-            response.cartActions![existingIndex] = cartAction!
+            response.cartActions![existingIndex] = cartAction!;
           } else {
             // New item - add to array
-            response.cartActions!.push(cartAction!)
+            response.cartActions!.push(cartAction!);
           }
 
           // Also set single cartAction for backward compatibility (last one)
-          response.cartAction = cartAction
+          response.cartAction = cartAction;
         }
 
         // Check if it's an array of menu items
         if (Array.isArray(result.data)) {
-          const items = result.data as Array<Record<string, unknown>>
+          const items = result.data as Array<Record<string, unknown>>;
           if (items.length > 0 && items[0].name_ar && items[0].price) {
-            response.products = items.slice(0, 5).map(item => ({
+            response.products = items.slice(0, 5).map((item) => ({
               id: item.id as string,
               name: item.name_ar as string,
               price: item.price as number,
               image: item.image_url as string | undefined,
               hasVariants: item.has_variants as boolean | undefined,
               providerId: item.provider_id as string | undefined,
-              providerName: (item.providers as { name_ar?: string })?.name_ar
-            }))
+              providerName: (item.providers as { name_ar?: string })?.name_ar,
+            }));
 
             // ═══════════════════════════════════════════════════════════════════
             // FIX: Store ALL items in sessionMemory for multi-item orders
             // This allows AI to use correct IDs when user says "ضيف ٢ كفتة و٣ داوود باشا"
             // ═══════════════════════════════════════════════════════════════════
-            const pendingItems = items.slice(0, 10).map(item => {
-              const variants = item.variants as Array<{ id: string; name_ar: string; price: number }> | undefined
+            const pendingItems = items.slice(0, 10).map((item) => {
+              const variants = item.variants as
+                | Array<{ id: string; name_ar: string; price: number }>
+                | undefined;
               return {
                 id: item.id as string,
                 name_ar: item.name_ar as string,
@@ -1279,20 +1407,25 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
                 provider_id: item.provider_id as string,
                 provider_name_ar: (item.providers as { name_ar?: string })?.name_ar,
                 has_variants: item.has_variants as boolean | undefined,
-                variants: variants?.map(v => ({
+                variants: variants?.map((v) => ({
                   id: v.id,
                   name_ar: v.name_ar,
-                  price: v.price
-                }))
-              }
-            })
+                  price: v.price,
+                })),
+              };
+            });
 
             // Store both pending_items (all) and pending_item (first) for backward compatibility
             response.sessionMemory = {
               pending_items: pendingItems,
-              pending_item: pendingItems[0]
-            }
-            console.log('[parseAgentOutput] Stored', pendingItems.length, 'pending items:', pendingItems.map(i => i.name_ar).join(', '))
+              pending_item: pendingItems[0],
+            };
+            console.log(
+              '[parseAgentOutput] Stored',
+              pendingItems.length,
+              'pending items:',
+              pendingItems.map((i) => i.name_ar).join(', ')
+            );
           }
         }
       }
@@ -1301,12 +1434,14 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
 
   // Generate dynamic quick replies based on context
   // Use provider ID from first product if available, then discovered provider, then context
-  const effectiveProviderId = response.products?.[0]?.providerId
-    || response.discoveredProviderId
-    || providerId
+  const effectiveProviderId =
+    response.products?.[0]?.providerId || response.discoveredProviderId || providerId;
 
   // Check for cart actions (both singular and plural)
-  const hasAnyCartAction = !!(response.cartAction || (response.cartActions && response.cartActions.length > 0))
+  const hasAnyCartAction = !!(
+    response.cartAction ||
+    (response.cartActions && response.cartActions.length > 0)
+  );
 
   const { suggestions, quickReplies } = generateDynamicQuickReplies(
     content,
@@ -1315,12 +1450,12 @@ function parseAgentOutput(content: string, turns: ConversationTurn[], providerId
     response.products?.[0]?.id,
     toolsUsed,
     effectiveProviderId
-  )
+  );
 
-  response.suggestions = suggestions
-  response.quickReplies = quickReplies
+  response.suggestions = suggestions;
+  response.quickReplies = quickReplies;
 
-  return response
+  return response;
 }
 
 /**
@@ -1332,6 +1467,6 @@ export async function quickAgentResponse(
 ): Promise<AgentResponse> {
   return runAgent({
     context,
-    messages: [{ role: 'user', content: userMessage }]
-  })
+    messages: [{ role: 'user', content: userMessage }],
+  });
 }

@@ -2,19 +2,19 @@
  * ProductSuggestionCard - Mini product card for chat suggestions
  */
 
-'use client'
+'use client';
 
-import { memo } from 'react'
-import Image from 'next/image'
-import { Plus, Star } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import type { ChatProduct } from '@/types/chat'
+import { memo } from 'react';
+import Image from 'next/image';
+import { Plus, Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { ChatProduct } from '@/types/chat';
 
 interface ProductSuggestionCardProps {
-  product: ChatProduct
-  onAddToCart?: () => void
-  className?: string
+  product: ChatProduct;
+  onAddToCart?: () => void;
+  className?: string;
 }
 
 export const ProductSuggestionCard = memo(function ProductSuggestionCard({
@@ -22,10 +22,10 @@ export const ProductSuggestionCard = memo(function ProductSuggestionCard({
   onAddToCart,
   className,
 }: ProductSuggestionCardProps) {
-  const hasDiscount = product.original_price && product.original_price > product.price
+  const hasDiscount = product.original_price && product.original_price > product.price;
   const discountPercent = hasDiscount
     ? Math.round((1 - product.price / product.original_price!) * 100)
-    : 0
+    : 0;
 
   return (
     <div
@@ -46,9 +46,7 @@ export const ProductSuggestionCard = memo(function ProductSuggestionCard({
             sizes="56px"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-2xl">
-            🍽️
-          </div>
+          <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
         )}
 
         {/* Discount badge */}
@@ -61,9 +59,7 @@ export const ProductSuggestionCard = memo(function ProductSuggestionCard({
 
       {/* Product Info */}
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-sm text-gray-900 truncate">
-          {product.name_ar}
-        </h4>
+        <h4 className="font-medium text-sm text-gray-900 truncate">{product.name_ar}</h4>
         <p className="text-xs text-gray-500 truncate">
           {product.provider_name_ar}
           {product.rating && (
@@ -74,13 +70,9 @@ export const ProductSuggestionCard = memo(function ProductSuggestionCard({
           )}
         </p>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="font-bold text-sm text-primary">
-            {product.price} ج.م
-          </span>
+          <span className="font-bold text-sm text-primary">{product.price} ج.م</span>
           {hasDiscount && (
-            <span className="text-xs text-gray-400 line-through">
-              {product.original_price} ج.م
-            </span>
+            <span className="text-xs text-gray-400 line-through">{product.original_price} ج.م</span>
           )}
         </div>
       </div>
@@ -91,14 +83,14 @@ export const ProductSuggestionCard = memo(function ProductSuggestionCard({
         variant="outline"
         className="flex-shrink-0 w-8 h-8 rounded-full border-primary text-primary hover:bg-primary hover:text-white"
         onClick={(e) => {
-          e.stopPropagation()
-          onAddToCart?.()
+          e.stopPropagation();
+          onAddToCart?.();
         }}
       >
         <Plus className="w-4 h-4" />
       </Button>
     </div>
-  )
-})
+  );
+});
 
-export default ProductSuggestionCard
+export default ProductSuggestionCard;

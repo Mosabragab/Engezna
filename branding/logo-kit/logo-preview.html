@@ -1,623 +1,744 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Engezna Logo Kit Preview | معاينة شعار إنجزنا</title>
-  <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Noto+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --engezna-blue: #009DE0;
-      --engezna-dark-blue: #0077B6;
-      --charcoal: #0F172A;
-      --white: #FFFFFF;
-      --light-gray: #F8FAFC;
-      --slate: #64748B;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Engezna Logo Kit Preview | معاينة شعار إنجزنا</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Noto+Sans+Arabic:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --engezna-blue: #009de0;
+        --engezna-dark-blue: #0077b6;
+        --charcoal: #0f172a;
+        --white: #ffffff;
+        --light-gray: #f8fafc;
+        --slate: #64748b;
+      }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-    body {
-      font-family: 'Noto Sans Arabic', sans-serif;
-      background: var(--light-gray);
-      color: var(--charcoal);
-      padding: 40px;
-    }
+      body {
+        font-family: 'Noto Sans Arabic', sans-serif;
+        background: var(--light-gray);
+        color: var(--charcoal);
+        padding: 40px;
+      }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 10px;
-      font-size: 2rem;
-    }
+      h1 {
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 2rem;
+      }
 
-    .subtitle {
-      text-align: center;
-      color: var(--slate);
-      margin-bottom: 40px;
-    }
+      .subtitle {
+        text-align: center;
+        color: var(--slate);
+        margin-bottom: 40px;
+      }
 
-    .section {
-      background: var(--white);
-      border-radius: 16px;
-      padding: 30px;
-      margin-bottom: 30px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
+      .section {
+        background: var(--white);
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
 
-    .section-title {
-      font-size: 1.25rem;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid var(--engezna-blue);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+      .section-title {
+        font-size: 1.25rem;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--engezna-blue);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-    .section-title span {
-      background: var(--engezna-blue);
-      color: white;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-    }
+      .section-title span {
+        background: var(--engezna-blue);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+      }
 
-    /* Logo Text Styles */
-    .logo-text {
-      font-family: 'Aref Ruqaa', serif;
-      font-weight: 700;
-      line-height: 1.2;
-    }
+      /* Logo Text Styles */
+      .logo-text {
+        font-family: 'Aref Ruqaa', serif;
+        font-weight: 700;
+        line-height: 1.2;
+      }
 
-    .logo-text.color {
-      color: var(--charcoal);
-    }
+      .logo-text.color {
+        color: var(--charcoal);
+      }
 
-    .logo-text.white {
-      color: var(--white);
-    }
+      .logo-text.white {
+        color: var(--white);
+      }
 
-    .logo-text.blue {
-      color: var(--engezna-blue);
-    }
+      .logo-text.blue {
+        color: var(--engezna-blue);
+      }
 
-    /* Size variations */
-    .logo-text.size-xs { font-size: 18px; }
-    .logo-text.size-sm { font-size: 24px; }
-    .logo-text.size-md { font-size: 36px; }
-    .logo-text.size-lg { font-size: 48px; }
-    .logo-text.size-xl { font-size: 64px; }
-    .logo-text.size-2xl { font-size: 80px; }
+      /* Size variations */
+      .logo-text.size-xs {
+        font-size: 18px;
+      }
+      .logo-text.size-sm {
+        font-size: 24px;
+      }
+      .logo-text.size-md {
+        font-size: 36px;
+      }
+      .logo-text.size-lg {
+        font-size: 48px;
+      }
+      .logo-text.size-xl {
+        font-size: 64px;
+      }
+      .logo-text.size-2xl {
+        font-size: 80px;
+      }
 
-    /* Logo showcase grid */
-    .logo-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-    }
+      /* Logo showcase grid */
+      .logo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+      }
 
-    .logo-item {
-      padding: 30px;
-      border-radius: 12px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 150px;
-    }
+      .logo-item {
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 150px;
+      }
 
-    .logo-item.light-bg {
-      background: var(--white);
-      border: 1px solid #E2E8F0;
-    }
+      .logo-item.light-bg {
+        background: var(--white);
+        border: 1px solid #e2e8f0;
+      }
 
-    .logo-item.dark-bg {
-      background: var(--charcoal);
-    }
+      .logo-item.dark-bg {
+        background: var(--charcoal);
+      }
 
-    .logo-item.blue-bg {
-      background: var(--engezna-blue);
-    }
+      .logo-item.blue-bg {
+        background: var(--engezna-blue);
+      }
 
-    .logo-item.gradient-bg {
-      background: linear-gradient(135deg, var(--engezna-blue) 0%, var(--engezna-dark-blue) 100%);
-    }
+      .logo-item.gradient-bg {
+        background: linear-gradient(135deg, var(--engezna-blue) 0%, var(--engezna-dark-blue) 100%);
+      }
 
-    .logo-item-label {
-      margin-top: 15px;
-      font-size: 0.75rem;
-      color: var(--slate);
-    }
+      .logo-item-label {
+        margin-top: 15px;
+        font-size: 0.75rem;
+        color: var(--slate);
+      }
 
-    .logo-item.dark-bg .logo-item-label,
-    .logo-item.blue-bg .logo-item-label,
-    .logo-item.gradient-bg .logo-item-label {
-      color: rgba(255,255,255,0.7);
-    }
+      .logo-item.dark-bg .logo-item-label,
+      .logo-item.blue-bg .logo-item-label,
+      .logo-item.gradient-bg .logo-item-label {
+        color: rgba(255, 255, 255, 0.7);
+      }
 
-    /* Icon styles */
-    .icon-showcase {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      align-items: flex-end;
-    }
+      /* Icon styles */
+      .icon-showcase {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: flex-end;
+      }
 
-    .icon-item {
-      text-align: center;
-    }
+      .icon-item {
+        text-align: center;
+      }
 
-    .icon-item img,
-    .icon-item svg {
-      display: block;
-      margin-bottom: 8px;
-    }
+      .icon-item img,
+      .icon-item svg {
+        display: block;
+        margin-bottom: 8px;
+      }
 
-    .icon-label {
-      font-size: 0.7rem;
-      color: var(--slate);
-    }
+      .icon-label {
+        font-size: 0.7rem;
+        color: var(--slate);
+      }
 
-    /* App Icon */
-    .app-icon {
-      border-radius: 22%;
-      background: var(--engezna-blue);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-family: Arial, sans-serif;
-    }
+      /* App Icon */
+      .app-icon {
+        border-radius: 22%;
+        background: var(--engezna-blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-family: Arial, sans-serif;
+      }
 
-    /* Combined Logo */
-    .combined-logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+      /* Combined Logo */
+      .combined-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
 
-    .combined-logo .icon {
-      width: 48px;
-      height: 48px;
-      background: var(--engezna-blue);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 24px;
-      font-weight: bold;
-      font-family: Arial, sans-serif;
-    }
+      .combined-logo .icon {
+        width: 48px;
+        height: 48px;
+        background: var(--engezna-blue);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        font-family: Arial, sans-serif;
+      }
 
-    /* Color palette */
-    .color-palette {
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
+      /* Color palette */
+      .color-palette {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
 
-    .color-swatch {
-      text-align: center;
-    }
+      .color-swatch {
+        text-align: center;
+      }
 
-    .color-box {
-      width: 100px;
-      height: 100px;
-      border-radius: 12px;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding-bottom: 8px;
-      font-size: 0.7rem;
-      font-weight: 500;
-    }
+      .color-box {
+        width: 100px;
+        height: 100px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+      }
 
-    .color-name {
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
+      .color-name {
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
 
-    .color-hex {
-      font-size: 0.7rem;
-      color: var(--slate);
-      font-family: monospace;
-    }
+      .color-hex {
+        font-size: 0.7rem;
+        color: var(--slate);
+        font-family: monospace;
+      }
 
-    /* Sizes table */
-    .sizes-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 30px;
-      align-items: flex-end;
-    }
+      /* Sizes table */
+      .sizes-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        align-items: flex-end;
+      }
 
-    .size-item {
-      text-align: center;
-    }
+      .size-item {
+        text-align: center;
+      }
 
-    .size-label {
-      font-size: 0.7rem;
-      color: var(--slate);
-      margin-top: 8px;
-    }
+      .size-label {
+        font-size: 0.7rem;
+        color: var(--slate);
+        margin-top: 8px;
+      }
 
-    /* Social Media Preview */
-    .social-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 20px;
-    }
+      /* Social Media Preview */
+      .social-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+      }
 
-    .social-item {
-      text-align: center;
-    }
+      .social-item {
+        text-align: center;
+      }
 
-    .social-preview {
-      background: var(--light-gray);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 10px;
-    }
+      .social-preview {
+        background: var(--light-gray);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 10px;
+      }
 
-    .social-name {
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
+      .social-name {
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
 
-    .social-size {
-      font-size: 0.7rem;
-      color: var(--slate);
-    }
+      .social-size {
+        font-size: 0.7rem;
+        color: var(--slate);
+      }
 
-    /* Clear space demo */
-    .clearspace-demo {
-      display: inline-block;
-      position: relative;
-      padding: 40px;
-      background: repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 10px,
-        rgba(0, 157, 224, 0.05) 10px,
-        rgba(0, 157, 224, 0.05) 20px
-      );
-      border: 2px dashed var(--engezna-blue);
-      border-radius: 12px;
-    }
+      /* Clear space demo */
+      .clearspace-demo {
+        display: inline-block;
+        position: relative;
+        padding: 40px;
+        background: repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 10px,
+          rgba(0, 157, 224, 0.05) 10px,
+          rgba(0, 157, 224, 0.05) 20px
+        );
+        border: 2px dashed var(--engezna-blue);
+        border-radius: 12px;
+      }
 
-    .clearspace-demo::before {
-      content: 'X';
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      font-size: 10px;
-      color: var(--engezna-blue);
-    }
+      .clearspace-demo::before {
+        content: 'X';
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 10px;
+        color: var(--engezna-blue);
+      }
 
-    /* Footer */
-    .footer {
-      text-align: center;
-      padding: 20px;
-      color: var(--slate);
-      font-size: 0.85rem;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>شعار إنجزنا - Logo Kit</h1>
-    <p class="subtitle">معاينة جميع أصول العلامة التجارية</p>
+      /* Footer */
+      .footer {
+        text-align: center;
+        padding: 20px;
+        color: var(--slate);
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>شعار إنجزنا - Logo Kit</h1>
+      <p class="subtitle">معاينة جميع أصول العلامة التجارية</p>
 
-    <!-- Primary Logo -->
-    <div class="section">
-      <h2 class="section-title">
-        الشعار النصي الأساسي
-        <span>Primary Text Logo</span>
-      </h2>
-      <div class="logo-grid">
-        <div class="logo-item light-bg">
-          <span class="logo-text color size-xl">إنجزنا</span>
-          <span class="logo-item-label">على خلفية فاتحة</span>
-        </div>
-        <div class="logo-item dark-bg">
-          <span class="logo-text white size-xl">إنجزنا</span>
-          <span class="logo-item-label">على خلفية داكنة</span>
-        </div>
-        <div class="logo-item blue-bg">
-          <span class="logo-text white size-xl">إنجزنا</span>
-          <span class="logo-item-label">على خلفية زرقاء</span>
-        </div>
-        <div class="logo-item gradient-bg">
-          <span class="logo-text white size-xl">إنجزنا</span>
-          <span class="logo-item-label">على خلفية متدرجة</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- App Icon English -->
-    <div class="section">
-      <h2 class="section-title">
-        أيقونة التطبيق (إنجليزي)
-        <span>App Icon - English (E)</span>
-      </h2>
-      <div class="icon-showcase">
-        <div class="icon-item">
-          <div class="app-icon" style="width: 128px; height: 128px; font-size: 64px;">E</div>
-          <span class="icon-label">128×128</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 96px; height: 96px; font-size: 48px;">E</div>
-          <span class="icon-label">96×96</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 64px; height: 64px; font-size: 32px;">E</div>
-          <span class="icon-label">64×64</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 48px; height: 48px; font-size: 24px;">E</div>
-          <span class="icon-label">48×48</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 32px; height: 32px; font-size: 16px;">E</div>
-          <span class="icon-label">32×32</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 16px; height: 16px; font-size: 8px;">E</div>
-          <span class="icon-label">16×16</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- App Icon Arabic -->
-    <div class="section">
-      <h2 class="section-title">
-        أيقونة التطبيق (عربي)
-        <span>App Icon - Arabic (إ)</span>
-      </h2>
-      <div class="icon-showcase">
-        <div class="icon-item">
-          <div class="app-icon" style="width: 128px; height: 128px; font-size: 64px; font-family: 'Aref Ruqaa', serif;">إ</div>
-          <span class="icon-label">128×128</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 96px; height: 96px; font-size: 48px; font-family: 'Aref Ruqaa', serif;">إ</div>
-          <span class="icon-label">96×96</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 64px; height: 64px; font-size: 32px; font-family: 'Aref Ruqaa', serif;">إ</div>
-          <span class="icon-label">64×64</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 48px; height: 48px; font-size: 24px; font-family: 'Aref Ruqaa', serif;">إ</div>
-          <span class="icon-label">48×48</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 32px; height: 32px; font-size: 16px; font-family: 'Aref Ruqaa', serif;">إ</div>
-          <span class="icon-label">32×32</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 16px; height: 16px; font-size: 8px; font-family: 'Aref Ruqaa', serif;">إ</div>
-          <span class="icon-label">16×16</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- App Icon Full Text -->
-    <div class="section">
-      <h2 class="section-title">
-        أيقونة بالاسم الكامل
-        <span>App Icon - Full Name</span>
-      </h2>
-      <div class="icon-showcase">
-        <div class="icon-item">
-          <div class="app-icon" style="width: 128px; height: 128px; font-size: 36px; font-family: 'Aref Ruqaa', serif;">إنجزنا</div>
-          <span class="icon-label">خلفية زرقاء</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 128px; height: 128px; font-size: 36px; font-family: 'Aref Ruqaa', serif; background: #0F172A;">إنجزنا</div>
-          <span class="icon-label">خلفية داكنة</span>
-        </div>
-        <div class="icon-item">
-          <div class="app-icon" style="width: 128px; height: 128px; font-size: 36px; font-family: 'Aref Ruqaa', serif; background: #FFFFFF; color: #009DE0; border: 1px solid #E2E8F0;">إنجزنا</div>
-          <span class="icon-label">خلفية بيضاء</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Combined Logo English -->
-    <div class="section">
-      <h2 class="section-title">
-        الشعار المدمج (أيقونة E + نص)
-        <span>Combined Logo - English Icon</span>
-      </h2>
-      <div class="logo-grid">
-        <div class="logo-item light-bg">
-          <div class="combined-logo">
-            <div class="icon">E</div>
-            <span class="logo-text color size-lg">إنجزنا</span>
+      <!-- Primary Logo -->
+      <div class="section">
+        <h2 class="section-title">
+          الشعار النصي الأساسي
+          <span>Primary Text Logo</span>
+        </h2>
+        <div class="logo-grid">
+          <div class="logo-item light-bg">
+            <span class="logo-text color size-xl">إنجزنا</span>
+            <span class="logo-item-label">على خلفية فاتحة</span>
           </div>
-          <span class="logo-item-label">أفقي - خلفية فاتحة</span>
-        </div>
-        <div class="logo-item dark-bg">
-          <div class="combined-logo">
-            <div class="icon">E</div>
-            <span class="logo-text white size-lg">إنجزنا</span>
+          <div class="logo-item dark-bg">
+            <span class="logo-text white size-xl">إنجزنا</span>
+            <span class="logo-item-label">على خلفية داكنة</span>
           </div>
-          <span class="logo-item-label">أفقي - خلفية داكنة</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Combined Logo Arabic -->
-    <div class="section">
-      <h2 class="section-title">
-        الشعار المدمج (أيقونة إ + نص)
-        <span>Combined Logo - Arabic Icon</span>
-      </h2>
-      <div class="logo-grid">
-        <div class="logo-item light-bg">
-          <div class="combined-logo">
-            <div class="icon" style="font-family: 'Aref Ruqaa', serif;">إ</div>
-            <span class="logo-text color size-lg">إنجزنا</span>
+          <div class="logo-item blue-bg">
+            <span class="logo-text white size-xl">إنجزنا</span>
+            <span class="logo-item-label">على خلفية زرقاء</span>
           </div>
-          <span class="logo-item-label">أفقي - خلفية فاتحة</span>
-        </div>
-        <div class="logo-item dark-bg">
-          <div class="combined-logo">
-            <div class="icon" style="font-family: 'Aref Ruqaa', serif;">إ</div>
-            <span class="logo-text white size-lg">إنجزنا</span>
+          <div class="logo-item gradient-bg">
+            <span class="logo-text white size-xl">إنجزنا</span>
+            <span class="logo-item-label">على خلفية متدرجة</span>
           </div>
-          <span class="logo-item-label">أفقي - خلفية داكنة</span>
         </div>
       </div>
-    </div>
 
-    <!-- Logo Sizes -->
-    <div class="section">
-      <h2 class="section-title">
-        أحجام الشعار
-        <span>Logo Sizes</span>
-      </h2>
-      <div class="sizes-grid">
-        <div class="size-item">
-          <span class="logo-text color size-2xl">إنجزنا</span>
-          <div class="size-label">2XL - 80px</div>
-        </div>
-        <div class="size-item">
-          <span class="logo-text color size-xl">إنجزنا</span>
-          <div class="size-label">XL - 64px</div>
-        </div>
-        <div class="size-item">
-          <span class="logo-text color size-lg">إنجزنا</span>
-          <div class="size-label">LG - 48px</div>
-        </div>
-        <div class="size-item">
-          <span class="logo-text color size-md">إنجزنا</span>
-          <div class="size-label">MD - 36px</div>
-        </div>
-        <div class="size-item">
-          <span class="logo-text color size-sm">إنجزنا</span>
-          <div class="size-label">SM - 24px</div>
-        </div>
-        <div class="size-item">
-          <span class="logo-text color size-xs">إنجزنا</span>
-          <div class="size-label">XS - 18px</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Color Palette -->
-    <div class="section">
-      <h2 class="section-title">
-        لوحة الألوان
-        <span>Color Palette</span>
-      </h2>
-      <div class="color-palette">
-        <div class="color-swatch">
-          <div class="color-box" style="background: #009DE0; color: white;">#009DE0</div>
-          <div class="color-name">Engezna Blue</div>
-          <div class="color-hex">RGB: 0, 157, 224</div>
-        </div>
-        <div class="color-swatch">
-          <div class="color-box" style="background: #0077B6; color: white;">#0077B6</div>
-          <div class="color-name">Dark Blue</div>
-          <div class="color-hex">RGB: 0, 119, 182</div>
-        </div>
-        <div class="color-swatch">
-          <div class="color-box" style="background: #0F172A; color: white;">#0F172A</div>
-          <div class="color-name">Charcoal</div>
-          <div class="color-hex">RGB: 15, 23, 42</div>
-        </div>
-        <div class="color-swatch">
-          <div class="color-box" style="background: #FFFFFF; border: 1px solid #E2E8F0;">#FFFFFF</div>
-          <div class="color-name">White</div>
-          <div class="color-hex">RGB: 255, 255, 255</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Clear Space -->
-    <div class="section">
-      <h2 class="section-title">
-        المساحة الآمنة
-        <span>Clear Space</span>
-      </h2>
-      <p style="margin-bottom: 20px; color: var(--slate);">يجب ترك مساحة فارغة حول الشعار تساوي ارتفاع حرف "ن"</p>
-      <div class="clearspace-demo">
-        <span class="logo-text color size-xl">إنجزنا</span>
-      </div>
-    </div>
-
-    <!-- Typography -->
-    <div class="section">
-      <h2 class="section-title">
-        الخطوط
-        <span>Typography</span>
-      </h2>
-      <div style="margin-bottom: 30px;">
-        <h3 style="font-size: 0.9rem; color: var(--slate); margin-bottom: 10px;">خط الشعار - Aref Ruqaa</h3>
-        <p style="font-family: 'Aref Ruqaa', serif; font-size: 48px; font-weight: 700;">إنجزنا</p>
-        <p style="font-family: 'Aref Ruqaa', serif; font-size: 24px; font-weight: 400;">عايز تطلب؟ إنجزنا</p>
-      </div>
-      <div>
-        <h3 style="font-size: 0.9rem; color: var(--slate); margin-bottom: 10px;">خط النصوص - Noto Sans Arabic</h3>
-        <p style="font-family: 'Noto Sans Arabic', sans-serif; font-size: 24px; font-weight: 700;">إنجزنا - خدمة التوصيل</p>
-        <p style="font-family: 'Noto Sans Arabic', sans-serif; font-size: 18px; font-weight: 400;">نوصل طلبك في أسرع وقت بأفضل جودة</p>
-      </div>
-    </div>
-
-    <!-- Social Media Preview -->
-    <div class="section">
-      <h2 class="section-title">
-        معاينة السوشيال ميديا
-        <span>Social Media Preview</span>
-      </h2>
-      <div class="social-grid">
-        <div class="social-item">
-          <div class="social-preview">
-            <div class="app-icon" style="width: 80px; height: 80px; font-size: 40px; margin: 0 auto; border-radius: 50%;">E</div>
+      <!-- App Icon English -->
+      <div class="section">
+        <h2 class="section-title">
+          أيقونة التطبيق (إنجليزي)
+          <span>App Icon - English (E)</span>
+        </h2>
+        <div class="icon-showcase">
+          <div class="icon-item">
+            <div class="app-icon" style="width: 128px; height: 128px; font-size: 64px">E</div>
+            <span class="icon-label">128×128</span>
           </div>
-          <div class="social-name">Profile Picture</div>
-          <div class="social-size">دائري - جميع المنصات</div>
+          <div class="icon-item">
+            <div class="app-icon" style="width: 96px; height: 96px; font-size: 48px">E</div>
+            <span class="icon-label">96×96</span>
+          </div>
+          <div class="icon-item">
+            <div class="app-icon" style="width: 64px; height: 64px; font-size: 32px">E</div>
+            <span class="icon-label">64×64</span>
+          </div>
+          <div class="icon-item">
+            <div class="app-icon" style="width: 48px; height: 48px; font-size: 24px">E</div>
+            <span class="icon-label">48×48</span>
+          </div>
+          <div class="icon-item">
+            <div class="app-icon" style="width: 32px; height: 32px; font-size: 16px">E</div>
+            <span class="icon-label">32×32</span>
+          </div>
+          <div class="icon-item">
+            <div class="app-icon" style="width: 16px; height: 16px; font-size: 8px">E</div>
+            <span class="icon-label">16×16</span>
+          </div>
         </div>
-        <div class="social-item">
-          <div class="social-preview" style="padding: 10px;">
-            <div style="background: linear-gradient(135deg, #009DE0, #0077B6); height: 60px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-              <span class="logo-text white" style="font-size: 20px;">إنجزنا</span>
+      </div>
+
+      <!-- App Icon Arabic -->
+      <div class="section">
+        <h2 class="section-title">
+          أيقونة التطبيق (عربي)
+          <span>App Icon - Arabic (إ)</span>
+        </h2>
+        <div class="icon-showcase">
+          <div class="icon-item">
+            <div
+              class="app-icon"
+              style="width: 128px; height: 128px; font-size: 64px; font-family: 'Aref Ruqaa', serif"
+            >
+              إ
             </div>
+            <span class="icon-label">128×128</span>
           </div>
-          <div class="social-name">Cover Photo</div>
-          <div class="social-size">Facebook / LinkedIn</div>
-        </div>
-        <div class="social-item">
-          <div class="social-preview">
-            <div style="background: #009DE0; width: 80px; height: 80px; border-radius: 8px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 40px; font-weight: bold; font-family: Arial;">E</span>
+          <div class="icon-item">
+            <div
+              class="app-icon"
+              style="width: 96px; height: 96px; font-size: 48px; font-family: 'Aref Ruqaa', serif"
+            >
+              إ
             </div>
+            <span class="icon-label">96×96</span>
           </div>
-          <div class="social-name">Square Icon</div>
-          <div class="social-size">Posts / Thumbnails</div>
+          <div class="icon-item">
+            <div
+              class="app-icon"
+              style="width: 64px; height: 64px; font-size: 32px; font-family: 'Aref Ruqaa', serif"
+            >
+              إ
+            </div>
+            <span class="icon-label">64×64</span>
+          </div>
+          <div class="icon-item">
+            <div
+              class="app-icon"
+              style="width: 48px; height: 48px; font-size: 24px; font-family: 'Aref Ruqaa', serif"
+            >
+              إ
+            </div>
+            <span class="icon-label">48×48</span>
+          </div>
+          <div class="icon-item">
+            <div
+              class="app-icon"
+              style="width: 32px; height: 32px; font-size: 16px; font-family: 'Aref Ruqaa', serif"
+            >
+              إ
+            </div>
+            <span class="icon-label">32×32</span>
+          </div>
+          <div class="icon-item">
+            <div
+              class="app-icon"
+              style="width: 16px; height: 16px; font-size: 8px; font-family: 'Aref Ruqaa', serif"
+            >
+              إ
+            </div>
+            <span class="icon-label">16×16</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="footer">
-      <p>© 2026 Engezna. All rights reserved.</p>
-      <p style="margin-top: 5px;">Version 1.0.0</p>
+      <!-- App Icon Full Text -->
+      <div class="section">
+        <h2 class="section-title">
+          أيقونة بالاسم الكامل
+          <span>App Icon - Full Name</span>
+        </h2>
+        <div class="icon-showcase">
+          <div class="icon-item">
+            <div
+              class="app-icon"
+              style="width: 128px; height: 128px; font-size: 36px; font-family: 'Aref Ruqaa', serif"
+            >
+              إنجزنا
+            </div>
+            <span class="icon-label">خلفية زرقاء</span>
+          </div>
+          <div class="icon-item">
+            <div
+              class="app-icon"
+              style="
+                width: 128px;
+                height: 128px;
+                font-size: 36px;
+                font-family: 'Aref Ruqaa', serif;
+                background: #0f172a;
+              "
+            >
+              إنجزنا
+            </div>
+            <span class="icon-label">خلفية داكنة</span>
+          </div>
+          <div class="icon-item">
+            <div
+              class="app-icon"
+              style="
+                width: 128px;
+                height: 128px;
+                font-size: 36px;
+                font-family: 'Aref Ruqaa', serif;
+                background: #ffffff;
+                color: #009de0;
+                border: 1px solid #e2e8f0;
+              "
+            >
+              إنجزنا
+            </div>
+            <span class="icon-label">خلفية بيضاء</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Combined Logo English -->
+      <div class="section">
+        <h2 class="section-title">
+          الشعار المدمج (أيقونة E + نص)
+          <span>Combined Logo - English Icon</span>
+        </h2>
+        <div class="logo-grid">
+          <div class="logo-item light-bg">
+            <div class="combined-logo">
+              <div class="icon">E</div>
+              <span class="logo-text color size-lg">إنجزنا</span>
+            </div>
+            <span class="logo-item-label">أفقي - خلفية فاتحة</span>
+          </div>
+          <div class="logo-item dark-bg">
+            <div class="combined-logo">
+              <div class="icon">E</div>
+              <span class="logo-text white size-lg">إنجزنا</span>
+            </div>
+            <span class="logo-item-label">أفقي - خلفية داكنة</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Combined Logo Arabic -->
+      <div class="section">
+        <h2 class="section-title">
+          الشعار المدمج (أيقونة إ + نص)
+          <span>Combined Logo - Arabic Icon</span>
+        </h2>
+        <div class="logo-grid">
+          <div class="logo-item light-bg">
+            <div class="combined-logo">
+              <div class="icon" style="font-family: 'Aref Ruqaa', serif">إ</div>
+              <span class="logo-text color size-lg">إنجزنا</span>
+            </div>
+            <span class="logo-item-label">أفقي - خلفية فاتحة</span>
+          </div>
+          <div class="logo-item dark-bg">
+            <div class="combined-logo">
+              <div class="icon" style="font-family: 'Aref Ruqaa', serif">إ</div>
+              <span class="logo-text white size-lg">إنجزنا</span>
+            </div>
+            <span class="logo-item-label">أفقي - خلفية داكنة</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logo Sizes -->
+      <div class="section">
+        <h2 class="section-title">
+          أحجام الشعار
+          <span>Logo Sizes</span>
+        </h2>
+        <div class="sizes-grid">
+          <div class="size-item">
+            <span class="logo-text color size-2xl">إنجزنا</span>
+            <div class="size-label">2XL - 80px</div>
+          </div>
+          <div class="size-item">
+            <span class="logo-text color size-xl">إنجزنا</span>
+            <div class="size-label">XL - 64px</div>
+          </div>
+          <div class="size-item">
+            <span class="logo-text color size-lg">إنجزنا</span>
+            <div class="size-label">LG - 48px</div>
+          </div>
+          <div class="size-item">
+            <span class="logo-text color size-md">إنجزنا</span>
+            <div class="size-label">MD - 36px</div>
+          </div>
+          <div class="size-item">
+            <span class="logo-text color size-sm">إنجزنا</span>
+            <div class="size-label">SM - 24px</div>
+          </div>
+          <div class="size-item">
+            <span class="logo-text color size-xs">إنجزنا</span>
+            <div class="size-label">XS - 18px</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Color Palette -->
+      <div class="section">
+        <h2 class="section-title">
+          لوحة الألوان
+          <span>Color Palette</span>
+        </h2>
+        <div class="color-palette">
+          <div class="color-swatch">
+            <div class="color-box" style="background: #009de0; color: white">#009DE0</div>
+            <div class="color-name">Engezna Blue</div>
+            <div class="color-hex">RGB: 0, 157, 224</div>
+          </div>
+          <div class="color-swatch">
+            <div class="color-box" style="background: #0077b6; color: white">#0077B6</div>
+            <div class="color-name">Dark Blue</div>
+            <div class="color-hex">RGB: 0, 119, 182</div>
+          </div>
+          <div class="color-swatch">
+            <div class="color-box" style="background: #0f172a; color: white">#0F172A</div>
+            <div class="color-name">Charcoal</div>
+            <div class="color-hex">RGB: 15, 23, 42</div>
+          </div>
+          <div class="color-swatch">
+            <div class="color-box" style="background: #ffffff; border: 1px solid #e2e8f0">
+              #FFFFFF
+            </div>
+            <div class="color-name">White</div>
+            <div class="color-hex">RGB: 255, 255, 255</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clear Space -->
+      <div class="section">
+        <h2 class="section-title">
+          المساحة الآمنة
+          <span>Clear Space</span>
+        </h2>
+        <p style="margin-bottom: 20px; color: var(--slate)">
+          يجب ترك مساحة فارغة حول الشعار تساوي ارتفاع حرف "ن"
+        </p>
+        <div class="clearspace-demo">
+          <span class="logo-text color size-xl">إنجزنا</span>
+        </div>
+      </div>
+
+      <!-- Typography -->
+      <div class="section">
+        <h2 class="section-title">
+          الخطوط
+          <span>Typography</span>
+        </h2>
+        <div style="margin-bottom: 30px">
+          <h3 style="font-size: 0.9rem; color: var(--slate); margin-bottom: 10px">
+            خط الشعار - Aref Ruqaa
+          </h3>
+          <p style="font-family: 'Aref Ruqaa', serif; font-size: 48px; font-weight: 700">إنجزنا</p>
+          <p style="font-family: 'Aref Ruqaa', serif; font-size: 24px; font-weight: 400">
+            عايز تطلب؟ إنجزنا
+          </p>
+        </div>
+        <div>
+          <h3 style="font-size: 0.9rem; color: var(--slate); margin-bottom: 10px">
+            خط النصوص - Noto Sans Arabic
+          </h3>
+          <p style="font-family: 'Noto Sans Arabic', sans-serif; font-size: 24px; font-weight: 700">
+            إنجزنا - خدمة التوصيل
+          </p>
+          <p style="font-family: 'Noto Sans Arabic', sans-serif; font-size: 18px; font-weight: 400">
+            نوصل طلبك في أسرع وقت بأفضل جودة
+          </p>
+        </div>
+      </div>
+
+      <!-- Social Media Preview -->
+      <div class="section">
+        <h2 class="section-title">
+          معاينة السوشيال ميديا
+          <span>Social Media Preview</span>
+        </h2>
+        <div class="social-grid">
+          <div class="social-item">
+            <div class="social-preview">
+              <div
+                class="app-icon"
+                style="
+                  width: 80px;
+                  height: 80px;
+                  font-size: 40px;
+                  margin: 0 auto;
+                  border-radius: 50%;
+                "
+              >
+                E
+              </div>
+            </div>
+            <div class="social-name">Profile Picture</div>
+            <div class="social-size">دائري - جميع المنصات</div>
+          </div>
+          <div class="social-item">
+            <div class="social-preview" style="padding: 10px">
+              <div
+                style="
+                  background: linear-gradient(135deg, #009de0, #0077b6);
+                  height: 60px;
+                  border-radius: 8px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span class="logo-text white" style="font-size: 20px">إنجزنا</span>
+              </div>
+            </div>
+            <div class="social-name">Cover Photo</div>
+            <div class="social-size">Facebook / LinkedIn</div>
+          </div>
+          <div class="social-item">
+            <div class="social-preview">
+              <div
+                style="
+                  background: #009de0;
+                  width: 80px;
+                  height: 80px;
+                  border-radius: 8px;
+                  margin: 0 auto;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span style="color: white; font-size: 40px; font-weight: bold; font-family: Arial"
+                  >E</span
+                >
+              </div>
+            </div>
+            <div class="social-name">Square Icon</div>
+            <div class="social-size">Posts / Thumbnails</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>© 2026 Engezna. All rights reserved.</p>
+        <p style="margin-top: 5px">Version 1.0.0</p>
+      </div>
     </div>
-  </div>
-</body>
+  </body>
 </html>

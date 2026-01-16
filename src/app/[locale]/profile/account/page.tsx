@@ -1,99 +1,101 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useLocale, useTranslations } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import { CustomerLayout } from '@/components/customer/layout'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Mail, Phone, Loader2, Check, Info, User, Trash2, AlertTriangle } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Mail, Phone, Loader2, Check, Info, User, Trash2, AlertTriangle } from 'lucide-react';
 
 type Profile = {
-  id: string
-  email: string | null
-  phone: string | null
-  full_name: string
-}
+  id: string;
+  email: string | null;
+  phone: string | null;
+  full_name: string;
+};
 
 export default function AccountPage() {
-  const locale = useLocale()
-  const t = useTranslations('settings.account')
-  const router = useRouter()
+  const locale = useLocale();
+  const t = useTranslations('settings.account');
+  const router = useRouter();
 
-  const [userId, setUserId] = useState<string | null>(null)
-  const [authLoading, setAuthLoading] = useState(true)
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   // Split name fields
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [phone, setPhone] = useState('')
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
 
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Delete account states
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deleteConfirmText, setDeleteConfirmText] = useState('')
-  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const checkAuthAndLoadProfile = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/profile/account`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/profile/account`);
+      return;
     }
 
-    setUserId(user.id)
-    setAuthLoading(false)
+    setUserId(user.id);
+    setAuthLoading(false);
 
     // Load profile
     const { data: profileData } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .single();
 
     if (profileData) {
-      setProfile(profileData)
+      setProfile(profileData);
 
       // Split full_name into first and last
-      const parts = (profileData.full_name || '').trim().split(' ')
+      const parts = (profileData.full_name || '').trim().split(' ');
       if (parts.length > 0) {
-        setFirstName(parts[0])
-        setLastName(parts.slice(1).join(' '))
+        setFirstName(parts[0]);
+        setLastName(parts.slice(1).join(' '));
       }
 
-      setPhone(profileData.phone || '')
+      setPhone(profileData.phone || '');
     }
-  }, [locale, router])
+  }, [locale, router]);
 
   useEffect(() => {
-    checkAuthAndLoadProfile()
-  }, [checkAuthAndLoadProfile])
+    checkAuthAndLoadProfile();
+  }, [checkAuthAndLoadProfile]);
 
   async function handleSave() {
-    if (!userId) return
+    if (!userId) return;
 
-    setSaving(true)
-    setMessage(null)
+    setSaving(true);
+    setMessage(null);
 
     // Combine first + last name into full_name
-    const full_name = `${firstName.trim()} ${lastName.trim()}`.trim()
+    const full_name = `${firstName.trim()} ${lastName.trim()}`.trim();
 
     if (!full_name) {
-      setMessage({ type: 'error', text: t('error') })
-      setSaving(false)
-      return
+      setMessage({ type: 'error', text: t('error') });
+      setSaving(false);
+      return;
     }
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     const { error } = await supabase
       .from('profiles')
@@ -101,50 +103,53 @@ export default function AccountPage() {
         full_name,
         phone: phone || null,
       })
-      .eq('id', userId)
+      .eq('id', userId);
 
     if (error) {
-      setMessage({ type: 'error', text: t('error') })
+      setMessage({ type: 'error', text: t('error') });
     } else {
-      setMessage({ type: 'success', text: t('saved') })
-      setTimeout(() => setMessage(null), 3000)
+      setMessage({ type: 'success', text: t('saved') });
+      setTimeout(() => setMessage(null), 3000);
     }
 
-    setSaving(false)
+    setSaving(false);
   }
 
   async function handleDeleteAccount() {
     if (deleteConfirmText !== (locale === 'ar' ? 'حذف' : 'DELETE')) {
-      return
+      return;
     }
 
-    setDeleting(true)
+    setDeleting(true);
 
     try {
       const response = await fetch('/api/auth/delete-account', {
         method: 'DELETE',
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
+        const error = await response.json();
         setMessage({
           type: 'error',
-          text: locale === 'ar' ? 'فشل حذف الحساب. حاول مرة أخرى.' : 'Failed to delete account. Please try again.'
-        })
-        setDeleting(false)
-        return
+          text:
+            locale === 'ar'
+              ? 'فشل حذف الحساب. حاول مرة أخرى.'
+              : 'Failed to delete account. Please try again.',
+        });
+        setDeleting(false);
+        return;
       }
 
       // Sign out and redirect to home
-      const supabase = createClient()
-      await supabase.auth.signOut()
-      window.location.href = `/${locale}`
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      window.location.href = `/${locale}`;
     } catch (error) {
       setMessage({
         type: 'error',
-        text: locale === 'ar' ? 'حدث خطأ. حاول مرة أخرى.' : 'An error occurred. Please try again.'
-      })
-      setDeleting(false)
+        text: locale === 'ar' ? 'حدث خطأ. حاول مرة أخرى.' : 'An error occurred. Please try again.',
+      });
+      setDeleting(false);
     }
   }
 
@@ -155,16 +160,13 @@ export default function AccountPage() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   return (
     <CustomerLayout headerTitle={t('title')} showBottomNav={true}>
-
       <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <h1 className="text-2xl font-bold text-foreground mb-6">
-          {t('title')}
-        </h1>
+        <h1 className="text-2xl font-bold text-foreground mb-6">{t('title')}</h1>
 
         <Card>
           <CardContent className="pt-6 space-y-4">
@@ -188,9 +190,7 @@ export default function AccountPage() {
 
             {/* First Name */}
             <div className="space-y-2">
-              <Label htmlFor="firstName">
-                {t('firstName')}
-              </Label>
+              <Label htmlFor="firstName">{t('firstName')}</Label>
               <Input
                 id="firstName"
                 type="text"
@@ -202,9 +202,7 @@ export default function AccountPage() {
 
             {/* Last Name */}
             <div className="space-y-2">
-              <Label htmlFor="lastName">
-                {t('lastName')}
-              </Label>
+              <Label htmlFor="lastName">{t('lastName')}</Label>
               <Input
                 id="lastName"
                 type="text"
@@ -232,11 +230,7 @@ export default function AccountPage() {
 
             {/* Save Button */}
             <div className="flex items-center gap-3 pt-2">
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1"
-              >
+              <Button onClick={handleSave} disabled={saving} className="flex-1">
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -250,11 +244,13 @@ export default function AccountPage() {
 
             {/* Message */}
             {message && (
-              <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
-                message.type === 'success'
-                  ? 'text-[#22C55E] bg-[#DCFCE7]'
-                  : 'text-[#EF4444] bg-[#FEF2F2]'
-              }`}>
+              <div
+                className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
+                  message.type === 'success'
+                    ? 'text-[#22C55E] bg-[#DCFCE7]'
+                    : 'text-[#EF4444] bg-[#FEF2F2]'
+                }`}
+              >
                 {message.type === 'success' && <Check className="w-4 h-4" />}
                 <span>{message.text}</span>
               </div>
@@ -322,9 +318,7 @@ export default function AccountPage() {
 
               <div className="pt-2">
                 <Label className="text-sm font-medium text-slate-700">
-                  {locale === 'ar'
-                    ? 'اكتب "حذف" للتأكيد:'
-                    : 'Type "DELETE" to confirm:'}
+                  {locale === 'ar' ? 'اكتب "حذف" للتأكيد:' : 'Type "DELETE" to confirm:'}
                 </Label>
                 <Input
                   value={deleteConfirmText}
@@ -339,8 +333,8 @@ export default function AccountPage() {
                   variant="outline"
                   className="flex-1"
                   onClick={() => {
-                    setShowDeleteConfirm(false)
-                    setDeleteConfirmText('')
+                    setShowDeleteConfirm(false);
+                    setDeleteConfirmText('');
                   }}
                   disabled={deleting}
                 >
@@ -370,5 +364,5 @@ export default function AccountPage() {
         </div>
       )}
     </CustomerLayout>
-  )
+  );
 }

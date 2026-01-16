@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter, useParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/auth'
-import { CustomerLayout } from '@/components/customer/layout'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   Clock,
   CheckCircle2,
@@ -33,72 +33,72 @@ import {
   Package,
   ChevronRight,
   ChevronLeft,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { CustomOrderRequest, CustomOrderItem, BroadcastStatus } from '@/types/custom-order'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { CustomOrderRequest, CustomOrderItem, BroadcastStatus } from '@/types/custom-order';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 // Types
 interface BroadcastWithRequests {
-  id: string
-  status: BroadcastStatus
-  original_input_type: 'text' | 'voice' | 'image' | 'mixed'
-  original_text: string | null
-  voice_url: string | null
-  image_urls: string[] | null
-  customer_notes: string | null
-  pricing_deadline: string
-  expires_at: string
-  created_at: string
-  requests: PricingRequest[]
+  id: string;
+  status: BroadcastStatus;
+  original_input_type: 'text' | 'voice' | 'image' | 'mixed';
+  original_text: string | null;
+  voice_url: string | null;
+  image_urls: string[] | null;
+  customer_notes: string | null;
+  pricing_deadline: string;
+  expires_at: string;
+  created_at: string;
+  requests: PricingRequest[];
 }
 
 interface PricingRequest {
-  id: string
-  provider_id: string
-  status: string
-  items_count: number
-  subtotal: number
-  delivery_fee: number
-  total: number
-  priced_at: string | null
-  pricing_expires_at: string | null
-  order_id: string | null
+  id: string;
+  provider_id: string;
+  status: string;
+  items_count: number;
+  subtotal: number;
+  delivery_fee: number;
+  total: number;
+  priced_at: string | null;
+  pricing_expires_at: string | null;
+  order_id: string | null;
   provider: {
-    id: string
-    name_ar: string
-    name_en: string
-    logo_url: string | null
-    rating: number
-  }
-  items: CustomOrderItem[]
+    id: string;
+    name_ar: string;
+    name_en: string;
+    logo_url: string | null;
+    rating: number;
+  };
+  items: CustomOrderItem[];
 }
 
 export default function CustomOrderReviewPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const params = useParams()
-  const broadcastId = params.id as string
-  const { user, loading: authLoading } = useAuth()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const params = useParams();
+  const broadcastId = params.id as string;
+  const { user, loading: authLoading } = useAuth();
+  const isRTL = locale === 'ar';
 
-  const [loading, setLoading] = useState(true)
-  const [broadcast, setBroadcast] = useState<BroadcastWithRequests | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true);
+  const [broadcast, setBroadcast] = useState<BroadcastWithRequests | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Approval dialog
-  const [selectedRequest, setSelectedRequest] = useState<PricingRequest | null>(null)
-  const [showApproveDialog, setShowApproveDialog] = useState(false)
-  const [showRejectDialog, setShowRejectDialog] = useState(false)
-  const [processing, setProcessing] = useState(false)
+  const [selectedRequest, setSelectedRequest] = useState<PricingRequest | null>(null);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   // Load broadcast and pricing requests
   const loadBroadcast = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id) return;
 
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
     // Fetch broadcast
     const { data: broadcastData, error: broadcastError } = await supabase
@@ -106,127 +106,129 @@ export default function CustomOrderReviewPage() {
       .select('*')
       .eq('id', broadcastId)
       .eq('customer_id', user.id)
-      .single()
+      .single();
 
     if (broadcastError || !broadcastData) {
-      setError(isRTL ? 'لم يتم العثور على الطلب' : 'Order not found')
-      setLoading(false)
-      return
+      setError(isRTL ? 'لم يتم العثور على الطلب' : 'Order not found');
+      setLoading(false);
+      return;
     }
 
     // Fetch pricing requests with items
     // Include both new (approved/rejected) and old (customer_approved/customer_rejected) status values
     const { data: requestsData } = await supabase
       .from('custom_order_requests')
-      .select(`
+      .select(
+        `
         *,
         provider:providers(id, name_ar, name_en, logo_url, rating),
         items:custom_order_items(*)
-      `)
+      `
+      )
       .eq('broadcast_id', broadcastId)
       .in('status', ['priced', 'approved', 'rejected', 'customer_approved', 'customer_rejected'])
-      .order('total', { ascending: true })
+      .order('total', { ascending: true });
 
-    const transformedRequests: PricingRequest[] = (requestsData || []).map(req => ({
+    const transformedRequests: PricingRequest[] = (requestsData || []).map((req) => ({
       ...req,
       provider: Array.isArray(req.provider) ? req.provider[0] : req.provider,
       items: req.items || [],
-    }))
+    }));
 
     setBroadcast({
       ...broadcastData,
       requests: transformedRequests,
-    })
-    setLoading(false)
-  }, [user?.id, broadcastId, isRTL])
+    });
+    setLoading(false);
+  }, [user?.id, broadcastId, isRTL]);
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push(`/${locale}/auth/login?redirect=/custom-order/${broadcastId}`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/custom-order/${broadcastId}`);
+      return;
     }
     if (user) {
-      loadBroadcast()
+      loadBroadcast();
     }
-  }, [user, authLoading, router, locale, broadcastId, loadBroadcast])
+  }, [user, authLoading, router, locale, broadcastId, loadBroadcast]);
 
   // Handle approve pricing - uses RPC function to bypass RLS
   const handleApprove = async () => {
-    if (!selectedRequest || !user?.id) return
+    if (!selectedRequest || !user?.id) return;
 
-    setProcessing(true)
+    setProcessing(true);
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Use RPC function for approval (bypasses RLS)
       const { data, error: rpcError } = await supabase.rpc('customer_approve_custom_order', {
         p_request_id: selectedRequest.id,
         p_broadcast_id: broadcastId,
-      })
+      });
 
       if (rpcError) {
-        console.error('RPC Error:', rpcError)
-        throw new Error(isRTL ? 'حدث خطأ في الموافقة' : 'Error approving order')
+        console.error('RPC Error:', rpcError);
+        throw new Error(isRTL ? 'حدث خطأ في الموافقة' : 'Error approving order');
       }
 
       // Check the result
       if (!data?.success) {
-        const errorMsg = data?.error || (isRTL ? 'حدث خطأ' : 'An error occurred')
-        throw new Error(errorMsg)
+        const errorMsg = data?.error || (isRTL ? 'حدث خطأ' : 'An error occurred');
+        throw new Error(errorMsg);
       }
 
-      setShowApproveDialog(false)
+      setShowApproveDialog(false);
 
       // Redirect to order page
-      const orderId = data.order_id || selectedRequest.order_id
+      const orderId = data.order_id || selectedRequest.order_id;
       if (orderId) {
-        router.push(`/${locale}/orders/${orderId}`)
+        router.push(`/${locale}/orders/${orderId}`);
       } else {
-        router.push(`/${locale}/orders`)
+        router.push(`/${locale}/orders`);
       }
     } catch (err) {
-      console.error('Error approving pricing:', err)
-      setError(err instanceof Error ? err.message : (isRTL ? 'حدث خطأ' : 'An error occurred'))
+      console.error('Error approving pricing:', err);
+      setError(err instanceof Error ? err.message : isRTL ? 'حدث خطأ' : 'An error occurred');
     } finally {
-      setProcessing(false)
+      setProcessing(false);
     }
-  }
+  };
 
   // Handle reject pricing - uses RPC function to bypass RLS
   const handleReject = async () => {
-    if (!selectedRequest) return
+    if (!selectedRequest) return;
 
-    setProcessing(true)
+    setProcessing(true);
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Use RPC function for rejection (bypasses RLS)
       const { data, error: rpcError } = await supabase.rpc('customer_reject_custom_order', {
         p_request_id: selectedRequest.id,
         p_broadcast_id: broadcastId,
-      })
+      });
 
       if (rpcError) {
-        console.error('RPC Error:', rpcError)
-        throw new Error(isRTL ? 'حدث خطأ في رفض العرض' : 'Error rejecting quote')
+        console.error('RPC Error:', rpcError);
+        throw new Error(isRTL ? 'حدث خطأ في رفض العرض' : 'Error rejecting quote');
       }
 
       // Check the result
       if (!data?.success) {
-        const errorMsg = data?.error || (isRTL ? 'حدث خطأ' : 'An error occurred')
-        throw new Error(errorMsg)
+        const errorMsg = data?.error || (isRTL ? 'حدث خطأ' : 'An error occurred');
+        throw new Error(errorMsg);
       }
 
-      setShowRejectDialog(false)
-      setSelectedRequest(null)
-      loadBroadcast() // Refresh data
+      setShowRejectDialog(false);
+      setSelectedRequest(null);
+      loadBroadcast(); // Refresh data
     } catch (err) {
-      console.error('Error rejecting pricing:', err)
-      setError(isRTL ? 'حدث خطأ أثناء رفض العرض' : 'Error rejecting quote')
+      console.error('Error rejecting pricing:', err);
+      setError(isRTL ? 'حدث خطأ أثناء رفض العرض' : 'Error rejecting quote');
     } finally {
-      setProcessing(false)
+      setProcessing(false);
     }
-  }
+  };
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -235,11 +237,11 @@ export default function CustomOrderReviewPage() {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
   // Check if broadcast has expired
-  const isExpired = broadcast?.expires_at ? new Date(broadcast.expires_at) < new Date() : false
+  const isExpired = broadcast?.expires_at ? new Date(broadcast.expires_at) < new Date() : false;
 
   // Loading state
   if (loading || authLoading) {
@@ -252,13 +254,11 @@ export default function CustomOrderReviewPage() {
         <div className="flex items-center justify-center h-[60vh]">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              {isRTL ? 'جاري التحميل...' : 'Loading...'}
-            </p>
+            <p className="text-muted-foreground">{isRTL ? 'جاري التحميل...' : 'Loading...'}</p>
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   // Error state
@@ -277,19 +277,19 @@ export default function CustomOrderReviewPage() {
             {error || (isRTL ? 'حدث خطأ' : 'An error occurred')}
           </h2>
           <Link href={`/${locale}/orders`}>
-            <Button className="mt-4">
-              {isRTL ? 'العودة للطلبات' : 'Back to Orders'}
-            </Button>
+            <Button className="mt-4">{isRTL ? 'العودة للطلبات' : 'Back to Orders'}</Button>
           </Link>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   // Get priced requests
-  const pricedRequests = broadcast.requests.filter(r => r.status === 'priced')
+  const pricedRequests = broadcast.requests.filter((r) => r.status === 'priced');
   // Check for both new and old status values for backwards compatibility
-  const approvedRequest = broadcast.requests.find(r => r.status === 'approved' || r.status === 'customer_approved')
+  const approvedRequest = broadcast.requests.find(
+    (r) => r.status === 'approved' || r.status === 'customer_approved'
+  );
 
   return (
     <CustomerLayout
@@ -368,7 +368,9 @@ export default function CustomOrderReviewPage() {
                   )}
                   <div>
                     <h4 className="font-bold">
-                      {isRTL ? approvedRequest.provider?.name_ar : approvedRequest.provider?.name_en}
+                      {isRTL
+                        ? approvedRequest.provider?.name_ar
+                        : approvedRequest.provider?.name_en}
                     </h4>
                     <p className="text-sm text-green-600">
                       {approvedRequest.items_count} {isRTL ? 'أصناف' : 'items'}
@@ -386,7 +388,11 @@ export default function CustomOrderReviewPage() {
                   <Link href={`/${locale}/orders/${approvedRequest.order_id}`}>
                     <Button className="w-full bg-green-600 hover:bg-green-700">
                       {isRTL ? 'تتبع الطلب' : 'Track Order'}
-                      {isRTL ? <ArrowLeft className="w-4 h-4 ms-2" /> : <ArrowRight className="w-4 h-4 ms-2" />}
+                      {isRTL ? (
+                        <ArrowLeft className="w-4 h-4 ms-2" />
+                      ) : (
+                        <ArrowRight className="w-4 h-4 ms-2" />
+                      )}
                     </Button>
                   </Link>
                 )}
@@ -399,13 +405,15 @@ export default function CustomOrderReviewPage() {
         {pricedRequests.length > 0 && !approvedRequest && (
           <div className="mb-6">
             <h3 className="font-semibold text-lg mb-3">
-              {isRTL ? `عروض الأسعار (${pricedRequests.length})` : `Price Quotes (${pricedRequests.length})`}
+              {isRTL
+                ? `عروض الأسعار (${pricedRequests.length})`
+                : `Price Quotes (${pricedRequests.length})`}
             </h3>
             <div className="space-y-4">
               {pricedRequests.map((request, index) => {
                 const isPricingExpired = request.pricing_expires_at
                   ? new Date(request.pricing_expires_at) < new Date()
-                  : false
+                  : false;
 
                 return (
                   <motion.div
@@ -414,7 +422,9 @@ export default function CustomOrderReviewPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Card className={`overflow-hidden ${index === 0 ? 'border-2 border-primary' : ''}`}>
+                    <Card
+                      className={`overflow-hidden ${index === 0 ? 'border-2 border-primary' : ''}`}
+                    >
                       {index === 0 && (
                         <div className="bg-primary text-white text-center py-1 text-sm font-medium">
                           {isRTL ? '⭐ أفضل سعر' : '⭐ Best Price'}
@@ -452,12 +462,20 @@ export default function CustomOrderReviewPage() {
                         {/* Price breakdown */}
                         <div className="bg-slate-50 rounded-lg p-3 mb-4 text-sm">
                           <div className="flex justify-between mb-1">
-                            <span className="text-muted-foreground">{isRTL ? 'المنتجات' : 'Products'}</span>
-                            <span>{request.subtotal.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}</span>
+                            <span className="text-muted-foreground">
+                              {isRTL ? 'المنتجات' : 'Products'}
+                            </span>
+                            <span>
+                              {request.subtotal.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                            </span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">{isRTL ? 'التوصيل' : 'Delivery'}</span>
-                            <span>{request.delivery_fee.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}</span>
+                            <span className="text-muted-foreground">
+                              {isRTL ? 'التوصيل' : 'Delivery'}
+                            </span>
+                            <span>
+                              {request.delivery_fee.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                            </span>
                           </div>
                         </div>
 
@@ -469,14 +487,16 @@ export default function CustomOrderReviewPage() {
                               {isRTL ? 'انتهت صلاحية هذا العرض' : 'This quote has expired'}
                             </p>
                           </div>
-                        ) : request.pricing_expires_at && (
-                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-amber-600 shrink-0" />
-                            <p className="text-sm text-amber-700">
-                              {isRTL ? 'ينتهي في: ' : 'Expires: '}
-                              {formatDate(request.pricing_expires_at)}
-                            </p>
-                          </div>
+                        ) : (
+                          request.pricing_expires_at && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-center gap-2">
+                              <Clock className="w-5 h-5 text-amber-600 shrink-0" />
+                              <p className="text-sm text-amber-700">
+                                {isRTL ? 'ينتهي في: ' : 'Expires: '}
+                                {formatDate(request.pricing_expires_at)}
+                              </p>
+                            </div>
+                          )
                         )}
 
                         {/* Action buttons */}
@@ -486,8 +506,8 @@ export default function CustomOrderReviewPage() {
                               variant="outline"
                               className="flex-1"
                               onClick={() => {
-                                setSelectedRequest(request)
-                                setShowRejectDialog(true)
+                                setSelectedRequest(request);
+                                setShowRejectDialog(true);
                               }}
                             >
                               <XCircle className="w-4 h-4 me-2" />
@@ -496,8 +516,8 @@ export default function CustomOrderReviewPage() {
                             <Button
                               className="flex-1 bg-green-600 hover:bg-green-700"
                               onClick={() => {
-                                setSelectedRequest(request)
-                                setShowApproveDialog(true)
+                                setSelectedRequest(request);
+                                setShowApproveDialog(true);
                               }}
                             >
                               <CheckCircle2 className="w-4 h-4 me-2" />
@@ -508,7 +528,7 @@ export default function CustomOrderReviewPage() {
                       </CardContent>
                     </Card>
                   </motion.div>
-                )
+                );
               })}
             </div>
           </div>
@@ -527,9 +547,7 @@ export default function CustomOrderReviewPage() {
                 : 'Merchants are working on pricing your order. You will be notified when a quote arrives.'}
             </p>
             <Link href={`/${locale}/orders`}>
-              <Button variant="outline">
-                {isRTL ? 'العودة للطلبات' : 'Back to Orders'}
-              </Button>
+              <Button variant="outline">{isRTL ? 'العودة للطلبات' : 'Back to Orders'}</Button>
             </Link>
           </div>
         )}
@@ -547,9 +565,7 @@ export default function CustomOrderReviewPage() {
                 : 'Sorry, this order has expired. You can create a new order.'}
             </p>
             <Link href={`/${locale}/providers`}>
-              <Button>
-                {isRTL ? 'طلب جديد' : 'New Order'}
-              </Button>
+              <Button>{isRTL ? 'طلب جديد' : 'New Order'}</Button>
             </Link>
           </div>
         )}
@@ -628,11 +644,7 @@ export default function CustomOrderReviewPage() {
             >
               {isRTL ? 'إلغاء' : 'Cancel'}
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              disabled={processing}
-            >
+            <Button variant="destructive" onClick={handleReject} disabled={processing}>
               {processing ? (
                 <Loader2 className="w-4 h-4 animate-spin me-2" />
               ) : (
@@ -644,5 +656,5 @@ export default function CustomOrderReviewPage() {
         </DialogContent>
       </Dialog>
     </CustomerLayout>
-  )
+  );
 }

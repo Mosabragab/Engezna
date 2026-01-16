@@ -1,43 +1,47 @@
-'use client'
+'use client';
 
-import { useEffect, useState, Suspense } from 'react'
-import { useLocale } from 'next-intl'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { CustomOrderInterface } from '@/components/custom-order'
-import { CustomerHeader } from '@/components/customer/layout'
-import { ArrowRight, ArrowLeft, Store, AlertCircle } from 'lucide-react'
-import Link from 'next/link'
-import type { ProviderWithCustomSettings, CreateBroadcastPayload } from '@/types/custom-order'
-import { createCustomerBroadcastService } from '@/lib/orders/broadcast-service'
+import { useEffect, useState, Suspense } from 'react';
+import { useLocale } from 'next-intl';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { CustomOrderInterface } from '@/components/custom-order';
+import { CustomerHeader } from '@/components/customer/layout';
+import { ArrowRight, ArrowLeft, Store, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import type { ProviderWithCustomSettings, CreateBroadcastPayload } from '@/types/custom-order';
+import { createCustomerBroadcastService } from '@/lib/orders/broadcast-service';
 
 function CustomOrderPageContent() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const providerId = searchParams.get('provider')
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const providerId = searchParams.get('provider');
 
-  const [provider, setProvider] = useState<ProviderWithCustomSettings | null>(null)
-  const [customerId, setCustomerId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [provider, setProvider] = useState<ProviderWithCustomSettings | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Fetch provider and user data
   useEffect(() => {
     async function fetchData() {
-      setLoading(true)
-      const supabase = createClient()
+      setLoading(true);
+      const supabase = createClient();
 
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
-        setCustomerId(user.id)
+        setCustomerId(user.id);
       } else {
         // Redirect to login if not authenticated
-        router.push(`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/custom-order?provider=${providerId}`)}`)
-        return
+        router.push(
+          `/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/custom-order?provider=${providerId}`)}`
+        );
+        return;
       }
 
       // Get provider if ID provided
@@ -46,68 +50,75 @@ function CustomOrderPageContent() {
           .from('providers')
           .select('*')
           .eq('id', providerId)
-          .single()
+          .single();
 
         if (providerError || !providerData) {
-          setError(isRTL ? 'المتجر غير موجود' : 'Provider not found')
-        } else if (providerData.operation_mode !== 'custom' && providerData.operation_mode !== 'hybrid') {
-          setError(isRTL ? 'هذا المتجر لا يدعم الطلب الخاص' : 'This provider does not support custom orders')
+          setError(isRTL ? 'المتجر غير موجود' : 'Provider not found');
+        } else if (
+          providerData.operation_mode !== 'custom' &&
+          providerData.operation_mode !== 'hybrid'
+        ) {
+          setError(
+            isRTL
+              ? 'هذا المتجر لا يدعم الطلب الخاص'
+              : 'This provider does not support custom orders'
+          );
         } else {
-          setProvider(providerData as ProviderWithCustomSettings)
+          setProvider(providerData as ProviderWithCustomSettings);
         }
       }
 
-      setLoading(false)
+      setLoading(false);
     }
 
-    fetchData()
-  }, [providerId, locale, router, isRTL])
+    fetchData();
+  }, [providerId, locale, router, isRTL]);
 
   // Handle order submission
   const handleSubmit = async (payload: CreateBroadcastPayload) => {
     if (!customerId) {
-      setError(isRTL ? 'يرجى تسجيل الدخول' : 'Please login first')
-      return
+      setError(isRTL ? 'يرجى تسجيل الدخول' : 'Please login first');
+      return;
     }
 
-    setSubmitting(true)
-    setError(null)
+    setSubmitting(true);
+    setError(null);
 
     try {
-      const supabase = createClient()
-      const broadcastService = createCustomerBroadcastService(supabase, customerId)
+      const supabase = createClient();
+      const broadcastService = createCustomerBroadcastService(supabase, customerId);
 
-      const result = await broadcastService.createBroadcast(payload)
+      const result = await broadcastService.createBroadcast(payload);
 
       if (result.success && result.broadcast?.id) {
         // Navigate to the review page
-        router.push(`/${locale}/orders/custom-review/${result.broadcast.id}`)
+        router.push(`/${locale}/orders/custom-review/${result.broadcast.id}`);
       } else {
-        throw new Error(result.error || 'Unknown error')
+        throw new Error(result.error || 'Unknown error');
       }
     } catch (err) {
-      console.error('Error creating broadcast:', err)
+      console.error('Error creating broadcast:', err);
       // Show detailed error for debugging
-      const errorMessage = err instanceof Error ? err.message : String(err)
-      console.error('Error details:', errorMessage)
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('Error details:', errorMessage);
       setError(
         isRTL
           ? `حدث خطأ أثناء إرسال الطلب: ${errorMessage}`
           : `Error submitting order: ${errorMessage}`
-      )
+      );
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   // Handle cancel
   const handleCancel = () => {
     if (providerId) {
-      router.push(`/${locale}/providers/${providerId}`)
+      router.push(`/${locale}/providers/${providerId}`);
     } else {
-      router.push(`/${locale}/providers`)
+      router.push(`/${locale}/providers`);
     }
-  }
+  };
 
   // Loading state
   if (loading) {
@@ -115,12 +126,10 @@ function CustomOrderPageContent() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-500">
-            {isRTL ? 'جاري التحميل...' : 'Loading...'}
-          </p>
+          <p className="text-slate-500">{isRTL ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
-    )
+    );
   }
 
   // Error state
@@ -132,9 +141,7 @@ function CustomOrderPageContent() {
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">
-            {isRTL ? 'حدث خطأ' : 'Error'}
-          </h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">{isRTL ? 'حدث خطأ' : 'Error'}</h2>
           <p className="text-slate-500 text-center mb-6">{error}</p>
           <Link
             href={`/${locale}/providers`}
@@ -145,7 +152,7 @@ function CustomOrderPageContent() {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   // No provider selected - show provider selection or error
@@ -174,7 +181,7 @@ function CustomOrderPageContent() {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -220,17 +227,19 @@ function CustomOrderPageContent() {
         />
       </div>
     </div>
-  )
+  );
 }
 
 export default function CustomOrderPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+        </div>
+      }
+    >
       <CustomOrderPageContent />
     </Suspense>
-  )
+  );
 }

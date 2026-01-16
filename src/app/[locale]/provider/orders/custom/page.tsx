@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { ProviderLayout } from '@/components/provider'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { ACTIVE_PROVIDER_STATUSES } from '@/types/database'
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { ProviderLayout } from '@/components/provider';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
 import {
   Clock,
   FileText,
@@ -27,94 +27,185 @@ import {
   Package,
   Truck,
   ChefHat,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 type CustomOrderRequest = {
-  id: string
-  broadcast_id: string
-  provider_id: string
-  input_type: 'text' | 'voice' | 'image' | 'mixed'
-  original_text: string | null
-  voice_url: string | null
-  image_urls: string[] | null
-  customer_notes: string | null
-  status: 'pending' | 'priced' | 'approved' | 'rejected' | 'expired' | 'cancelled'
-  items_count: number
-  subtotal: number
-  delivery_fee: number
-  total: number
-  created_at: string
-  pricing_expires_at: string | null
-  priced_at: string | null
-  order_id: string | null
+  id: string;
+  broadcast_id: string;
+  provider_id: string;
+  input_type: 'text' | 'voice' | 'image' | 'mixed';
+  original_text: string | null;
+  voice_url: string | null;
+  image_urls: string[] | null;
+  customer_notes: string | null;
+  status: 'pending' | 'priced' | 'approved' | 'rejected' | 'expired' | 'cancelled';
+  items_count: number;
+  subtotal: number;
+  delivery_fee: number;
+  total: number;
+  created_at: string;
+  pricing_expires_at: string | null;
+  priced_at: string | null;
+  order_id: string | null;
   broadcast: {
-    original_text: string | null
-    transcribed_text: string | null
-    customer_notes: string | null
+    original_text: string | null;
+    transcribed_text: string | null;
+    customer_notes: string | null;
     customer: {
-      id: string
-      full_name: string | null
-      phone: string | null
-    } | null
-  } | null
+      id: string;
+      full_name: string | null;
+      phone: string | null;
+    } | null;
+  } | null;
   order: {
-    id: string
-    order_number: string
-    status: string
-  } | null
-}
+    id: string;
+    order_number: string;
+    status: string;
+  } | null;
+};
 
-const STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string; bgColor: string; label_ar: string; label_en: string }> = {
-  pending: { icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', label_ar: 'بانتظار التسعير', label_en: 'Awaiting Pricing' },
-  priced: { icon: DollarSign, color: 'text-blue-600', bgColor: 'bg-blue-50', label_ar: 'تم التسعير', label_en: 'Priced' },
-  approved: { icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-50', label_ar: 'موافق عليه', label_en: 'Approved' },
-  rejected: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-50', label_ar: 'مرفوض', label_en: 'Rejected' },
-  expired: { icon: AlertCircle, color: 'text-slate-500', bgColor: 'bg-slate-100', label_ar: 'منتهي', label_en: 'Expired' },
-  cancelled: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-50', label_ar: 'ملغي', label_en: 'Cancelled' },
-}
+const STATUS_CONFIG: Record<
+  string,
+  { icon: typeof Clock; color: string; bgColor: string; label_ar: string; label_en: string }
+> = {
+  pending: {
+    icon: Clock,
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50',
+    label_ar: 'بانتظار التسعير',
+    label_en: 'Awaiting Pricing',
+  },
+  priced: {
+    icon: DollarSign,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    label_ar: 'تم التسعير',
+    label_en: 'Priced',
+  },
+  approved: {
+    icon: CheckCircle2,
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    label_ar: 'موافق عليه',
+    label_en: 'Approved',
+  },
+  rejected: {
+    icon: XCircle,
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    label_ar: 'مرفوض',
+    label_en: 'Rejected',
+  },
+  expired: {
+    icon: AlertCircle,
+    color: 'text-slate-500',
+    bgColor: 'bg-slate-100',
+    label_ar: 'منتهي',
+    label_en: 'Expired',
+  },
+  cancelled: {
+    icon: XCircle,
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    label_ar: 'ملغي',
+    label_en: 'Cancelled',
+  },
+};
 
 const INPUT_TYPE_ICONS = {
   text: FileText,
   voice: Mic,
   image: ImageIcon,
   mixed: FileText,
-}
+};
 
 // Order execution status config (for approved orders that become actual orders)
-const ORDER_STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string; bgColor: string; label_ar: string; label_en: string }> = {
-  pending: { icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', label_ar: 'جديد', label_en: 'New' },
-  accepted: { icon: CheckCircle2, color: 'text-blue-600', bgColor: 'bg-blue-50', label_ar: 'تم القبول', label_en: 'Accepted' },
-  preparing: { icon: ChefHat, color: 'text-blue-600', bgColor: 'bg-blue-50', label_ar: 'جاري التحضير', label_en: 'Preparing' },
-  ready: { icon: Package, color: 'text-cyan-600', bgColor: 'bg-cyan-50', label_ar: 'جاهز', label_en: 'Ready' },
-  out_for_delivery: { icon: Truck, color: 'text-blue-600', bgColor: 'bg-blue-50', label_ar: 'في الطريق', label_en: 'On the way' },
-  delivered: { icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-50', label_ar: 'تم التوصيل', label_en: 'Delivered' },
-  cancelled: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-50', label_ar: 'ملغي', label_en: 'Cancelled' },
-  rejected: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-50', label_ar: 'مرفوض', label_en: 'Rejected' },
-}
+const ORDER_STATUS_CONFIG: Record<
+  string,
+  { icon: typeof Clock; color: string; bgColor: string; label_ar: string; label_en: string }
+> = {
+  pending: {
+    icon: Clock,
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50',
+    label_ar: 'جديد',
+    label_en: 'New',
+  },
+  accepted: {
+    icon: CheckCircle2,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    label_ar: 'تم القبول',
+    label_en: 'Accepted',
+  },
+  preparing: {
+    icon: ChefHat,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    label_ar: 'جاري التحضير',
+    label_en: 'Preparing',
+  },
+  ready: {
+    icon: Package,
+    color: 'text-cyan-600',
+    bgColor: 'bg-cyan-50',
+    label_ar: 'جاهز',
+    label_en: 'Ready',
+  },
+  out_for_delivery: {
+    icon: Truck,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    label_ar: 'في الطريق',
+    label_en: 'On the way',
+  },
+  delivered: {
+    icon: CheckCircle2,
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    label_ar: 'تم التوصيل',
+    label_en: 'Delivered',
+  },
+  cancelled: {
+    icon: XCircle,
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    label_ar: 'ملغي',
+    label_en: 'Cancelled',
+  },
+  rejected: {
+    icon: XCircle,
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    label_ar: 'مرفوض',
+    label_en: 'Rejected',
+  },
+};
 
 export default function CustomOrdersListPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isRTL = locale === 'ar';
 
-  const [loading, setLoading] = useState(true)
-  const [requests, setRequests] = useState<CustomOrderRequest[]>([])
-  const [providerId, setProviderId] = useState<string | null>(null)
-  const [filter, setFilter] = useState<'all' | 'pending' | 'priced' | 'completed'>('all')
+  const [loading, setLoading] = useState(true);
+  const [requests, setRequests] = useState<CustomOrderRequest[]>([]);
+  const [providerId, setProviderId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'pending' | 'priced' | 'completed'>('all');
 
   // Check for success message
-  const successMessage = searchParams.get('success')
+  const successMessage = searchParams.get('success');
 
   // Load custom order requests
   const loadRequests = useCallback(async (provId: string) => {
-    const supabase = createClient()
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('custom_order_requests')
-      .select(`
+      .select(
+        `
         *,
         broadcast:custom_order_broadcasts(
           original_text,
@@ -131,42 +222,49 @@ export default function CustomOrdersListPage() {
           order_number,
           status
         )
-      `)
+      `
+      )
       .eq('provider_id', provId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (!error && data) {
       // Transform the data
       const transformed = data.map((req) => ({
         ...req,
-        broadcast: Array.isArray(req.broadcast) ? {
-          ...req.broadcast[0],
-          customer: Array.isArray(req.broadcast[0]?.customer)
-            ? req.broadcast[0].customer[0]
-            : req.broadcast[0]?.customer
-        } : req.broadcast ? {
-          ...req.broadcast,
-          customer: Array.isArray(req.broadcast?.customer)
-            ? req.broadcast.customer[0]
-            : req.broadcast?.customer
-        } : null,
+        broadcast: Array.isArray(req.broadcast)
+          ? {
+              ...req.broadcast[0],
+              customer: Array.isArray(req.broadcast[0]?.customer)
+                ? req.broadcast[0].customer[0]
+                : req.broadcast[0]?.customer,
+            }
+          : req.broadcast
+            ? {
+                ...req.broadcast,
+                customer: Array.isArray(req.broadcast?.customer)
+                  ? req.broadcast.customer[0]
+                  : req.broadcast?.customer,
+              }
+            : null,
         order: Array.isArray(req.order) ? req.order[0] : req.order,
-      }))
-      setRequests(transformed as CustomOrderRequest[])
+      }));
+      setRequests(transformed as CustomOrderRequest[]);
     }
-  }, [])
+  }, []);
 
   // Initialize
   useEffect(() => {
     const init = async () => {
-      setLoading(true)
-      const supabase = createClient()
+      setLoading(true);
+      const supabase = createClient();
 
       // Check authentication
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        router.push(`/${locale}/provider/login`)
-        return
+        router.push(`/${locale}/provider/login`);
+        return;
       }
 
       // Get provider
@@ -174,27 +272,27 @@ export default function CustomOrdersListPage() {
         .from('providers')
         .select('id, status')
         .eq('owner_id', user.id)
-        .limit(1)
+        .limit(1);
 
-      const provider = providerData?.[0]
+      const provider = providerData?.[0];
       if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
-        router.push(`/${locale}/provider`)
-        return
+        router.push(`/${locale}/provider`);
+        return;
       }
 
-      setProviderId(provider.id)
-      await loadRequests(provider.id)
-      setLoading(false)
-    }
+      setProviderId(provider.id);
+      await loadRequests(provider.id);
+      setLoading(false);
+    };
 
-    init()
-  }, [locale, router, loadRequests])
+    init();
+  }, [locale, router, loadRequests]);
 
   // Subscribe to realtime updates
   useEffect(() => {
-    if (!providerId) return
+    if (!providerId) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     const channel = supabase
       .channel(`custom-orders-provider-${providerId}`)
@@ -208,82 +306,81 @@ export default function CustomOrdersListPage() {
         },
         () => {
           // Reload requests on any change
-          loadRequests(providerId)
+          loadRequests(providerId);
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [providerId, loadRequests])
+      supabase.removeChannel(channel);
+    };
+  }, [providerId, loadRequests]);
 
   // Filter requests
   const filteredRequests = requests.filter((req) => {
-    if (filter === 'all') return true
-    if (filter === 'pending') return req.status === 'pending'
-    if (filter === 'priced') return req.status === 'priced'
-    if (filter === 'completed') return ['approved', 'rejected', 'expired', 'cancelled'].includes(req.status)
-    return true
-  })
+    if (filter === 'all') return true;
+    if (filter === 'pending') return req.status === 'pending';
+    if (filter === 'priced') return req.status === 'priced';
+    if (filter === 'completed')
+      return ['approved', 'rejected', 'expired', 'cancelled'].includes(req.status);
+    return true;
+  });
 
   // Counts
-  const pendingCount = requests.filter((r) => r.status === 'pending').length
-  const pricedCount = requests.filter((r) => r.status === 'priced').length
+  const pendingCount = requests.filter((r) => r.status === 'pending').length;
+  const pricedCount = requests.filter((r) => r.status === 'priced').length;
 
   // Format time
   const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr)
+    const date = new Date(dateStr);
     return date.toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-EG', {
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
   // Format date
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
+    const date = new Date(dateStr);
     return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-EG', {
       day: 'numeric',
       month: 'short',
-    })
-  }
+    });
+  };
 
   // Calculate time remaining
   const getTimeRemaining = (expiresAt: string | null) => {
-    if (!expiresAt) return null
-    const now = new Date()
-    const expires = new Date(expiresAt)
-    const diff = expires.getTime() - now.getTime()
+    if (!expiresAt) return null;
+    const now = new Date();
+    const expires = new Date(expiresAt);
+    const diff = expires.getTime() - now.getTime();
 
-    if (diff <= 0) return { text: isRTL ? 'منتهي' : 'Expired', urgent: true }
+    if (diff <= 0) return { text: isRTL ? 'منتهي' : 'Expired', urgent: true };
 
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
     if (hours > 0) {
       return {
         text: isRTL ? `${hours} ساعة ${minutes} دقيقة` : `${hours}h ${minutes}m`,
         urgent: hours < 1,
-      }
+      };
     }
     return {
       text: isRTL ? `${minutes} دقيقة` : `${minutes}m`,
       urgent: true,
-    }
-  }
+    };
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-slate-500">
-            {isRTL ? 'جاري التحميل...' : 'Loading...'}
-          </p>
+          <p className="text-slate-500">{isRTL ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -296,7 +393,9 @@ export default function CustomOrdersListPage() {
         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
           <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
           <p className="text-green-700 text-sm">
-            {isRTL ? 'تم إرسال التسعيرة بنجاح! سيتم إعلامك عند موافقة العميل.' : 'Quote sent successfully! You will be notified when the customer approves.'}
+            {isRTL
+              ? 'تم إرسال التسعيرة بنجاح! سيتم إعلامك عند موافقة العميل.'
+              : 'Quote sent successfully! You will be notified when the customer approves.'}
           </p>
         </div>
       )}
@@ -311,7 +410,9 @@ export default function CustomOrdersListPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-amber-700">{pendingCount}</p>
-                <p className="text-xs text-amber-600">{isRTL ? 'بانتظار التسعير' : 'Awaiting Pricing'}</p>
+                <p className="text-xs text-amber-600">
+                  {isRTL ? 'بانتظار التسعير' : 'Awaiting Pricing'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -324,7 +425,9 @@ export default function CustomOrdersListPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-blue-700">{pricedCount}</p>
-                <p className="text-xs text-blue-600">{isRTL ? 'بانتظار الموافقة' : 'Awaiting Approval'}</p>
+                <p className="text-xs text-blue-600">
+                  {isRTL ? 'بانتظار الموافقة' : 'Awaiting Approval'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -352,7 +455,9 @@ export default function CustomOrdersListPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-slate-700">{requests.length}</p>
-                <p className="text-xs text-slate-600">{isRTL ? 'إجمالي الطلبات' : 'Total Requests'}</p>
+                <p className="text-xs text-slate-600">
+                  {isRTL ? 'إجمالي الطلبات' : 'Total Requests'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -419,10 +524,16 @@ export default function CustomOrdersListPage() {
           </div>
           <h2 className="text-xl font-semibold mb-2 text-slate-800">
             {filter === 'pending'
-              ? isRTL ? 'لا توجد طلبات بانتظار التسعير' : 'No orders awaiting pricing'
+              ? isRTL
+                ? 'لا توجد طلبات بانتظار التسعير'
+                : 'No orders awaiting pricing'
               : filter === 'priced'
-              ? isRTL ? 'لا توجد طلبات بانتظار الموافقة' : 'No orders awaiting approval'
-              : isRTL ? 'لا توجد طلبات خاصة' : 'No custom orders yet'}
+                ? isRTL
+                  ? 'لا توجد طلبات بانتظار الموافقة'
+                  : 'No orders awaiting approval'
+                : isRTL
+                  ? 'لا توجد طلبات خاصة'
+                  : 'No custom orders yet'}
           </h2>
           <p className="text-slate-500 text-sm">
             {isRTL
@@ -433,27 +544,36 @@ export default function CustomOrdersListPage() {
       ) : (
         <div className="space-y-4">
           {filteredRequests.map((request) => {
-            const statusConfig = STATUS_CONFIG[request.status] || STATUS_CONFIG.pending
-            const StatusIcon = statusConfig.icon
-            const InputIcon = INPUT_TYPE_ICONS[request.input_type] || FileText
-            const timeRemaining = request.status === 'pending' ? getTimeRemaining(request.pricing_expires_at) : null
+            const statusConfig = STATUS_CONFIG[request.status] || STATUS_CONFIG.pending;
+            const StatusIcon = statusConfig.icon;
+            const InputIcon = INPUT_TYPE_ICONS[request.input_type] || FileText;
+            const timeRemaining =
+              request.status === 'pending' ? getTimeRemaining(request.pricing_expires_at) : null;
 
             return (
               <Card key={request.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <CardContent className="p-0">
                   {/* Header */}
-                  <div className={`p-4 border-b ${request.status === 'pending' ? 'bg-gradient-to-r from-amber-50 to-yellow-50' : ''}`}>
+                  <div
+                    className={`p-4 border-b ${request.status === 'pending' ? 'bg-gradient-to-r from-amber-50 to-yellow-50' : ''}`}
+                  >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${statusConfig.bgColor}`}>
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center ${statusConfig.bgColor}`}
+                        >
                           <InputIcon className={`w-4 h-4 ${statusConfig.color}`} />
                         </div>
-                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color} ${statusConfig.bgColor}`}>
+                        <div
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color} ${statusConfig.bgColor}`}
+                        >
                           <StatusIcon className="w-3.5 h-3.5" />
                           {isRTL ? statusConfig.label_ar : statusConfig.label_en}
                         </div>
                         {timeRemaining && (
-                          <span className={`text-xs px-2 py-0.5 rounded ${timeRemaining.urgent ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}`}>
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded ${timeRemaining.urgent ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}`}
+                          >
                             {timeRemaining.text}
                           </span>
                         )}
@@ -487,7 +607,10 @@ export default function CustomOrdersListPage() {
                     {/* Order Text */}
                     <div className="mb-4">
                       <p className="text-sm text-slate-700 line-clamp-2">
-                        {request.broadcast?.transcribed_text || request.broadcast?.original_text || request.original_text || (isRTL ? '(تسجيل صوتي / صور)' : '(Voice/Image order)')}
+                        {request.broadcast?.transcribed_text ||
+                          request.broadcast?.original_text ||
+                          request.original_text ||
+                          (isRTL ? '(تسجيل صوتي / صور)' : '(Voice/Image order)')}
                       </p>
                       {request.customer_notes && (
                         <p className="text-xs text-slate-500 mt-1">
@@ -504,16 +627,24 @@ export default function CustomOrdersListPage() {
                           <span className="text-slate-700">{request.items_count}</span>
                         </div>
                         <div className="flex justify-between text-sm mt-1">
-                          <span className="text-slate-500">{isRTL ? 'المجموع الفرعي' : 'Subtotal'}</span>
-                          <span className="text-slate-700">{request.subtotal.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}</span>
+                          <span className="text-slate-500">
+                            {isRTL ? 'المجموع الفرعي' : 'Subtotal'}
+                          </span>
+                          <span className="text-slate-700">
+                            {request.subtotal.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                          </span>
                         </div>
                         <div className="flex justify-between text-sm mt-1">
                           <span className="text-slate-500">{isRTL ? 'التوصيل' : 'Delivery'}</span>
-                          <span className="text-slate-700">{request.delivery_fee.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}</span>
+                          <span className="text-slate-700">
+                            {request.delivery_fee.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                          </span>
                         </div>
                         <div className="flex justify-between font-semibold mt-2 pt-2 border-t border-slate-200">
                           <span>{isRTL ? 'الإجمالي' : 'Total'}</span>
-                          <span className="text-primary">{request.total.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}</span>
+                          <span className="text-primary">
+                            {request.total.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -524,7 +655,11 @@ export default function CustomOrdersListPage() {
                         <Button className="w-full gap-2">
                           <DollarSign className="w-4 h-4" />
                           {isRTL ? 'تسعير الطلب' : 'Price Order'}
-                          {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                          {isRTL ? (
+                            <ArrowLeft className="w-4 h-4" />
+                          ) : (
+                            <ArrowRight className="w-4 h-4" />
+                          )}
                         </Button>
                       </Link>
                     )}
@@ -537,10 +672,14 @@ export default function CustomOrdersListPage() {
                       <div className="space-y-3">
                         {/* Order Execution Status */}
                         {(() => {
-                          const orderStatusConfig = ORDER_STATUS_CONFIG[request.order.status] || ORDER_STATUS_CONFIG.pending
-                          const OrderStatusIcon = orderStatusConfig.icon
+                          const orderStatusConfig =
+                            ORDER_STATUS_CONFIG[request.order.status] ||
+                            ORDER_STATUS_CONFIG.pending;
+                          const OrderStatusIcon = orderStatusConfig.icon;
                           return (
-                            <div className={`flex items-center justify-between p-3 rounded-lg ${orderStatusConfig.bgColor}`}>
+                            <div
+                              className={`flex items-center justify-between p-3 rounded-lg ${orderStatusConfig.bgColor}`}
+                            >
                               <div className="flex items-center gap-2">
                                 <OrderStatusIcon className={`w-4 h-4 ${orderStatusConfig.color}`} />
                                 <span className={`text-sm font-medium ${orderStatusConfig.color}`}>
@@ -548,17 +687,23 @@ export default function CustomOrdersListPage() {
                                 </span>
                               </div>
                               <span className="text-xs text-slate-500">
-                                #{request.order.order_number || request.order.id.slice(0, 8).toUpperCase()}
+                                #
+                                {request.order.order_number ||
+                                  request.order.id.slice(0, 8).toUpperCase()}
                               </span>
                             </div>
-                          )
+                          );
                         })()}
                         {/* Manage Order Button */}
                         {!['delivered', 'cancelled', 'rejected'].includes(request.order.status) && (
                           <Link href={`/${locale}/provider/orders/${request.order.id}?from=custom`}>
                             <Button variant="outline" className="w-full gap-2">
                               {isRTL ? 'إدارة الطلب' : 'Manage Order'}
-                              {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                              {isRTL ? (
+                                <ArrowLeft className="w-4 h-4" />
+                              ) : (
+                                <ArrowRight className="w-4 h-4" />
+                              )}
                             </Button>
                           </Link>
                         )}
@@ -575,10 +720,10 @@ export default function CustomOrdersListPage() {
                   </div>
                 </CardContent>
               </Card>
-            )
+            );
           })}
         </div>
       )}
     </ProviderLayout>
-  )
+  );
 }

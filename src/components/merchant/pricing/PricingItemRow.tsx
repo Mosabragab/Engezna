@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useState, useCallback, useEffect } from 'react'
-import { useLocale } from 'next-intl'
-import { cn } from '@/lib/utils'
+import { useState, useCallback, useEffect } from 'react';
+import { useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
 import {
   Check,
   X,
@@ -13,45 +13,40 @@ import {
   ChevronDown,
   ChevronUp,
   AlertTriangle,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type {
   CustomOrderItem,
   ItemAvailabilityStatus,
   PriceHistoryItem,
   UnitType,
-} from '@/types/custom-order'
-import { UNIT_TYPES } from '@/types/custom-order'
+} from '@/types/custom-order';
+import { UNIT_TYPES } from '@/types/custom-order';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface PricingItemRowProps {
-  index: number
-  item: Partial<CustomOrderItem>
-  originalText?: string
-  priceHistory?: PriceHistoryItem | null
-  onUpdate: (updates: Partial<CustomOrderItem>) => void
-  onRemove: () => void
-  disabled?: boolean
-  className?: string
-  autoFocus?: boolean
+  index: number;
+  item: Partial<CustomOrderItem>;
+  originalText?: string;
+  priceHistory?: PriceHistoryItem | null;
+  onUpdate: (updates: Partial<CustomOrderItem>) => void;
+  onRemove: () => void;
+  disabled?: boolean;
+  className?: string;
+  autoFocus?: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -69,40 +64,35 @@ export function PricingItemRow({
   className,
   autoFocus = false,
 }: PricingItemRowProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [showSubstitute, setShowSubstitute] = useState(
-    item.availability_status === 'substituted'
-  )
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showSubstitute, setShowSubstitute] = useState(item.availability_status === 'substituted');
 
   // Calculate total price
-  const calculateTotal = useCallback(
-    (qty: number, price: number) => {
-      return qty * price
-    },
-    []
-  )
+  const calculateTotal = useCallback((qty: number, price: number) => {
+    return qty * price;
+  }, []);
 
   // Update total when quantity or price changes
   useEffect(() => {
-    const qty = item.quantity || 0
-    const price = item.unit_price || 0
-    const total = calculateTotal(qty, price)
+    const qty = item.quantity || 0;
+    const price = item.unit_price || 0;
+    const total = calculateTotal(qty, price);
     if (item.total_price !== total) {
-      onUpdate({ total_price: total })
+      onUpdate({ total_price: total });
     }
-  }, [item.quantity, item.unit_price, calculateTotal, onUpdate, item.total_price])
+  }, [item.quantity, item.unit_price, calculateTotal, onUpdate, item.total_price]);
 
   // Update substitute total
   useEffect(() => {
     if (showSubstitute) {
-      const qty = item.substitute_quantity || 0
-      const price = item.substitute_unit_price || 0
-      const total = calculateTotal(qty, price)
+      const qty = item.substitute_quantity || 0;
+      const price = item.substitute_unit_price || 0;
+      const total = calculateTotal(qty, price);
       if (item.substitute_total_price !== total) {
-        onUpdate({ substitute_total_price: total })
+        onUpdate({ substitute_total_price: total });
       }
     }
   }, [
@@ -112,24 +102,24 @@ export function PricingItemRow({
     calculateTotal,
     onUpdate,
     item.substitute_total_price,
-  ])
+  ]);
 
   // Handle status change
   const handleStatusChange = (status: ItemAvailabilityStatus) => {
-    onUpdate({ availability_status: status })
+    onUpdate({ availability_status: status });
     if (status === 'substituted') {
-      setShowSubstitute(true)
+      setShowSubstitute(true);
     } else {
-      setShowSubstitute(false)
+      setShowSubstitute(false);
     }
-  }
+  };
 
   // Copy customer text to item name
   const handleCopyCustomerText = () => {
     if (originalText) {
-      onUpdate({ item_name_ar: originalText, original_customer_text: originalText })
+      onUpdate({ item_name_ar: originalText, original_customer_text: originalText });
     }
-  }
+  };
 
   // Use previous price from history
   const handleUsePreviousPrice = () => {
@@ -139,25 +129,25 @@ export function PricingItemRow({
         item_name_en: priceHistory.item_name_en,
         unit_type: priceHistory.unit_type,
         unit_price: priceHistory.unit_price,
-      })
+      });
     }
-  }
+  };
 
   // Status colors
   const getStatusColor = (status: ItemAvailabilityStatus) => {
     switch (status) {
       case 'available':
-        return 'bg-emerald-100 text-emerald-700'
+        return 'bg-emerald-100 text-emerald-700';
       case 'unavailable':
-        return 'bg-red-100 text-red-700'
+        return 'bg-red-100 text-red-700';
       case 'substituted':
-        return 'bg-amber-100 text-amber-700'
+        return 'bg-amber-100 text-amber-700';
       case 'partial':
-        return 'bg-blue-100 text-blue-700'
+        return 'bg-blue-100 text-blue-700';
       default:
-        return 'bg-slate-100 text-slate-700'
+        return 'bg-slate-100 text-slate-700';
     }
-  }
+  };
 
   return (
     <motion.div
@@ -258,9 +248,7 @@ export function PricingItemRow({
                 <Input
                   type="number"
                   value={item.quantity || ''}
-                  onChange={(e) =>
-                    onUpdate({ quantity: parseFloat(e.target.value) || 0 })
-                  }
+                  onChange={(e) => onUpdate({ quantity: parseFloat(e.target.value) || 0 })}
                   placeholder="0"
                   min="0"
                   step="0.5"
@@ -280,9 +268,7 @@ export function PricingItemRow({
                   disabled={disabled || item.availability_status === 'unavailable'}
                 >
                   <SelectTrigger className="focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                    <SelectValue
-                      placeholder={isRTL ? 'اختر' : 'Select'}
-                    />
+                    <SelectValue placeholder={isRTL ? 'اختر' : 'Select'} />
                   </SelectTrigger>
                   <SelectContent>
                     {UNIT_TYPES.map((unit) => (
@@ -302,9 +288,7 @@ export function PricingItemRow({
                 <Input
                   type="number"
                   value={item.unit_price || ''}
-                  onChange={(e) =>
-                    onUpdate({ unit_price: parseFloat(e.target.value) || 0 })
-                  }
+                  onChange={(e) => onUpdate({ unit_price: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
                   min="0"
                   step="0.5"
@@ -326,9 +310,7 @@ export function PricingItemRow({
 
             {/* Status Selection - Using inline styles to guarantee colors */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-slate-500">
-                {isRTL ? 'الحالة:' : 'Status:'}
-              </span>
+              <span className="text-xs text-slate-500">{isRTL ? 'الحالة:' : 'Status:'}</span>
               <div className="flex gap-1">
                 {/* Available Button */}
                 <button
@@ -336,7 +318,8 @@ export function PricingItemRow({
                   onClick={() => handleStatusChange('available')}
                   disabled={disabled}
                   style={{
-                    backgroundColor: item.availability_status === 'available' ? '#10b981' : '#f1f5f9',
+                    backgroundColor:
+                      item.availability_status === 'available' ? '#10b981' : '#f1f5f9',
                     color: item.availability_status === 'available' ? '#ffffff' : '#334155',
                     padding: '10px 14px', // Increased for 48px touch target
                     minHeight: '44px', // iOS minimum
@@ -349,17 +332,22 @@ export function PricingItemRow({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
-                    boxShadow: item.availability_status === 'available' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+                    boxShadow:
+                      item.availability_status === 'available'
+                        ? '0 1px 2px rgba(0,0,0,0.1)'
+                        : 'none',
                     transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => {
                     if (!disabled) {
-                      e.currentTarget.style.backgroundColor = item.availability_status === 'available' ? '#059669' : '#e2e8f0'
+                      e.currentTarget.style.backgroundColor =
+                        item.availability_status === 'available' ? '#059669' : '#e2e8f0';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!disabled) {
-                      e.currentTarget.style.backgroundColor = item.availability_status === 'available' ? '#10b981' : '#f1f5f9'
+                      e.currentTarget.style.backgroundColor =
+                        item.availability_status === 'available' ? '#10b981' : '#f1f5f9';
                     }
                   }}
                 >
@@ -373,7 +361,8 @@ export function PricingItemRow({
                   onClick={() => handleStatusChange('unavailable')}
                   disabled={disabled}
                   style={{
-                    backgroundColor: item.availability_status === 'unavailable' ? '#ef4444' : '#f1f5f9',
+                    backgroundColor:
+                      item.availability_status === 'unavailable' ? '#ef4444' : '#f1f5f9',
                     color: item.availability_status === 'unavailable' ? '#ffffff' : '#334155',
                     padding: '10px 14px', // Increased for 48px touch target
                     minHeight: '44px', // iOS minimum
@@ -386,17 +375,22 @@ export function PricingItemRow({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
-                    boxShadow: item.availability_status === 'unavailable' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+                    boxShadow:
+                      item.availability_status === 'unavailable'
+                        ? '0 1px 2px rgba(0,0,0,0.1)'
+                        : 'none',
                     transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => {
                     if (!disabled) {
-                      e.currentTarget.style.backgroundColor = item.availability_status === 'unavailable' ? '#dc2626' : '#e2e8f0'
+                      e.currentTarget.style.backgroundColor =
+                        item.availability_status === 'unavailable' ? '#dc2626' : '#e2e8f0';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!disabled) {
-                      e.currentTarget.style.backgroundColor = item.availability_status === 'unavailable' ? '#ef4444' : '#f1f5f9'
+                      e.currentTarget.style.backgroundColor =
+                        item.availability_status === 'unavailable' ? '#ef4444' : '#f1f5f9';
                     }
                   }}
                 >
@@ -410,7 +404,8 @@ export function PricingItemRow({
                   onClick={() => handleStatusChange('substituted')}
                   disabled={disabled}
                   style={{
-                    backgroundColor: item.availability_status === 'substituted' ? '#f59e0b' : '#f1f5f9',
+                    backgroundColor:
+                      item.availability_status === 'substituted' ? '#f59e0b' : '#f1f5f9',
                     color: item.availability_status === 'substituted' ? '#ffffff' : '#334155',
                     padding: '10px 14px', // Increased for 48px touch target
                     minHeight: '44px', // iOS minimum
@@ -423,17 +418,22 @@ export function PricingItemRow({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
-                    boxShadow: item.availability_status === 'substituted' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+                    boxShadow:
+                      item.availability_status === 'substituted'
+                        ? '0 1px 2px rgba(0,0,0,0.1)'
+                        : 'none',
                     transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => {
                     if (!disabled) {
-                      e.currentTarget.style.backgroundColor = item.availability_status === 'substituted' ? '#d97706' : '#e2e8f0'
+                      e.currentTarget.style.backgroundColor =
+                        item.availability_status === 'substituted' ? '#d97706' : '#e2e8f0';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!disabled) {
-                      e.currentTarget.style.backgroundColor = item.availability_status === 'substituted' ? '#f59e0b' : '#f1f5f9'
+                      e.currentTarget.style.backgroundColor =
+                        item.availability_status === 'substituted' ? '#f59e0b' : '#f1f5f9';
                     }
                   }}
                 >
@@ -453,11 +453,7 @@ export function PricingItemRow({
               onClick={() => setIsExpanded(!isExpanded)}
               className="h-12 w-12 min-h-[48px] min-w-[48px]"
             >
-              {isExpanded ? (
-                <ChevronUp className="w-5 h-5" />
-              ) : (
-                <ChevronDown className="w-5 h-5" />
-              )}
+              {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </Button>
             <Button
               type="button"
@@ -520,9 +516,7 @@ export function PricingItemRow({
                   <div className="col-span-4">
                     <Select
                       value={item.substitute_unit_type || ''}
-                      onValueChange={(value) =>
-                        onUpdate({ substitute_unit_type: value })
-                      }
+                      onValueChange={(value) => onUpdate({ substitute_unit_type: value })}
                       disabled={disabled}
                     >
                       <SelectTrigger className="bg-white">
@@ -562,8 +556,7 @@ export function PricingItemRow({
                       {isRTL ? 'إجمالي البديل: ' : 'Substitute total: '}
                     </span>
                     <span className="font-semibold text-amber-700">
-                      {(item.substitute_total_price || 0).toFixed(2)}{' '}
-                      {isRTL ? 'ج.م' : 'EGP'}
+                      {(item.substitute_total_price || 0).toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
                     </span>
                   </div>
                 </div>
@@ -617,9 +610,7 @@ export function PricingItemRow({
                   value={item.merchant_notes || ''}
                   onChange={(e) => onUpdate({ merchant_notes: e.target.value })}
                   placeholder={
-                    isRTL
-                      ? 'مثال: السعر شامل الضريبة...'
-                      : 'e.g., Price includes tax...'
+                    isRTL ? 'مثال: السعر شامل الضريبة...' : 'e.g., Price includes tax...'
                   }
                   disabled={disabled}
                 />
@@ -635,9 +626,7 @@ export function PricingItemRow({
                       {priceHistory.unit_price} {isRTL ? 'ج.م' : 'EGP'}
                     </strong>
                     {' - '}
-                    {new Date(priceHistory.last_ordered_at).toLocaleDateString(
-                      locale
-                    )}
+                    {new Date(priceHistory.last_ordered_at).toLocaleDateString(locale)}
                   </span>
                 </div>
               )}
@@ -646,7 +635,7 @@ export function PricingItemRow({
         )}
       </AnimatePresence>
     </motion.div>
-  )
+  );
 }
 
-export default PricingItemRow
+export default PricingItemRow;

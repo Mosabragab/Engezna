@@ -1,4 +1,5 @@
 # تقرير المراجعة الشاملة لنظام التسويات - منصة إنجزنا
+
 ## Comprehensive Settlement System Audit Report
 
 **تاريخ التقرير:** 26 ديسمبر 2025 (محدّث)
@@ -19,9 +20,11 @@
 ### ✅ الإصلاحات المُنفذة
 
 #### 1. إصلاح تعارض الـ Triggers
+
 **المشكلة**: العمولة تظهر 22 بدلاً من 17.5 بعد المرتجع
 **السبب**: دالة `calculate_order_commission` كانت تعيد حساب العمولة وتتجاهل قيمة `settlement_adjusted`
 **الحل**:
+
 ```sql
 -- قبل الإصلاح (خاطئ)
 IF NEW.settlement_adjusted = true AND OLD.settlement_adjusted = true THEN
@@ -31,8 +34,10 @@ IF NEW.settlement_adjusted = true THEN
 ```
 
 #### 2. توحيد مصدر الحقيقة
+
 **المبدأ**: قاعدة البيانات هي المصدر الوحيد للحسابات المالية
 **التغييرات**:
+
 - إزالة جميع حسابات العمولة من الواجهة الأمامية
 - عرض القيم من قاعدة البيانات مباشرة:
   - `platform_commission` - العمولة الفعلية
@@ -40,11 +45,14 @@ IF NEW.settlement_adjusted = true THEN
   - `cod_commission_owed`, `online_platform_commission` - من جدول التسويات
 
 #### 3. تصميم موحد لكروت COD/Online
+
 **الملفات المحدثة**:
+
 - `src/app/[locale]/admin/settlements/[id]/page.tsx`
 - `src/app/[locale]/provider/finance/page.tsx`
 
 **التصميم الجديد**:
+
 - خلفية بيضاء مع حدود ملونة (amber لـ COD, blue لـ Online)
 - أيقونة في مربع ملون بالهيدر
 - عدد الطلبات تحت العنوان
@@ -60,6 +68,7 @@ IF NEW.settlement_adjusted = true THEN
 ### ✅ نقاط القوة الحالية
 
 #### أ) الـ Trigger الهجين (`calculate_order_commission`)
+
 **الموقع:** `supabase/migrations/20251224220000_fix_commission_excludes_delivery.sql`
 
 ```
@@ -71,10 +80,12 @@ IF NEW.settlement_adjusted = true THEN
 ```
 
 **إصلاح 24 ديسمبر 2025:**
+
 - ✅ تم تصحيح المعادلة لاستبعاد `delivery_fee` من حساب العمولة
 - ✅ إذا كان `subtotal` غير موجود، يُحسب: `total - delivery_fee - discount`
 
 **الإيجابيات:**
+
 - ✅ يحسب العمولة على مستوى السيرفر (أمان ضد التلاعب)
 - ✅ يتعامل مع الطلبات الملغاة/المرفوضة (يصفّر العمولة)
 - ✅ يحترم فترة السماح (Grace Period) بتاريخ الطلب وليس الوقت الحالي
@@ -82,9 +93,11 @@ IF NEW.settlement_adjusted = true THEN
 - ✅ يتابع تغيير `provider_id` لإعادة الحساب
 
 #### ب) دالة توليد التسوية (`generate_provider_settlement`)
+
 **الموقع:** `supabase/migrations/20251221000004_fix_refunds_settlements_integration.sql`
 
 **الإيجابيات:**
+
 - ✅ تستبعد الطلبات المعدّلة (`settlement_adjusted = true`)
 - ✅ تستخدم `platform_commission` المحسوبة من الطلب مباشرة
 - ✅ تمنع تكرار نفس الفترة للمزود الواحد
@@ -94,12 +107,14 @@ IF NEW.settlement_adjusted = true THEN
 #### 1. تعارض في حساب `gross_revenue`
 
 **في الـ Admin Dashboard** (`src/app/[locale]/admin/settlements/page.tsx:349-350`):
+
 ```typescript
 // يحسب من orders.total
-const grossRevenue = codGrossRevenue + onlineGrossRevenue
+const grossRevenue = codGrossRevenue + onlineGrossRevenue;
 ```
 
 **في الـ Trigger** (`migrations/20251223100000_secure_commission_calculation.sql:132`):
+
 ```sql
 -- يحسب من subtotal - discount
 NEW.platform_commission := ROUND(
@@ -108,6 +123,7 @@ NEW.platform_commission := ROUND(
 ```
 
 **⚠️ التوصية:** يجب توحيد الأساس:
+
 - إذا كانت العمولة على `subtotal - discount` → يجب أن يكون `gross_revenue` = `subtotal`
 - حالياً Admin يستخدم `total` بينما الـ trigger يستخدم `subtotal - discount`
 
@@ -120,6 +136,7 @@ NEW.platform_commission := ROUND(
 **الموقع:** `supabase/migrations/20251221000004_fix_refunds_settlements_integration.sql`
 
 **آلية العمل:**
+
 1. عند تأكيد العميل استلام المبلغ المسترد (`customer_confirmed = true`)
 2. يحسب نسبة الاسترداد: `refund_percentage = (refund_amount / order_total) × 100`
 3. يخصم العمولة بنفس النسبة:
@@ -130,12 +147,15 @@ NEW.platform_commission := ROUND(
 5. يُرفع علم `settlement_adjusted = true` لمنع إعادة الحساب
 
 ### ✅ نقاط القوة
+
 - تخفيض نسبي للعمولة (ليس تصفيرها بالكامل)
 - سجل تدقيق في جدول `settlement_adjustments`
 - تحديث التسوية تلقائياً إذا كانت موجودة
 
 ### ⚠️ ملاحظة هامة
+
 الطلبات المعدّلة (`settlement_adjusted = true`) تُستبعد من التسويات الجديدة، مما قد يسبب:
+
 - طلبات مرتجعة جزئياً لا تُحسب في التسويات اللاحقة
 
 **التوصية:** إضافة منطق لإدراج الطلبات المعدّلة بقيمتها المعدّلة في التسويات.
@@ -147,6 +167,7 @@ NEW.platform_commission := ROUND(
 ### ✅ الوضع الحالي
 
 **الآلية في الـ Trigger:**
+
 ```sql
 IF v_provider_record.commission_status = 'in_grace_period'
    AND v_provider_record.grace_period_end IS NOT NULL
@@ -155,6 +176,7 @@ IF v_provider_record.commission_status = 'in_grace_period'
 ```
 
 **الإيجابيات:**
+
 - ✅ يقيّم بتاريخ الطلب (`created_at`) وليس الوقت الحالي
 - ✅ يحفظ العمولة = 0 في الطلب
 
@@ -174,12 +196,12 @@ IF v_provider_record.commission_status = 'in_grace_period'
 
 ### 📊 مقارنة المعادلات
 
-| البند | Admin Dashboard | Provider Dashboard | الحالة |
-|-------|-----------------|-------------------|--------|
-| إجمالي الإيرادات | `SUM(orders.total)` | `SUM(orders.total)` | ✅ متطابق |
-| العمولة | `SUM(orders.platform_commission)` | `order.platform_commission` | ✅ متطابق |
-| صافي التسوية | `gross - commission` | `net_payout` من settlements | ⚠️ مختلف |
-| المستحق للمنصة | `net_amount_due ?? platform_commission` | `net_amount_due ?? platform_commission` | ✅ متطابق |
+| البند            | Admin Dashboard                         | Provider Dashboard                      | الحالة    |
+| ---------------- | --------------------------------------- | --------------------------------------- | --------- |
+| إجمالي الإيرادات | `SUM(orders.total)`                     | `SUM(orders.total)`                     | ✅ متطابق |
+| العمولة          | `SUM(orders.platform_commission)`       | `order.platform_commission`             | ✅ متطابق |
+| صافي التسوية     | `gross - commission`                    | `net_payout` من settlements             | ⚠️ مختلف  |
+| المستحق للمنصة   | `net_amount_due ?? platform_commission` | `net_amount_due ?? platform_commission` | ✅ متطابق |
 
 ### ⚠️ تعارضات مكتشفة
 
@@ -615,6 +637,7 @@ const getActualCommission = (order: Order) => {
 ## 8️⃣ الخلاصة
 
 النظام الحالي **سليم معمارياً** مع حاجة لـ:
+
 1. توحيد مصادر البيانات
 2. تحسين عرض فترة السماح
 3. إصلاح التعامل مع المرتجعات الجزئية

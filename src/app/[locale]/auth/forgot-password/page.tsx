@@ -1,53 +1,53 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { ArrowLeft, ArrowRight, Loader2, Mail, CheckCircle } from 'lucide-react'
+import { useState } from 'react';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { ArrowLeft, ArrowRight, Loader2, Mail, CheckCircle } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [emailSent, setEmailSent] = useState(false)
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!email || !email.includes('@')) {
-      setError(locale === 'ar' ? 'يرجى إدخال إيميل صحيح' : 'Please enter a valid email')
-      return
+      setError(locale === 'ar' ? 'يرجى إدخال إيميل صحيح' : 'Please enter a valid email');
+      return;
     }
 
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const supabase = createClient()
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+      const supabase = createClient();
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${siteUrl}/${locale}/auth/reset-password`,
-      })
+      });
 
       if (resetError) {
-        console.error('Reset password error:', resetError)
-        setError(resetError.message)
-        return
+        console.error('Reset password error:', resetError);
+        setError(resetError.message);
+        return;
       }
 
-      setEmailSent(true)
+      setEmailSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Email sent success state
   if (emailSent) {
@@ -85,8 +85,8 @@ export default function ForgotPasswordPage() {
           <button
             type="button"
             onClick={() => {
-              setEmailSent(false)
-              setEmail('')
+              setEmailSent(false);
+              setEmail('');
             }}
             className="text-[#009DE0] font-medium hover:underline"
           >
@@ -102,7 +102,7 @@ export default function ForgotPasswordPage() {
           {locale === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -137,7 +137,10 @@ export default function ForgotPasswordPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email Input */}
           <div className="space-y-2">
-            <label htmlFor="email" className="flex items-center gap-2 text-sm font-medium text-slate-700">
+            <label
+              htmlFor="email"
+              className="flex items-center gap-2 text-sm font-medium text-slate-700"
+            >
               <Mail className="w-4 h-4 text-[#009DE0]" />
               {locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}
             </label>
@@ -188,5 +191,5 @@ export default function ForgotPasswordPage() {
         {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
       </Link>
     </div>
-  )
+  );
 }

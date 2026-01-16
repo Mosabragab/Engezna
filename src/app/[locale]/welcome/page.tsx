@@ -1,11 +1,11 @@
-import Link from 'next/link'
-import { Suspense } from 'react'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { Button } from '@/components/ui/button'
-import { Footer } from '@/components/shared/Footer'
-import { InstallPrompt } from '@/components/pwa/InstallPrompt'
-import { WelcomeClientWrapper, LanguageToggle } from '@/components/welcome/WelcomeClientWrapper'
-import { GovernoratesList, GovernoratesListSkeleton } from '@/components/welcome/GovernoratesList'
+import Link from 'next/link';
+import { Suspense } from 'react';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { Button } from '@/components/ui/button';
+import { Footer } from '@/components/shared/Footer';
+import { InstallPrompt } from '@/components/pwa/InstallPrompt';
+import { WelcomeClientWrapper, LanguageToggle } from '@/components/welcome/WelcomeClientWrapper';
+import { GovernoratesList, GovernoratesListSkeleton } from '@/components/welcome/GovernoratesList';
 import {
   MessageCircle,
   Star,
@@ -16,15 +16,15 @@ import {
   ChevronRight,
   MessagesSquare,
   Store,
-} from 'lucide-react'
+} from 'lucide-react';
 
 interface PageProps {
-  params: Promise<{ locale: string }>
+  params: Promise<{ locale: string }>;
 }
 
 export default async function WelcomePage({ params }: PageProps) {
-  const { locale } = await params
-  const isRTL = locale === 'ar'
+  const { locale } = await params;
+  const isRTL = locale === 'ar';
 
   // Categories with emoji and gradient backgrounds
   const categories = [
@@ -56,7 +56,7 @@ export default async function WelcomePage({ params }: PageProps) {
       emoji: '🍌',
       gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)',
     },
-  ]
+  ];
 
   const features = [
     {
@@ -64,7 +64,8 @@ export default async function WelcomePage({ params }: PageProps) {
       title_ar: 'اطلب بالشات',
       title_en: 'Chat to Order',
       description_ar: 'اطلب بالكلام! مساعدنا الذكي يفهم طلبك ويضيفه للسلة',
-      description_en: 'Order by chatting! Our smart assistant understands your request and adds it to your cart',
+      description_en:
+        'Order by chatting! Our smart assistant understands your request and adds it to your cart',
       color: 'bg-primary/10 text-primary',
     },
     {
@@ -107,7 +108,7 @@ export default async function WelcomePage({ params }: PageProps) {
       description_en: 'Not just for Cairo - Engezna is for all cities in Egypt',
       color: 'bg-rose-50 text-rose-600',
     },
-  ]
+  ];
 
   const steps = [
     {
@@ -131,7 +132,7 @@ export default async function WelcomePage({ params }: PageProps) {
       description_ar: 'أكد طلبك وانتظر التوصيل السريع',
       description_en: 'Confirm your order and wait for fast delivery',
     },
-  ]
+  ];
 
   return (
     <WelcomeClientWrapper>
@@ -175,14 +176,21 @@ export default async function WelcomePage({ params }: PageProps) {
                 >
                   <MapPin className="w-5 h-5" />
                   {isRTL ? 'اختر موقعك للبدء' : 'Select Your Location to Start'}
-                  {isRTL ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  {isRTL ? (
+                    <ChevronLeft className="w-5 h-5" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5" />
+                  )}
                 </Button>
               </Link>
 
               {/* Already have account */}
               <p className="mt-4 text-sm text-slate-500">
                 {isRTL ? 'لديك حساب؟' : 'Have an account?'}{' '}
-                <Link href={`/${locale}/auth/login`} className="text-primary hover:underline font-medium">
+                <Link
+                  href={`/${locale}/auth/login`}
+                  className="text-primary hover:underline font-medium"
+                >
                   {isRTL ? 'سجل دخول' : 'Sign in'}
                 </Link>
               </p>
@@ -244,7 +252,9 @@ export default async function WelcomePage({ params }: PageProps) {
                   key={index}
                   className="bg-white rounded-2xl p-6 border border-slate-100 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-1 transition-all duration-300 group"
                 >
-                  <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                  <div
+                    className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}
+                  >
                     <feature.icon className="w-6 h-6" />
                   </div>
                   <h3 className="font-bold text-slate-900 mb-2">
@@ -356,7 +366,9 @@ export default async function WelcomePage({ params }: PageProps) {
                 className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
               >
                 <Store className="w-5 h-5" />
-                {isRTL ? 'انضم كشريك - 6 شهور بدون عمولة' : 'Join as a Partner - 6 months with 0% commission'}
+                {isRTL
+                  ? 'انضم كشريك - 6 شهور بدون عمولة'
+                  : 'Join as a Partner - 6 months with 0% commission'}
                 {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </Link>
             </div>
@@ -370,5 +382,5 @@ export default async function WelcomePage({ params }: PageProps) {
         <InstallPrompt />
       </div>
     </WelcomeClientWrapper>
-  )
+  );
 }

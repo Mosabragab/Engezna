@@ -52,7 +52,8 @@ export class PermissionService {
       // 1. جلب أدوار المشرف
       const { data: adminRoles, error: rolesError } = await supabase
         .from('admin_roles')
-        .select(`
+        .select(
+          `
           *,
           role:roles (
             id,
@@ -63,7 +64,8 @@ export class PermissionService {
             icon,
             is_system
           )
-        `)
+        `
+        )
         .eq('admin_id', this.adminId)
         .or('expires_at.is.null,expires_at.gt.now()');
 
@@ -74,12 +76,13 @@ export class PermissionService {
       }
 
       // 2. جلب صلاحيات كل دور
-      const roleIds = this.roles.map(r => r.role_id);
+      const roleIds = this.roles.map((r) => r.role_id);
 
       if (roleIds.length > 0) {
         const { data: rolePermissions, error: rpError } = await supabase
           .from('role_permissions')
-          .select(`
+          .select(
+            `
             *,
             permission:permissions (
               id,
@@ -89,7 +92,8 @@ export class PermissionService {
               resource:resources (code),
               action:actions (code)
             )
-          `)
+          `
+          )
           .in('role_id', roleIds)
           .or('expires_at.is.null,expires_at.gt.now()');
 
@@ -100,7 +104,7 @@ export class PermissionService {
           for (const rp of rolePermissions) {
             if (rp.permission) {
               const code = rp.permission.code as PermissionCode;
-              const adminRole = this.roles.find(r => r.role_id === rp.role_id);
+              const adminRole = this.roles.find((r) => r.role_id === rp.role_id);
 
               // دمج القيود من الدور والصلاحية
               const mergedConstraints = this.mergeConstraints(
@@ -123,7 +127,8 @@ export class PermissionService {
       // 3. جلب الصلاحيات المخصصة للمشرف
       const { data: directPerms, error: dpError } = await supabase
         .from('admin_permissions')
-        .select(`
+        .select(
+          `
           *,
           permission:permissions (
             id,
@@ -131,7 +136,8 @@ export class PermissionService {
             resource:resources (code),
             action:actions (code)
           )
-        `)
+        `
+        )
         .eq('admin_id', this.adminId)
         .or('expires_at.is.null,expires_at.gt.now()');
 
@@ -198,14 +204,14 @@ export class PermissionService {
 
   // التحقق من عدة صلاحيات
   async canAll(requests: PermissionCheckRequest[]): Promise<boolean> {
-    const results = await Promise.all(requests.map(r => this.can(r)));
-    return results.every(r => r.allowed);
+    const results = await Promise.all(requests.map((r) => this.can(r)));
+    return results.every((r) => r.allowed);
   }
 
   // التحقق من أي صلاحية
   async canAny(requests: PermissionCheckRequest[]): Promise<boolean> {
-    const results = await Promise.all(requests.map(r => this.can(r)));
-    return results.some(r => r.allowed);
+    const results = await Promise.all(requests.map((r) => this.can(r)));
+    return results.some((r) => r.allowed);
   }
 
   // جلب الموارد المسموح الوصول لها
@@ -277,12 +283,12 @@ export class PermissionService {
 
   // جلب الدور الرئيسي
   getPrimaryRole(): AdminRole | undefined {
-    return this.roles.find(r => r.is_primary) || this.roles[0];
+    return this.roles.find((r) => r.is_primary) || this.roles[0];
   }
 
   // هل المشرف super_admin؟
   isSuperAdmin(): boolean {
-    return this.roles.some(r => r.role?.code === 'super_admin');
+    return this.roles.some((r) => r.role?.code === 'super_admin');
   }
 
   // التحقق من القيود
@@ -610,7 +616,9 @@ export async function createServerPermissionService(): Promise<PermissionService
   const { createClient: createServerClient } = await import('@/lib/supabase/server');
   const supabase = await createServerClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return null;
 
   // جلب admin_id

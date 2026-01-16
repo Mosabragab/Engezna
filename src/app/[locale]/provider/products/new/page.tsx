@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ACTIVE_PROVIDER_STATUSES } from '@/types/database'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
 import {
   ArrowLeft,
   ArrowRight,
@@ -24,35 +24,35 @@ import {
   Info,
   FolderOpen,
   Plus,
-} from 'lucide-react'
+} from 'lucide-react';
 
 type Category = {
-  id: string
-  name_ar: string
-  name_en: string
-}
+  id: string;
+  name_ar: string;
+  name_en: string;
+};
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default function AddProductPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
-  const [providerId, setProviderId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [providerId, setProviderId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Category state
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loadingCategories, setLoadingCategories] = useState(false)
-  const [showNewCategory, setShowNewCategory] = useState(false)
-  const [newCategoryAr, setNewCategoryAr] = useState('')
-  const [newCategoryEn, setNewCategoryEn] = useState('')
-  const [savingCategory, setSavingCategory] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategoryAr, setNewCategoryAr] = useState('');
+  const [newCategoryEn, setNewCategoryEn] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -69,62 +69,64 @@ export default function AddProductPage() {
     preparation_time_min: '15',
     calories: '',
     category_id: '',
-  })
+  });
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   const checkAuth = async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/products/new`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/provider/products/new`);
+      return;
     }
 
     const { data: providerData } = await supabase
       .from('providers')
       .select('id, status')
       .eq('owner_id', user.id)
-      .limit(1)
+      .limit(1);
 
-    const provider = providerData?.[0]
+    const provider = providerData?.[0];
     if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
-      router.push(`/${locale}/provider`)
-      return
+      router.push(`/${locale}/provider`);
+      return;
     }
 
-    setProviderId(provider.id)
-    await loadCategories(provider.id)
-    setLoading(false)
-  }
+    setProviderId(provider.id);
+    await loadCategories(provider.id);
+    setLoading(false);
+  };
 
   const loadCategories = async (provId: string) => {
-    setLoadingCategories(true)
-    const supabase = createClient()
+    setLoadingCategories(true);
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('provider_categories')
       .select('id, name_ar, name_en')
       .eq('provider_id', provId)
-      .order('display_order', { ascending: true })
+      .order('display_order', { ascending: true });
 
     if (!error && data) {
-      setCategories(data)
+      setCategories(data);
     }
-    setLoadingCategories(false)
-  }
+    setLoadingCategories(false);
+  };
 
   const handleCreateCategory = async () => {
-    if (!newCategoryAr.trim() || !providerId) return
+    if (!newCategoryAr.trim() || !providerId) return;
 
-    setSavingCategory(true)
-    const supabase = createClient()
+    setSavingCategory(true);
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('provider_categories')
@@ -133,99 +135,123 @@ export default function AddProductPage() {
         name_ar: newCategoryAr.trim(),
         name_en: newCategoryEn.trim() || newCategoryAr.trim(),
         display_order: categories.length,
-        is_active: true
+        is_active: true,
       })
       .select('id, name_ar, name_en')
-      .single()
+      .single();
 
     if (!error && data) {
-      setCategories(prev => [...prev, data])
-      setFormData(prev => ({ ...prev, category_id: data.id }))
-      setNewCategoryAr('')
-      setNewCategoryEn('')
-      setShowNewCategory(false)
+      setCategories((prev) => [...prev, data]);
+      setFormData((prev) => ({ ...prev, category_id: data.id }));
+      setNewCategoryAr('');
+      setNewCategoryEn('');
+      setShowNewCategory(false);
     }
-    setSavingCategory(false)
-  }
+    setSavingCategory(false);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'الملف يجب أن يكون صورة' : 'File must be an image' }))
-      return
+      setErrors((prev) => ({
+        ...prev,
+        image: locale === 'ar' ? 'الملف يجب أن يكون صورة' : 'File must be an image',
+      }));
+      return;
     }
 
     // Validate file size (2MB max)
     if (file.size > 2 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 2 ميجابايت' : 'Image must be less than 2MB' }))
-      return
+      setErrors((prev) => ({
+        ...prev,
+        image:
+          locale === 'ar'
+            ? 'حجم الصورة يجب أن يكون أقل من 2 ميجابايت'
+            : 'Image must be less than 2MB',
+      }));
+      return;
     }
 
-    setUploading(true)
-    setErrors(prev => ({ ...prev, image: '' }))
+    setUploading(true);
+    setErrors((prev) => ({ ...prev, image: '' }));
 
     try {
-      const supabase = createClient()
-      const fileExt = file.name.split('.').pop()
-      const fileName = `products/${providerId}/${Date.now()}.${fileExt}`
+      const supabase = createClient();
+      const fileExt = file.name.split('.').pop();
+      const fileName = `products/${providerId}/${Date.now()}.${fileExt}`;
 
       const { data, error } = await supabase.storage
         .from('public')
-        .upload(fileName, file, { upsert: true })
+        .upload(fileName, file, { upsert: true });
 
       if (error) {
-        setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image' }))
-        return
+        setErrors((prev) => ({
+          ...prev,
+          image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image',
+        }));
+        return;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('public')
-        .getPublicUrl(fileName)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('public').getPublicUrl(fileName);
 
-      setFormData(prev => ({ ...prev, image_url: publicUrl }))
-      setImagePreview(publicUrl)
+      setFormData((prev) => ({ ...prev, image_url: publicUrl }));
+      setImagePreview(publicUrl);
     } catch {
-      setErrors(prev => ({ ...prev, image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image' }))
+      setErrors((prev) => ({
+        ...prev,
+        image: locale === 'ar' ? 'فشل رفع الصورة' : 'Failed to upload image',
+      }));
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   const removeImage = () => {
-    setFormData(prev => ({ ...prev, image_url: '' }))
-    setImagePreview(null)
-  }
+    setFormData((prev) => ({ ...prev, image_url: '' }));
+    setImagePreview(null);
+  };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     if (!formData.name_ar.trim()) {
-      newErrors.name_ar = locale === 'ar' ? 'الاسم بالعربية مطلوب' : 'Arabic name is required'
+      newErrors.name_ar = locale === 'ar' ? 'الاسم بالعربية مطلوب' : 'Arabic name is required';
     }
     if (!formData.name_en.trim()) {
-      newErrors.name_en = locale === 'ar' ? 'الاسم بالإنجليزية مطلوب' : 'English name is required'
+      newErrors.name_en = locale === 'ar' ? 'الاسم بالإنجليزية مطلوب' : 'English name is required';
     }
     if (!formData.price || parseFloat(formData.price) <= 0) {
-      newErrors.price = locale === 'ar' ? 'السعر مطلوب ويجب أن يكون أكبر من 0' : 'Price is required and must be greater than 0'
+      newErrors.price =
+        locale === 'ar'
+          ? 'السعر مطلوب ويجب أن يكون أكبر من 0'
+          : 'Price is required and must be greater than 0';
     }
-    if (formData.original_price && parseFloat(formData.original_price) <= parseFloat(formData.price)) {
-      newErrors.original_price = locale === 'ar' ? 'السعر الأصلي يجب أن يكون أكبر من السعر الحالي' : 'Original price must be greater than current price'
+    if (
+      formData.original_price &&
+      parseFloat(formData.original_price) <= parseFloat(formData.price)
+    ) {
+      newErrors.original_price =
+        locale === 'ar'
+          ? 'السعر الأصلي يجب أن يكون أكبر من السعر الحالي'
+          : 'Original price must be greater than current price';
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!validateForm() || !providerId) return
+    if (!validateForm() || !providerId) return;
 
-    setSaving(true)
-    const supabase = createClient()
+    setSaving(true);
+    const supabase = createClient();
 
     // Build product data - only include category_id if it's set and table supports it
     const productData: Record<string, any> = {
@@ -242,51 +268,51 @@ export default function AddProductPage() {
       is_spicy: formData.is_spicy,
       preparation_time_min: parseInt(formData.preparation_time_min) || 15,
       calories: formData.calories ? parseInt(formData.calories) : null,
-    }
+    };
 
     // Only add category_id if a category is selected
     if (formData.category_id) {
-      productData.category_id = formData.category_id
+      productData.category_id = formData.category_id;
     }
 
-    const { error } = await supabase
-      .from('menu_items')
-      .insert(productData)
+    const { error } = await supabase.from('menu_items').insert(productData);
 
     if (error) {
       // If category_id column doesn't exist, retry without it
       if (error.message?.includes('category_id')) {
-        delete productData.category_id
-        const { error: retryError } = await supabase
-          .from('menu_items')
-          .insert(productData)
+        delete productData.category_id;
+        const { error: retryError } = await supabase.from('menu_items').insert(productData);
 
         if (retryError) {
-          setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل إضافة المنتج' : 'Failed to add product' }))
-          setSaving(false)
-          return
+          setErrors((prev) => ({
+            ...prev,
+            submit: locale === 'ar' ? 'فشل إضافة المنتج' : 'Failed to add product',
+          }));
+          setSaving(false);
+          return;
         }
       } else {
-        setErrors(prev => ({ ...prev, submit: locale === 'ar' ? 'فشل إضافة المنتج' : 'Failed to add product' }))
-        setSaving(false)
-        return
+        setErrors((prev) => ({
+          ...prev,
+          submit: locale === 'ar' ? 'فشل إضافة المنتج' : 'Failed to add product',
+        }));
+        setSaving(false);
+        return;
       }
     }
 
-    router.push(`/${locale}/provider/products`)
-  }
+    router.push(`/${locale}/provider/products`);
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-500">
-            {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-          </p>
+          <p className="text-slate-500">{locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -362,9 +388,7 @@ export default function AddProductPage() {
                   )}
                 </label>
               )}
-              {errors.image && (
-                <p className="text-red-500 text-sm mt-2">{errors.image}</p>
-              )}
+              {errors.image && <p className="text-red-500 text-sm mt-2">{errors.image}</p>}
             </CardContent>
           </Card>
 
@@ -386,14 +410,20 @@ export default function AddProductPage() {
                     <div className="flex gap-2">
                       <select
                         value={formData.category_id}
-                        onChange={(e) => setFormData(prev => ({ ...prev, category_id: e.target.value }))}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, category_id: e.target.value }))
+                        }
                         className="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                         disabled={loadingCategories}
                       >
                         <option value="">
                           {loadingCategories
-                            ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
-                            : (locale === 'ar' ? 'بدون تصنيف' : 'No Category')}
+                            ? locale === 'ar'
+                              ? 'جاري التحميل...'
+                              : 'Loading...'
+                            : locale === 'ar'
+                              ? 'بدون تصنيف'
+                              : 'No Category'}
                         </option>
                         {categories.map((cat) => (
                           <option key={cat.id} value={cat.id}>
@@ -440,7 +470,9 @@ export default function AddProductPage() {
                   <div>
                     <label className="block text-sm font-medium text-slate-600 mb-2">
                       {locale === 'ar' ? 'اسم التصنيف (إنجليزي)' : 'Category Name (English)'}
-                      <span className="text-slate-400 text-xs mr-1">({locale === 'ar' ? 'اختياري' : 'Optional'})</span>
+                      <span className="text-slate-400 text-xs mr-1">
+                        ({locale === 'ar' ? 'اختياري' : 'Optional'})
+                      </span>
                     </label>
                     <input
                       type="text"
@@ -456,9 +488,9 @@ export default function AddProductPage() {
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        setShowNewCategory(false)
-                        setNewCategoryAr('')
-                        setNewCategoryEn('')
+                        setShowNewCategory(false);
+                        setNewCategoryAr('');
+                        setNewCategoryEn('');
                       }}
                       className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100"
                     >
@@ -471,8 +503,12 @@ export default function AddProductPage() {
                       className="flex-1"
                     >
                       {savingCategory
-                        ? (locale === 'ar' ? 'جاري الحفظ...' : 'Saving...')
-                        : (locale === 'ar' ? 'إضافة' : 'Add')}
+                        ? locale === 'ar'
+                          ? 'جاري الحفظ...'
+                          : 'Saving...'
+                        : locale === 'ar'
+                          ? 'إضافة'
+                          : 'Add'}
                     </Button>
                   </div>
                 </div>
@@ -497,14 +533,12 @@ export default function AddProductPage() {
                 <input
                   type="text"
                   value={formData.name_ar}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name_ar: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name_ar: e.target.value }))}
                   className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={locale === 'ar' ? 'مثال: برجر لحم' : 'e.g., برجر لحم'}
                   dir="rtl"
                 />
-                {errors.name_ar && (
-                  <p className="text-red-500 text-sm mt-1">{errors.name_ar}</p>
-                )}
+                {errors.name_ar && <p className="text-red-500 text-sm mt-1">{errors.name_ar}</p>}
               </div>
 
               {/* English Name */}
@@ -515,14 +549,12 @@ export default function AddProductPage() {
                 <input
                   type="text"
                   value={formData.name_en}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name_en: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name_en: e.target.value }))}
                   className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="e.g., Beef Burger"
                   dir="ltr"
                 />
-                {errors.name_en && (
-                  <p className="text-red-500 text-sm mt-1">{errors.name_en}</p>
-                )}
+                {errors.name_en && <p className="text-red-500 text-sm mt-1">{errors.name_en}</p>}
               </div>
 
               {/* Arabic Description */}
@@ -532,10 +564,14 @@ export default function AddProductPage() {
                 </label>
                 <textarea
                   value={formData.description_ar}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description_ar: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description_ar: e.target.value }))
+                  }
                   rows={3}
                   className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                  placeholder={locale === 'ar' ? 'وصف المنتج بالعربية...' : 'Product description in Arabic...'}
+                  placeholder={
+                    locale === 'ar' ? 'وصف المنتج بالعربية...' : 'Product description in Arabic...'
+                  }
                   dir="rtl"
                 />
               </div>
@@ -547,7 +583,9 @@ export default function AddProductPage() {
                 </label>
                 <textarea
                   value={formData.description_en}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description_en: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description_en: e.target.value }))
+                  }
                   rows={3}
                   className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   placeholder="Product description in English..."
@@ -577,13 +615,11 @@ export default function AddProductPage() {
                     step="0.01"
                     min="0"
                     value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
                     className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="0.00"
                   />
-                  {errors.price && (
-                    <p className="text-red-500 text-sm mt-1">{errors.price}</p>
-                  )}
+                  {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
                 </div>
 
                 {/* Original Price */}
@@ -596,7 +632,9 @@ export default function AddProductPage() {
                     step="0.01"
                     min="0"
                     value={formData.original_price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, original_price: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, original_price: e.target.value }))
+                    }
                     className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="0.00"
                   />
@@ -634,7 +672,9 @@ export default function AddProductPage() {
                     type="number"
                     min="1"
                     value={formData.preparation_time_min}
-                    onChange={(e) => setFormData(prev => ({ ...prev, preparation_time_min: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, preparation_time_min: e.target.value }))
+                    }
                     className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="15"
                   />
@@ -649,7 +689,7 @@ export default function AddProductPage() {
                     type="number"
                     min="0"
                     value={formData.calories}
-                    onChange={(e) => setFormData(prev => ({ ...prev, calories: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, calories: e.target.value }))}
                     className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder={locale === 'ar' ? 'اختياري' : 'Optional'}
                   />
@@ -668,15 +708,19 @@ export default function AddProductPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, is_vegetarian: !prev.is_vegetarian }))}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, is_vegetarian: !prev.is_vegetarian }))
+                    }
                     dir="ltr"
                     className={`w-12 h-6 rounded-full transition-colors relative ${
                       formData.is_vegetarian ? 'bg-green-500' : 'bg-slate-300'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 shadow ${
-                      formData.is_vegetarian ? 'left-[1.375rem]' : 'left-0.5'
-                    }`} />
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 shadow ${
+                        formData.is_vegetarian ? 'left-[1.375rem]' : 'left-0.5'
+                      }`}
+                    />
                   </button>
                 </label>
 
@@ -684,21 +728,21 @@ export default function AddProductPage() {
                 <label className="flex items-center justify-between cursor-pointer">
                   <div className="flex items-center gap-2">
                     <Flame className="w-5 h-5 text-red-500" />
-                    <span className="text-slate-700">
-                      {locale === 'ar' ? 'حار' : 'Spicy'}
-                    </span>
+                    <span className="text-slate-700">{locale === 'ar' ? 'حار' : 'Spicy'}</span>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, is_spicy: !prev.is_spicy }))}
+                    onClick={() => setFormData((prev) => ({ ...prev, is_spicy: !prev.is_spicy }))}
                     dir="ltr"
                     className={`w-12 h-6 rounded-full transition-colors relative ${
                       formData.is_spicy ? 'bg-red-500' : 'bg-slate-300'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 shadow ${
-                      formData.is_spicy ? 'left-[1.375rem]' : 'left-0.5'
-                    }`} />
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 shadow ${
+                        formData.is_spicy ? 'left-[1.375rem]' : 'left-0.5'
+                      }`}
+                    />
                   </button>
                 </label>
 
@@ -712,15 +756,19 @@ export default function AddProductPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, is_available: !prev.is_available }))}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, is_available: !prev.is_available }))
+                    }
                     dir="ltr"
                     className={`w-12 h-6 rounded-full transition-colors relative ${
                       formData.is_available ? 'bg-primary' : 'bg-slate-300'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 shadow ${
-                      formData.is_available ? 'left-[1.375rem]' : 'left-0.5'
-                    }`} />
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 shadow ${
+                        formData.is_available ? 'left-[1.375rem]' : 'left-0.5'
+                      }`}
+                    />
                   </button>
                 </label>
               </div>
@@ -735,12 +783,7 @@ export default function AddProductPage() {
           )}
 
           {/* Submit Button */}
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full"
-            disabled={saving}
-          >
+          <Button type="submit" size="lg" className="w-full" disabled={saving}>
             {saving ? (
               <>
                 <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
@@ -756,5 +799,5 @@ export default function AddProductPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }

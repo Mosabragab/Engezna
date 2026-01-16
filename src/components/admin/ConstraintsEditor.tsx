@@ -1,10 +1,14 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { useLocale } from 'next-intl'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { PermissionConstraints, GeographicConstraint, TimeConstraint } from '@/types/permissions'
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocale } from 'next-intl';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type {
+  PermissionConstraints,
+  GeographicConstraint,
+  TimeConstraint,
+} from '@/types/permissions';
 import {
   MapPin,
   Clock,
@@ -19,35 +23,35 @@ import {
   ChevronRight,
   Settings,
   Shield,
-} from 'lucide-react'
+} from 'lucide-react';
 
 interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
+  id: string;
+  name_ar: string;
+  name_en: string;
 }
 
 interface City {
-  id: string
-  name_ar: string
-  name_en: string
-  governorate_id: string
+  id: string;
+  name_ar: string;
+  name_en: string;
+  governorate_id: string;
 }
 
 interface District {
-  id: string
-  name_ar: string
-  name_en: string
-  city_id: string | null
-  governorate_id: string
+  id: string;
+  name_ar: string;
+  name_en: string;
+  city_id: string | null;
+  governorate_id: string;
 }
 
 interface ConstraintsEditorProps {
-  constraints: PermissionConstraints
-  onChange: (constraints: PermissionConstraints) => void
-  permissionCode?: string
-  resourceCode?: string
-  actionCode?: string
+  constraints: PermissionConstraints;
+  onChange: (constraints: PermissionConstraints) => void;
+  permissionCode?: string;
+  resourceCode?: string;
+  actionCode?: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -58,7 +62,7 @@ const DAYS_OF_WEEK = [
   { value: 4, ar: 'الخميس', en: 'Thursday' },
   { value: 5, ar: 'الجمعة', en: 'Friday' },
   { value: 6, ar: 'السبت', en: 'Saturday' },
-]
+];
 
 export function ConstraintsEditor({
   constraints,
@@ -67,112 +71,122 @@ export function ConstraintsEditor({
   resourceCode,
   actionCode,
 }: ConstraintsEditorProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['geographic']))
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['geographic']));
 
   // Geography data
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [cities, setCities] = useState<City[]>([])
-  const [districts, setDistricts] = useState<District[]>([])
-  const [loadingGeo, setLoadingGeo] = useState(true)
+  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [loadingGeo, setLoadingGeo] = useState(true);
 
   const loadGeoData = useCallback(async () => {
-    const supabase = createClient()
-    setLoadingGeo(true)
+    const supabase = createClient();
+    setLoadingGeo(true);
 
     const [govRes, cityRes, distRes] = await Promise.all([
       supabase.from('governorates').select('id, name_ar, name_en').order('name_ar'),
       supabase.from('cities').select('id, name_ar, name_en, governorate_id').order('name_ar'),
-      supabase.from('districts').select('id, name_ar, name_en, city_id, governorate_id').order('name_ar'),
-    ])
+      supabase
+        .from('districts')
+        .select('id, name_ar, name_en, city_id, governorate_id')
+        .order('name_ar'),
+    ]);
 
-    if (govRes.data) setGovernorates(govRes.data)
-    if (cityRes.data) setCities(cityRes.data)
-    if (distRes.data) setDistricts(distRes.data)
-    setLoadingGeo(false)
-  }, [])
+    if (govRes.data) setGovernorates(govRes.data);
+    if (cityRes.data) setCities(cityRes.data);
+    if (distRes.data) setDistricts(distRes.data);
+    setLoadingGeo(false);
+  }, []);
 
   useEffect(() => {
-    loadGeoData()
-  }, [loadGeoData])
+    loadGeoData();
+  }, [loadGeoData]);
 
   function toggleSection(section: string) {
-    const newExpanded = new Set(expandedSections)
+    const newExpanded = new Set(expandedSections);
     if (newExpanded.has(section)) {
-      newExpanded.delete(section)
+      newExpanded.delete(section);
     } else {
-      newExpanded.add(section)
+      newExpanded.add(section);
     }
-    setExpandedSections(newExpanded)
+    setExpandedSections(newExpanded);
   }
 
   function updateConstraint<K extends keyof PermissionConstraints>(
     key: K,
     value: PermissionConstraints[K] | undefined
   ) {
-    const newConstraints = { ...constraints }
+    const newConstraints = { ...constraints };
     if (value === undefined || value === null || (Array.isArray(value) && value.length === 0)) {
-      delete newConstraints[key]
+      delete newConstraints[key];
     } else {
-      newConstraints[key] = value
+      newConstraints[key] = value;
     }
-    onChange(newConstraints)
+    onChange(newConstraints);
   }
 
   // Geographic handlers
   function toggleGovernorate(govId: string) {
-    const current = constraints.geographic?.governorates || []
+    const current = constraints.geographic?.governorates || [];
     const newGovs = current.includes(govId)
-      ? current.filter(id => id !== govId)
-      : [...current, govId]
+      ? current.filter((id) => id !== govId)
+      : [...current, govId];
 
     updateConstraint('geographic', {
       ...constraints.geographic,
       governorates: newGovs.length > 0 ? newGovs : undefined,
-    } as GeographicConstraint)
+    } as GeographicConstraint);
   }
 
   function toggleCity(cityId: string) {
-    const current = constraints.geographic?.cities || []
+    const current = constraints.geographic?.cities || [];
     const newCities = current.includes(cityId)
-      ? current.filter(id => id !== cityId)
-      : [...current, cityId]
+      ? current.filter((id) => id !== cityId)
+      : [...current, cityId];
 
     updateConstraint('geographic', {
       ...constraints.geographic,
       cities: newCities.length > 0 ? newCities : undefined,
-    } as GeographicConstraint)
+    } as GeographicConstraint);
   }
 
   // Time restriction handlers
   function updateTimeRestriction(field: keyof TimeConstraint, value: string | number[]) {
-    const current = constraints.time_restriction || { start: '09:00', end: '22:00', days: [0, 1, 2, 3, 4, 5, 6] }
+    const current = constraints.time_restriction || {
+      start: '09:00',
+      end: '22:00',
+      days: [0, 1, 2, 3, 4, 5, 6],
+    };
     updateConstraint('time_restriction', {
       ...current,
       [field]: value,
-    })
+    });
   }
 
   function toggleDay(day: number) {
-    const current = constraints.time_restriction?.days || [0, 1, 2, 3, 4, 5, 6]
+    const current = constraints.time_restriction?.days || [0, 1, 2, 3, 4, 5, 6];
     const newDays = current.includes(day)
-      ? current.filter(d => d !== day)
-      : [...current, day].sort()
-    updateTimeRestriction('days', newDays)
+      ? current.filter((d) => d !== day)
+      : [...current, day].sort();
+    updateTimeRestriction('days', newDays);
   }
 
   // Check which constraint types are relevant for this permission
-  const showGeographic = resourceCode && ['providers', 'orders', 'customers', 'support', 'locations'].includes(resourceCode)
-  const showAmountLimit = actionCode && ['refund', 'settle', 'approve'].includes(actionCode)
-  const showOwnOnly = actionCode && ['update', 'delete', 'assign'].includes(actionCode)
-  const showAssignedOnly = actionCode && ['view', 'update', 'assign'].includes(actionCode)
-  const showRequiresApproval = actionCode && ['delete', 'refund', 'ban', 'settle', 'approve', 'reject'].includes(actionCode)
-  const showTimeRestriction = true // Available for all
-  const showFields = resourceCode && ['customers', 'providers'].includes(resourceCode)
+  const showGeographic =
+    resourceCode &&
+    ['providers', 'orders', 'customers', 'support', 'locations'].includes(resourceCode);
+  const showAmountLimit = actionCode && ['refund', 'settle', 'approve'].includes(actionCode);
+  const showOwnOnly = actionCode && ['update', 'delete', 'assign'].includes(actionCode);
+  const showAssignedOnly = actionCode && ['view', 'update', 'assign'].includes(actionCode);
+  const showRequiresApproval =
+    actionCode && ['delete', 'refund', 'ban', 'settle', 'approve', 'reject'].includes(actionCode);
+  const showTimeRestriction = true; // Available for all
+  const showFields = resourceCode && ['customers', 'providers'].includes(resourceCode);
 
-  const hasActiveConstraints = Object.keys(constraints).length > 0
+  const hasActiveConstraints = Object.keys(constraints).length > 0;
 
   return (
     <div className="space-y-3">
@@ -186,34 +200,26 @@ export function ConstraintsEditor({
             </span>
             <ul className="mt-1 list-disc list-inside text-xs space-y-0.5">
               {constraints.geographic && (
-                <li>
-                  {locale === 'ar' ? 'قيود جغرافية' : 'Geographic restrictions'}
-                </li>
+                <li>{locale === 'ar' ? 'قيود جغرافية' : 'Geographic restrictions'}</li>
               )}
               {constraints.amount_limit && (
                 <li>
-                  {locale === 'ar' ? `حد أقصى: ${constraints.amount_limit} ج.م` : `Max amount: ${constraints.amount_limit} EGP`}
+                  {locale === 'ar'
+                    ? `حد أقصى: ${constraints.amount_limit} ج.م`
+                    : `Max amount: ${constraints.amount_limit} EGP`}
                 </li>
               )}
               {constraints.requires_approval && (
-                <li>
-                  {locale === 'ar' ? 'يحتاج موافقة' : 'Requires approval'}
-                </li>
+                <li>{locale === 'ar' ? 'يحتاج موافقة' : 'Requires approval'}</li>
               )}
               {constraints.time_restriction && (
-                <li>
-                  {locale === 'ar' ? 'مقيد بالوقت' : 'Time restricted'}
-                </li>
+                <li>{locale === 'ar' ? 'مقيد بالوقت' : 'Time restricted'}</li>
               )}
               {constraints.own_only && (
-                <li>
-                  {locale === 'ar' ? 'ما أنشأه فقط' : 'Own items only'}
-                </li>
+                <li>{locale === 'ar' ? 'ما أنشأه فقط' : 'Own items only'}</li>
               )}
               {constraints.assigned_only && (
-                <li>
-                  {locale === 'ar' ? 'المعين له فقط' : 'Assigned only'}
-                </li>
+                <li>{locale === 'ar' ? 'المعين له فقط' : 'Assigned only'}</li>
               )}
             </ul>
           </div>
@@ -260,9 +266,9 @@ export function ConstraintsEditor({
                   </p>
 
                   <div className="max-h-48 overflow-y-auto space-y-2">
-                    {governorates.map(gov => {
-                      const isSelected = constraints.geographic?.governorates?.includes(gov.id)
-                      const govCities = cities.filter(c => c.governorate_id === gov.id)
+                    {governorates.map((gov) => {
+                      const isSelected = constraints.geographic?.governorates?.includes(gov.id);
+                      const govCities = cities.filter((c) => c.governorate_id === gov.id);
 
                       return (
                         <div key={gov.id} className="space-y-1">
@@ -280,10 +286,15 @@ export function ConstraintsEditor({
 
                           {isSelected && govCities.length > 0 && (
                             <div className={`${isRTL ? 'mr-6' : 'ml-6'} space-y-1`}>
-                              {govCities.map(city => {
-                                const isCitySelected = constraints.geographic?.cities?.includes(city.id)
+                              {govCities.map((city) => {
+                                const isCitySelected = constraints.geographic?.cities?.includes(
+                                  city.id
+                                );
                                 return (
-                                  <label key={city.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-slate-50 cursor-pointer">
+                                  <label
+                                    key={city.id}
+                                    className="flex items-center gap-2 p-1.5 rounded hover:bg-slate-50 cursor-pointer"
+                                  >
                                     <input
                                       type="checkbox"
                                       checked={isCitySelected || false}
@@ -294,12 +305,12 @@ export function ConstraintsEditor({
                                       {locale === 'ar' ? city.name_ar : city.name_en}
                                     </span>
                                   </label>
-                                )
+                                );
                               })}
                             </div>
                           )}
                         </div>
-                      )
+                      );
                     })}
                   </div>
 
@@ -359,26 +370,28 @@ export function ConstraintsEditor({
                   type="number"
                   value={constraints.amount_limit || ''}
                   onChange={(e) => {
-                    const val = e.target.value ? Number(e.target.value) : undefined
-                    updateConstraint('amount_limit', val)
+                    const val = e.target.value ? Number(e.target.value) : undefined;
+                    updateConstraint('amount_limit', val);
                   }}
                   placeholder={locale === 'ar' ? 'مثال: 500' : 'e.g., 500'}
                   className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="text-sm text-slate-500">
-                  {locale === 'ar' ? 'ج.م' : 'EGP'}
-                </span>
+                <span className="text-sm text-slate-500">{locale === 'ar' ? 'ج.م' : 'EGP'}</span>
               </div>
 
               <label className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={constraints.requires_approval || false}
-                  onChange={(e) => updateConstraint('requires_approval', e.target.checked || undefined)}
+                  onChange={(e) =>
+                    updateConstraint('requires_approval', e.target.checked || undefined)
+                  }
                   className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                 />
                 <span className="text-sm text-slate-700">
-                  {locale === 'ar' ? 'يحتاج موافقة إذا تجاوز الحد' : 'Requires approval if exceeds limit'}
+                  {locale === 'ar'
+                    ? 'يحتاج موافقة إذا تجاوز الحد'
+                    : 'Requires approval if exceeds limit'}
                 </span>
               </label>
 
@@ -391,8 +404,8 @@ export function ConstraintsEditor({
                     type="number"
                     value={constraints.approval_threshold || ''}
                     onChange={(e) => {
-                      const val = e.target.value ? Number(e.target.value) : undefined
-                      updateConstraint('approval_threshold', val)
+                      const val = e.target.value ? Number(e.target.value) : undefined;
+                      updateConstraint('approval_threshold', val);
                     }}
                     placeholder={locale === 'ar' ? 'مثال: 200' : 'e.g., 200'}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
@@ -462,7 +475,9 @@ export function ConstraintsEditor({
                   <input
                     type="checkbox"
                     checked={constraints.assigned_only || false}
-                    onChange={(e) => updateConstraint('assigned_only', e.target.checked || undefined)}
+                    onChange={(e) =>
+                      updateConstraint('assigned_only', e.target.checked || undefined)
+                    }
                     className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
                   />
                   <div>
@@ -521,9 +536,13 @@ export function ConstraintsEditor({
                   checked={!!constraints.time_restriction}
                   onChange={(e) => {
                     if (e.target.checked) {
-                      updateConstraint('time_restriction', { start: '09:00', end: '22:00', days: [0, 1, 2, 3, 4, 5, 6] })
+                      updateConstraint('time_restriction', {
+                        start: '09:00',
+                        end: '22:00',
+                        days: [0, 1, 2, 3, 4, 5, 6],
+                      });
                     } else {
-                      updateConstraint('time_restriction', undefined)
+                      updateConstraint('time_restriction', undefined);
                     }
                   }}
                   className="w-4 h-4 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
@@ -565,8 +584,8 @@ export function ConstraintsEditor({
                       {locale === 'ar' ? 'أيام الأسبوع' : 'Days of week'}
                     </label>
                     <div className="flex flex-wrap gap-1">
-                      {DAYS_OF_WEEK.map(day => {
-                        const isSelected = constraints.time_restriction?.days.includes(day.value)
+                      {DAYS_OF_WEEK.map((day) => {
+                        const isSelected = constraints.time_restriction?.days.includes(day.value);
                         return (
                           <button
                             key={day.value}
@@ -580,7 +599,7 @@ export function ConstraintsEditor({
                           >
                             {locale === 'ar' ? day.ar : day.en}
                           </button>
-                        )
+                        );
                       })}
                     </div>
                   </div>
@@ -631,7 +650,7 @@ export function ConstraintsEditor({
         </Button>
       )}
     </div>
-  )
+  );
 }
 
-export default ConstraintsEditor
+export default ConstraintsEditor;

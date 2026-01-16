@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { Search, MessageCircle, Sparkles } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useLocale } from 'next-intl';
+import { Search, MessageCircle, Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface HeroSectionProps {
-  onChatClick?: () => void
-  onSearch?: (query: string) => void
-  onSearchClick?: () => void
-  className?: string
+  onChatClick?: () => void;
+  onSearch?: (query: string) => void;
+  onSearchClick?: () => void;
+  className?: string;
 }
 
 /**
@@ -21,16 +21,11 @@ export function HeroSection({
   onSearchClick,
   className = '',
 }: HeroSectionProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   return (
-    <section
-      className={cn(
-        'relative overflow-hidden',
-        className
-      )}
-    >
+    <section className={cn('relative overflow-hidden', className)}>
       {/* Elegant Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#E8F7FF] via-[#F0FAFF] to-white" />
       <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-primary/5 to-transparent" />
@@ -49,10 +44,7 @@ export function HeroSection({
         </div>
 
         {/* Elegant Search Bar */}
-        <div
-          onClick={onSearchClick}
-          className="relative max-w-2xl mx-auto group cursor-pointer"
-        >
+        <div onClick={onSearchClick} className="relative max-w-2xl mx-auto group cursor-pointer">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <div className="relative bg-white rounded-2xl shadow-elegant border border-slate-100/80 hover:border-primary/20 hover:shadow-elegant-lg transition-all duration-300">
             <div className="flex items-center px-5 py-4">
@@ -65,23 +57,21 @@ export function HeroSection({
                 placeholder={isRTL ? 'ابحث عن مطعم أو أكلة...' : 'Search for restaurant or food...'}
                 className="flex-1 mx-4 bg-transparent text-slate-900 placeholder:text-slate-400 text-base outline-none cursor-pointer"
                 onClick={(e) => {
-                  e.stopPropagation()
-                  onSearchClick?.()
+                  e.stopPropagation();
+                  onSearchClick?.();
                 }}
               />
               {onChatClick && (
                 <button
                   onClick={(e) => {
-                    e.stopPropagation()
-                    onChatClick?.()
+                    e.stopPropagation();
+                    onChatClick?.();
                   }}
                   className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-primary/90 rounded-xl text-white text-sm font-medium hover:shadow-lg hover:shadow-primary/25 active:scale-95 transition-all duration-200"
                   aria-label={isRTL ? 'دردش واطلب' : 'Chat & Order'}
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span className="hidden sm:inline">
-                    {isRTL ? 'اطلب بالذكاء' : 'AI Order'}
-                  </span>
+                  <span className="hidden sm:inline">{isRTL ? 'اطلب بالذكاء' : 'AI Order'}</span>
                 </button>
               )}
             </div>
@@ -89,5 +79,5 @@ export function HeroSection({
         </div>
       </div>
     </section>
-  )
+  );
 }

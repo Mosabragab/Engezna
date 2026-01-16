@@ -1,67 +1,67 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { CustomerLayout } from '@/components/customer/layout'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import { useCart } from '@/lib/store/cart'
-import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import { useCart } from '@/lib/store/cart';
+import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
 
 interface PaymentResultPageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }
 
 export default function PaymentResultPage({ params }: PaymentResultPageProps) {
-  const locale = useLocale()
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Cart store for clearing cart on successful payment
-  const { clearCart, clearPendingOnlineOrder, pendingOnlineOrder } = useCart()
+  const { clearCart, clearPendingOnlineOrder, pendingOnlineOrder } = useCart();
 
-  const [orderId, setOrderId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'pending' | 'failed' | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'pending' | 'failed' | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Track if cart was already cleared to prevent duplicate clears
-  const cartClearedRef = useRef(false)
+  const cartClearedRef = useRef(false);
 
   useEffect(() => {
     const init = async () => {
-      const resolvedParams = await params
-      setOrderId(resolvedParams.id)
-    }
-    init()
-  }, [params])
+      const resolvedParams = await params;
+      setOrderId(resolvedParams.id);
+    };
+    init();
+  }, [params]);
 
   useEffect(() => {
-    if (!orderId) return
+    if (!orderId) return;
 
     const checkPaymentStatus = async () => {
       try {
         // Get payment status from URL params (from Kashier redirect)
-        const urlStatus = searchParams.get('paymentStatus') || searchParams.get('status')
+        const urlStatus = searchParams.get('paymentStatus') || searchParams.get('status');
 
         // Also check the database for the actual status
-        const supabase = createClient()
+        const supabase = createClient();
         const { data: order, error: orderError } = await supabase
           .from('orders')
           .select('id, payment_status, status, total')
           .eq('id', orderId)
-          .single()
+          .single();
 
         if (orderError || !order) {
-          setError(locale === 'ar' ? 'لم يتم العثور على الطلب' : 'Order not found')
-          setLoading(false)
-          return
+          setError(locale === 'ar' ? 'لم يتم العثور على الطلب' : 'Order not found');
+          setLoading(false);
+          return;
         }
 
         // Determine final status
         if (order.payment_status === 'paid') {
-          setPaymentStatus('paid')
+          setPaymentStatus('paid');
         } else if (urlStatus === 'SUCCESS' || urlStatus === 'CAPTURED') {
           // Payment might be successful but webhook hasn't updated yet
           // Wait a bit and check again
@@ -70,85 +70,87 @@ export default function PaymentResultPage({ params }: PaymentResultPageProps) {
               .from('orders')
               .select('payment_status')
               .eq('id', orderId)
-              .single()
+              .single();
 
             if (updatedOrder?.payment_status === 'paid') {
-              setPaymentStatus('paid')
+              setPaymentStatus('paid');
             } else {
-              setPaymentStatus('pending')
+              setPaymentStatus('pending');
             }
-          }, 2000)
-          setPaymentStatus('pending')
+          }, 2000);
+          setPaymentStatus('pending');
         } else if (urlStatus === 'PENDING') {
-          setPaymentStatus('pending')
+          setPaymentStatus('pending');
         } else if (urlStatus === 'FAILED' || urlStatus === 'CANCELLED') {
-          setPaymentStatus('failed')
+          setPaymentStatus('failed');
         } else if (order.payment_status === 'failed') {
-          setPaymentStatus('failed')
+          setPaymentStatus('failed');
         } else {
-          setPaymentStatus('pending')
+          setPaymentStatus('pending');
         }
 
-        setLoading(false)
+        setLoading(false);
       } catch (err) {
-        console.error('Error checking payment status:', err)
-        setError(locale === 'ar' ? 'حدث خطأ أثناء التحقق من حالة الدفع' : 'Error checking payment status')
-        setLoading(false)
+        console.error('Error checking payment status:', err);
+        setError(
+          locale === 'ar' ? 'حدث خطأ أثناء التحقق من حالة الدفع' : 'Error checking payment status'
+        );
+        setLoading(false);
       }
-    }
+    };
 
-    checkPaymentStatus()
-  }, [orderId, searchParams, locale])
+    checkPaymentStatus();
+  }, [orderId, searchParams, locale]);
 
   // Poll for status update if pending
   useEffect(() => {
-    if (paymentStatus !== 'pending' || !orderId) return
+    if (paymentStatus !== 'pending' || !orderId) return;
 
     const pollInterval = setInterval(async () => {
-      const supabase = createClient()
+      const supabase = createClient();
       const { data: order } = await supabase
         .from('orders')
         .select('payment_status')
         .eq('id', orderId)
-        .single()
+        .single();
 
       if (order?.payment_status === 'paid') {
-        setPaymentStatus('paid')
-        clearInterval(pollInterval)
+        setPaymentStatus('paid');
+        clearInterval(pollInterval);
       } else if (order?.payment_status === 'failed') {
-        setPaymentStatus('failed')
-        clearInterval(pollInterval)
+        setPaymentStatus('failed');
+        clearInterval(pollInterval);
       }
-    }, 3000)
+    }, 3000);
 
     // Stop polling after 30 seconds
-    setTimeout(() => clearInterval(pollInterval), 30000)
+    setTimeout(() => clearInterval(pollInterval), 30000);
 
-    return () => clearInterval(pollInterval)
-  }, [paymentStatus, orderId])
+    return () => clearInterval(pollInterval);
+  }, [paymentStatus, orderId]);
 
   // Handle cart clearing based on payment status
   useEffect(() => {
     if (paymentStatus === 'paid' && !cartClearedRef.current) {
       // Payment successful - clear cart and pending order
-      cartClearedRef.current = true
-      clearCart()
-      clearPendingOnlineOrder()
-      console.log('Payment successful - cart cleared')
+      cartClearedRef.current = true;
+      clearCart();
+      clearPendingOnlineOrder();
+      console.log('Payment successful - cart cleared');
     } else if (paymentStatus === 'failed') {
       // Payment failed - clear pending order but keep cart for retry
-      clearPendingOnlineOrder()
-      console.log('Payment failed - pending order cleared, cart preserved for retry')
+      clearPendingOnlineOrder();
+      console.log('Payment failed - pending order cleared, cart preserved for retry');
     }
-  }, [paymentStatus, clearCart, clearPendingOnlineOrder])
+  }, [paymentStatus, clearCart, clearPendingOnlineOrder]);
 
   // Verify this is the correct order (matches pending order)
   useEffect(() => {
     if (orderId && pendingOnlineOrder && pendingOnlineOrder.orderId !== orderId) {
       // This shouldn't happen, but log it for debugging
-      console.warn('Order ID mismatch: URL order differs from pending order')
+      console.warn('Order ID mismatch: URL order differs from pending order');
     }
-  }, [orderId, pendingOnlineOrder])
+  }, [orderId, pendingOnlineOrder]);
 
   if (loading) {
     return (
@@ -160,7 +162,7 @@ export default function PaymentResultPage({ params }: PaymentResultPageProps) {
           </p>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   if (error) {
@@ -168,16 +170,14 @@ export default function PaymentResultPage({ params }: PaymentResultPageProps) {
       <CustomerLayout showBackButton={true} showBottomNav={true}>
         <div className="min-h-[60vh] flex flex-col items-center justify-center p-6">
           <XCircle className="w-20 h-20 text-destructive mb-4" />
-          <h1 className="text-2xl font-bold mb-2">
-            {locale === 'ar' ? 'خطأ' : 'Error'}
-          </h1>
+          <h1 className="text-2xl font-bold mb-2">{locale === 'ar' ? 'خطأ' : 'Error'}</h1>
           <p className="text-muted-foreground mb-6">{error}</p>
           <Button onClick={() => router.push(`/${locale}`)}>
             {locale === 'ar' ? 'العودة للرئيسية' : 'Go Home'}
           </Button>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   return (
@@ -257,5 +257,5 @@ export default function PaymentResultPage({ params }: PaymentResultPageProps) {
         )}
       </div>
     </CustomerLayout>
-  )
+  );
 }

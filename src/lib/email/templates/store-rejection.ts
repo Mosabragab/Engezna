@@ -1,9 +1,9 @@
 export interface StoreRejectionData {
-  to: string
-  merchantName: string
-  storeName: string
-  rejectionReason: string
-  supportUrl: string
+  to: string;
+  merchantName: string;
+  storeName: string;
+  rejectionReason: string;
+  supportUrl: string;
 }
 
 export function storeRejectionTemplate(data: StoreRejectionData): string {
@@ -117,5 +117,5 @@ export function storeRejectionTemplate(data: StoreRejectionData): string {
         </tr>
     </table>
 </body>
-</html>`
+</html>`;
 }

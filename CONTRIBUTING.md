@@ -180,16 +180,16 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ### Types
 
-| Type | Description |
-|------|-------------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
-| `style` | Code style (formatting, no logic change) |
-| `refactor` | Code refactoring |
-| `perf` | Performance improvement |
-| `test` | Adding/updating tests |
-| `chore` | Build process, dependencies |
+| Type       | Description                              |
+| ---------- | ---------------------------------------- |
+| `feat`     | New feature                              |
+| `fix`      | Bug fix                                  |
+| `docs`     | Documentation only                       |
+| `style`    | Code style (formatting, no logic change) |
+| `refactor` | Code refactoring                         |
+| `perf`     | Performance improvement                  |
+| `test`     | Adding/updating tests                    |
+| `chore`    | Build process, dependencies              |
 
 ### Scopes
 
@@ -348,6 +348,7 @@ npx playwright test e2e/customer-journey.spec.ts
 ### Translation Keys
 
 All user-facing text must have translations in:
+
 - `/src/i18n/messages/ar.json`
 - `/src/i18n/messages/en.json`
 
@@ -378,6 +379,7 @@ All user-facing text must have translations in:
 ## Contact
 
 For questions or issues:
+
 - **Email:** support@engezna.com
 - **GitHub Issues:** [Create Issue](https://github.com/Mosabragab/Engezna/issues)
 

@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
+import { useLocale } from 'next-intl';
 
-type StatusType = 'open' | 'closed' | 'busy' | 'paused' | 'pending'
+type StatusType = 'open' | 'closed' | 'busy' | 'paused' | 'pending';
 
 interface StatusBadgeProps {
-  status: StatusType
-  size?: 'sm' | 'md' | 'lg'
-  showDot?: boolean
-  className?: string
+  status: StatusType;
+  size?: 'sm' | 'md' | 'lg';
+  showDot?: boolean;
+  className?: string;
 }
 
 export function StatusBadge({
@@ -17,7 +17,7 @@ export function StatusBadge({
   showDot = true,
   className = '',
 }: StatusBadgeProps) {
-  const locale = useLocale()
+  const locale = useLocale();
 
   const statusConfig = {
     open: {
@@ -50,21 +50,21 @@ export function StatusBadge({
       textColor: 'text-slate-700',
       dotColor: 'bg-slate-500',
     },
-  }
+  };
 
-  const config = statusConfig[status] || statusConfig.closed
+  const config = statusConfig[status] || statusConfig.closed;
 
   const sizeClasses = {
     sm: 'text-xs px-2 py-0.5',
     md: 'text-sm px-2.5 py-1',
     lg: 'text-base px-3 py-1.5',
-  }
+  };
 
   const dotSizes = {
     sm: 'w-1.5 h-1.5',
     md: 'w-2 h-2',
     lg: 'w-2.5 h-2.5',
-  }
+  };
 
   return (
     <span
@@ -75,5 +75,5 @@ export function StatusBadge({
       )}
       {config.label}
     </span>
-  )
+  );
 }

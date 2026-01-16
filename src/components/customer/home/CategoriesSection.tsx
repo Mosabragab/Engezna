@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface Category {
-  id: string
-  key: string
-  nameAr: string
-  nameEn: string
-  emoji: string
-  gradient: string
+  id: string;
+  key: string;
+  nameAr: string;
+  nameEn: string;
+  emoji: string;
+  gradient: string;
 }
 
 // Active categories - 4 categories currently available
@@ -23,7 +23,7 @@ const categories: Category[] = [
     nameAr: 'مطاعم',
     nameEn: 'Restaurants',
     emoji: '🍔',
-    gradient: 'linear-gradient(145deg, rgba(254,243,199,0.85) 0%, rgba(254,249,195,0.7) 100%)'
+    gradient: 'linear-gradient(145deg, rgba(254,243,199,0.85) 0%, rgba(254,249,195,0.7) 100%)',
   },
   {
     id: '2',
@@ -31,7 +31,7 @@ const categories: Category[] = [
     nameAr: 'البن والحلويات',
     nameEn: 'Coffee & Sweets',
     emoji: '☕',
-    gradient: 'linear-gradient(145deg, rgba(245,235,220,0.9) 0%, rgba(237,224,205,0.75) 100%)'
+    gradient: 'linear-gradient(145deg, rgba(245,235,220,0.9) 0%, rgba(237,224,205,0.75) 100%)',
   },
   {
     id: '3',
@@ -39,7 +39,7 @@ const categories: Category[] = [
     nameAr: 'سوبر ماركت',
     nameEn: 'Supermarket',
     emoji: '🛒',
-    gradient: 'linear-gradient(145deg, rgba(224,244,255,0.9) 0%, rgba(186,230,253,0.75) 100%)'
+    gradient: 'linear-gradient(145deg, rgba(224,244,255,0.9) 0%, rgba(186,230,253,0.75) 100%)',
   },
   {
     id: '4',
@@ -47,16 +47,16 @@ const categories: Category[] = [
     nameAr: 'خضروات وفواكه',
     nameEn: 'Vegetables & Fruits',
     emoji: '🍌',
-    gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)'
+    gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)',
   },
-]
+];
 
 interface CategoriesSectionProps {
-  selectedCategory?: string
-  onCategoryClick?: (categoryKey: string) => void
-  showViewAll?: boolean
-  onViewAll?: () => void
-  className?: string
+  selectedCategory?: string;
+  onCategoryClick?: (categoryKey: string) => void;
+  showViewAll?: boolean;
+  onViewAll?: () => void;
+  className?: string;
 }
 
 export function CategoriesSection({
@@ -66,9 +66,9 @@ export function CategoriesSection({
   onViewAll,
   className = '',
 }: CategoriesSectionProps) {
-  const locale = useLocale()
+  const locale = useLocale();
 
-  const sectionTitle = locale === 'ar' ? 'الأقسام' : 'Categories'
+  const sectionTitle = locale === 'ar' ? 'الأقسام' : 'Categories';
 
   return (
     <section className={cn('py-6 px-4 bg-white', className)}>
@@ -89,11 +89,13 @@ export function CategoriesSection({
       {/* Categories Grid - Elegant Design with Hover Effects */}
       <div className="grid grid-cols-4 gap-3 sm:gap-4">
         {categories.map((category, index) => {
-          const isSelected = selectedCategory === category.key
+          const isSelected = selectedCategory === category.key;
 
           const cardContent = (
-            <div className={`flex flex-col items-center animate-slide-up opacity-0 stagger-${index + 1}`}
-                 style={{ animationFillMode: 'forwards' }}>
+            <div
+              className={`flex flex-col items-center animate-slide-up opacity-0 stagger-${index + 1}`}
+              style={{ animationFillMode: 'forwards' }}
+            >
               {/* Card - Elegant floating design */}
               <div
                 className={cn(
@@ -122,14 +124,16 @@ export function CategoriesSection({
               </div>
 
               {/* Label - Elegant typography */}
-              <span className={cn(
-                'mt-3 text-xs sm:text-sm font-semibold text-center leading-tight line-clamp-2',
-                isSelected ? 'text-primary' : 'text-slate-700'
-              )}>
+              <span
+                className={cn(
+                  'mt-3 text-xs sm:text-sm font-semibold text-center leading-tight line-clamp-2',
+                  isSelected ? 'text-primary' : 'text-slate-700'
+                )}
+              >
                 {locale === 'ar' ? category.nameAr : category.nameEn}
               </span>
             </div>
-          )
+          );
 
           if (onCategoryClick) {
             return (
@@ -140,7 +144,7 @@ export function CategoriesSection({
               >
                 {cardContent}
               </button>
-            )
+            );
           }
 
           return (
@@ -151,12 +155,12 @@ export function CategoriesSection({
             >
               {cardContent}
             </Link>
-          )
+          );
         })}
       </div>
     </section>
-  )
+  );
 }
 
-export { categories }
-export type { Category }
+export { categories };
+export type { Category };

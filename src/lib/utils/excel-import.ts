@@ -8,12 +8,8 @@
  * - variants: Multiple options with different prices (pizza sizes, kebab weights)
  */
 
-import * as XLSX from 'xlsx'
-import type {
-  ExtractedCategory,
-  ExtractedProduct,
-  ExtractedVariant,
-} from '@/types/menu-import'
+import * as XLSX from 'xlsx';
+import type { ExtractedCategory, ExtractedProduct, ExtractedVariant } from '@/types/menu-import';
 import {
   PRICING_TYPES,
   VARIANT_TYPES,
@@ -21,12 +17,8 @@ import {
   detectVariantTypeFromHeaders,
   type PricingType,
   type VariantType,
-} from '@/lib/constants/pricing-types'
-import {
-  UNIT_TYPES,
-  getSuggestedUnit,
-  type UnitType,
-} from '@/lib/constants/unit-types'
+} from '@/lib/constants/pricing-types';
+import { UNIT_TYPES, getSuggestedUnit, type UnitType } from '@/lib/constants/unit-types';
 
 // ═══════════════════════════════════════════════════════════════
 // COLUMN DETECTION PATTERNS
@@ -38,7 +30,20 @@ export const COLUMN_PATTERNS: Record<string, string[]> = {
   category: ['القسم', 'الفئة', 'التصنيف', 'category', 'section', 'type', 'نوع', 'الاقسام', 'قسم'],
 
   // Product name - 'الصنف' here means the item/product name
-  product: ['المنتج', 'الاسم', 'الصنف', 'البند', 'product', 'name', 'item', 'اسم المنتج', 'المنتجات', 'الأصناف', 'منتج', 'صنف'],
+  product: [
+    'المنتج',
+    'الاسم',
+    'الصنف',
+    'البند',
+    'product',
+    'name',
+    'item',
+    'اسم المنتج',
+    'المنتجات',
+    'الأصناف',
+    'منتج',
+    'صنف',
+  ],
 
   // Single price
   price: ['السعر', 'price', 'سعر', 'الثمن', 'cost', 'التكلفة'],
@@ -74,8 +79,18 @@ export const COLUMN_PATTERNS: Record<string, string[]> = {
   name_en: ['الاسم بالانجليزي', 'english name', 'name en', 'الاسم الانجليزي'],
 
   // Image URL
-  image_url: ['الصورة', 'صورة', 'image', 'image_url', 'imageurl', 'رابط الصورة', 'url', 'photo', 'صوره'],
-}
+  image_url: [
+    'الصورة',
+    'صورة',
+    'image',
+    'image_url',
+    'imageurl',
+    'رابط الصورة',
+    'url',
+    'photo',
+    'صوره',
+  ],
+};
 
 // ═══════════════════════════════════════════════════════════════
 // VARIANT GROUP CONFIGURATIONS
@@ -124,64 +139,64 @@ export const VARIANT_GROUPS = {
       weight_kilo: { ar: 'كيلو', en: '1kg', multiplier: 1 },
     },
   },
-}
+};
 
 // ═══════════════════════════════════════════════════════════════
 // INTERFACES
 // ═══════════════════════════════════════════════════════════════
 
 export interface ColumnMapping {
-  category?: number
-  product: number
-  price?: number
-  description?: number
-  name_en?: number
-  unit?: number
-  image_url?: number
+  category?: number;
+  product: number;
+  price?: number;
+  description?: number;
+  name_en?: number;
+  unit?: number;
+  image_url?: number;
   variants: Array<{
-    column: number
-    key: string
-    name_ar: string
-    name_en: string
-    variantType: VariantType
-    multiplier?: number
-  }>
+    column: number;
+    key: string;
+    name_ar: string;
+    name_en: string;
+    variantType: VariantType;
+    multiplier?: number;
+  }>;
 }
 
 export interface DetectionResult {
-  mapping: ColumnMapping
-  confidence: number
-  pricingType: PricingType
-  variantType: VariantType | null
-  unitType: UnitType | null
-  variantGroup: keyof typeof VARIANT_GROUPS | null
-  suggestions: string[]
-  headers: string[]
-  sampleData: string[][]
+  mapping: ColumnMapping;
+  confidence: number;
+  pricingType: PricingType;
+  variantType: VariantType | null;
+  unitType: UnitType | null;
+  variantGroup: keyof typeof VARIANT_GROUPS | null;
+  suggestions: string[];
+  headers: string[];
+  sampleData: string[][];
 }
 
 export interface ParsedExcelData {
-  categories: ExtractedCategory[]
-  totalProducts: number
-  warnings: string[]
-  pricingType: PricingType
-  variantType: VariantType | null
-  unitType: UnitType | null
+  categories: ExtractedCategory[];
+  totalProducts: number;
+  warnings: string[];
+  pricingType: PricingType;
+  variantType: VariantType | null;
+  unitType: UnitType | null;
 }
 
 export interface MultiSheetResult {
   sheets: Array<{
-    name: string
-    detection: DetectionResult
-    data: ParsedExcelData
-  }>
-  combined: ParsedExcelData
+    name: string;
+    detection: DetectionResult;
+    data: ParsedExcelData;
+  }>;
+  combined: ParsedExcelData;
 }
 
 export interface SheetData {
-  name: string
-  headers: string[]
-  rows: (string | number | null)[][]
+  name: string;
+  headers: string[];
+  rows: (string | number | null)[][];
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -192,65 +207,65 @@ export interface SheetData {
  * Read Excel file and return data from ALL sheets
  */
 export async function readExcelFile(file: File): Promise<{
-  sheets: SheetData[]
-  sheetNames: string[]
+  sheets: SheetData[];
+  sheetNames: string[];
 }> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
 
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer)
-        const workbook = XLSX.read(data, { type: 'array' })
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
 
-        const sheets: SheetData[] = []
+        const sheets: SheetData[] = [];
 
         // Read ALL sheets
         for (const sheetName of workbook.SheetNames) {
-          const worksheet = workbook.Sheets[sheetName]
+          const worksheet = workbook.Sheets[sheetName];
 
           // Convert to JSON
           const jsonData = XLSX.utils.sheet_to_json<(string | number | null)[]>(worksheet, {
             header: 1,
             defval: null,
-          })
+          });
 
           if (jsonData.length < 2) {
-            continue // Skip empty sheets
+            continue; // Skip empty sheets
           }
 
           // First row is headers
-          const headers = (jsonData[0] || []).map((h) => String(h || '').trim())
-          const rows = jsonData.slice(1).filter((row) =>
-            row.some((cell) => cell !== null && cell !== '')
-          )
+          const headers = (jsonData[0] || []).map((h) => String(h || '').trim());
+          const rows = jsonData
+            .slice(1)
+            .filter((row) => row.some((cell) => cell !== null && cell !== ''));
 
           if (rows.length > 0) {
             sheets.push({
               name: sheetName,
               headers,
               rows,
-            })
+            });
           }
         }
 
         if (sheets.length === 0) {
-          reject(new Error('الملف فارغ أو لا يحتوي على بيانات كافية'))
-          return
+          reject(new Error('الملف فارغ أو لا يحتوي على بيانات كافية'));
+          return;
         }
 
         resolve({
           sheets,
           sheetNames: workbook.SheetNames,
-        })
+        });
       } catch (error) {
-        reject(new Error('فشل في قراءة الملف: ' + (error as Error).message))
+        reject(new Error('فشل في قراءة الملف: ' + (error as Error).message));
       }
-    }
+    };
 
-    reader.onerror = () => reject(new Error('فشل في قراءة الملف'))
-    reader.readAsArrayBuffer(file)
-  })
+    reader.onerror = () => reject(new Error('فشل في قراءة الملف'));
+    reader.readAsArrayBuffer(file);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -261,20 +276,23 @@ export async function readExcelFile(file: File): Promise<{
  * Check if a column contains mostly numeric values (prices)
  */
 function isNumericColumn(rows: (string | number | null)[][], columnIndex: number): boolean {
-  let numericCount = 0
-  let totalCount = 0
+  let numericCount = 0;
+  let totalCount = 0;
 
   for (const row of rows.slice(0, 10)) {
-    const value = row[columnIndex]
+    const value = row[columnIndex];
     if (value !== null && value !== undefined && value !== '') {
-      totalCount++
-      if (typeof value === 'number' || (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.-]/g, ''))))) {
-        numericCount++
+      totalCount++;
+      if (
+        typeof value === 'number' ||
+        (typeof value === 'string' && !isNaN(parseFloat(value.replace(/[^\d.-]/g, ''))))
+      ) {
+        numericCount++;
       }
     }
   }
 
-  return totalCount > 0 && (numericCount / totalCount) >= 0.8
+  return totalCount > 0 && numericCount / totalCount >= 0.8;
 }
 
 /**
@@ -282,32 +300,32 @@ function isNumericColumn(rows: (string | number | null)[][], columnIndex: number
  */
 function parsePrice(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined || value === '') {
-    return null
+    return null;
   }
 
   if (typeof value === 'number') {
-    return value > 0 ? value : null
+    return value > 0 ? value : null;
   }
 
   const cleanedValue = String(value)
     .replace(/[^\d.,-]/g, '')
     .replace(',', '.')
-    .trim()
+    .trim();
 
-  const parsed = parseFloat(cleanedValue)
-  return !isNaN(parsed) && parsed > 0 ? parsed : null
+  const parsed = parseFloat(cleanedValue);
+  return !isNaN(parsed) && parsed > 0 ? parsed : null;
 }
 
 /**
  * Detect pricing type and unit from sheet name
  */
 function detectFromSheetName(sheetName: string): {
-  pricingType: PricingType
-  variantType: VariantType | null
-  unitType: UnitType | null
-  variantGroup: keyof typeof VARIANT_GROUPS | null
+  pricingType: PricingType;
+  variantType: VariantType | null;
+  unitType: UnitType | null;
+  variantGroup: keyof typeof VARIANT_GROUPS | null;
 } {
-  const name = sheetName.toLowerCase()
+  const name = sheetName.toLowerCase();
 
   // Check for per_unit patterns (vegetables, fruits, grocery)
   if (name.includes('خضار') || name.includes('فاكهة') || name.includes('فواكه')) {
@@ -316,7 +334,7 @@ function detectFromSheetName(sheetName: string): {
       variantType: null,
       unitType: 'kg',
       variantGroup: null,
-    }
+    };
   }
 
   if (name.includes('سوبر') || name.includes('بقالة') || name.includes('grocery')) {
@@ -325,7 +343,7 @@ function detectFromSheetName(sheetName: string): {
       variantType: null,
       unitType: 'piece',
       variantGroup: null,
-    }
+    };
   }
 
   // Check for variants patterns
@@ -335,17 +353,22 @@ function detectFromSheetName(sheetName: string): {
       variantType: 'size',
       unitType: null,
       variantGroup: 'sizes',
-    }
+    };
   }
 
-  if (name.includes('مشويات') || name.includes('كباب') || name.includes('لحوم') ||
-      name.includes('أوزان') || name.includes('اوزان')) {
+  if (
+    name.includes('مشويات') ||
+    name.includes('كباب') ||
+    name.includes('لحوم') ||
+    name.includes('أوزان') ||
+    name.includes('اوزان')
+  ) {
     return {
       pricingType: 'variants',
       variantType: 'weight',
       unitType: null,
       variantGroup: 'weights_restaurant',
-    }
+    };
   }
 
   if (name.includes('قهوة') || name.includes('coffee') || name.includes('جرامات')) {
@@ -354,7 +377,7 @@ function detectFromSheetName(sheetName: string): {
       variantType: 'coffee_weight',
       unitType: null,
       variantGroup: 'weights_coffee',
-    }
+    };
   }
 
   // Check for restaurant patterns (fixed or variants)
@@ -364,7 +387,7 @@ function detectFromSheetName(sheetName: string): {
       variantType: null,
       unitType: 'piece',
       variantGroup: null,
-    }
+    };
   }
 
   // Default
@@ -373,7 +396,7 @@ function detectFromSheetName(sheetName: string): {
     variantType: null,
     unitType: null,
     variantGroup: null,
-  }
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -391,118 +414,120 @@ export function detectColumns(
   const mapping: ColumnMapping = {
     product: -1,
     variants: [],
-  }
+  };
 
-  const suggestions: string[] = []
-  let confidence = 0
-  let matchedCount = 0
+  const suggestions: string[] = [];
+  let confidence = 0;
+  let matchedCount = 0;
 
   // Debug: Log input
-  console.log('=== DETECT COLUMNS DEBUG ===')
-  console.log('Sheet name:', sheetName)
-  console.log('Headers:', JSON.stringify(headers))
+  console.log('=== DETECT COLUMNS DEBUG ===');
+  console.log('Sheet name:', sheetName);
+  console.log('Headers:', JSON.stringify(headers));
 
   // Get hints from sheet name
-  const sheetHints = sheetName ? detectFromSheetName(sheetName) : {
-    pricingType: 'fixed' as PricingType,
-    variantType: null,
-    unitType: null,
-    variantGroup: null,
-  }
+  const sheetHints = sheetName
+    ? detectFromSheetName(sheetName)
+    : {
+        pricingType: 'fixed' as PricingType,
+        variantType: null,
+        unitType: null,
+        variantGroup: null,
+      };
 
   // Normalize headers
-  const normalizedHeaders = headers.map((h) =>
-    h.toLowerCase().trim().replace(/\s+/g, ' ')
-  )
+  const normalizedHeaders = headers.map((h) => h.toLowerCase().trim().replace(/\s+/g, ' '));
 
   // Helper to find column with strict matching
   const findColumn = (patternKey: string): number => {
-    const patterns = COLUMN_PATTERNS[patternKey]
-    if (!patterns) return -1
+    const patterns = COLUMN_PATTERNS[patternKey];
+    if (!patterns) return -1;
 
     for (let i = 0; i < normalizedHeaders.length; i++) {
-      const header = normalizedHeaders[i]
-      if (!header || header.length === 0) continue
+      const header = normalizedHeaders[i];
+      if (!header || header.length === 0) continue;
 
       for (const pattern of patterns) {
-        const normalizedPattern = pattern.toLowerCase()
+        const normalizedPattern = pattern.toLowerCase();
 
         // Exact match (highest priority)
         if (header === normalizedPattern) {
-          return i
+          return i;
         }
 
         // Header contains pattern (pattern must be 2+ chars to avoid false positives)
         if (normalizedPattern.length >= 2 && header.includes(normalizedPattern)) {
-          return i
+          return i;
         }
 
         // Pattern contains header (header must be 2+ chars to avoid false positives)
         if (header.length >= 2 && normalizedPattern.includes(header)) {
-          return i
+          return i;
         }
       }
     }
-    return -1
-  }
+    return -1;
+  };
 
   // Detect product column (required)
-  mapping.product = findColumn('product')
+  mapping.product = findColumn('product');
   if (mapping.product === -1) {
     // First non-numeric column might be product
     for (let i = 0; i < headers.length; i++) {
       if (!normalizedHeaders[i].match(/\d/) && normalizedHeaders[i].length > 0) {
         if (mapping.category === undefined || mapping.category !== i) {
-          mapping.product = i
-          suggestions.push(`تم تخمين عمود المنتج: "${headers[i]}"`)
-          break
+          mapping.product = i;
+          suggestions.push(`تم تخمين عمود المنتج: "${headers[i]}"`);
+          break;
         }
       }
     }
   } else {
-    matchedCount++
+    matchedCount++;
   }
 
   // Detect other basic columns
-  mapping.category = findColumn('category')
-  if (mapping.category !== -1) matchedCount++
+  mapping.category = findColumn('category');
+  if (mapping.category !== -1) matchedCount++;
 
-  mapping.description = findColumn('description')
-  if (mapping.description !== -1) matchedCount++
+  mapping.description = findColumn('description');
+  if (mapping.description !== -1) matchedCount++;
 
-  mapping.name_en = findColumn('name_en')
-  if (mapping.name_en !== -1) matchedCount++
+  mapping.name_en = findColumn('name_en');
+  if (mapping.name_en !== -1) matchedCount++;
 
-  mapping.unit = findColumn('unit')
-  if (mapping.unit !== -1) matchedCount++
+  mapping.unit = findColumn('unit');
+  if (mapping.unit !== -1) matchedCount++;
 
-  mapping.image_url = findColumn('image_url')
-  if (mapping.image_url !== -1) matchedCount++
+  mapping.image_url = findColumn('image_url');
+  if (mapping.image_url !== -1) matchedCount++;
 
   // Detect price column
-  const priceCol = findColumn('price')
+  const priceCol = findColumn('price');
 
   // Detect variant columns
-  let detectedVariantGroup: keyof typeof VARIANT_GROUPS | null = null
-  let detectedVariantType: VariantType | null = null
+  let detectedVariantGroup: keyof typeof VARIANT_GROUPS | null = null;
+  let detectedVariantType: VariantType | null = null;
 
   // Check each variant group and find the BEST match (most columns matched)
   let bestGroupMatch: {
-    groupKey: keyof typeof VARIANT_GROUPS
-    variants: ColumnMapping['variants']
-    variantType: VariantType
-  } | null = null
+    groupKey: keyof typeof VARIANT_GROUPS;
+    variants: ColumnMapping['variants'];
+    variantType: VariantType;
+  } | null = null;
 
   for (const [groupKey, group] of Object.entries(VARIANT_GROUPS)) {
-    const foundVariants: ColumnMapping['variants'] = []
+    const foundVariants: ColumnMapping['variants'] = [];
 
     for (const colKey of group.columns) {
-      const colIndex = findColumn(colKey)
+      const colIndex = findColumn(colKey);
       if (colIndex !== -1) {
-        const labelInfo = (group.labels as Record<string, { ar: string; en: string; multiplier?: number }>)[colKey]
+        const labelInfo = (
+          group.labels as Record<string, { ar: string; en: string; multiplier?: number }>
+        )[colKey];
         if (labelInfo) {
           // Use ACTUAL column header for display, but keep multiplier from config
-          const actualHeader = headers[colIndex] || labelInfo.ar
+          const actualHeader = headers[colIndex] || labelInfo.ar;
           foundVariants.push({
             column: colIndex,
             key: colKey,
@@ -510,7 +535,7 @@ export function detectColumns(
             name_en: actualHeader, // Use actual header name!
             variantType: group.variantType,
             multiplier: labelInfo.multiplier,
-          })
+          });
         }
       }
     }
@@ -522,115 +547,130 @@ export function detectColumns(
           groupKey: groupKey as keyof typeof VARIANT_GROUPS,
           variants: foundVariants,
           variantType: group.variantType,
-        }
+        };
       }
     }
   }
 
   // Use the best matching group
   if (bestGroupMatch) {
-    mapping.variants = bestGroupMatch.variants
-    detectedVariantGroup = bestGroupMatch.groupKey
-    detectedVariantType = bestGroupMatch.variantType
-    matchedCount += bestGroupMatch.variants.length
+    mapping.variants = bestGroupMatch.variants;
+    detectedVariantGroup = bestGroupMatch.groupKey;
+    detectedVariantType = bestGroupMatch.variantType;
+    matchedCount += bestGroupMatch.variants.length;
   }
 
   // If no variants found, check for numeric columns
   if (mapping.variants.length === 0 && priceCol !== -1) {
-    mapping.price = priceCol
-    matchedCount++
+    mapping.price = priceCol;
+    matchedCount++;
   }
 
   // Auto-detect numeric columns as price columns
   if (mapping.variants.length === 0 && mapping.price === undefined && rows) {
-    const numericColumns: number[] = []
+    const numericColumns: number[] = [];
     for (let i = 0; i < headers.length; i++) {
-      if (i !== mapping.product && i !== mapping.category && i !== mapping.description && i !== mapping.unit) {
+      if (
+        i !== mapping.product &&
+        i !== mapping.category &&
+        i !== mapping.description &&
+        i !== mapping.unit
+      ) {
         if (isNumericColumn(rows, i)) {
-          numericColumns.push(i)
+          numericColumns.push(i);
         }
       }
     }
 
     if (numericColumns.length === 1) {
-      mapping.price = numericColumns[0]
-      matchedCount++
+      mapping.price = numericColumns[0];
+      matchedCount++;
     } else if (numericColumns.length >= 2) {
       // Multiple price columns = variants
-      const looksLikeSizes = numericColumns.some(col =>
+      const looksLikeSizes = numericColumns.some((col) =>
         /صغير|وسط|كبير|small|medium|large/i.test(headers[col])
-      )
-      const looksLikeWeights = numericColumns.some(col =>
+      );
+      const looksLikeWeights = numericColumns.some((col) =>
         /ربع|نص|كيلو|quarter|half|kilo|جرام|gram/i.test(headers[col])
-      )
+      );
 
       for (let idx = 0; idx < numericColumns.length; idx++) {
-        const col = numericColumns[idx]
-        const varType = looksLikeWeights ? 'weight' : looksLikeSizes ? 'size' : 'option'
+        const col = numericColumns[idx];
+        const varType = looksLikeWeights ? 'weight' : looksLikeSizes ? 'size' : 'option';
         mapping.variants.push({
           column: col,
           key: `variant_${idx}`,
           name_ar: headers[col] || `خيار ${idx + 1}`,
           name_en: headers[col] || `Option ${idx + 1}`,
           variantType: varType,
-        })
+        });
       }
 
       if (looksLikeWeights) {
-        detectedVariantGroup = 'weights_restaurant'
-        detectedVariantType = 'weight'
+        detectedVariantGroup = 'weights_restaurant';
+        detectedVariantType = 'weight';
       } else if (looksLikeSizes) {
-        detectedVariantGroup = 'sizes'
-        detectedVariantType = 'size'
+        detectedVariantGroup = 'sizes';
+        detectedVariantType = 'size';
       } else {
-        detectedVariantGroup = null
-        detectedVariantType = 'option'
+        detectedVariantGroup = null;
+        detectedVariantType = 'option';
       }
-      matchedCount += numericColumns.length
+      matchedCount += numericColumns.length;
     }
   }
 
   // Calculate confidence
-  const totalPossible = 4 + (mapping.variants.length || 1)
-  confidence = Math.min(1, matchedCount / totalPossible)
+  const totalPossible = 4 + (mapping.variants.length || 1);
+  confidence = Math.min(1, matchedCount / totalPossible);
 
   // Determine final pricing type
-  let pricingType: PricingType = 'fixed'
-  let variantType: VariantType | null = null
-  let unitType: UnitType | null = null
+  let pricingType: PricingType = 'fixed';
+  let variantType: VariantType | null = null;
+  let unitType: UnitType | null = null;
 
   if (mapping.variants.length > 0) {
-    pricingType = 'variants'
-    variantType = detectedVariantType || sheetHints.variantType
+    pricingType = 'variants';
+    variantType = detectedVariantType || sheetHints.variantType;
   } else if (sheetHints.pricingType === 'per_unit') {
-    pricingType = 'per_unit'
-    unitType = sheetHints.unitType || 'kg'
+    pricingType = 'per_unit';
+    unitType = sheetHints.unitType || 'kg';
   } else {
-    pricingType = 'fixed'
+    pricingType = 'fixed';
   }
 
   // Use sheet hints if no variants detected
   if (!detectedVariantGroup && sheetHints.variantGroup) {
-    detectedVariantGroup = sheetHints.variantGroup
-    variantType = sheetHints.variantType
-    pricingType = 'variants'
+    detectedVariantGroup = sheetHints.variantGroup;
+    variantType = sheetHints.variantType;
+    pricingType = 'variants';
   }
 
   // Suggestions
   if (confidence < 0.5) {
-    suggestions.push('لم يتم التعرف على بعض الأعمدة، يرجى التحقق من التعيين')
+    suggestions.push('لم يتم التعرف على بعض الأعمدة، يرجى التحقق من التعيين');
   }
   if (mapping.product === -1) {
-    suggestions.push('لم يتم العثور على عمود اسم المنتج')
+    suggestions.push('لم يتم العثور على عمود اسم المنتج');
   }
 
   // Debug: Log detection result
-  console.log('=== DETECT COLUMNS RESULT ===')
-  console.log('Product column:', mapping.product, '→', headers[mapping.product] || 'NOT FOUND')
-  console.log('Category column:', mapping.category, '→', mapping.category !== undefined ? headers[mapping.category] || 'NOT FOUND' : 'undefined')
-  console.log('Price column:', mapping.price, '→', mapping.price !== undefined ? headers[mapping.price] || 'NOT FOUND' : 'undefined')
-  console.log('Pricing type:', pricingType)
-  console.log('Confidence:', confidence)
+  console.log('=== DETECT COLUMNS RESULT ===');
+  console.log('Product column:', mapping.product, '→', headers[mapping.product] || 'NOT FOUND');
+  console.log(
+    'Category column:',
+    mapping.category,
+    '→',
+    mapping.category !== undefined ? headers[mapping.category] || 'NOT FOUND' : 'undefined'
+  );
+  console.log(
+    'Price column:',
+    mapping.price,
+    '→',
+    mapping.price !== undefined ? headers[mapping.price] || 'NOT FOUND' : 'undefined'
+  );
+  console.log('Pricing type:', pricingType);
+  console.log('Confidence:', confidence);
 
   return {
     mapping,
@@ -642,7 +682,7 @@ export function detectColumns(
     suggestions,
     headers,
     sampleData: [],
-  }
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -659,34 +699,34 @@ export function transformExcelData(
   variantType: VariantType | null = null,
   unitType: UnitType | null = null
 ): ParsedExcelData {
-  const categoriesMap = new Map<string, ExtractedCategory>()
-  const warnings: string[] = []
-  let totalProducts = 0
+  const categoriesMap = new Map<string, ExtractedCategory>();
+  const warnings: string[] = [];
+  let totalProducts = 0;
 
   // Debug: Log column mapping
-  console.log('=== TRANSFORM EXCEL DATA DEBUG ===')
-  console.log('Column mapping:', JSON.stringify(mapping, null, 2))
-  console.log('Product column index:', mapping.product)
-  console.log('Category column index:', mapping.category)
-  console.log('Price column index:', mapping.price)
-  console.log('Pricing type:', pricingType)
-  console.log('Total rows to process:', rows.length)
+  console.log('=== TRANSFORM EXCEL DATA DEBUG ===');
+  console.log('Column mapping:', JSON.stringify(mapping, null, 2));
+  console.log('Product column index:', mapping.product);
+  console.log('Category column index:', mapping.category);
+  console.log('Price column index:', mapping.price);
+  console.log('Pricing type:', pricingType);
+  console.log('Total rows to process:', rows.length);
   if (rows.length > 0) {
-    console.log('First row sample:', JSON.stringify(rows[0]))
+    console.log('First row sample:', JSON.stringify(rows[0]));
   }
 
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-    const row = rows[rowIndex]
+    const row = rows[rowIndex];
 
     // Get product name
-    const productName = mapping.product >= 0 ? String(row[mapping.product] || '').trim() : ''
-    if (!productName) continue
+    const productName = mapping.product >= 0 ? String(row[mapping.product] || '').trim() : '';
+    if (!productName) continue;
 
     // Get category
-    let categoryName = 'عام'
+    let categoryName = 'عام';
     if (mapping.category !== undefined && mapping.category >= 0) {
-      const catValue = row[mapping.category]
-      if (catValue) categoryName = String(catValue).trim()
+      const catValue = row[mapping.category];
+      if (catValue) categoryName = String(catValue).trim();
     }
 
     // Get or create category
@@ -700,26 +740,28 @@ export function transformExcelData(
         default_pricing_type: pricingType,
         default_unit_type: unitType || undefined,
         default_variant_type: variantType || undefined,
-      })
+      });
     }
 
-    const category = categoriesMap.get(categoryName)!
+    const category = categoriesMap.get(categoryName)!;
 
     // Get description and english name
-    const description = mapping.description !== undefined && mapping.description >= 0
-      ? String(row[mapping.description] || '').trim() || null
-      : null
-    const nameEn = mapping.name_en !== undefined && mapping.name_en >= 0
-      ? String(row[mapping.name_en] || '').trim() || null
-      : null
+    const description =
+      mapping.description !== undefined && mapping.description >= 0
+        ? String(row[mapping.description] || '').trim() || null
+        : null;
+    const nameEn =
+      mapping.name_en !== undefined && mapping.name_en >= 0
+        ? String(row[mapping.name_en] || '').trim() || null
+        : null;
 
     // Get image URL
-    let imageUrl: string | null = null
+    let imageUrl: string | null = null;
     if (mapping.image_url !== undefined && mapping.image_url >= 0) {
-      const rawUrl = String(row[mapping.image_url] || '').trim()
+      const rawUrl = String(row[mapping.image_url] || '').trim();
       // Validate that it's a URL
       if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))) {
-        imageUrl = rawUrl
+        imageUrl = rawUrl;
       }
     }
 
@@ -745,26 +787,26 @@ export function transformExcelData(
       confidence: 1.0,
       needs_review: false,
       source_note: 'Excel Import',
-    }
+    };
 
     // Handle pricing based on type
     if (pricingType === 'fixed' || pricingType === 'per_unit') {
       if (mapping.price !== undefined && mapping.price >= 0) {
-        const priceValue = row[mapping.price]
-        product.price = parsePrice(priceValue)
+        const priceValue = row[mapping.price];
+        product.price = parsePrice(priceValue);
         if (product.price === null) {
-          product.needs_review = true
-          warnings.push(`صف ${rowIndex + 2}: لا يوجد سعر للمنتج "${productName}"`)
+          product.needs_review = true;
+          warnings.push(`صف ${rowIndex + 2}: لا يوجد سعر للمنتج "${productName}"`);
         }
       }
     } else if (pricingType === 'variants' && mapping.variants.length > 0) {
       // Build variants
-      const variants: ExtractedVariant[] = []
-      let isFirst = true
+      const variants: ExtractedVariant[] = [];
+      let isFirst = true;
 
       for (const variantMapping of mapping.variants) {
-        const priceValue = row[variantMapping.column]
-        const price = parsePrice(priceValue)
+        const priceValue = row[variantMapping.column];
+        const price = parsePrice(priceValue);
 
         if (price !== null) {
           variants.push({
@@ -774,24 +816,24 @@ export function transformExcelData(
             is_default: isFirst,
             display_order: variants.length + 1,
             multiplier: variantMapping.multiplier,
-          })
-          isFirst = false
+          });
+          isFirst = false;
         }
       }
 
       if (variants.length > 0) {
-        product.variants = variants
-        product.price = variants[0].price
-        product.variant_type = variantType
+        product.variants = variants;
+        product.price = variants[0].price;
+        product.variant_type = variantType;
       } else {
-        product.needs_review = true
-        product.pricing_type = 'fixed'
-        warnings.push(`صف ${rowIndex + 2}: لا توجد أسعار للمنتج "${productName}"`)
+        product.needs_review = true;
+        product.pricing_type = 'fixed';
+        warnings.push(`صف ${rowIndex + 2}: لا توجد أسعار للمنتج "${productName}"`);
       }
     }
 
-    category.products.push(product)
-    totalProducts++
+    category.products.push(product);
+    totalProducts++;
   }
 
   return {
@@ -801,7 +843,7 @@ export function transformExcelData(
     pricingType,
     variantType,
     unitType,
-  }
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -822,11 +864,11 @@ export function processAllSheets(sheets: SheetData[]): MultiSheetResult {
       variantType: null,
       unitType: null,
     },
-  }
+  };
 
   for (const sheet of sheets) {
     // Detect columns with sheet name context
-    const detection = detectColumns(sheet.headers, sheet.rows, sheet.name)
+    const detection = detectColumns(sheet.headers, sheet.rows, sheet.name);
 
     // Transform data
     const data = transformExcelData(
@@ -835,17 +877,17 @@ export function processAllSheets(sheets: SheetData[]): MultiSheetResult {
       detection.pricingType,
       detection.variantType,
       detection.unitType
-    )
+    );
 
     // Use sheet name as category if no category column
     if (detection.mapping.category === undefined || detection.mapping.category < 0) {
-      const sheetCategory = sheet.name.split('-')[0].trim()
+      const sheetCategory = sheet.name.split('-')[0].trim();
       if (sheetCategory) {
-        data.categories.forEach(cat => {
+        data.categories.forEach((cat) => {
           if (cat.name_ar === 'عام') {
-            cat.name_ar = sheetCategory
+            cat.name_ar = sheetCategory;
           }
-        })
+        });
       }
     }
 
@@ -853,32 +895,32 @@ export function processAllSheets(sheets: SheetData[]): MultiSheetResult {
       name: sheet.name,
       detection,
       data,
-    })
+    });
   }
 
   // Combine all categories
-  const categoryMap = new Map<string, ExtractedCategory>()
+  const categoryMap = new Map<string, ExtractedCategory>();
 
   for (const sheet of results.sheets) {
     for (const category of sheet.data.categories) {
-      const existingCategory = categoryMap.get(category.name_ar)
+      const existingCategory = categoryMap.get(category.name_ar);
       if (existingCategory) {
-        existingCategory.products.push(...category.products)
+        existingCategory.products.push(...category.products);
       } else {
-        categoryMap.set(category.name_ar, { ...category })
+        categoryMap.set(category.name_ar, { ...category });
       }
     }
 
-    results.combined.totalProducts += sheet.data.totalProducts
-    results.combined.warnings.push(...sheet.data.warnings)
+    results.combined.totalProducts += sheet.data.totalProducts;
+    results.combined.warnings.push(...sheet.data.warnings);
   }
 
   results.combined.categories = Array.from(categoryMap.values()).map((cat, index) => ({
     ...cat,
     display_order: index + 1,
-  }))
+  }));
 
-  return results
+  return results;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -913,13 +955,18 @@ export function getColumnTypeOptions(): { value: string; label_ar: string; label
     { value: 'weight_100g', label_ar: '100 جرام', label_en: '100g' },
     { value: 'weight_250g', label_ar: '250 جرام', label_en: '250g' },
     { value: 'weight_500g', label_ar: '500 جرام', label_en: '500g' },
-  ]
+  ];
 }
 
 /**
  * Get pricing type options for selection
  */
-export function getPricingTypeOptions(): { value: PricingType; label_ar: string; label_en: string; description_ar: string }[] {
+export function getPricingTypeOptions(): {
+  value: PricingType;
+  label_ar: string;
+  label_en: string;
+  description_ar: string;
+}[] {
   return [
     {
       value: 'fixed',
@@ -939,19 +986,24 @@ export function getPricingTypeOptions(): { value: PricingType; label_ar: string;
       label_en: 'Variants',
       description_ar: 'أحجام أو أوزان مختلفة (بيتزا ص/م/ك، كباب ربع/نص/كيلو)',
     },
-  ]
+  ];
 }
 
 /**
  * Get unit type options for selection
  */
-export function getUnitTypeOptions(): { value: UnitType; label_ar: string; label_en: string; category: string }[] {
+export function getUnitTypeOptions(): {
+  value: UnitType;
+  label_ar: string;
+  label_en: string;
+  category: string;
+}[] {
   return Object.entries(UNIT_TYPES).map(([key, unit]) => ({
     value: key as UnitType,
     label_ar: unit.name_ar,
     label_en: unit.name_en,
     category: unit.category,
-  }))
+  }));
 }
 
 /**
@@ -967,40 +1019,42 @@ export function applyManualMapping(
   const mapping: ColumnMapping = {
     product: -1,
     variants: [],
-  }
+  };
 
   // Process assignments
   for (const [colIndexStr, assignment] of Object.entries(columnAssignments)) {
-    const colIndex = parseInt(colIndexStr)
-    if (assignment === 'ignore') continue
+    const colIndex = parseInt(colIndexStr);
+    if (assignment === 'ignore') continue;
 
     switch (assignment) {
       case 'category':
-        mapping.category = colIndex
-        break
+        mapping.category = colIndex;
+        break;
       case 'product':
-        mapping.product = colIndex
-        break
+        mapping.product = colIndex;
+        break;
       case 'description':
-        mapping.description = colIndex
-        break
+        mapping.description = colIndex;
+        break;
       case 'name_en':
-        mapping.name_en = colIndex
-        break
+        mapping.name_en = colIndex;
+        break;
       case 'price':
-        mapping.price = colIndex
-        break
+        mapping.price = colIndex;
+        break;
       case 'unit':
-        mapping.unit = colIndex
-        break
+        mapping.unit = colIndex;
+        break;
       case 'image_url':
-        mapping.image_url = colIndex
-        break
+        mapping.image_url = colIndex;
+        break;
       default:
         // Check if it's a variant
         for (const [, group] of Object.entries(VARIANT_GROUPS)) {
           if (group.columns.includes(assignment)) {
-            const labelInfo = (group.labels as Record<string, { ar: string; en: string; multiplier?: number }>)[assignment]
+            const labelInfo = (
+              group.labels as Record<string, { ar: string; en: string; multiplier?: number }>
+            )[assignment];
             if (labelInfo) {
               mapping.variants.push({
                 column: colIndex,
@@ -1009,16 +1063,16 @@ export function applyManualMapping(
                 name_en: labelInfo.en,
                 variantType: group.variantType,
                 multiplier: labelInfo.multiplier,
-              })
+              });
             }
-            break
+            break;
           }
         }
     }
   }
 
   // Calculate confidence
-  const confidence = mapping.product >= 0 ? 0.8 : 0.2
+  const confidence = mapping.product >= 0 ? 0.8 : 0.2;
 
   return {
     mapping,
@@ -1030,5 +1084,5 @@ export function applyManualMapping(
     suggestions: mapping.product < 0 ? ['يجب تحديد عمود اسم المنتج'] : [],
     headers,
     sampleData: [],
-  }
+  };
 }

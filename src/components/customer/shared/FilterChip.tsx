@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { ReactNode } from 'react'
-import { Check } from 'lucide-react'
+import { ReactNode } from 'react';
+import { Check } from 'lucide-react';
 
 interface FilterChipProps {
-  label: string
-  icon?: ReactNode
-  isActive?: boolean
-  onClick?: () => void
-  className?: string
+  label: string;
+  icon?: ReactNode;
+  isActive?: boolean;
+  onClick?: () => void;
+  className?: string;
 }
 
 export function FilterChip({
@@ -31,5 +31,5 @@ export function FilterChip({
       {!isActive && icon && <span className="text-base">{icon}</span>}
       {label}
     </button>
-  )
+  );
 }

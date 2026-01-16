@@ -104,9 +104,9 @@ supabase functions logs custom-order-expiration --project-ref YOUR_PROJECT_REF
 
 The function uses these environment variables (automatically set by Supabase):
 
-| Variable | Description |
-|----------|-------------|
-| `SUPABASE_URL` | Your Supabase project URL |
+| Variable                    | Description                          |
+| --------------------------- | ------------------------------------ |
+| `SUPABASE_URL`              | Your Supabase project URL            |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key for database access |
 
 ## Database Tables Affected | الجداول المتأثرة
