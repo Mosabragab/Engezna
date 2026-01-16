@@ -1,24 +1,24 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useMemo } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import {
   ArrowLeft,
   ArrowRight,
@@ -31,47 +31,49 @@ import {
   Lock,
   Eye,
   EyeOff,
-} from 'lucide-react'
-import { useGoogleLogin } from '@react-oauth/google'
+} from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
-  is_active: boolean
+  id: string;
+  name_ar: string;
+  name_en: string;
+  is_active: boolean;
 }
 
 interface City {
-  id: string
-  name_ar: string
-  name_en: string
-  governorate_id: string
-  is_active: boolean
+  id: string;
+  name_ar: string;
+  name_en: string;
+  governorate_id: string;
+  is_active: boolean;
 }
 
 // ============================================================================
 // Form Schema
 // ============================================================================
 
-const registerSchema = z.object({
-  email: z.string().email('البريد الإلكتروني غير صالح'),
-  firstName: z.string().min(2, 'الاسم الأول مطلوب (حرفين على الأقل)'),
-  lastName: z.string().min(2, 'اسم العائلة مطلوب (حرفين على الأقل)'),
-  phone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'رقم هاتف مصري غير صالح'),
-  governorateId: z.string().min(1, 'يرجى اختيار المحافظة'),
-  cityId: z.string().min(1, 'يرجى اختيار المدينة'),
-  password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'كلمة المرور غير متطابقة',
-  path: ['confirmPassword'],
-})
+const registerSchema = z
+  .object({
+    email: z.string().email('البريد الإلكتروني غير صالح'),
+    firstName: z.string().min(2, 'الاسم الأول مطلوب (حرفين على الأقل)'),
+    lastName: z.string().min(2, 'اسم العائلة مطلوب (حرفين على الأقل)'),
+    phone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'رقم هاتف مصري غير صالح'),
+    governorateId: z.string().min(1, 'يرجى اختيار المحافظة'),
+    cityId: z.string().min(1, 'يرجى اختيار المدينة'),
+    password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'كلمة المرور غير متطابقة',
+    path: ['confirmPassword'],
+  });
 
-type RegisterFormData = z.infer<typeof registerSchema>
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 // ============================================================================
 // Google Icon Component
@@ -96,33 +98,33 @@ const GoogleIcon = () => (
       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
     />
   </svg>
-)
+);
 
 // ============================================================================
 // Main Component
 // ============================================================================
 
 export default function RegisterPage() {
-  const locale = useLocale()
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect')
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
+  const isRTL = locale === 'ar';
 
   // Loading states
-  const [isLoading, setIsLoading] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [emailSent, setEmailSent] = useState(false)
-  const [registeredEmail, setRegisteredEmail] = useState('')
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   // Password visibility
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Location data
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [cities, setCities] = useState<City[]>([])
-  const [loadingLocations, setLoadingLocations] = useState(true)
+  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
 
   const {
     register,
@@ -142,85 +144,87 @@ export default function RegisterPage() {
       password: '',
       confirmPassword: '',
     },
-  })
+  });
 
-  const selectedGovernorateId = watch('governorateId')
+  const selectedGovernorateId = watch('governorateId');
 
   // Filter cities based on selected governorate
   const filteredCities = useMemo(() => {
-    if (!selectedGovernorateId) return []
-    return cities.filter(city => city.governorate_id === selectedGovernorateId)
-  }, [selectedGovernorateId, cities])
+    if (!selectedGovernorateId) return [];
+    return cities.filter((city) => city.governorate_id === selectedGovernorateId);
+  }, [selectedGovernorateId, cities]);
 
   // Fetch locations
   useEffect(() => {
     async function fetchLocations() {
-      const supabase = createClient()
+      const supabase = createClient();
 
       const { data: govData } = await supabase
         .from('governorates')
         .select('id, name_ar, name_en, is_active')
         .eq('is_active', true)
-        .order('name_ar')
+        .order('name_ar');
 
       if (govData) {
-        setGovernorates(govData)
+        setGovernorates(govData);
       }
 
       const { data: cityData } = await supabase
         .from('cities')
         .select('id, name_ar, name_en, governorate_id, is_active')
         .eq('is_active', true)
-        .order('name_ar')
+        .order('name_ar');
 
       if (cityData) {
-        setCities(cityData)
+        setCities(cityData);
       }
 
-      setLoadingLocations(false)
+      setLoadingLocations(false);
     }
 
-    fetchLocations()
-  }, [])
+    fetchLocations();
+  }, []);
 
   // Reset city when governorate changes
   useEffect(() => {
-    setValue('cityId', '')
-  }, [selectedGovernorateId, setValue])
+    setValue('cityId', '');
+  }, [selectedGovernorateId, setValue]);
 
   // Handle Google signup
   const handleGoogleSignup = useGoogleLogin({
     flow: 'auth-code',
     onSuccess: async (codeResponse) => {
-      setIsGoogleLoading(true)
-      setError(null)
+      setIsGoogleLoading(true);
+      setError(null);
 
       try {
         const tokenResponse = await fetch('/api/auth/google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code: codeResponse.code }),
-        })
+        });
 
-        const tokens = await tokenResponse.json()
+        const tokens = await tokenResponse.json();
 
         if (!tokenResponse.ok || !tokens.id_token) {
-          setError(locale === 'ar' ? 'فشل في الحصول على بيانات Google' : 'Failed to get Google credentials')
-          setIsGoogleLoading(false)
-          return
+          setError(
+            locale === 'ar' ? 'فشل في الحصول على بيانات Google' : 'Failed to get Google credentials'
+          );
+          setIsGoogleLoading(false);
+          return;
         }
 
-        const supabase = createClient()
+        const supabase = createClient();
 
         const { data, error: signInError } = await supabase.auth.signInWithIdToken({
           provider: 'google',
           token: tokens.id_token,
-        })
+        });
 
         if (signInError) {
-          setError(signInError.message)
-          setIsGoogleLoading(false)
-          return
+          setError(signInError.message);
+          setIsGoogleLoading(false);
+          return;
         }
 
         if (data.user) {
@@ -229,40 +233,57 @@ export default function RegisterPage() {
             .from('profiles')
             .select('governorate_id, phone')
             .eq('id', data.user.id)
-            .single()
+            .single();
 
           if (!profile) {
             // Create profile for new user
             await supabase.from('profiles').insert({
               id: data.user.id,
               email: data.user.email,
-              full_name: (data.user.user_metadata?.full_name || data.user.user_metadata?.name || '') as string,
+              full_name: (data.user.user_metadata?.full_name ||
+                data.user.user_metadata?.name ||
+                '') as string,
               role: 'customer',
-            })
+            });
+          }
+
+          // Wait for session to be fully persisted before redirecting
+          // This ensures cookies are written before navigation
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // Verify session is active
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (!session) {
+            console.error('Session not found after Google sign-in');
+            setError(locale === 'ar' ? 'فشل في إنشاء الجلسة' : 'Failed to create session');
+            setIsGoogleLoading(false);
+            return;
           }
 
           // Redirect to complete profile if needed
           const completeProfileUrl = redirectTo
             ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
-            : `/${locale}/auth/complete-profile`
-          window.location.href = completeProfileUrl
+            : `/${locale}/auth/complete-profile`;
+          window.location.href = completeProfileUrl;
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       } finally {
-        setIsGoogleLoading(false)
+        setIsGoogleLoading(false);
       }
     },
     onError: () => {
-      setError(locale === 'ar' ? 'فشل التسجيل بـ Google' : 'Google sign-up failed')
-      setIsGoogleLoading(false)
+      setError(locale === 'ar' ? 'فشل التسجيل بـ Google' : 'Google sign-up failed');
+      setIsGoogleLoading(false);
     },
-  })
+  });
 
   // Handle form submission
   const onSubmit = async (data: RegisterFormData) => {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
       // Call registration API
@@ -279,24 +300,52 @@ export default function RegisterPage() {
           cityId: data.cityId,
           locale,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!response.ok) {
-        setError(result.error || (locale === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'Registration failed'))
-        return
+        setError(
+          result.error || (locale === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'Registration failed')
+        );
+        return;
       }
 
-      // Success - show email sent message
-      setRegisteredEmail(data.email)
-      setEmailSent(true)
+      // Check if this is a test account - auto login
+      if (result.isTestAccount) {
+        const supabase = createClient();
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+
+        if (signInError) {
+          console.error('Auto-login error:', signInError);
+          setError(
+            locale === 'ar'
+              ? 'تم إنشاء الحساب. يرجى تسجيل الدخول.'
+              : 'Account created. Please sign in.'
+          );
+          return;
+        }
+
+        // Wait for session to persist
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Redirect to home or specified redirect
+        window.location.href = redirectTo || `/${locale}`;
+        return;
+      }
+
+      // Success - show email sent message for regular accounts
+      setRegisteredEmail(data.email);
+      setEmailSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Email sent success state
   if (emailSent) {
@@ -316,9 +365,7 @@ export default function RegisterPage() {
           </h1>
 
           <p className="text-slate-500 mb-2">
-            {locale === 'ar'
-              ? 'أرسلنا رابط التأكيد إلى:'
-              : 'We sent a verification link to:'}
+            {locale === 'ar' ? 'أرسلنا رابط التأكيد إلى:' : 'We sent a verification link to:'}
           </p>
 
           <p className="text-[#0F172A] font-medium mb-6" dir="ltr">
@@ -355,7 +402,7 @@ export default function RegisterPage() {
           {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -431,9 +478,7 @@ export default function RegisterPage() {
               className={`h-[44px] ${errors.email ? 'border-red-300' : ''}`}
               dir="ltr"
             />
-            {errors.email && (
-              <p className="text-xs text-red-500">{errors.email.message}</p>
-            )}
+            {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
           </div>
 
           {/* Name Fields Row */}
@@ -513,12 +558,18 @@ export default function RegisterPage() {
                 value={selectedGovernorateId}
                 onValueChange={(value) => setValue('governorateId', value)}
               >
-                <SelectTrigger className={`h-[44px] ${errors.governorateId ? 'border-red-300' : ''}`}>
+                <SelectTrigger
+                  className={`h-[44px] ${errors.governorateId ? 'border-red-300' : ''}`}
+                >
                   <SelectValue
                     placeholder={
                       loadingLocations
-                        ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
-                        : (locale === 'ar' ? 'اختر المحافظة' : 'Select')
+                        ? locale === 'ar'
+                          ? 'جاري التحميل...'
+                          : 'Loading...'
+                        : locale === 'ar'
+                          ? 'اختر المحافظة'
+                          : 'Select'
                     }
                   />
                 </SelectTrigger>
@@ -551,8 +602,12 @@ export default function RegisterPage() {
                   <SelectValue
                     placeholder={
                       !selectedGovernorateId
-                        ? (locale === 'ar' ? 'اختر المحافظة أولاً' : 'Select governorate')
-                        : (locale === 'ar' ? 'اختر المدينة' : 'Select')
+                        ? locale === 'ar'
+                          ? 'اختر المحافظة أولاً'
+                          : 'Select governorate'
+                        : locale === 'ar'
+                          ? 'اختر المدينة'
+                          : 'Select'
                     }
                   />
                 </SelectTrigger>
@@ -594,9 +649,7 @@ export default function RegisterPage() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {errors.password && (
-              <p className="text-xs text-red-500">{errors.password.message}</p>
-            )}
+            {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
           </div>
 
           {/* Confirm Password */}
@@ -639,8 +692,10 @@ export default function RegisterPage() {
                 <Loader2 className="w-4 h-4 me-2 animate-spin" />
                 {locale === 'ar' ? 'جاري التسجيل...' : 'Registering...'}
               </>
+            ) : locale === 'ar' ? (
+              'إنشاء الحساب'
             ) : (
-              locale === 'ar' ? 'إنشاء الحساب' : 'Create Account'
+              'Create Account'
             )}
           </Button>
         </form>
@@ -680,7 +735,11 @@ export default function RegisterPage() {
           <p className="text-slate-500">
             {locale === 'ar' ? 'لديك حساب بالفعل؟' : 'Already have an account?'}{' '}
             <Link
-              href={redirectTo ? `/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/login`}
+              href={
+                redirectTo
+                  ? `/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}`
+                  : `/${locale}/auth/login`
+              }
               className="text-[#009DE0] font-medium hover:underline"
             >
               {locale === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
@@ -698,5 +757,5 @@ export default function RegisterPage() {
         {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
       </Link>
     </div>
-  )
+  );
 }

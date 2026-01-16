@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { ArrowLeft, ArrowRight, Loader2, Mail, Eye, EyeOff } from 'lucide-react'
-import { guestLocationStorage } from '@/lib/hooks/useGuestLocation'
-import { useGoogleLogin } from '@react-oauth/google'
+import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { ArrowLeft, ArrowRight, Loader2, Mail, Eye, EyeOff } from 'lucide-react';
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
+import { useGoogleLogin } from '@react-oauth/google';
 
 // Google Icon Component
 const GoogleIcon = () => (
@@ -30,11 +30,11 @@ const GoogleIcon = () => (
       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
     />
   </svg>
-)
+);
 
 // Error messages mapping
 const getErrorMessage = (errorCode: string | null, locale: string): string | null => {
-  if (!errorCode) return null
+  if (!errorCode) return null;
 
   const messages: Record<string, { ar: string; en: string }> = {
     link_expired: {
@@ -61,34 +61,34 @@ const getErrorMessage = (errorCode: string | null, locale: string): string | nul
       ar: 'الإيميل أو كلمة المرور غير صحيحة',
       en: 'Invalid email or password',
     },
-  }
+  };
 
-  const message = messages[errorCode]
-  return message ? (locale === 'ar' ? message.ar : message.en) : null
-}
+  const message = messages[errorCode];
+  return message ? (locale === 'ar' ? message.ar : message.en) : null;
+};
 
 export default function LoginPage() {
-  const locale = useLocale()
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect')
-  const urlError = searchParams.get('error')
+  const locale = useLocale();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
+  const urlError = searchParams.get('error');
 
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [isEmailLoading, setIsEmailLoading] = useState(false)
-  const [error, setError] = useState<string | null>(() => getErrorMessage(urlError, locale))
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const [error, setError] = useState<string | null>(() => getErrorMessage(urlError, locale));
 
   // Email + Password states
-  const [showEmailForm, setShowEmailForm] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Handle Google login with authorization code flow
   const handleGoogleLogin = useGoogleLogin({
     flow: 'auth-code',
     onSuccess: async (codeResponse) => {
-      setIsGoogleLoading(true)
-      setError(null)
+      setIsGoogleLoading(true);
+      setError(null);
 
       try {
         // Exchange auth code for ID token via our API
@@ -96,100 +96,115 @@ export default function LoginPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code: codeResponse.code }),
-        })
+        });
 
-        const tokens = await tokenResponse.json()
+        const tokens = await tokenResponse.json();
 
         if (!tokenResponse.ok || !tokens.id_token) {
-          setError(locale === 'ar' ? 'فشل في الحصول على بيانات Google' : 'Failed to get Google credentials')
-          setIsGoogleLoading(false)
-          return
+          setError(
+            locale === 'ar' ? 'فشل في الحصول على بيانات Google' : 'Failed to get Google credentials'
+          );
+          setIsGoogleLoading(false);
+          return;
         }
 
-        const supabase = createClient()
+        const supabase = createClient();
 
         // Sign in to Supabase with Google ID token
         const { data, error: signInError } = await supabase.auth.signInWithIdToken({
           provider: 'google',
           token: tokens.id_token,
-        })
+        });
 
         if (signInError) {
-          console.error('Supabase signInWithIdToken error:', signInError)
-          setError(signInError.message)
-          setIsGoogleLoading(false)
-          return
+          console.error('Supabase signInWithIdToken error:', signInError);
+          setError(signInError.message);
+          setIsGoogleLoading(false);
+          return;
         }
 
-        await handlePostLogin(supabase, data.user)
+        await handlePostLogin(supabase, data.user);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       } finally {
-        setIsGoogleLoading(false)
+        setIsGoogleLoading(false);
       }
     },
     onError: () => {
-      setError(locale === 'ar' ? 'فشل تسجيل الدخول بـ Google' : 'Google sign-in failed')
-      setIsGoogleLoading(false)
+      setError(locale === 'ar' ? 'فشل تسجيل الدخول بـ Google' : 'Google sign-in failed');
+      setIsGoogleLoading(false);
     },
-  })
+  });
 
   // Handle Email + Password Login
   const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!email || !email.includes('@')) {
-      setError(locale === 'ar' ? 'يرجى إدخال إيميل صحيح' : 'Please enter a valid email')
-      return
+      setError(locale === 'ar' ? 'يرجى إدخال إيميل صحيح' : 'Please enter a valid email');
+      return;
     }
 
     if (!password || password.length < 6) {
-      setError(locale === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters')
-      return
+      setError(
+        locale === 'ar'
+          ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
+          : 'Password must be at least 6 characters'
+      );
+      return;
     }
 
-    setIsEmailLoading(true)
-    setError(null)
+    setIsEmailLoading(true);
+    setError(null);
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
-      })
+      });
 
       if (signInError) {
-        console.error('Sign in error:', signInError)
+        console.error('Sign in error:', signInError);
         if (signInError.message.includes('Invalid login credentials')) {
-          setError(locale === 'ar' ? 'الإيميل أو كلمة المرور غير صحيحة' : 'Invalid email or password')
+          setError(
+            locale === 'ar' ? 'الإيميل أو كلمة المرور غير صحيحة' : 'Invalid email or password'
+          );
         } else if (signInError.message.includes('Email not confirmed')) {
-          setError(locale === 'ar' ? 'يرجى تأكيد الإيميل أولاً. تحقق من بريدك الإلكتروني' : 'Please confirm your email first. Check your inbox')
+          setError(
+            locale === 'ar'
+              ? 'يرجى تأكيد الإيميل أولاً. تحقق من بريدك الإلكتروني'
+              : 'Please confirm your email first. Check your inbox'
+          );
         } else {
-          setError(signInError.message)
+          setError(signInError.message);
         }
-        setIsEmailLoading(false)
-        return
+        setIsEmailLoading(false);
+        return;
       }
 
-      await handlePostLogin(supabase, data.user)
+      await handlePostLogin(supabase, data.user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsEmailLoading(false)
+      setIsEmailLoading(false);
     }
-  }
+  };
 
   // Common post-login handler
-  const handlePostLogin = async (supabase: ReturnType<typeof createClient>, user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null) => {
-    if (!user) return
+  const handlePostLogin = async (
+    supabase: ReturnType<typeof createClient>,
+    user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null
+  ) => {
+    if (!user) return;
 
     // Check if profile exists, if not create one
     const { data: profile } = await supabase
       .from('profiles')
       .select('governorate_id, phone, role')
       .eq('id', user.id)
-      .single()
+      .single();
 
     if (!profile) {
       // Create profile for new user
@@ -198,11 +213,11 @@ export default function LoginPage() {
         email: user.email,
         full_name: (user.user_metadata?.full_name || user.user_metadata?.name || '') as string,
         role: 'customer',
-      })
+      });
     }
 
     // Sync guest location if exists
-    const guestLocation = guestLocationStorage.get()
+    const guestLocation = guestLocationStorage.get();
     if (guestLocation?.governorateId && !profile?.governorate_id) {
       await supabase
         .from('profiles')
@@ -211,8 +226,25 @@ export default function LoginPage() {
           city_id: guestLocation.cityId || null,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id)
-      guestLocationStorage.clear()
+        .eq('id', user.id);
+      guestLocationStorage.clear();
+    }
+
+    // Wait for session to be fully persisted before redirecting
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Verify session is active
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('Session not found after login');
+      setError(
+        locale === 'ar'
+          ? 'فشل في إنشاء الجلسة. حاول مرة أخرى.'
+          : 'Failed to create session. Please try again.'
+      );
+      return;
     }
 
     // Check if profile is complete
@@ -220,22 +252,22 @@ export default function LoginPage() {
       .from('profiles')
       .select('governorate_id, phone')
       .eq('id', user.id)
-      .single()
+      .single();
 
     if (!fullProfile?.governorate_id || !fullProfile?.phone) {
       const completeProfileUrl = redirectTo
         ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
-        : `/${locale}/auth/complete-profile`
-      window.location.href = completeProfileUrl
-      return
+        : `/${locale}/auth/complete-profile`;
+      window.location.href = completeProfileUrl;
+      return;
     }
 
     // Profile is complete - redirect
-    window.location.href = redirectTo || `/${locale}`
-  }
+    window.location.href = redirectTo || `/${locale}`;
+  };
 
-  const isRTL = locale === 'ar'
-  const isLoading = isGoogleLoading || isEmailLoading
+  const isRTL = locale === 'ar';
+  const isLoading = isGoogleLoading || isEmailLoading;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
@@ -356,7 +388,11 @@ export default function LoginPage() {
           <p className="text-slate-500">
             {locale === 'ar' ? 'ليس لديك حساب؟' : "Don't have an account?"}{' '}
             <Link
-              href={redirectTo ? `/${locale}/auth/register?redirect=${encodeURIComponent(redirectTo)}` : `/${locale}/auth/register`}
+              href={
+                redirectTo
+                  ? `/${locale}/auth/register?redirect=${encodeURIComponent(redirectTo)}`
+                  : `/${locale}/auth/register`
+              }
               className="text-[#009DE0] font-medium hover:underline"
             >
               {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
@@ -425,5 +461,5 @@ export default function LoginPage() {
         {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
       </Link>
     </div>
-  )
+  );
 }
