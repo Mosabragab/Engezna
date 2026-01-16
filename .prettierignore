@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# Cache
+.cache/
+.eslintcache
+
+# Coverage
+coverage/
+
+# Playwright
+e2e/reports/
+playwright-report/
+test-results/
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+
+# PWA
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+public/serwist-*.js
+public/serwist-*.js.map
+
+# Generated
+*.min.js
+*.min.css
+
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Environment
+.env*
+
+# IDE
+.idea/
+.vscode/
+
+# Misc
+*.log
+*.tsbuildinfo
