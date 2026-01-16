@@ -1,102 +1,126 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
 
 export default function AuthCallbackPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [error, setError] = useState<string | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     // Prevent double execution
-    if (isProcessing) return
-    setIsProcessing(true)
+    if (isProcessing) return;
+    setIsProcessing(true);
 
     const handleCallback = async () => {
-      const code = searchParams.get('code')
-      const tokenHash = searchParams.get('token_hash')
-      const type = searchParams.get('type')
-      const errorParam = searchParams.get('error')
-      const errorDescription = searchParams.get('error_description')
-      const redirectParam = searchParams.get('redirect')
-      const verified = searchParams.get('verified')
-      const next = searchParams.get('next') ?? redirectParam ?? '/'
+      const code = searchParams.get('code');
+      const tokenHash = searchParams.get('token_hash');
+      const type = searchParams.get('type');
+      const errorParam = searchParams.get('error');
+      const errorDescription = searchParams.get('error_description');
+      const redirectParam = searchParams.get('redirect');
+      const verified = searchParams.get('verified');
+      const next = searchParams.get('next') ?? redirectParam ?? '/';
 
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Handle error from Supabase (e.g., expired link)
       if (errorParam) {
-        console.error('Auth callback error:', errorParam, errorDescription)
-        const errorMessage = errorParam === 'access_denied' ? 'link_expired' : errorParam
-        router.push(`/${locale}/auth/login?error=${errorMessage}${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`)
-        return
+        console.error('Auth callback error:', errorParam, errorDescription);
+        const errorMessage = errorParam === 'access_denied' ? 'link_expired' : errorParam;
+        router.push(
+          `/${locale}/auth/login?error=${errorMessage}${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`
+        );
+        return;
       }
 
       // First, check if user is already logged in (session might be set automatically)
-      let { data: { user } } = await supabase.auth.getUser()
+      let {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       // Handle token_hash verification (from email verification link)
-      let isSignupVerification = false
+      let isSignupVerification = false;
       if (!user && tokenHash && type) {
         const { data, error: verifyError } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
           type: type as 'signup' | 'recovery' | 'email',
-        })
+        });
 
         if (verifyError) {
-          console.error('Auth callback: Token verification error:', verifyError.message)
-          setError(locale === 'ar' ? 'فشل التحقق من الرابط. قد يكون منتهي الصلاحية.' : 'Failed to verify link. It may have expired.')
+          console.error('Auth callback: Token verification error:', verifyError.message);
+          setError(
+            locale === 'ar'
+              ? 'فشل التحقق من الرابط. قد يكون منتهي الصلاحية.'
+              : 'Failed to verify link. It may have expired.'
+          );
           setTimeout(() => {
-            router.push(`/${locale}/auth/login?error=verification_failed${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`)
-          }, 3000)
-          return
+            router.push(
+              `/${locale}/auth/login?error=verification_failed${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`
+            );
+          }, 3000);
+          return;
         }
-        user = data.user
-        isSignupVerification = type === 'signup'
+        user = data.user;
+        isSignupVerification = type === 'signup';
       }
 
       // If no user and we have a code, try to exchange it
       if (!user && code) {
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
         if (exchangeError) {
-          console.error('Auth callback: Code exchange error:', exchangeError.message)
+          console.error('Auth callback: Code exchange error:', exchangeError.message);
           // Try getting user again - sometimes session is set but exchange fails
-          const { data: { user: retryUser } } = await supabase.auth.getUser()
+          const {
+            data: { user: retryUser },
+          } = await supabase.auth.getUser();
           if (retryUser) {
-            user = retryUser
+            user = retryUser;
           } else {
-            setError(locale === 'ar' ? 'فشل التحقق من الرابط' : 'Failed to verify link')
+            setError(locale === 'ar' ? 'فشل التحقق من الرابط' : 'Failed to verify link');
             setTimeout(() => {
-              router.push(`/${locale}/auth/login?error=exchange_failed${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`)
-            }, 2000)
-            return
+              router.push(
+                `/${locale}/auth/login?error=exchange_failed${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`
+              );
+            }, 2000);
+            return;
           }
         } else {
-          user = data.user
+          user = data.user;
         }
       }
 
       // If still no user, redirect to login
       if (!user) {
-        console.error('Auth callback: No user found')
-        router.push(`/${locale}/auth/login?error=no_user`)
-        return
+        console.error('Auth callback: No user found');
+        router.push(`/${locale}/auth/login?error=no_user`);
+        return;
       }
 
-      // Check if user profile exists and is complete
+      // Check if user profile exists and is complete (with location names)
       const { data: profile } = await supabase
         .from('profiles')
-        .select('governorate_id, phone, role')
+        .select(
+          `
+          governorate_id,
+          phone,
+          role,
+          city_id,
+          governorates:governorate_id (name_ar, name_en),
+          cities:city_id (name_ar, name_en)
+        `
+        )
         .eq('id', user.id)
-        .single()
+        .single();
 
       // If profile doesn't exist, create it
       if (!profile) {
@@ -105,29 +129,31 @@ export default function AuthCallbackPage() {
           email: user.email,
           full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
           role: 'customer',
-        })
+        });
 
         // Redirect to complete profile
-        const completeProfileUrl = next !== '/'
-          ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(next)}`
-          : `/${locale}/auth/complete-profile`
-        router.push(completeProfileUrl)
-        return
+        const completeProfileUrl =
+          next !== '/'
+            ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(next)}`
+            : `/${locale}/auth/complete-profile`;
+        router.push(completeProfileUrl);
+        return;
       }
 
       // Check if profile is incomplete
       if (!profile.governorate_id || !profile.phone) {
         // For providers, redirect to provider complete-profile
         if (profile.role === 'provider_owner') {
-          router.push(`/${locale}/provider/complete-profile`)
-          return
+          router.push(`/${locale}/provider/complete-profile`);
+          return;
         }
         // For customers, redirect to customer complete-profile
-        const completeProfileUrl = next !== '/'
-          ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(next)}`
-          : `/${locale}/auth/complete-profile`
-        router.push(completeProfileUrl)
-        return
+        const completeProfileUrl =
+          next !== '/'
+            ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(next)}`
+            : `/${locale}/auth/complete-profile`;
+        router.push(completeProfileUrl);
+        return;
       }
 
       // Send welcome email if this is a signup verification
@@ -137,12 +163,23 @@ export default function AuthCallbackPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: user.id }),
-          })
+          });
         } catch (emailError) {
           // Don't block the flow if welcome email fails
-          console.error('Failed to send welcome email:', emailError)
+          console.error('Failed to send welcome email:', emailError);
         }
       }
+
+      // Sync location to localStorage (so home page can read it)
+      const gov = profile.governorates as unknown as { name_ar: string; name_en: string } | null;
+      const city = profile.cities as unknown as { name_ar: string; name_en: string } | null;
+
+      guestLocationStorage.set({
+        governorateId: profile.governorate_id,
+        governorateName: gov ? { ar: gov.name_ar, en: gov.name_en } : null,
+        cityId: profile.city_id || null,
+        cityName: city ? { ar: city.name_ar, en: city.name_en } : null,
+      });
 
       // Profile complete - redirect based on role
       if (profile.role === 'provider_owner') {
@@ -151,23 +188,25 @@ export default function AuthCallbackPage() {
           .from('providers')
           .select('status')
           .eq('owner_id', user.id)
-          .single()
+          .single();
 
         if (provider?.status === 'incomplete') {
-          router.push(`/${locale}/provider/complete-profile`)
-          return
+          router.push(`/${locale}/provider/complete-profile`);
+          return;
         }
-        router.push(`/${locale}/provider`)
-        return
+        router.push(`/${locale}/provider`);
+        return;
       }
 
       // For customers, redirect to destination
-      const redirectUrl = next.startsWith('/') ? next : `/${locale}${next.startsWith('/') ? '' : '/'}${next}`
-      router.push(redirectUrl)
-    }
+      const redirectUrl = next.startsWith('/')
+        ? next
+        : `/${locale}${next.startsWith('/') ? '' : '/'}${next}`;
+      router.push(redirectUrl);
+    };
 
-    handleCallback()
-  }, [searchParams, locale, router, isProcessing])
+    handleCallback();
+  }, [searchParams, locale, router, isProcessing]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
@@ -199,5 +238,5 @@ export default function AuthCallbackPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

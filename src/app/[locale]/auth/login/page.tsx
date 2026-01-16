@@ -247,10 +247,18 @@ export default function LoginPage() {
       return;
     }
 
-    // Check if profile is complete
+    // Check if profile is complete (with location names for localStorage)
     const { data: fullProfile } = await supabase
       .from('profiles')
-      .select('governorate_id, phone')
+      .select(
+        `
+        governorate_id,
+        phone,
+        city_id,
+        governorates:governorate_id (name_ar, name_en),
+        cities:city_id (name_ar, name_en)
+      `
+      )
       .eq('id', user.id)
       .single();
 
@@ -261,6 +269,17 @@ export default function LoginPage() {
       window.location.href = completeProfileUrl;
       return;
     }
+
+    // Sync user location to localStorage (so home page can read it)
+    const gov = fullProfile.governorates as unknown as { name_ar: string; name_en: string } | null;
+    const city = fullProfile.cities as unknown as { name_ar: string; name_en: string } | null;
+
+    guestLocationStorage.set({
+      governorateId: fullProfile.governorate_id,
+      governorateName: gov ? { ar: gov.name_ar, en: gov.name_en } : null,
+      cityId: fullProfile.city_id || null,
+      cityName: city ? { ar: city.name_ar, en: city.name_en } : null,
+    });
 
     // Profile is complete - redirect
     window.location.href = redirectTo || `/${locale}`;
